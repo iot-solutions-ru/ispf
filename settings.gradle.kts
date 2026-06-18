@@ -15,4 +15,5 @@ include(
     "packages:ispf-driver-virtual",
     "packages:ispf-plugin-model",
     "packages:ispf-plugin-workflow",
+    "packages:ispf-plugin-oil-terminal",
 )

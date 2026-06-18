@@ -14,8 +14,8 @@ export default function ValueWidgetView({
   editable = false,
 }: ValueWidgetViewProps) {
   const { rawValue, variable, isLoading, isError } = useBoundVariable(
-    widget.objectPath,
-    widget.variableName,
+    widget.objectPath ?? "",
+    widget.variableName ?? "",
     widget.valueField,
     refreshIntervalMs
   );
@@ -46,7 +46,7 @@ export default function ValueWidgetView({
         {unit ? <span className="dash-widget-unit">{unit}</span> : null}
       </div>
       <div className="dash-widget-meta mono">
-        {widget.objectPath.split(".").pop()}.{widget.variableName}
+        {(widget.objectPath ?? "—").split(".").pop()}.{widget.variableName}
       </div>
     </div>
   );

@@ -1,4 +1,18 @@
-export type WidgetType = "value" | "toggle" | "indicator" | "chart" | "sparkline" | "function";
+export type WidgetType =
+  | "value"
+  | "toggle"
+  | "indicator"
+  | "chart"
+  | "sparkline"
+  | "function"
+  | "function-form"
+  | "progress"
+  | "object-table"
+  | "event-feed"
+  | "work-queue"
+  | "status-badge"
+  | "gauge"
+  | "card-grid";
 
 export type ChartStyle = "line" | "area";
 
@@ -10,9 +24,11 @@ export interface DashboardWidgetBase {
   y: number;
   w: number;
   h: number;
-  objectPath: string;
-  variableName: string;
+  objectPath?: string;
+  variableName?: string;
   valueField?: string;
+  /** When set, objectPath is taken from dashboard selection (e.g. selected order). */
+  selectionKey?: string;
 }
 
 export interface ValueWidget extends DashboardWidgetBase {
@@ -58,6 +74,80 @@ export interface FunctionWidget extends DashboardWidgetBase {
   functionName: string;
   buttonLabel?: string;
   confirmMessage?: string;
+  /** Static JSON input rows for invoke (optional). */
+  inputJson?: string;
+}
+
+export interface FunctionFormField {
+  name: string;
+  label: string;
+  type: "text" | "number" | "select";
+  /** Parent path — options = child object display names / paths */
+  optionsFrom?: string;
+  staticOptions?: string[];
+  defaultValue?: string;
+}
+
+export interface FunctionFormWidget extends DashboardWidgetBase {
+  type: "function-form";
+  functionName: string;
+  buttonLabel?: string;
+  confirmMessage?: string;
+  fieldsJson?: string;
+}
+
+export interface ProgressWidget extends DashboardWidgetBase {
+  type: "progress";
+  currentVariable: string;
+  maxVariable: string;
+  unit?: string;
+  decimals?: number;
+}
+
+export interface ObjectTableColumn {
+  variable: string;
+  label: string;
+}
+
+export interface ObjectTableWidget extends DashboardWidgetBase {
+  type: "object-table";
+  parentPath: string;
+  columnsJson?: string;
+  /** Writes selected row path into dashboard selection */
+  selectionKey?: string;
+}
+
+export interface EventFeedWidget extends DashboardWidgetBase {
+  type: "event-feed";
+  objectPathPrefix?: string;
+  eventNamesJson?: string;
+  maxItems?: number;
+}
+
+export interface WorkQueueWidget extends DashboardWidgetBase {
+  type: "work-queue";
+  operatorId?: string;
+  maxItems?: number;
+}
+
+export interface StatusBadgeWidget extends DashboardWidgetBase {
+  type: "status-badge";
+}
+
+export interface GaugeWidget extends DashboardWidgetBase {
+  type: "gauge";
+  minVariable?: string;
+  maxVariable?: string;
+  minValue?: number;
+  maxValue?: number;
+  unit?: string;
+  decimals?: number;
+}
+
+export interface CardGridWidget extends DashboardWidgetBase {
+  type: "card-grid";
+  parentPath: string;
+  variablesJson?: string;
 }
 
 export type DashboardWidget =
@@ -66,7 +156,15 @@ export type DashboardWidget =
   | IndicatorWidget
   | ChartWidget
   | SparklineWidget
-  | FunctionWidget;
+  | FunctionWidget
+  | FunctionFormWidget
+  | ProgressWidget
+  | ObjectTableWidget
+  | EventFeedWidget
+  | WorkQueueWidget
+  | StatusBadgeWidget
+  | GaugeWidget
+  | CardGridWidget;
 
 export interface DashboardLayout {
   columns: number;
@@ -89,6 +187,14 @@ export const WIDGET_TYPES: Array<{ type: WidgetType; label: string }> = [
   { type: "chart", label: "График / тренд" },
   { type: "sparkline", label: "Спарклайн" },
   { type: "function", label: "Функция (кнопка)" },
+  { type: "function-form", label: "Функция (форма)" },
+  { type: "progress", label: "Прогресс" },
+  { type: "object-table", label: "Таблица объектов" },
+  { type: "event-feed", label: "Лента событий" },
+  { type: "work-queue", label: "Очередь задач" },
+  { type: "status-badge", label: "Статус (badge)" },
+  { type: "gauge", label: "Шкала / gauge" },
+  { type: "card-grid", label: "Карточки объектов" },
 ];
 
 export function emptyLayout(): DashboardLayout {
@@ -161,7 +267,87 @@ export function newWidget(type: WidgetType, index: number): DashboardWidget {
         h: 2,
         functionName: "acknowledgeAlarm",
         buttonLabel: "Выполнить",
-        objectPath: "",
+      };
+    case "function-form":
+      return {
+        ...base,
+        type: "function-form",
+        w: 4,
+        h: 4,
+        functionName: "assign",
+        buttonLabel: "Выполнить",
+        fieldsJson: "[]",
+      };
+    case "progress":
+      return {
+        ...base,
+        type: "progress",
+        w: 6,
+        h: 2,
+        currentVariable: "actualLiters",
+        maxVariable: "plannedLiters",
+        unit: "л",
+        decimals: 0,
+        selectionKey: "order",
+      };
+    case "object-table":
+      return {
+        ...base,
+        type: "object-table",
+        w: 8,
+        h: 5,
+        parentPath: "",
+        columnsJson: "[]",
+        selectionKey: "order",
+      };
+    case "event-feed":
+      return {
+        ...base,
+        type: "event-feed",
+        w: 12,
+        h: 4,
+        objectPathPrefix: "",
+        eventNamesJson: "[]",
+        maxItems: 20,
+      };
+    case "work-queue":
+      return {
+        ...base,
+        type: "work-queue",
+        w: 4,
+        h: 5,
+        operatorId: "operator",
+        maxItems: 10,
+      };
+    case "status-badge":
+      return {
+        ...base,
+        type: "status-badge",
+        w: 3,
+        h: 2,
+        variableName: "status",
+        selectionKey: "order",
+      };
+    case "gauge":
+      return {
+        ...base,
+        type: "gauge",
+        w: 4,
+        h: 3,
+        variableName: "levelM3",
+        minVariable: "minLevelM3",
+        maxVariable: "maxLevelM3",
+        unit: "м³",
+        decimals: 1,
+      };
+    case "card-grid":
+      return {
+        ...base,
+        type: "card-grid",
+        w: 6,
+        h: 4,
+        parentPath: "",
+        variablesJson: '["levelM3","qualityOk"]',
       };
     default:
       return { ...base, type: "value", decimals: 1 };

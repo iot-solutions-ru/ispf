@@ -96,6 +96,14 @@ export default function WidgetEditorPanel({
             onChange={(e) => update({ valueField: e.target.value })}
           />
         </label>
+        <label>
+          Ключ выбора (selectionKey)
+          <input
+            value={widget.selectionKey ?? ""}
+            onChange={(e) => update({ selectionKey: e.target.value || undefined })}
+            placeholder="order"
+          />
+        </label>
         <p className="hint full">Позицию и размер меняйте перетаскиванием на сетке.</p>
         {(widget.type === "value" || widget.type === "chart" || widget.type === "sparkline") && (
           <label>
@@ -192,6 +200,168 @@ export default function WidgetEditorPanel({
               <input
                 value={widget.confirmMessage ?? ""}
                 onChange={(e) => update({ confirmMessage: e.target.value })}
+              />
+            </label>
+            <label>
+              JSON input (опционально)
+              <textarea
+                rows={3}
+                value={widget.inputJson ?? ""}
+                onChange={(e) => update({ inputJson: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "function-form" && (
+          <>
+            <label>
+              Имя функции
+              <input
+                value={widget.functionName}
+                onChange={(e) => update({ functionName: e.target.value })}
+              />
+            </label>
+            <label>
+              Текст кнопки
+              <input
+                value={widget.buttonLabel ?? ""}
+                onChange={(e) => update({ buttonLabel: e.target.value })}
+              />
+            </label>
+            <label>
+              Поля (JSON)
+              <textarea
+                rows={5}
+                value={widget.fieldsJson ?? "[]"}
+                onChange={(e) => update({ fieldsJson: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "progress" && (
+          <>
+            <label>
+              Переменная текущего
+              <input
+                value={widget.currentVariable}
+                onChange={(e) => update({ currentVariable: e.target.value })}
+              />
+            </label>
+            <label>
+              Переменная максимума
+              <input
+                value={widget.maxVariable}
+                onChange={(e) => update({ maxVariable: e.target.value })}
+              />
+            </label>
+            <label>
+              Единица
+              <input
+                value={widget.unit ?? ""}
+                onChange={(e) => update({ unit: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "object-table" && (
+          <>
+            <label>
+              Родитель (parentPath)
+              <input
+                value={widget.parentPath}
+                onChange={(e) => update({ parentPath: e.target.value })}
+              />
+            </label>
+            <label>
+              Колонки (JSON)
+              <textarea
+                rows={4}
+                value={widget.columnsJson ?? "[]"}
+                onChange={(e) => update({ columnsJson: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "event-feed" && (
+          <>
+            <label>
+              Префикс пути
+              <input
+                value={widget.objectPathPrefix ?? ""}
+                onChange={(e) => update({ objectPathPrefix: e.target.value })}
+              />
+            </label>
+            <label>
+              Имена событий (JSON)
+              <textarea
+                rows={3}
+                value={widget.eventNamesJson ?? "[]"}
+                onChange={(e) => update({ eventNamesJson: e.target.value })}
+              />
+            </label>
+            <label>
+              Макс. записей
+              <input
+                type="number"
+                min={5}
+                max={100}
+                value={widget.maxItems ?? 20}
+                onChange={(e) => update({ maxItems: Number(e.target.value) })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "work-queue" && (
+          <>
+            <label>
+              Operator ID
+              <input
+                value={widget.operatorId ?? "operator"}
+                onChange={(e) => update({ operatorId: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "gauge" && (
+          <>
+            <label>
+              minVariable
+              <input
+                value={widget.minVariable ?? ""}
+                onChange={(e) => update({ minVariable: e.target.value })}
+              />
+            </label>
+            <label>
+              maxVariable
+              <input
+                value={widget.maxVariable ?? ""}
+                onChange={(e) => update({ maxVariable: e.target.value })}
+              />
+            </label>
+            <label>
+              Единица
+              <input
+                value={widget.unit ?? ""}
+                onChange={(e) => update({ unit: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "card-grid" && (
+          <>
+            <label>
+              Родитель (parentPath)
+              <input
+                value={widget.parentPath}
+                onChange={(e) => update({ parentPath: e.target.value })}
+              />
+            </label>
+            <label>
+              Переменные (JSON)
+              <textarea
+                rows={3}
+                value={widget.variablesJson ?? "[]"}
+                onChange={(e) => update({ variablesJson: e.target.value })}
               />
             </label>
           </>

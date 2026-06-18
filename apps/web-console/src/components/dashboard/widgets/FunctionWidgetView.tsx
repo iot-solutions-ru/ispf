@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invokeFunction } from "../../../api";
 import type { FunctionWidget } from "../../../types/dashboard";
+import { resolveWidgetPath } from "../dashboardUtils";
+import { useDashboardContext } from "../DashboardContext";
 import WidgetDragHandle from "../WidgetDragHandle";
 
 interface FunctionWidgetViewProps {
@@ -10,21 +12,35 @@ interface FunctionWidgetViewProps {
 }
 
 export default function FunctionWidgetView({ widget, editable }: FunctionWidgetViewProps) {
+  const { selection } = useDashboardContext();
+  const queryClient = useQueryClient();
+  const objectPath = resolveWidgetPath(widget.objectPath, widget.selectionKey, selection);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: () => {
-      if (!widget.objectPath || !widget.functionName) {
+      if (!objectPath || !widget.functionName) {
         throw new Error("Объект и функция обязательны");
       }
-      return invokeFunction(widget.objectPath, widget.functionName);
+      let input: unknown;
+      if (widget.inputJson?.trim()) {
+        try {
+          input = JSON.parse(widget.inputJson);
+        } catch {
+          throw new Error("Некорректный inputJson");
+        }
+      }
+      return invokeFunction(objectPath, widget.functionName, input);
     },
     onSuccess: (result) => {
       const row = result.rows?.[0];
       const text = row?.message ? String(row.message) : "Выполнено";
       setMessage(text);
       setError(null);
+      queryClient.invalidateQueries({ queryKey: ["variables"] });
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
     },
     onError: (err: Error) => {
       setError(err.message);
@@ -47,7 +63,7 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
       <button
         type="button"
         className="btn primary function-widget-btn"
-        disabled={editable || mutation.isPending || !widget.objectPath || !widget.functionName}
+        disabled={editable || mutation.isPending || !objectPath || !widget.functionName}
         onClick={handleClick}
       >
         {mutation.isPending ? "…" : widget.buttonLabel ?? widget.functionName}

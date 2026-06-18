@@ -5,11 +5,20 @@ import ValueWidgetView from "./widgets/ValueWidgetView";
 import IndicatorWidgetView, { ToggleWidgetView } from "./widgets/IndicatorWidgetView";
 import ChartWidgetView from "./widgets/ChartWidgetView";
 import SparklineWidgetView from "./widgets/SparklineWidgetView";
+import FunctionFormWidgetView from "./widgets/FunctionFormWidgetView";
+import ProgressWidgetView from "./widgets/ProgressWidgetView";
+import ObjectTableWidgetView from "./widgets/ObjectTableWidgetView";
+import EventFeedWidgetView from "./widgets/EventFeedWidgetView";
+import WorkQueueWidgetView from "./widgets/WorkQueueWidgetView";
+import StatusBadgeWidgetView from "./widgets/StatusBadgeWidgetView";
+import GaugeWidgetView from "./widgets/GaugeWidgetView";
+import CardGridWidgetView from "./widgets/CardGridWidgetView";
 import FunctionWidgetView from "./widgets/FunctionWidgetView";
+import { DashboardProvider } from "./DashboardContext";
 
 const GRID_MARGIN: [number, number] = [12, 12];
 const DRAG_CANCEL_SELECTOR =
-  "button, input, select, textarea, a, .dash-chart-body, .dash-sparkline-body, .dashboard-grid-resize-handle";
+  "button, input, select, textarea, a, .dash-chart-body, .dash-sparkline-body, .dashboard-grid-resize-handle, .dash-object-table, .dash-event-feed-list, .dash-work-queue-list, .function-form-fields";
 
 interface DashboardGridProps {
   layout: DashboardLayout;
@@ -196,10 +205,11 @@ export default function DashboardGrid({
   const height = canvasHeight(layout.widgets, metrics);
 
   return (
-    <div
-      ref={containerRef}
-      className={`dashboard-grid-host ${editable ? "editable" : ""}`}
-    >
+    <DashboardProvider>
+      <div
+        ref={containerRef}
+        className={`dashboard-grid-host ${editable ? "editable" : ""}`}
+      >
       <div
         ref={canvasRef}
         className="dashboard-grid-canvas"
@@ -244,7 +254,8 @@ export default function DashboardGrid({
           );
         })}
       </div>
-    </div>
+      </div>
+    </DashboardProvider>
   );
 }
 
@@ -300,6 +311,58 @@ function WidgetRenderer({
       );
     case "function":
       return <FunctionWidgetView widget={widget} editable={editable} />;
+    case "function-form":
+      return <FunctionFormWidgetView widget={widget} editable={editable} />;
+    case "progress":
+      return (
+        <ProgressWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
+    case "object-table":
+      return (
+        <ObjectTableWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
+    case "event-feed":
+      return (
+        <EventFeedWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
+    case "work-queue":
+      return <WorkQueueWidgetView widget={widget} editable={editable} />;
+    case "status-badge":
+      return (
+        <StatusBadgeWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
+    case "gauge":
+      return (
+        <GaugeWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
+    case "card-grid":
+      return (
+        <CardGridWidgetView
+          widget={widget}
+          refreshIntervalMs={refreshIntervalMs}
+          editable={editable}
+        />
+      );
     default:
       return <div className="dash-widget">Неизвестный виджет</div>;
   }

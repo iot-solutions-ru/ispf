@@ -19,8 +19,8 @@ export default function SparklineWidgetView({
   const decimals = widget.decimals ?? 1;
 
   const { points, stats, isLoading } = useTrendSeries(
-    widget.objectPath,
-    widget.variableName,
+    widget.objectPath ?? "",
+    widget.variableName ?? "",
     widget.valueField,
     refreshIntervalMs,
     maxPoints

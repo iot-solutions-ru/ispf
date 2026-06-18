@@ -17,8 +17,8 @@ export default function IndicatorWidgetView({
   editable = false,
 }: IndicatorWidgetViewProps) {
   const { rawValue, isLoading, isError } = useBoundVariable(
-    widget.objectPath,
-    widget.variableName,
+    widget.objectPath ?? "",
+    widget.variableName ?? "",
     widget.valueField,
     refreshIntervalMs
   );
@@ -58,9 +58,10 @@ export function ToggleWidgetView({
   editable = false,
 }: ToggleWidgetViewProps & { editable?: boolean }) {
   const queryClient = useQueryClient();
+  const objectPath = widget.objectPath ?? "";
   const { rawValue, variable, writable, isLoading } = useBoundVariable(
-    widget.objectPath,
-    widget.variableName,
+    objectPath,
+    widget.variableName ?? "",
     widget.valueField,
     refreshIntervalMs
   );
@@ -74,10 +75,10 @@ export function ToggleWidgetView({
       }
       const field = widget.valueField ?? "value";
       const record = setFieldValue(cloneRecord(variable.value), field, next);
-      return setVariable(widget.objectPath, widget.variableName, record);
+      return setVariable(objectPath, widget.variableName ?? "", record);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["variables", widget.objectPath] });
+      queryClient.invalidateQueries({ queryKey: ["variables", objectPath] });
     },
   });
 

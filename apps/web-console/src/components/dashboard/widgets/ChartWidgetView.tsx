@@ -30,8 +30,8 @@ export default function ChartWidgetView({
   const decimals = widget.decimals ?? 1;
 
   const { points, stats, isLoading, isError, variable } = useTrendSeries(
-    widget.objectPath,
-    widget.variableName,
+    widget.objectPath ?? "",
+    widget.variableName ?? "",
     widget.valueField,
     refreshIntervalMs,
     maxPoints
