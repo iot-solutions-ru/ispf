@@ -1,0 +1,48 @@
+package com.ispf.plugin.model;
+
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.FunctionDescriptor;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Full model definition — blueprint for object structure and bindings.
+ */
+public record ModelDefinition(
+        String id,
+        String name,
+        String description,
+        ModelType type,
+        ObjectType targetObjectType,
+        String suitabilityExpression,
+        List<ModelVariableDefinition> variables,
+        List<EventDescriptor> events,
+        List<FunctionDescriptor> functions,
+        List<ModelBindingDefinition> bindings,
+        Map<String, String> parameters,
+        Instant createdAt,
+        Instant updatedAt
+) {
+    public ModelDefinition {
+        if (description == null) {
+            description = "";
+        }
+        if (suitabilityExpression == null) {
+            suitabilityExpression = "";
+        }
+        if (parameters == null) {
+            parameters = Map.of();
+        }
+        variables = List.copyOf(variables != null ? variables : List.of());
+        events = List.copyOf(events != null ? events : List.of());
+        functions = List.copyOf(functions != null ? functions : List.of());
+        bindings = List.copyOf(bindings != null ? bindings : List.of());
+    }
+
+    public String objectPath(String modelsRoot) {
+        return modelsRoot + "." + name;
+    }
+}

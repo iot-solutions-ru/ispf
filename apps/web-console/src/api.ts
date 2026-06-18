@@ -1,0 +1,233 @@
+import type {
+  ObjectSummary,
+  CreateObjectPayload,
+  DataRecord,
+  PlatformInfo,
+  UpdateObjectPayload,
+  VariableDto,
+  ObjectEditorDto,
+} from "./types";
+import type { DashboardView } from "./types/dashboard";
+import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
+import { getStoredRole } from "./auth/role";
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-ISPF-Role": getStoredRole(),
+      ...init?.headers,
+    },
+    ...init,
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Request failed: ${response.status}`);
+  }
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return response.json();
+}
+
+export function fetchPlatformInfo(): Promise<PlatformInfo> {
+  return request("/api/v1/info");
+}
+
+export interface AuthMe {
+  authenticated: boolean;
+  principal?: string;
+  roles: string[];
+}
+
+export function fetchAuthMe(): Promise<AuthMe> {
+  return request("/api/v1/auth/me");
+}
+
+export function validateExpression(expression: string): Promise<{ valid: boolean; expression: string; error: string | null }> {
+  return request("/api/v1/expressions/validate", {
+    method: "POST",
+    body: JSON.stringify({ expression }),
+  });
+}
+
+export function fetchObjects(parent?: string): Promise<ObjectSummary[]> {
+  const query = parent ? `?parent=${encodeURIComponent(parent)}` : "";
+  return request(`/api/v1/objects${query}`);
+}
+
+export function fetchObjectEditor(path: string): Promise<ObjectEditorDto> {
+  return request(`/api/v1/objects/by-path/editor?path=${encodeURIComponent(path)}`);
+}
+
+export function fetchObject(path: string): Promise<ObjectSummary> {
+  return request(`/api/v1/objects/by-path?path=${encodeURIComponent(path)}`);
+}
+
+export function fetchVariables(path: string): Promise<VariableDto[]> {
+  return request(`/api/v1/objects/by-path/variables?path=${encodeURIComponent(path)}`);
+}
+
+export function createObject(payload: CreateObjectPayload): Promise<ObjectSummary> {
+  return request("/api/v1/objects", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateObject(path: string, payload: UpdateObjectPayload): Promise<ObjectSummary> {
+  return request(`/api/v1/objects/by-path?path=${encodeURIComponent(path)}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteObject(path: string): Promise<void> {
+  return request(`/api/v1/objects/by-path?path=${encodeURIComponent(path)}`, {
+    method: "DELETE",
+  });
+}
+
+export function setVariable(path: string, name: string, value: DataRecord): Promise<VariableDto> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/variables?${params}`, {
+    method: "PUT",
+    body: JSON.stringify(value),
+  });
+}
+
+export function fetchDashboard(path: string): Promise<DashboardView> {
+  return request(`/api/v1/dashboards/by-path?path=${encodeURIComponent(path)}`);
+}
+
+export function saveDashboardLayout(path: string, layoutJson: string): Promise<DashboardView> {
+  return request(`/api/v1/dashboards/by-path/layout?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ layoutJson }),
+  });
+}
+
+export function saveDashboardTitle(path: string, title: string): Promise<DashboardView> {
+  return request(`/api/v1/dashboards/by-path/title?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ title }),
+  });
+}
+
+export function fetchWorkflow(path: string): Promise<WorkflowView> {
+  return request(`/api/v1/workflows/by-path?path=${encodeURIComponent(path)}`);
+}
+
+export function saveWorkflowBpmn(path: string, bpmnXml: string): Promise<WorkflowView> {
+  return request(`/api/v1/workflows/by-path/bpmn?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ bpmnXml }),
+  });
+}
+
+export function updateWorkflowStatus(
+  path: string,
+  status: WorkflowLifecycleStatus
+): Promise<WorkflowView> {
+  return request(`/api/v1/workflows/by-path/status?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function runWorkflow(path: string): Promise<WorkflowView> {
+  return request(`/api/v1/workflows/by-path/run?path=${encodeURIComponent(path)}`, {
+    method: "POST",
+  });
+}
+
+export function fetchWorkQueue(limit = 50): Promise<import("./types/operator").WorkQueueItem[]> {
+  return request(`/api/v1/work-queue?limit=${limit}`);
+}
+
+export function claimWorkTask(taskId: string, operatorId = "operator"): Promise<import("./types/operator").WorkQueueItem> {
+  const params = new URLSearchParams({ taskId, operatorId });
+  return request(`/api/v1/work-queue/claim?${params}`, { method: "POST" });
+}
+
+export function completeWorkTask(
+  taskId: string,
+  operatorId = "operator"
+): Promise<import("./types/operator").WorkQueueItem> {
+  const params = new URLSearchParams({ taskId, operatorId });
+  return request(`/api/v1/work-queue/complete?${params}`, { method: "POST" });
+}
+
+export function invokeFunction(
+  path: string,
+  name: string,
+  input?: unknown
+): Promise<{ schema: unknown; rows: Array<Record<string, unknown>> }> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/functions/invoke?${params}`, {
+    method: "POST",
+    body: input ? JSON.stringify(input) : undefined,
+  });
+}
+
+export function fetchEvents(objectPath?: string, limit = 50): Promise<import("./types/event").ObjectEvent[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (objectPath) {
+    params.set("objectPath", objectPath);
+  }
+  return request(`/api/v1/events?${params}`);
+}
+
+export function fetchAlertRules(): Promise<import("./types/event").AlertRule[]> {
+  return request("/api/v1/alert-rules");
+}
+
+export function createAlertRule(
+  payload: import("./types/automation").CreateAlertRulePayload
+): Promise<import("./types/event").AlertRule> {
+  return request("/api/v1/alert-rules", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAlertRule(
+  id: string,
+  payload: Partial<import("./types/automation").CreateAlertRulePayload>
+): Promise<import("./types/event").AlertRule> {
+  return request(`/api/v1/alert-rules/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteAlertRule(id: string): Promise<void> {
+  return request(`/api/v1/alert-rules/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+export function fetchCorrelators(): Promise<import("./types/event").EventCorrelator[]> {
+  return request("/api/v1/correlators");
+}
+
+export function createCorrelator(
+  payload: import("./types/automation").CreateCorrelatorPayload
+): Promise<import("./types/event").EventCorrelator> {
+  return request("/api/v1/correlators", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateCorrelator(
+  id: string,
+  payload: Partial<import("./types/automation").CreateCorrelatorPayload>
+): Promise<import("./types/event").EventCorrelator> {
+  return request(`/api/v1/correlators/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCorrelator(id: string): Promise<void> {
+  return request(`/api/v1/correlators/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

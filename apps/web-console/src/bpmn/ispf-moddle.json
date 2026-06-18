@@ -1,0 +1,44 @@
+{
+  "name": "ISPF",
+  "uri": "http://ispf.io/bpmn",
+  "prefix": "ispf",
+  "types": [
+    {
+      "name": "Attributes",
+      "extends": [
+        "bpmn:ServiceTask",
+        "bpmn:UserTask",
+        "bpmn:SequenceFlow"
+      ],
+      "properties": [
+        { "name": "action", "isAttr": true, "type": "String" },
+        { "name": "targetObject", "isAttr": true, "type": "String" },
+        { "name": "variable", "isAttr": true, "type": "String" },
+        { "name": "value", "isAttr": true, "type": "String" },
+        { "name": "message", "isAttr": true, "type": "String" },
+        { "name": "subject", "isAttr": true, "type": "String" },
+        { "name": "channel", "isAttr": true, "type": "String" },
+        { "name": "level", "isAttr": true, "type": "String" },
+        { "name": "assigneeRole", "isAttr": true, "type": "String" },
+        { "name": "title", "isAttr": true, "type": "String" },
+        { "name": "instructions", "isAttr": true, "type": "String" },
+        { "name": "function", "isAttr": true, "type": "String" },
+        { "name": "condition", "isAttr": true, "type": "String" },
+        { "name": "conditionExpression", "isAttr": true, "type": "String" },
+        { "name": "default", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "MessageTask",
+      "superClass": ["bpmn:Task"],
+      "meta": {
+        "allowedIn": ["bpmn:Process", "bpmn:SubProcess"]
+      },
+      "properties": [
+        { "name": "subject", "isAttr": true, "type": "String" },
+        { "name": "message", "isAttr": true, "type": "String" },
+        { "name": "channel", "isAttr": true, "type": "String" }
+      ]
+    }
+  ]
+}

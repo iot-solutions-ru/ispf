@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/ispf-local;MODE=PostgreSQL;AUTO_SERVER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://example.invalid/realms/ispf
+
+ispf:
+  security:
+    rbac-enabled: true
+    local-default-role: admin
+  mqtt:
+    enabled: false
+  nats:
+    enabled: false
+
+logging:
+  level:
+    com.ispf: DEBUG

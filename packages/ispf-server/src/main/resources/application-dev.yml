@@ -1,0 +1,18 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/ispf
+
+ispf:
+  mqtt:
+    enabled: true
+    broker-url: tcp://localhost:1883
+  nats:
+    enabled: true
+    url: nats://localhost:4222
+
+logging:
+  level:
+    com.ispf: DEBUG

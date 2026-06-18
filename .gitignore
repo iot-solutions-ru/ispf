@@ -1,0 +1,30 @@
+# Build
+build/
+.gradle/
+out/
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & data
+logs/
+data/
+*.log

@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:ispf;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://example.invalid/realms/ispf
+
+ispf:
+  mqtt:
+    enabled: false

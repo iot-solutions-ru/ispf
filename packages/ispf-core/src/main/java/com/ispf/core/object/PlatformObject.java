@@ -1,0 +1,117 @@
+package com.ispf.core.object;
+
+import com.ispf.core.model.DataRecord;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * A node in the hierarchical resource graph — the central ISPF concept.
+ * <p>
+ * Path example: {@code tenants.acme.devices.modbus-pump-01}
+ */
+public class PlatformObject {
+
+    private final String id;
+    private final String path;
+    private final ObjectType type;
+    private volatile String displayName;
+    private volatile String description;
+    private final String templateId;
+    private final Instant createdAt;
+    private final Map<String, Variable> variables = new ConcurrentHashMap<>();
+    private final Map<String, FunctionDescriptor> functions = new ConcurrentHashMap<>();
+    private final Map<String, EventDescriptor> events = new ConcurrentHashMap<>();
+
+    public PlatformObject(
+            String id,
+            String path,
+            ObjectType type,
+            String displayName,
+            String description,
+            String templateId
+    ) {
+        this.id = id;
+        this.path = path;
+        this.type = type;
+        this.displayName = displayName != null ? displayName : path.substring(path.lastIndexOf('.') + 1);
+        this.description = description != null ? description : "";
+        this.templateId = templateId;
+        this.createdAt = Instant.now();
+    }
+
+    public String id() {
+        return id;
+    }
+
+    public String path() {
+        return path;
+    }
+
+    public ObjectType type() {
+        return type;
+    }
+
+    public String displayName() {
+        return displayName;
+    }
+
+    public String description() {
+        return description;
+    }
+
+    public Optional<String> templateId() {
+        return Optional.ofNullable(templateId);
+    }
+
+    public Instant createdAt() {
+        return createdAt;
+    }
+
+    public Map<String, Variable> variables() {
+        return Map.copyOf(variables);
+    }
+
+    public Map<String, FunctionDescriptor> functions() {
+        return Map.copyOf(functions);
+    }
+
+    public Map<String, EventDescriptor> events() {
+        return Map.copyOf(events);
+    }
+
+    public void addVariable(Variable variable) {
+        variables.put(variable.name(), variable);
+    }
+
+    public Optional<Variable> getVariable(String name) {
+        return Optional.ofNullable(variables.get(name));
+    }
+
+    public void setVariableValue(String name, DataRecord value) {
+        Variable variable = variables.get(name);
+        if (variable == null) {
+            throw new IllegalArgumentException("Unknown variable: " + name);
+        }
+        variable.setValue(value);
+    }
+
+    public void addFunction(FunctionDescriptor function) {
+        functions.put(function.name(), function);
+    }
+
+    public void addEvent(EventDescriptor event) {
+        events.put(event.name(), event);
+    }
+
+    public void updateInfo(String displayName, String description) {
+        if (displayName != null && !displayName.isBlank()) {
+            this.displayName = displayName;
+        }
+        if (description != null) {
+            this.description = description;
+        }
+    }
+}

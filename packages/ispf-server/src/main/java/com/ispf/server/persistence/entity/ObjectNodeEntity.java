@@ -1,0 +1,116 @@
+package com.ispf.server.persistence.entity;
+
+import com.ispf.core.object.ObjectType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+@Entity
+@Table(name = "object_nodes")
+public class ObjectNodeEntity {
+
+    @Id
+    private String id;
+
+    @Column(nullable = false, unique = true, length = 512)
+    private String path;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private ObjectType type;
+
+    @Column(name = "display_name", nullable = false, length = 256)
+    private String displayName;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "template_id", length = 128)
+    private String templateId;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "events_json", columnDefinition = "TEXT")
+    private String eventsJson;
+
+    @Column(name = "functions_json", columnDefinition = "TEXT")
+    private String functionsJson;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    public ObjectType getType() {
+        return type;
+    }
+
+    public void setType(ObjectType type) {
+        this.type = type;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getTemplateId() {
+        return templateId;
+    }
+
+    public void setTemplateId(String templateId) {
+        this.templateId = templateId;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getEventsJson() {
+        return eventsJson;
+    }
+
+    public void setEventsJson(String eventsJson) {
+        this.eventsJson = eventsJson;
+    }
+
+    public String getFunctionsJson() {
+        return functionsJson;
+    }
+
+    public void setFunctionsJson(String functionsJson) {
+        this.functionsJson = functionsJson;
+    }
+}

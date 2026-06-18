@@ -1,0 +1,39 @@
+package com.ispf.server.config;
+
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
+
+public final class IspfAuthorizationRules {
+
+    private IspfAuthorizationRules() {
+    }
+
+    public static void apply(
+            AuthorizeHttpRequestsConfigurer<?>.AuthorizationManagerRequestMatcherRegistry auth
+    ) {
+        auth.requestMatchers(
+                "/api/v1/info",
+                "/api/v1/auth/me",
+                "/actuator/health",
+                "/actuator/prometheus",
+                "/ws/**"
+        ).permitAll();
+
+        auth.requestMatchers("/api/v1/alert-rules/**", "/api/v1/correlators/**")
+                .hasRole(IspfRoles.ADMIN);
+
+        auth.requestMatchers("/api/v1/work-queue/**")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/objects/by-path/functions/invoke")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/events/**")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
+        auth.requestMatchers("/api/v1/**").hasRole(IspfRoles.ADMIN);
+    }
+}
