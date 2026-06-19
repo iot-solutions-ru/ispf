@@ -9,45 +9,42 @@ public final class ApplicationSeedProfiles {
 
     public static List<ApplicationDataService.SeedScript> scripts(String profile) {
         return switch (profile) {
-            case "smoke-p301" -> smokeP301();
+            case "smoke-demo" -> smokeDemo();
             default -> throw new IllegalArgumentException("Unknown seed profile: " + profile);
         };
     }
 
-    private static List<ApplicationDataService.SeedScript> smokeP301() {
+    private static List<ApplicationDataService.SeedScript> smokeDemo() {
         return List.of(
                 new ApplicationDataService.SeedScript(
-                        "shift",
+                        "categories",
                         """
-                                INSERT INTO dispatch_shift (id, shift_code, status, started_at)
-                                SELECT '11111111-1111-1111-1111-111111111111', 'SHIFT-2026-A', 'open', CURRENT_TIMESTAMP
+                                INSERT INTO demo_category (id, category_code, status)
+                                SELECT '11111111-1111-1111-1111-111111111111', 'CAT-A', 'open'
                                 WHERE NOT EXISTS (
-                                  SELECT 1 FROM dispatch_shift WHERE shift_code = 'SHIFT-2026-A'
+                                  SELECT 1 FROM demo_category WHERE category_code = 'CAT-A'
                                 );
                                 """
                 ),
                 new ApplicationDataService.SeedScript(
-                        "orders",
+                        "items",
                         """
-                                INSERT INTO dispatch_order (id, order_number, status, shift_id, tank_path)
-                                SELECT '22222222-2222-2222-2222-222222222201', 'DO-2026-001', 'ready',
-                                       '11111111-1111-1111-1111-111111111111', 'root.platform.terminal.tanks.t1'
-                                WHERE NOT EXISTS (SELECT 1 FROM dispatch_order WHERE order_number = 'DO-2026-001');
-                                INSERT INTO dispatch_order (id, order_number, status, shift_id, tank_path)
-                                SELECT '22222222-2222-2222-2222-222222222202', 'DO-2026-002', 'assigned',
-                                       '11111111-1111-1111-1111-111111111111', 'root.platform.terminal.tanks.t2'
-                                WHERE NOT EXISTS (SELECT 1 FROM dispatch_order WHERE order_number = 'DO-2026-002');
+                                INSERT INTO demo_item (id, item_code, status, category_id)
+                                SELECT '22222222-2222-2222-2222-222222222201', 'ITEM-001', 'ready',
+                                       '11111111-1111-1111-1111-111111111111'
+                                WHERE NOT EXISTS (SELECT 1 FROM demo_item WHERE item_code = 'ITEM-001');
+                                INSERT INTO demo_item (id, item_code, status, category_id)
+                                SELECT '22222222-2222-2222-2222-222222222202', 'ITEM-002', 'assigned',
+                                       '11111111-1111-1111-1111-111111111111'
+                                WHERE NOT EXISTS (SELECT 1 FROM demo_item WHERE item_code = 'ITEM-002');
                                 """
                 ),
                 new ApplicationDataService.SeedScript(
-                        "tanks",
+                        "metrics",
                         """
-                                INSERT INTO tank_balance (tank_path, product_code, volume_liters, quality_status)
-                                SELECT 'root.platform.terminal.tanks.t1', 'DIESEL', 120000, 'approved'
-                                WHERE NOT EXISTS (SELECT 1 FROM tank_balance WHERE tank_path = 'root.platform.terminal.tanks.t1');
-                                INSERT INTO tank_balance (tank_path, product_code, volume_liters, quality_status)
-                                SELECT 'root.platform.terminal.tanks.t2', 'GASOLINE', 95000, 'approved'
-                                WHERE NOT EXISTS (SELECT 1 FROM tank_balance WHERE tank_path = 'root.platform.terminal.tanks.t2');
+                                INSERT INTO demo_metric (metric_key, metric_value, status)
+                                SELECT 'throughput', 42, 'ok'
+                                WHERE NOT EXISTS (SELECT 1 FROM demo_metric WHERE metric_key = 'throughput');
                                 """
                 )
         );

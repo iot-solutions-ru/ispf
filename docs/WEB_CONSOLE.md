@@ -43,8 +43,6 @@ Generic operator shell без отраслевого кода в `main`:
 - Все вызовы: `POST /api/v1/bff/invoke` + `wireProfile: anima-operator-v1` (`src/api/bff.ts`)
 - Экраны: `screens[]` с `actions` и опциональной `table` (список из `result[]`)
 
-Полный SCR terminal (SCR-00…07) — ветка `feature/oil-terminal-reference`, см. [PLUGINS.md](PLUGINS.md).
-
 ## Навигация
 
 Клиентский роутер не используется. Состояние в `App.tsx`:

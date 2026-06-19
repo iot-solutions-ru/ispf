@@ -125,6 +125,27 @@ public class WorkflowEngine {
         }
     }
 
+    public void deliverSignal(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            String signalName,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting for signal");
+        }
+        List<ExecutionToken> resumed = instance.resumeSignal(signalName);
+        for (ExecutionToken token : resumed) {
+            String catchNodeId = token.currentNodeId();
+            advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
+        }
+        while (instance.status() == InstanceStatus.RUNNING) {
+            step(instance, process, executor, messageExecutor, evaluator);
+        }
+    }
+
     private void stepToken(
             WorkflowInstance instance,
             BpmnProcess process,
@@ -182,6 +203,14 @@ public class WorkflowEngine {
                     return;
                 }
                 instance.waitTokenAt(token, nodeId);
+            }
+            case "intermediateCatchEvent" -> {
+                SignalCatchDefinition catchDef = process.signalCatchEvents().get(nodeId);
+                if (catchDef == null) {
+                    instance.fail("Signal catch definition missing: " + nodeId);
+                    return;
+                }
+                instance.waitTokenAtSignal(token, nodeId, catchDef.signalName());
             }
             case "endEvent" -> {
                 token.complete();

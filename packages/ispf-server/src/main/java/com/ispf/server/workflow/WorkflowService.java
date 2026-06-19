@@ -21,6 +21,8 @@ import com.ispf.plugin.workflow.WorkflowEngine;
 import com.ispf.plugin.workflow.WorkflowException;
 import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
+import com.ispf.server.persistence.WorkflowInstanceRepository;
+import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.function.FunctionService;
 import org.slf4j.Logger;
@@ -30,7 +32,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -53,6 +57,7 @@ public class WorkflowService {
     private final WorkflowConditionFactory conditionFactory;
     private final FunctionService functionService;
     private final WorkQueueService workQueueService;
+    private final WorkflowInstanceRepository instanceRepository;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -64,7 +69,8 @@ public class WorkflowService {
             WorkflowInstanceStore instanceStore,
             WorkflowConditionFactory conditionFactory,
             FunctionService functionService,
-            @Lazy WorkQueueService workQueueService
+            @Lazy WorkQueueService workQueueService,
+            WorkflowInstanceRepository instanceRepository
     ) {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
@@ -76,6 +82,7 @@ public class WorkflowService {
         this.conditionFactory = conditionFactory;
         this.functionService = functionService;
         this.workQueueService = workQueueService;
+        this.instanceRepository = instanceRepository;
     }
 
     @Transactional
@@ -156,18 +163,7 @@ public class WorkflowService {
                 .orElse(null);
         instanceStore.save(instance, process, triggerObjectPath, pendingTask);
         persistInstanceSnapshot(path, instance);
-
-        if (instance.status() == InstanceStatus.COMPLETED) {
-            natsEventBridge.publishWorkflowEvent(path, "completed", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "status", instance.status().name()
-            ));
-        } else if (instance.status() == InstanceStatus.WAITING) {
-            natsEventBridge.publishWorkflowEvent(path, "waiting", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "taskId", instance.pendingUserTaskId().orElse("")
-            ));
-        }
+        publishInstanceEvent(path, instance);
         return getWorkflow(path);
     }
 
@@ -221,19 +217,83 @@ public class WorkflowService {
                 .orElse(null);
         instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
         persistInstanceSnapshot(workflowPath, instance);
-
-        if (instance.status() == InstanceStatus.COMPLETED) {
-            natsEventBridge.publishWorkflowEvent(workflowPath, "completed", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "status", instance.status().name()
-            ));
-        } else if (instance.status() == InstanceStatus.WAITING) {
-            natsEventBridge.publishWorkflowEvent(workflowPath, "waiting", Map.of(
-                    "instanceId", instance.instanceId(),
-                    "taskId", instance.pendingUserTaskId().orElse("")
-            ));
-        }
+        publishInstanceEvent(workflowPath, instance);
         return getWorkflow(workflowPath);
+    }
+
+    @Transactional
+    public Map<String, Object> deliverSignal(String instanceId, String signalName, String operatorId)
+            throws WorkflowException {
+        if (signalName == null || signalName.isBlank()) {
+            throw new WorkflowException("Signal name is required");
+        }
+        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
+        WorkflowInstance instance = stored.instance();
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting: " + instanceId);
+        }
+        if (!instance.pendingSignalNames().contains(signalName)) {
+            throw new WorkflowException("Instance is not waiting for signal: " + signalName);
+        }
+
+        String workflowPath = instance.workflowPath();
+        BpmnProcess process = workflowEngine.parse(
+                readString(objectManager.require(workflowPath), "bpmnXml")
+                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        );
+
+        if (operatorId != null && !operatorId.isBlank()) {
+            instance.claim(operatorId);
+        }
+        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
+        workflowEngine.deliverSignal(
+                instance,
+                process,
+                signalName,
+                this::executeTask,
+                this::executeMessageTask,
+                evaluator
+        );
+
+        UserTaskDefinition nextPending = instance.pendingUserTaskId()
+                .map(id -> process.userTasks().get(id))
+                .orElse(null);
+        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
+        persistInstanceSnapshot(workflowPath, instance);
+        publishInstanceEvent(workflowPath, instance);
+
+        return Map.of(
+                "instanceId", instanceId,
+                "signal", signalName,
+                "status", instance.status().name()
+        );
+    }
+
+    @Transactional
+    public Map<String, Object> deliverSignalByWorkflowPath(String workflowPath, String signalName, String operatorId)
+            throws WorkflowException {
+        if (signalName == null || signalName.isBlank()) {
+            throw new WorkflowException("Signal name is required");
+        }
+        List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
+                workflowPath,
+                InstanceStatus.WAITING.name()
+        );
+        List<String> signaled = new ArrayList<>();
+        for (WorkflowInstanceEntity entity : waiting) {
+            WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(entity.getId());
+            if (!stored.instance().pendingSignalNames().contains(signalName)) {
+                continue;
+            }
+            deliverSignal(entity.getId(), signalName, operatorId);
+            signaled.add(entity.getId());
+        }
+        return Map.of(
+                "workflowPath", workflowPath,
+                "signal", signalName,
+                "signaledCount", signaled.size(),
+                "instanceIds", signaled
+        );
     }
 
     @Transactional
@@ -356,6 +416,21 @@ public class WorkflowService {
         }
     }
 
+    private void publishInstanceEvent(String path, WorkflowInstance instance) {
+        if (instance.status() == InstanceStatus.COMPLETED) {
+            natsEventBridge.publishWorkflowEvent(path, "completed", Map.of(
+                    "instanceId", instance.instanceId(),
+                    "status", instance.status().name()
+            ));
+        } else if (instance.status() == InstanceStatus.WAITING) {
+            natsEventBridge.publishWorkflowEvent(path, "waiting", Map.of(
+                    "instanceId", instance.instanceId(),
+                    "taskId", instance.pendingUserTaskId().orElse(""),
+                    "signal", instance.pendingSignalName().orElse("")
+            ));
+        }
+    }
+
     private void persistInstanceSnapshot(String path, WorkflowInstance instance) {
         try {
             Map<String, Object> state = new HashMap<>();
@@ -368,6 +443,7 @@ public class WorkflowService {
             state.put("errorMessage", instance.errorMessage());
             state.put("assignee", instance.assignee().orElse(null));
             state.put("pendingUserTaskId", instance.pendingUserTaskId().orElse(null));
+            state.put("pendingSignalName", instance.pendingSignalName().orElse(null));
 
             String json = objectMapper.writeValueAsString(state);
             objectManager.setVariableValue(path, "instanceState", DataRecord.single(STRING_VALUE, Map.of("value", json)));

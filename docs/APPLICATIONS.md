@@ -1,6 +1,6 @@
 # Приложения на платформе (REQ-PF)
 
-Платформенный слой для развёртывания прикладных решений (например, **terminal / michaael**) **без Java-кода в `ispf-server`**. Соответствует ADR-0008 и требованиям REQ-PF.
+Платформенный слой для развёртывания прикладных решений **без Java-кода отрасли в `ispf-server`**. Соответствует ADR-0008 и требованиям REQ-PF.
 
 **Полный backlog и gap-анализ:** [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md).
 
@@ -17,8 +17,6 @@
 | 07 | Model Registry Persistence | `model_definitions` + автосохранение при CRUD моделей |
 | 10 | Workflow Cancel | `POST /workflows/instances/{id}/cancel` |
 
-Пример полного app bundle (oil-terminal) — ветка **`feature/oil-terminal-reference`**, не в `main`. См. [PLUGINS.md](PLUGINS.md).
-
 ## Регистрация приложения
 
 ```http
@@ -26,10 +24,10 @@ POST /api/v1/applications
 Content-Type: application/json
 
 {
-  "appId": "terminal",
-  "displayName": "Oil Terminal",
-  "tablePrefix": "terminal_",
-  "schemaName": "terminal"
+  "appId": "myapp",
+  "displayName": "My Application",
+  "tablePrefix": "myapp_",
+  "schemaName": "myapp"
 }
 ```
 
@@ -38,13 +36,13 @@ Content-Type: application/json
 SQL-скрипты приложения **не** попадают в Flyway платформы. Деплой через API в **изолированной schema** (`schemaName`, по умолчанию `app_{appId}`):
 
 ```http
-POST /api/v1/applications/terminal/data/migrate
+POST /api/v1/applications/myapp/data/migrate
 Content-Type: application/json
 
 {
   "version": "1.0.0",
   "scripts": [
-    { "id": "dispatch_order", "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (...);" }
+    { "id": "items", "sql": "CREATE TABLE IF NOT EXISTS demo_item (...);" }
   ]
 }
 ```
@@ -54,22 +52,22 @@ Content-Type: application/json
 **Guard:** DDL не может создавать platform-таблицы (`applications`, `workflow_*`, …). При непустом `tablePrefix` имена таблиц должны начинаться с префикса.
 
 ```http
-GET /api/v1/applications/terminal/data/status
+GET /api/v1/applications/myapp/data/status
 ```
 
 ### Seed (smoke)
 
 ```http
-POST /api/v1/applications/terminal/data/seed
+POST /api/v1/applications/myapp/data/seed
 Content-Type: application/json
 
-{ "profile": "smoke-p301" }
+{ "profile": "smoke-demo" }
 ```
 
-Встроенный профиль `smoke-p301` — идемпотентные INSERT для смены, нарядов `DO-2026-*`, tanks. Повторный вызов пропускает уже применённые seed-блоки.
+Встроенный профиль `smoke-demo` — идемпотентные INSERT в generic-таблицы (`demo_category`, `demo_item`, `demo_metric`). Повторный вызов пропускает уже применённые seed-блоки.
 
 ```http
-GET /api/v1/applications/terminal/data/status
+GET /api/v1/applications/myapp/data/status
 ```
 
 ## Деплой функций (REQ-PF-01)
@@ -91,12 +89,12 @@ GET /api/v1/applications/terminal/data/status
 Один invoke = одна JDBC-транзакция (rollback при необработанном exception). Вложенные `invoke_function` — до 8 уровней. Невалидный script → **400** на deploy.
 
 ```http
-POST /api/v1/applications/terminal/functions/deploy
+POST /api/v1/applications/myapp/functions/deploy
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.terminal.dispatch",
-  "functionName": "terminal_dispatchOrder_startFilling",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "functionName": "myapp_ping",
   "version": "1",
   "descriptor": {
     "inputSchema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
@@ -124,32 +122,32 @@ Content-Type: application/json
 Один запрос — регистрация, metadata, миграции, функции, расписания:
 
 ```http
-POST /api/v1/applications/terminal/deploy
+POST /api/v1/applications/myapp/deploy
 Content-Type: application/json
 
 {
   "version": "1.0.0",
-  "displayName": "Oil Terminal",
+  "displayName": "My Application",
   "tablePrefix": "",
-  "schemaName": "terminal",
+  "schemaName": "myapp",
   "objects": [
     {
       "parentPath": "root.platform",
-      "name": "terminal",
+      "name": "myapp",
       "type": "CUSTOM",
-      "displayName": "Oil Terminal"
+      "displayName": "My Application"
     }
   ],
   "dashboards": [
     {
-      "path": "root.platform.terminal.ops",
+      "path": "root.platform.myapp.ops",
       "title": "Operator Board",
       "layoutJson": "{ \"columns\": 12, \"rowHeight\": 72, \"widgets\": [] }"
     }
   ],
   "workflows": [
     {
-      "path": "root.platform.terminal.workflows.p301",
+      "path": "root.platform.myapp.workflows.main",
       "bpmnXml": "<definitions ...>...</definitions>",
       "status": "ACTIVE"
     }
@@ -158,13 +156,13 @@ Content-Type: application/json
   "functions": [ ... ],
   "schedules": [
     {
-      "scheduleId": "erp-import",
+      "scheduleId": "import-job",
       "enabled": true,
       "intervalMs": 60000,
       "actionType": "invoke_function",
       "action": {
-        "objectPath": "root.platform.terminal.erp",
-        "functionName": "terminal_erpGateway_importOrders"
+        "objectPath": "root.platform.myapp.integration",
+        "functionName": "myapp_importRecords"
       }
     }
   ]
@@ -182,8 +180,8 @@ POST /api/v1/bff/invoke
 Content-Type: application/json
 
 {
-  "objectPath": "root.platform.terminal.dispatch",
-  "functionName": "terminal_dispatchOrder_startFilling",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "functionName": "myapp_processRecord",
   "input": {
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
     "rows": [{ "orderId": "..." }]
@@ -220,10 +218,10 @@ POST /api/v1/schedules
 
 ```xml
 <ispf:serviceTask action="invoke_function"
-  objectPath="root.platform.terminal.dispatch"
-  functionName="terminal_dispatchOrder_assign"
-  inputMap="orderId=${workflow.orderId}"
-  outputMap="assignResult=result" />
+  objectPath="root.platform.devices.demo-sensor-01"
+  functionName="myapp_acknowledge"
+  inputMap="deviceId=${workflow.deviceId}"
+  outputMap="ackResult=result" />
 ```
 
 ## Отмена workflow (REQ-PF-10)
@@ -251,8 +249,6 @@ Content-Type: application/json
 | `/applications/*/operator-manifest` | `operator`, `admin` |
 | `/bff/invoke`, `/workflows/instances/*/cancel` | `operator`, `admin` |
 
-Пример полного app bundle (oil-terminal) — ветка **`feature/oil-terminal-reference`**, не в `main`. См. [PLUGINS.md](PLUGINS.md).
-
 ## SQL bindings (REQ-PF-08)
 
 Декларативная синхронизация object variable ← SQL в app schema:
@@ -260,9 +256,9 @@ Content-Type: application/json
 ```http
 POST /api/v1/applications/{appId}/bindings/deploy
 {
-  "objectPath": "root.platform.terminal.demo.dispatch-summary",
-  "variable": "activeOrders",
-  "query": "SELECT COUNT(*) AS value FROM dispatch_order WHERE status = 'ready'",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "variable": "readyCount",
+  "query": "SELECT COUNT(*) AS value FROM demo_item WHERE status = 'ready'",
   "refresh": "on_schedule",
   "refreshIntervalMs": 30000,
   "valueField": "value"
@@ -320,6 +316,5 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json`.
 
 ## Следующие шаги (backlog)
 
-- BPMN signal catch (PF-10b)
-- Terminal app full bundle + smoke P-301 e2e (michaael)
-- Расширить `TerminalAppParityTest` (weighbridge, incident, P-301 workflow)
+- PF-01c `map` / `buildRecord` в script engine
+- Models в bundle deploy (PF-03 P2)

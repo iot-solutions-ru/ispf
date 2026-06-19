@@ -142,7 +142,6 @@ Event fire → event_history
 | Stand | Branch | Description |
 |-------|--------|-------------|
 | Demo sensor | `main` | virtual driver, alert, workflow |
-| Oil terminal (P-301) | `feature/oil-terminal-reference` | MES reference, отдельная ветка |
 
 ## Documentation Index
 

@@ -8,6 +8,7 @@
       "extends": [
         "bpmn:ServiceTask",
         "bpmn:UserTask",
+        "bpmn:IntermediateCatchEvent",
         "bpmn:SequenceFlow"
       ],
       "properties": [
@@ -25,7 +26,8 @@
         { "name": "function", "isAttr": true, "type": "String" },
         { "name": "condition", "isAttr": true, "type": "String" },
         { "name": "conditionExpression", "isAttr": true, "type": "String" },
-        { "name": "default", "isAttr": true, "type": "String" }
+        { "name": "default", "isAttr": true, "type": "String" },
+        { "name": "signal", "isAttr": true, "type": "String" }
       ]
     },
     {

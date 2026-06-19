@@ -11,6 +11,8 @@ public final class ExecutionToken {
     private String currentNodeId;
     private TokenState state;
     private String pendingUserTaskId;
+    private String pendingSignalCatchNodeId;
+    private String pendingSignalName;
     private String arrivedJoinNodeId;
 
     public ExecutionToken(String tokenId, String startNodeId) {
@@ -39,6 +41,14 @@ public final class ExecutionToken {
         return pendingUserTaskId;
     }
 
+    public String pendingSignalCatchNodeId() {
+        return pendingSignalCatchNodeId;
+    }
+
+    public String pendingSignalName() {
+        return pendingSignalName;
+    }
+
     public String arrivedJoinNodeId() {
         return arrivedJoinNodeId;
     }
@@ -50,12 +60,28 @@ public final class ExecutionToken {
     public void waitAtUserTask(String userTaskNodeId) {
         state = TokenState.WAITING;
         pendingUserTaskId = userTaskNodeId;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
         currentNodeId = userTaskNodeId;
+    }
+
+    public void waitAtSignalCatch(String catchNodeId, String signalName) {
+        state = TokenState.WAITING;
+        pendingUserTaskId = null;
+        pendingSignalCatchNodeId = catchNodeId;
+        pendingSignalName = signalName;
+        currentNodeId = catchNodeId;
     }
 
     public void resumeAfterUserTask() {
         state = TokenState.ACTIVE;
         pendingUserTaskId = null;
+    }
+
+    public void resumeAfterSignalCatch() {
+        state = TokenState.ACTIVE;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
     }
 
     public void arriveAtJoin(String joinNodeId) {
@@ -67,6 +93,8 @@ public final class ExecutionToken {
     public void complete() {
         state = TokenState.COMPLETED;
         pendingUserTaskId = null;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
         arrivedJoinNodeId = null;
     }
 
@@ -74,6 +102,8 @@ public final class ExecutionToken {
         state = TokenState.ACTIVE;
         currentNodeId = nodeId;
         pendingUserTaskId = null;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
         arrivedJoinNodeId = null;
     }
 
@@ -82,11 +112,15 @@ public final class ExecutionToken {
             String currentNodeId,
             TokenState state,
             String pendingUserTaskId,
+            String pendingSignalCatchNodeId,
+            String pendingSignalName,
             String arrivedJoinNodeId
     ) {
         ExecutionToken token = new ExecutionToken(tokenId, currentNodeId);
         token.state = state;
         token.pendingUserTaskId = pendingUserTaskId;
+        token.pendingSignalCatchNodeId = pendingSignalCatchNodeId;
+        token.pendingSignalName = pendingSignalName;
         token.arrivedJoinNodeId = arrivedJoinNodeId;
         return token;
     }

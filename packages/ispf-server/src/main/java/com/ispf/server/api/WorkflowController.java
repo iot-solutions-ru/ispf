@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/workflows")
 public class WorkflowController {
@@ -51,9 +53,21 @@ public class WorkflowController {
         return workflowService.runWorkflow(path, triggerObjectPath);
     }
 
+    @PostMapping("/signal")
+    public Map<String, Object> signal(@RequestBody SignalBroadcastRequest request) throws WorkflowException {
+        return workflowService.deliverSignalByWorkflowPath(
+                request.workflowPath(),
+                request.signal(),
+                request.operatorId()
+        );
+    }
+
     public record SaveBpmnRequest(@NotBlank String bpmnXml) {
     }
 
     public record UpdateStatusRequest(WorkflowLifecycleStatus status) {
+    }
+
+    public record SignalBroadcastRequest(String workflowPath, String signal, String operatorId) {
     }
 }

@@ -64,11 +64,8 @@ deploy/                   # Mosquitto config
 docker-compose.yml        # PostgreSQL, Redis, NATS, MQTT, Keycloak
 ```
 
-Эталонный стенд нефтебазы (P-301) вынесен в отдельную ветку `feature/oil-terminal-reference` и не входит в `main`.
-
 ## Лицензия и границы
 
 - **Ядро** (`main`): [Apache 2.0](LICENSE) + [NOTICE](../NOTICE) — `packages/ispf-*`, web-console, docs
-- **Коммерческие плагины**: отдельные репозитории, явная лицензия в пакете — [docs/PLUGINS.md](docs/PLUGINS.md)
-- **Oil-terminal / P-301**: только ветка `feature/oil-terminal-reference`, **не** в `main`
+- **Коммерческие плагины и app bundle**: отдельные репозитории, явная лицензия в пакете — [docs/PLUGINS.md](docs/PLUGINS.md)
 - Подробнее: [docs/LICENSE.md](docs/LICENSE.md), [docs/THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md)

@@ -90,10 +90,6 @@ TypeScript strict check в CI-equivalent локально.
 cd apps/web-console && npm ci && npm run build
 ```
 
-## Эталон нефтебазы
+## App bundle smoke (вне `main`)
 
-Smoke-скрипт на ветке `feature/oil-terminal-reference`:
-
-`examples/oil-terminal/oil-terminal-smoke.ps1`
-
-Не входит в `main`.
+E2E smoke конкретного приложения выполняется в репозитории app bundle, не в framework `main`.

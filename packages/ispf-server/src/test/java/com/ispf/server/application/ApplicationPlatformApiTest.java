@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ApplicationPlatformApiTest {
 
     private static final String DEMO_DEVICE = "root.platform.devices.demo-sensor-01";
-    private static final String APP_ID = "terminal-test";
+    private static final String APP_ID = "platform-test";
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +36,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "appId": "%s",
-                                  "displayName": "Terminal Test",
+                                  "displayName": "Platform Test",
                                   "tablePrefix": ""
                                 }
                                 """.formatted(APP_ID)))
@@ -50,13 +50,13 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "appId": "%s",
-                                  "displayName": "Terminal Test",
+                                  "displayName": "Platform Test",
                                   "tablePrefix": ""
                                 }
                                 """.formatted(APP_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.appId").value(APP_ID))
-                .andExpect(jsonPath("$.schemaName").value("app_terminal_test"));
+                .andExpect(jsonPath("$.schemaName").value("app_platform_test"));
 
         mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -65,49 +65,49 @@ class ApplicationPlatformApiTest {
                                   "version": "1.0.0",
                                   "scripts": [
                                     {
-                                      "id": "dispatch_order",
-                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);"
+                                      "id": "platform_item",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);"
                                     }
                                   ]
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.applied", hasItem("dispatch_order")));
+                .andExpect(jsonPath("$.applied", hasItem("platform_item")));
 
         mockMvc.perform(get("/api/v1/applications/%s/data/status".formatted(APP_ID)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.currentVersion").value("1.0.0"))
-                .andExpect(jsonPath("$.schemaName").value("app_terminal_test"));
+                .andExpect(jsonPath("$.schemaName").value("app_platform_test"));
     }
 
     @Test
     void deploysScriptFunctionAndInvokesViaBff() throws Exception {
-        String orderId = UUID.randomUUID().toString();
+        String itemId = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "version": "1.0.1",
-                                  "displayName": "Terminal Test",
+                                  "displayName": "Platform Test",
                                   "migrations": [
                                     {
-                                      "id": "dispatch_order",
-                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO dispatch_order (id, order_number, status) VALUES ('%s', 'DO-TEST-01', 'ready');"
+                                      "id": "platform_item",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO platform_item (id, item_code, status) VALUES ('%s', 'IT-TEST-01', 'ready');"
                                     }
                                   ],
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_ping",
+                                      "functionName": "platform_ping",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": {
-                                          "name": "terminal_ping_input",
-                                          "fields": [{"name": "orderId", "type": "STRING"}]
+                                          "name": "platform_ping_input",
+                                          "fields": [{"name": "itemId", "type": "STRING"}]
                                         },
                                         "outputSchema": {
-                                          "name": "terminal_ping_output",
+                                          "name": "platform_ping_output",
                                           "fields": [
                                             {"name": "error_code", "type": "STRING"},
                                             {"name": "error_message", "type": "STRING"},
@@ -117,12 +117,12 @@ class ApplicationPlatformApiTest {
                                       },
                                       "source": {
                                         "type": "script",
-                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectOne\\",\\"var\\":\\"order\\",\\"sql\\":\\"SELECT status FROM dispatch_order WHERE id = ?\\",\\"params\\":[\\"${input.orderId}\\"]},{\\"type\\":\\"failIfNull\\",\\"var\\":\\"order\\",\\"error_code\\":\\"NOT_FOUND\\",\\"error_message\\":\\"missing\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"status\\":\\"${order.status}\\"}}]}"
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectOne\\",\\"var\\":\\"order\\",\\"sql\\":\\"SELECT status FROM platform_item WHERE id = ?\\",\\"params\\":[\\"${input.itemId}\\"]},{\\"type\\":\\"failIfNull\\",\\"var\\":\\"order\\",\\"error_code\\":\\"NOT_FOUND\\",\\"error_message\\":\\"missing\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"status\\":\\"${order.status}\\"}}]}"
                                       }
                                     }
                                   ]
                                 }
-                                """.formatted(orderId, DEMO_DEVICE)))
+                                """.formatted(itemId, DEMO_DEVICE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"));
 
@@ -131,16 +131,16 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_ping",
+                                  "functionName": "platform_ping",
                                   "input": {
                                     "schema": {
-                                      "name": "terminal_ping_input",
-                                      "fields": [{"name": "orderId", "type": "STRING"}]
+                                      "name": "platform_ping_input",
+                                      "fields": [{"name": "itemId", "type": "STRING"}]
                                     },
-                                    "rows": [{"orderId": "%s"}]
+                                    "rows": [{"itemId": "%s"}]
                                   }
                                 }
-                                """.formatted(DEMO_DEVICE, orderId)))
+                                """.formatted(DEMO_DEVICE, itemId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.status").value("ready"));
@@ -156,13 +156,13 @@ class ApplicationPlatformApiTest {
                                   "migrations": [
                                     {
                                       "id": "orders_seed",
-                                      "sql": "DELETE FROM dispatch_order; INSERT INTO dispatch_order (id, order_number, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DO-LIST-01', 'ready'); INSERT INTO dispatch_order (id, order_number, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'DO-LIST-02', 'assigned');"
+                                      "sql": "DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'IT-LIST-01', 'ready'); INSERT INTO platform_item (id, item_code, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'IT-LIST-02', 'assigned');"
                                     }
                                   ],
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_listOrders",
+                                      "functionName": "platform_listItems",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -177,7 +177,7 @@ class ApplicationPlatformApiTest {
                                               "nestedSchema": {
                                                 "name": "order_row",
                                                 "fields": [
-                                                  {"name": "order_number", "type": "STRING"},
+                                                  {"name": "item_code", "type": "STRING"},
                                                   {"name": "status", "type": "STRING"}
                                                 ]
                                               }
@@ -187,7 +187,7 @@ class ApplicationPlatformApiTest {
                                       },
                                       "source": {
                                         "type": "script",
-                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT order_number AS order_number, status AS status FROM dispatch_order ORDER BY order_number\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT item_code AS item_code, status AS status FROM platform_item ORDER BY item_code\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
                                       }
                                     }
                                   ]
@@ -200,14 +200,14 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_listOrders",
+                                  "functionName": "platform_listItems",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.rows", hasSize(2)))
-                .andExpect(jsonPath("$.result.rows[0].order_number").value("DO-LIST-01"));
+                .andExpect(jsonPath("$.result.rows[0].item_code").value("IT-LIST-01"));
     }
 
     @Test
@@ -220,7 +220,7 @@ class ApplicationPlatformApiTest {
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_gate_fail",
+                                      "functionName": "platform_gate_fail",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -234,12 +234,12 @@ class ApplicationPlatformApiTest {
                                       },
                                       "source": {
                                         "type": "script",
-                                        "body": "{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"TANK_NOT_APPROVED\\",\\"error_message\\":\\"blocked\\"}}]}"
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"GATE_BLOCKED\\",\\"error_message\\":\\"blocked\\"}}]}"
                                       }
                                     },
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_startFilling",
+                                      "functionName": "platform_startJob",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -253,7 +253,7 @@ class ApplicationPlatformApiTest {
                                       },
                                       "source": {
                                         "type": "script",
-                                        "body": "{\\"steps\\":[{\\"type\\":\\"invoke_function\\",\\"objectPath\\":\\"%s\\",\\"functionName\\":\\"terminal_gate_fail\\",\\"input\\":{}},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\"}}]}"
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"invoke_function\\",\\"objectPath\\":\\"%s\\",\\"functionName\\":\\"platform_gate_fail\\",\\"input\\":{}},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\"}}]}"
                                       }
                                     }
                                   ]
@@ -266,12 +266,12 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_startFilling",
+                                  "functionName": "platform_startJob",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.error_code").value("TANK_NOT_APPROVED"))
+                .andExpect(jsonPath("$.error_code").value("GATE_BLOCKED"))
                 .andExpect(jsonPath("$.error_message").value("blocked"));
     }
 
@@ -304,21 +304,21 @@ class ApplicationPlatformApiTest {
 
     @Test
     void seedProfileIsIdempotent() throws Exception {
-        String terminalApp = "terminal-seed";
+        String seedApp = "seed-demo";
 
         mockMvc.perform(post("/api/v1/applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "appId": "%s",
-                                  "displayName": "Terminal Seed",
+                                  "displayName": "Seed Demo",
                                   "tablePrefix": "",
-                                  "schemaName": "terminal"
+                                  "schemaName": "seed_demo"
                                 }
-                                """.formatted(terminalApp)))
+                                """.formatted(seedApp)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(terminalApp))
+        mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(seedApp))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -326,22 +326,22 @@ class ApplicationPlatformApiTest {
                                   "scripts": [
                                     {
                                       "id": "schema",
-                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_shift (id UUID PRIMARY KEY, shift_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, started_at TIMESTAMP); CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, shift_id UUID, tank_path VARCHAR(255)); CREATE TABLE IF NOT EXISTS tank_balance (tank_path VARCHAR(255) PRIMARY KEY, product_code VARCHAR(64), volume_liters BIGINT, quality_status VARCHAR(32));"
+                                      "sql": "CREATE TABLE IF NOT EXISTS demo_category (id UUID PRIMARY KEY, category_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); CREATE TABLE IF NOT EXISTS demo_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, category_id UUID); CREATE TABLE IF NOT EXISTS demo_metric (metric_key VARCHAR(64) PRIMARY KEY, metric_value BIGINT, status VARCHAR(32));"
                                     }
                                   ]
                                 }
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/applications/%s/data/seed".formatted(terminalApp))
+        mockMvc.perform(post("/api/v1/applications/%s/data/seed".formatted(seedApp))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"profile\": \"smoke-p301\"}"))
+                        .content("{\"profile\": \"smoke-demo\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.applied", hasSize(3)));
 
-        mockMvc.perform(post("/api/v1/applications/%s/data/seed".formatted(terminalApp))
+        mockMvc.perform(post("/api/v1/applications/%s/data/seed".formatted(seedApp))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"profile\": \"smoke-p301\"}"))
+                        .content("{\"profile\": \"smoke-demo\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.skipped", hasSize(3)));
     }
@@ -414,25 +414,25 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "version": "2.0.0",
-                                  "displayName": "Terminal Test",
+                                  "displayName": "Platform Test",
                                   "objects": [
                                     {
                                       "parentPath": "root.platform",
-                                      "name": "terminal-app",
+                                      "name": "demo-app",
                                       "type": "CUSTOM",
-                                      "displayName": "Terminal App"
+                                      "displayName": "Demo App"
                                     }
                                   ],
                                   "dashboards": [
                                     {
-                                      "path": "root.platform.terminal-app.ops",
+                                      "path": "root.platform.demo-app.ops",
                                       "title": "Ops Board",
                                       "layoutJson": "{\\"columns\\":12,\\"rowHeight\\":72,\\"widgets\\":[]}"
                                     }
                                   ],
                                   "workflows": [
                                     {
-                                      "path": "root.platform.terminal-app.p301",
+                                      "path": "root.platform.demo-app.main-flow",
                                       "bpmnXml": "%s",
                                       "status": "ACTIVE"
                                     }
@@ -441,15 +441,15 @@ class ApplicationPlatformApiTest {
                                 """.formatted(minimalBpmn)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"))
-                .andExpect(jsonPath("$.applied", hasItem("object:terminal-app")))
-                .andExpect(jsonPath("$.applied", hasItem("dashboard:root.platform.terminal-app.ops")))
-                .andExpect(jsonPath("$.applied", hasItem("workflow:root.platform.terminal-app.p301")));
+                .andExpect(jsonPath("$.applied", hasItem("object:demo-app")))
+                .andExpect(jsonPath("$.applied", hasItem("dashboard:root.platform.demo-app.ops")))
+                .andExpect(jsonPath("$.applied", hasItem("workflow:root.platform.demo-app.main-flow")));
 
-        mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", "root.platform.terminal-app.ops"))
+        mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", "root.platform.demo-app.ops"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Ops Board"));
 
-        mockMvc.perform(get("/api/v1/workflows/by-path").param("path", "root.platform.terminal-app.p301"))
+        mockMvc.perform(get("/api/v1/workflows/by-path").param("path", "root.platform.demo-app.main-flow"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.bpmnXml").isNotEmpty());
@@ -465,13 +465,13 @@ class ApplicationPlatformApiTest {
                                   "migrations": [
                                     {
                                       "id": "orders_wire",
-                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM dispatch_order; INSERT INTO dispatch_order (id, order_number, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DO-WIRE-01', 'ready');"
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'IT-WIRE-01', 'ready');"
                                     }
                                   ],
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_wire_list",
+                                      "functionName": "platform_wire_list",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -486,7 +486,7 @@ class ApplicationPlatformApiTest {
                                               "nestedSchema": {
                                                 "name": "order_row",
                                                 "fields": [
-                                                  {"name": "order_number", "type": "STRING"},
+                                                  {"name": "item_code", "type": "STRING"},
                                                   {"name": "status", "type": "STRING"}
                                                 ]
                                               }
@@ -496,7 +496,7 @@ class ApplicationPlatformApiTest {
                                       },
                                       "source": {
                                         "type": "script",
-                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT order_number AS order_number, status AS status FROM dispatch_order\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT item_code AS item_code, status AS status FROM platform_item\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
                                       }
                                     }
                                   ]
@@ -509,7 +509,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_wire_list",
+                                  "functionName": "platform_wire_list",
                                   "wireProfile": "anima-operator-v1",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
@@ -519,13 +519,13 @@ class ApplicationPlatformApiTest {
                 .andExpect(jsonPath("$.error_message").value(""))
                 .andExpect(jsonPath("$.wireProfile").value("anima-operator-v1"))
                 .andExpect(jsonPath("$.result", hasSize(1)))
-                .andExpect(jsonPath("$.result[0].order_number").value("DO-WIRE-01"))
-                .andExpect(jsonPath("$.result_field_labels.order_number").value("order_number"));
+                .andExpect(jsonPath("$.result[0].item_code").value("IT-WIRE-01"))
+                .andExpect(jsonPath("$.result_field_labels.item_code").value("item_code"));
     }
 
     @Test
     void cancelWorkflowsScriptStepReturnsCount() throws Exception {
-        String workflowPath = "root.platform.terminal-app.cancel-target";
+        String workflowPath = "root.platform.demo-app.cancel-target";
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -534,9 +534,9 @@ class ApplicationPlatformApiTest {
                                   "objects": [
                                     {
                                       "parentPath": "root.platform",
-                                      "name": "terminal-app",
+                                      "name": "demo-app",
                                       "type": "CUSTOM",
-                                      "displayName": "Terminal App"
+                                      "displayName": "Demo App"
                                     }
                                   ],
                                   "workflows": [
@@ -549,7 +549,7 @@ class ApplicationPlatformApiTest {
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_cancel_waiting",
+                                      "functionName": "platform_cancel_waiting",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -577,7 +577,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_cancel_waiting",
+                                  "functionName": "platform_cancel_waiting",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -593,7 +593,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_version_probe",
+                                  "functionName": "platform_version_probe",
                                   "version": "1",
                                   "descriptor": {
                                     "inputSchema": { "name": "in", "fields": [] },
@@ -619,7 +619,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_version_probe",
+                                  "functionName": "platform_version_probe",
                                   "version": "2",
                                   "descriptor": {
                                     "inputSchema": { "name": "in", "fields": [] },
@@ -642,7 +642,7 @@ class ApplicationPlatformApiTest {
 
         mockMvc.perform(get("/api/v1/applications/%s/functions".formatted(APP_ID))
                         .param("objectPath", DEMO_DEVICE)
-                        .param("functionName", "terminal_version_probe"))
+                        .param("functionName", "platform_version_probe"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
 
@@ -651,7 +651,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_version_probe",
+                                  "functionName": "platform_version_probe",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -663,7 +663,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_version_probe",
+                                  "functionName": "platform_version_probe",
                                   "version": "1"
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -675,7 +675,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_version_probe",
+                                  "functionName": "platform_version_probe",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -693,7 +693,7 @@ class ApplicationPlatformApiTest {
                                   "scripts": [
                                     {
                                       "id": "orders_kpi",
-                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM dispatch_order; INSERT INTO dispatch_order (id, order_number, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'KPI-01', 'ready'); INSERT INTO dispatch_order (id, order_number, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'KPI-02', 'ready');"
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'KPI-01', 'ready'); INSERT INTO platform_item (id, item_code, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'KPI-02', 'ready');"
                                     }
                                   ]
                                 }
@@ -705,8 +705,8 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "variable": "activeOrders",
-                                  "query": "SELECT COUNT(*) AS cnt FROM dispatch_order WHERE status = 'ready'",
+                                  "variable": "readyCount",
+                                  "query": "SELECT COUNT(*) AS cnt FROM platform_item WHERE status = 'ready'",
                                   "refresh": "on_schedule",
                                   "refreshIntervalMs": 60000,
                                   "valueField": "cnt"
@@ -719,14 +719,14 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "variable": "activeOrders"
+                                  "variable": "readyCount"
                                 }
                                 """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
                         .param("path", DEMO_DEVICE)
-                        .param("name", "activeOrders"))
+                        .param("name", "readyCount"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.value.rows[0].value").value(2));
     }
@@ -741,7 +741,7 @@ class ApplicationPlatformApiTest {
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_bundle_marker",
+                                      "functionName": "platform_bundle_marker",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -773,7 +773,7 @@ class ApplicationPlatformApiTest {
                                   "functions": [
                                     {
                                       "objectPath": "%s",
-                                      "functionName": "terminal_bundle_marker",
+                                      "functionName": "platform_bundle_marker",
                                       "version": "1",
                                       "descriptor": {
                                         "inputSchema": { "name": "in", "fields": [] },
@@ -806,7 +806,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_bundle_marker",
+                                  "functionName": "platform_bundle_marker",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -826,7 +826,7 @@ class ApplicationPlatformApiTest {
                         .content("""
                                 {
                                   "objectPath": "%s",
-                                  "functionName": "terminal_bundle_marker",
+                                  "functionName": "platform_bundle_marker",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))

@@ -42,6 +42,7 @@ public class BpmnParser {
             Map<String, ServiceTaskDefinition> serviceTasks = new HashMap<>();
             Map<String, UserTaskDefinition> userTasks = new HashMap<>();
             Map<String, MessageTaskDefinition> messageTasks = new HashMap<>();
+            Map<String, SignalCatchDefinition> signalCatchEvents = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
             String startNodeId = null;
 
@@ -85,6 +86,12 @@ public class BpmnParser {
                 messageTasks.put(id, parseMessageTask(task));
             }
 
+            for (Element catchEvent : elements(process, "intermediateCatchEvent")) {
+                String id = catchEvent.getAttribute("id");
+                nodeTypes.put(id, "intermediateCatchEvent");
+                signalCatchEvents.put(id, parseSignalCatch(catchEvent));
+            }
+
             for (Element flow : elements(process, "sequenceFlow")) {
                 sequenceFlows.add(parseSequenceFlow(flow));
             }
@@ -101,6 +108,7 @@ public class BpmnParser {
                     serviceTasks,
                     userTasks,
                     messageTasks,
+                    signalCatchEvents,
                     List.copyOf(sequenceFlows)
             );
         } catch (WorkflowException e) {
@@ -120,6 +128,30 @@ public class BpmnParser {
         }
         boolean defaultFlow = "true".equalsIgnoreCase(readIspfAttribute(flow, "default"));
         return new SequenceFlowDefinition(id, source, target, condition, defaultFlow);
+    }
+
+    private SignalCatchDefinition parseSignalCatch(Element catchEvent) throws WorkflowException {
+        Map<String, String> parameters = new HashMap<>();
+        readIspfAttribute(catchEvent, parameters, "signal");
+        String signalName = parameters.get("signal");
+        if (signalName == null || signalName.isBlank()) {
+            Element signalDef = firstChildElement(catchEvent, "signalEventDefinition");
+            if (signalDef != null) {
+                signalName = signalDef.getAttribute("signalRef");
+                if (signalName == null || signalName.isBlank()) {
+                    signalName = readIspfAttribute(signalDef, "signal");
+                }
+            }
+        }
+        if (signalName == null || signalName.isBlank()) {
+            throw new WorkflowException("Signal catch event requires ispf:signal: " + catchEvent.getAttribute("id"));
+        }
+        return new SignalCatchDefinition(
+                catchEvent.getAttribute("id"),
+                catchEvent.getAttribute("name"),
+                signalName,
+                Map.copyOf(parameters)
+        );
     }
 
     private MessageTaskDefinition parseMessageTask(Element task) {

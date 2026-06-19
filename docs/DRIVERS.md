@@ -50,7 +50,7 @@ GET  /api/v1/drivers/runtime/status?devicePath=...
 | `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |
 | `rack-signals` | `gasPresent`, `groundConnected` | Булевы сигналы по `rackId` |
 
-Пример meter (SCR-03):
+Пример meter (virtual driver profile):
 
 ```json
 {

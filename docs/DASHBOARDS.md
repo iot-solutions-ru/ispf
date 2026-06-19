@@ -74,15 +74,15 @@ View-компоненты: `apps/web-console/src/components/dashboard/widgets/`
 ```json
 [
   {
-    "name": "tankName",
-    "label": "РВС",
+    "name": "devicePath",
+    "label": "Устройство",
     "type": "select",
-    "optionsFrom": "root.platform.oil-terminal.tanks",
-    "defaultValue": "rvs3"
+    "optionsFrom": "root.platform.devices.demo-sensor-01",
+    "defaultValue": "demo-sensor-01"
   },
   {
-    "name": "plannedLiters",
-    "label": "План, л",
+    "name": "threshold",
+    "label": "Порог",
     "type": "number"
   }
 ]

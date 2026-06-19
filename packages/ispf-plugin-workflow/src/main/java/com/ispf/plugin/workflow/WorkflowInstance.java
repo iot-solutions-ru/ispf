@@ -121,6 +121,21 @@ public class WorkflowInstance {
                 .toList();
     }
 
+    public Optional<String> pendingSignalName() {
+        return waitingTokens().stream()
+                .map(ExecutionToken::pendingSignalName)
+                .filter(name -> name != null && !name.isBlank())
+                .findFirst();
+    }
+
+    public List<String> pendingSignalNames() {
+        return waitingTokens().stream()
+                .map(ExecutionToken::pendingSignalName)
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
+    }
+
     public Optional<String> assignee() {
         return Optional.ofNullable(assignee);
     }
@@ -185,6 +200,12 @@ public class WorkflowInstance {
         recomputeStatus();
     }
 
+    public void waitTokenAtSignal(ExecutionToken token, String catchNodeId, String signalName) {
+        token.waitAtSignalCatch(catchNodeId, signalName);
+        history.add("SIGNAL_WAIT@" + signalName + "#" + token.tokenId());
+        recomputeStatus();
+    }
+
     public void claim(String operatorId) {
         assignee = operatorId;
         history.add("CLAIMED@" + operatorId);
@@ -200,6 +221,22 @@ public class WorkflowInstance {
             }
         }
         throw new IllegalStateException("No waiting token for user task: " + userTaskNodeId);
+    }
+
+    public List<ExecutionToken> resumeSignal(String signalName) {
+        List<ExecutionToken> resumed = new ArrayList<>();
+        for (ExecutionToken token : waitingTokens()) {
+            if (signalName.equals(token.pendingSignalName())) {
+                token.resumeAfterSignalCatch();
+                history.add("SIGNAL@" + signalName + "#" + token.tokenId());
+                resumed.add(token);
+            }
+        }
+        if (resumed.isEmpty()) {
+            throw new IllegalStateException("No waiting token for signal: " + signalName);
+        }
+        recomputeStatus();
+        return resumed;
     }
 
     public ExecutionToken mergeTokensAtJoin(String joinNodeId) {
@@ -265,6 +302,12 @@ public class WorkflowInstance {
                     if (token.pendingUserTaskId() != null) {
                         map.put("pendingUserTaskId", token.pendingUserTaskId());
                     }
+                    if (token.pendingSignalCatchNodeId() != null) {
+                        map.put("pendingSignalCatchNodeId", token.pendingSignalCatchNodeId());
+                    }
+                    if (token.pendingSignalName() != null) {
+                        map.put("pendingSignalName", token.pendingSignalName());
+                    }
                     if (token.arrivedJoinNodeId() != null) {
                         map.put("arrivedJoinNodeId", token.arrivedJoinNodeId());
                     }
@@ -296,6 +339,8 @@ public class WorkflowInstance {
                     currentNodeId,
                     tokenState,
                     stringValue(map.get("pendingUserTaskId")),
+                    stringValue(map.get("pendingSignalCatchNodeId")),
+                    stringValue(map.get("pendingSignalName")),
                     stringValue(map.get("arrivedJoinNodeId"))
             ));
         }

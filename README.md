@@ -120,5 +120,5 @@ cd apps/web-console && npm install && npm run dev
 **[Apache License 2.0](LICENSE)** — © 2026 ISPF Core Contributors (только ядро в `main`).  
 См. также [NOTICE](NOTICE).
 
-Коммерческие плагины и reference-стенды (oil-terminal) — вне `main`, со своей лицензией.  
+Коммерческие плагины и app bundle заказчика — вне `main`, со своей лицензией.  
 Подробнее: [docs/LICENSE.md](docs/LICENSE.md), [docs/PLUGINS.md](docs/PLUGINS.md).

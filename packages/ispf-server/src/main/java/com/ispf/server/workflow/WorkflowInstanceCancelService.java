@@ -46,7 +46,7 @@ public class WorkflowInstanceCancelService {
                     "instanceId", instanceId,
                     "status", entity.getStatus(),
                     "cancelled", false,
-                    "message", "Already terminal"
+                    "message", "Already final"
             );
         }
 

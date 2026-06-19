@@ -12,6 +12,7 @@ public record BpmnProcess(
         Map<String, ServiceTaskDefinition> serviceTasks,
         Map<String, UserTaskDefinition> userTasks,
         Map<String, MessageTaskDefinition> messageTasks,
+        Map<String, SignalCatchDefinition> signalCatchEvents,
         List<SequenceFlowDefinition> sequenceFlows
 ) {
     public String resolveNext(String nodeId, WorkflowConditionEvaluator evaluator) throws WorkflowException {
