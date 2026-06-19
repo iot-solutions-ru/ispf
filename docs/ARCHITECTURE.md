@@ -2,7 +2,7 @@
 
 ## Vision
 
-**IoT Solutions Platform Framework (ISPF)** — это middleware-платформа для IoT, промышленной автоматизации и IT-операций. Цель — дать единую модель данных и API для устройств, дашбордов, алертов и автоматизации без привязки к монолитному legacy-стеку.
+**IoT Solutions Platform Framework (ISPF)** — middleware-платформа для IoT, промышленной автоматизации и IT-операций. Единая модель данных и API для устройств, HMI-дашбордов, алертов и BPMN-автоматизации.
 
 ## Core Domain Model
 
@@ -21,29 +21,31 @@ graph TB
     DEVICE --> EVENTS[Events]
     VARS --> DR[DataRecord]
     DR --> SCHEMA[DataSchema]
+    VARS --> CEL[CEL Bindings]
 ```
+
+Подробнее: [OBJECT_MODEL.md](OBJECT_MODEL.md).
 
 ### Platform Object
 
-Адресуемый узел в дереве объектов: `root.platform.devices.pump-01`. Каждый объект имеет тип (`DEVICE`, `DASHBOARD`, `WORKFLOW`, …), переменные, функции и события.
+Адресуемый узел: `root.platform.devices.pump-01`. Типы: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `CUSTOM`, …
 
 ### DataRecord
 
-Типизированная табличная структура:
+- `DataSchema` — поля (`FieldType`)
+- `DataRecord` — строки с валидацией
 
-- `DataSchema` — описание полей (`FieldType`: BOOLEAN, DOUBLE, STRING, RECORD, …)
-- `DataRecord` — строки данных с валидацией по схеме
+### Models (Templates)
 
-### Templates
-
-`ObjectTemplate` — blueprint для создания экземпляров. Содержит переменные, события, функции и binding-выражения.
+`ModelDefinition` — blueprint: variables, events, functions, bindings.  
+См. [MODELS.md](MODELS.md).
 
 ### Expressions
 
-Google CEL (Common Expression Language) для вычисляемых привязок:
+Google CEL для bindings, alert rules, workflow gateways:
 
 ```
-self.temperature.value > 80.0
+self.temperature.value > self.threshold.value
 ```
 
 ## Runtime Layers
@@ -51,41 +53,93 @@ self.temperature.value > 80.0
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Web Console (React 19 + Vite + TanStack Query)         │
+│  Admin │ Operator HMI │ Dashboard/Workflow builders     │
 ├─────────────────────────────────────────────────────────┤
-│  API Gateway (Spring Boot 3.4)                          │
-│  REST / WebSocket / OAuth2 JWT                          │
+│  API Layer (Spring Boot 3.4)                            │
+│  REST / WebSocket / OAuth2 JWT / RBAC                   │
 ├─────────────────────────────────────────────────────────┤
-│  Core Services                                          │
-│  ObjectTree │ ExpressionEngine │ EventBus │ Scheduler  │
+│  Domain Services                                        │
+│  ObjectManager │ EventService │ WorkflowService         │
+│  DashboardService │ AlertRuleService │ CorrelatorService│
+│  DriverRuntimeService │ ModelEngine                     │
 ├─────────────────────────────────────────────────────────┤
-│  Driver Runtime (SPI)                                   │
-│  MQTT │ Modbus* │ OPC UA* │ SNMP*                       │
+│  Plugins & Libraries                                    │
+│  ispf-core │ ispf-expression │ ispf-plugin-model         │
+│  ispf-plugin-workflow                                   │
+├─────────────────────────────────────────────────────────┤
+│  Driver SPI                                             │
+│  virtual │ mqtt │ modbus-tcp │ snmp                     │
 ├─────────────────────────────────────────────────────────┤
 │  Persistence & Messaging                                │
-│  PostgreSQL/TimescaleDB │ Redis │ NATS JetStream          │
+│  PostgreSQL/H2 │ Flyway │ NATS* │ MQTT*                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
+## Package Map
+
+| Package | Role |
+|---------|------|
+| `ispf-core` | ObjectTree, PlatformObject, DataRecord |
+| `ispf-expression` | CEL engine, BindingEvaluator |
+| `ispf-driver-*` | Device protocol adapters |
+| `ispf-plugin-model` | Model registry & engine |
+| `ispf-plugin-workflow` | BPMN parser & executor |
+| `ispf-server` | Spring Boot wiring, REST, JPA, security |
+
 ## Security Model
 
-- OAuth2 Resource Server (JWT)
-- Per-object RBAC (planned)
-- Driver sandboxing via isolated classloaders (planned)
+OAuth2 JWT (Keycloak) или header-based RBAC (`local`).  
+Roles: `admin`, `operator`.  
+См. [SECURITY.md](SECURITY.md).
+
+## Data Flow: Telemetry
+
+```
+DeviceDriver.readPoints()
+  → DriverRuntimeService
+  → ObjectManager.setVariableValue()
+  → BindingEvaluator (CEL)
+  → AlertRuleListener
+  → ObjectChangeEvent → WebSocket → Web Console
+```
+
+## Data Flow: Automation
+
+```
+Event fire → event_history
+  → EventCorrelatorListener → WorkflowService.run
+  → UserTask → WorkQueue → Operator HMI
+```
 
 ## Deployment Topology
 
-**Development:** `docker compose` + local Gradle bootRun
+**Development:** `docker compose` + Gradle bootRun + Vite dev server.
 
 **Production (target):**
 
-- `ispf-server` — stateless replicas behind ingress
-- `ispf-gateway` — protocol adapters (MQTT, Modbus)
-- `ispf-agent` — edge connectivity
+- `ispf-server` — stateless replicas
 - Managed PostgreSQL, Redis, NATS
+- Keycloak / OIDC
+- Static web-console behind CDN/ingress
+
+См. [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Extension Points
 
-1. **DeviceDriver** — реализуйте SPI, зарегистрируйте в runtime
-2. **ObjectTemplate** — определите модель устройства/сервиса
-3. **REST/Webhook** — интеграции через стандартные API
-4. **NATS subjects** — event-driven automation (planned)
+1. **DeviceDriver** — новый протокол ([DRIVERS.md](DRIVERS.md))
+2. **ModelDefinition** — шаблон устройства/процесса ([MODELS.md](MODELS.md))
+3. **FunctionHandler** — бизнес-операции на объектах
+4. **Dashboard widgets** — новые типы в web-console ([DASHBOARDS.md](DASHBOARDS.md))
+5. **REST / Webhook** — внешние интеграции ([API.md](API.md))
+6. **NATS subjects** — messageTask в BPMN ([WORKFLOWS.md](WORKFLOWS.md))
+
+## Reference Stands
+
+| Stand | Branch | Description |
+|-------|--------|-------------|
+| Demo sensor | `main` | virtual driver, alert, workflow |
+| Oil terminal (P-301) | `feature/oil-terminal-reference` | MES reference, отдельная ветка |
+
+## Documentation Index
+
+Полный комплект: [docs/README.md](README.md).
