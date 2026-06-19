@@ -120,7 +120,7 @@ public class DriverRuntimeService {
                     if (update.system()) {
                         objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
                     } else {
-                        objectManager.setVariableValue(update.path(), update.variableName(), update.value());
+                        objectManager.setDriverTelemetryValue(update.path(), update.variableName(), update.value());
                     }
                 },
                 entry -> log.info("[driver:{}] {} {}", devicePath, entry.level(), entry.message())
@@ -141,6 +141,7 @@ public class DriverRuntimeService {
                 TimeUnit.MILLISECONDS
         );
         activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null));
+        poll(devicePath);
         setStatus(devicePath, "RUNNING");
         return status(devicePath).orElseThrow();
     }

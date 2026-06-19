@@ -120,10 +120,10 @@ Terminal (P-301) — **reference application** для проверки зрел�
 | **PF-05** | Platform Scheduler | **Готово** | — | P1 |
 | **PF-06** | BFF Wire Gateway | **Частично** | Custom field labels map (P2) | P1 |
 | **PF-07** | Model Registry Persistence | **Готово** | — | P2 |
-| **PF-08** | Variable ↔ SQL sync | **Нет** | Declarative bindings (§4.5) | P2 |
-| **PF-09** | Integration Simulator SPI | **Нет** | Device/simulator profiles (§4.6) | P2 |
+| **PF-08** | Variable ↔ SQL sync | **Да** | Declarative bindings (§4.5) | P2 |
+| **PF-09** | Integration Simulator SPI | **Да** | virtual driver profiles (§4.6) | P2 |
 | **PF-10** | Workflow cancel | **Частично** | BPMN signal catch (§4.7b, P2) | P1 |
-| **PF-11** | Function rollback / versions | **Нет** | Deploy previous version (§4.8) | P2 |
+| **PF-11** | Function rollback / versions | **Да** | Deploy previous version (§4.8) | P2 |
 
 ---
 
@@ -432,9 +432,9 @@ Sprint B (P1) — e2e P-301
   Web Console → generic bff ✅ (manifest shell)
 
 Sprint C (P2) — demo parity
-  PF-08 SQL bindings
-  PF-09 simulator SPI
-  PF-11 function rollback
+  PF-08 SQL bindings ✅
+  PF-09 simulator SPI ✅ (virtual profiles)
+  PF-11 function rollback ✅
 
 Sprint D (P2) — polish
   PF-03b bundle rollback

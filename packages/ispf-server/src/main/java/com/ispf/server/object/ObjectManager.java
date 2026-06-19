@@ -149,6 +149,19 @@ public class ObjectManager {
         publish(ObjectChangeEvent.of(ObjectChangeType.DELETED, path));
     }
 
+    public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
+        PlatformObject node = objectTree.require(path);
+        Variable variable = node.getVariable(name).orElseGet(() -> {
+            Variable created = new Variable(name, value.schema(), true, false, null, null);
+            node.addVariable(created);
+            return created;
+        });
+        variable.setComputedValue(value);
+        persistVariable(path, variable);
+        publish(ObjectChangeEvent.variableUpdated(path, name));
+        return variable;
+    }
+
     @Transactional
     public Variable setVariableValue(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);

@@ -252,6 +252,44 @@ Content-Type: application/json
 
 Пример полного app bundle (oil-terminal) — ветка **`feature/oil-terminal-reference`**, не в `main`. См. [PLUGINS.md](PLUGINS.md).
 
+## SQL bindings (REQ-PF-08)
+
+Декларативная синхронизация object variable ← SQL в app schema:
+
+```http
+POST /api/v1/applications/{appId}/bindings/deploy
+{
+  "objectPath": "root.platform.terminal.demo.dispatch-summary",
+  "variable": "activeOrders",
+  "query": "SELECT COUNT(*) AS value FROM dispatch_order WHERE status = 'ready'",
+  "refresh": "on_schedule",
+  "refreshIntervalMs": 30000,
+  "valueField": "value"
+}
+```
+
+| `refresh` | Поведение |
+|-----------|-----------|
+| `on_schedule` | Периодический poll (`ApplicationSqlBindingScheduler`) |
+| `on_function_success` | После успешного invoke функции (опционально `triggerObjectPath` / `triggerFunctionName`) |
+
+Также deploy через bundle: `bindings[]` в manifest.
+
+```http
+GET  /api/v1/applications/{appId}/bindings
+POST /api/v1/applications/{appId}/bindings/refresh
+```
+
+## Function versions (REQ-PF-11)
+
+```http
+GET  /api/v1/applications/{appId}/functions?objectPath=&functionName=
+POST /api/v1/applications/{appId}/functions/rollback
+{ "objectPath", "functionName", "version": "2" }
+```
+
+Rollback поднимает `deployed_at` выбранной версии — `findLatest` снова её использует.
+
 ## Связанная документация
 
 - [API.md](API.md) — таблица endpoints
@@ -263,6 +301,6 @@ Content-Type: application/json
 
 ## Следующие шаги (backlog)
 
-- **REQ-PF-08** — Variable ↔ SQL sync для demo dashboards
-- **REQ-PF-09** — Integration Simulator SPI
-- Rollback bundle на предыдущую версию (P2)
+- Bundle rollback на предыдущую версию (Sprint D / PF-03b)
+- BPMN signal catch (PF-10b)
+- Terminal app deploy + smoke P-301 e2e (michaael bundle)

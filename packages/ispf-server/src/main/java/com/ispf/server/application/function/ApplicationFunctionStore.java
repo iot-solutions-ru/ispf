@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -80,6 +81,63 @@ public class ApplicationFunctionStore {
         );
     }
 
+    public Optional<ApplicationFunctionHandler.DeployedFunction> findByVersion(
+            String appId,
+            String objectPath,
+            String functionName,
+            String version
+    ) {
+        List<ApplicationFunctionHandler.DeployedFunction> rows = jdbcTemplate.query("""
+                SELECT id, app_id, object_path, function_name, version,
+                       source_type, source_body, input_schema_json, output_schema_json
+                FROM %s
+                WHERE app_id = ? AND object_path = ? AND function_name = ? AND version = ?
+                """.formatted(functionsTable),
+                this::mapDeployedFunction,
+                appId,
+                objectPath,
+                functionName,
+                version
+        );
+        return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+    }
+
+    public List<Map<String, Object>> listVersions(String appId, String objectPath, String functionName) {
+        return jdbcTemplate.query("""
+                SELECT version, source_type, deployed_at
+                FROM %s
+                WHERE app_id = ? AND object_path = ? AND function_name = ?
+                ORDER BY deployed_at DESC
+                """.formatted(functionsTable),
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("version", rs.getString("version"));
+                    row.put("sourceType", rs.getString("source_type"));
+                    row.put("deployedAt", rs.getTimestamp("deployed_at"));
+                    return row;
+                },
+                appId,
+                objectPath,
+                functionName
+        );
+    }
+
+    public void activateVersion(String appId, String objectPath, String functionName, String version) {
+        int updated = jdbcTemplate.update("""
+                UPDATE %s SET deployed_at = ?
+                WHERE app_id = ? AND object_path = ? AND function_name = ? AND version = ?
+                """.formatted(functionsTable),
+                Timestamp.from(Instant.now()),
+                appId,
+                objectPath,
+                functionName,
+                version
+        );
+        if (updated == 0) {
+            throw new IllegalArgumentException("Function version not found: " + functionName + "@" + version);
+        }
+    }
+
     public Optional<ApplicationFunctionHandler.DeployedFunction> findLatest(String objectPath, String functionName) {
         List<ApplicationFunctionHandler.DeployedFunction> rows = jdbcTemplate.query("""
                 SELECT id, app_id, object_path, function_name, version,
@@ -89,20 +147,25 @@ public class ApplicationFunctionStore {
                 ORDER BY deployed_at DESC
                 LIMIT 1
                 """.formatted(functionsTable),
-                (rs, rowNum) -> new ApplicationFunctionHandler.DeployedFunction(
-                        UUID.fromString(rs.getString("id")),
-                        rs.getString("app_id"),
-                        rs.getString("object_path"),
-                        rs.getString("function_name"),
-                        rs.getString("version"),
-                        rs.getString("source_type"),
-                        rs.getString("source_body"),
-                        rs.getString("input_schema_json"),
-                        rs.getString("output_schema_json")
-                ),
+                this::mapDeployedFunction,
                 objectPath,
                 functionName
         );
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
+    }
+
+    private ApplicationFunctionHandler.DeployedFunction mapDeployedFunction(java.sql.ResultSet rs, int rowNum)
+            throws java.sql.SQLException {
+        return new ApplicationFunctionHandler.DeployedFunction(
+                UUID.fromString(rs.getString("id")),
+                rs.getString("app_id"),
+                rs.getString("object_path"),
+                rs.getString("function_name"),
+                rs.getString("version"),
+                rs.getString("source_type"),
+                rs.getString("source_body"),
+                rs.getString("input_schema_json"),
+                rs.getString("output_schema_json")
+        );
     }
 }

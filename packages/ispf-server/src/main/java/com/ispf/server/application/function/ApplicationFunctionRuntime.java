@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
@@ -26,6 +27,7 @@ public class ApplicationFunctionRuntime {
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final FunctionInvokeAuditService auditService;
+    private final ApplicationSqlBindingService sqlBindingService;
 
     public ApplicationFunctionRuntime(
             ApplicationFunctionStore store,
@@ -34,7 +36,8 @@ public class ApplicationFunctionRuntime {
             ApplicationSchemaSession schemaSession,
             ObjectManager objectManager,
             ObjectMapper objectMapper,
-            FunctionInvokeAuditService auditService
+            FunctionInvokeAuditService auditService,
+            ApplicationSqlBindingService sqlBindingService
     ) {
         this.store = store;
         this.scriptEngine = scriptEngine;
@@ -43,6 +46,7 @@ public class ApplicationFunctionRuntime {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.auditService = auditService;
+        this.sqlBindingService = sqlBindingService;
     }
 
     @Transactional
@@ -87,6 +91,7 @@ public class ApplicationFunctionRuntime {
                 default -> throw new IllegalStateException("Unsupported source type: " + deployed.sourceType());
             });
             auditService.record(deployed.appId(), objectPath, functionName, true, null);
+            sqlBindingService.refreshAfterFunction(deployed.appId(), objectPath, functionName);
             return outputHolder[0];
         } catch (RuntimeException ex) {
             auditService.record(deployed.appId(), objectPath, functionName, false, ex.getMessage());

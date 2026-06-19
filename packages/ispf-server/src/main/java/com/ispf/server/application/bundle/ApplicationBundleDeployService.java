@@ -3,6 +3,7 @@ package com.ispf.server.application.bundle;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.api.ApplicationController;
+import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
@@ -22,6 +23,7 @@ public class ApplicationBundleDeployService {
     private final ApplicationFunctionStore functionStore;
     private final ApplicationBundleMetadataService metadataService;
     private final PlatformSchedulerService schedulerService;
+    private final ApplicationSqlBindingService sqlBindingService;
     private final ObjectMapper objectMapper;
 
     public ApplicationBundleDeployService(
@@ -29,12 +31,14 @@ public class ApplicationBundleDeployService {
             ApplicationFunctionStore functionStore,
             ApplicationBundleMetadataService metadataService,
             PlatformSchedulerService schedulerService,
+            ApplicationSqlBindingService sqlBindingService,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
         this.metadataService = metadataService;
         this.schedulerService = schedulerService;
+        this.sqlBindingService = sqlBindingService;
         this.objectMapper = objectMapper;
     }
 
@@ -117,6 +121,27 @@ public class ApplicationBundleDeployService {
             }
         }
 
+        if (manifest.bindings() != null) {
+            for (BundleSqlBinding binding : manifest.bindings()) {
+                try {
+                    sqlBindingService.deploy(appId, new ApplicationSqlBindingService.DeploySqlBindingRequest(
+                            binding.objectPath(),
+                            binding.variable(),
+                            binding.query(),
+                            binding.refresh(),
+                            binding.refreshIntervalMs(),
+                            binding.valueField(),
+                            binding.triggerObjectPath(),
+                            binding.triggerFunctionName(),
+                            binding.enabled()
+                    ));
+                    applied.add("binding:" + binding.variable());
+                } catch (Exception ex) {
+                    errors.add("binding:" + binding.variable() + ": " + ex.getMessage());
+                }
+            }
+        }
+
         if (manifest.schedules() != null) {
             for (BundleSchedule schedule : manifest.schedules()) {
                 try {
@@ -175,6 +200,7 @@ public class ApplicationBundleDeployService {
             List<BundleWorkflow> workflows,
             List<BundleMigration> migrations,
             List<BundleFunction> functions,
+            List<BundleSqlBinding> bindings,
             List<BundleSchedule> schedules
     ) {
     }
@@ -213,6 +239,19 @@ public class ApplicationBundleDeployService {
             String version,
             ApplicationController.FunctionDescriptorDto descriptor,
             ApplicationController.FunctionSourceDto source
+    ) {
+    }
+
+    public record BundleSqlBinding(
+            String objectPath,
+            String variable,
+            String query,
+            String refresh,
+            Long refreshIntervalMs,
+            String valueField,
+            String triggerObjectPath,
+            String triggerFunctionName,
+            Boolean enabled
     ) {
     }
 

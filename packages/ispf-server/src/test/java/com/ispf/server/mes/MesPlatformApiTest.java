@@ -118,4 +118,47 @@ class MesPlatformApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RUNNING"));
     }
+
+    @Test
+    void meterSimulatorProfileIncreasesLitersWhileFilling() throws Exception {
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", DEMO_DEVICE))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", DEMO_DEVICE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "virtual",
+                                  "pollIntervalMs": 500,
+                                  "configuration": {
+                                    "profile": "meter",
+                                    "litersPerSecond": "200",
+                                    "filling": "true"
+                                  },
+                                  "autoStart": true
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RUNNING"));
+
+        Thread.sleep(2000);
+
+        mockMvc.perform(get("/api/v1/drivers/runtime/status").param("devicePath", DEMO_DEVICE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RUNNING"));
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables")
+                        .param("path", DEMO_DEVICE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", hasItem("meterLiters")))
+                .andExpect(jsonPath("$[*].name", hasItem("flowRate")))
+                .andExpect(jsonPath("$[*].name", hasItem("filling")));
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", DEMO_DEVICE)
+                        .param("name", "flowRate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value(200.0));
+    }
 }

@@ -109,6 +109,10 @@ public class ApplicationDataStore {
         jdbcTemplate.execute(sql);
     }
 
+    public List<Map<String, Object>> queryForList(String sql) {
+        return jdbcTemplate.queryForList(sql);
+    }
+
     public boolean isSeedApplied(String appId, String profile, String seedId) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM %s

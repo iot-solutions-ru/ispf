@@ -585,4 +585,149 @@ class ApplicationPlatformApiTest {
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.result.cancelledCount").value(0));
     }
+
+    @Test
+    void listsFunctionVersionsAndRollsBack() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/functions/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_version_probe",
+                                  "version": "1",
+                                  "descriptor": {
+                                    "inputSchema": { "name": "in", "fields": [] },
+                                    "outputSchema": {
+                                      "name": "out",
+                                      "fields": [
+                                        {"name": "error_code", "type": "STRING"},
+                                        {"name": "error_message", "type": "STRING"},
+                                        {"name": "marker", "type": "STRING"}
+                                      ]
+                                    }
+                                  },
+                                  "source": {
+                                    "type": "script",
+                                    "body": "{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"marker\\":\\"v1\\"}}]}"
+                                  }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/applications/%s/functions/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_version_probe",
+                                  "version": "2",
+                                  "descriptor": {
+                                    "inputSchema": { "name": "in", "fields": [] },
+                                    "outputSchema": {
+                                      "name": "out",
+                                      "fields": [
+                                        {"name": "error_code", "type": "STRING"},
+                                        {"name": "error_message", "type": "STRING"},
+                                        {"name": "marker", "type": "STRING"}
+                                      ]
+                                    }
+                                  },
+                                  "source": {
+                                    "type": "script",
+                                    "body": "{\\"steps\\":[{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"marker\\":\\"v2\\"}}]}"
+                                  }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/applications/%s/functions".formatted(APP_ID))
+                        .param("objectPath", DEMO_DEVICE)
+                        .param("functionName", "terminal_version_probe"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_version_probe",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.marker").value("v2"));
+
+        mockMvc.perform(post("/api/v1/applications/%s/functions/rollback".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_version_probe",
+                                  "version": "1"
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("active"));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_version_probe",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.marker").value("v1"));
+    }
+
+    @Test
+    void sqlBindingRefreshesDashboardKpiVariable() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "3.0.0",
+                                  "scripts": [
+                                    {
+                                      "id": "orders_kpi",
+                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM dispatch_order; INSERT INTO dispatch_order (id, order_number, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'KPI-01', 'ready'); INSERT INTO dispatch_order (id, order_number, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'KPI-02', 'ready');"
+                                    }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/applications/%s/bindings/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "variable": "activeOrders",
+                                  "query": "SELECT COUNT(*) AS cnt FROM dispatch_order WHERE status = 'ready'",
+                                  "refresh": "on_schedule",
+                                  "refreshIntervalMs": 60000,
+                                  "valueField": "cnt"
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/applications/%s/bindings/refresh".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "variable": "activeOrders"
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", DEMO_DEVICE)
+                        .param("name", "activeOrders"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value(2));
+    }
 }

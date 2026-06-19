@@ -41,25 +41,33 @@ GET  /api/v1/drivers/runtime/status?devicePath=...
 
 ### virtual (`ispf-driver-virtual`)
 
-Симулятор для стенда без железа.
+Симулятор для стенда без железа. Профиль задаётся в `driverConfigJson.profile`:
 
-- **Режим по умолчанию:** синусоида `temperature` + `status.online`
-- **Point mappings:** ключ переменной → режим симуляции
+| `profile` | Переменные | Назначение |
+|-----------|------------|------------|
+| `demo` (default) | `temperature`, `status` | Синусоида температуры |
+| `meter` | `meterLiters`, `flowRate`, `filling` | Налив: `litersPerSecond`, `filling` |
+| `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |
+| `rack-signals` | `gasPresent`, `groundConnected` | Булевы сигналы по `rackId` |
 
-| Режим | Переменная |
-|-------|------------|
-| `sim` / `sim-temperature` | Температура (синусоида) |
-| `sim-tank-level` | Уровень (DOUBLE) |
-| `sim-status` | online + lastSeen |
-
-Конфиг JSON:
+Пример meter (SCR-03):
 
 ```json
 {
+  "profile": "meter",
+  "litersPerSecond": "120",
+  "filling": "true"
+}
+```
+
+Конфиг demo-температуры:
+
+```json
+{
+  "profile": "demo",
   "baseTemperature": "22.0",
   "amplitude": "15.0",
-  "periodSec": "60",
-  "pollIntervalMs": "2000"
+  "periodSec": "60"
 }
 ```
 

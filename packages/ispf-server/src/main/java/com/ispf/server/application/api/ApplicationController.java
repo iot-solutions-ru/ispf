@@ -2,6 +2,7 @@ package com.ispf.server.application.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -26,17 +29,20 @@ public class ApplicationController {
     private final ApplicationDataService dataService;
     private final ApplicationFunctionStore functionStore;
     private final ApplicationBundleDeployService bundleDeployService;
+    private final ApplicationSqlBindingService sqlBindingService;
     private final ObjectMapper objectMapper;
 
     public ApplicationController(
             ApplicationDataService dataService,
             ApplicationFunctionStore functionStore,
             ApplicationBundleDeployService bundleDeployService,
+            ApplicationSqlBindingService sqlBindingService,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
         this.bundleDeployService = bundleDeployService;
+        this.sqlBindingService = sqlBindingService;
         this.objectMapper = objectMapper;
     }
 
@@ -80,6 +86,67 @@ public class ApplicationController {
             @RequestBody SeedRequest request
     ) {
         return dataService.seed(appId, request.profile());
+    }
+
+    @GetMapping("/{appId}/functions")
+    public List<Map<String, Object>> listFunctionVersions(
+            @PathVariable String appId,
+            @RequestParam String objectPath,
+            @RequestParam String functionName
+    ) {
+        return functionStore.listVersions(appId, objectPath, functionName);
+    }
+
+    @PostMapping("/{appId}/functions/rollback")
+    public Map<String, Object> rollbackFunction(
+            @PathVariable String appId,
+            @RequestBody RollbackFunctionRequest request
+    ) {
+        functionStore.activateVersion(appId, request.objectPath(), request.functionName(), request.version());
+        return Map.of(
+                "appId", appId,
+                "objectPath", request.objectPath(),
+                "functionName", request.functionName(),
+                "version", request.version(),
+                "status", "active"
+        );
+    }
+
+    @GetMapping("/{appId}/bindings")
+    public List<Map<String, Object>> listBindings(@PathVariable String appId) {
+        return sqlBindingService.list(appId);
+    }
+
+    @PostMapping("/{appId}/bindings/deploy")
+    public Map<String, Object> deployBinding(
+            @PathVariable String appId,
+            @RequestBody DeploySqlBindingRequest request
+    ) {
+        sqlBindingService.deploy(appId, new ApplicationSqlBindingService.DeploySqlBindingRequest(
+                request.objectPath(),
+                request.variable(),
+                request.query(),
+                request.refresh(),
+                request.refreshIntervalMs(),
+                request.valueField(),
+                request.triggerObjectPath(),
+                request.triggerFunctionName(),
+                request.enabled()
+        ));
+        return Map.of(
+                "appId", appId,
+                "objectPath", request.objectPath(),
+                "variable", request.variable(),
+                "status", "deployed"
+        );
+    }
+
+    @PostMapping("/{appId}/bindings/refresh")
+    public Map<String, Object> refreshBinding(
+            @PathVariable String appId,
+            @RequestBody RefreshBindingRequest request
+    ) {
+        return sqlBindingService.refresh(appId, request.objectPath(), request.variable());
     }
 
     @PostMapping("/{appId}/functions/deploy")
@@ -169,5 +236,24 @@ public class ApplicationController {
     }
 
     public record FunctionSourceDto(String type, String body) {
+    }
+
+    public record RollbackFunctionRequest(String objectPath, String functionName, String version) {
+    }
+
+    public record DeploySqlBindingRequest(
+            String objectPath,
+            String variable,
+            String query,
+            String refresh,
+            Long refreshIntervalMs,
+            String valueField,
+            String triggerObjectPath,
+            String triggerFunctionName,
+            Boolean enabled
+    ) {
+    }
+
+    public record RefreshBindingRequest(String objectPath, String variable) {
     }
 }
