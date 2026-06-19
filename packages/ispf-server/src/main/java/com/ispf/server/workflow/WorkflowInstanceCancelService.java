@@ -1,6 +1,8 @@
 package com.ispf.server.workflow;
 
 import com.ispf.plugin.workflow.InstanceStatus;
+import com.ispf.server.application.data.ApplicationSchemaSession;
+import com.ispf.server.application.data.PlatformSqlCatalog;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,13 +20,19 @@ public class WorkflowInstanceCancelService {
 
     private final WorkflowInstanceRepository instanceRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final ApplicationSchemaSession schemaSession;
+    private final String cancelJournalTable;
 
     public WorkflowInstanceCancelService(
             WorkflowInstanceRepository instanceRepository,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            ApplicationSchemaSession schemaSession,
+            PlatformSqlCatalog platformSqlCatalog
     ) {
         this.instanceRepository = instanceRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.schemaSession = schemaSession;
+        this.cancelJournalTable = platformSqlCatalog.table("workflow_cancel_journal");
     }
 
     @Transactional
@@ -47,10 +55,10 @@ public class WorkflowInstanceCancelService {
         instanceRepository.save(entity);
 
         jdbcTemplate.update("""
-                INSERT INTO workflow_cancel_journal (
+                INSERT INTO %s (
                     id, instance_id, workflow_path, reason, detail_json, cancelled_by, cancelled_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
+                """.formatted(cancelJournalTable),
                 UUID.randomUUID(),
                 instanceId,
                 entity.getWorkflowPath(),
@@ -70,14 +78,44 @@ public class WorkflowInstanceCancelService {
 
     @Transactional
     public int cancelWaitingByWorkflowPath(String workflowPath, String reason, String detailJson, String cancelledBy) {
-        List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
-                workflowPath,
-                InstanceStatus.WAITING.name()
+        return cancelByWorkflowPath(workflowPath, List.of(InstanceStatus.WAITING.name()), reason, detailJson, cancelledBy);
+    }
+
+    @Transactional
+    public int cancelByWorkflowPath(
+            String workflowPath,
+            List<String> statusIn,
+            String reason,
+            String detailJson,
+            String cancelledBy
+    ) {
+        int[] count = new int[1];
+        schemaSession.runWithPlatformCatalog(() ->
+                count[0] = cancelByWorkflowPathOnPlatformCatalog(workflowPath, statusIn, reason, detailJson, cancelledBy)
         );
+        return count[0];
+    }
+
+    private int cancelByWorkflowPathOnPlatformCatalog(
+            String workflowPath,
+            List<String> statusIn,
+            String reason,
+            String detailJson,
+            String cancelledBy
+    ) {
+        List<String> statuses = statusIn == null || statusIn.isEmpty()
+                ? List.of(InstanceStatus.WAITING.name())
+                : statusIn;
         int count = 0;
-        for (WorkflowInstanceEntity entity : waiting) {
-            cancel(entity.getId(), reason, detailJson, cancelledBy);
-            count++;
+        for (String status : statuses) {
+            List<WorkflowInstanceEntity> instances = instanceRepository.findByWorkflowPathAndStatus(
+                    workflowPath,
+                    status
+            );
+            for (WorkflowInstanceEntity entity : instances) {
+                cancel(entity.getId(), reason, detailJson, cancelledBy);
+                count++;
+            }
         }
         return count;
     }

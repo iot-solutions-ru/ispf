@@ -1,13 +1,15 @@
 package com.ispf.server.application.bff;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.function.FunctionService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -15,9 +17,17 @@ import java.util.Map;
 public class BffController {
 
     private final FunctionService functionService;
+    private final ApplicationFunctionStore functionStore;
+    private final ObjectMapper objectMapper;
 
-    public BffController(FunctionService functionService) {
+    public BffController(
+            FunctionService functionService,
+            ApplicationFunctionStore functionStore,
+            ObjectMapper objectMapper
+    ) {
         this.functionService = functionService;
+        this.functionStore = functionStore;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping("/invoke")
@@ -27,7 +37,22 @@ public class BffController {
                 request.functionName(),
                 request.input()
         );
-        return BffWireMapper.toWire(output, request.wireProfile());
+        return BffWireMapper.toWire(output, request.wireProfile(), resolveOutputSchema(
+                request.objectPath(),
+                request.functionName()
+        ));
+    }
+
+    private DataSchema resolveOutputSchema(String objectPath, String functionName) {
+        return functionStore.findLatest(objectPath, functionName)
+                .map(deployed -> {
+                    try {
+                        return objectMapper.readValue(deployed.outputSchemaJson(), DataSchema.class);
+                    } catch (Exception ex) {
+                        throw new IllegalStateException("Invalid function schema JSON", ex);
+                    }
+                })
+                .orElse(null);
     }
 
     public record BffInvokeRequest(
@@ -36,35 +61,5 @@ public class BffController {
             DataRecord input,
             String wireProfile
     ) {
-    }
-
-    static final class BffWireMapper {
-
-        private BffWireMapper() {
-        }
-
-        static Map<String, Object> toWire(DataRecord output, String wireProfile) {
-            Map<String, Object> row = output != null && output.rowCount() > 0
-                    ? new LinkedHashMap<>(output.firstRow())
-                    : new LinkedHashMap<>();
-
-            String errorCode = stringValue(row.remove("error_code"), "OK");
-            String errorMessage = stringValue(row.remove("error_message"), "");
-
-            Map<String, Object> wire = new LinkedHashMap<>();
-            wire.put("error_code", errorCode);
-            wire.put("error_message", errorMessage);
-            if ("OK".equals(errorCode)) {
-                wire.put("result", row);
-            }
-            if (wireProfile != null && !wireProfile.isBlank()) {
-                wire.put("wireProfile", wireProfile);
-            }
-            return wire;
-        }
-
-        private static String stringValue(Object value, String fallback) {
-            return value == null ? fallback : String.valueOf(value);
-        }
     }
 }

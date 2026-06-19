@@ -15,6 +15,7 @@ public class FunctionScriptValidator {
             "exec",
             "setVar",
             "invoke_function",
+            "cancel_workflows",
             "failIfNull",
             "failIfNotEquals",
             "return"
@@ -69,6 +70,7 @@ public class FunctionScriptValidator {
                 }
             }
             case "invoke_function" -> require(step, "objectPath", "functionName");
+            case "cancel_workflows" -> require(step, "workflowPath");
             case "failIfNull" -> require(step, "var");
             case "failIfNotEquals" -> require(step, "var", "equals");
             case "return" -> {

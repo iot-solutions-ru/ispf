@@ -386,4 +386,203 @@ class ApplicationPlatformApiTest {
                         .content(migrate))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void deploysBundleMetadataObjectsDashboardsAndWorkflows() throws Exception {
+        String minimalBpmn = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                             targetNamespace="http://ispf.io/bpmn">
+                  <process id="Process_1" isExecutable="true">
+                    <startEvent id="StartEvent_1"/>
+                  </process>
+                  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+                    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
+                      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+                        <dc:Bounds x="180" y="100" width="36" height="36"/>
+                      </bpmndi:BPMNShape>
+                    </bpmndi:BPMNPlane>
+                  </bpmndi:BPMNDiagram>
+                </definitions>
+                """.replace("\n", "").replace("\"", "\\\"");
+
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "2.0.0",
+                                  "displayName": "Terminal Test",
+                                  "objects": [
+                                    {
+                                      "parentPath": "root.platform",
+                                      "name": "terminal-app",
+                                      "type": "CUSTOM",
+                                      "displayName": "Terminal App"
+                                    }
+                                  ],
+                                  "dashboards": [
+                                    {
+                                      "path": "root.platform.terminal-app.ops",
+                                      "title": "Ops Board",
+                                      "layoutJson": "{\\"columns\\":12,\\"rowHeight\\":72,\\"widgets\\":[]}"
+                                    }
+                                  ],
+                                  "workflows": [
+                                    {
+                                      "path": "root.platform.terminal-app.p301",
+                                      "bpmnXml": "%s",
+                                      "status": "ACTIVE"
+                                    }
+                                  ]
+                                }
+                                """.formatted(minimalBpmn)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.applied", hasItem("object:terminal-app")))
+                .andExpect(jsonPath("$.applied", hasItem("dashboard:root.platform.terminal-app.ops")))
+                .andExpect(jsonPath("$.applied", hasItem("workflow:root.platform.terminal-app.p301")));
+
+        mockMvc.perform(get("/api/v1/dashboards/by-path").param("path", "root.platform.terminal-app.ops"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Ops Board"));
+
+        mockMvc.perform(get("/api/v1/workflows/by-path").param("path", "root.platform.terminal-app.p301"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.bpmnXml").isNotEmpty());
+    }
+
+    @Test
+    void animaOperatorWireProfileReturnsTableArray() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "2.0.1",
+                                  "migrations": [
+                                    {
+                                      "id": "orders_wire",
+                                      "sql": "CREATE TABLE IF NOT EXISTS dispatch_order (id UUID PRIMARY KEY, order_number VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM dispatch_order; INSERT INTO dispatch_order (id, order_number, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'DO-WIRE-01', 'ready');"
+                                    }
+                                  ],
+                                  "functions": [
+                                    {
+                                      "objectPath": "%s",
+                                      "functionName": "terminal_wire_list",
+                                      "version": "1",
+                                      "descriptor": {
+                                        "inputSchema": { "name": "in", "fields": [] },
+                                        "outputSchema": {
+                                          "name": "out",
+                                          "fields": [
+                                            {"name": "error_code", "type": "STRING"},
+                                            {"name": "error_message", "type": "STRING"},
+                                            {
+                                              "name": "rows",
+                                              "type": "RECORD_LIST",
+                                              "nestedSchema": {
+                                                "name": "order_row",
+                                                "fields": [
+                                                  {"name": "order_number", "type": "STRING"},
+                                                  {"name": "status", "type": "STRING"}
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "source": {
+                                        "type": "script",
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT order_number AS order_number, status AS status FROM dispatch_order\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
+                                      }
+                                    }
+                                  ]
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_wire_list",
+                                  "wireProfile": "anima-operator-v1",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.error_message").value(""))
+                .andExpect(jsonPath("$.wireProfile").value("anima-operator-v1"))
+                .andExpect(jsonPath("$.result", hasSize(1)))
+                .andExpect(jsonPath("$.result[0].order_number").value("DO-WIRE-01"))
+                .andExpect(jsonPath("$.result_field_labels.order_number").value("order_number"));
+    }
+
+    @Test
+    void cancelWorkflowsScriptStepReturnsCount() throws Exception {
+        String workflowPath = "root.platform.terminal-app.cancel-target";
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "2.0.2",
+                                  "objects": [
+                                    {
+                                      "parentPath": "root.platform",
+                                      "name": "terminal-app",
+                                      "type": "CUSTOM",
+                                      "displayName": "Terminal App"
+                                    }
+                                  ],
+                                  "workflows": [
+                                    {
+                                      "path": "%s",
+                                      "bpmnXml": "<definitions xmlns=\\"http://www.omg.org/spec/BPMN/20100524/MODEL\\"><process id=\\"P\\" isExecutable=\\"true\\"><startEvent id=\\"S\\"/></process></definitions>",
+                                      "status": "ACTIVE"
+                                    }
+                                  ],
+                                  "functions": [
+                                    {
+                                      "objectPath": "%s",
+                                      "functionName": "terminal_cancel_waiting",
+                                      "version": "1",
+                                      "descriptor": {
+                                        "inputSchema": { "name": "in", "fields": [] },
+                                        "outputSchema": {
+                                          "name": "out",
+                                          "fields": [
+                                            {"name": "error_code", "type": "STRING"},
+                                            {"name": "error_message", "type": "STRING"},
+                                            {"name": "cancelledCount", "type": "INTEGER"}
+                                          ]
+                                        }
+                                      },
+                                      "source": {
+                                        "type": "script",
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"cancel_workflows\\",\\"var\\":\\"cancelled\\",\\"workflowPath\\":\\"%s\\",\\"statusIn\\":[\\"WAITING\\",\\"RUNNING\\"],\\"reason\\":\\"incident\\",\\"detail\\":{}},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"cancelledCount\\":\\"${cancelled.cancelledCount}\\"}}]}"
+                                      }
+                                    }
+                                  ]
+                                }
+                                """.formatted(workflowPath, DEMO_DEVICE, workflowPath)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "terminal_cancel_waiting",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result.cancelledCount").value(0));
+    }
 }

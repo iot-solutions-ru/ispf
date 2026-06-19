@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
+import com.ispf.server.workflow.WorkflowInstanceCancelService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -22,10 +23,16 @@ public class FunctionScriptEngine {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final WorkflowInstanceCancelService workflowCancelService;
 
-    public FunctionScriptEngine(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public FunctionScriptEngine(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            WorkflowInstanceCancelService workflowCancelService
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.workflowCancelService = workflowCancelService;
     }
 
     public DataRecord execute(
@@ -83,6 +90,22 @@ public class FunctionScriptEngine {
                         String var = step.path("var").asText("");
                         if (!var.isBlank()) {
                             vars.put(var, nestedRow);
+                        }
+                    }
+                    case "cancel_workflows" -> {
+                        List<String> statusIn = readStringList(step.get("statusIn"));
+                        Map<String, Object> detail = resolveInputObject(step.get("detail"), vars);
+                        int cancelled = workflowCancelService.cancelByWorkflowPath(
+                                step.path("workflowPath").asText(),
+                                statusIn,
+                                step.path("reason").asText("cancelled"),
+                                objectMapper.writeValueAsString(detail),
+                                "application-script"
+                        );
+                        Map<String, Object> cancelResult = Map.of("cancelledCount", cancelled);
+                        String var = step.path("var").asText("");
+                        if (!var.isBlank()) {
+                            vars.put(var, cancelResult);
                         }
                     }
                     case "failIfNull" -> {
@@ -218,6 +241,17 @@ public class FunctionScriptEngine {
 
     private static List<Map<String, Object>> normalizeRows(List<Map<String, Object>> rows) {
         return rows.stream().map(FunctionScriptEngine::normalizeRow).toList();
+    }
+
+    private static List<String> readStringList(JsonNode node) {
+        List<String> values = new ArrayList<>();
+        if (node == null || !node.isArray()) {
+            return values;
+        }
+        for (JsonNode item : node) {
+            values.add(item.asText());
+        }
+        return values;
     }
 
     private static Map<String, Object> normalizeRow(Map<String, Object> row) {

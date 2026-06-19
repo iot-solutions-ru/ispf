@@ -115,14 +115,14 @@ Terminal (P-301) — **reference application** для проверки зрел�
 |:---|:---|:---|:---|:---:|
 | **PF-01** | Application Function Runtime | **Частично** | `map`/`buildRecord` (PF-01c), regression parity | P0 |
 | **PF-02** | Application Data Layer | **Частично** | Канон terminal migrations в michaael bundle (PF-02c) | P0 |
-| **PF-03** | Application Package Deploy | **Частично** | Objects/dashboards/BPMN в bundle (§4.3) | P1 |
+| **PF-03** | Application Package Deploy | **Частично** | models в bundle (P2) | P1 |
 | **PF-04** | BPMN `invoke_function` | **Готово** | Regression tests с app functions | P1 |
 | **PF-05** | Platform Scheduler | **Готово** | — | P1 |
-| **PF-06** | BFF Wire Gateway | **Частично** | Wire profile + labels (§4.4) | P1 |
+| **PF-06** | BFF Wire Gateway | **Частично** | Custom field labels map (P2) | P1 |
 | **PF-07** | Model Registry Persistence | **Готово** | — | P2 |
 | **PF-08** | Variable ↔ SQL sync | **Нет** | Declarative bindings (§4.5) | P2 |
 | **PF-09** | Integration Simulator SPI | **Нет** | Device/simulator profiles (§4.6) | P2 |
-| **PF-10** | Workflow cancel | **Частично** | Cancel from script + bulk filter (§4.7) | P1 |
+| **PF-10** | Workflow cancel | **Частично** | BPMN signal catch (§4.7b, P2) | P1 |
 | **PF-11** | Function rollback / versions | **Нет** | Deploy previous version (§4.8) | P2 |
 
 ---
@@ -239,7 +239,7 @@ Idempotent INSERT для smoke (смена, наряды DO-2026-*, tanks).
 
 **Нужно (P1):**
 
-#### PF-06a — wire profile `anima-operator-v1`
+#### PF-06a — wire profile `anima-operator-v1` ✅
 
 По канону michaael `core/front-back-contract.md`:
 
@@ -310,7 +310,7 @@ Deploy profile из app bundle; prod — замена на real driver **без*
 
 **Нужно (P1):**
 
-#### PF-10a — script step `cancel_workflows`
+#### PF-10a — script step `cancel_workflows` ✅
 
 ```json
 {

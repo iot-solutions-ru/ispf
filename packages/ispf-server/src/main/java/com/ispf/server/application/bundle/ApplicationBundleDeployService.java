@@ -20,17 +20,20 @@ public class ApplicationBundleDeployService {
 
     private final ApplicationDataService dataService;
     private final ApplicationFunctionStore functionStore;
+    private final ApplicationBundleMetadataService metadataService;
     private final PlatformSchedulerService schedulerService;
     private final ObjectMapper objectMapper;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
             ApplicationFunctionStore functionStore,
+            ApplicationBundleMetadataService metadataService,
             PlatformSchedulerService schedulerService,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
+        this.metadataService = metadataService;
         this.schedulerService = schedulerService;
         this.objectMapper = objectMapper;
     }
@@ -52,6 +55,42 @@ public class ApplicationBundleDeployService {
             }
         } catch (Exception ex) {
             errors.add("register: " + ex.getMessage());
+        }
+
+        if (manifest.objects() != null) {
+            for (BundleObject object : manifest.objects()) {
+                try {
+                    if (metadataService.deployObject(object) == ApplicationBundleMetadataService.DeployOutcome.APPLIED) {
+                        applied.add("object:" + object.name());
+                    } else {
+                        skipped.add("object:" + object.name());
+                    }
+                } catch (Exception ex) {
+                    errors.add("object:" + object.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.dashboards() != null) {
+            for (BundleDashboard dashboard : manifest.dashboards()) {
+                try {
+                    metadataService.deployDashboard(dashboard);
+                    applied.add("dashboard:" + dashboard.path());
+                } catch (Exception ex) {
+                    errors.add("dashboard:" + dashboard.path() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.workflows() != null) {
+            for (BundleWorkflow workflow : manifest.workflows()) {
+                try {
+                    metadataService.deployWorkflow(workflow);
+                    applied.add("workflow:" + workflow.path());
+                } catch (Exception ex) {
+                    errors.add("workflow:" + workflow.path() + ": " + ex.getMessage());
+                }
+            }
         }
 
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
@@ -131,9 +170,37 @@ public class ApplicationBundleDeployService {
             String displayName,
             String tablePrefix,
             String schemaName,
+            List<BundleObject> objects,
+            List<BundleDashboard> dashboards,
+            List<BundleWorkflow> workflows,
             List<BundleMigration> migrations,
             List<BundleFunction> functions,
             List<BundleSchedule> schedules
+    ) {
+    }
+
+    public record BundleObject(
+            String parentPath,
+            String name,
+            String type,
+            String displayName,
+            String description,
+            String templateId
+    ) {
+    }
+
+    public record BundleDashboard(
+            String path,
+            String title,
+            String layoutJson,
+            Integer refreshIntervalMs
+    ) {
+    }
+
+    public record BundleWorkflow(
+            String path,
+            String bpmnXml,
+            String status
     ) {
     }
 

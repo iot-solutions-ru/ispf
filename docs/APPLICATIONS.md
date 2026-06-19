@@ -83,6 +83,7 @@ GET /api/v1/applications/terminal/data/status
 | `exec` | DML/DDL с `params` |
 | `setVar` | Присвоение литерала или `${path}` |
 | `invoke_function` | Вызов другой deploy-функции; propagate `error_code` |
+| `cancel_workflows` | Отмена workflow instances по `workflowPath` + `statusIn` |
 | `failIfNull` | Выход с `error_code` / `error_message` |
 | `failIfNotEquals` | Проверка значения var |
 | `return` | Сборка output (`fields`); массивы через `${var}` |
@@ -120,7 +121,7 @@ Content-Type: application/json
 
 ## Bundle deploy (REQ-PF-03)
 
-Один запрос — регистрация, миграции, функции, расписания:
+Один запрос — регистрация, metadata, миграции, функции, расписания:
 
 ```http
 POST /api/v1/applications/terminal/deploy
@@ -130,6 +131,29 @@ Content-Type: application/json
   "version": "1.0.0",
   "displayName": "Oil Terminal",
   "tablePrefix": "",
+  "schemaName": "terminal",
+  "objects": [
+    {
+      "parentPath": "root.platform",
+      "name": "terminal",
+      "type": "CUSTOM",
+      "displayName": "Oil Terminal"
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.terminal.ops",
+      "title": "Operator Board",
+      "layoutJson": "{ \"columns\": 12, \"rowHeight\": 72, \"widgets\": [] }"
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.terminal.workflows.p301",
+      "bpmnXml": "<definitions ...>...</definitions>",
+      "status": "ACTIVE"
+    }
+  ],
   "migrations": [ { "id": "...", "sql": "..." } ],
   "functions": [ ... ],
   "schedules": [
@@ -164,11 +188,22 @@ Content-Type: application/json
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
     "rows": [{ "orderId": "..." }]
   },
-  "wireProfile": "terminal"
+  "wireProfile": "anima-operator-v1"
 }
 ```
 
-Ответ: `{ "error_code": "OK", "error_message": "", "result": { ... } }`.
+### Wire profile `anima-operator-v1`
+
+| Правило | Поведение |
+|---------|-----------|
+| Успех | `error_code === "OK"`, `error_message === ""` |
+| Ошибка | `result` отсутствует |
+| Таблица | `result` = массив строк (unwrap поля `rows`) |
+| Подписи | `result_field_labels` из output schema |
+
+Ответ (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "anima-operator-v1" }`.
+
+Ответ (таблица): `{ "error_code": "OK", "result": [ {...}, ... ], "result_field_labels": {...} }`.
 
 ## Расписания (REQ-PF-05)
 
