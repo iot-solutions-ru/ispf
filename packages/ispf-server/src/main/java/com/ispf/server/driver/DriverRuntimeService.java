@@ -1,6 +1,6 @@
 package com.ispf.server.driver;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.model.DataRecord;

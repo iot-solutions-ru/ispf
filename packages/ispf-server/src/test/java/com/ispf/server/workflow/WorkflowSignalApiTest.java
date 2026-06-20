@@ -1,7 +1,7 @@
 package com.ispf.server.workflow;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.BeforeEach;

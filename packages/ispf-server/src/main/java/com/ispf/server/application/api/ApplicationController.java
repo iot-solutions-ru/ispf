@@ -1,6 +1,6 @@
 package com.ispf.server.application.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;

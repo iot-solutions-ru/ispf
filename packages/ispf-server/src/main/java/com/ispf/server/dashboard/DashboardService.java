@@ -1,7 +1,7 @@
 package com.ispf.server.dashboard;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
@@ -104,7 +104,7 @@ public class DashboardService {
     private void validateLayoutJson(String layoutJson) {
         try {
             objectMapper.readTree(layoutJson);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalArgumentException("Invalid layout JSON", e);
         }
     }
@@ -112,7 +112,7 @@ public class DashboardService {
     private Object parseLayout(String layoutJson) {
         try {
             return objectMapper.readValue(layoutJson, Object.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return Map.of("columns", 12, "rowHeight", 72, "widgets", java.util.List.of());
         }
     }

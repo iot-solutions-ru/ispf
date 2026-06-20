@@ -1,6 +1,6 @@
 package com.ispf.server.history;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.object.Variable;

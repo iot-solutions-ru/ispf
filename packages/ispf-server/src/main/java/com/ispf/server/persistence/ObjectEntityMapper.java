@@ -1,7 +1,7 @@
 package com.ispf.server.persistence;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
@@ -59,7 +59,7 @@ public class ObjectEntityMapper {
         }
         try {
             return objectMapper.readValue(json, DataSchema.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("Invalid schema JSON", e);
         }
     }
@@ -70,7 +70,7 @@ public class ObjectEntityMapper {
         }
         try {
             return objectMapper.readValue(json, EventDescriptor[].class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return new EventDescriptor[0];
         }
     }
@@ -81,7 +81,7 @@ public class ObjectEntityMapper {
         }
         try {
             return objectMapper.readValue(json, FunctionDescriptor[].class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return new FunctionDescriptor[0];
         }
     }
@@ -92,7 +92,7 @@ public class ObjectEntityMapper {
         }
         try {
             return objectMapper.readValue(json, DataRecord.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return null;
         }
     }
@@ -104,7 +104,7 @@ public class ObjectEntityMapper {
     private String writeJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new IllegalStateException("JSON serialization failed", e);
         }
     }

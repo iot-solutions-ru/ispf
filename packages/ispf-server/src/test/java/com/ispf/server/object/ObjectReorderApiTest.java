@@ -33,7 +33,7 @@ class ObjectReorderApiTest {
                 .getResponse()
                 .getContentAsString();
 
-        var children = new com.fasterxml.jackson.databind.ObjectMapper()
+        var children = tools.jackson.databind.json.JsonMapper.builder().build()
                 .readTree(first);
         String pathA = children.get(0).get("path").asText();
         String pathB = children.get(1).get("path").asText();

@@ -1,9 +1,10 @@
 package com.ispf.server.federation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 
@@ -104,7 +105,7 @@ public final class FederationPathRemapper {
 
     private static String remapFieldsJson(String fieldsJson, String remotePrefix, String localRoot) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonMapper.builder().build();
             JsonNode fields = mapper.readTree(fieldsJson);
             if (!fields.isArray()) {
                 return fieldsJson;

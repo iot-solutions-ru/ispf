@@ -58,8 +58,8 @@
 | # | Тема | Статус |
 |---|------|--------|
 | P.1 | Java 25 toolchain + CI | Done |
-| P.2 | Spring Boot 4.0.7 migration | Done (jackson2 bridge) |
-| P.3 | Jackson 3 native (`tools.jackson`) | Pending |
+| P.2 | Spring Boot 4.0.7 migration | Done |
+| P.3 | Jackson 3 native (`tools.jackson`) | Done |
 
 ## Связанные документы
 

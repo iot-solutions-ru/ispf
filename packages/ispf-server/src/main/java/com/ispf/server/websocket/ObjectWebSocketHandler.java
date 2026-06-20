@@ -1,6 +1,6 @@
 package com.ispf.server.websocket;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.object.ObjectChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

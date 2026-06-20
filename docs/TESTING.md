@@ -15,7 +15,7 @@
 
 JUnit 5, Java 25, Spring Boot 4.
 
-Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`). Jackson 2 API remains via `spring-boot-jackson2` bridge until code migrates to Jackson 3 (`tools.jackson`).
+Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `spring-boot-starter-security-test`, `spring-boot-starter-data-jpa-test`). JSON uses Jackson 3 (`tools.jackson`); `@JsonProperty` / `@JsonCreator` stay on `com.fasterxml.jackson.annotation`.
 
 ## Профиль test
 

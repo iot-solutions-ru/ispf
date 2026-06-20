@@ -1,8 +1,8 @@
 package com.ispf.server.federation;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.http.HttpStatus;
@@ -67,7 +67,7 @@ public class FederationProxyService {
                 target.remotePath(),
                 remotePrefix
         );
-        ObjectNode copy = json.deepCopy();
+        ObjectNode copy = (ObjectNode) json.deepCopy();
         copy.put("path", target.localPath());
         if (copy.hasNonNull("layoutJson") && copy.get("layoutJson").isTextual()) {
             copy.put(

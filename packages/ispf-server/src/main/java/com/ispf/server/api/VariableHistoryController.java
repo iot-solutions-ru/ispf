@@ -1,6 +1,6 @@
 package com.ispf.server.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.federation.FederationProxyService;
 import com.ispf.server.history.VariableHistoryService;
 import org.springframework.format.annotation.DateTimeFormat;

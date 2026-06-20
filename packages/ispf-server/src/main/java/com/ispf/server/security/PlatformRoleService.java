@@ -1,7 +1,7 @@
 package com.ispf.server.security;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;

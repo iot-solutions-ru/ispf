@@ -81,7 +81,6 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     runtimeOnly("com.h2database:h2")
     implementation("org.springframework.boot:spring-boot-starter-flyway")
-    implementation("org.springframework.boot:spring-boot-jackson2")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
 

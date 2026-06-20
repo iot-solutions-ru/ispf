@@ -1,7 +1,7 @@
 package com.ispf.server.application.script;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
@@ -219,10 +219,9 @@ public class FunctionScriptEngine {
         if (fieldsNode == null || !fieldsNode.isObject()) {
             return row;
         }
-        fieldsNode.fields().forEachRemaining(entry -> {
-            Object value = resolveStepValue(entry.getValue(), vars);
-            row.put(entry.getKey(), value);
-        });
+        fieldsNode.forEachEntry((key, value) ->
+                row.put(key, resolveStepValue(value, vars))
+        );
         return row;
     }
 
@@ -231,8 +230,8 @@ public class FunctionScriptEngine {
         if (inputNode == null || !inputNode.isObject()) {
             return input;
         }
-        inputNode.fields().forEachRemaining(entry ->
-                input.put(entry.getKey(), resolveStepValue(entry.getValue(), vars))
+        inputNode.forEachEntry((key, value) ->
+                input.put(key, resolveStepValue(value, vars))
         );
         return input;
     }

@@ -1,7 +1,7 @@
 package com.ispf.server.operator;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.data.ApplicationDataStore;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

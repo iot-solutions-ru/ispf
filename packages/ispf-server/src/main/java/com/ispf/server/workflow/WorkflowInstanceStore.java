@@ -1,6 +1,6 @@
 package com.ispf.server.workflow;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.plugin.workflow.BpmnProcess;
 import com.ispf.plugin.workflow.ExecutionToken;
 import com.ispf.plugin.workflow.InstanceStatus;
