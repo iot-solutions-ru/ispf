@@ -53,6 +53,14 @@
 | 4.1 | PF-13 federation design + spike | Done (peers + proxy read + catalog sync) |
 | 4.2 | Multi-tenant tree namespaces | Done (spike: root.tenant.* + scope) |
 
+## Platform baseline
+
+| # | Тема | Статус |
+|---|------|--------|
+| P.1 | Java 25 toolchain + CI | Done |
+| P.2 | Spring Boot 4.0.7 migration | Done (jackson2 bridge) |
+| P.3 | Jackson 3 native (`tools.jackson`) | Pending |
+
 ## Связанные документы
 
 - [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF детали

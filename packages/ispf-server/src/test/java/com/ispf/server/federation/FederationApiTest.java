@@ -2,7 +2,7 @@ package com.ispf.server.federation;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.MediaType;
@@ -77,6 +77,13 @@ class FederationApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.localRoot").value("root.platform.federation.site-a"))
                 .andExpect(jsonPath("$.created").value(greaterThan(0)));
+
+        mockMvc.perform(post("/api/v1/federation/peers/" + id + "/sync-catalog")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.localRoot").value("root.platform.federation.site-a"))
+                .andExpect(jsonPath("$.created").value(0))
+                .andExpect(jsonPath("$.updated").value(greaterThan(0)));
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .header("Authorization", "Bearer " + token)

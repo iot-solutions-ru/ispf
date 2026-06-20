@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.server.federation.FederationCatalogService;
 import com.ispf.server.federation.FederationPeer;
 import com.ispf.server.federation.FederationPeerDraft;
@@ -28,13 +29,16 @@ public class FederationController {
 
     private final FederationService federationService;
     private final FederationCatalogService federationCatalogService;
+    private final ObjectMapper objectMapper;
 
     public FederationController(
             FederationService federationService,
-            FederationCatalogService federationCatalogService
+            FederationCatalogService federationCatalogService,
+            ObjectMapper objectMapper
     ) {
         this.federationService = federationService;
         this.federationCatalogService = federationCatalogService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/peers")
@@ -65,11 +69,12 @@ public class FederationController {
     }
 
     @GetMapping("/proxy/objects/by-path")
-    public JsonNode proxyObject(
+    public Object proxyObject(
             @RequestParam UUID peerId,
             @RequestParam String path
     ) {
-        return federationService.proxyObjectByPath(peerId, path);
+        JsonNode json = federationService.proxyObjectByPath(peerId, path);
+        return objectMapper.convertValue(json, Object.class);
     }
 
     public record SyncCatalogResponse(

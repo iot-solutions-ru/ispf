@@ -50,6 +50,9 @@ public class FederationCatalogService {
             if (remotePath == null || remotePath.isBlank()) {
                 continue;
             }
+            if (isFederationCatalogPath(remotePath)) {
+                continue;
+            }
             if (!remotePath.equals(prefix) && !remotePath.startsWith(prefix + ".")) {
                 continue;
             }
@@ -134,6 +137,11 @@ public class FederationCatalogService {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
         return trimmed;
+    }
+
+    private static boolean isFederationCatalogPath(String path) {
+        return path.equals(FederationPaths.FEDERATION_ROOT)
+                || path.startsWith(FederationPaths.FEDERATION_ROOT + ".");
     }
 
     public record SyncResult(String localRoot, int created, int updated, int remoteCount) {

@@ -34,11 +34,20 @@ public class DashboardController {
     @GetMapping("/by-path")
     public DashboardService.DashboardView get(@RequestParam String path) {
         return federationProxyService.resolve(path)
-                .map(target -> objectMapper.convertValue(
-                        federationProxyService.proxyDashboard(target),
-                        DashboardService.DashboardView.class
-                ))
+                .map(this::mapProxyDashboard)
                 .orElseGet(() -> dashboardService.getDashboard(path));
+    }
+
+    private DashboardService.DashboardView mapProxyDashboard(FederationProxyService.FederationProxyTarget target) {
+        var json = federationProxyService.proxyDashboard(target);
+        String localPath = json.path("path").asText(target.localPath());
+        String title = json.path("title").asText(localPath);
+        int refreshIntervalMs = json.path("refreshIntervalMs").asInt(5000);
+        String layoutJson = json.path("layoutJson").asText("");
+        Object layout = json.hasNonNull("layout")
+                ? objectMapper.convertValue(json.get("layout"), Object.class)
+                : objectMapper.convertValue(json.path("layoutJson").asText("{}"), Object.class);
+        return new DashboardService.DashboardView(localPath, title, refreshIntervalMs, layout, layoutJson);
     }
 
     @PutMapping("/by-path/layout")

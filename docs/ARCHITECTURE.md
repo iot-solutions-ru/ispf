@@ -55,7 +55,7 @@ self.temperature.value > self.threshold.value
 │  Web Console (React 19 + Vite + TanStack Query)         │
 │  Admin │ Operator HMI │ Dashboard/Workflow builders     │
 ├─────────────────────────────────────────────────────────┤
-│  API Layer (Spring Boot 3.4)                            │
+│  API Layer (Spring Boot 4.0, Java 25)                   │
 │  REST / WebSocket / OAuth2 JWT / RBAC                   │
 ├─────────────────────────────────────────────────────────┤
 │  Domain Services                                        │

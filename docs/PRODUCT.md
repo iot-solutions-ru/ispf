@@ -57,7 +57,7 @@ graph LR
 
 - **Единая модель** — устройство, дашборд, workflow и приложение — узлы одного дерева с типизированными переменными и событиями.
 - **Расширяемость без форка ядра** — отраслевые решения деплоятся как bundle (SQL, JSON-функции, отчёты, operator UI).
-- **Cloud-native стек** — Spring Boot 3.4, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, опционально NATS/MQTT/Keycloak.
+- **Cloud-native стек** — Spring Boot 4.0, Java 25, PostgreSQL/TimescaleDB, React 19, REST + WebSocket, опционально NATS/MQTT/Keycloak.
 - **58 встроенных драйверов** — от Modbus и OPC UA до SNMP, Kafka и JDBC ([каталог](DRIVERS.md)).
 - **Apache 2.0 ядро** — коммерческие отраслевые bundle — отдельно ([PLUGINS.md](PLUGINS.md)).
 

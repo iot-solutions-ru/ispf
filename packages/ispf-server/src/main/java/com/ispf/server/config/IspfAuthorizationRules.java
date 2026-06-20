@@ -2,7 +2,6 @@ package com.ispf.server.config;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 public final class IspfAuthorizationRules {
 
@@ -37,23 +36,23 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.POST, "/api/v1/bff/**")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/applications/*/operator-ui", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/operator-ui")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/applications/*/hmi-ui", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/hmi-ui")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/applications/*/operator-manifest", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/operator-manifest")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/operator-apps", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/operator-apps")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/operator-apps/*/ui", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/operator-apps/*/ui")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
         auth.requestMatchers(HttpMethod.POST, "/api/v1/operator-apps/**")
                 .hasRole(IspfRoles.ADMIN);
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/operator-apps/**", "PUT"))
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/operator-apps/**")
                 .hasRole(IspfRoles.ADMIN);
 
-        auth.requestMatchers(new AntPathRequestMatcher("/api/v1/**", "GET"))
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/events/**")

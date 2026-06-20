@@ -62,7 +62,7 @@ public final class FederationProxyMetadata {
             node.addVariable(new Variable(name, schema, true, false, null, value));
             return;
         }
-        node.setVariableValue(name, value);
+        node.getVariable(name).orElseThrow().setComputedValue(value);
     }
 
     private static boolean readBoolean(PlatformObject node, String name) {
