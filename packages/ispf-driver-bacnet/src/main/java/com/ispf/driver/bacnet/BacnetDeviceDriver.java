@@ -1,0 +1,191 @@
+package com.ispf.driver.bacnet;
+
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverException;
+import com.ispf.driver.DriverMetadata;
+import com.serotonin.bacnet4j.LocalDevice;
+import com.serotonin.bacnet4j.RemoteDevice;
+import com.serotonin.bacnet4j.exception.BACnetException;
+import com.serotonin.bacnet4j.npdu.ip.IpNetwork;
+import com.serotonin.bacnet4j.npdu.ip.IpNetworkBuilder;
+import com.serotonin.bacnet4j.service.unconfirmed.WhoIsRequest;
+import com.serotonin.bacnet4j.transport.DefaultTransport;
+import com.serotonin.bacnet4j.type.Encodable;
+import com.serotonin.bacnet4j.type.constructed.Address;
+import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
+import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
+import com.serotonin.bacnet4j.type.primitive.OctetString;
+import com.serotonin.bacnet4j.type.primitive.Unsigned16;
+import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
+import com.serotonin.bacnet4j.util.RequestUtils;
+
+import java.net.InetAddress;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * BACnet/IP driver — reads object properties via BACnet4J.
+ * <p>
+ * Point mapping: {@code objectType:instance:property} e.g. {@code analog-input:1:present-value}.
+ */
+public class BacnetDeviceDriver implements DeviceDriver {
+
+    private static final DriverMetadata METADATA = new DriverMetadata(
+            "bacnet",
+            "BACnet/IP Driver",
+            "0.1.0",
+            "Polls BACnet/IP devices and maps object properties to ISPF variables",
+            "ISPF",
+            Map.of(
+                    "host", "127.0.0.1",
+                    "port", "47808",
+                    "localDeviceId", "1234",
+                    "remoteDeviceId", "1001",
+                    "timeoutMs", "5000",
+                    "pollIntervalMs", "5000"
+            )
+    );
+
+    private static final DataSchema VALUE_SCHEMA = DataSchema.builder("bacnetValue")
+            .field("value", FieldType.STRING)
+            .field("property", FieldType.STRING)
+            .build();
+
+    private DriverObject driverObject;
+    private LocalDevice localDevice;
+    private RemoteDevice remoteDevice;
+    private String host = "127.0.0.1";
+    private int port = 47808;
+    private int localDeviceId = 1234;
+    private int remoteDeviceId = 1001;
+    private int timeoutMs = 5000;
+    private final Map<String, BacnetPoint> points = new ConcurrentHashMap<>();
+    private volatile boolean connected;
+
+    @Override
+    public DriverMetadata metadata() {
+        return METADATA;
+    }
+
+    @Override
+    public void initialize(DriverObject driverObject) {
+        this.driverObject = driverObject;
+        readConfig("host", value -> host = value);
+        readConfig("port", value -> port = Integer.parseInt(value));
+        readConfig("localDeviceId", value -> localDeviceId = Integer.parseInt(value));
+        readConfig("remoteDeviceId", value -> remoteDeviceId = Integer.parseInt(value));
+        readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+    }
+
+    @Override
+    public void connect() throws DriverException {
+        try {
+            IpNetwork network = new IpNetworkBuilder()
+                    .withLocalBindAddress("0.0.0.0")
+                    .withPort(port)
+                    .withReuseAddress(true)
+                    .build();
+            localDevice = new LocalDevice(localDeviceId, new DefaultTransport(network));
+            localDevice.initialize();
+            localDevice.updateRemoteDevice(remoteDeviceId, toIpAddress(host, port));
+            localDevice.sendGlobalBroadcast(new WhoIsRequest(
+                    new UnsignedInteger(remoteDeviceId),
+                    new UnsignedInteger(remoteDeviceId)
+            ));
+            remoteDevice = localDevice.getRemoteDeviceBlocking(remoteDeviceId, timeoutMs);
+            connected = true;
+            driverObject.log(
+                    DriverLogLevel.INFO,
+                    "Connected to BACnet device " + remoteDeviceId + " at " + host + ":" + port
+            );
+        } catch (Exception e) {
+            connected = false;
+            terminateLocalDevice();
+            throw new DriverException("BACnet connect failed", e);
+        }
+    }
+
+    @Override
+    public void disconnect() {
+        connected = false;
+        remoteDevice = null;
+        terminateLocalDevice();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return connected && localDevice != null && remoteDevice != null;
+    }
+
+    @Override
+    public void readPoints(Map<String, String> pointMappings) throws DriverException {
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        points.clear();
+        for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
+            BacnetPoint point = BacnetPoint.parse(entry.getValue());
+            points.put(entry.getKey(), point);
+            driverObject.updateVariable(entry.getKey(), readPoint(point));
+        }
+    }
+
+    @Override
+    public void writePoint(String pointId, DataRecord value) throws DriverException {
+        throw new DriverException("BACnet write not implemented");
+    }
+
+    private DataRecord readPoint(BacnetPoint point) throws DriverException {
+        try {
+            ObjectIdentifier objectId = new ObjectIdentifier(point.objectType(), point.instance());
+            Encodable rawValue = RequestUtils.getProperty(
+                    localDevice,
+                    remoteDevice,
+                    objectId,
+                    point.property()
+            );
+            return DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", rawValue != null ? rawValue.toString() : "",
+                    "property", PropertyIdentifier.nameForId(point.property().intValue())
+            ));
+        } catch (BACnetException e) {
+            throw new DriverException("BACnet read failed for " + point, e);
+        }
+    }
+
+    private static Address toIpAddress(String host, int port) throws Exception {
+        byte[] ip = InetAddress.getByName(host).getAddress();
+        byte[] mac = new byte[] {
+                ip[0], ip[1], ip[2], ip[3],
+                (byte) (port >> 8),
+                (byte) port
+        };
+        return new Address(new Unsigned16(0), new OctetString(mac));
+    }
+
+    private void terminateLocalDevice() {
+        if (localDevice != null) {
+            try {
+                localDevice.terminate();
+            } catch (Exception ignored) {
+                // best effort
+            }
+            localDevice = null;
+        }
+    }
+
+    private void readConfig(String name, java.util.function.Consumer<String> consumer) {
+        driverObject.getVariable(name).ifPresent(record -> {
+            Object raw = record.firstRow().get("raw");
+            if (raw == null) {
+                raw = record.firstRow().get("value");
+            }
+            if (raw != null) {
+                consumer.accept(raw.toString());
+            }
+        });
+    }
+}

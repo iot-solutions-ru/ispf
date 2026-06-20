@@ -10,6 +10,10 @@ allprojects {
 
     repositories {
         mavenCentral()
+        maven {
+            name = "ias-releases"
+            url = uri("https://maven.mangoautomation.net/repository/ias-release/")
+        }
     }
 }
 

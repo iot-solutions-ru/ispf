@@ -119,7 +119,7 @@
 | **PF-10** | Workflow cancel + signal     | **Готово**       | —                                               | P1  |
 | **PF-11** | Function rollback / versions | **Да**           | Deploy previous version (§4.8)                  | P2  |
 | **PF-12** | Application SQL reports      | **Да**           | PDF export (out of scope)                       | P2  |
-| **PF-14** | Device driver catalog        | **Частично**     | 63 кандидата (§10), 4 в `main`                  | P3+ |
+| **PF-14** | Device driver catalog        | **Частично**     | 31 / 63 в `main` (§10)                          | P3+ |
 
 
 ---
@@ -481,7 +481,7 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 
 ## 10. Каталог драйверов устройств (roadmap)
 
-**REQ-PF-14** — каталог кандидатов на реализацию в ISPF, **не реализовано** (кроме отмеченных ✅).
+**REQ-PF-14** — каталог кандидатов на реализацию в ISPF. **Реализовано 31 из 63** (см. таблицу «Уже в `main`» и отметки ✅ ниже).
 
 ### Границы каталога
 
@@ -490,7 +490,7 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 - Отраслевые реализации по-прежнему могут идти **вне `main`** ([PLUGINS.md](PLUGINS.md)); таблица ниже — generic-каталог platform.
 - Каждый новый драйвер: модуль `ispf-driver-*` + SPI `DeviceDriver` + регистрация в `DriverCatalog` ([DRIVERS.md](DRIVERS.md)).
 
-### Уже в `main`
+### Уже в `main` (31)
 
 
 | `driverId`   | Протокол                   | Статус                                 |
@@ -503,6 +503,29 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 | `icmp`       | ICMP / Ping                | ✅                                      |
 | `ssh`        | SSH                        | ✅                                      |
 | `coap`       | CoAP                       | ✅                                      |
+| `opcua`      | OPC UA client              | ✅                                      |
+| `s7`         | Siemens S7                 | ✅                                      |
+| `iec104`     | IEC 60870-5-104 client     | ✅                                      |
+| `bacnet`     | BACnet/IP                  | ✅                                      |
+| `dnp3`       | DNP3 TCP                   | ✅ placeholder (native stack — позже)   |
+| `jmx`        | JMX                        | ✅                                      |
+| `jdbc`       | SQL (JDBC)                 | ✅                                      |
+| `file`       | File System                | ✅                                      |
+| `folder`     | Folder                     | ✅                                      |
+| `application`| Shell / script             | ✅                                      |
+| `message-stream` | TCP/UDP stream         | ✅                                      |
+| `nmea`       | NMEA 0183                  | ✅                                      |
+| `telnet`     | Telnet                     | ✅                                      |
+| `soap`       | SOAP                       | ✅                                      |
+| `ip-host`    | IP Host (ping/web/tcp/…)   | ✅ частично (#20–30 кроме LDAP и др.)   |
+| `kafka`      | Apache Kafka               | ✅                                      |
+| `gps-tracker`| GPS/M2M TCP server         | ✅                                      |
+| `flexible`   | Flexible TCP/UDP           | ✅                                      |
+| `mbus`       | M-Bus                      | ✅                                      |
+| `omron-fins` | Omron FINS                 | ✅                                      |
+| `asterisk`   | Asterisk AMI               | ✅                                      |
+| `smpp`       | SMPP                       | ✅                                      |
+| `smb`        | SMB/CIFS                   | ✅                                      |
 
 
 ### Кандидаты (63)
@@ -510,62 +533,62 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 
 | #   | Протокол / технология    | Драйвер (имя)          | ISPF                          |
 | --- | ------------------------ | ---------------------- | ----------------------------- |
-| 1   | Bash Script              | Application            | —                             |
-| 2   | Asterisk                 | Asterisk               | —                             |
-| 3   | BACnet IP / MS/TP        | BACnet                 | —                             |
+| 1   | Bash Script              | Application            | ✅ (`application`)             |
+| 2   | Asterisk                 | Asterisk               | ✅ (`asterisk`)                |
+| 3   | BACnet IP / MS/TP        | BACnet                 | ✅ (`bacnet`, IP)              |
 | 4   | CoAP                     | CoAP                   | ✅ (`coap`)                    |
 | 5   | CORBA                    | CORBA                  | —                             |
 | 6   | CWMP (TR-069)            | CWMP                   | —                             |
-| 7   | SQL (JDBC/ODBC)          | Database               | частично (PF-08 SQL bindings) |
+| 7   | SQL (JDBC/ODBC)          | Database               | ✅ (`jdbc`); ODBC — позже      |
 | 8   | DLMS/COSEM               | DLMS/COSEM             | —                             |
-| 9   | DNP3                     | DNP3                   | —                             |
+| 9   | DNP3                     | DNP3                   | ✅ placeholder (`dnp3`)        |
 | 10  | Ethernet/IP (CIP)        | Ethernet/IP            | —                             |
-| 11  | File System              | File                   | —                             |
-| 12  | TCP/UDP, Serial          | Flexible Driver        | —                             |
-| 13  | File System              | Folder                 | —                             |
-| 14  | GPS/GLONASS, M2M         | GPS Tracker            | —                             |
+| 11  | File System              | File                   | ✅ (`file`)                    |
+| 12  | TCP/UDP, Serial          | Flexible Driver        | ✅ (`flexible`)                |
+| 13  | File System              | Folder                 | ✅ (`folder`)                  |
+| 14  | GPS/GLONASS, M2M         | GPS Tracker            | ✅ (`gps-tracker`)             |
 | 15  | Gremlin / TinkerPop      | Graph Database         | —                             |
 | 16  | HTTP/HTTPS               | HTTP                   | ✅ (`http`)                    |
 | 17  | HTTP/HTTPS               | HTTP Server            | —                             |
-| 18  | IEC 60870-5-104          | IEC 60870-5-104        | —                             |
+| 18  | IEC 60870-5-104          | IEC 60870-5-104        | ✅ (`iec104`)                  |
 | 19  | IEC 60870-5-104          | IEC 60870-5-104 Server | —                             |
-| 20  | HTTP/HTTPS               | IP Host (web)          | —                             |
-| 21  | ICMP                     | IP Host (ping)         | ✅ (`icmp`)                    |
+| 20  | HTTP/HTTPS               | IP Host (web)          | ✅ (`ip-host` HTTP)            |
+| 21  | ICMP                     | IP Host (ping)         | ✅ (`icmp`, `ip-host`)         |
 | 22  | LDAP                     | IP Host (LDAP)         | —                             |
 | 23  | DHCP                     | IP Host (DHCP)         | —                             |
-| 24  | DNS                      | IP Host (DNS)          | —                             |
-| 25  | FTP                      | IP Host (FTP)          | —                             |
+| 24  | DNS                      | IP Host (DNS)          | ✅ (`ip-host` DNS)             |
+| 25  | FTP                      | IP Host (FTP)          | ✅ (`ip-host` FTP)             |
 | 26  | IMAP                     | IP Host (IMAP)         | —                             |
 | 27  | POP3                     | IP Host (POP3)         | —                             |
 | 28  | RADIUS                   | IP Host (Radius)       | —                             |
-| 29  | SMB/CIFS                 | IP Host (SMB)          | —                             |
-| 30  | SMTP                     | IP Host (SMTP)         | —                             |
-| 31  | Telnet                   | IP Host (Telnet)       | —                             |
+| 29  | SMB/CIFS                 | IP Host (SMB)          | ✅ (`smb`, `ip-host` частично) |
+| 30  | SMTP                     | IP Host (SMTP)         | ✅ (`ip-host` SMTP)            |
+| 31  | Telnet                   | IP Host (Telnet)       | ✅ (`telnet`)                  |
 | 32  | IPMI                     | IPMI                   | —                             |
-| 33  | JMX                      | JMX                    | —                             |
-| 34  | Apache Kafka             | Kafka                  | —                             |
+| 33  | JMX                      | JMX                    | ✅ (`jmx`)                     |
+| 34  | Apache Kafka             | Kafka                  | ✅ (`kafka`)                   |
 | 35  | Internal Protocol        | Local Agent            | —                             |
-| 36  | JMX (local)              | Local System           | —                             |
-| 37  | TCP/UDP, Serial          | Message Stream         | —                             |
-| 38  | M-Bus                    | Meter-Bus              | —                             |
+| 36  | JMX (local)              | Local System           | ✅ через `jmx` local           |
+| 37  | TCP/UDP, Serial          | Message Stream         | ✅ (`message-stream`)          |
+| 38  | M-Bus                    | Meter-Bus              | ✅ (`mbus`)                    |
 | 39  | Modbus RTU/ASCII/TCP/UDP | Modbus                 | частично (`modbus-tcp`)       |
 | 40  | GSM/GPRS (AT)            | Modem                  | —                             |
 | 41  | MQTT                     | MQTT                   | ✅                             |
-| 42  | NMEA 0183                | NMEA                   | —                             |
-| 43  | Omron FINS               | Omron FINS             | —                             |
+| 42  | NMEA 0183                | NMEA                   | ✅ (`nmea`)                    |
+| 43  | Omron FINS               | Omron FINS             | ✅ (`omron-fins`)              |
 | 44  | ODBC                     | Database (ODBC)        | —                             |
 | 45  | OPC DA 2.0               | OPC                    | —                             |
 | 46  | LON / LonTalk            | OPC (bridge)           | —                             |
 | 47  | OPC DA/AE/HDA            | OPC + OPC Agent        | —                             |
-| 48  | OPC UA                   | OPC UA                 | —                             |
+| 48  | OPC UA                   | OPC UA                 | ✅ (`opcua`)                   |
 | 49  | OPC UA                   | OPC UA Server          | —                             |
-| 50  | Siemens S7               | Siemens S7             | —                             |
+| 50  | Siemens S7               | Siemens S7             | ✅ (`s7`)                      |
 | 51  | SIP                      | SIP                    | —                             |
-| 52  | SMB/CIFS                 | Samba                  | —                             |
+| 52  | SMB/CIFS                 | Samba                  | ✅ (`smb`)                     |
 | 53  | SMI-S                    | SMI-S                  | —                             |
-| 54  | SMPP                     | SMPP                   | —                             |
+| 54  | SMPP                     | SMPP                   | ✅ (`smpp`)                    |
 | 55  | SNMP v1/v2c/v3           | SNMP                   | ✅ (`snmp`)                    |
-| 56  | SOAP                     | SOAP                   | —                             |
+| 56  | SOAP                     | SOAP                   | ✅ (`soap`)                    |
 | 57  | SSH                      | SSH                    | ✅ (`ssh`)                     |
 | 58  | —                        | Virtual Device         | ✅ (`virtual`)                 |
 | 59  | VMware SOAP API          | VMware                 | —                             |
@@ -634,6 +657,7 @@ Platform **не** содержит бизнес-правил отраслей �
 
 | Дата       | Изменение                                                                   |
 | ---------- | --------------------------------------------------------------------------- |
+| 2026-06-20 | REQ-PF-14: волны 2–4 — 27 новых драйверов (31 всего), docs/DRIVERS.md      |
 | 2026-06-20 | REQ-PF-14: каталог 63 device drivers (roadmap)                              |
 | 2026-06-19 | REQ-PF-13: distributed topology & object federation — roadmap (P3+, vision) |
 | 2026-06-19 | Первая consolidated версия: статус `main` + gap PF-01a…11                   |
