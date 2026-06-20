@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -77,6 +78,11 @@ public class FederationController {
         return objectMapper.convertValue(json, Object.class);
     }
 
+    @PostMapping("/remote-token")
+    public Map<String, Object> fetchRemoteToken(@Valid @RequestBody RemoteTokenRequest request) {
+        return federationService.fetchRemoteLoginToken(request.baseUrl(), request.username(), request.password());
+    }
+
     public record SyncCatalogResponse(
             String localRoot,
             int created,
@@ -125,5 +131,12 @@ public class FederationController {
                     description
             );
         }
+    }
+
+    public record RemoteTokenRequest(
+            @NotBlank String baseUrl,
+            @NotBlank String username,
+            @NotBlank String password
+    ) {
     }
 }

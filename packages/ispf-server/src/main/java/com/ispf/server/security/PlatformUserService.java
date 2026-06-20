@@ -7,6 +7,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.config.IspfRoles;
+import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.tenant.TenantStore;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,7 @@ public class PlatformUserService {
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
     private final TenantStore tenantStore;
+    private final IspfSecurityProperties securityProperties;
 
     public PlatformUserService(
             PlatformUserStore userStore,
@@ -47,7 +49,8 @@ public class PlatformUserService {
             ObjectManager objectManager,
             PasswordEncoder passwordEncoder,
             ObjectMapper objectMapper,
-            TenantStore tenantStore
+            TenantStore tenantStore,
+            IspfSecurityProperties securityProperties
     ) {
         this.userStore = userStore;
         this.roleService = roleService;
@@ -57,6 +60,7 @@ public class PlatformUserService {
         this.passwordEncoder = passwordEncoder;
         this.objectMapper = objectMapper;
         this.tenantStore = tenantStore;
+        this.securityProperties = securityProperties;
     }
 
     @Transactional
@@ -103,6 +107,36 @@ public class PlatformUserService {
         if (token != null && !token.isBlank()) {
             sessionStore.delete(token.trim());
         }
+    }
+
+    @Transactional
+    public Map<String, Object> issueFederationToken(String username, Integer ttlHours) {
+        if (!securityProperties.isTokenAuthEnabled()) {
+            throw new IllegalArgumentException(
+                    "Platform token auth is disabled; federation tokens require profile local or ispf.security.token-auth-enabled"
+            );
+        }
+        String normalized = normalizeUsername(username);
+        PlatformUserStore.PlatformUser user = userStore.findByUsername(normalized)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + normalized));
+        if (!user.enabled()) {
+            throw new IllegalArgumentException("User is disabled");
+        }
+        sessionStore.deleteExpired(Instant.now());
+        int hours = ttlHours != null && ttlHours > 0 ? ttlHours : 12;
+        hours = Math.min(hours, 168);
+        String token = UUID.randomUUID().toString().replace("-", "");
+        Instant expiresAt = Instant.now().plusSeconds(hours * 3600L);
+        sessionStore.save(token, user.username(), expiresAt);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("token", token);
+        response.put("expiresAt", expiresAt.toString());
+        response.put("username", user.username());
+        response.put("displayName", user.displayName());
+        response.put("roles", deserializeRoles(user.rolesJson()));
+        response.put("purpose", "federation");
+        response.put("ttlHours", hours);
+        return response;
     }
 
     public Optional<AuthenticatedUser> authenticateToken(String token) {

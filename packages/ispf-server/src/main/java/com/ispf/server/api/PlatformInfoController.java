@@ -32,6 +32,8 @@ public class PlatformInfoController {
                 "dashboard-builder",
                 "workflow-engine",
                 "federation",
+                "federation-issue-token",
+                "federation-remote-token",
                 "oidc-rbac"
         });
         return payload;

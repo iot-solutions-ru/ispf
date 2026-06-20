@@ -46,7 +46,7 @@ export function deleteFederationPeer(id: string): Promise<void> {
   return fetch(`/api/v1/federation/peers/${encodeURIComponent(id)}`, {
     method: "DELETE",
     headers: getAuthHeaders(),
-  }).then((response) => {
+  }).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Delete peer failed: ${response.status}`));
     }
@@ -77,6 +77,38 @@ export function probeFederationObject(peerId: string, path: string): Promise<Rec
   }).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Proxy failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export interface RemoteFederationTokenPayload {
+  baseUrl: string;
+  username: string;
+  password: string;
+}
+
+export interface FederationTokenResponse {
+  token: string;
+  expiresAt?: string;
+  username?: string;
+  roles?: string[];
+}
+
+export function fetchRemoteFederationToken(payload: RemoteFederationTokenPayload): Promise<FederationTokenResponse> {
+  return fetch("/api/v1/federation/remote-token", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    if (!response.ok) {
+      const message = parseApiError(await response.text(), `Remote token failed: ${response.status}`);
+      if (response.status === 403) {
+        throw new Error(
+          `${message}. Endpoint не найден или доступ запрещён — перезапустите ispf-server с последней сборкой.`
+        );
+      }
+      throw new Error(message);
     }
     return response.json();
   });

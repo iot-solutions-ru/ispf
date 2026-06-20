@@ -111,6 +111,26 @@ class FederationApiTest {
                 .andExpect(jsonPath("$[?(@.name=='site-a')]").doesNotExist());
     }
 
+    @Test
+    void fetchRemoteTokenViaLoopbackLogin() throws Exception {
+        String token = loginAdmin();
+        String baseUrl = "http://127.0.0.1:" + port;
+
+        mockMvc.perform(post("/api/v1/federation/remote-token")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "baseUrl": "%s",
+                                  "username": "admin",
+                                  "password": "admin"
+                                }
+                                """.formatted(baseUrl)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").exists())
+                .andExpect(jsonPath("$.username").value("admin"));
+    }
+
     private String loginAdmin() throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

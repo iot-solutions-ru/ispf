@@ -14,6 +14,8 @@ Spike реализации REQ-PF-13: реестр peer-инстансов и pr
 |-----------|----------|
 | `federation_peers` (V26) | Таблица peer: name, baseUrl, authToken, pathPrefix, enabled |
 | `GET/POST/PUT/DELETE /api/v1/federation/peers` | CRUD (admin) |
+| `POST /api/v1/federation/remote-token` | Логин на remote ISPF (server-side), возвращает Bearer для `authToken` |
+| `POST /api/v1/security/users/{username}/federation-token` | Выпуск Bearer-сессии для service user на **этом** узле |
 | `POST /api/v1/federation/peers/{id}/sync-catalog` | Импорт remote object list в локальное дерево |
 | Proxy-узлы | AGENT с переменными `federationProxy`, `federationPeerId`, `federationRemotePath` |
 | `GET /api/v1/federation/proxy/objects/by-path` | Прямой proxy-read без catalog sync |
@@ -47,6 +49,17 @@ Web Console: кнопка **Sync** на панели Federation peers.
 В peer сохраняется `authToken` (Bearer service account на удалённом ISPF). Токен не возвращается в list API (`hasAuthToken: true/false`).
 
 Если `authToken` не задан, исходящие запросы к peer используют Bearer-токен текущего пользователя (удобно для loopback на `127.0.0.1` с включённым RBAC). Для фоновых задач без HTTP-контекста token на peer обязателен.
+
+### Web Console
+
+Панель **Federation peers** (Explorer → Platform → Federation):
+
+1. **Токен для federation (этот узел)** — выбор пользователя и TTL, кнопка «Выпустить токен». Токен копируется в peer на другом ISPF.
+2. При создании peer:
+   - **Текущий сессионный токен** — подставляет Bearer вашей сессии (loopback).
+   - **Получить токен с remote** — `POST /api/v1/federation/remote-token` с `baseUrl` из формы и учётными данными remote (пароль не сохраняется на сервере).
+
+Токены — обычные platform session tokens (TTL по умолчанию 12 ч, макс. 168 ч), не долгоживущие API keys. Нужен профиль `local` или `ispf.security.token-auth-enabled: true`.
 
 ## Ограничения spike
 

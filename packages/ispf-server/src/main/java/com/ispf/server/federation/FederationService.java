@@ -15,7 +15,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -51,6 +53,55 @@ public class FederationService {
     public void deletePeer(UUID id) {
         requirePeer(id);
         peerStore.delete(id);
+    }
+
+    public Map<String, Object> fetchRemoteLoginToken(String baseUrl, String username, String password) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "baseUrl is required");
+        }
+        if (username == null || username.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "username is required");
+        }
+        if (password == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password is required");
+        }
+        String url = baseUrl.trim().replaceAll("/+$", "") + "/api/v1/auth/login";
+        try {
+            String json = objectMapper.writeValueAsString(Map.of("username", username.trim(), "password", password));
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(15))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_GATEWAY,
+                        "Remote login failed: HTTP " + response.statusCode()
+                );
+            }
+            JsonNode node = objectMapper.readTree(response.body());
+            String token = node.path("token").asText(null);
+            if (token == null || token.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Remote login did not return a token");
+            }
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", token);
+            if (node.hasNonNull("expiresAt")) {
+                result.put("expiresAt", node.get("expiresAt").asText());
+            }
+            if (node.hasNonNull("username")) {
+                result.put("username", node.get("username").asText());
+            }
+            if (node.has("roles")) {
+                result.put("roles", objectMapper.convertValue(node.get("roles"), List.class));
+            }
+            return result;
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Remote login failed: " + ex.getMessage(), ex);
+        }
     }
 
     public JsonNode proxyObjectByPath(UUID peerId, String objectPath) {

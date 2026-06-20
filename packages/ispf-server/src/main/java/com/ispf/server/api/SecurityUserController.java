@@ -1,7 +1,6 @@
 package com.ispf.server.api;
 
 import com.ispf.server.security.PlatformUserService;
-import com.ispf.server.security.PlatformUserService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -91,6 +90,19 @@ public class SecurityUserController {
         }
     }
 
+    @PostMapping("/{username}/federation-token")
+    public Map<String, Object> issueFederationToken(
+            @PathVariable String username,
+            @RequestBody(required = false) IssueFederationTokenRequest request
+    ) {
+        try {
+            Integer ttlHours = request != null ? request.ttlHours() : null;
+            return userService.issueFederationToken(username, ttlHours);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     public record CreateUserRequest(
             @NotBlank String username,
             String displayName,
@@ -109,5 +121,8 @@ public class SecurityUserController {
     }
 
     public record SetPasswordRequest(@NotBlank String password) {
+    }
+
+    public record IssueFederationTokenRequest(Integer ttlHours) {
     }
 }

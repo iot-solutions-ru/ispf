@@ -1,4 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
+import { parseApiError } from "../utils/parseApiError";
 
 export interface SecurityUserSummary {
   username: string;
@@ -21,7 +22,16 @@ async function securityRequest<T>(url: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    const message = parseApiError(text, `Request failed: ${response.status}`);
+    if (response.status === 403 && url.includes("federation-token")) {
+      throw new Error(
+        `${message}. Endpoint не найден или доступ запрещён — перезапустите ispf-server с последней сборкой и войдите как admin.`
+      );
+    }
+    if (response.status === 403) {
+      throw new Error(`${message}. Проверьте, что вы вошли как admin и сессия не истекла.`);
+    }
+    throw new Error(message);
   }
   return response.json();
 }
@@ -62,5 +72,21 @@ export function setSecurityUserPassword(username: string, password: string): Pro
   return securityRequest(`/api/v1/security/users/${encodeURIComponent(username)}/password`, {
     method: "PUT",
     body: JSON.stringify({ password }),
+  });
+}
+
+export interface FederationTokenResponse {
+  token: string;
+  expiresAt?: string;
+  username?: string;
+  roles?: string[];
+  purpose?: string;
+  ttlHours?: number;
+}
+
+export function issueFederationToken(username: string, ttlHours?: number): Promise<FederationTokenResponse> {
+  return securityRequest(`/api/v1/security/users/${encodeURIComponent(username)}/federation-token`, {
+    method: "POST",
+    body: JSON.stringify(ttlHours != null ? { ttlHours } : {}),
   });
 }

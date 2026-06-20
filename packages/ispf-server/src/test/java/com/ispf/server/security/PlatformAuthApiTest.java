@@ -74,6 +74,34 @@ class PlatformAuthApiTest {
     }
 
     @Test
+    void adminIssuesFederationTokenForUser() throws Exception {
+        String admin = adminToken();
+
+        mockMvc.perform(post("/api/v1/security/users/operator/federation-token")
+                        .header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{ \"ttlHours\": 24 }"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("operator"))
+                .andExpect(jsonPath("$.purpose").value("federation"))
+                .andExpect(jsonPath("$.ttlHours").value(24))
+                .andExpect(jsonPath("$.token").exists());
+
+        MvcResult issued = mockMvc.perform(post("/api/v1/security/users/operator/federation-token")
+                        .header("Authorization", "Bearer " + admin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andReturn();
+        String federationToken = issued.getResponse().getContentAsString()
+                .replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/security/users")
+                        .header("Authorization", "Bearer " + federationToken))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void loginReturnsAutoStartPreferences() throws Exception {
         mockMvc.perform(put("/api/v1/security/users/operator")
                         .header("Authorization", "Bearer " + adminToken())
