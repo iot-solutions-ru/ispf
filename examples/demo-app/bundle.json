@@ -1,0 +1,89 @@
+{
+  "version": "1.0.0",
+  "displayName": "Demo Application",
+  "tablePrefix": "",
+  "schemaName": "app_demo",
+  "migrations": [
+    {
+      "id": "schema_and_seed",
+      "sql": "CREATE TABLE IF NOT EXISTS demo_category (id UUID PRIMARY KEY, category_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);\nCREATE TABLE IF NOT EXISTS demo_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL, category_id UUID);\nCREATE TABLE IF NOT EXISTS demo_metric (metric_key VARCHAR(64) PRIMARY KEY, metric_value BIGINT, status VARCHAR(32));\nINSERT INTO demo_category (id, category_code, status) SELECT '11111111-1111-1111-1111-111111111111', 'CAT-A', 'open' WHERE NOT EXISTS (SELECT 1 FROM demo_category WHERE category_code = 'CAT-A');\nINSERT INTO demo_item (id, item_code, status, category_id) SELECT '22222222-2222-2222-2222-222222222201', 'ITEM-001', 'ready', '11111111-1111-1111-1111-111111111111' WHERE NOT EXISTS (SELECT 1 FROM demo_item WHERE item_code = 'ITEM-001');\nINSERT INTO demo_item (id, item_code, status, category_id) SELECT '22222222-2222-2222-2222-222222222202', 'ITEM-002', 'assigned', '11111111-1111-1111-1111-111111111111' WHERE NOT EXISTS (SELECT 1 FROM demo_item WHERE item_code = 'ITEM-002');\nINSERT INTO demo_item (id, item_code, status, category_id) SELECT '22222222-2222-2222-2222-222222222203', 'ITEM-003', 'ready', '11111111-1111-1111-1111-111111111111' WHERE NOT EXISTS (SELECT 1 FROM demo_item WHERE item_code = 'ITEM-003');\nINSERT INTO demo_metric (metric_key, metric_value, status) SELECT 'throughput', 42, 'ok' WHERE NOT EXISTS (SELECT 1 FROM demo_metric WHERE metric_key = 'throughput');"
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "ready-items",
+      "title": "Готовые позиции",
+      "description": "Позиции с заданным статусом (параметр status)",
+      "query": "SELECT item_code, status FROM demo_item WHERE status = ? ORDER BY item_code",
+      "parameters": ["status"],
+      "columns": [
+        { "field": "item_code", "label": "Код" },
+        { "field": "status", "label": "Статус" }
+      ],
+      "maxRows": 500
+    },
+    {
+      "reportId": "items-summary",
+      "title": "Сводка по статусам",
+      "description": "Количество позиций в каждом статусе",
+      "query": "SELECT status, COUNT(*) AS cnt FROM demo_item GROUP BY status ORDER BY status",
+      "parameters": [],
+      "columns": [
+        { "field": "status", "label": "Статус" },
+        { "field": "cnt", "label": "Кол-во" }
+      ],
+      "maxRows": 100
+    },
+    {
+      "reportId": "items-by-category",
+      "title": "Позиции по категории",
+      "description": "JOIN demo_item и demo_category",
+      "query": "SELECT i.item_code, i.status, c.category_code FROM demo_item i JOIN demo_category c ON c.id = i.category_id ORDER BY c.category_code, i.item_code",
+      "parameters": [],
+      "columns": [
+        { "field": "category_code", "label": "Категория" },
+        { "field": "item_code", "label": "Код" },
+        { "field": "status", "label": "Статус" }
+      ],
+      "maxRows": 500
+    }
+  ],
+  "operatorManifest": {
+    "appId": "demo",
+    "title": "Demo Application",
+    "wireProfile": "anima-operator-v1",
+    "defaultScreen": "ready-items-report",
+    "screens": [
+      {
+        "id": "ready-items-report",
+        "title": "Готовые позиции",
+        "description": "Отчёт ready-items: позиции со статусом ready",
+        "report": {
+          "reportId": "ready-items",
+          "parameters": { "status": "ready" },
+          "refreshIntervalMs": 30000,
+          "emptyMessage": "Нет готовых позиций"
+        }
+      },
+      {
+        "id": "items-summary-report",
+        "title": "Сводка по статусам",
+        "description": "Отчёт items-summary без параметров",
+        "report": {
+          "reportId": "items-summary",
+          "refreshIntervalMs": 60000,
+          "emptyMessage": "Нет данных"
+        }
+      },
+      {
+        "id": "items-by-category-report",
+        "title": "По категориям",
+        "description": "Отчёт items-by-category с JOIN",
+        "report": {
+          "reportId": "items-by-category",
+          "emptyMessage": "Нет позиций"
+        }
+      }
+    ]
+  }
+}

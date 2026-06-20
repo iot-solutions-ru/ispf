@@ -1,0 +1,305 @@
+{
+  "appId": "oil-terminal",
+  "title": "Oil Terminal",
+  "wireProfile": "anima-operator-v1",
+  "defaultScreen": "shift",
+  "screens": [
+    {
+      "id": "shift",
+      "title": "Смена (SCR-00)",
+      "description": "KPI открытой смены: наряды, алерты РВС",
+      "table": {
+        "objectPath": "root.platform.terminal.front.shiftDashboard",
+        "functionName": "terminal_shiftDashboard_getShiftSummary",
+        "input": {},
+        "refreshIntervalMs": 30000,
+        "emptyMessage": "Нет открытой смены"
+      },
+      "actions": []
+    },
+    {
+      "id": "orders",
+      "title": "Очередь нарядов (SCR-01)",
+      "description": "Активные наряды смены (planned / ready / filling)",
+      "table": {
+        "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+        "functionName": "terminal_dispatchWorkbench_listActiveOrders",
+        "input": {},
+        "refreshIntervalMs": 15000,
+        "emptyMessage": "Нет открытых нарядов",
+        "selectable": false
+      },
+      "actions": [
+        {
+          "id": "erp-import",
+          "label": "Импорт из ERP",
+          "objectPath": "root.platform.terminal.config.erpGateway",
+          "functionName": "terminal_erpGateway_pullNextDispatchOrder",
+          "input": {},
+          "successMessage": "Наряд импортирован из ERP"
+        }
+      ]
+    },
+    {
+      "id": "assign",
+      "title": "Назначение РВС (SCR-02)",
+      "description": "Выберите planned-наряд и назначьте РВС с допуском P-210 и эстакаду",
+      "table": {
+        "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+        "functionName": "terminal_dispatchWorkbench_listPlannedOrders",
+        "input": {},
+        "refreshIntervalMs": 15000,
+        "emptyMessage": "Нет нарядов в статусе planned",
+        "selectable": true,
+        "selectionKey": "order_id"
+      },
+      "actions": [
+        {
+          "id": "assign-tank",
+          "label": "Сохранить назначение",
+          "objectPath": "root.platform.terminal.terminal.dispatchOrder",
+          "functionName": "terminal_dispatchOrder_assignTank",
+          "requiresSelection": true,
+          "successMessage": "Наряд переведён в ready",
+          "fields": [
+            { "name": "orderId", "bindFromSelection": "order_id", "hidden": true },
+            {
+              "name": "tankPath",
+              "label": "РВС (только qualityOk)",
+              "type": "SELECT",
+              "required": true,
+              "optionsFrom": {
+                "objectPath": "root.platform.terminal.config.qualityGate",
+                "functionName": "terminal_qualityGate_listTankStatus",
+                "valueField": "tank_path",
+                "labelField": "tank_path",
+                "filterField": "quality_ok",
+                "filterValue": true
+              }
+            },
+            {
+              "name": "rackId",
+              "label": "Эстакада (только свободные)",
+              "type": "SELECT",
+              "required": true,
+              "optionsFrom": {
+                "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+                "functionName": "terminal_dispatchWorkbench_listAvailableRacks",
+                "valueField": "rack_id",
+                "labelField": "label"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quality",
+      "title": "Шлюз качества (SCR-04)",
+      "description": "Статус проб P-210 по резервуарам",
+      "table": {
+        "objectPath": "root.platform.terminal.config.qualityGate",
+        "functionName": "terminal_qualityGate_listTankStatus",
+        "input": {},
+        "refreshIntervalMs": 60000,
+        "emptyMessage": "Нет данных по РВС"
+      },
+      "actions": []
+    },
+    {
+      "id": "rack",
+      "title": "Эстакада - налив (SCR-03)",
+      "description": "Старт и завершение налива для наряда ready / filling на выбранной эстакаде",
+      "table": {
+        "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+        "functionName": "terminal_dispatchWorkbench_listRackOrders",
+        "input": { "rackId": "rack-1" },
+        "refreshIntervalMs": 5000,
+        "emptyMessage": "Нет нарядов на эстакаде",
+        "selectable": true,
+        "selectionKey": "order_id"
+      },
+      "actions": [
+        {
+          "id": "start-filling",
+          "label": "Старт налива",
+          "objectPath": "root.platform.terminal.terminal.dispatchOrder",
+          "functionName": "terminal_dispatchOrder_startFilling",
+          "requiresSelection": true,
+          "showWhen": { "field": "status", "equals": "ready" },
+          "successMessage": "Налив начат (filling)",
+          "fields": [
+            { "name": "orderId", "bindFromSelection": "order_id", "hidden": true },
+            {
+              "name": "vehiclePlate",
+              "label": "Гос. номер ТС (из наряда)",
+              "type": "STRING",
+              "required": true,
+              "readOnly": true,
+              "bindFromSelection": "vehicle_plate"
+            }
+          ]
+        },
+        {
+          "id": "complete-filling",
+          "label": "Стоп налива",
+          "objectPath": "root.platform.terminal.terminal.dispatchOrder",
+          "functionName": "terminal_dispatchOrder_complete",
+          "requiresSelection": true,
+          "showWhen": { "field": "status", "equals": "filling" },
+          "successMessage": "Налив завершён (completed)",
+          "fields": [
+            { "name": "orderId", "bindFromSelection": "order_id", "hidden": true },
+            {
+              "name": "actualLiters",
+              "label": "Факт, л (план)",
+              "type": "DOUBLE",
+              "required": true,
+              "readOnly": true,
+              "bindFromSelection": "planned_liters"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tanks",
+      "title": "Мониторинг РВС (SCR-05)",
+      "description": "Сводка уровней и алертов по резервуарам",
+      "table": {
+        "objectPath": "root.platform.terminal.terminal.tank",
+        "functionName": "terminal_tank_getMonitoringSummary",
+        "input": {},
+        "refreshIntervalMs": 30000,
+        "emptyMessage": "Нет данных по РВС"
+      },
+      "actions": []
+    },
+    {
+      "id": "incident",
+      "title": "Инцидент (SCR-06 / P-230)",
+      "description": "Регистрация аварии; останов связанных операций на эстакаде",
+      "table": {
+        "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+        "functionName": "terminal_dispatchWorkbench_listRackOrders",
+        "input": { "rackId": "rack-1" },
+        "refreshIntervalMs": 10000,
+        "emptyMessage": "Нет активных операций на эстакаде 1",
+        "selectable": true,
+        "selectionKey": "order_id"
+      },
+      "actions": [
+        {
+          "id": "register-incident",
+          "label": "Зарегистрировать инцидент",
+          "objectPath": "root.platform.terminal.terminal.incident",
+          "functionName": "terminal_incident_register",
+          "successMessage": "Инцидент зарегистрирован",
+          "fields": [
+            {
+              "name": "incidentType",
+              "label": "Тип",
+              "type": "SELECT",
+              "required": true,
+              "options": [
+                { "value": "SPILL", "label": "Разлив (SPILL)" },
+                { "value": "GAS_ALARM", "label": "Газоанализ (GAS_ALARM)" },
+                { "value": "EQUIPMENT", "label": "Отказ оборудования (EQUIPMENT)" },
+                { "value": "OTHER", "label": "Прочее (OTHER)" }
+              ]
+            },
+            {
+              "name": "tankPath",
+              "label": "РВС",
+              "type": "SELECT",
+              "optionsFrom": {
+                "objectPath": "root.platform.terminal.config.qualityGate",
+                "functionName": "terminal_qualityGate_listTankStatus",
+                "valueField": "tank_path",
+                "labelField": "tank_path"
+              }
+            },
+            {
+              "name": "rackId",
+              "label": "Эстакада",
+              "type": "SELECT",
+              "options": [
+                { "value": "rack-1", "label": "Эстакада 1 (rack-1)" },
+                { "value": "rack-2", "label": "Эстакада 2 (rack-2)" }
+              ]
+            },
+            { "name": "orderId", "bindFromSelection": "order_id", "hidden": true },
+            {
+              "name": "commentText",
+              "label": "Комментарий",
+              "type": "TEXT",
+              "placeholder": "Описание инцидента"
+            },
+            { "name": "stopLinkedOperations", "default": "true", "hidden": true }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "complete",
+      "title": "Завершение / весовая (SCR-07)",
+      "description": "Весовая, ERP, закрытие наряда (completed -> closed)",
+      "table": {
+        "objectPath": "root.platform.terminal.front.dispatchWorkbench",
+        "functionName": "terminal_dispatchWorkbench_listCompletedOrders",
+        "input": {},
+        "refreshIntervalMs": 15000,
+        "emptyMessage": "Нет нарядов в статусе completed",
+        "selectable": true,
+        "selectionKey": "order_id"
+      },
+      "actions": [
+        {
+          "id": "record-weighbridge",
+          "label": "Записать весовую",
+          "objectPath": "root.platform.terminal.terminal.dispatchOrder",
+          "functionName": "terminal_dispatchOrder_recordWeighbridge",
+          "requiresSelection": true,
+          "showWhenAll": [{ "field": "gross_weight_kg", "empty": true }],
+          "successMessage": "Данные весовой сохранены",
+          "fields": [
+            { "name": "orderId", "bindFromSelection": "order_id", "hidden": true },
+            {
+              "name": "grossWeightKg",
+              "label": "Брутто, кг",
+              "type": "DOUBLE",
+              "required": true,
+              "default": 8600
+            }
+          ]
+        },
+        {
+          "id": "erp-post",
+          "label": "Отправить факт в ERP",
+          "objectPath": "root.platform.terminal.config.erpGateway",
+          "functionName": "terminal_erpGateway_postDispatchFact",
+          "requiresSelection": true,
+          "showWhenAll": [
+            { "field": "gross_weight_kg", "present": true },
+            { "field": "erp_ref", "empty": true }
+          ],
+          "successMessage": "Факт отгрузки передан в ERP (stub)",
+          "fields": [{ "name": "orderId", "bindFromSelection": "order_id", "hidden": true }]
+        },
+        {
+          "id": "close-order",
+          "label": "Закрыть наряд",
+          "objectPath": "root.platform.terminal.terminal.dispatchOrder",
+          "functionName": "terminal_dispatchOrder_close",
+          "requiresSelection": true,
+          "showWhenAll": [
+            { "field": "gross_weight_kg", "present": true },
+            { "field": "erp_ref", "present": true }
+          ],
+          "successMessage": "Наряд закрыт (closed)",
+          "fields": [{ "name": "orderId", "bindFromSelection": "order_id", "hidden": true }]
+        }
+      ]
+    }
+  ]
+}

@@ -13,7 +13,8 @@ import {
   recordsEqual,
   setFieldValue,
 } from "../utils/record";
-import { objectIcon } from "../utils/tree";
+import IconPicker from "./icons/IconPicker";
+import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import VariableFieldEditor from "./VariableFieldEditor";
 
 interface ObjectPropertiesEditorProps {
@@ -27,17 +28,22 @@ type SectionKey = "info" | "variables" | "events" | "functions";
 interface EditorState {
   displayName: string;
   description: string;
+  iconId: string | null;
   variables: Record<string, DataRecord>;
 }
 
 function buildState(data: ObjectEditorDto): EditorState {
   const variables: Record<string, DataRecord> = {};
   for (const v of data.variables) {
+    if (v.name === "uiIcon") {
+      continue;
+    }
     variables[v.name] = ensureRecord(v);
   }
   return {
     displayName: data.object.displayName,
     description: data.object.description,
+    iconId: data.object.iconId ?? null,
     variables,
   };
 }
@@ -154,6 +160,7 @@ export default function ObjectPropertiesEditor({
     if (!state || !baseline) return false;
     if (state.displayName !== baseline.displayName) return true;
     if (state.description !== baseline.description) return true;
+    if (state.iconId !== baseline.iconId) return true;
     for (const name of Object.keys(state.variables)) {
       if (!recordsEqual(state.variables[name], baseline.variables[name])) {
         return true;
@@ -168,6 +175,7 @@ export default function ObjectPropertiesEditor({
       await updateObject(path, {
         displayName: state.displayName,
         description: state.description,
+        iconId: state.iconId ?? "",
       });
       for (const variable of editorQuery.data.variables) {
         const current = state.variables[variable.name];
@@ -201,6 +209,7 @@ export default function ObjectPropertiesEditor({
       setState({
         displayName: baseline.displayName,
         description: baseline.description,
+        iconId: baseline.iconId,
         variables: Object.fromEntries(
           Object.entries(baseline.variables).map(([k, v]) => [k, cloneRecord(v)])
         ),
@@ -270,7 +279,9 @@ export default function ObjectPropertiesEditor({
       </div>
 
       <div className="properties-editor-header">
-        <span className="ctx-icon">{objectIcon(ctx.type)}</span>
+        <span className="ctx-icon">
+          <ObjectTreeIcon path={ctx.path} type={ctx.type} iconId={state.iconId} size={24} />
+        </span>
         <div>
           <h2>{ctx.displayName}</h2>
           <p className="hint">{ctx.description || "Универсальный редактор объекта"}</p>
@@ -316,6 +327,16 @@ export default function ObjectPropertiesEditor({
                 onChange={(e) => setState((s) => s && { ...s, description: e.target.value })}
               />
             </label>
+            <label className="full">
+              Иконка в дереве
+              <IconPicker
+                path={ctx.path}
+                type={ctx.type}
+                value={state.iconId}
+                disabled={isRoot}
+                onChange={(iconId) => setState((s) => s && { ...s, iconId })}
+              />
+            </label>
           </div>
         )}
       </section>
@@ -329,7 +350,9 @@ export default function ObjectPropertiesEditor({
             {editorQuery.data.variables.length === 0 && (
               <p className="hint">Нет переменных</p>
             )}
-            {editorQuery.data.variables.map((variable) => (
+            {editorQuery.data.variables
+              .filter((variable) => variable.name !== "uiIcon")
+              .map((variable) => (
               <VariableEditorRow
                 key={variable.name}
                 variable={variable}

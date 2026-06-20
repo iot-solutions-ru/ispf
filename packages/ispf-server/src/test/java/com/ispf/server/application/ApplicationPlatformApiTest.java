@@ -833,4 +833,98 @@ class ApplicationPlatformApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.result.marker").value("bundle-v1"));
     }
+
+    @Test
+    void deploysAndRunsSqlReportWithCsvExport() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "5.0.0",
+                                  "migrations": [
+                                    {
+                                      "id": "report_items",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'RPT-01', 'ready'); INSERT INTO platform_item (id, item_code, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'RPT-02', 'closed');"
+                                    }
+                                  ],
+                                  "reports": [
+                                    {
+                                      "reportId": "ready-items",
+                                      "title": "Ready items",
+                                      "query": "SELECT item_code, status FROM platform_item WHERE status = ?",
+                                      "parameters": ["status"],
+                                      "columns": [
+                                        { "field": "item_code", "label": "Code" },
+                                        { "field": "status", "label": "Status" }
+                                      ]
+                                    }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.applied", hasItem("report:ready-items")));
+
+        mockMvc.perform(get("/api/v1/applications/%s/reports".formatted(APP_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].reportId").value("ready-items"));
+
+        mockMvc.perform(post("/api/v1/applications/%s/reports/ready-items/run".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "parameters": { "status": "ready" } }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rowCount").value(1))
+                .andExpect(jsonPath("$.rows[0].item_code").value("RPT-01"));
+
+        mockMvc.perform(get("/api/v1/applications/%s/reports/ready-items/export".formatted(APP_ID))
+                        .param("status", "ready"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", org.hamcrest.Matchers.containsString("ready-items.csv")));
+    }
+
+    @Test
+    void syncsApplicationEntitiesIntoObjectTree() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "6.0.0",
+                                  "displayName": "Platform Test",
+                                  "migrations": [
+                                    {
+                                      "id": "tree_items",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);"
+                                    }
+                                  ],
+                                  "reports": [
+                                    {
+                                      "reportId": "tree-report",
+                                      "title": "Tree Report",
+                                      "query": "SELECT item_code FROM platform_item",
+                                      "parameters": [],
+                                      "columns": [{ "field": "item_code", "label": "Code" }]
+                                    }
+                                  ],
+                                  "operatorManifest": {
+                                    "appId": "%s",
+                                    "title": "Platform Test",
+                                    "defaultScreen": "main",
+                                    "screens": [
+                                      { "id": "main", "title": "Main", "report": { "reportId": "tree-report" } }
+                                    ]
+                                  }
+                                }
+                                """.formatted(APP_ID)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.objectTree").value("synced"));
+
+        mockMvc.perform(get("/api/v1/objects"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test.reports.tree-report")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test.migrations.tree_items")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test.screens.main")));
+    }
 }

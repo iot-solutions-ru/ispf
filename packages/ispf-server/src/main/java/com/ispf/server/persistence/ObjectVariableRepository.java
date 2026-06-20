@@ -14,5 +14,7 @@ public interface ObjectVariableRepository extends JpaRepository<ObjectVariableEn
 
     void deleteByObjectPath(String objectPath);
 
+    void deleteByObjectPathAndName(String objectPath, String name);
+
     void deleteByObjectPathStartingWith(String objectPathPrefix);
 }

@@ -75,7 +75,11 @@ Content-Type: application/json
 | Method | Path | Роли | Описание |
 |--------|------|------|----------|
 | POST | `/api/v1/applications` | admin | Регистрация приложения |
-| POST | `/api/v1/applications/{appId}/deploy` | admin | Bundle deploy (миграции + функции + schedules) |
+| POST | `/api/v1/applications/{appId}/deploy` | admin | Bundle deploy (миграции + функции + schedules + reports) |
+| GET | `/api/v1/applications/{appId}/reports` | admin | Список SQL-отчётов |
+| POST | `/api/v1/applications/{appId}/reports/deploy` | admin | Deploy одного отчёта |
+| POST | `/api/v1/applications/{appId}/reports/{reportId}/run` | operator+ | Выполнить отчёт |
+| GET | `/api/v1/applications/{appId}/reports/{reportId}/export` | operator+ | CSV-экспорт |
 | POST | `/api/v1/applications/{appId}/data/migrate` | admin | SQL-миграции приложения |
 | GET | `/api/v1/applications/{appId}/data/status` | admin | Статус миграций |
 | POST | `/api/v1/applications/{appId}/functions/deploy` | admin | Deploy script-функции |
@@ -83,7 +87,7 @@ Content-Type: application/json
 | GET | `/api/v1/schedules` | admin | Список расписаний |
 | POST | `/api/v1/schedules` | admin | Создать/обновить расписание |
 
-Подробнее: [APPLICATIONS.md](APPLICATIONS.md), [PLUGINS.md](PLUGINS.md).
+Подробнее: [APPLICATIONS.md](APPLICATIONS.md), [REPORTS.md](REPORTS.md), [PLUGINS.md](PLUGINS.md).
 
 ## Work Queue
 

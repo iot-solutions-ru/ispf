@@ -1,4 +1,4 @@
-import { getStoredRole } from "../auth/role";
+import { getAuthHeaders } from "../auth/session";
 import {
   ANIMA_OPERATOR_WIRE_PROFILE,
   type BffInvokeRequest,
@@ -11,7 +11,7 @@ export async function bffInvoke<T = unknown>(request: BffInvokeRequest): Promise
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-ISPF-Role": getStoredRole(),
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({
       ...request,
@@ -32,14 +32,30 @@ export function assertBffOk<T>(wire: BffWireResponse<T>): T {
   return wire.result;
 }
 
+export type BffFieldType = "STRING" | "DOUBLE" | "BOOLEAN" | "LONG" | "INTEGER";
+
 export function toBffInput(
   values: Record<string, unknown> | undefined,
+  fieldTypes?: Record<string, BffFieldType>,
   schemaName = "in"
 ): NonNullable<BffInvokeRequest["input"]> {
   const row = values ?? {};
-  const fields = Object.keys(row).map((name) => ({ name, type: "STRING" }));
+  const fields = Object.keys(row).map((name) => ({
+    name,
+    type: fieldTypes?.[name] ?? inferBffFieldType(row[name]),
+  }));
   return {
     schema: { name: schemaName, fields },
     rows: [row],
   };
+}
+
+function inferBffFieldType(value: unknown): BffFieldType {
+  if (typeof value === "boolean") {
+    return "BOOLEAN";
+  }
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? "LONG" : "DOUBLE";
+  }
+  return "STRING";
 }

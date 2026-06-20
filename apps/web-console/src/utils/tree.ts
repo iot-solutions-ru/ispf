@@ -40,6 +40,10 @@ export function objectIcon(type: string): string {
       return "▣";
     case "DASHBOARD":
       return "▦";
+    case "APPLICATION":
+      return "▤";
+    case "REPORT":
+      return "▧";
     case "USER":
       return "◎";
     case "AGENT":

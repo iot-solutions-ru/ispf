@@ -3,19 +3,22 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteObject,
   fetchObject,
+  fetchObjectEditor,
   fetchVariables,
   updateObject,
 } from "../api";
 import type { ObjectSummary, VariableDto } from "../types";
 import { recordDisplayValue } from "../utils/tree";
 import EditVariableDialog from "./EditVariableDialog";
+import IconPicker from "./icons/IconPicker";
+import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 
 interface ObjectInspectorProps {
   path: string;
   onDeleted: () => void;
 }
 
-type Tab = "general" | "variables" | "events";
+type Tab = "general" | "variables" | "events" | "functions";
 
 export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProps) {
   const queryClient = useQueryClient();
@@ -35,6 +38,12 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
     enabled: tab === "variables",
   });
 
+  const editorQuery = useQuery({
+    queryKey: ["object-editor", path],
+    queryFn: () => fetchObjectEditor(path),
+    enabled: tab === "functions",
+  });
+
   useEffect(() => {
     if (objectQuery.data) {
       setDisplayName(objectQuery.data.displayName);
@@ -44,6 +53,15 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
 
   const saveMutation = useMutation({
     mutationFn: () => updateObject(path, { displayName, description }),
+    onSuccess: (updated: ObjectSummary) => {
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+      queryClient.setQueryData(["object", path], updated);
+    },
+  });
+
+  const iconMutation = useMutation({
+    mutationFn: (iconId: string | null) =>
+      updateObject(path, { iconId: iconId ?? "" }),
     onSuccess: (updated: ObjectSummary) => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.setQueryData(["object", path], updated);
@@ -72,9 +90,12 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
   return (
     <div className="inspector">
       <header className="inspector-header">
-        <div>
-          <h2>{obj.displayName}</h2>
-          <code className="path-code">{obj.path}</code>
+        <div className="inspector-title-row">
+          <ObjectTreeIcon path={obj.path} type={obj.type} iconId={obj.iconId} size={22} />
+          <div>
+            <h2>{obj.displayName}</h2>
+            <code className="path-code">{obj.path}</code>
+          </div>
         </div>
         <div className="inspector-actions">
           {!isRoot && (
@@ -95,14 +116,20 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
       </header>
 
       <nav className="tabs">
-        {(["general", "variables", "events"] as Tab[]).map((t) => (
+        {(["general", "variables", "events", "functions"] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             className={tab === t ? "active" : ""}
             onClick={() => setTab(t)}
           >
-            {t === "general" ? "Свойства" : t === "variables" ? "Переменные" : "События"}
+            {t === "general"
+              ? "Свойства"
+              : t === "variables"
+                ? "Переменные"
+                : t === "events"
+                  ? "События"
+                  : "Функции"}
           </button>
         ))}
       </nav>
@@ -130,6 +157,16 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
                 rows={3}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </label>
+            <label className="full">
+              Иконка в дереве
+              <IconPicker
+                path={obj.path}
+                type={obj.type}
+                value={obj.iconId}
+                disabled={isRoot || iconMutation.isPending}
+                onChange={(iconId) => iconMutation.mutate(iconId)}
               />
             </label>
             <label>
@@ -173,7 +210,9 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
                 </tr>
               </thead>
               <tbody>
-                {variablesQuery.data.map((v) => (
+                {variablesQuery.data
+                  .filter((v) => v.name !== "uiIcon")
+                  .map((v) => (
                   <tr key={v.name}>
                     <td><code>{v.name}</code></td>
                     <td className="mono">{recordDisplayValue(v.value)}</td>
@@ -207,6 +246,25 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
               {obj.eventNames.map((name) => (
                 <li key={name}>
                   <code>{name}</code>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {tab === "functions" && (
+        <section className="panel">
+          {editorQuery.isLoading && <p>Загрузка…</p>}
+          {editorQuery.data && editorQuery.data.functions.length === 0 && (
+            <p className="hint">Нет функций</p>
+          )}
+          {editorQuery.data && editorQuery.data.functions.length > 0 && (
+            <ul className="event-list">
+              {editorQuery.data.functions.map((fn) => (
+                <li key={fn.name}>
+                  <code>{fn.name}</code>
+                  {fn.description && <span className="model-var-desc">{fn.description}</span>}
                 </li>
               ))}
             </ul>

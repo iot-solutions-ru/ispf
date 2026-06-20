@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { TreeNode } from "../types";
-import { objectIcon } from "../utils/tree";
+import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 
 interface ObjectTreeProps {
   nodes: TreeNode[];
@@ -46,7 +46,13 @@ function TreeItem({
         >
           {hasChildren ? (expanded ? "▾" : "▸") : "·"}
         </span>
-        <span className="tree-icon">{objectIcon(node.object.type)}</span>
+        <span className="tree-icon">
+          <ObjectTreeIcon
+            path={node.object.path}
+            type={node.object.type}
+            iconId={node.object.iconId}
+          />
+        </span>
         <span className="tree-label">{node.object.displayName}</span>
         <span className="tree-type">{node.object.type}</span>
       </button>

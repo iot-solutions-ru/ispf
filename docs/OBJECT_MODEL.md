@@ -13,6 +13,13 @@ root
     ├── root.platform.models
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
+    ├── root.platform.security
+    │   ├── root.platform.security.users
+    │   │   ├── root.platform.security.users.admin
+    │   │   └── root.platform.security.users.operator
+    │   └── root.platform.security.roles
+    │       ├── root.platform.security.roles.admin
+    │       └── root.platform.security.roles.operator
     └── root.platform.workflows
         └── root.platform.workflows.demo-alarm-handler
 ```
@@ -34,6 +41,19 @@ root
 | `ALERT` | Правило алерта (legacy object type) |
 | `AGENT` | Edge agent |
 | `CUSTOM` | Произвольный контейнер |
+| `APPLICATION` | Прикладное приложение (bundle) |
+| `REPORT` | SQL-отчёт приложения |
+
+## Безопасность в дереве
+
+Узлы `root.platform.security` создаются автоматически при старте и при изменении пользователей:
+
+| Путь | Тип | Переменные |
+|------|-----|------------|
+| `...security.users.{username}` | `USER` | `username`, `displayName`, `roles`, `enabled` |
+| `...security.roles.{role}` | `CUSTOM` | `roleName`, `description` |
+
+CRUD пользователей — через `POST/PUT/DELETE /api/v1/security/users` (роль `admin`). Удаление узла `USER` в дереве также удаляет учётную запись.
 
 ## Состав объекта (`PlatformObject`)
 

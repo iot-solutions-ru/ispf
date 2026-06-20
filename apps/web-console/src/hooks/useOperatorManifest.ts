@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { getStoredRole } from "../auth/role";
+import { getAuthHeaders } from "../auth/session";
 import type { OperatorManifest } from "../types/operatorManifest";
 
 async function loadManifestFromApi(appId: string): Promise<OperatorManifest | null> {
   const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/operator-manifest`, {
-    headers: { "X-ISPF-Role": getStoredRole() },
+    headers: getAuthHeaders(),
   });
   if (response.status === 404) {
     return null;

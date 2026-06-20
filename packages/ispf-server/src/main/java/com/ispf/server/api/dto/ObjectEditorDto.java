@@ -3,6 +3,7 @@ package com.ispf.server.api.dto;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.server.object.ObjectUiIconService;
 
 import java.util.List;
 
@@ -16,11 +17,20 @@ public record ObjectEditorDto(
         List<FunctionDescriptor> functions
 ) {
     public static ObjectEditorDto from(PlatformObject node) {
+        return from(node, null);
+    }
+
+    public static ObjectEditorDto from(PlatformObject node, ObjectUiIconService iconService) {
+        String iconId = iconService != null
+                ? iconService.readIconId(node).orElse(null)
+                : null;
         return new ObjectEditorDto(
-                ObjectDto.from(node),
-                node.variables().values().stream().map(VariableDto::from).sorted(
-                        (a, b) -> a.name().compareTo(b.name())
-                ).toList(),
+                ObjectDto.from(node, iconId),
+                node.variables().values().stream()
+                        .filter(v -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(v.name()))
+                        .map(VariableDto::from)
+                        .sorted((a, b) -> a.name().compareTo(b.name()))
+                        .toList(),
                 node.events().values().stream().sorted(
                         (a, b) -> a.name().compareTo(b.name())
                 ).toList(),

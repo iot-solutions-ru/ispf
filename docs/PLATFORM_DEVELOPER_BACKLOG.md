@@ -111,6 +111,7 @@
 | **PF-09** | Integration Simulator SPI | **Да** | virtual driver profiles (§4.6) | P2 |
 | **PF-10** | Workflow cancel + signal | **Готово** | — | P1 |
 | **PF-11** | Function rollback / versions | **Да** | Deploy previous version (§4.8) | P2 |
+| **PF-12** | Application SQL reports | **Да** | PDF export (out of scope) | P2 |
 
 ---
 

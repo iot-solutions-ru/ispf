@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.server.security.PlatformUserService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,13 +20,20 @@ public class LocalSecurityConfig {
     @Bean
     SecurityFilterChain localSecurityFilterChain(
             HttpSecurity http,
-            IspfSecurityProperties properties
+            IspfSecurityProperties properties,
+            PlatformUserService userService
     ) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         if (properties.isRbacEnabled()) {
+            if (properties.isTokenAuthEnabled()) {
+                http.addFilterBefore(
+                        new LocalBearerTokenFilter(userService),
+                        UsernamePasswordAuthenticationFilter.class
+                );
+            }
             http.addFilterBefore(
                     new LocalRoleHeaderFilter(properties),
                     UsernamePasswordAuthenticationFilter.class

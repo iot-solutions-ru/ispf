@@ -14,5 +14,7 @@ public enum ObjectType {
     WORKFLOW,
     ALERT,
     AGENT,
+    APPLICATION,
+    REPORT,
     CUSTOM
 }

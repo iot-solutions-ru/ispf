@@ -18,7 +18,8 @@ spring:
 ispf:
   security:
     rbac-enabled: true
-    local-default-role: admin
+    token-auth-enabled: true
+    local-default-role: ""
   mqtt:
     enabled: false
   nats:

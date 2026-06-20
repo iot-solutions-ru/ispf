@@ -3,6 +3,8 @@ package com.ispf.server.application.script;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.FieldDefinition;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionRuntime;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
@@ -138,14 +140,32 @@ public class FunctionScriptEngine {
 
     private static DataRecord toOutputRecord(DataSchema outputSchema, Map<String, Object> row) {
         Map<String, Object> normalized = new LinkedHashMap<>();
-        for (var field : outputSchema.fields()) {
+        for (FieldDefinition field : outputSchema.fields()) {
             Object value = row.get(field.name());
             if (value == null && !field.nullable()) {
                 value = defaultValue(field.type());
+            } else {
+                value = coerceFieldValue(field, value);
             }
             normalized.put(field.name(), value);
         }
         return DataRecord.single(outputSchema, normalized);
+    }
+
+    private static Object coerceFieldValue(FieldDefinition field, Object value) {
+        if (value == null || field.type() != FieldType.BOOLEAN) {
+            return value;
+        }
+        if (value instanceof Boolean) {
+            return value;
+        }
+        if (value instanceof Number number) {
+            return number.intValue() != 0;
+        }
+        if (value instanceof String text) {
+            return "true".equalsIgnoreCase(text) || "1".equals(text);
+        }
+        return value;
     }
 
     private static Object defaultValue(com.ispf.core.model.FieldType type) {

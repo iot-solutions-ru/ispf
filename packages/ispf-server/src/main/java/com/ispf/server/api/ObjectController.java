@@ -9,7 +9,9 @@ import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.api.dto.ObjectEditorDto;
 import com.ispf.server.api.dto.VariableDto;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
+import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -34,34 +36,44 @@ public class ObjectController {
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
     private final WorkflowService workflowService;
+    private final PlatformUserService platformUserService;
+    private final ObjectUiIconService objectUiIconService;
 
     public ObjectController(
             ObjectManager objectManager,
             DashboardService dashboardService,
-            WorkflowService workflowService
+            WorkflowService workflowService,
+            PlatformUserService platformUserService,
+            ObjectUiIconService objectUiIconService
     ) {
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
         this.workflowService = workflowService;
+        this.platformUserService = platformUserService;
+        this.objectUiIconService = objectUiIconService;
+    }
+
+    private ObjectDto toDto(PlatformObject node) {
+        return ObjectDto.from(node, objectUiIconService.readIconId(node).orElse(null));
     }
 
     @GetMapping
     public List<ObjectDto> list(@RequestParam(required = false) String parent) {
         var tree = objectManager.tree();
         if (parent == null || parent.isBlank()) {
-            return tree.all().stream().map(ObjectDto::from).toList();
+            return tree.all().stream().map(this::toDto).toList();
         }
-        return tree.childrenOf(parent).stream().map(ObjectDto::from).toList();
+        return tree.childrenOf(parent).stream().map(this::toDto).toList();
     }
 
     @GetMapping("/by-path/editor")
     public ObjectEditorDto editor(@RequestParam String path) {
-        return ObjectEditorDto.from(objectManager.require(path));
+        return ObjectEditorDto.from(objectManager.require(path), objectUiIconService);
     }
 
     @GetMapping("/by-path")
     public ObjectDto get(@RequestParam String path) {
-        return ObjectDto.from(objectManager.require(path));
+        return toDto(objectManager.require(path));
     }
 
     @PostMapping
@@ -84,18 +96,29 @@ public class ObjectController {
         if (request.type() == ObjectType.WORKFLOW) {
             workflowService.ensureWorkflowStructure(node.path());
         }
-        return ObjectDto.from(objectManager.require(node.path()));
+        return toDto(objectManager.require(node.path()));
     }
 
     @PatchMapping("/by-path")
     public ObjectDto update(@RequestParam String path, @Valid @RequestBody UpdateObjectRequest request) {
-        PlatformObject node = objectManager.updateInfo(path, request.displayName(), request.description());
-        return ObjectDto.from(node);
+        try {
+            if (request.iconId() != null) {
+                objectUiIconService.setIconId(path, request.iconId());
+            }
+            PlatformObject node = objectManager.updateInfo(path, request.displayName(), request.description());
+            return toDto(node);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @DeleteMapping("/by-path")
     public void delete(@RequestParam String path) {
         try {
+            if (platformUserService.isSecurityUserPath(path)) {
+                platformUserService.deleteUser(platformUserService.usernameFromPath(path));
+                return;
+            }
             objectManager.delete(path);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -126,6 +149,9 @@ public class ObjectController {
     ) {
         try {
             Variable variable = objectManager.setVariableValue(path, name, value);
+            if (platformUserService.isSecurityUserPath(path)) {
+                platformUserService.syncVariableFromObject(path, name, value);
+            }
             return VariableDto.from(variable);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -144,7 +170,8 @@ public class ObjectController {
 
     public record UpdateObjectRequest(
             String displayName,
-            String description
+            String description,
+            String iconId
     ) {
     }
 }

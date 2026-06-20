@@ -44,6 +44,10 @@ public class LocalRoleHeaderFilter extends OncePerRequestFilter {
         if (role == null || role.isBlank()) {
             role = properties.getLocalDefaultRole();
         }
+        if (role == null || role.isBlank()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         role = role.trim().toLowerCase();
         if (IspfRoles.ADMIN.equals(role) || IspfRoles.OPERATOR.equals(role)) {
             var authentication = new UsernamePasswordAuthenticationToken(

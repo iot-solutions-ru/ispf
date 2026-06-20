@@ -18,17 +18,36 @@ Per-object ACL — в roadmap ([ARCHITECTURE.md](ARCHITECTURE.md)).
 Файл: `application-local.yml`
 
 - OAuth отключён (dummy issuer)
-- RBAC через заголовок **`X-ISPF-Role`**
-- `ispf.security.local-default-role: admin` — если заголовок не передан
-- `LocalSecurityConfig` + `LocalRoleFilter`
+- RBAC включён; аутентификация по **Bearer-токену** после `POST /api/v1/auth/login`
+- `ispf.security.token-auth-enabled: true`
+- `ispf.security.local-default-role:` пусто — без токена доступ запрещён
+- `LocalBearerTokenFilter` + опциональный fallback `X-ISPF-Role` (только dev)
 
-Использование:
+Учётные записи по умолчанию (если БД пуста): `admin/admin`, `operator/operator`.
 
 ```bash
-curl -H "X-ISPF-Role: operator" http://localhost:8080/api/v1/objects
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin"}'
+
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 ```
 
-Web Console: селектор роли в шапке.
+Web Console: экран входа; сессия хранится в `localStorage`. Админ управляет пользователями в дереве `root.platform.security.users`.
+
+### Управление пользователями (admin)
+
+| Endpoint | Описание |
+|----------|----------|
+| `GET /api/v1/security/users` | Список пользователей |
+| `POST /api/v1/security/users` | Создать пользователя |
+| `PUT /api/v1/security/users/{username}` | Обновить (роли, enabled, displayName) |
+| `DELETE /api/v1/security/users/{username}` | Удалить |
+| `POST /api/v1/security/users/{username}/password` | Сменить пароль |
+| `POST /api/v1/auth/logout` | Завершить сессию |
+| `GET /api/v1/auth/me` | Текущий пользователь (с токеном) |
+
+Пользователи и роли синхронизируются в дерево объектов (см. [OBJECT_MODEL.md](OBJECT_MODEL.md)).
 
 ### dev / default (production-like)
 
@@ -48,7 +67,8 @@ Web Console: селектор роли в шапке.
 | Endpoint | admin | operator | public |
 |----------|:-----:|:--------:|:------:|
 | `GET /api/v1/info` | ✓ | ✓ | ✓ |
-| `GET /api/v1/auth/me` | ✓ | ✓ | ✓ |
+| `POST /api/v1/auth/login` | | | ✓ |
+| `GET /api/v1/auth/me` | ✓ | ✓ | |
 | `GET /actuator/health` | ✓ | ✓ | ✓ |
 | `WS /ws/**` | ✓ | ✓ | ✓ |
 | `GET /api/v1/**` | ✓ | ✓ | |
@@ -58,6 +78,7 @@ Web Console: селектор роли в шапке.
 | `POST /api/v1/workflows/instances/*/cancel` | ✓ | ✓ | |
 | `GET/POST /api/v1/work-queue/**` | ✓ | ✓ | |
 | `POST/PUT/PATCH/DELETE /api/v1/**` | ✓ | | |
+| `/api/v1/security/**` | ✓ | | |
 | `/api/v1/applications/**` | ✓ | | |
 | `/api/v1/schedules/**` | ✓ | | |
 | `/api/v1/alert-rules/**` | ✓ | | |
@@ -89,7 +110,8 @@ Web Console (будущее): интеграция OIDC login; сейчас в d
 |------------|----------|
 | `ISPF_OAUTH_ISSUER` | JWT issuer URI |
 | `ispf.security.rbac-enabled` | Вкл/выкл RBAC |
-| `ispf.security.local-default-role` | Роль по умолчанию (local) |
+| `ispf.security.token-auth-enabled` | Bearer-сессии (local) |
+| `ispf.security.local-default-role` | Роль по умолчанию без токена (local, dev only) |
 
 ## Рекомендации для production
 

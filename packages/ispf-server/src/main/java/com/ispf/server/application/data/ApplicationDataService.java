@@ -1,5 +1,6 @@
 package com.ispf.server.application.data;
 
+import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,14 +13,21 @@ public class ApplicationDataService {
 
     private final ApplicationDataStore store;
     private final ApplicationSchemaSession schemaSession;
+    private final ApplicationObjectTreeService objectTreeService;
 
-    public ApplicationDataService(ApplicationDataStore store, ApplicationSchemaSession schemaSession) {
+    public ApplicationDataService(
+            ApplicationDataStore store,
+            ApplicationSchemaSession schemaSession,
+            ApplicationObjectTreeService objectTreeService
+    ) {
         this.store = store;
         this.schemaSession = schemaSession;
+        this.objectTreeService = objectTreeService;
     }
 
     public Map<String, Object> register(String appId, String displayName, String tablePrefix, String schemaName) {
         store.registerApp(appId, displayName, tablePrefix, schemaName);
+        objectTreeService.syncApplication(appId);
         Map<String, Object> app = store.findApp(appId).orElseThrow();
         return Map.of(
                 "appId", appId,
@@ -54,6 +62,8 @@ public class ApplicationDataService {
             store.recordMigration(appId, version, script.id(), script.sql());
             applied.add(script.id());
         }
+
+        objectTreeService.syncApplication(appId);
 
         return Map.of(
                 "appId", appId,

@@ -6,10 +6,14 @@ import { resolveOperatorScreen } from "../../types/operatorManifest";
 import ManifestScreen from "./ManifestScreen";
 import OperatorSidebar from "./OperatorSidebar";
 
+import type { AuthSession } from "../../auth/session";
+
 interface OperatorManifestViewProps {
   appId: string;
   operatorId?: string;
   onSwitchAdmin?: () => void;
+  session?: AuthSession;
+  onLogout?: () => void;
 }
 
 function resolveScreenFromUrl(): string | null {
@@ -20,6 +24,8 @@ export default function OperatorManifestView({
   appId,
   operatorId = "operator",
   onSwitchAdmin,
+  session,
+  onLogout,
 }: OperatorManifestViewProps) {
   useObjectWebSocket();
   const manifestQuery = useOperatorManifest(appId);
@@ -67,13 +73,21 @@ export default function OperatorManifestView({
           <strong>{manifest.title}</strong>
           <span className="brand-sub">
             {appId} · {wireProfile}
+            {session ? ` · ${session.displayName}` : ""}
           </span>
         </div>
+        <div className="topbar-actions">
+          {onLogout && (
+            <button type="button" className="btn" onClick={onLogout}>
+              Выйти
+            </button>
+          )}
         {onSwitchAdmin && (
           <button type="button" className="btn" onClick={onSwitchAdmin}>
             Админ-консоль
           </button>
         )}
+        </div>
       </header>
       <nav className="op-nav">
         {manifest.screens.map((screen) => (
@@ -90,7 +104,7 @@ export default function OperatorManifestView({
       {statusMessage && <div className="op-alert op-alert-info">{statusMessage}</div>}
       <div className="operator-layout">
         <main className="operator-dashboard op-manifest-main">
-          <ManifestScreen screen={activeScreen} wireProfile={wireProfile} onStatus={setStatusMessage} />
+          <ManifestScreen screen={activeScreen} wireProfile={wireProfile} appId={appId} onStatus={setStatusMessage} />
         </main>
         <aside className="operator-sidebar">
           <OperatorSidebar operatorId={operatorId} />

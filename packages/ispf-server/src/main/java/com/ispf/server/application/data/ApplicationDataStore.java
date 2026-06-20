@@ -58,6 +58,13 @@ public class ApplicationDataStore {
         );
     }
 
+    public List<Map<String, Object>> listAllApps() {
+        return jdbcTemplate.queryForList(
+                "SELECT app_id, display_name, table_prefix, schema_name, created_at FROM "
+                        + applicationsTable + " ORDER BY app_id"
+        );
+    }
+
     public Optional<Map<String, Object>> findApp(String appId) {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
                 "SELECT app_id, display_name, table_prefix, schema_name, created_at FROM "

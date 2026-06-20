@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchObjects, fetchPlatformInfo } from "./api";
-import { getStoredRole, isAdminRole, setStoredRole, type IspfRole } from "./auth/role";
+import { logout } from "./auth/login";
+import { getPrimaryRole, getStoredSession, isAdminSession, type AuthSession } from "./auth/session";
 import type { EditorTab } from "./types";
 import { buildObjectTree } from "./utils/tree";
 import { useObjectWebSocket } from "./hooks/useObjectWebSocket";
@@ -13,6 +14,9 @@ import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
 import AutomationView from "./components/automation/AutomationView";
+import LoginView from "./components/LoginView";
+import ModelEditorPanel from "./components/ModelEditorPanel";
+import { isModelsPath } from "./types/models";
 
 let tabCounter = 1;
 
@@ -26,8 +30,13 @@ function useAppMode(): ["admin" | "operator", (mode: "admin" | "operator") => vo
     const url = new URL(window.location.href);
     if (next === "operator") {
       url.searchParams.set("mode", "operator");
+      if (!url.searchParams.get("app")) {
+        url.searchParams.set("app", "demo");
+      }
     } else {
       url.searchParams.delete("mode");
+      url.searchParams.delete("app");
+      url.searchParams.delete("screen");
     }
     window.history.replaceState({}, "", url.toString());
   };
@@ -36,7 +45,7 @@ function useAppMode(): ["admin" | "operator", (mode: "admin" | "operator") => vo
 
 export default function App() {
   const [appMode, setAppMode] = useAppMode();
-  const [ispfRole, setIspfRole] = useState<IspfRole>(() => getStoredRole());
+  const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
   const queryClient = useQueryClient();
   const [workspaceTab, setWorkspaceTab] = useState<"explorer" | "automation" | string>("explorer");
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
@@ -105,22 +114,47 @@ export default function App() {
 
   const activeEditor = editorTabs.find((t) => t.id === workspaceTab);
   const isSpecializedEditor =
-    activeEditor?.objectType === "DASHBOARD" || activeEditor?.objectType === "WORKFLOW";
+    activeEditor?.objectType === "DASHBOARD"
+    || activeEditor?.objectType === "WORKFLOW"
+    || activeEditor?.objectType === "MODEL"
+    || (activeEditor != null && isModelsPath(activeEditor.path));
   const showPropertiesEditor =
     activeEditor &&
     (propertiesTabPath === activeEditor.path || !isSpecializedEditor);
   const parentForCreate = selectedPath ?? "root";
-  const isAdmin = isAdminRole(ispfRole);
+  const isAdmin = isAdminSession(session);
+  const primaryRole = getPrimaryRole(session);
 
-  const changeRole = (role: IspfRole) => {
-    setStoredRole(role);
-    setIspfRole(role);
-    queryClient.invalidateQueries();
+  const handleLogout = async () => {
+    await logout();
+    setSession(null);
+    queryClient.clear();
   };
+
+  const selectOperatorApp = (appId: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("mode", "operator");
+    url.searchParams.set("app", appId);
+    url.searchParams.delete("screen");
+    window.history.replaceState({}, "", url.toString());
+    setAppMode("operator");
+  };
+
+  if (!session?.token) {
+    return <LoginView onLoggedIn={(next) => { setSession(next); queryClient.invalidateQueries(); }} />;
+  }
 
   if (appMode === "operator") {
     const operatorAppId = new URLSearchParams(window.location.search).get("app");
-    return <OperatorView appId={operatorAppId} onSwitchAdmin={() => setAppMode("admin")} />;
+    return (
+      <OperatorView
+        appId={operatorAppId}
+        onSelectApp={selectOperatorApp}
+        onSwitchAdmin={() => setAppMode("admin")}
+        session={session}
+        onLogout={() => void handleLogout()}
+      />
+    );
   }
 
   return (
@@ -131,32 +165,26 @@ export default function App() {
           <div>
             <strong>Консоль администратора</strong>
             <span className="brand-sub">
-              {info.data?.name ?? "IoT Solutions Platform Framework"}
+              {session.displayName} · {primaryRole ?? "—"}
               {info.data?.version ? ` · v${info.data.version}` : ""}
             </span>
           </div>
         </div>
         <div className="topbar-actions">
-          <label className="role-select">
-            <span className="role-select-label">Роль</span>
-            <select
-              value={ispfRole}
-              onChange={(e) => changeRole(e.target.value as IspfRole)}
-              title="Local: заголовок X-ISPF-Role; dev: роли Keycloak admin/operator"
-            >
-              <option value="admin">admin</option>
-              <option value="operator">operator</option>
-            </select>
-          </label>
-          <button type="button" className="btn" onClick={() => setAppMode("operator")}>
-            Оператор
-          </button>
+          {(primaryRole === "admin" || primaryRole === "operator") && (
+            <button type="button" className="btn" onClick={() => setAppMode("operator")} title="Открыть operator UI (demo)">
+              Оператор · demo
+            </button>
+          )}
           <button
             type="button"
             className="btn"
             onClick={() => queryClient.invalidateQueries({ queryKey: ["objects"] })}
           >
             Обновить
+          </button>
+          <button type="button" className="btn" onClick={() => void handleLogout()}>
+            Выйти
           </button>
           {isAdmin && (
             <button type="button" className="btn primary" onClick={() => setShowCreate(true)}>
@@ -235,6 +263,7 @@ export default function App() {
                 selectedPath={selectedPath}
                 onOpenEditor={openEditor}
                 onDeleted={() => setSelectedPath("root")}
+                isAdmin={isAdmin}
               />
             </main>
           </>
@@ -255,6 +284,17 @@ export default function App() {
                 path={activeEditor.path}
                 onClose={() => closeEditor(activeEditor.id)}
                 onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+              />
+            ) : activeEditor.objectType === "MODEL" || isModelsPath(activeEditor.path) ? (
+              <ModelEditorPanel
+                selectedPath={activeEditor.path}
+                canManage={isAdmin}
+                title={activeEditor.title}
+                onClose={() => closeEditor(activeEditor.id)}
+                onSelectPath={(path) => {
+                  setSelectedPath(path);
+                  openEditor(path);
+                }}
               />
             ) : (
               <ObjectPropertiesEditor

@@ -174,6 +174,8 @@ public class ModelController {
                     request.description(),
                     request.type() != null ? request.type() : ModelType.INSTANCE
             );
+            modelPersistence.persist(model, false);
+            objectManager.persistNodeTree(model.objectPath(modelEngine.modelsRoot()));
             return ModelDto.from(model, modelEngine.modelsRoot());
         } catch (ModelException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());

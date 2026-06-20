@@ -247,7 +247,7 @@ Content-Type: application/json
 |----------|------|
 | `/applications/**`, `/schedules/**` | `admin` |
 | `/applications/*/operator-manifest` | `operator`, `admin` |
-| `/bff/invoke`, `/workflows/instances/*/cancel` | `operator`, `admin` |
+| `/bff/invoke`, `/workflows/instances/*/cancel`, `/applications/*/reports/*/run` | `operator`, `admin` |
 
 ## SQL bindings (REQ-PF-08)
 
@@ -299,11 +299,34 @@ POST /api/v1/applications/{appId}/deploy/rollback
 
 Rollback повторно применяет сохранённый manifest (migrations skip, functions re-apply).
 
+## Отчёты (REQ-PF-12)
+
+SQL-отчёты в app schema: deploy через bundle `reports[]` или `POST .../reports/deploy`, выполнение `POST .../reports/{id}/run`, экспорт CSV `GET .../reports/{id}/export`.
+
+Подробнее: [REPORTS.md](REPORTS.md).
+
 ## Operator manifest (из bundle)
 
 Поле `operatorManifest` в deploy bundle → `GET /api/v1/applications/{appId}/operator-manifest`.
 
 Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json`.
+
+### Дерево объектов
+
+После register/deploy сущности приложения синхронизируются в `root.platform.applications.{appId}`:
+
+| Папка | Содержимое |
+|-------|------------|
+| `reports` | SQL-отчёты (`ObjectType.REPORT`) |
+| `functions` | Deployed script functions |
+| `schedules` | `platform_schedules` |
+| `bindings` | SQL bindings |
+| `migrations` | Применённые data migrations |
+| `screens` | Экраны operator manifest |
+
+Синхронизация: при deploy/register/migrate и при старте сервера.
+
+**Пример:** [examples/demo-app/bundle.json](../examples/demo-app/bundle.json) — три SQL-отчёта и operator UI для `appId=demo`.
 
 ## Связанная документация
 

@@ -8,7 +8,9 @@ import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
+import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
+import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,6 +27,8 @@ public class ApplicationBundleDeployService {
     private final ApplicationBundleMetadataService metadataService;
     private final PlatformSchedulerService schedulerService;
     private final ApplicationSqlBindingService sqlBindingService;
+    private final ApplicationReportService reportService;
+    private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final ObjectMapper objectMapper;
 
@@ -34,6 +38,8 @@ public class ApplicationBundleDeployService {
             ApplicationBundleMetadataService metadataService,
             PlatformSchedulerService schedulerService,
             ApplicationSqlBindingService sqlBindingService,
+            ApplicationReportService reportService,
+            ApplicationObjectTreeService objectTreeService,
             ApplicationBundleSnapshotStore snapshotStore,
             ObjectMapper objectMapper
     ) {
@@ -42,6 +48,8 @@ public class ApplicationBundleDeployService {
         this.metadataService = metadataService;
         this.schedulerService = schedulerService;
         this.sqlBindingService = sqlBindingService;
+        this.reportService = reportService;
+        this.objectTreeService = objectTreeService;
         this.snapshotStore = snapshotStore;
         this.objectMapper = objectMapper;
     }
@@ -146,6 +154,29 @@ public class ApplicationBundleDeployService {
             }
         }
 
+        if (manifest.reports() != null) {
+            for (BundleReport report : manifest.reports()) {
+                try {
+                    reportService.deploy(appId, new ApplicationReportService.DeployReportRequest(
+                            report.reportId(),
+                            report.title(),
+                            report.description(),
+                            report.query(),
+                            report.parameters(),
+                            report.columns() == null
+                                    ? List.of()
+                                    : report.columns().stream()
+                                            .map(col -> new ApplicationReportService.ReportColumn(col.field(), col.label()))
+                                            .toList(),
+                            report.maxRows()
+                    ));
+                    applied.add("report:" + report.reportId());
+                } catch (Exception ex) {
+                    errors.add("report:" + report.reportId() + ": " + ex.getMessage());
+                }
+            }
+        }
+
         if (manifest.schedules() != null) {
             for (BundleSchedule schedule : manifest.schedules()) {
                 try {
@@ -182,6 +213,15 @@ public class ApplicationBundleDeployService {
             response.put("snapshot", "recorded");
         } catch (Exception ex) {
             errors.add("snapshot: " + ex.getMessage());
+            response.put("status", "PARTIAL");
+            response.put("errors", errors);
+        }
+
+        try {
+            objectTreeService.syncApplication(appId);
+            response.put("objectTree", "synced");
+        } catch (Exception ex) {
+            errors.add("objectTree: " + ex.getMessage());
             response.put("status", "PARTIAL");
             response.put("errors", errors);
         }
@@ -243,6 +283,7 @@ public class ApplicationBundleDeployService {
             List<BundleMigration> migrations,
             List<BundleFunction> functions,
             List<BundleSqlBinding> bindings,
+            List<BundleReport> reports,
             List<BundleSchedule> schedules,
             Map<String, Object> operatorManifest
     ) {
@@ -296,6 +337,20 @@ public class ApplicationBundleDeployService {
             String triggerFunctionName,
             Boolean enabled
     ) {
+    }
+
+    public record BundleReport(
+            String reportId,
+            String title,
+            String description,
+            String query,
+            List<String> parameters,
+            List<BundleReportColumn> columns,
+            Integer maxRows
+    ) {
+    }
+
+    public record BundleReportColumn(String field, String label) {
     }
 
     public record BundleSchedule(

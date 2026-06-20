@@ -174,6 +174,17 @@ public class ObjectManager {
     }
 
     @Transactional
+    public void deleteVariable(String path, String name) {
+        PlatformObject node = objectTree.require(path);
+        if (node.getVariable(name).isEmpty()) {
+            return;
+        }
+        node.removeVariable(name);
+        variableRepository.deleteByObjectPathAndName(path, name);
+        publish(ObjectChangeEvent.variableUpdated(path, name));
+    }
+
+    @Transactional
     public Variable setSystemVariableValue(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name)

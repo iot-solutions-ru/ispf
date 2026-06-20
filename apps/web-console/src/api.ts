@@ -9,13 +9,13 @@ import type {
 } from "./types";
 import type { DashboardView } from "./types/dashboard";
 import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
-import { getStoredRole } from "./auth/role";
+import { getAuthHeaders } from "./auth/session";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     headers: {
       "Content-Type": "application/json",
-      "X-ISPF-Role": getStoredRole(),
+      ...getAuthHeaders(),
       ...init?.headers,
     },
     ...init,

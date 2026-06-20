@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -79,6 +80,25 @@ public class ApplicationFunctionStore {
                 function.outputSchemaJson(),
                 Timestamp.from(Instant.now())
         );
+    }
+
+    public List<ApplicationFunctionHandler.DeployedFunction> listLatestByApp(String appId) {
+        List<ApplicationFunctionHandler.DeployedFunction> rows = jdbcTemplate.query("""
+                SELECT id, app_id, object_path, function_name, version,
+                       source_type, source_body, input_schema_json, output_schema_json
+                FROM %s
+                WHERE app_id = ?
+                ORDER BY object_path, function_name, deployed_at DESC
+                """.formatted(functionsTable),
+                this::mapDeployedFunction,
+                appId
+        );
+        Map<String, ApplicationFunctionHandler.DeployedFunction> latest = new LinkedHashMap<>();
+        for (ApplicationFunctionHandler.DeployedFunction row : rows) {
+            String key = row.objectPath() + "\0" + row.functionName();
+            latest.putIfAbsent(key, row);
+        }
+        return List.copyOf(latest.values());
     }
 
     public Optional<ApplicationFunctionHandler.DeployedFunction> findByVersion(

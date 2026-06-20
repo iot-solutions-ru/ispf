@@ -17,6 +17,8 @@ export type ObjectType =
   | "WORKFLOW"
   | "ALERT"
   | "AGENT"
+  | "APPLICATION"
+  | "REPORT"
   | "CUSTOM";
 
 export interface ObjectSummary {
@@ -26,6 +28,7 @@ export interface ObjectSummary {
   displayName: string;
   description: string;
   templateId: string | null;
+  iconId?: string | null;
   createdAt: string;
   variableNames: string[];
   eventNames: string[];
@@ -100,4 +103,5 @@ export interface CreateObjectPayload {
 export interface UpdateObjectPayload {
   displayName?: string;
   description?: string;
+  iconId?: string | null;
 }

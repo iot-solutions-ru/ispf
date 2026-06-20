@@ -86,6 +86,10 @@ public class PlatformObject {
         variables.put(variable.name(), variable);
     }
 
+    public void removeVariable(String name) {
+        variables.remove(name);
+    }
+
     public Optional<Variable> getVariable(String name) {
         return Optional.ofNullable(variables.get(name));
     }

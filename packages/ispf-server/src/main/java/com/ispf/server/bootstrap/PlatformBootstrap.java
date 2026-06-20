@@ -84,6 +84,16 @@ public class PlatformBootstrap {
         );
         tree.register(workflows);
 
+        PlatformObject applications = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.applications",
+                ObjectType.CUSTOM,
+                "Applications",
+                "Deployed application bundles (functions, reports, schedules)",
+                "app-folder-v1"
+        );
+        tree.register(applications);
+
         PlatformObject demoWorkflow = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.workflows.demo-alarm-handler",
