@@ -54,7 +54,10 @@ packages/
   ispf-driver-mqtt/       # MQTT (Paho)
   ispf-driver-modbus/     # Modbus TCP (j2mod)
   ispf-driver-snmp/       # SNMP v1/v2c (SNMP4J)
-  ispf-driver-virtual/    # Симулятор для стенда
+  ispf-driver-http/       # HTTP client
+  ispf-driver-icmp/       # Ping / reachability
+  ispf-driver-ssh/        # SSH commands
+  ispf-driver-coap/       # CoAP client
   ispf-plugin-model/      # Models plugin
   ispf-plugin-workflow/   # BPMN workflow engine (library)
   ispf-server/            # Spring Boot API

@@ -498,7 +498,11 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 | `virtual`    | Virtual Device (симулятор) | ✅                                      |
 | `mqtt`       | MQTT                       | ✅                                      |
 | `modbus-tcp` | Modbus TCP                 | ✅ частично (без RTU/ASCII/UDP)         |
-| `snmp`       | SNMP v1/v2c                | ✅ частично (без v3, traps, MIB editor) |
+| `snmp`       | SNMP v1/v2c/v3             | ✅ (traps/MIB editor — позже)           |
+| `http`       | HTTP/HTTPS client          | ✅                                      |
+| `icmp`       | ICMP / Ping                | ✅                                      |
+| `ssh`        | SSH                        | ✅                                      |
+| `coap`       | CoAP                       | ✅                                      |
 
 
 ### Кандидаты (63)
@@ -509,7 +513,7 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 | 1   | Bash Script              | Application            | —                             |
 | 2   | Asterisk                 | Asterisk               | —                             |
 | 3   | BACnet IP / MS/TP        | BACnet                 | —                             |
-| 4   | CoAP                     | CoAP                   | —                             |
+| 4   | CoAP                     | CoAP                   | ✅ (`coap`)                    |
 | 5   | CORBA                    | CORBA                  | —                             |
 | 6   | CWMP (TR-069)            | CWMP                   | —                             |
 | 7   | SQL (JDBC/ODBC)          | Database               | частично (PF-08 SQL bindings) |
@@ -521,12 +525,12 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 | 13  | File System              | Folder                 | —                             |
 | 14  | GPS/GLONASS, M2M         | GPS Tracker            | —                             |
 | 15  | Gremlin / TinkerPop      | Graph Database         | —                             |
-| 16  | HTTP/HTTPS               | HTTP                   | —                             |
+| 16  | HTTP/HTTPS               | HTTP                   | ✅ (`http`)                    |
 | 17  | HTTP/HTTPS               | HTTP Server            | —                             |
 | 18  | IEC 60870-5-104          | IEC 60870-5-104        | —                             |
 | 19  | IEC 60870-5-104          | IEC 60870-5-104 Server | —                             |
 | 20  | HTTP/HTTPS               | IP Host (web)          | —                             |
-| 21  | ICMP                     | IP Host (ping)         | —                             |
+| 21  | ICMP                     | IP Host (ping)         | ✅ (`icmp`)                    |
 | 22  | LDAP                     | IP Host (LDAP)         | —                             |
 | 23  | DHCP                     | IP Host (DHCP)         | —                             |
 | 24  | DNS                      | IP Host (DNS)          | —                             |
@@ -560,9 +564,9 @@ Post-PF (P3+) — platform evolution (см. §9, §10)
 | 52  | SMB/CIFS                 | Samba                  | —                             |
 | 53  | SMI-S                    | SMI-S                  | —                             |
 | 54  | SMPP                     | SMPP                   | —                             |
-| 55  | SNMP v1/v2c/v3           | SNMP                   | частично (`snmp`)             |
+| 55  | SNMP v1/v2c/v3           | SNMP                   | ✅ (`snmp`)                    |
 | 56  | SOAP                     | SOAP                   | —                             |
-| 57  | SSH                      | SSH                    | —                             |
+| 57  | SSH                      | SSH                    | ✅ (`ssh`)                     |
 | 58  | —                        | Virtual Device         | ✅ (`virtual`)                 |
 | 59  | VMware SOAP API          | VMware                 | —                             |
 | 60  | XMPP                     | XMPP                   | —                             |

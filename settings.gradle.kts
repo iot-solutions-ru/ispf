@@ -13,6 +13,10 @@ include(
     "packages:ispf-driver-modbus",
     "packages:ispf-driver-snmp",
     "packages:ispf-driver-virtual",
+    "packages:ispf-driver-http",
+    "packages:ispf-driver-icmp",
+    "packages:ispf-driver-ssh",
+    "packages:ispf-driver-coap",
     "packages:ispf-plugin-model",
     "packages:ispf-plugin-workflow",
 )

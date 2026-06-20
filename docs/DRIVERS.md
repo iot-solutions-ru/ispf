@@ -24,7 +24,7 @@ public interface DeviceDriver {
 
 | Переменная | Описание |
 |------------|----------|
-| `driverId` | ID драйвера (`virtual`, `mqtt`, `modbus-tcp`, `snmp`) |
+| `driverId` | ID драйвера (`virtual`, `mqtt`, `modbus-tcp`, `snmp`, `http`, `icmp`, `ssh`, `coap`) |
 | `driverStatus` | `STOPPED` / `RUNNING` / `ERROR` |
 | `driverPollIntervalMs` | Интервал опроса |
 | `driverConfigJson` | JSON конфигурации |
@@ -91,13 +91,13 @@ j2mod, Modbus TCP.
 
 ### snmp (`ispf-driver-snmp`)
 
-SNMP4J, v1/v2c GET/SET.
+SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 
 Формат точки: `oid` или `oid:VALUE_KIND` (`STRING`, `INTEGER`, …).
 
 Демо `snmp-localhost`: MIB-II OIDs (`sysName`, `sysDescr`, `sysUpTime`, `sysLocation`).
 
-Конфиг:
+Конфиг v2c:
 
 ```json
 {
@@ -107,6 +107,81 @@ SNMP4J, v1/v2c GET/SET.
   "version": "2c",
   "timeoutMs": "3000",
   "retries": "1"
+}
+```
+
+Конфиг v3 (дополнительно):
+
+```json
+{
+  "version": "3",
+  "securityName": "snmpuser",
+  "authProtocol": "MD5",
+  "authPassphrase": "authpass",
+  "privProtocol": "DES",
+  "privPassphrase": "privpass"
+}
+```
+
+### http (`ispf-driver-http`)
+
+HTTP/HTTPS client (Java HttpClient). Опрос REST endpoints.
+
+Point mapping: `path`, `GET:path`, `HEAD:path`, полный URL, суффикс `:json` для строкового JSON-скаляра.
+
+```json
+{
+  "baseUrl": "http://127.0.0.1:8080",
+  "timeoutMs": "5000"
+}
+```
+
+Пример mappings: `{"platformVersion": "GET:/api/v1/info:json"}`
+
+### icmp (`ispf-driver-icmp`)
+
+Доступность хоста (ICMP / `InetAddress.isReachable`).
+
+Point mapping: hostname или IP на переменную; пустое значение — `host` из конфига.
+
+```json
+{
+  "host": "127.0.0.1",
+  "timeoutMs": "3000"
+}
+```
+
+Переменная получает: `reachable`, `latencyMs`, `host`.
+
+### ssh (`ispf-driver-ssh`)
+
+Удалённое выполнение shell-команды (JSch).
+
+Point mapping: команда на переменную, например `uptime`.
+
+```json
+{
+  "host": "192.168.1.10",
+  "port": "22",
+  "username": "admin",
+  "password": "secret",
+  "timeoutMs": "10000"
+}
+```
+
+Переменная: `value` (stdout), `exitCode`, `stderr`.
+
+### coap (`ispf-driver-coap`)
+
+CoAP client (Eclipse Californium), GET ресурсов IoT-устройств.
+
+Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...`
+
+```json
+{
+  "host": "127.0.0.1",
+  "port": "5683",
+  "timeoutMs": "5000"
 }
 ```
 

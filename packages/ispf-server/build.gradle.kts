@@ -11,6 +11,10 @@ dependencies {
     implementation(project(":packages:ispf-driver-modbus"))
     implementation(project(":packages:ispf-driver-snmp"))
     implementation(project(":packages:ispf-driver-virtual"))
+    implementation(project(":packages:ispf-driver-http"))
+    implementation(project(":packages:ispf-driver-icmp"))
+    implementation(project(":packages:ispf-driver-ssh"))
+    implementation(project(":packages:ispf-driver-coap"))
     implementation(project(":packages:ispf-plugin-model"))
     implementation(project(":packages:ispf-plugin-workflow"))
 
