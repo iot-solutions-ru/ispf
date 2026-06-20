@@ -4,6 +4,10 @@ export interface AuthSession {
   displayName: string;
   roles: string[];
   expiresAt?: string;
+  /** When true, web console opens operator app instead of admin shell. */
+  autoStartEnabled?: boolean;
+  /** Operator manifest app id (e.g. demo, oil-terminal). */
+  autoStartApp?: string;
 }
 
 const SESSION_KEY = "ispf-auth-session";

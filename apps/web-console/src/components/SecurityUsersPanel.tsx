@@ -1,5 +1,112 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createSecurityUser, fetchSecurityUsers, setSecurityUserPassword } from "../api/securityUsers";
+import { useMemo } from "react";
+import {
+  createSecurityUser,
+  fetchSecurityUsers,
+  setSecurityUserPassword,
+  updateSecurityUser,
+  type SecurityUserSummary,
+} from "../api/securityUsers";
+
+interface OperatorAppEntry {
+  appId: string;
+  title: string;
+}
+
+async function loadOperatorApps(): Promise<OperatorAppEntry[]> {
+  const response = await fetch("/operator-apps/index.json");
+  if (!response.ok) {
+    return [{ appId: "demo", title: "Demo Application" }];
+  }
+  const index = (await response.json()) as { apps?: OperatorAppEntry[] };
+  return index.apps?.length ? index.apps : [{ appId: "demo", title: "Demo Application" }];
+}
+
+function serverSupportsAutoStart(users: SecurityUserSummary[] | undefined): boolean {
+  return Boolean(users?.some((user) => Object.prototype.hasOwnProperty.call(user, "autoStartEnabled")));
+}
+
+interface UserAutoStartControlsProps {
+  user: SecurityUserSummary;
+  apps: OperatorAppEntry[];
+  serverReady: boolean;
+}
+
+function UserAutoStartControls({ user, apps, serverReady }: UserAutoStartControlsProps) {
+  const queryClient = useQueryClient();
+  const defaultApp = apps[0]?.appId ?? "demo";
+  const enabled = user.autoStartEnabled === true;
+  const selectedApp = user.autoStartApp || defaultApp;
+
+  const mutation = useMutation({
+    mutationFn: async (payload: Parameters<typeof updateSecurityUser>[1]) => {
+      const updated = await updateSecurityUser(user.username, payload);
+      if (payload.autoStartEnabled === true && updated.autoStartEnabled !== true) {
+        throw new Error(
+          "Сервер не сохранил автозапуск. Перезапустите ispf-server (миграция V16)."
+        );
+      }
+      if (
+        payload.autoStartApp &&
+        payload.autoStartEnabled !== false &&
+        updated.autoStartApp !== payload.autoStartApp
+      ) {
+        throw new Error(
+          "Сервер не сохранил приложение. Перезапустите ispf-server (миграция V16)."
+        );
+      }
+      return updated;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["security-users"] });
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+    },
+  });
+
+  const disabled = !serverReady || mutation.isPending;
+
+  return (
+    <div className="security-user-autostart">
+      <button
+        type="button"
+        className={`btn small security-user-autostart-toggle ${enabled ? "primary" : ""}`}
+        disabled={disabled}
+        onClick={() => {
+          const nextEnabled = !enabled;
+          mutation.mutate({
+            autoStartEnabled: nextEnabled,
+            autoStartApp: nextEnabled ? selectedApp : user.autoStartApp ?? null,
+          });
+        }}
+      >
+        {mutation.isPending ? "…" : enabled ? "Вкл" : "Выкл"}
+      </button>
+      <select
+        className="security-user-autostart-app"
+        value={user.autoStartApp ?? ""}
+        disabled={disabled}
+        onChange={(event) => {
+          const appId = event.target.value;
+          if (!appId) {
+            mutation.mutate({ autoStartEnabled: false, autoStartApp: null });
+            return;
+          }
+          mutation.mutate({ autoStartEnabled: true, autoStartApp: appId });
+        }}
+      >
+        <option value="">— без приложения —</option>
+        {apps.map((app) => (
+          <option key={app.appId} value={app.appId}>
+            {app.title} ({app.appId})
+          </option>
+        ))}
+      </select>
+      {mutation.error && (
+        <span className="hint error security-user-autostart-error">{String(mutation.error)}</span>
+      )}
+    </div>
+  );
+}
 
 interface SecurityUsersPanelProps {
   canManage: boolean;
@@ -11,6 +118,13 @@ export default function SecurityUsersPanel({ canManage }: SecurityUsersPanelProp
     queryKey: ["security-users"],
     queryFn: fetchSecurityUsers,
   });
+  const appsQuery = useQuery({
+    queryKey: ["operator-apps-index"],
+    queryFn: loadOperatorApps,
+  });
+
+  const apps = useMemo(() => appsQuery.data ?? [], [appsQuery.data]);
+  const serverReady = serverSupportsAutoStart(usersQuery.data);
 
   const createMutation = useMutation({
     mutationFn: createSecurityUser,
@@ -33,16 +147,25 @@ export default function SecurityUsersPanel({ canManage }: SecurityUsersPanelProp
     <section className="security-users-panel">
       <h3>Пользователи платформы</h3>
       <p className="op-muted">
-        Учётные записи синхронизированы с деревом: <code>root.platform.security.users</code>
+        Учётные записи синхронизированы с деревом: <code>root.platform.security.users</code>.
+        При включённом автозапуске пользователь после входа попадает в operator-приложение, а не в
+        админ-консоль.
       </p>
+      {!serverReady && usersQuery.data && (
+        <div className="op-alert op-alert-error">
+          Автозапуск недоступен: сервер без миграции V16. Перезапустите{" "}
+          <code>ispf-server</code> с актуальным кодом.
+        </div>
+      )}
       {usersQuery.error && <div className="op-alert op-alert-error">{String(usersQuery.error)}</div>}
-      <table className="op-table">
+      <table className="op-table security-users-table">
         <thead>
           <tr>
             <th>Логин</th>
             <th>Имя</th>
             <th>Роли</th>
             <th>Активен</th>
+            <th colSpan={2}>Автозапуск приложения</th>
             <th>Пароль</th>
           </tr>
         </thead>
@@ -53,6 +176,9 @@ export default function SecurityUsersPanel({ canManage }: SecurityUsersPanelProp
               <td>{user.displayName}</td>
               <td>{user.roles.join(", ")}</td>
               <td>{user.enabled ? "да" : "нет"}</td>
+              <td colSpan={2}>
+                <UserAutoStartControls user={user} apps={apps} serverReady={serverReady} />
+              </td>
               <td>
                 <button
                   type="button"

@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -69,5 +70,40 @@ class PlatformAuthApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].path", hasItem("root.platform.security.users.admin")))
                 .andExpect(jsonPath("$[*].path", hasItem("root.platform.security.roles.operator")));
+    }
+
+    @Test
+    void loginReturnsAutoStartPreferences() throws Exception {
+        mockMvc.perform(put("/api/v1/security/users/operator")
+                        .header("Authorization", "Bearer " + adminToken())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "autoStartEnabled": true,
+                                  "autoStartApp": "demo"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "operator", "password": "operator" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.autoStartEnabled").value(true))
+                .andExpect(jsonPath("$.autoStartApp").value("demo"));
+    }
+
+    private String adminToken() throws Exception {
+        MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "admin", "password": "admin" }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+        String body = login.getResponse().getContentAsString();
+        return body.replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
     }
 }

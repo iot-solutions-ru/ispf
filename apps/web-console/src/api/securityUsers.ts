@@ -6,6 +6,8 @@ export interface SecurityUserSummary {
   roles: string[];
   enabled: boolean;
   objectPath: string;
+  autoStartEnabled?: boolean;
+  autoStartApp?: string;
 }
 
 async function securityRequest<T>(url: string, init?: RequestInit): Promise<T> {
@@ -36,6 +38,22 @@ export function createSecurityUser(payload: {
 }): Promise<SecurityUserSummary> {
   return securityRequest("/api/v1/security/users", {
     method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateSecurityUser(
+  username: string,
+  payload: {
+    autoStartEnabled?: boolean;
+    autoStartApp?: string | null;
+    displayName?: string;
+    roles?: string[];
+    enabled?: boolean;
+  }
+): Promise<SecurityUserSummary> {
+  return securityRequest(`/api/v1/security/users/${encodeURIComponent(username)}`, {
+    method: "PUT",
     body: JSON.stringify(payload),
   });
 }

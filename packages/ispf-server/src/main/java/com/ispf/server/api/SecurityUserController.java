@@ -59,7 +59,9 @@ public class SecurityUserController {
                     username,
                     request.displayName(),
                     request.roles(),
-                    request.enabled()
+                    request.enabled(),
+                    request.autoStartEnabled(),
+                    request.autoStartApp()
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -100,7 +102,9 @@ public class SecurityUserController {
     public record UpdateUserRequest(
             String displayName,
             List<String> roles,
-            Boolean enabled
+            Boolean enabled,
+            Boolean autoStartEnabled,
+            String autoStartApp
     ) {
     }
 

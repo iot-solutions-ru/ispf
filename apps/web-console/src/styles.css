@@ -2410,6 +2410,46 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   align-items: center;
 }
 
+.security-user-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.security-users-table td {
+  vertical-align: middle;
+}
+
+.security-user-autostart {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.security-user-autostart-toggle {
+  min-width: 3.25rem;
+}
+
+.security-user-autostart-app {
+  min-width: 12rem;
+  max-width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.security-user-autostart-error {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
 .op-table {
   width: 100%;
   border-collapse: collapse;

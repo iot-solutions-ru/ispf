@@ -76,13 +76,17 @@ public class PlatformUserService {
         String token = UUID.randomUUID().toString().replace("-", "");
         Instant expiresAt = Instant.now().plusSeconds(12 * 3600);
         sessionStore.save(token, user.username(), expiresAt);
-        return Map.of(
-                "token", token,
-                "expiresAt", expiresAt.toString(),
-                "username", user.username(),
-                "displayName", user.displayName(),
-                "roles", deserializeRoles(user.rolesJson())
-        );
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("token", token);
+        response.put("expiresAt", expiresAt.toString());
+        response.put("username", user.username());
+        response.put("displayName", user.displayName());
+        response.put("roles", deserializeRoles(user.rolesJson()));
+        response.put("autoStartEnabled", user.autoStartEnabled());
+        if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
+            response.put("autoStartApp", user.autoStartApp());
+        }
+        return response;
     }
 
     @Transactional
@@ -126,6 +130,8 @@ public class PlatformUserService {
                 serializeRoles(roles),
                 objectPath,
                 true,
+                false,
+                null,
                 Instant.now(),
                 Instant.now()
         );
@@ -139,7 +145,9 @@ public class PlatformUserService {
             String username,
             String displayName,
             List<String> roles,
-            Boolean enabled
+            Boolean enabled,
+            Boolean autoStartEnabled,
+            String autoStartApp
     ) {
         PlatformUserStore.PlatformUser existing = userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
@@ -149,7 +157,17 @@ public class PlatformUserService {
         String resolvedDisplayName = displayName != null && !displayName.isBlank()
                 ? displayName
                 : existing.displayName();
+        boolean resolvedAutoStartEnabled = autoStartEnabled != null
+                ? autoStartEnabled
+                : existing.autoStartEnabled();
+        String resolvedAutoStartApp = autoStartApp != null
+                ? normalizeAutoStartApp(autoStartApp, resolvedAutoStartEnabled)
+                : existing.autoStartApp();
+        if (resolvedAutoStartEnabled && (resolvedAutoStartApp == null || resolvedAutoStartApp.isBlank())) {
+            throw new IllegalArgumentException("autoStartApp is required when autoStartEnabled is true");
+        }
         userStore.updateProfile(username, resolvedDisplayName, serializeRoles(resolvedRoles), resolvedEnabled);
+        userStore.updateAutoStart(username, resolvedAutoStartEnabled, resolvedAutoStartApp);
         PlatformUserStore.PlatformUser updated = userStore.findByUsername(username).orElseThrow();
         objectTreeService.syncUser(updated);
         if (objectManager.tree().findByPath(existing.objectPath()).isPresent()) {
@@ -212,6 +230,18 @@ public class PlatformUserService {
                     user.rolesJson(),
                     user.enabled()
             );
+            case "autoStartEnabled" -> {
+                boolean enabledAutoStart = Boolean.parseBoolean(fieldValue);
+                String app = enabledAutoStart ? user.autoStartApp() : user.autoStartApp();
+                if (enabledAutoStart && (app == null || app.isBlank())) {
+                    throw new IllegalArgumentException("autoStartApp must be set before enabling auto start");
+                }
+                userStore.updateAutoStart(user.username(), enabledAutoStart, app);
+            }
+            case "autoStartApp" -> {
+                String app = normalizeAutoStartApp(fieldValue, user.autoStartEnabled());
+                userStore.updateAutoStart(user.username(), user.autoStartEnabled(), app);
+            }
             default -> {
                 return;
             }
@@ -237,6 +267,10 @@ public class PlatformUserService {
         summary.put("displayName", user.displayName());
         summary.put("roles", deserializeRoles(user.rolesJson()));
         summary.put("enabled", user.enabled());
+        summary.put("autoStartEnabled", user.autoStartEnabled());
+        if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
+            summary.put("autoStartApp", user.autoStartApp());
+        }
         summary.put("objectPath", user.objectPath());
         summary.put("createdAt", user.createdAt().toString());
         summary.put("updatedAt", user.updatedAt().toString());
@@ -295,6 +329,20 @@ public class PlatformUserService {
         }
         validateRoles(roles);
         return roles;
+    }
+
+    private static String normalizeAutoStartApp(String autoStartApp, boolean autoStartEnabled) {
+        if (autoStartApp == null) {
+            return null;
+        }
+        String normalized = autoStartApp.trim();
+        if (normalized.isEmpty()) {
+            return autoStartEnabled ? null : null;
+        }
+        if (!normalized.matches("[a-z0-9._-]{1,64}")) {
+            throw new IllegalArgumentException("Invalid autoStartApp format");
+        }
+        return normalized;
     }
 
     private static String readStringField(DataRecord value) {

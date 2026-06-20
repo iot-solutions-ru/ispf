@@ -3,6 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchObjects, fetchPlatformInfo } from "./api";
 import { logout } from "./auth/login";
 import { getPrimaryRole, getStoredSession, isAdminSession, type AuthSession } from "./auth/session";
+import {
+  resolveInitialAppMode,
+  resolveOperatorAppId,
+  shouldOpenOperatorShell,
+} from "./auth/routing";
 import type { EditorTab } from "./types";
 import { buildObjectTree } from "./utils/tree";
 import { readSelectedPath, writeSelectedPath } from "./utils/treeExpanded";
@@ -21,18 +26,15 @@ import { isModelsPath } from "./types/models";
 
 let tabCounter = 1;
 
-function useAppMode(): ["admin" | "operator", (mode: "admin" | "operator") => void] {
-  const initial = new URLSearchParams(window.location.search).get("mode") === "operator"
-    ? "operator"
-    : "admin";
-  const [mode, setModeState] = useState<"admin" | "operator">(initial);
+function useAppMode(session: AuthSession | null): ["admin" | "operator", (mode: "admin" | "operator") => void] {
+  const [mode, setModeState] = useState<"admin" | "operator">(() => resolveInitialAppMode(session));
   const setMode = (next: "admin" | "operator") => {
     setModeState(next);
     const url = new URL(window.location.href);
     if (next === "operator") {
       url.searchParams.set("mode", "operator");
-      if (!url.searchParams.get("app")) {
-        url.searchParams.set("app", "demo");
+      if (!url.searchParams.get("app") && session?.autoStartApp) {
+        url.searchParams.set("app", session.autoStartApp);
       }
     } else {
       url.searchParams.delete("mode");
@@ -45,13 +47,30 @@ function useAppMode(): ["admin" | "operator", (mode: "admin" | "operator") => vo
 }
 
 export default function App() {
-  const [appMode, setAppMode] = useAppMode();
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
+  const [appMode, setAppMode] = useAppMode(session);
   const queryClient = useQueryClient();
   const [workspaceTab, setWorkspaceTab] = useState<"explorer" | "automation" | string>("explorer");
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
   const [propertiesTabPath, setPropertiesTabPath] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(() => readSelectedPath());
+
+  useEffect(() => {
+    if (!session?.autoStartEnabled || !session.autoStartApp) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "admin" && isAdminSession(session)) {
+      return;
+    }
+    if (!params.get("app")) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("mode", "operator");
+      url.searchParams.set("app", session.autoStartApp);
+      window.history.replaceState({}, "", url.toString());
+      setAppMode("operator");
+    }
+  }, [session, setAppMode]);
 
   useEffect(() => {
     if (selectedPath) {
@@ -147,17 +166,37 @@ export default function App() {
     setAppMode("operator");
   };
 
+  const handleLoggedIn = (next: AuthSession) => {
+    setSession(next);
+    queryClient.invalidateQueries();
+    if (next.autoStartEnabled && next.autoStartApp) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("mode", "operator");
+      url.searchParams.set("app", next.autoStartApp);
+      url.searchParams.delete("screen");
+      window.history.replaceState({}, "", url.toString());
+      setAppMode("operator");
+    } else if (!isAdminSession(next)) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("mode", "operator");
+      url.searchParams.delete("app");
+      url.searchParams.delete("screen");
+      window.history.replaceState({}, "", url.toString());
+      setAppMode("operator");
+    }
+  };
+
   if (!session?.token) {
-    return <LoginView onLoggedIn={(next) => { setSession(next); queryClient.invalidateQueries(); }} />;
+    return <LoginView onLoggedIn={handleLoggedIn} />;
   }
 
-  if (appMode === "operator") {
-    const operatorAppId = new URLSearchParams(window.location.search).get("app");
+  if (shouldOpenOperatorShell(session, appMode)) {
+    const operatorAppId = resolveOperatorAppId(session);
     return (
       <OperatorView
         appId={operatorAppId}
         onSelectApp={selectOperatorApp}
-        onSwitchAdmin={() => setAppMode("admin")}
+        onSwitchAdmin={isAdmin ? () => setAppMode("admin") : undefined}
         session={session}
         onLogout={() => void handleLogout()}
       />

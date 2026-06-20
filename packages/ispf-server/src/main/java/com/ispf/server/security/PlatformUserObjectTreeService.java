@@ -93,6 +93,8 @@ public class PlatformUserObjectTreeService {
         setStringVariable(path, "displayName", user.displayName(), true);
         setStringVariable(path, "roles", String.join(",", deserializeRoles(user.rolesJson())), true);
         setBooleanVariable(path, "enabled", user.enabled(), true);
+        setBooleanVariable(path, "autoStartEnabled", user.autoStartEnabled(), true);
+        setStringVariable(path, "autoStartApp", user.autoStartApp() != null ? user.autoStartApp() : "", true);
     }
 
     private void ensureSecurityRoot() {

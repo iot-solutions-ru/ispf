@@ -30,7 +30,7 @@ public class PlatformUserStore {
             jdbcTemplate.update("""
                     UPDATE %s
                     SET password_hash = ?, display_name = ?, roles_json = ?, object_path = ?,
-                        enabled = ?, updated_at = ?
+                        enabled = ?, auto_start_enabled = ?, auto_start_app = ?, updated_at = ?
                     WHERE username = ?
                     """.formatted(usersTable),
                     user.passwordHash(),
@@ -38,6 +38,8 @@ public class PlatformUserStore {
                     user.rolesJson(),
                     user.objectPath(),
                     user.enabled(),
+                    user.autoStartEnabled(),
+                    user.autoStartApp(),
                     Timestamp.from(Instant.now()),
                     user.username()
             );
@@ -46,8 +48,8 @@ public class PlatformUserStore {
         jdbcTemplate.update("""
                 INSERT INTO %s (
                     username, password_hash, display_name, roles_json, object_path,
-                    enabled, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    enabled, auto_start_enabled, auto_start_app, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.formatted(usersTable),
                 user.username(),
                 user.passwordHash(),
@@ -55,6 +57,8 @@ public class PlatformUserStore {
                 user.rolesJson(),
                 user.objectPath(),
                 user.enabled(),
+                user.autoStartEnabled(),
+                user.autoStartApp(),
                 Timestamp.from(user.createdAt()),
                 Timestamp.from(Instant.now())
         );
@@ -74,6 +78,19 @@ public class PlatformUserStore {
         );
     }
 
+    public void updateAutoStart(String username, boolean autoStartEnabled, String autoStartApp) {
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET auto_start_enabled = ?, auto_start_app = ?, updated_at = ?
+                WHERE username = ?
+                """.formatted(usersTable),
+                autoStartEnabled,
+                autoStartApp,
+                Timestamp.from(Instant.now()),
+                username
+        );
+    }
+
     public void updatePassword(String username, String passwordHash) {
         jdbcTemplate.update(
                 "UPDATE %s SET password_hash = ?, updated_at = ? WHERE username = ?".formatted(usersTable),
@@ -87,7 +104,7 @@ public class PlatformUserStore {
         List<PlatformUser> rows = jdbcTemplate.query(
                 """
                         SELECT username, password_hash, display_name, roles_json, object_path,
-                               enabled, created_at, updated_at
+                               enabled, auto_start_enabled, auto_start_app, created_at, updated_at
                         FROM %s WHERE username = ?
                         """.formatted(usersTable),
                 this::mapRow,
@@ -100,7 +117,7 @@ public class PlatformUserStore {
         return jdbcTemplate.query(
                 """
                         SELECT username, password_hash, display_name, roles_json, object_path,
-                               enabled, created_at, updated_at
+                               enabled, auto_start_enabled, auto_start_app, created_at, updated_at
                         FROM %s ORDER BY username
                         """.formatted(usersTable),
                 this::mapRow
@@ -127,6 +144,8 @@ public class PlatformUserStore {
                 rs.getString("roles_json"),
                 rs.getString("object_path"),
                 rs.getBoolean("enabled"),
+                rs.getBoolean("auto_start_enabled"),
+                rs.getString("auto_start_app"),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant()
         );
@@ -139,6 +158,8 @@ public class PlatformUserStore {
             String rolesJson,
             String objectPath,
             boolean enabled,
+            boolean autoStartEnabled,
+            String autoStartApp,
             Instant createdAt,
             Instant updatedAt
     ) {
