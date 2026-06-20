@@ -1,9 +1,15 @@
 import { OPERATOR_APPS_ROOT, isOperatorAppChildPath } from "./operatorAppsPath";
+import {
+  ALERT_RULES_ROOT,
+  CORRELATORS_ROOT,
+  isAlertRulePath,
+  isCorrelatorPath,
+} from "./automationPath";
 import type { ObjectType } from "../types";
 
 export const APPLICATIONS_ROOT = "root.platform.applications";
 
-export type CreateDialogMode = "object" | "application" | "operator-app";
+export type CreateDialogMode = "object" | "application" | "operator-app" | "alert-rule" | "correlator";
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === APPLICATIONS_ROOT) {
@@ -11,6 +17,12 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   }
   if (parentPath === OPERATOR_APPS_ROOT) {
     return "operator-app";
+  }
+  if (parentPath === ALERT_RULES_ROOT) {
+    return "alert-rule";
+  }
+  if (parentPath === CORRELATORS_ROOT) {
+    return "correlator";
   }
   return "object";
 }
@@ -21,6 +33,10 @@ export function createActionLabel(parentPath: string): string {
       return "+ Deploy-приложение";
     case "operator-app":
       return "+ Operator app";
+    case "alert-rule":
+      return "+ Правило алерта";
+    case "correlator":
+      return "+ Коррелятор";
     default:
       return "+ Объект";
   }
@@ -31,10 +47,18 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
   if (!path) {
     return false;
   }
-  if (path === APPLICATIONS_ROOT || path === OPERATOR_APPS_ROOT) {
+  if (
+    path === APPLICATIONS_ROOT
+    || path === OPERATOR_APPS_ROOT
+    || path === ALERT_RULES_ROOT
+    || path === CORRELATORS_ROOT
+  ) {
     return true;
   }
   if (isOperatorAppChildPath(path)) {
+    return false;
+  }
+  if (isAlertRulePath(path) || isCorrelatorPath(path)) {
     return false;
   }
   if (path.startsWith(`${APPLICATIONS_ROOT}.`)) {
@@ -47,7 +71,20 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     return false;
   }
 
-  const containerTypes: ObjectType[] = ["ROOT", "TENANT", "CUSTOM", "MODEL"];
+  const containerTypes: ObjectType[] = [
+    "ROOT",
+    "TENANT",
+    "PLATFORM",
+    "DEVICES",
+    "DASHBOARDS",
+    "WORKFLOWS",
+    "ALERT_RULES",
+    "CORRELATORS",
+    "APPLICATIONS",
+    "OPERATOR_APPS",
+    "MODEL",
+    "CUSTOM",
+  ];
   if (!objectType || !containerTypes.includes(objectType)) {
     return false;
   }
@@ -61,6 +98,8 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     || path.endsWith(".models")
     || path.endsWith(".dashboards")
     || path.endsWith(".workflows")
+    || path.endsWith(".alert-rules")
+    || path.endsWith(".correlators")
   );
 }
 

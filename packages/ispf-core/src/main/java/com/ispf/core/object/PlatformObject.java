@@ -16,10 +16,11 @@ public class PlatformObject {
 
     private final String id;
     private final String path;
-    private final ObjectType type;
+    private ObjectType type;
     private volatile String displayName;
     private volatile String description;
     private final String templateId;
+    private volatile int sortOrder;
     private final Instant createdAt;
     private final Map<String, Variable> variables = new ConcurrentHashMap<>();
     private final Map<String, FunctionDescriptor> functions = new ConcurrentHashMap<>();
@@ -33,12 +34,25 @@ public class PlatformObject {
             String description,
             String templateId
     ) {
+        this(id, path, type, displayName, description, templateId, 0);
+    }
+
+    public PlatformObject(
+            String id,
+            String path,
+            ObjectType type,
+            String displayName,
+            String description,
+            String templateId,
+            int sortOrder
+    ) {
         this.id = id;
         this.path = path;
         this.type = type;
         this.displayName = displayName != null ? displayName : path.substring(path.lastIndexOf('.') + 1);
         this.description = description != null ? description : "";
         this.templateId = templateId;
+        this.sortOrder = sortOrder;
         this.createdAt = Instant.now();
     }
 
@@ -52,6 +66,13 @@ public class PlatformObject {
 
     public ObjectType type() {
         return type;
+    }
+
+    public void setType(ObjectType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("type is required");
+        }
+        this.type = type;
     }
 
     public String displayName() {
@@ -68,6 +89,14 @@ public class PlatformObject {
 
     public Instant createdAt() {
         return createdAt;
+    }
+
+    public int sortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public Map<String, Variable> variables() {

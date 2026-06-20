@@ -52,7 +52,7 @@ public class PlatformUserObjectTreeService {
         ensureSecurityRoot();
         ensureNode(
                 PlatformUserService.ROLES_FOLDER,
-                ObjectType.CUSTOM,
+                ObjectType.ROLES,
                 "Roles",
                 "Platform RBAC roles",
                 "security-folder-v1"
@@ -70,14 +70,14 @@ public class PlatformUserObjectTreeService {
         ensureSecurityRoot();
         ensureNode(
                 PlatformUserService.ROLES_FOLDER,
-                ObjectType.CUSTOM,
+                ObjectType.ROLES,
                 "Roles",
                 "Platform RBAC roles",
                 "security-folder-v1"
         );
         ensureNode(
                 role.objectPath(),
-                ObjectType.CUSTOM,
+                ObjectType.ROLE,
                 role.displayName(),
                 role.description(),
                 "platform-role-v1"
@@ -101,7 +101,7 @@ public class PlatformUserObjectTreeService {
         ensureSecurityRoot();
         ensureNode(
                 PlatformUserService.USERS_FOLDER,
-                ObjectType.CUSTOM,
+                ObjectType.USERS,
                 "Users",
                 "Platform user accounts",
                 "security-folder-v1"
@@ -125,7 +125,7 @@ public class PlatformUserObjectTreeService {
     private void ensureSecurityRoot() {
         ensureNode(
                 PlatformUserService.SECURITY_ROOT,
-                ObjectType.CUSTOM,
+                ObjectType.SECURITY,
                 "Security",
                 "Authentication and RBAC",
                 "security-folder-v1"
@@ -153,6 +153,7 @@ public class PlatformUserObjectTreeService {
     ) {
         if (objectManager.tree().findByPath(path).isPresent()) {
             objectManager.updateInfo(path, displayName, description);
+            objectManager.reconcileType(path, type);
             return;
         }
         int lastDot = path.lastIndexOf('.');
@@ -161,7 +162,7 @@ public class PlatformUserObjectTreeService {
             if (objectManager.tree().findByPath(parentPath).isEmpty()) {
                 ensureNode(
                         parentPath,
-                        ObjectType.CUSTOM,
+                        ObjectType.SECURITY,
                         parentPath.substring(parentPath.lastIndexOf('.') + 1),
                         "",
                         "security-folder-v1"

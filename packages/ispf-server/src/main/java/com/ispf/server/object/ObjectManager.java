@@ -28,9 +28,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Central service for object tree operations with database persistence and change events.
@@ -120,11 +123,50 @@ public class ObjectManager {
                 type,
                 displayName,
                 description,
-                templateId
+                templateId,
+                nextSortOrder(parentPath)
         );
         objectTree.register(node);
         persistNode(node);
         publish(ObjectChangeEvent.of(ObjectChangeType.CREATED, fullPath));
+        return node;
+    }
+
+    @Transactional
+    public void reorderChildren(String parentPath, List<String> orderedPaths) {
+        if (parentPath == null || parentPath.isBlank()) {
+            throw new IllegalArgumentException("parentPath is required");
+        }
+        objectTree.require(parentPath);
+        List<PlatformObject> children = objectTree.childrenOf(parentPath);
+        if (children.isEmpty()) {
+            throw new IllegalArgumentException("No children under: " + parentPath);
+        }
+        if (orderedPaths == null || orderedPaths.size() != children.size()) {
+            throw new IllegalArgumentException("orderedPaths must list all direct children");
+        }
+        Set<String> expected = children.stream().map(PlatformObject::path).collect(Collectors.toSet());
+        Set<String> provided = new LinkedHashSet<>(orderedPaths);
+        if (!expected.equals(provided)) {
+            throw new IllegalArgumentException("orderedPaths must match direct children of " + parentPath);
+        }
+        for (int index = 0; index < orderedPaths.size(); index++) {
+            String path = orderedPaths.get(index);
+            PlatformObject node = objectTree.require(path);
+            node.setSortOrder(index);
+            persistNode(node);
+        }
+        publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, parentPath));
+    }
+
+    @Transactional
+    public PlatformObject reconcileType(String path, ObjectType expectedType) {
+        PlatformObject node = objectTree.require(path);
+        if (node.type() != expectedType) {
+            node.setType(expectedType);
+            persistNode(node);
+            publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+        }
         return node;
     }
 
@@ -240,10 +282,24 @@ public class ObjectManager {
     private void ensureBootstrapNodes() {
         ensureBootstrapNode(
                 "root.platform.operator-apps",
-                ObjectType.CUSTOM,
+                ObjectType.OPERATOR_APPS,
                 "Operator Apps",
                 "Operator HMI — набор дашбордов для ?mode=operator&app=<id>",
                 "app-folder-v1"
+        );
+        ensureBootstrapNode(
+                "root.platform.alert-rules",
+                ObjectType.ALERT_RULES,
+                "Alert Rules",
+                "CEL rules that publish events on variable changes",
+                null
+        );
+        ensureBootstrapNode(
+                "root.platform.correlators",
+                ObjectType.CORRELATORS,
+                "Correlators",
+                "Event patterns that trigger workflows",
+                null
         );
     }
 
@@ -294,7 +350,8 @@ public class ObjectManager {
                     entity.getType(),
                     entity.getDisplayName(),
                     entity.getDescription(),
-                    entity.getTemplateId()
+                    entity.getTemplateId(),
+                    entity.getSortOrder()
             );
             for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
                 node.addEvent(event);
@@ -327,6 +384,13 @@ public class ObjectManager {
 
     private void persistNode(PlatformObject node) {
         nodeRepository.save(mapper.toEntity(node));
+    }
+
+    private int nextSortOrder(String parentPath) {
+        return objectTree.childrenOf(parentPath).stream()
+                .mapToInt(PlatformObject::sortOrder)
+                .max()
+                .orElse(-1) + 1;
     }
 
     private void persistVariable(String path, Variable variable) {

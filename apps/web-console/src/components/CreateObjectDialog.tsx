@@ -53,6 +53,10 @@ export default function CreateObjectDialog({
         return "Новое deploy-приложение";
       case "operator-app":
         return "Новое operator-приложение";
+      case "alert-rule":
+        return "Новое правило алерта";
+      case "correlator":
+        return "Новый коррелятор";
       default:
         return "Новый объект";
     }
@@ -88,6 +92,28 @@ export default function CreateObjectDialog({
       if (mode === "operator-app") {
         await createOperatorApp(name, displayName || name);
         return operatorAppObjectPath(name);
+      }
+      if (mode === "alert-rule") {
+        const obj = await createObject({
+          parentPath,
+          name,
+          type: "ALERT",
+          displayName: displayName || name,
+          description,
+          templateId: "alert-rule-v1",
+        });
+        return obj.path;
+      }
+      if (mode === "correlator") {
+        const obj = await createObject({
+          parentPath,
+          name,
+          type: "CORRELATOR",
+          displayName: displayName || name,
+          description,
+          templateId: "correlator-v1",
+        });
+        return obj.path;
       }
       const obj = await createObject({
         parentPath,
@@ -141,6 +167,11 @@ export default function CreateObjectDialog({
               выберите дашборды в дочернем объекте.
             </p>
           )}
+          {(mode === "alert-rule" || mode === "correlator") && (
+            <p className="hint">
+              После создания настройте параметры в панели свойств выбранного объекта.
+            </p>
+          )}
           <form
             className="form-grid"
             onSubmit={(e) => {
@@ -149,7 +180,7 @@ export default function CreateObjectDialog({
             }}
           >
             <label>
-              {mode === "object" ? "Имя (сегмент пути) *" : "App ID *"}
+              {mode === "object" ? "Имя (сегмент пути) *" : "Имя / ID *"}
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}

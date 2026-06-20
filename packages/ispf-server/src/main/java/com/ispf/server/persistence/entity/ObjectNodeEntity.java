@@ -36,6 +36,9 @@ public class ObjectNodeEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
+
     @Column(name = "events_json", columnDefinition = "TEXT")
     private String eventsJson;
 
@@ -96,6 +99,14 @@ public class ObjectNodeEntity {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getEventsJson() {

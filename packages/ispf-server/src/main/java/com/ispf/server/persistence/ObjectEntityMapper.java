@@ -32,6 +32,7 @@ public class ObjectEntityMapper {
         entity.setDescription(node.description());
         entity.setTemplateId(node.templateId().orElse(null));
         entity.setCreatedAt(node.createdAt());
+        entity.setSortOrder(node.sortOrder());
         entity.setEventsJson(writeJson(node.events().values().toArray(new EventDescriptor[0])));
         entity.setFunctionsJson(writeJson(node.functions().values().toArray(new FunctionDescriptor[0])));
         return entity;

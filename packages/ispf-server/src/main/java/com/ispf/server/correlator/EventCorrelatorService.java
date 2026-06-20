@@ -1,10 +1,9 @@
 package com.ispf.server.correlator;
 
 import com.ispf.plugin.workflow.WorkflowException;
+import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.persistence.CorrelatorHitRepository;
-import com.ispf.server.persistence.EventCorrelatorRepository;
 import com.ispf.server.persistence.entity.CorrelatorHitEntity;
-import com.ispf.server.persistence.entity.EventCorrelatorEntity;
 import com.ispf.server.workflow.WorkflowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,36 +15,34 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class EventCorrelatorService {
 
     private static final Logger log = LoggerFactory.getLogger(EventCorrelatorService.class);
 
-    private final EventCorrelatorRepository correlatorRepository;
+    private final AutomationTreeService automationTreeService;
     private final CorrelatorHitRepository hitRepository;
     private final WorkflowService workflowService;
 
     public EventCorrelatorService(
-            EventCorrelatorRepository correlatorRepository,
+            AutomationTreeService automationTreeService,
             CorrelatorHitRepository hitRepository,
             @Lazy WorkflowService workflowService
     ) {
-        this.correlatorRepository = correlatorRepository;
+        this.automationTreeService = automationTreeService;
         this.hitRepository = hitRepository;
         this.workflowService = workflowService;
     }
 
     @Transactional(readOnly = true)
     public List<EventCorrelator> list() {
-        return correlatorRepository.findAll().stream().map(this::toModel).toList();
+        return automationTreeService.listCorrelators();
     }
 
     @Transactional(readOnly = true)
     public EventCorrelator get(String id) {
-        return toModel(correlatorRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Correlator not found: " + id)));
+        return automationTreeService.getCorrelator(id);
     }
 
     @Transactional
@@ -62,115 +59,80 @@ public class EventCorrelatorService {
                 request.minOccurrences(),
                 request.windowSeconds()
         );
-        Instant now = Instant.now();
-        EventCorrelatorEntity entity = new EventCorrelatorEntity();
-        entity.setId(UUID.randomUUID().toString());
-        entity.setName(request.name());
-        entity.setObjectPath(blankToNull(request.objectPath()));
-        entity.setPatternType(patternType.name());
-        entity.setEventName(request.eventName());
-        entity.setSecondEventName(blankToNull(request.secondEventName()));
-        entity.setWindowSeconds(request.windowSeconds());
-        entity.setMinOccurrences(request.minOccurrences());
-        entity.setCooldownSeconds(request.cooldownSeconds());
-        entity.setActionType(request.actionType().name());
-        entity.setActionTarget(request.actionTarget());
-        entity.setEnabled(request.enabled());
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-        return toModel(correlatorRepository.save(entity));
+        return automationTreeService.createCorrelator(
+                request.name(),
+                request.objectPath(),
+                patternType,
+                request.eventName(),
+                request.secondEventName(),
+                request.windowSeconds(),
+                request.minOccurrences(),
+                request.cooldownSeconds(),
+                request.actionType(),
+                request.actionTarget(),
+                request.enabled()
+        );
     }
 
     @Transactional
     public EventCorrelator update(String id, UpdateCorrelatorRequest request) {
-        EventCorrelatorEntity entity = correlatorRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Correlator not found: " + id));
-        if (request.name() != null) {
-            entity.setName(request.name());
-        }
-        if (request.objectPath() != null) {
-            entity.setObjectPath(blankToNull(request.objectPath()));
-        }
-        if (request.patternType() != null) {
-            entity.setPatternType(request.patternType().name());
-        }
-        if (request.eventName() != null) {
-            entity.setEventName(request.eventName());
-        }
-        if (request.secondEventName() != null) {
-            entity.setSecondEventName(blankToNull(request.secondEventName()));
-        }
-        if (request.windowSeconds() != null) {
-            entity.setWindowSeconds(request.windowSeconds());
-        }
-        if (request.minOccurrences() != null) {
-            entity.setMinOccurrences(request.minOccurrences());
-        }
-        if (request.cooldownSeconds() != null) {
-            entity.setCooldownSeconds(request.cooldownSeconds());
-        }
-        if (request.actionType() != null) {
-            entity.setActionType(request.actionType().name());
-        }
-        if (request.actionTarget() != null) {
-            entity.setActionTarget(request.actionTarget());
-        }
-        if (request.enabled() != null) {
-            entity.setEnabled(request.enabled());
-        }
+        EventCorrelator current = get(id);
+        CorrelatorPatternType patternType = request.patternType() != null
+                ? request.patternType()
+                : current.patternType();
         validateRequest(
-                CorrelatorPatternType.valueOf(entity.getPatternType()),
-                entity.getEventName(),
-                entity.getSecondEventName(),
-                CorrelatorActionType.valueOf(entity.getActionType()),
-                entity.getActionTarget(),
-                entity.getMinOccurrences(),
-                entity.getWindowSeconds()
+                patternType,
+                request.eventName() != null ? request.eventName() : current.eventName(),
+                request.secondEventName() != null ? request.secondEventName() : current.secondEventName(),
+                request.actionType() != null ? request.actionType() : current.actionType(),
+                request.actionTarget() != null ? request.actionTarget() : current.actionTarget(),
+                request.minOccurrences() != null ? request.minOccurrences() : current.minOccurrences(),
+                request.windowSeconds() != null ? request.windowSeconds() : current.windowSeconds()
         );
-        entity.setUpdatedAt(Instant.now());
-        return toModel(correlatorRepository.save(entity));
+        return automationTreeService.updateCorrelator(
+                id,
+                request.name(),
+                request.objectPath(),
+                request.patternType(),
+                request.eventName(),
+                request.secondEventName(),
+                request.windowSeconds(),
+                request.minOccurrences(),
+                request.cooldownSeconds(),
+                request.actionType(),
+                request.actionTarget(),
+                request.enabled()
+        );
     }
 
     @Transactional
     public void delete(String id) {
-        if (!correlatorRepository.existsById(id)) {
-            throw new IllegalArgumentException("Correlator not found: " + id);
-        }
-        hitRepository.deleteByCorrelatorId(id);
-        correlatorRepository.deleteById(id);
+        automationTreeService.deleteCorrelator(id);
     }
 
     @Transactional
     public void processEventFired(String objectPath, String eventName) {
-        LinkedHashMap<String, EventCorrelatorEntity> correlators = new LinkedHashMap<>();
-        for (EventCorrelatorEntity correlator : correlatorRepository.findByEventNameAndEnabledTrue(eventName)) {
-            correlators.put(correlator.getId(), correlator);
-        }
-        for (EventCorrelatorEntity correlator : correlatorRepository.findBySecondEventNameAndEnabledTrue(eventName)) {
-            correlators.putIfAbsent(correlator.getId(), correlator);
+        LinkedHashMap<String, EventCorrelator> correlators = new LinkedHashMap<>();
+        for (EventCorrelator correlator : automationTreeService.findEnabledCorrelatorsForEvent(eventName)) {
+            correlators.put(correlator.id(), correlator);
         }
 
         Instant now = Instant.now();
-        for (EventCorrelatorEntity correlator : correlators.values()) {
-            if (!matchesObject(correlator.getObjectPath(), objectPath)) {
+        for (EventCorrelator correlator : correlators.values()) {
+            if (!matchesObject(correlator.objectPath(), objectPath)) {
                 continue;
             }
             if (isInCooldown(correlator, now)) {
                 continue;
             }
-            CorrelatorPatternType patternType = CorrelatorPatternType.valueOf(
-                    correlator.getPatternType() != null ? correlator.getPatternType() : CorrelatorPatternType.COUNT.name()
-            );
-            boolean triggered = switch (patternType) {
+            boolean triggered = switch (correlator.patternType()) {
                 case COUNT -> processCountPattern(correlator, objectPath, eventName, now);
                 case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, now);
             };
             if (triggered) {
                 executeAction(correlator, objectPath);
-                correlator.setLastTriggeredAt(now);
-                correlator.setUpdatedAt(now);
-                correlatorRepository.save(correlator);
-                hitRepository.deleteByCorrelatorId(correlator.getId());
+                automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
+                hitRepository.deleteByCorrelatorId(correlator.id());
             }
         }
         hitRepository.deleteOlderThan(now.minus(1, ChronoUnit.HOURS));
@@ -178,103 +140,74 @@ public class EventCorrelatorService {
 
     @Transactional
     public void ensureDemoCorrelators() {
-        if (correlatorRepository.count() > 0) {
-            return;
-        }
-        create(new CreateCorrelatorRequest(
-                "Alarm handler on threshold event",
-                "root.platform.devices.demo-sensor-01",
-                CorrelatorPatternType.COUNT,
-                "thresholdExceeded",
-                null,
-                0,
-                1,
-                120,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.demo-alarm-handler",
-                true
-        ));
-        create(new CreateCorrelatorRequest(
-                "Threshold then alarm active (sequence demo)",
-                "root.platform.devices.demo-sensor-01",
-                CorrelatorPatternType.SEQUENCE,
-                "thresholdExceeded",
-                "alarmActive",
-                300,
-                1,
-                120,
-                CorrelatorActionType.RUN_WORKFLOW,
-                "root.platform.workflows.demo-alarm-handler",
-                false
-        ));
+        automationTreeService.ensureDemoCorrelators();
     }
 
     private boolean processCountPattern(
-            EventCorrelatorEntity correlator,
+            EventCorrelator correlator,
             String objectPath,
             String eventName,
             Instant now
     ) {
-        if (!eventName.equals(correlator.getEventName())) {
+        if (!eventName.equals(correlator.eventName())) {
             return false;
         }
-        recordHit(correlator.getId(), objectPath, eventName, now);
+        recordHit(correlator.id(), objectPath, eventName, now);
         return thresholdMet(correlator, objectPath, now);
     }
 
     private boolean processSequencePattern(
-            EventCorrelatorEntity correlator,
+            EventCorrelator correlator,
             String objectPath,
             String eventName,
             Instant now
     ) {
-        String firstEvent = correlator.getEventName();
-        String secondEvent = correlator.getSecondEventName();
+        String firstEvent = correlator.eventName();
+        String secondEvent = correlator.secondEventName();
         if (secondEvent == null || secondEvent.isBlank()) {
             return false;
         }
         if (eventName.equals(firstEvent)) {
-            recordHit(correlator.getId(), objectPath, firstEvent, now);
+            recordHit(correlator.id(), objectPath, firstEvent, now);
             return false;
         }
         if (!eventName.equals(secondEvent)) {
             return false;
         }
-        Instant since = correlator.getWindowSeconds() > 0
-                ? now.minusSeconds(correlator.getWindowSeconds())
+        Instant since = correlator.windowSeconds() > 0
+                ? now.minusSeconds(correlator.windowSeconds())
                 : now.minusSeconds(1);
         return hitRepository.existsByCorrelatorIdAndObjectPathAndEventNameAndOccurredAtAfter(
-                correlator.getId(),
+                correlator.id(),
                 objectPath,
                 firstEvent,
                 since
         );
     }
 
-    private void executeAction(EventCorrelatorEntity correlator, String objectPath) {
-        CorrelatorActionType actionType = CorrelatorActionType.valueOf(correlator.getActionType());
+    private void executeAction(EventCorrelator correlator, String objectPath) {
         try {
-            switch (actionType) {
-                case RUN_WORKFLOW -> workflowService.runWorkflow(correlator.getActionTarget(), objectPath);
+            switch (correlator.actionType()) {
+                case RUN_WORKFLOW -> workflowService.runWorkflow(correlator.actionTarget(), objectPath);
             }
         } catch (WorkflowException e) {
-            log.warn("Correlator {} action failed: {}", correlator.getId(), e.getMessage());
+            log.warn("Correlator {} action failed: {}", correlator.id(), e.getMessage());
         }
     }
 
-    private boolean thresholdMet(EventCorrelatorEntity correlator, String objectPath, Instant now) {
-        if (correlator.getWindowSeconds() <= 0) {
-            return correlator.getMinOccurrences() <= 1
+    private boolean thresholdMet(EventCorrelator correlator, String objectPath, Instant now) {
+        if (correlator.windowSeconds() <= 0) {
+            return correlator.minOccurrences() <= 1
                     || hitRepository.countByCorrelatorIdAndObjectPathAndOccurredAtAfter(
-                    correlator.getId(), objectPath, now.minusSeconds(1)) >= correlator.getMinOccurrences();
+                    correlator.id(), objectPath, now.minusSeconds(1)) >= correlator.minOccurrences();
         }
-        Instant since = now.minusSeconds(correlator.getWindowSeconds());
+        Instant since = now.minusSeconds(correlator.windowSeconds());
         long hits = hitRepository.countByCorrelatorIdAndObjectPathAndOccurredAtAfter(
-                correlator.getId(),
+                correlator.id(),
                 objectPath,
                 since
         );
-        return hits >= correlator.getMinOccurrences();
+        return hits >= correlator.minOccurrences();
     }
 
     private void recordHit(String correlatorId, String objectPath, String eventName, Instant now) {
@@ -286,12 +219,12 @@ public class EventCorrelatorService {
         hitRepository.save(hit);
     }
 
-    private static boolean isInCooldown(EventCorrelatorEntity correlator, Instant now) {
-        if (correlator.getCooldownSeconds() <= 0 || correlator.getLastTriggeredAt() == null) {
+    private static boolean isInCooldown(EventCorrelator correlator, Instant now) {
+        if (correlator.cooldownSeconds() <= 0 || correlator.lastTriggeredAt() == null) {
             return false;
         }
-        return correlator.getLastTriggeredAt()
-                .plusSeconds(correlator.getCooldownSeconds())
+        return correlator.lastTriggeredAt()
+                .plusSeconds(correlator.cooldownSeconds())
                 .isAfter(now);
     }
 
@@ -336,33 +269,6 @@ public class EventCorrelatorService {
         }
     }
 
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
-    }
-
-    private EventCorrelator toModel(EventCorrelatorEntity entity) {
-        CorrelatorPatternType patternType = entity.getPatternType() != null
-                ? CorrelatorPatternType.valueOf(entity.getPatternType())
-                : CorrelatorPatternType.COUNT;
-        return new EventCorrelator(
-                entity.getId(),
-                entity.getName(),
-                entity.getObjectPath(),
-                patternType,
-                entity.getEventName(),
-                entity.getSecondEventName(),
-                entity.getWindowSeconds(),
-                entity.getMinOccurrences(),
-                entity.getCooldownSeconds(),
-                CorrelatorActionType.valueOf(entity.getActionType()),
-                entity.getActionTarget(),
-                entity.isEnabled(),
-                entity.getLastTriggeredAt(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
-    }
-
     public record CreateCorrelatorRequest(
             String name,
             String objectPath,
@@ -376,32 +282,6 @@ public class EventCorrelatorService {
             String actionTarget,
             boolean enabled
     ) {
-        /** Backward-compatible constructor for COUNT pattern. */
-        public CreateCorrelatorRequest(
-                String name,
-                String objectPath,
-                String eventName,
-                int windowSeconds,
-                int minOccurrences,
-                int cooldownSeconds,
-                CorrelatorActionType actionType,
-                String actionTarget,
-                boolean enabled
-        ) {
-            this(
-                    name,
-                    objectPath,
-                    CorrelatorPatternType.COUNT,
-                    eventName,
-                    null,
-                    windowSeconds,
-                    minOccurrences,
-                    cooldownSeconds,
-                    actionType,
-                    actionTarget,
-                    enabled
-            );
-        }
     }
 
     public record UpdateCorrelatorRequest(

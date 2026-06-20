@@ -201,6 +201,24 @@ code,
   border-right: 2px solid var(--accent);
 }
 
+.tree-row.dragging {
+  opacity: 0.45;
+}
+
+.tree-row.drop-target {
+  outline: 1px dashed var(--accent);
+  outline-offset: -1px;
+  background: rgba(47, 129, 247, 0.1);
+}
+
+.object-tree.is-dragging .tree-row[draggable="true"] {
+  cursor: grab;
+}
+
+.object-tree.is-dragging .tree-row.dragging {
+  cursor: grabbing;
+}
+
 .tree-toggle {
   color: var(--text-muted);
   font-size: 0.7rem;

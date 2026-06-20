@@ -1,0 +1,56 @@
+package com.ispf.server.object;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.greaterThan;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class ObjectReorderApiTest {
+
+    private static final String PARENT = "root.platform.devices";
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void reordersDirectChildrenWithinParent() throws Exception {
+        String first = mockMvc.perform(get("/api/v1/objects").param("parent", PARENT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(greaterThan(1)))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        var children = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(first);
+        String pathA = children.get(0).get("path").asText();
+        String pathB = children.get(1).get("path").asText();
+
+        mockMvc.perform(put("/api/v1/objects/reorder")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "%s",
+                                  "orderedPaths": ["%s", "%s"]
+                                }
+                                """.formatted(PARENT, pathB, pathA)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/objects").param("parent", PARENT))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].path").value(pathB))
+                .andExpect(jsonPath("$[1].path").value(pathA));
+    }
+}

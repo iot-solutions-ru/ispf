@@ -12,6 +12,14 @@ import {
 } from "../utils/operatorAppsPath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "../utils/securityUserPath";
 import { isSecurityRolePath, isSecurityRolesRoot } from "../utils/securityRolePath";
+import {
+  isAlertRulePath,
+  isAlertRulesRoot,
+  isCorrelatorPath,
+  isCorrelatorsRoot,
+} from "../utils/automationPath";
+import AlertRuleInspector from "./automation/AlertRuleInspector";
+import CorrelatorInspector from "./automation/CorrelatorInspector";
 import { APPLICATIONS_ROOT, canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
 
 interface ExplorerViewProps {
@@ -44,6 +52,10 @@ export default function ExplorerView({
   const isUserObject = isSecurityUserPath(selectedPath);
   const isRolesRoot = isSecurityRolesRoot(selectedPath);
   const isRoleObject = isSecurityRolePath(selectedPath);
+  const isAlertRule = isAlertRulePath(selectedPath);
+  const isCorrelator = isCorrelatorPath(selectedPath);
+  const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
+  const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
   const showCreateButton =
     isAdmin
     && canCreateChildAt(selectedPath, selectedObject?.type)
@@ -54,7 +66,8 @@ export default function ExplorerView({
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
     >
-      {!isOperatorAppChild && !isUsersRoot && !isUserObject && !isRolesRoot && !isRoleObject && (
+      {!isOperatorAppChild && !isUsersRoot && !isUserObject && !isRolesRoot && !isRoleObject
+        && !isAlertRule && !isCorrelator && (
         <div className="explorer-toolbar">
           {showCreateButton && (
             <button type="button" className="btn primary" onClick={onCreateChild}>
@@ -82,6 +95,10 @@ export default function ExplorerView({
         <SecurityRolesPanel canManage={isAdmin} onSelectRole={onSelectPath} />
       ) : isRoleObject ? (
         <SecurityRoleInspector path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+      ) : isAlertRule ? (
+        <AlertRuleInspector path={selectedPath} canManage={isAdmin} />
+      ) : isCorrelator ? (
+        <CorrelatorInspector path={selectedPath} canManage={isAdmin} />
       ) : (
         <>
           <ObjectInspector path={selectedPath} onDeleted={onDeleted} canManage={isAdmin} />
@@ -97,6 +114,20 @@ export default function ExplorerView({
             <section className="operator-apps-folder-hint">
               <p className="hint">
                 Operator UI настраивается в дочерних объектах. Новое приложение — кнопка выше.
+              </p>
+            </section>
+          )}
+          {isAlertRulesFolder && (
+            <section className="operator-apps-folder-hint">
+              <p className="hint">
+                CEL-правила публикуют события при изменении переменных. Создайте правило кнопкой выше.
+              </p>
+            </section>
+          )}
+          {isCorrelatorsFolder && (
+            <section className="operator-apps-folder-hint">
+              <p className="hint">
+                Корреляторы реагируют на события и запускают workflow. Создайте коррелятор кнопкой выше.
               </p>
             </section>
           )}

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchObjects, fetchPlatformInfo } from "./api";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { fetchObjects, fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { logout } from "./auth/login";
 import { getPrimaryRole, getStoredSession, isAdminSession, type AuthSession } from "./auth/session";
 import {
@@ -19,7 +19,6 @@ import DashboardBuilder from "./components/dashboard/DashboardBuilder";
 import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
-import AutomationView from "./components/automation/AutomationView";
 import SystemMetricsView from "./components/SystemMetricsView";
 import LoginView from "./components/LoginView";
 import ModelEditorPanel from "./components/ModelEditorPanel";
@@ -53,7 +52,7 @@ export default function App() {
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
   const [appMode, setAppMode] = useAppMode(session);
   const queryClient = useQueryClient();
-  const [workspaceTab, setWorkspaceTab] = useState<"explorer" | "automation" | string>("explorer");
+  const [workspaceTab, setWorkspaceTab] = useState<"explorer" | string>("explorer");
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
   const [propertiesTabPath, setPropertiesTabPath] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<string | null>(() => readSelectedPath());
@@ -90,6 +89,12 @@ export default function App() {
     queryKey: ["objects"],
     queryFn: () => fetchObjects(),
     refetchInterval: 30_000,
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: ({ parentPath, orderedPaths }: { parentPath: string; orderedPaths: string[] }) =>
+      reorderObjectChildren(parentPath, orderedPaths),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["objects"] }),
   });
 
   const tree = useMemo(() => {
@@ -263,13 +268,6 @@ export default function App() {
         >
           Обозреватель
         </button>
-        <button
-          type="button"
-          className={workspaceTab === "automation" ? "active" : ""}
-          onClick={() => setWorkspaceTab("automation")}
-        >
-          Автоматизация
-        </button>
         {isAdmin && (
           <button
             type="button"
@@ -301,7 +299,7 @@ export default function App() {
       </nav>
 
       <div className="workspace">
-        {workspaceTab !== "automation" && workspaceTab !== "system" && (
+        {workspaceTab !== "system" && (
           <aside className="sidebar">
             <div className="sidebar-head">
               <h3>Дерево объектов</h3>
@@ -324,6 +322,10 @@ export default function App() {
                 selectedPath={selectedPath}
                 onSelect={setSelectedPath}
                 onOpenEditor={openEditor}
+                canReorder={isAdmin && !treeFilter.trim()}
+                onReorder={(parentPath, orderedPaths) =>
+                  reorderMutation.mutate({ parentPath, orderedPaths })
+                }
               />
             )}
           </aside>
@@ -342,8 +344,6 @@ export default function App() {
             />
           </main>
         )}
-
-        {workspaceTab === "automation" && <AutomationView readOnly={!isAdmin} />}
 
         {workspaceTab === "system" && isAdmin && <SystemMetricsView />}
 

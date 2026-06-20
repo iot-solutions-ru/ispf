@@ -135,13 +135,15 @@ public class ModelApplicationRunner {
     }
 
     private void ensurePlatformDemoNodes() {
-        ensureNode("root.platform.devices", ObjectType.CUSTOM, "Devices", "Connected devices");
+        ensureNode("root.platform.devices", ObjectType.DEVICES, "Devices", "Connected devices");
         ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor", "mqtt-sensor-v1");
-        ensureNode("root.platform.dashboards", ObjectType.CUSTOM, "Dashboards", "HMI dashboards");
+        ensureNode("root.platform.dashboards", ObjectType.DASHBOARDS, "Dashboards", "HMI dashboards");
         ensureNode("root.platform.dashboards.demo-sensor", ObjectType.DASHBOARD, "Demo Sensor Dashboard", "Live HMI for demo MQTT temperature sensor", "dashboard-v1");
         ensureNode("root.platform.dashboards.snmp-host-monitoring", ObjectType.DASHBOARD, "SNMP Host Monitoring", "System monitoring dashboard for SNMP agents (Windows/Linux)", "dashboard-v1");
-        ensureNode("root.platform.workflows", ObjectType.CUSTOM, "Workflows", "BPMN automation workflows");
+        ensureNode("root.platform.workflows", ObjectType.WORKFLOWS, "Workflows", "BPMN automation workflows");
         ensureNode("root.platform.workflows.demo-alarm-handler", ObjectType.WORKFLOW, "Demo Alarm Handler", "Triggers when demo sensor alarm becomes active", "workflow-v1");
+        ensureNode("root.platform.alert-rules", ObjectType.ALERT_RULES, "Alert Rules", "CEL rules that publish events on variable changes");
+        ensureNode("root.platform.correlators", ObjectType.CORRELATORS, "Correlators", "Event patterns that trigger workflows");
     }
 
     private void ensureNode(String path, ObjectType type, String displayName, String description) {
@@ -150,6 +152,7 @@ public class ModelApplicationRunner {
 
     private void ensureNode(String path, ObjectType type, String displayName, String description, String modelId) {
         if (objectManager.tree().findByPath(path).isPresent()) {
+            objectManager.reconcileType(path, type);
             return;
         }
         int lastDot = path.lastIndexOf('.');

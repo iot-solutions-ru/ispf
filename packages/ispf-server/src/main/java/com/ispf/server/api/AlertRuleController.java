@@ -4,11 +4,11 @@ import com.ispf.server.alert.AlertRule;
 import com.ispf.server.alert.AlertRuleService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,9 +28,9 @@ public class AlertRuleController {
         return alertRuleService.list();
     }
 
-    @GetMapping("/{id}")
-    public AlertRule get(@PathVariable String id) {
-        return alertRuleService.get(id);
+    @GetMapping("/by-path")
+    public AlertRule get(@RequestParam String path) {
+        return alertRuleService.get(path);
     }
 
     @PostMapping
@@ -38,13 +38,13 @@ public class AlertRuleController {
         return alertRuleService.create(request);
     }
 
-    @PutMapping("/{id}")
-    public AlertRule update(@PathVariable String id, @RequestBody AlertRuleService.UpdateAlertRuleRequest request) {
-        return alertRuleService.update(id, request);
+    @PutMapping("/by-path")
+    public AlertRule update(@RequestParam String path, @RequestBody AlertRuleService.UpdateAlertRuleRequest request) {
+        return alertRuleService.update(path, request);
     }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable String id) {
-        alertRuleService.delete(id);
+    @DeleteMapping("/by-path")
+    public void delete(@RequestParam String path) {
+        alertRuleService.delete(path);
     }
 }

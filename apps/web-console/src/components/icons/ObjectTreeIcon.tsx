@@ -112,30 +112,61 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "ROOT":
       return "root";
     case "TENANT":
+    case "PLATFORM":
       return "tenant";
     case "USER":
       return "user";
+    case "DEVICES":
     case "DEVICE":
       return "device";
     case "DRIVER":
       return "driver";
     case "MODEL":
       return "model";
+    case "DASHBOARDS":
     case "DASHBOARD":
       return "dashboard";
+    case "WORKFLOWS":
     case "WORKFLOW":
+    case "CORRELATORS":
+    case "CORRELATOR":
       return "workflow";
+    case "ALERT_RULES":
     case "ALERT":
       return "alert";
+    case "APPLICATIONS":
+    case "APPLICATION":
+    case "OPERATOR_APPS":
+      return "application";
+    case "REPORTS":
+    case "REPORT":
+      return "report";
+    case "SECURITY":
+      return "security";
+    case "USERS":
+      return "users-folder";
+    case "ROLES":
+    case "ROLE":
+      return "roles-folder";
+    case "FUNCTIONS":
+    case "FUNCTION":
+      return "functions";
+    case "SCHEDULES":
+    case "SCHEDULE":
+      return "schedules";
+    case "BINDINGS":
+    case "BINDING":
+      return "bindings";
+    case "MIGRATIONS":
+    case "MIGRATION":
+      return "database";
+    case "SCREENS":
+    case "SCREEN":
+      return "screens";
     case "AGENT":
       return "agent";
-    case "APPLICATION":
-      return "application";
     case "CUSTOM":
     default:
-      if (type === "REPORT") {
-        return "report";
-      }
       return "folder";
   }
 }

@@ -45,7 +45,7 @@ public class OperatorAppObjectTreeService {
             objectManager.create(
                     "root.platform",
                     "operator-apps",
-                    ObjectType.CUSTOM,
+                    ObjectType.OPERATOR_APPS,
                     "Operator Apps",
                     "Operator HMI — набор дашбордов для ?mode=operator&app=<id>",
                     "app-folder-v1"
@@ -62,6 +62,7 @@ public class OperatorAppObjectTreeService {
     ) {
         if (objectManager.tree().findByPath(path).isPresent()) {
             objectManager.updateInfo(path, displayName, description);
+            objectManager.reconcileType(path, type);
             return;
         }
         int lastDot = path.lastIndexOf('.');

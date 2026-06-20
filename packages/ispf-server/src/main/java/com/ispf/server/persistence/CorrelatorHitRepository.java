@@ -30,4 +30,8 @@ public interface CorrelatorHitRepository extends JpaRepository<CorrelatorHitEnti
     @Modifying
     @Query("DELETE FROM CorrelatorHitEntity h WHERE h.occurredAt < :cutoff")
     int deleteOlderThan(@Param("cutoff") Instant cutoff);
+
+    @Modifying
+    @Query("UPDATE CorrelatorHitEntity h SET h.correlatorId = :newId WHERE h.correlatorId = :oldId")
+    void remapCorrelatorId(@Param("oldId") String oldId, @Param("newId") String newId);
 }

@@ -4,32 +4,29 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.event.EventService;
-import com.ispf.server.persistence.AlertRuleRepository;
-import com.ispf.server.persistence.entity.AlertRuleEntity;
+import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class AlertRuleService {
 
-    private final AlertRuleRepository repository;
+    private final AutomationTreeService automationTreeService;
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
     private final EventService eventService;
 
     public AlertRuleService(
-            AlertRuleRepository repository,
+            AutomationTreeService automationTreeService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
             EventService eventService
     ) {
-        this.repository = repository;
+        this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
         this.eventService = eventService;
@@ -37,121 +34,85 @@ public class AlertRuleService {
 
     @Transactional(readOnly = true)
     public List<AlertRule> list() {
-        return repository.findAll().stream().map(this::toModel).toList();
+        return automationTreeService.listAlertRules();
     }
 
     @Transactional(readOnly = true)
     public AlertRule get(String id) {
-        return toModel(repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Alert rule not found: " + id)));
+        return automationTreeService.getAlertRule(id);
     }
 
     @Transactional
     public AlertRule create(CreateAlertRuleRequest request) {
         validateRule(request.objectPath(), request.eventName(), request.conditionExpr());
-        Instant now = Instant.now();
-        AlertRuleEntity entity = new AlertRuleEntity();
-        entity.setId(UUID.randomUUID().toString());
-        entity.setName(request.name());
-        entity.setObjectPath(request.objectPath());
-        entity.setWatchVariable(request.watchVariable());
-        entity.setConditionExpr(request.conditionExpr());
-        entity.setEventName(request.eventName());
-        entity.setPayloadVariable(request.payloadVariable());
-        entity.setEnabled(request.enabled());
-        entity.setEdgeTrigger(request.edgeTrigger());
-        entity.setLastConditionMet(null);
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-        return toModel(repository.save(entity));
+        return automationTreeService.createAlertRule(
+                request.name(),
+                request.objectPath(),
+                request.watchVariable(),
+                request.conditionExpr(),
+                request.eventName(),
+                request.payloadVariable(),
+                request.enabled(),
+                request.edgeTrigger()
+        );
     }
 
     @Transactional
     public AlertRule update(String id, UpdateAlertRuleRequest request) {
-        AlertRuleEntity entity = repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Alert rule not found: " + id));
-        if (request.name() != null) {
-            entity.setName(request.name());
+        if (request.objectPath() != null || request.eventName() != null || request.conditionExpr() != null) {
+            AlertRule current = get(id);
+            validateRule(
+                    request.objectPath() != null ? request.objectPath() : current.objectPath(),
+                    request.eventName() != null ? request.eventName() : current.eventName(),
+                    request.conditionExpr() != null ? request.conditionExpr() : current.conditionExpr()
+            );
         }
-        if (request.objectPath() != null) {
-            entity.setObjectPath(request.objectPath());
-        }
-        if (request.watchVariable() != null) {
-            entity.setWatchVariable(request.watchVariable());
-        }
-        if (request.conditionExpr() != null) {
-            entity.setConditionExpr(request.conditionExpr());
-        }
-        if (request.eventName() != null) {
-            entity.setEventName(request.eventName());
-        }
-        if (request.payloadVariable() != null) {
-            entity.setPayloadVariable(request.payloadVariable().isBlank() ? null : request.payloadVariable());
-        }
-        if (request.enabled() != null) {
-            entity.setEnabled(request.enabled());
-        }
-        if (request.edgeTrigger() != null) {
-            entity.setEdgeTrigger(request.edgeTrigger());
-        }
-        validateRule(entity.getObjectPath(), entity.getEventName(), entity.getConditionExpr());
-        entity.setUpdatedAt(Instant.now());
-        return toModel(repository.save(entity));
+        return automationTreeService.updateAlertRule(
+                id,
+                request.name(),
+                request.objectPath(),
+                request.watchVariable(),
+                request.conditionExpr(),
+                request.eventName(),
+                request.payloadVariable(),
+                request.enabled(),
+                request.edgeTrigger()
+        );
     }
 
     @Transactional
     public void delete(String id) {
-        if (!repository.existsById(id)) {
-            throw new IllegalArgumentException("Alert rule not found: " + id);
-        }
-        repository.deleteById(id);
+        automationTreeService.deleteAlertRule(id);
     }
 
     @Transactional
     public void processVariableChange(String objectPath, String variableName) {
-        List<AlertRuleEntity> rules = repository.findByObjectPathAndWatchVariableAndEnabledTrue(
-                objectPath,
-                variableName
-        );
+        List<AlertRule> rules = automationTreeService.findEnabledAlertRules(objectPath, variableName);
         if (rules.isEmpty()) {
             return;
         }
 
         PlatformObject node = objectManager.require(objectPath);
-        for (AlertRuleEntity rule : rules) {
-            if (!node.events().containsKey(rule.getEventName())) {
+        for (AlertRule rule : rules) {
+            if (!node.events().containsKey(rule.eventName())) {
                 continue;
             }
-            boolean conditionMet = evaluateCondition(rule.getConditionExpr(), node);
+            boolean conditionMet = evaluateCondition(rule.conditionExpr(), node);
             boolean shouldFire = conditionMet;
-            if (rule.isEdgeTrigger()) {
-                shouldFire = conditionMet && !Boolean.TRUE.equals(rule.getLastConditionMet());
+            if (rule.edgeTrigger()) {
+                shouldFire = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
             }
-            rule.setLastConditionMet(conditionMet);
-            rule.setUpdatedAt(Instant.now());
-            repository.save(rule);
+            automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
             if (shouldFire) {
-                DataRecord payload = resolvePayload(node, rule.getPayloadVariable());
-                eventService.fire(objectPath, rule.getEventName(), payload);
+                DataRecord payload = resolvePayload(node, rule.payloadVariable());
+                eventService.fire(objectPath, rule.eventName(), payload);
             }
         }
     }
 
     @Transactional
     public void ensureDemoRules() {
-        if (repository.count() > 0) {
-            return;
-        }
-        create(new CreateAlertRuleRequest(
-                "Temperature threshold exceeded",
-                "root.platform.devices.demo-sensor-01",
-                "alarmActive",
-                "self.alarmActive[\"value\"] == true",
-                "thresholdExceeded",
-                "temperature",
-                true,
-                true
-        ));
+        automationTreeService.ensureDemoAlertRule();
     }
 
     private DataRecord resolvePayload(PlatformObject node, String payloadVariable) {
@@ -181,23 +142,6 @@ public class AlertRuleService {
             throw new IllegalArgumentException("Unknown event on object: " + eventName);
         }
         expressionEngine.compile(conditionExpr);
-    }
-
-    private AlertRule toModel(AlertRuleEntity entity) {
-        return new AlertRule(
-                entity.getId(),
-                entity.getName(),
-                entity.getObjectPath(),
-                entity.getWatchVariable(),
-                entity.getConditionExpr(),
-                entity.getEventName(),
-                entity.getPayloadVariable(),
-                entity.isEnabled(),
-                entity.isEdgeTrigger(),
-                entity.getLastConditionMet(),
-                entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
     }
 
     public record CreateAlertRuleRequest(

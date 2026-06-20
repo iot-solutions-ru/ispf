@@ -1,5 +1,21 @@
 import type { ObjectSummary, TreeNode } from "../types";
 
+function compareObjects(a: ObjectSummary, b: ObjectSummary): number {
+  const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+  if (order !== 0) {
+    return order;
+  }
+  return a.displayName.localeCompare(b.displayName, undefined, { sensitivity: "base" });
+}
+
+export function parentObjectPath(path: string): string | null {
+  if (path === "root") {
+    return null;
+  }
+  const dot = path.lastIndexOf(".");
+  return dot === -1 ? "root" : path.slice(0, dot);
+}
+
 export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   const byPath = new Map(objects.map((c) => [c.path, c]));
   const childMap = new Map<string, ObjectSummary[]>();
@@ -14,7 +30,7 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   }
 
   for (const list of childMap.values()) {
-    list.sort((a, b) => a.displayName.localeCompare(b.displayName));
+    list.sort(compareObjects);
   }
 
   function build(parentPath: string): TreeNode[] {

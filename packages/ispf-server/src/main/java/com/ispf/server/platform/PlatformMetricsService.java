@@ -5,8 +5,6 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.driver.DriverRuntimeService;
-import com.ispf.server.persistence.AlertRuleRepository;
-import com.ispf.server.persistence.EventCorrelatorRepository;
 import com.ispf.server.persistence.EventHistoryRepository;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -37,8 +35,6 @@ public class PlatformMetricsService {
     private final VariableSampleRepository variableSampleRepository;
     private final EventHistoryRepository eventHistoryRepository;
     private final WorkflowInstanceRepository workflowInstanceRepository;
-    private final AlertRuleRepository alertRuleRepository;
-    private final EventCorrelatorRepository eventCorrelatorRepository;
     private final VariableHistoryProperties variableHistoryProperties;
     private final DataSource dataSource;
     private final DriverRuntimeService driverRuntimeService;
@@ -54,8 +50,6 @@ public class PlatformMetricsService {
             VariableSampleRepository variableSampleRepository,
             EventHistoryRepository eventHistoryRepository,
             WorkflowInstanceRepository workflowInstanceRepository,
-            AlertRuleRepository alertRuleRepository,
-            EventCorrelatorRepository eventCorrelatorRepository,
             VariableHistoryProperties variableHistoryProperties,
             DataSource dataSource,
             DriverRuntimeService driverRuntimeService,
@@ -70,8 +64,6 @@ public class PlatformMetricsService {
         this.variableSampleRepository = variableSampleRepository;
         this.eventHistoryRepository = eventHistoryRepository;
         this.workflowInstanceRepository = workflowInstanceRepository;
-        this.alertRuleRepository = alertRuleRepository;
-        this.eventCorrelatorRepository = eventCorrelatorRepository;
         this.variableHistoryProperties = variableHistoryProperties;
         this.dataSource = dataSource;
         this.driverRuntimeService = driverRuntimeService;
@@ -145,6 +137,7 @@ public class PlatformMetricsService {
         section.put("applications", objectNodeRepository.countByType(ObjectType.APPLICATION));
         section.put("models", objectNodeRepository.countByType(ObjectType.MODEL));
         section.put("alerts", objectNodeRepository.countByType(ObjectType.ALERT));
+        section.put("correlators", objectNodeRepository.countByType(ObjectType.CORRELATOR));
         return section;
     }
 
@@ -190,8 +183,8 @@ public class PlatformMetricsService {
         section.put("workflowInstancesCompleted", workflowInstanceRepository.countByStatus("COMPLETED"));
         section.put("workflowInstancesFailed", workflowInstanceRepository.countByStatus("FAILED"));
         section.put("workflowInstancesCancelled", workflowInstanceRepository.countByStatus("CANCELLED"));
-        section.put("alertRules", alertRuleRepository.count());
-        section.put("eventCorrelators", eventCorrelatorRepository.count());
+        section.put("alertRules", objectNodeRepository.countByType(ObjectType.ALERT));
+        section.put("eventCorrelators", objectNodeRepository.countByType(ObjectType.CORRELATOR));
         section.put("applicationFunctions", applicationFunctionStore.countDistinctFunctions());
         section.put("applicationFunctionVersions", applicationFunctionStore.countDeployedVersions());
         section.put("platformSchedules", platformSchedulerService.countSchedules());

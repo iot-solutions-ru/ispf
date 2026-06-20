@@ -72,7 +72,7 @@ export default function SecurityRoleInspector({
     <div className="inspector security-user-inspector">
       <header className="inspector-header security-user-header">
         <div className="inspector-title-row">
-          <ObjectTreeIcon path={path} type="CUSTOM" size={28} />
+          <ObjectTreeIcon path={path} type="ROLE" size={28} />
           <div className="security-user-heading">
             <div className="security-user-title-line">
               <h2>{displayName.trim() || role.name}</h2>

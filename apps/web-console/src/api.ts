@@ -56,6 +56,13 @@ export function fetchObjects(parent?: string): Promise<ObjectSummary[]> {
   return request(`/api/v1/objects${query}`);
 }
 
+export function reorderObjectChildren(parentPath: string, orderedPaths: string[]): Promise<void> {
+  return request("/api/v1/objects/reorder", {
+    method: "PUT",
+    body: JSON.stringify({ parentPath, orderedPaths }),
+  });
+}
+
 export function fetchObjectEditor(path: string): Promise<ObjectEditorDto> {
   return request(`/api/v1/objects/by-path/editor?path=${encodeURIComponent(path)}`);
 }
@@ -313,17 +320,17 @@ export function createAlertRule(
 }
 
 export function updateAlertRule(
-  id: string,
+  path: string,
   payload: Partial<import("./types/automation").CreateAlertRulePayload>
 ): Promise<import("./types/event").AlertRule> {
-  return request(`/api/v1/alert-rules/${encodeURIComponent(id)}`, {
+  return request(`/api/v1/alert-rules/by-path?path=${encodeURIComponent(path)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export function deleteAlertRule(id: string): Promise<void> {
-  return request(`/api/v1/alert-rules/${encodeURIComponent(id)}`, { method: "DELETE" });
+export function deleteAlertRule(path: string): Promise<void> {
+  return request(`/api/v1/alert-rules/by-path?path=${encodeURIComponent(path)}`, { method: "DELETE" });
 }
 
 export function fetchCorrelators(): Promise<import("./types/event").EventCorrelator[]> {
@@ -340,15 +347,15 @@ export function createCorrelator(
 }
 
 export function updateCorrelator(
-  id: string,
+  path: string,
   payload: Partial<import("./types/automation").CreateCorrelatorPayload>
 ): Promise<import("./types/event").EventCorrelator> {
-  return request(`/api/v1/correlators/${encodeURIComponent(id)}`, {
+  return request(`/api/v1/correlators/by-path?path=${encodeURIComponent(path)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export function deleteCorrelator(id: string): Promise<void> {
-  return request(`/api/v1/correlators/${encodeURIComponent(id)}`, { method: "DELETE" });
+export function deleteCorrelator(path: string): Promise<void> {
+  return request(`/api/v1/correlators/by-path?path=${encodeURIComponent(path)}`, { method: "DELETE" });
 }

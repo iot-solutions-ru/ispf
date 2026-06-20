@@ -90,7 +90,7 @@ public class ApplicationObjectTreeService {
     private void ensureApplicationsRoot() {
         ensureNode(
                 APPLICATIONS_ROOT,
-                ObjectType.CUSTOM,
+                ObjectType.APPLICATIONS,
                 "Applications",
                 "Deployed application bundles",
                 "app-folder-v1"
@@ -124,7 +124,7 @@ public class ApplicationObjectTreeService {
             expected.add(nodeName);
             ensureNode(
                     folderPath + "." + nodeName,
-                    ObjectType.CUSTOM,
+                    ObjectType.FUNCTION,
                     function.functionName(),
                     "objectPath=" + function.objectPath() + ", version=" + function.version(),
                     "application-function-v1"
@@ -146,7 +146,7 @@ public class ApplicationObjectTreeService {
             expected.add(nodeName);
             ensureNode(
                     folderPath + "." + nodeName,
-                    ObjectType.CUSTOM,
+                    ObjectType.SCHEDULE,
                     scheduleId,
                     "intervalMs=" + schedule.get("interval_ms") + ", action=" + schedule.get("action_type"),
                     "application-schedule-v1"
@@ -164,7 +164,7 @@ public class ApplicationObjectTreeService {
             expected.add(nodeName);
             ensureNode(
                     folderPath + "." + nodeName,
-                    ObjectType.CUSTOM,
+                    ObjectType.BINDING,
                     binding.variableName(),
                     "objectPath=" + binding.objectPath() + ", refresh=" + binding.refreshMode(),
                     "application-binding-v1"
@@ -183,7 +183,7 @@ public class ApplicationObjectTreeService {
             expected.add(nodeName);
             ensureNode(
                     folderPath + "." + nodeName,
-                    ObjectType.CUSTOM,
+                    ObjectType.MIGRATION,
                     scriptId,
                     "version=" + migration.get("version"),
                     "application-migration-v1"
@@ -226,7 +226,7 @@ public class ApplicationObjectTreeService {
                                     : "screen";
                     ensureNode(
                             folderPath + "." + nodeName,
-                            ObjectType.CUSTOM,
+                            ObjectType.SCREEN,
                             title,
                             kind + ", id=" + screenId,
                             "operator-screen-v1"
@@ -241,7 +241,9 @@ public class ApplicationObjectTreeService {
     }
 
     private void ensureFolder(String path, String title, String description) {
-        ensureNode(path, ObjectType.CUSTOM, title, description, "app-folder-v1");
+        ObjectType folderType = com.ispf.server.object.SystemObjectTypeResolver.resolve(path, "app-folder-v1")
+                .orElse(ObjectType.CUSTOM);
+        ensureNode(path, folderType, title, description, "app-folder-v1");
     }
 
     private void ensureNode(
@@ -253,6 +255,7 @@ public class ApplicationObjectTreeService {
     ) {
         if (objectManager.tree().findByPath(path).isPresent()) {
             objectManager.updateInfo(path, displayName, description != null ? description : "");
+            objectManager.reconcileType(path, type);
             return;
         }
         int lastDot = path.lastIndexOf('.');
@@ -261,7 +264,8 @@ public class ApplicationObjectTreeService {
             if (objectManager.tree().findByPath(parentPath).isEmpty()) {
                 ensureNode(
                         parentPath,
-                        ObjectType.CUSTOM,
+                        com.ispf.server.object.SystemObjectTypeResolver.resolve(parentPath, "app-folder-v1")
+                                .orElse(ObjectType.APPLICATION),
                         parentTitle(parentPath),
                         "",
                         "app-folder-v1"

@@ -109,6 +109,244 @@ public class ModelBootstrap {
     public void ensureBuiltInModels() {
         seedModels();
         ensureDeviceDriverModel();
+        ensureAutomationModels();
+    }
+
+    private void ensureAutomationModels() {
+        if (modelRegistry.findByName("alert-rule-v1").isEmpty()) {
+            modelEngine.createModel(buildAlertRuleModel());
+        }
+        if (modelRegistry.findByName("correlator-v1").isEmpty()) {
+            modelEngine.createModel(buildCorrelatorModel());
+        }
+    }
+
+    static ModelDefinition buildAlertRuleModel() {
+        return new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "alert-rule-v1",
+                "CEL alert rule — watches a variable and publishes events",
+                ModelType.RELATIVE,
+                ObjectType.ALERT,
+                "",
+                List.of(
+                        ModelVariableDefinition.of(
+                                "targetObjectPath",
+                                "Object path to watch",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "watchVariable",
+                                "Variable name that triggers evaluation",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "conditionExpr",
+                                "CEL expression evaluated on the target object",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "eventName",
+                                "Event to publish when condition is met",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "payloadVariable",
+                                "Optional variable for event payload",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "enabled",
+                                "Whether the rule is active",
+                                "config",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                        ),
+                        ModelVariableDefinition.of(
+                                "edgeTrigger",
+                                "Fire only on false→true transition",
+                                "config",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                        ),
+                        ModelVariableDefinition.of(
+                                "lastConditionMet",
+                                "Runtime: last evaluated condition result",
+                                "runtime",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                false,
+                                null,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    static ModelDefinition buildCorrelatorModel() {
+        return new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "correlator-v1",
+                "Event correlator — COUNT or SEQUENCE patterns trigger workflows",
+                ModelType.RELATIVE,
+                ObjectType.CORRELATOR,
+                "",
+                List.of(
+                        ModelVariableDefinition.of(
+                                "targetObjectPath",
+                                "Optional object path filter (empty = any)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "patternType",
+                                "COUNT or SEQUENCE",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "COUNT"))
+                        ),
+                        ModelVariableDefinition.of(
+                                "eventName",
+                                "Primary event name",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "secondEventName",
+                                "Second event for SEQUENCE pattern",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "windowSeconds",
+                                "Sliding window for COUNT pattern",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                        ),
+                        ModelVariableDefinition.of(
+                                "minOccurrences",
+                                "Minimum occurrences in window",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1))
+                        ),
+                        ModelVariableDefinition.of(
+                                "cooldownSeconds",
+                                "Cooldown after trigger",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 120))
+                        ),
+                        ModelVariableDefinition.of(
+                                "actionType",
+                                "Action on match (RUN_WORKFLOW)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "RUN_WORKFLOW"))
+                        ),
+                        ModelVariableDefinition.of(
+                                "actionTarget",
+                                "Workflow path for RUN_WORKFLOW",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "enabled",
+                                "Whether the correlator is active",
+                                "config",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                        ),
+                        ModelVariableDefinition.of(
+                                "lastTriggeredAt",
+                                "Runtime: last trigger timestamp (ISO-8601)",
+                                "runtime",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                false,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
     }
 
     private void ensureDeviceDriverModel() {

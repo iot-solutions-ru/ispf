@@ -4,11 +4,11 @@ import com.ispf.server.correlator.EventCorrelator;
 import com.ispf.server.correlator.EventCorrelatorService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -28,9 +28,9 @@ public class EventCorrelatorController {
         return correlatorService.list();
     }
 
-    @GetMapping("/{id}")
-    public EventCorrelator get(@PathVariable String id) {
-        return correlatorService.get(id);
+    @GetMapping("/by-path")
+    public EventCorrelator get(@RequestParam String path) {
+        return correlatorService.get(path);
     }
 
     @PostMapping
@@ -38,16 +38,16 @@ public class EventCorrelatorController {
         return correlatorService.create(request);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/by-path")
     public EventCorrelator update(
-            @PathVariable String id,
+            @RequestParam String path,
             @RequestBody EventCorrelatorService.UpdateCorrelatorRequest request
     ) {
-        return correlatorService.update(id, request);
+        return correlatorService.update(path, request);
     }
 
-    @DeleteMapping("/{id}")
-    public void delete(@PathVariable String id) {
-        correlatorService.delete(id);
+    @DeleteMapping("/by-path")
+    public void delete(@RequestParam String path) {
+        correlatorService.delete(path);
     }
 }

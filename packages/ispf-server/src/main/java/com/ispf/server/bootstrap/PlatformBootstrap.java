@@ -17,7 +17,7 @@ public class PlatformBootstrap {
         PlatformObject platform = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform",
-                ObjectType.CUSTOM,
+                ObjectType.PLATFORM,
                 "Platform",
                 "IoT Solutions Platform Framework",
                 null
@@ -27,7 +27,7 @@ public class PlatformBootstrap {
         PlatformObject devices = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.devices",
-                ObjectType.CUSTOM,
+                ObjectType.DEVICES,
                 "Devices",
                 "Connected devices",
                 null
@@ -47,7 +47,7 @@ public class PlatformBootstrap {
         PlatformObject dashboards = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.dashboards",
-                ObjectType.CUSTOM,
+                ObjectType.DASHBOARDS,
                 "Dashboards",
                 "HMI dashboards and operator screens",
                 null
@@ -87,17 +87,37 @@ public class PlatformBootstrap {
         PlatformObject workflows = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.workflows",
-                ObjectType.CUSTOM,
+                ObjectType.WORKFLOWS,
                 "Workflows",
                 "BPMN automation workflows",
                 null
         );
         tree.register(workflows);
 
+        PlatformObject alertRules = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.alert-rules",
+                ObjectType.ALERT_RULES,
+                "Alert Rules",
+                "CEL rules that publish events on variable changes",
+                null
+        );
+        tree.register(alertRules);
+
+        PlatformObject correlators = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.correlators",
+                ObjectType.CORRELATORS,
+                "Correlators",
+                "Event patterns that trigger workflows",
+                null
+        );
+        tree.register(correlators);
+
         PlatformObject applications = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.applications",
-                ObjectType.CUSTOM,
+                ObjectType.APPLICATIONS,
                 "Applications",
                 "Deployed application bundles (functions, reports, schedules)",
                 "app-folder-v1"
@@ -107,7 +127,7 @@ public class PlatformBootstrap {
         PlatformObject operatorApps = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.operator-apps",
-                ObjectType.CUSTOM,
+                ObjectType.OPERATOR_APPS,
                 "Operator Apps",
                 "Operator HMI — набор дашбордов для ?mode=operator&app=<id>",
                 null

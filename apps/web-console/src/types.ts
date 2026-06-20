@@ -10,15 +10,39 @@ export type ObjectType =
   | "ROOT"
   | "TENANT"
   | "USER"
+  | "PLATFORM"
+  | "DEVICES"
   | "DEVICE"
   | "DRIVER"
   | "MODEL"
+  | "DASHBOARDS"
   | "DASHBOARD"
+  | "WORKFLOWS"
   | "WORKFLOW"
+  | "ALERT_RULES"
   | "ALERT"
-  | "AGENT"
+  | "CORRELATORS"
+  | "CORRELATOR"
+  | "APPLICATIONS"
   | "APPLICATION"
+  | "OPERATOR_APPS"
+  | "SECURITY"
+  | "USERS"
+  | "ROLES"
+  | "ROLE"
+  | "REPORTS"
   | "REPORT"
+  | "FUNCTIONS"
+  | "FUNCTION"
+  | "SCHEDULES"
+  | "SCHEDULE"
+  | "BINDINGS"
+  | "BINDING"
+  | "MIGRATIONS"
+  | "MIGRATION"
+  | "SCREENS"
+  | "SCREEN"
+  | "AGENT"
   | "CUSTOM";
 
 export interface ObjectSummary {
@@ -30,6 +54,7 @@ export interface ObjectSummary {
   templateId: string | null;
   iconId?: string | null;
   createdAt: string;
+  sortOrder: number;
   variableNames: string[];
   eventNames: string[];
 }

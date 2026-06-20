@@ -1,6 +1,7 @@
 package com.ispf.core.object;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,6 +54,8 @@ public class ObjectTree {
                 }
             }
         }
+        children.sort(Comparator.comparingInt(PlatformObject::sortOrder)
+                .thenComparing(PlatformObject::displayName, String.CASE_INSENSITIVE_ORDER));
         return children;
     }
 

@@ -16,6 +16,7 @@ public record ObjectDto(
         String templateId,
         String iconId,
         Instant createdAt,
+        int sortOrder,
         List<String> variableNames,
         List<String> eventNames
 ) {
@@ -33,6 +34,7 @@ public record ObjectDto(
                 node.templateId().orElse(null),
                 iconId,
                 node.createdAt(),
+                node.sortOrder(),
                 node.variables().keySet().stream()
                         .filter(name -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(name))
                         .sorted()

@@ -12,11 +12,13 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.driver.DeviceProvisioningService;
+import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -42,6 +45,7 @@ public class ObjectController {
     private final PlatformRoleService platformRoleService;
     private final ObjectUiIconService objectUiIconService;
     private final DeviceProvisioningService deviceProvisioningService;
+    private final AutomationTreeService automationTreeService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -50,7 +54,8 @@ public class ObjectController {
             PlatformUserService platformUserService,
             PlatformRoleService platformRoleService,
             ObjectUiIconService objectUiIconService,
-            DeviceProvisioningService deviceProvisioningService
+            DeviceProvisioningService deviceProvisioningService,
+            AutomationTreeService automationTreeService
     ) {
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
@@ -59,6 +64,7 @@ public class ObjectController {
         this.platformRoleService = platformRoleService;
         this.objectUiIconService = objectUiIconService;
         this.deviceProvisioningService = deviceProvisioningService;
+        this.automationTreeService = automationTreeService;
     }
 
     private ObjectDto toDto(PlatformObject node) {
@@ -104,6 +110,12 @@ public class ObjectController {
         if (request.type() == ObjectType.WORKFLOW) {
             workflowService.ensureWorkflowStructure(node.path());
         }
+        if (request.type() == ObjectType.ALERT) {
+            automationTreeService.ensureAlertRuleStructure(node.path());
+        }
+        if (request.type() == ObjectType.CORRELATOR) {
+            automationTreeService.ensureCorrelatorStructure(node.path());
+        }
         if (request.type() == ObjectType.DEVICE && request.driverId() != null && !request.driverId().isBlank()) {
             deviceProvisioningService.provisionDriver(
                     node.path(),
@@ -140,7 +152,25 @@ public class ObjectController {
                 platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
                 return;
             }
+            if (objectManager.tree().findByPath(path)
+                    .filter(node -> node.type() == ObjectType.CORRELATOR)
+                    .isPresent()) {
+                automationTreeService.deleteCorrelator(path);
+                return;
+            }
             objectManager.delete(path);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (ObjectNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+    }
+
+    @PutMapping("/reorder")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reorder(@Valid @RequestBody ReorderObjectsRequest request) {
+        try {
+            objectManager.reorderChildren(request.parentPath(), request.orderedPaths());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (ObjectNotFoundException e) {
@@ -215,6 +245,12 @@ public class ObjectController {
             String displayName,
             String description,
             String iconId
+    ) {
+    }
+
+    public record ReorderObjectsRequest(
+            @NotBlank String parentPath,
+            @NotEmpty List<@NotBlank String> orderedPaths
     ) {
     }
 
