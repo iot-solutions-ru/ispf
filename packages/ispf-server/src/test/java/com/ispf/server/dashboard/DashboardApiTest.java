@@ -37,9 +37,12 @@ class DashboardApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("SNMP Host Monitoring"))
                 .andExpect(jsonPath("$.refreshIntervalMs").value(10000))
-                .andExpect(jsonPath("$.layout.widgets[?(@.id=='device-table')]").exists())
-                .andExpect(jsonPath("$.layout.widgets[?(@.id=='device-table')].selectionKey").value("device"))
-                .andExpect(jsonPath("$.layout.widgets[?(@.id=='uptime-chart')].type").value("chart"));
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-proc')]").exists())
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-proc')].selectionKey").value("device"))
+                .andExpect(jsonPath("$.layout.theme").value("btop"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-cpu')].type").value("chart"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-net-down')].type").value("chart"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='uptime-chart')]").doesNotExist());
     }
 
     @Test

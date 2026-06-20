@@ -82,7 +82,24 @@
 
 ### snmp-agent-v1
 
-SNMP-устройство с MIB-II точками. Демо: `root.platform.devices.snmp-localhost`.
+SNMP-устройство с MIB-II и HOST-RESOURCES-MIB точками. Демо: `root.platform.devices.snmp-localhost`.
+
+| Переменная | OID | Описание |
+|------------|-----|----------|
+| `sysName` | 1.3.6.1.2.1.1.5.0 | Имя хоста |
+| `sysDescr` | 1.3.6.1.2.1.1.1.0 | Описание системы / ОС |
+| `sysUpTime` | 1.3.6.1.2.1.1.3.0 | Uptime (TimeTicks) |
+| `sysLocation` | 1.3.6.1.2.1.1.6.0 | Расположение |
+| `sysContact` | 1.3.6.1.2.1.1.4.0 | Контакт |
+| `hrMemorySize` | 1.3.6.1.2.1.25.2.2.0 | Объём RAM (KB) |
+| `hrSystemProcesses` | 1.3.6.1.2.1.25.1.6.0 | Число процессов |
+| `hrSystemNumUsers` | 1.3.6.1.2.1.25.1.5.0 | Число пользователей |
+| `ifNumber` | 1.3.6.1.2.1.2.1.0 | Число сетевых интерфейсов |
+| `ifInOctets` | 1.3.6.1.2.1.2.2.1.10.1 | Входящие octets (интерфейс #1) |
+| `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.1 | Исходящие octets (интерфейс #1) |
+| `hrProcessorLoad` | 1.3.6.1.2.1.25.3.3.1.2.1 | Загрузка CPU % (ядро #1) |
+
+Используются дашбордом `root.platform.dashboards.snmp-host-monitoring`.
 
 ## Пример: instantiate
 

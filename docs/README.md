@@ -2,13 +2,23 @@
 
 **IoT Solutions Platform Framework** — middleware-платформа для IoT, SCADA и промышленной автоматизации.
 
-## Содержание
+## Документация по продукту
+
+| Документ | Аудитория | Описание |
+|----------|-----------|----------|
+| **[Обзор продукта](PRODUCT.md)** | Все | Возможности, сценарии, карта документации |
+| [Руководство оператора](OPERATOR_GUIDE.md) | Оператор | HMI, work queue, события |
+| [Руководство разработчика решений](SOLUTION_DEVELOPER_GUIDE.md) | App developer | Deploy приложений, operator UI, bundle |
+| [Глоссарий](GLOSSARY.md) | Все | Термины и определения |
+
+## Техническая документация
 
 | Раздел | Описание |
 |--------|----------|
 | [Быстрый старт](GETTING_STARTED.md) | Установка, профили, первый запуск |
 | [Архитектура](ARCHITECTURE.md) | Видение, слои, расширяемость |
 | [Модель объектов](OBJECT_MODEL.md) | Дерево, переменные, события, функции, CEL |
+| [История переменных](VARIABLE_HISTORY.md) | Time-series, флаги, retention, roadmap |
 | [REST API](API.md) | Полный справочник endpoints |
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |

@@ -5,6 +5,7 @@ import {
   fetchObjectEditor,
   setVariable,
   updateObject,
+  updateVariableHistory,
 } from "../api";
 import type { ObjectEditorDto, DataRecord, VariableDto } from "../types";
 import {
@@ -16,6 +17,11 @@ import {
 import IconPicker from "./icons/IconPicker";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import VariableFieldEditor from "./VariableFieldEditor";
+import VariableHistoryFields, {
+  formatHistoryRetention,
+  type VariableHistoryState,
+} from "./VariableHistoryFields";
+import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 
 interface ObjectPropertiesEditorProps {
   path: string;
@@ -30,21 +36,39 @@ interface EditorState {
   description: string;
   iconId: string | null;
   variables: Record<string, DataRecord>;
+  variableHistory: Record<string, VariableHistoryState>;
+}
+
+function historyFromVariable(v: VariableDto): VariableHistoryState {
+  return {
+    historyEnabled: v.historyEnabled ?? false,
+    historyRetentionDays: v.historyRetentionDays ?? null,
+  };
+}
+
+function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean {
+  return (
+    a.historyEnabled === b.historyEnabled &&
+    a.historyRetentionDays === b.historyRetentionDays
+  );
 }
 
 function buildState(data: ObjectEditorDto): EditorState {
   const variables: Record<string, DataRecord> = {};
+  const variableHistory: Record<string, VariableHistoryState> = {};
   for (const v of data.variables) {
     if (v.name === "uiIcon") {
       continue;
     }
     variables[v.name] = ensureRecord(v);
+    variableHistory[v.name] = historyFromVariable(v);
   }
   return {
     displayName: data.object.displayName,
     description: data.object.description,
     iconId: data.object.iconId ?? null,
     variables,
+    variableHistory,
   };
 }
 
@@ -52,21 +76,29 @@ function VariableEditorRow({
   variable,
   record,
   baseline,
+  history,
+  historyBaseline,
   onChange,
+  onHistoryChange,
 }: {
   variable: VariableDto;
   record: DataRecord;
   baseline: DataRecord;
+  history: VariableHistoryState;
+  historyBaseline: VariableHistoryState;
   onChange: (next: DataRecord) => void;
+  onHistoryChange: (next: VariableHistoryState) => void;
 }) {
   const [showBinding, setShowBinding] = useState(false);
   const [showJson, setShowJson] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const dirty = !recordsEqual(record, baseline);
+  const historyDirty = !historyEqual(history, historyBaseline);
   const row = record.rows[0] ?? {};
   const disabled = !variable.writable || Boolean(variable.bindingExpression);
 
   return (
-    <article className={`property-card ${dirty ? "dirty" : ""}`}>
+    <article className={`property-card ${dirty || historyDirty ? "dirty" : ""}`}>
       <header className="property-card-header">
         <div>
           <code className="property-name">{variable.name}</code>
@@ -74,9 +106,17 @@ function VariableEditorRow({
             {variable.readable && <span className="badge">R</span>}
             {variable.writable && <span className="badge w">W</span>}
             {variable.bindingExpression && <span className="badge b">Σ</span>}
+            {history.historyEnabled && (
+              <span className="badge hist" title={formatHistoryRetention(history.historyRetentionDays)}>
+                H
+              </span>
+            )}
           </span>
         </div>
         <div className="property-card-tools">
+          <button type="button" className="btn tiny" onClick={() => setShowHistory((v) => !v)}>
+            История
+          </button>
           <button type="button" className="btn tiny" onClick={() => setShowBinding((v) => !v)}>
             Привязка
           </button>
@@ -85,6 +125,16 @@ function VariableEditorRow({
           </button>
         </div>
       </header>
+
+      {showHistory && (
+        <div className="binding-panel">
+          <VariableHistoryFields
+            idPrefix={`prop-${variable.name}`}
+            value={history}
+            onChange={onHistoryChange}
+          />
+        </div>
+      )}
 
       {showBinding && (
         <div className="binding-panel">
@@ -165,6 +215,9 @@ export default function ObjectPropertiesEditor({
       if (!recordsEqual(state.variables[name], baseline.variables[name])) {
         return true;
       }
+      if (!historyEqual(state.variableHistory[name], baseline.variableHistory[name])) {
+        return true;
+      }
     }
     return false;
   }, [state, baseline]);
@@ -182,6 +235,11 @@ export default function ObjectPropertiesEditor({
         const base = baseline.variables[variable.name];
         if (variable.writable && !variable.bindingExpression && !recordsEqual(current, base)) {
           await setVariable(path, variable.name, current);
+        }
+        const currentHistory = state.variableHistory[variable.name];
+        const baseHistory = baseline.variableHistory[variable.name];
+        if (currentHistory && baseHistory && !historyEqual(currentHistory, baseHistory)) {
+          await updateVariableHistory(path, variable.name, currentHistory);
         }
       }
     },
@@ -213,6 +271,9 @@ export default function ObjectPropertiesEditor({
         variables: Object.fromEntries(
           Object.entries(baseline.variables).map(([k, v]) => [k, cloneRecord(v)])
         ),
+        variableHistory: Object.fromEntries(
+          Object.entries(baseline.variableHistory).map(([k, v]) => [k, { ...v }])
+        ),
       });
     }
   }, [baseline]);
@@ -231,6 +292,7 @@ export default function ObjectPropertiesEditor({
 
   const ctx = editorQuery.data.object;
   const isRoot = path === "root";
+  const canDelete = canDeleteObjectPath(path);
   const crumbs = path.split(".");
 
   return (
@@ -262,7 +324,7 @@ export default function ObjectPropertiesEditor({
           >
             Сохранить
           </button>
-          {!isRoot && (
+          {canDelete && (
             <button
               type="button"
               className="btn danger"
@@ -358,9 +420,21 @@ export default function ObjectPropertiesEditor({
                 variable={variable}
                 record={state.variables[variable.name]}
                 baseline={baseline!.variables[variable.name]}
+                history={state.variableHistory[variable.name]}
+                historyBaseline={baseline!.variableHistory[variable.name]}
                 onChange={(next) =>
                   setState((s) =>
                     s ? { ...s, variables: { ...s.variables, [variable.name]: next } } : s
+                  )
+                }
+                onHistoryChange={(next) =>
+                  setState((s) =>
+                    s
+                      ? {
+                          ...s,
+                          variableHistory: { ...s.variableHistory, [variable.name]: next },
+                        }
+                      : s
                   )
                 }
               />

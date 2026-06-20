@@ -77,7 +77,11 @@ export default function ChartWidgetView({
         ) : isError ? (
           <div className="dash-chart-placeholder error">Ошибка привязки</div>
         ) : points.length < 2 ? (
-          <div className="dash-chart-placeholder">Ожидание точек тренда…</div>
+          <div className="dash-chart-placeholder">
+            {variable?.historyEnabled === false
+              ? "История отключена для переменной"
+              : "Ожидание точек тренда…"}
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {chartStyle === "line" ? (

@@ -12,6 +12,7 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.driver.DeviceProvisioningService;
+import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
@@ -38,6 +39,7 @@ public class ObjectController {
     private final DashboardService dashboardService;
     private final WorkflowService workflowService;
     private final PlatformUserService platformUserService;
+    private final PlatformRoleService platformRoleService;
     private final ObjectUiIconService objectUiIconService;
     private final DeviceProvisioningService deviceProvisioningService;
 
@@ -46,6 +48,7 @@ public class ObjectController {
             DashboardService dashboardService,
             WorkflowService workflowService,
             PlatformUserService platformUserService,
+            PlatformRoleService platformRoleService,
             ObjectUiIconService objectUiIconService,
             DeviceProvisioningService deviceProvisioningService
     ) {
@@ -53,6 +56,7 @@ public class ObjectController {
         this.dashboardService = dashboardService;
         this.workflowService = workflowService;
         this.platformUserService = platformUserService;
+        this.platformRoleService = platformRoleService;
         this.objectUiIconService = objectUiIconService;
         this.deviceProvisioningService = deviceProvisioningService;
     }
@@ -132,6 +136,10 @@ public class ObjectController {
                 platformUserService.deleteUser(platformUserService.usernameFromPath(path));
                 return;
             }
+            if (platformRoleService.isSecurityRolePath(path)) {
+                platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
+                return;
+            }
             objectManager.delete(path);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -171,6 +179,25 @@ public class ObjectController {
         }
     }
 
+    @PatchMapping("/by-path/variables/history")
+    public VariableDto updateVariableHistory(
+            @RequestParam String path,
+            @RequestParam String name,
+            @Valid @RequestBody UpdateVariableHistoryRequest request
+    ) {
+        try {
+            Variable variable = objectManager.updateVariableHistory(
+                    path,
+                    name,
+                    request.historyEnabled(),
+                    request.historyRetentionDays()
+            );
+            return VariableDto.from(variable);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
     public record CreateObjectRequest(
             @NotBlank String parentPath,
             @NotBlank String name,
@@ -188,6 +215,12 @@ public class ObjectController {
             String displayName,
             String description,
             String iconId
+    ) {
+    }
+
+    public record UpdateVariableHistoryRequest(
+            boolean historyEnabled,
+            Integer historyRetentionDays
     ) {
     }
 }

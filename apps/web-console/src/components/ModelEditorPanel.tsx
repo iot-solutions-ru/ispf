@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   applyModel,
@@ -16,8 +16,10 @@ import {
   MODELS_ROOT,
   modelNameFromPath,
   type ModelDto,
+  type ModelVariableDefinition,
 } from "../types/models";
 import { recordDisplayValue } from "../utils/tree";
+import { formatHistoryRetention } from "./VariableHistoryFields";
 
 interface ModelEditorPanelProps {
   selectedPath: string;
@@ -51,13 +53,24 @@ function ModelDetail({
   const [applyPath, setApplyPath] = useState("");
   const [parentPath, setParentPath] = useState("root.platform.devices");
   const [instanceName, setInstanceName] = useState("");
+  const [variables, setVariables] = useState(model.variables);
   const isBuiltin = BUILTIN_MODEL_NAMES.has(model.name);
+
+  useEffect(() => {
+    setVariables(model.variables);
+  }, [model.variables]);
+
+  const variablesDirty = useMemo(
+    () => JSON.stringify(variables) !== JSON.stringify(model.variables),
+    [variables, model.variables]
+  );
 
   const saveMutation = useMutation({
     mutationFn: () =>
       updateModel(model.id, {
         description,
         suitabilityExpression: suitability,
+        variables,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["model", model.name] });
@@ -93,6 +106,15 @@ function ModelDetail({
       onSelectPath?.(MODELS_ROOT);
     },
   });
+
+  function patchVariableHistory(
+    name: string,
+    patch: Pick<ModelVariableDefinition, "historyEnabled" | "historyRetentionDays">
+  ) {
+    setVariables((prev) =>
+      prev.map((v) => (v.name === name ? { ...v, ...patch } : v))
+    );
+  }
 
   return (
     <div className="model-detail">
@@ -145,6 +167,9 @@ function ModelDetail({
               Сохранить метаданные
             </button>
           )}
+          {!isBuiltin && variablesDirty && (
+            <p className="hint">Изменены настройки истории переменных — сохраните модель.</p>
+          )}
           {saveMutation.error && (
             <p className="hint error">{String(saveMutation.error)}</p>
           )}
@@ -152,8 +177,8 @@ function ModelDetail({
       )}
 
       <section className="model-section">
-        <h4>Переменные ({model.variables.length})</h4>
-        {model.variables.length === 0 ? (
+        <h4>Переменные ({variables.length})</h4>
+        {variables.length === 0 ? (
           <p className="hint">Нет переменных</p>
         ) : (
           <table className="data-table">
@@ -162,12 +187,14 @@ function ModelDetail({
                 <th>Имя</th>
                 <th>Группа</th>
                 <th>Запись</th>
+                <th>История</th>
+                <th>Хранение</th>
                 <th>По умолчанию</th>
                 <th>Binding</th>
               </tr>
             </thead>
             <tbody>
-              {model.variables.map((v) => (
+              {variables.map((v) => (
                 <tr key={v.name}>
                   <td>
                     <code>{v.name}</code>
@@ -177,6 +204,48 @@ function ModelDetail({
                   </td>
                   <td>{v.group}</td>
                   <td>{v.writable ? "да" : "нет"}</td>
+                  <td>
+                    {canManage && !isBuiltin ? (
+                      <label className="checkbox-label inline">
+                        <input
+                          type="checkbox"
+                          checked={v.historyEnabled ?? false}
+                          onChange={(e) =>
+                            patchVariableHistory(v.name, {
+                              historyEnabled: e.target.checked,
+                              historyRetentionDays: v.historyRetentionDays ?? null,
+                            })
+                          }
+                        />
+                        да
+                      </label>
+                    ) : (
+                      v.historyEnabled ? "да" : "нет"
+                    )}
+                  </td>
+                  <td>
+                    {canManage && !isBuiltin && v.historyEnabled ? (
+                      <input
+                        type="number"
+                        min={1}
+                        max={3650}
+                        className="model-retention-input"
+                        placeholder="90"
+                        value={v.historyRetentionDays ?? ""}
+                        onChange={(e) => {
+                          const raw = e.target.value.trim();
+                          patchVariableHistory(v.name, {
+                            historyEnabled: true,
+                            historyRetentionDays: raw === "" ? null : Number.parseInt(raw, 10),
+                          });
+                        }}
+                      />
+                    ) : v.historyEnabled ? (
+                      formatHistoryRetention(v.historyRetentionDays)
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="mono small">
                     {v.defaultValue ? recordDisplayValue(v.defaultValue) : "—"}
                   </td>
@@ -185,6 +254,18 @@ function ModelDetail({
               ))}
             </tbody>
           </table>
+        )}
+        {canManage && !isBuiltin && variables.length > 0 && (
+          <div className="model-var-history-actions">
+            <button
+              type="button"
+              className="btn"
+              disabled={!variablesDirty || saveMutation.isPending}
+              onClick={() => saveMutation.mutate()}
+            >
+              Сохранить настройки переменных
+            </button>
+          </div>
         )}
       </section>
 

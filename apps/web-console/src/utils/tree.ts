@@ -74,3 +74,18 @@ export function recordDisplayValue(record: { rows: Array<Record<string, unknown>
   }
   return JSON.stringify(row, null, 2);
 }
+
+/** Single-line preview for tables (no pretty-print). */
+export function recordCompactValue(
+  record: { rows: Array<Record<string, unknown>> } | null
+): string {
+  if (!record || record.rows.length === 0) {
+    return "—";
+  }
+  const row = record.rows[0];
+  const keys = Object.keys(row);
+  if (keys.length === 1) {
+    return formatVariableValue(row[keys[0]]);
+  }
+  return keys.map((key) => `${key}: ${formatVariableValue(row[key])}`).join(", ");
+}

@@ -67,17 +67,21 @@ public class ModelBootstrap {
     public static final String DEVICE_DRIVER_MODEL = "device-driver-v1";
     public static final String SNMP_LOCALHOST_PATH = "root.platform.devices.snmp-localhost";
 
-    private static final String SNMP_DRIVER_CONFIG =
+    public static final String SNMP_DRIVER_CONFIG =
             "{\"host\":\"127.0.0.1\",\"port\":\"161\",\"community\":\"public\",\"version\":\"2c\",\"timeoutMs\":\"3000\",\"retries\":\"1\"}";
 
-    private static final String SNMP_POINT_MAPPINGS =
+    /** OID mappings for {@link #SNMP_AGENT_MODEL} — must match dashboard {@code snmp-host-monitoring}. */
+    public static final String SNMP_POINT_MAPPINGS =
             "{\"sysName\":\"1.3.6.1.2.1.1.5.0:STRING\",\"sysDescr\":\"1.3.6.1.2.1.1.1.0:STRING\","
                     + "\"sysUpTime\":\"1.3.6.1.2.1.1.3.0\",\"sysLocation\":\"1.3.6.1.2.1.1.6.0:STRING\","
                     + "\"sysContact\":\"1.3.6.1.2.1.1.4.0:STRING\","
                     + "\"hrMemorySize\":\"1.3.6.1.2.1.25.2.2.0:INTEGER\","
                     + "\"hrSystemProcesses\":\"1.3.6.1.2.1.25.1.6.0:INTEGER\","
                     + "\"hrSystemNumUsers\":\"1.3.6.1.2.1.25.1.5.0:INTEGER\","
-                    + "\"ifNumber\":\"1.3.6.1.2.1.2.1.0:INTEGER\"}";
+                    + "\"ifNumber\":\"1.3.6.1.2.1.2.1.0:INTEGER\","
+                    + "\"ifInOctets\":\"1.3.6.1.2.1.2.2.1.10.1:INTEGER\","
+                    + "\"ifOutOctets\":\"1.3.6.1.2.1.2.2.1.16.1:INTEGER\","
+                    + "\"hrProcessorLoad\":\"1.3.6.1.2.1.25.3.3.1.2.1:INTEGER\"}";
 
     private static final DataSchema SNMP_NUMERIC_SCHEMA = DataSchema.builder("snmpNumeric")
             .field("value", FieldType.DOUBLE)
@@ -128,7 +132,7 @@ public class ModelBootstrap {
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "status",
                                 "Device connectivity status",
                                 "status",
@@ -138,7 +142,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STATUS_SCHEMA, Map.of("online", true, "lastSeen", "init"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "temperature",
                                 "Current temperature reading",
                                 "telemetry",
@@ -148,7 +152,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 22.5, "unit", "C"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "threshold",
                                 "Alarm threshold in Celsius",
                                 "config",
@@ -158,7 +162,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "alarmActive",
                                 "Whether temperature exceeds threshold",
                                 "status",
@@ -171,7 +175,7 @@ public class ModelBootstrap {
                                         Map.of("value", false)
                                 )
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "alarmAcknowledged",
                                 "Operator acknowledged the active alarm",
                                 "status",
@@ -181,7 +185,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -191,7 +195,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -201,7 +205,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -211,7 +215,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 2000))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -221,7 +225,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", VIRTUAL_DRIVER_CONFIG))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
@@ -267,7 +271,7 @@ public class ModelBootstrap {
                 ObjectType.DASHBOARD,
                 "",
                 List.of(
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "title",
                                 "Dashboard title shown in the header",
                                 "info",
@@ -277,7 +281,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Dashboard"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "refreshIntervalMs",
                                 "Widget polling interval in milliseconds",
                                 "config",
@@ -287,7 +291,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "layout",
                                 "Dashboard layout JSON (grid + widgets)",
                                 "config",
@@ -316,7 +320,7 @@ public class ModelBootstrap {
                 ObjectType.WORKFLOW,
                 "",
                 List.of(
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "title",
                                 "Workflow title",
                                 "info",
@@ -326,7 +330,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Workflow"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "status",
                                 "Lifecycle status: DRAFT, ACTIVE, STOPPED",
                                 "config",
@@ -336,7 +340,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "DRAFT"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "bpmnXml",
                                 "BPMN 2.0 process definition",
                                 "config",
@@ -346,7 +350,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "triggerJson",
                                 "Variable trigger configuration JSON",
                                 "config",
@@ -356,7 +360,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "instanceState",
                                 "Last workflow instance state JSON",
                                 "runtime",
@@ -366,7 +370,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "lastRunAt",
                                 "Timestamp of last workflow run",
                                 "runtime",
@@ -376,7 +380,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "lastAction",
                                 "Last action recorded by workflow",
                                 "runtime",
@@ -407,7 +411,7 @@ public class ModelBootstrap {
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "status",
                                 "Device connectivity status",
                                 "status",
@@ -417,7 +421,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -427,7 +431,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -437,7 +441,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -447,7 +451,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -457,7 +461,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
@@ -486,7 +490,7 @@ public class ModelBootstrap {
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "status",
                                 "Device connectivity status",
                                 "status",
@@ -496,7 +500,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "sysName",
                                 "SNMP sysName (1.3.6.1.2.1.1.5.0)",
                                 "telemetry",
@@ -506,7 +510,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "sysDescr",
                                 "SNMP sysDescr (1.3.6.1.2.1.1.1.0)",
                                 "telemetry",
@@ -516,7 +520,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "sysUpTime",
                                 "SNMP sysUpTime (1.3.6.1.2.1.1.3.0)",
                                 "telemetry",
@@ -526,7 +530,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "sysLocation",
                                 "SNMP sysLocation (1.3.6.1.2.1.1.6.0)",
                                 "telemetry",
@@ -536,7 +540,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "sysContact",
                                 "SNMP sysContact (1.3.6.1.2.1.1.4.0)",
                                 "telemetry",
@@ -546,7 +550,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "hrMemorySize",
                                 "Physical memory size in KB (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.2.2.0)",
                                 "telemetry",
@@ -556,7 +560,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "hrSystemProcesses",
                                 "Running processes (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.1.6.0)",
                                 "telemetry",
@@ -566,7 +570,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "hrSystemNumUsers",
                                 "Logged-in users (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.1.5.0)",
                                 "telemetry",
@@ -576,7 +580,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
                                 "ifNumber",
                                 "Network interfaces count (IF-MIB 1.3.6.1.2.1.2.1.0)",
                                 "telemetry",
@@ -586,7 +590,37 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.withHistory(
+                                "ifInOctets",
+                                "Inbound octets on primary interface (IF-MIB ifInOctets.1)",
+                                "telemetry",
+                                SNMP_NUMERIC_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                        ),
+                        ModelVariableDefinition.withHistory(
+                                "ifOutOctets",
+                                "Outbound octets on primary interface (IF-MIB ifOutOctets.1)",
+                                "telemetry",
+                                SNMP_NUMERIC_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                        ),
+                        ModelVariableDefinition.withHistory(
+                                "hrProcessorLoad",
+                                "CPU load % (HOST-RESOURCES-MIB hrProcessorLoad.1)",
+                                "telemetry",
+                                SNMP_NUMERIC_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                        ),
+                        ModelVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -596,7 +630,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "snmp"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -606,7 +640,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -616,7 +650,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -626,7 +660,7 @@ public class ModelBootstrap {
                                 null,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", SNMP_DRIVER_CONFIG))
                         ),
-                        new ModelVariableDefinition(
+                        ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",

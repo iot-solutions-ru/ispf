@@ -164,6 +164,7 @@ Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`
 |---------|------------|
 | `object_nodes` | Узлы дерева |
 | `object_variables` | Значения и binding_expr |
+| `variable_samples` | История телеметрии (time-series сэмплы) |
 | `event_history` | Журнал событий |
 | `workflow_instances` | Экземпляры BPMN |
 | `workflow_user_tasks` | Задачи оператора |
@@ -202,3 +203,28 @@ Web Console подписывается через `useObjectWebSocket` и инв
 | Переменные | `GET/PUT .../variables` |
 
 При создании `DASHBOARD` / `WORKFLOW` автоматически применяется соответствующая built-in модель.
+
+## История переменных
+
+Текущее значение — в `object_variables`. **История** пишется в `variable_samples` только для переменных с `historyEnabled = true` при каждом `VARIABLE_UPDATED` (debounce по `min-interval-ms`).
+
+У каждой переменной (в модели и на объекте):
+
+| Поле | Описание |
+|------|----------|
+| `historyEnabled` | Записывать ли временной ряд |
+| `historyRetentionDays` | Срок хранения в днях; `null` — платформенный default из `ispf.variable-history.retention-days` |
+
+```http
+GET /api/v1/objects/by-path/variables/history?path=...&name=temperature&field=value&limit=500
+PATCH /api/v1/objects/by-path/variables/history?path=...&name=temperature
+Content-Type: application/json
+
+{"historyEnabled": true, "historyRetentionDays": 30}
+```
+
+Конфигурация платформы: `ispf.variable-history` в `application.yml` (`enabled`, `min-interval-ms`, `retention-days`).
+
+Графики (`useTrendSeries`) загружают историю с сервера и дополняют live-точками через WebSocket/polling.
+
+Подробный roadmap: [VARIABLE_HISTORY.md](./VARIABLE_HISTORY.md).

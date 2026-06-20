@@ -7,7 +7,6 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
-import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,15 +20,18 @@ public class PlatformUserObjectTreeService {
 
     private final ObjectManager objectManager;
     private final PlatformUserStore userStore;
+    private final PlatformRoleStore roleStore;
     private final ObjectMapper objectMapper;
 
     public PlatformUserObjectTreeService(
             ObjectManager objectManager,
             PlatformUserStore userStore,
+            PlatformRoleStore roleStore,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
         this.userStore = userStore;
+        this.roleStore = roleStore;
         this.objectMapper = objectMapper;
     }
 
@@ -55,20 +57,43 @@ public class PlatformUserObjectTreeService {
                 "Platform RBAC roles",
                 "security-folder-v1"
         );
+        Set<String> expected = new HashSet<>();
+        for (PlatformRoleStore.PlatformRole role : roleStore.listAll()) {
+            syncRole(role);
+            expected.add(role.name());
+        }
+        pruneRoles(expected);
+    }
+
+    @Transactional
+    public void syncRole(PlatformRoleStore.PlatformRole role) {
+        ensureSecurityRoot();
         ensureNode(
-                PlatformUserService.ROLES_FOLDER + "." + IspfRoles.ADMIN,
+                PlatformUserService.ROLES_FOLDER,
                 ObjectType.CUSTOM,
-                "admin",
-                "Full platform administration",
-                "platform-role-v1"
+                "Roles",
+                "Platform RBAC roles",
+                "security-folder-v1"
         );
         ensureNode(
-                PlatformUserService.ROLES_FOLDER + "." + IspfRoles.OPERATOR,
+                role.objectPath(),
                 ObjectType.CUSTOM,
-                "operator",
-                "Operator HMI and read-only automation",
+                role.displayName(),
+                role.description(),
                 "platform-role-v1"
         );
+    }
+
+    private void pruneRoles(Set<String> expectedRoleNames) {
+        if (objectManager.tree().findByPath(PlatformUserService.ROLES_FOLDER).isEmpty()) {
+            return;
+        }
+        objectManager.tree().childrenOf(PlatformUserService.ROLES_FOLDER).forEach(child -> {
+            String roleName = child.path().substring(child.path().lastIndexOf('.') + 1);
+            if (!expectedRoleNames.contains(roleName)) {
+                objectManager.delete(child.path());
+            }
+        });
     }
 
     @Transactional

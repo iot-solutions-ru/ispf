@@ -1,12 +1,17 @@
 import ObjectInspector from "./ObjectInspector";
 import OperatorAppsPanel from "./OperatorAppsPanel";
 import SecurityUsersPanel from "./SecurityUsersPanel";
+import SecurityUserInspector from "./SecurityUserInspector";
+import SecurityRolesPanel from "./SecurityRolesPanel";
+import SecurityRoleInspector from "./SecurityRoleInspector";
 import { isModelsPath } from "../types/models";
 import type { ObjectSummary } from "../types";
 import {
   isOperatorAppChildPath,
   isOperatorAppsRootPath,
 } from "../utils/operatorAppsPath";
+import { isSecurityUserPath, isSecurityUsersRoot } from "../utils/securityUserPath";
+import { isSecurityRolePath, isSecurityRolesRoot } from "../utils/securityRolePath";
 import { APPLICATIONS_ROOT, canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
 
 interface ExplorerViewProps {
@@ -15,6 +20,7 @@ interface ExplorerViewProps {
   onOpenEditor: (path: string) => void;
   onCreateChild: () => void;
   onDeleted: () => void;
+  onSelectPath: (path: string) => void;
   isAdmin: boolean;
 }
 
@@ -24,6 +30,7 @@ export default function ExplorerView({
   onOpenEditor,
   onCreateChild,
   onDeleted,
+  onSelectPath,
   isAdmin,
 }: ExplorerViewProps) {
   if (!selectedPath) {
@@ -33,14 +40,21 @@ export default function ExplorerView({
   const isOperatorAppChild = isOperatorAppChildPath(selectedPath);
   const isOperatorAppsRoot = isOperatorAppsRootPath(selectedPath);
   const isApplicationsRoot = selectedPath === APPLICATIONS_ROOT;
+  const isUsersRoot = isSecurityUsersRoot(selectedPath);
+  const isUserObject = isSecurityUserPath(selectedPath);
+  const isRolesRoot = isSecurityRolesRoot(selectedPath);
+  const isRoleObject = isSecurityRolePath(selectedPath);
   const showCreateButton =
-    isAdmin && canCreateChildAt(selectedPath, selectedObject?.type);
+    isAdmin
+    && canCreateChildAt(selectedPath, selectedObject?.type)
+    && !isUsersRoot
+    && !isRolesRoot;
 
   return (
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
     >
-      {!isOperatorAppChild && (
+      {!isOperatorAppChild && !isUsersRoot && !isUserObject && !isRolesRoot && !isRoleObject && (
         <div className="explorer-toolbar">
           {showCreateButton && (
             <button type="button" className="btn primary" onClick={onCreateChild}>
@@ -60,6 +74,14 @@ export default function ExplorerView({
 
       {isOperatorAppChild ? (
         <OperatorAppsPanel canManage={isAdmin} selectedPath={selectedPath} />
+      ) : isUsersRoot ? (
+        <SecurityUsersPanel canManage={isAdmin} onSelectUser={onSelectPath} />
+      ) : isUserObject ? (
+        <SecurityUserInspector path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+      ) : isRolesRoot ? (
+        <SecurityRolesPanel canManage={isAdmin} onSelectRole={onSelectPath} />
+      ) : isRoleObject ? (
+        <SecurityRoleInspector path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
       ) : (
         <>
           <ObjectInspector path={selectedPath} onDeleted={onDeleted} canManage={isAdmin} />
@@ -79,10 +101,6 @@ export default function ExplorerView({
             </section>
           )}
         </>
-      )}
-
-      {selectedPath === "root.platform.security.users" && (
-        <SecurityUsersPanel canManage={isAdmin} />
       )}
     </div>
   );

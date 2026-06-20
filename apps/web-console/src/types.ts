@@ -56,6 +56,8 @@ export interface VariableDto {
   writable: boolean;
   bindingExpression: string | null;
   updatedAt: string | null;
+  historyEnabled: boolean;
+  historyRetentionDays: number | null;
 }
 
 export interface FunctionDescriptor {

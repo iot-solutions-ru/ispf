@@ -47,6 +47,8 @@ public class ObjectEntityMapper {
         entity.setWritable(variable.writable());
         entity.setBindingExpr(variable.bindingExpression().orElse(null));
         entity.setUpdatedAt(variable.updatedAt().orElse(null));
+        entity.setHistoryEnabled(variable.historyEnabled());
+        entity.setHistoryRetentionDays(variable.historyRetentionDays().orElse(null));
         return entity;
     }
 

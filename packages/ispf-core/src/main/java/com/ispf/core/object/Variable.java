@@ -17,6 +17,8 @@ public class Variable {
     private final boolean readable;
     private final boolean writable;
     private final String bindingExpression;
+    private final boolean historyEnabled;
+    private final Integer historyRetentionDays;
     private final AtomicReference<DataRecord> value = new AtomicReference<>();
     private volatile Instant updatedAt;
 
@@ -28,11 +30,26 @@ public class Variable {
             String bindingExpression,
             DataRecord initialValue
     ) {
+        this(name, schema, readable, writable, bindingExpression, initialValue, false, null);
+    }
+
+    public Variable(
+            String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            String bindingExpression,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
         this.name = name;
         this.schema = schema;
         this.readable = readable;
         this.writable = writable;
         this.bindingExpression = bindingExpression;
+        this.historyEnabled = historyEnabled;
+        this.historyRetentionDays = historyRetentionDays;
         if (initialValue != null) {
             value.set(initialValue);
             updatedAt = Instant.now();
@@ -57,6 +74,33 @@ public class Variable {
 
     public Optional<String> bindingExpression() {
         return Optional.ofNullable(bindingExpression);
+    }
+
+    /** Whether time-series samples are stored for this variable. */
+    public boolean historyEnabled() {
+        return historyEnabled;
+    }
+
+    /**
+     * Per-variable retention in days; {@code null} uses the platform default from configuration.
+     */
+    public Optional<Integer> historyRetentionDays() {
+        return Optional.ofNullable(historyRetentionDays);
+    }
+
+    public Variable withHistorySettings(boolean enabled, Integer retentionDays) {
+        Variable copy = new Variable(
+                name,
+                schema,
+                readable,
+                writable,
+                bindingExpression,
+                value.get(),
+                enabled,
+                retentionDays
+        );
+        copy.updatedAt = this.updatedAt;
+        return copy;
     }
 
     public Optional<DataRecord> value() {

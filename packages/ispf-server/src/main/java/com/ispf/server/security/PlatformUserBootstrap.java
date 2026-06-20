@@ -9,15 +9,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class PlatformUserBootstrap {
 
+    private final PlatformRoleService roleService;
     private final PlatformUserService userService;
 
-    public PlatformUserBootstrap(PlatformUserService userService) {
+    public PlatformUserBootstrap(PlatformRoleService roleService, PlatformUserService userService) {
+        this.roleService = roleService;
         this.userService = userService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 10)
     public void seedUsersAndSyncTree() {
+        roleService.ensureDefaultRoles();
         userService.ensureDefaultUsers();
     }
 }

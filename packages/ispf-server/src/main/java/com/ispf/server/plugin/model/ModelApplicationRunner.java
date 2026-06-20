@@ -1,6 +1,7 @@
 package com.ispf.server.plugin.model;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -9,11 +10,16 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowDefinitions;
+import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.model.ModelVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Applies built-in models to demo objects after bootstrap.
@@ -153,17 +159,127 @@ public class ModelApplicationRunner {
     }
 
     public void ensureSnmpLocalhostDevice() {
-        if (objectManager.tree().findByPath(ModelBootstrap.SNMP_LOCALHOST_PATH).isPresent()) {
-            return;
-        }
         modelRegistry.findByName(ModelBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
-            modelEngine.instantiateModel(
-                    model.id(),
-                    "root.platform.devices",
-                    "snmp-localhost",
-                    Map.of()
-            );
+            if (objectManager.tree().findByPath(ModelBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
+                modelEngine.instantiateModel(
+                        model.id(),
+                        "root.platform.devices",
+                        "snmp-localhost",
+                        Map.of()
+                );
+            } else {
+                syncSnmpAgentDevice(model, ModelBootstrap.SNMP_LOCALHOST_PATH);
+            }
             objectManager.persistNodeTree(ModelBootstrap.SNMP_LOCALHOST_PATH);
         });
+    }
+
+    /**
+     * Aligns per-variable history metadata on all objects instantiated from a model.
+     */
+    public void syncAllModelBackedVariableMetadata() {
+        for (PlatformObject node : objectManager.tree().all()) {
+            Optional<String> templateId = node.templateId();
+            if (templateId.isEmpty() || templateId.get().isBlank()) {
+                continue;
+            }
+            Optional<ModelDefinition> model = modelRegistry.findById(templateId.get());
+            if (model.isEmpty()) {
+                model = modelRegistry.findByName(templateId.get());
+            }
+            if (model.isEmpty()) {
+                continue;
+            }
+            if (syncModelVariableMetadata(model.get(), node.path())) {
+                objectManager.persistNodeTree(node.path());
+            }
+        }
+    }
+
+    /**
+     * Adds variables and OID mappings missing on demo SNMP devices created before HOST-RESOURCES-MIB support.
+     */
+    private void syncSnmpAgentDevice(ModelDefinition model, String devicePath) {
+        if (syncModelVariableMetadata(model, devicePath)) {
+            // in-memory updates only; caller persists
+        }
+        ensureSnmpDriverMappings(objectManager.require(devicePath));
+    }
+
+    private boolean syncModelVariableMetadata(ModelDefinition model, String objectPath) {
+        PlatformObject target = objectManager.require(objectPath);
+        boolean changed = false;
+        for (ModelVariableDefinition varDef : model.variables()) {
+            Optional<Variable> existingOpt = target.getVariable(varDef.name());
+            if (existingOpt.isPresent()) {
+                Variable existing = existingOpt.get();
+                if (existing.historyEnabled() != varDef.historyEnabled()
+                        || !Objects.equals(
+                        existing.historyRetentionDays().orElse(null),
+                        varDef.historyRetentionDays()
+                )) {
+                    target.addVariable(existing.withHistorySettings(
+                            varDef.historyEnabled(),
+                            varDef.historyRetentionDays()
+                    ));
+                    changed = true;
+                }
+            } else {
+                target.addVariable(new Variable(
+                        varDef.name(),
+                        varDef.schema(),
+                        varDef.readable(),
+                        varDef.writable(),
+                        varDef.defaultBinding(),
+                        varDef.defaultValue(),
+                        varDef.historyEnabled(),
+                        varDef.historyRetentionDays()
+                ));
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private void ensureSnmpDriverMappings(PlatformObject device) {
+        Set<String> requiredMappingKeys = Set.of(
+                "sysName", "sysDescr", "sysUpTime", "sysLocation", "sysContact",
+                "hrMemorySize", "hrSystemProcesses", "hrSystemNumUsers", "ifNumber",
+                "ifInOctets", "ifOutOctets", "hrProcessorLoad"
+        );
+        String currentMappings = readVariableStringField(device, "driverPointMappingsJson", "value");
+        boolean complete = requiredMappingKeys.stream().allMatch(currentMappings::contains);
+        if (complete) {
+            return;
+        }
+        DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
+        device.setVariableValue(
+                "driverPointMappingsJson",
+                DataRecord.single(stringSchema, Map.of("value", ModelBootstrap.SNMP_POINT_MAPPINGS))
+        );
+        if (device.getVariable("driverId").isPresent()) {
+            device.setVariableValue(
+                    "driverId",
+                    DataRecord.single(stringSchema, Map.of("value", "snmp"))
+            );
+        }
+        if (device.getVariable("driverConfigJson").isPresent()) {
+            String config = readVariableStringField(device, "driverConfigJson", "value");
+            if (config.isBlank() || config.equals("{}")) {
+                device.setVariableValue(
+                        "driverConfigJson",
+                        DataRecord.single(stringSchema, Map.of("value", ModelBootstrap.SNMP_DRIVER_CONFIG))
+                );
+            }
+        }
+    }
+
+    private static String readVariableStringField(PlatformObject device, String variableName, String field) {
+        return device.getVariable(variableName)
+                .flatMap(Variable::value)
+                .filter(record -> record.rowCount() > 0)
+                .map(record -> record.get(field, 0))
+                .map(String::valueOf)
+                .orElse("");
     }
 }

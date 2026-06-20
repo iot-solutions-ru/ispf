@@ -89,6 +89,7 @@ public class ObjectManager {
         modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
         modelApplicationRunner.getObject().applyDemoModels();
         modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
+        modelApplicationRunner.getObject().syncAllModelBackedVariableMetadata();
         initialized = true;
     }
 
@@ -183,6 +184,23 @@ public class ObjectManager {
         node.removeVariable(name);
         variableRepository.deleteByObjectPathAndName(path, name);
         publish(ObjectChangeEvent.variableUpdated(path, name));
+    }
+
+    @Transactional
+    public Variable updateVariableHistory(
+            String path,
+            String name,
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
+        PlatformObject node = objectTree.require(path);
+        Variable variable = node.getVariable(name)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
+        Variable updated = variable.withHistorySettings(historyEnabled, historyRetentionDays);
+        node.addVariable(updated);
+        persistVariable(path, updated);
+        publish(ObjectChangeEvent.variableUpdated(path, name));
+        return updated;
     }
 
     @Transactional
@@ -299,7 +317,9 @@ public class ObjectManager {
                         varEntity.isReadable(),
                         varEntity.isWritable(),
                         varEntity.getBindingExpr(),
-                        value
+                        value,
+                        varEntity.isHistoryEnabled(),
+                        varEntity.getHistoryRetentionDays()
                 ));
             }
         }
@@ -322,6 +342,8 @@ public class ObjectManager {
         entity.setWritable(mapped.isWritable());
         entity.setBindingExpr(mapped.getBindingExpr());
         entity.setUpdatedAt(mapped.getUpdatedAt());
+        entity.setHistoryEnabled(mapped.isHistoryEnabled());
+        entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
         variableRepository.save(entity);
     }
 

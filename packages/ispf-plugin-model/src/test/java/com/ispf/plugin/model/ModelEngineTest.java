@@ -76,7 +76,7 @@ class ModelEngineTest {
                 ModelType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
-                List.of(new ModelVariableDefinition(
+                List.of(ModelVariableDefinition.withHistory(
                         "temperature",
                         "Current temperature",
                         "telemetry",

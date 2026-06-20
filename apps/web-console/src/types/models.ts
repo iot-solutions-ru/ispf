@@ -11,6 +11,8 @@ export interface ModelVariableDefinition {
   writable: boolean;
   defaultBinding: string | null;
   defaultValue: DataRecord | null;
+  historyEnabled?: boolean;
+  historyRetentionDays?: number | null;
 }
 
 export interface ModelBindingDefinition {

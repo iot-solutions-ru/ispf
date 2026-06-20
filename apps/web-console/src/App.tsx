@@ -327,6 +327,7 @@ export default function App() {
               onOpenEditor={openEditor}
               onCreateChild={() => setShowCreate(true)}
               onDeleted={() => setSelectedPath("root")}
+              onSelectPath={setSelectedPath}
               isAdmin={isAdmin}
             />
           </main>

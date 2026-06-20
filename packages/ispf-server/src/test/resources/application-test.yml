@@ -22,3 +22,5 @@ ispf:
     enabled: false
   nats:
     enabled: false
+  variable-history:
+    min-interval-ms: 0

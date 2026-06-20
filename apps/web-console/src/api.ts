@@ -68,6 +68,32 @@ export function fetchVariables(path: string): Promise<VariableDto[]> {
   return request(`/api/v1/objects/by-path/variables?path=${encodeURIComponent(path)}`);
 }
 
+export interface VariableHistorySample {
+  ts: string;
+  value: number | null;
+  text: string | null;
+}
+
+export interface VariableHistoryResponse {
+  objectPath: string;
+  variableName: string;
+  field: string;
+  samples: VariableHistorySample[];
+}
+
+export function fetchVariableHistory(
+  path: string,
+  name: string,
+  options?: { field?: string; from?: string; to?: string; limit?: number }
+): Promise<VariableHistoryResponse> {
+  const params = new URLSearchParams({ path, name });
+  if (options?.field) params.set("field", options.field);
+  if (options?.from) params.set("from", options.from);
+  if (options?.to) params.set("to", options.to);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  return request(`/api/v1/objects/by-path/variables/history?${params}`);
+}
+
 export function createObject(payload: CreateObjectPayload): Promise<ObjectSummary> {
   return request("/api/v1/objects", {
     method: "POST",
@@ -93,6 +119,23 @@ export function setVariable(path: string, name: string, value: DataRecord): Prom
   return request(`/api/v1/objects/by-path/variables?${params}`, {
     method: "PUT",
     body: JSON.stringify(value),
+  });
+}
+
+export interface UpdateVariableHistoryPayload {
+  historyEnabled: boolean;
+  historyRetentionDays: number | null;
+}
+
+export function updateVariableHistory(
+  path: string,
+  name: string,
+  payload: UpdateVariableHistoryPayload
+): Promise<VariableDto> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/variables/history?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });
 }
 

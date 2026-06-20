@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -110,6 +111,40 @@ class PlatformAuthApiTest {
                 .andExpect(jsonPath("$.appId").value("platform"))
                 .andExpect(jsonPath("$.defaultDashboard").value("root.platform.dashboards.snmp-host-monitoring"))
                 .andExpect(jsonPath("$.dashboards").isArray());
+    }
+
+    @Test
+    void managesPlatformRoles() throws Exception {
+        String token = adminToken();
+
+        mockMvc.perform(get("/api/v1/security/roles")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", hasItem("admin")))
+                .andExpect(jsonPath("$[*].name", hasItem("operator")));
+
+        mockMvc.perform(post("/api/v1/security/roles")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "supervisor",
+                                  "displayName": "Supervisor",
+                                  "description": "Shift supervisor"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("supervisor"))
+                .andExpect(jsonPath("$.objectPath").value("root.platform.security.roles.supervisor"));
+
+        mockMvc.perform(get("/api/v1/objects")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.security.roles.supervisor")));
+
+        mockMvc.perform(delete("/api/v1/security/roles/supervisor")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
     }
 
     private String adminToken() throws Exception {

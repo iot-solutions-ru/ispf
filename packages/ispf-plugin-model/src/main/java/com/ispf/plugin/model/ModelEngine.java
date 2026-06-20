@@ -153,7 +153,7 @@ public class ModelEngine {
     ) {
         PlatformObject source = objectTree.require(sourcePath);
         List<ModelVariableDefinition> variables = source.variables().values().stream()
-                .map(v -> new ModelVariableDefinition(
+                .map(v -> ModelVariableDefinition.of(
                         v.name(),
                         "",
                         "default",
@@ -161,7 +161,9 @@ public class ModelEngine {
                         v.readable(),
                         v.writable(),
                         v.bindingExpression().orElse(null),
-                        v.value().orElse(null)
+                        v.value().orElse(null),
+                        v.historyEnabled(),
+                        v.historyRetentionDays().orElse(null)
                 ))
                 .toList();
 
@@ -291,7 +293,9 @@ public class ModelEngine {
                     varDef.readable(),
                     varDef.writable(),
                     binding,
-                    varDef.defaultValue()
+                    varDef.defaultValue(),
+                    varDef.historyEnabled(),
+                    varDef.historyRetentionDays()
             );
             target.addVariable(variable);
         }
@@ -310,7 +314,9 @@ public class ModelEngine {
                         variable.readable(),
                         variable.writable(),
                         resolveParameters(binding.expression(), parameters),
-                        variable.value().orElse(null)
+                        variable.value().orElse(null),
+                        variable.historyEnabled(),
+                        variable.historyRetentionDays().orElse(null)
                 );
                 target.addVariable(updated);
             }, () -> {

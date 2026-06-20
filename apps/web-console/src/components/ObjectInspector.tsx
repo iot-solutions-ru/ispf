@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteObject,
@@ -8,11 +8,14 @@ import {
   updateObject,
 } from "../api";
 import type { ObjectSummary, VariableDto } from "../types";
-import { recordDisplayValue } from "../utils/tree";
+import { recordCompactValue } from "../utils/tree";
 import EditVariableDialog from "./EditVariableDialog";
 import DeviceDriverPanel from "./DeviceDriverPanel";
 import IconPicker from "./icons/IconPicker";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
+import VariableHistoryPanel from "./VariableHistoryPanel";
+import { formatHistoryRetention } from "./VariableHistoryFields";
+import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 
 interface ObjectInspectorProps {
   path: string;
@@ -28,6 +31,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
   const [editingVariable, setEditingVariable] = useState<VariableDto | null>(null);
+  const [historyVariable, setHistoryVariable] = useState<string | null>(null);
 
   const objectQuery = useQuery({
     queryKey: ["object", path],
@@ -45,6 +49,10 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
     queryFn: () => fetchObjectEditor(path),
     enabled: tab === "functions",
   });
+
+  useEffect(() => {
+    setHistoryVariable(null);
+  }, [path]);
 
   useEffect(() => {
     if (objectQuery.data) {
@@ -94,6 +102,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
 
   const obj = objectQuery.data;
   const isRoot = path === "root";
+  const canDelete = canDeleteObjectPath(path);
   const isDevice = obj.type === "DEVICE";
   const tabs: Tab[] = isDevice
     ? ["general", "driver", "variables", "events", "functions"]
@@ -125,7 +134,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
           </div>
         </div>
         <div className="inspector-actions">
-          {!isRoot && (
+          {canDelete && (
             <button
               type="button"
               className="btn danger"
@@ -233,32 +242,89 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                   <th>Имя</th>
                   <th>Значение</th>
                   <th>Запись</th>
+                  <th>История</th>
                   <th>Привязка</th>
-                  <th></th>
+                  <th aria-label="Действия" />
                 </tr>
               </thead>
               <tbody>
                 {variablesQuery.data
                   .filter((v) => v.name !== "uiIcon")
-                  .map((v) => (
-                  <tr key={v.name}>
-                    <td><code>{v.name}</code></td>
-                    <td className="mono">{recordDisplayValue(v.value)}</td>
-                    <td>{v.writable ? "да" : "нет"}</td>
-                    <td className="mono small">{v.bindingExpression ?? "—"}</td>
-                    <td>
-                      {v.writable && (
+                  .map((v) => {
+                  const compactValue = recordCompactValue(v.value);
+                  return (
+                  <Fragment key={v.name}>
+                  <tr
+                    className={historyVariable === v.name ? "var-row-active" : undefined}
+                  >
+                    <td className="var-name-cell"><code>{v.name}</code></td>
+                    <td className="mono var-value-cell" title={compactValue}>
+                      {compactValue}
+                    </td>
+                    <td className="var-flag-cell">{v.writable ? "да" : "нет"}</td>
+                    <td className="var-history-cell">
+                      {v.historyEnabled ? (
+                        <>
+                          <span className="var-flag yes">да</span>
+                          <span className="var-history-retention">
+                            {formatHistoryRetention(v.historyRetentionDays)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="var-flag no">нет</span>
+                      )}
+                    </td>
+                    <td className="mono small var-binding-cell" title={v.bindingExpression ?? undefined}>
+                      {v.bindingExpression ?? "—"}
+                    </td>
+                    <td className="var-actions-cell">
+                      {v.historyEnabled && (
+                        <button
+                          type="button"
+                          className={`btn small ${historyVariable === v.name ? "primary" : ""}`}
+                          onClick={() =>
+                            setHistoryVariable((current) =>
+                              current === v.name ? null : v.name
+                            )
+                          }
+                        >
+                          График
+                        </button>
+                      )}
+                      {canManage ? (
                         <button
                           type="button"
                           className="btn small"
                           onClick={() => setEditingVariable(v)}
                         >
-                          Изменить
+                          Настройки
                         </button>
+                      ) : (
+                        v.writable && !v.bindingExpression && (
+                          <button
+                            type="button"
+                            className="btn small"
+                            onClick={() => setEditingVariable(v)}
+                          >
+                            Изменить
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
-                ))}
+                  {historyVariable === v.name && v.historyEnabled && (
+                    <tr className="var-history-row">
+                      <td colSpan={6}>
+                        <VariableHistoryPanel
+                          objectPath={path}
+                          variableName={v.name}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
+                );
+                })}
               </tbody>
             </table>
             </div>
@@ -305,6 +371,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
         <EditVariableDialog
           objectPath={path}
           variable={editingVariable}
+          canManageHistory={canManage}
           onClose={() => setEditingVariable(null)}
           onSaved={() => {
             queryClient.invalidateQueries({ queryKey: ["variables", path] });

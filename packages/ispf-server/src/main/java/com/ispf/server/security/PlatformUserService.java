@@ -27,8 +27,10 @@ public class PlatformUserService {
     public static final String USERS_FOLDER = SECURITY_ROOT + ".users";
     public static final String ROLES_FOLDER = SECURITY_ROOT + ".roles";
     public static final String USERS_PATH_PREFIX = USERS_FOLDER + ".";
+    public static final String ROLES_PATH_PREFIX = ROLES_FOLDER + ".";
 
     private final PlatformUserStore userStore;
+    private final PlatformRoleService roleService;
     private final PlatformAuthSessionStore sessionStore;
     private final PlatformUserObjectTreeService objectTreeService;
     private final ObjectManager objectManager;
@@ -37,6 +39,7 @@ public class PlatformUserService {
 
     public PlatformUserService(
             PlatformUserStore userStore,
+            PlatformRoleService roleService,
             PlatformAuthSessionStore sessionStore,
             PlatformUserObjectTreeService objectTreeService,
             ObjectManager objectManager,
@@ -44,6 +47,7 @@ public class PlatformUserService {
             ObjectMapper objectMapper
     ) {
         this.userStore = userStore;
+        this.roleService = roleService;
         this.sessionStore = sessionStore;
         this.objectTreeService = objectTreeService;
         this.objectManager = objectManager;
@@ -59,7 +63,7 @@ public class PlatformUserService {
         }
         createUser("admin", "Administrator", "admin", List.of(IspfRoles.ADMIN));
         createUser("operator", "Operator", "operator", List.of(IspfRoles.OPERATOR));
-        objectTreeService.syncRoles();
+        objectTreeService.syncAll();
     }
 
     @Transactional
@@ -289,14 +293,7 @@ public class PlatformUserService {
     }
 
     private void validateRoles(List<String> roles) {
-        if (roles == null || roles.isEmpty()) {
-            throw new IllegalArgumentException("At least one role is required");
-        }
-        for (String role : roles) {
-            if (!IspfRoles.ADMIN.equals(role) && !IspfRoles.OPERATOR.equals(role)) {
-                throw new IllegalArgumentException("Unknown role: " + role);
-            }
-        }
+        roleService.validateRoleNames(roles);
     }
 
     private String serializeRoles(List<String> roles) {

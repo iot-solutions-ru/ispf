@@ -1,0 +1,168 @@
+package com.ispf.server.security;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ispf.server.config.IspfRoles;
+import com.ispf.server.object.ObjectManager;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class PlatformRoleService {
+
+    private final PlatformRoleStore roleStore;
+    private final PlatformUserStore userStore;
+    private final PlatformUserObjectTreeService objectTreeService;
+    private final ObjectManager objectManager;
+    private final ObjectMapper objectMapper;
+
+    public PlatformRoleService(
+            PlatformRoleStore roleStore,
+            PlatformUserStore userStore,
+            PlatformUserObjectTreeService objectTreeService,
+            ObjectManager objectManager,
+            ObjectMapper objectMapper
+    ) {
+        this.roleStore = roleStore;
+        this.userStore = userStore;
+        this.objectTreeService = objectTreeService;
+        this.objectManager = objectManager;
+        this.objectMapper = objectMapper;
+    }
+
+    @Transactional
+    public void ensureDefaultRoles() {
+        if (roleStore.exists()) {
+            objectTreeService.syncRoles();
+            return;
+        }
+        upsertBuiltIn(IspfRoles.ADMIN, "Full platform administration");
+        upsertBuiltIn(IspfRoles.OPERATOR, "Operator HMI and read-only automation");
+        objectTreeService.syncRoles();
+    }
+
+    @Transactional
+    public Map<String, Object> createRole(String name, String displayName, String description) {
+        String normalized = normalizeRoleName(name);
+        if (roleStore.findByName(normalized).isPresent()) {
+            throw new IllegalArgumentException("Role already exists: " + normalized);
+        }
+        PlatformRoleStore.PlatformRole role = new PlatformRoleStore.PlatformRole(
+                normalized,
+                displayName != null && !displayName.isBlank() ? displayName : normalized,
+                description != null ? description : "",
+                false,
+                Instant.now(),
+                Instant.now()
+        );
+        roleStore.upsert(role);
+        objectTreeService.syncRole(role);
+        return toSummary(role);
+    }
+
+    @Transactional
+    public Map<String, Object> updateRole(String name, String displayName, String description) {
+        PlatformRoleStore.PlatformRole existing = roleStore.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + name));
+        String resolvedDisplayName = displayName != null && !displayName.isBlank()
+                ? displayName
+                : existing.displayName();
+        String resolvedDescription = description != null ? description : existing.description();
+        roleStore.updateProfile(name, resolvedDisplayName, resolvedDescription);
+        PlatformRoleStore.PlatformRole updated = roleStore.findByName(name).orElseThrow();
+        objectTreeService.syncRole(updated);
+        return toSummary(updated);
+    }
+
+    @Transactional
+    public void deleteRole(String name) {
+        PlatformRoleStore.PlatformRole role = roleStore.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + name));
+        if (role.builtIn()) {
+            throw new IllegalArgumentException("Cannot delete built-in role: " + name);
+        }
+        if (isRoleAssigned(name)) {
+            throw new IllegalArgumentException("Role is assigned to users: " + name);
+        }
+        roleStore.delete(name);
+        if (objectManager.tree().findByPath(role.objectPath()).isPresent()) {
+            objectManager.delete(role.objectPath());
+        }
+    }
+
+    public List<Map<String, Object>> listRoles() {
+        return roleStore.listAll().stream().map(this::toSummary).toList();
+    }
+
+    public void validateRoleNames(List<String> roles) {
+        if (roles == null || roles.isEmpty()) {
+            throw new IllegalArgumentException("At least one role is required");
+        }
+        for (String role : roles) {
+            if (roleStore.findByName(role).isEmpty()) {
+                throw new IllegalArgumentException("Unknown role: " + role);
+            }
+        }
+    }
+
+    public boolean isSecurityRolePath(String path) {
+        return path != null && path.startsWith(PlatformUserService.ROLES_PATH_PREFIX);
+    }
+
+    public String roleNameFromPath(String path) {
+        return path.substring(PlatformUserService.ROLES_PATH_PREFIX.length());
+    }
+
+    private boolean isRoleAssigned(String roleName) {
+        return userStore.listAll().stream()
+                .anyMatch(user -> deserializeRoles(user.rolesJson()).contains(roleName));
+    }
+
+    private List<String> deserializeRoles(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<>() {
+            });
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private void upsertBuiltIn(String name, String description) {
+        roleStore.upsert(new PlatformRoleStore.PlatformRole(
+                name,
+                name,
+                description,
+                true,
+                Instant.now(),
+                Instant.now()
+        ));
+    }
+
+    private static String normalizeRoleName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Role name is required");
+        }
+        String normalized = name.trim().toLowerCase();
+        if (!normalized.matches("[a-z0-9._-]{2,64}")) {
+            throw new IllegalArgumentException("Invalid role name format");
+        }
+        return normalized;
+    }
+
+    private Map<String, Object> toSummary(PlatformRoleStore.PlatformRole role) {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("name", role.name());
+        summary.put("displayName", role.displayName());
+        summary.put("description", role.description());
+        summary.put("builtIn", role.builtIn());
+        summary.put("objectPath", role.objectPath());
+        summary.put("createdAt", role.createdAt().toString());
+        summary.put("updatedAt", role.updatedAt().toString());
+        return summary;
+    }
+}

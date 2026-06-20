@@ -25,6 +25,8 @@
 | DELETE | `/api/v1/objects/by-path` | admin | Удалить поддерево |
 | GET | `/api/v1/objects/by-path/variables` | operator+ | Список переменных |
 | GET | `/api/v1/objects/by-path/variables/detail` | operator+ | Одна переменная (`name`) |
+| GET | `/api/v1/objects/by-path/variables/history` | operator+ | История переменной (`path`, `name`, `field`, `from`, `to`, `limit`; только при `historyEnabled`) |
+| PATCH | `/api/v1/objects/by-path/variables/history` | admin | `historyEnabled`, `historyRetentionDays` |
 | PUT | `/api/v1/objects/by-path/variables` | admin | Записать значение |
 
 ### Создание объекта

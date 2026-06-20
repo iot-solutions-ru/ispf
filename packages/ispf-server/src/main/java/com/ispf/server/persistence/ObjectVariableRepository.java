@@ -10,6 +10,8 @@ public interface ObjectVariableRepository extends JpaRepository<ObjectVariableEn
 
     List<ObjectVariableEntity> findByObjectPath(String objectPath);
 
+    List<ObjectVariableEntity> findByHistoryEnabledTrue();
+
     Optional<ObjectVariableEntity> findByObjectPathAndName(String objectPath, String name);
 
     void deleteByObjectPath(String objectPath);

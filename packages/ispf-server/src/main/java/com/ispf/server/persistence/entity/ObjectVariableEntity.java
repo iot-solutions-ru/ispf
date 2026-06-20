@@ -45,6 +45,12 @@ public class ObjectVariableEntity {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "history_enabled", nullable = false)
+    private boolean historyEnabled;
+
+    @Column(name = "history_retention_days")
+    private Integer historyRetentionDays;
+
     public Long getId() {
         return id;
     }
@@ -115,5 +121,21 @@ public class ObjectVariableEntity {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isHistoryEnabled() {
+        return historyEnabled;
+    }
+
+    public void setHistoryEnabled(boolean historyEnabled) {
+        this.historyEnabled = historyEnabled;
+    }
+
+    public Integer getHistoryRetentionDays() {
+        return historyRetentionDays;
+    }
+
+    public void setHistoryRetentionDays(Integer historyRetentionDays) {
+        this.historyRetentionDays = historyRetentionDays;
     }
 }

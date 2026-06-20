@@ -207,7 +207,7 @@ export default function DashboardGrid({
   return (
     <div
       ref={containerRef}
-      className={`dashboard-grid-host ${editable ? "editable" : ""}`}
+      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}`}
     >
       <div
         ref={canvasRef}

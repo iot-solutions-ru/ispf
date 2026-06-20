@@ -11,7 +11,9 @@ public record VariableDto(
         boolean readable,
         boolean writable,
         String bindingExpression,
-        Instant updatedAt
+        Instant updatedAt,
+        boolean historyEnabled,
+        Integer historyRetentionDays
 ) {
     public static VariableDto from(Variable variable) {
         return new VariableDto(
@@ -20,7 +22,9 @@ public record VariableDto(
                 variable.readable(),
                 variable.writable(),
                 variable.bindingExpression().orElse(null),
-                variable.updatedAt().orElse(null)
+                variable.updatedAt().orElse(null),
+                variable.historyEnabled(),
+                variable.historyRetentionDays().orElse(null)
         );
     }
 }

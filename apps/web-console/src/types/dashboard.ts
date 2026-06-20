@@ -196,6 +196,8 @@ export type DashboardWidget =
 export interface DashboardLayout {
   columns: number;
   rowHeight: number;
+  /** Visual theme id, e.g. "btop" → class dashboard-theme-btop on grid host */
+  theme?: string;
   widgets: DashboardWidget[];
 }
 
@@ -238,6 +240,7 @@ export function parseLayoutJson(raw: string | undefined | null): DashboardLayout
     return {
       columns: parsed.columns ?? 12,
       rowHeight: parsed.rowHeight ?? 72,
+      theme: typeof parsed.theme === "string" ? parsed.theme : undefined,
       widgets: Array.isArray(parsed.widgets) ? parsed.widgets : [],
     };
   } catch {
