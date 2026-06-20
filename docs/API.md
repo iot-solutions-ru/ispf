@@ -24,6 +24,7 @@
 | POST | `/api/v1/objects` | admin | Создать объект |
 | PATCH | `/api/v1/objects/by-path` | admin | displayName, description |
 | DELETE | `/api/v1/objects/by-path` | admin | Удалить поддерево |
+| PUT | `/api/v1/objects/reorder` | admin | Порядок дочерних (`parentPath`, `orderedPaths`) |
 | GET | `/api/v1/objects/by-path/variables` | operator+ | Список переменных |
 | GET | `/api/v1/objects/by-path/variables/detail` | operator+ | Одна переменная (`name`) |
 | GET | `/api/v1/objects/by-path/variables/history` | operator+ | История переменной (`path`, `name`, `field`, `from`, `to`, `limit`; только при `historyEnabled`) |
@@ -130,20 +131,20 @@ Content-Type: application/json
 | Method | Path | Роли |
 |--------|------|------|
 | GET | `/api/v1/alert-rules` | admin |
-| GET | `/api/v1/alert-rules/{id}` | admin |
+| GET | `/api/v1/alert-rules/by-path?path=` | admin |
 | POST | `/api/v1/alert-rules` | admin |
-| PUT | `/api/v1/alert-rules/{id}` | admin |
-| DELETE | `/api/v1/alert-rules/{id}` | admin |
+| PUT | `/api/v1/alert-rules/by-path?path=` | admin |
+| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |
 
 ## Event Correlators
 
 | Method | Path | Роли |
 |--------|------|------|
 | GET | `/api/v1/correlators` | admin |
-| GET | `/api/v1/correlators/{id}` | admin |
+| GET | `/api/v1/correlators/by-path?path=` | admin |
 | POST | `/api/v1/correlators` | admin |
-| PUT | `/api/v1/correlators/{id}` | admin |
-| DELETE | `/api/v1/correlators/{id}` | admin |
+| PUT | `/api/v1/correlators/by-path?path=` | admin |
+| DELETE | `/api/v1/correlators/by-path?path=` | admin |
 
 ## Драйверы
 

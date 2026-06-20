@@ -176,13 +176,13 @@ cd apps/web-console && npm install && npm run dev
 - [x] Variable historian: samples, export, aggregate, dashboard widgets
 - [x] Platform metrics (admin System tab)
 - [x] Object tree: drag-and-drop порядок, семантические типы узлов
+- [x] Документация синхронизирована с object-tree моделью автоматизации
 
 ### В работе / далее
 
 - [ ] Keycloak-first prod auth (полный OAuth flow в UI)
 - [ ] TimescaleDB retention policies (prod historian)
 - [ ] NATS event bus (опциональная шина между инстансами)
-- [ ] Документация: синхронизация AUTOMATION.md / OBJECT_MODEL.md с object-tree моделью
 
 ## Лицензия
 

@@ -57,8 +57,8 @@ Historian **завершён** для текущего scope. Мониторин
 
 | Тема | Примечание |
 |------|------------|
-| Алерты по порогам / трендам | Отдельный объект (правило алерта), связь с переменной и historian — позже; см. [AUTOMATION.md](./AUTOMATION.md), `alert_rules` |
-| Корреляторы событий | Уже есть API `/api/v1/correlators` — см. [AUTOMATION.md](./AUTOMATION.md) |
+| Алерты по порогам / трендам | Узлы `ALERT` в дереве; см. [AUTOMATION.md](./AUTOMATION.md) |
+| Корреляторы событий | Узлы `CORRELATOR` в дереве; API `/api/v1/correlators` — см. [AUTOMATION.md](./AUTOMATION.md) |
 
 Historian только **хранит и отдаёт** временные ряды; генерация событий и эскалация — слой автоматизации.
 

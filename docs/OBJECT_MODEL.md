@@ -20,8 +20,12 @@ root
     │   └── root.platform.security.roles
     │       ├── root.platform.security.roles.admin
     │       └── root.platform.security.roles.operator
-    └── root.platform.workflows
-        └── root.platform.workflows.demo-alarm-handler
+    ├── root.platform.workflows
+    │   └── root.platform.workflows.demo-alarm-handler
+    ├── root.platform.alert-rules
+    │   └── root.platform.alert-rules.temperature-threshold-exceeded
+    └── root.platform.correlators
+        └── root.platform.correlators.alarm-handler-on-threshold-event
 ```
 
 Пути разделяются **точкой** (`.`), не слэшем. Резолвинг дочернего пути: `parentPath + "." + name`.
@@ -32,17 +36,31 @@ root
 |-----|------------|
 | `ROOT` | Корень дерева |
 | `TENANT` | Арендатор (multi-tenancy, план) |
-| `USER` | Пользователь |
+| `PLATFORM` | Узел `root.platform` |
+| `DEVICES` | Каталог устройств |
 | `DEVICE` | Устройство с драйвером |
 | `DRIVER` | Экземпляр драйвера |
 | `MODEL` | Определение модели |
+| `DASHBOARDS` | Каталог дашбордов |
 | `DASHBOARD` | HMI-экран |
+| `WORKFLOWS` | Каталог workflow |
 | `WORKFLOW` | BPMN-процесс |
-| `ALERT` | Правило алерта (legacy object type) |
-| `AGENT` | Edge agent |
-| `CUSTOM` | Произвольный контейнер |
+| `ALERT_RULES` | Каталог alert rules |
+| `ALERT` | Правило алерта |
+| `CORRELATORS` | Каталог correlators |
+| `CORRELATOR` | Event correlator |
+| `APPLICATIONS` | Каталог приложений |
 | `APPLICATION` | Прикладное приложение (bundle) |
-| `REPORT` | SQL-отчёт приложения |
+| `OPERATOR_APPS` | Каталог operator UI |
+| `SECURITY` | Корень RBAC |
+| `USERS` / `USER` | Пользователи |
+| `ROLES` / `ROLE` | Роли |
+| `FUNCTIONS` / `FUNCTION` | Функции приложения |
+| `REPORTS` / `REPORT` | SQL-отчёты |
+| `AGENT` | Edge agent |
+| `CUSTOM` | Произвольный контейнер (fallback для неизвестных узлов) |
+
+Системные папки (`PLATFORM`, `DEVICES`, `ALERT_RULES`, …) получают семантический тип при bootstrap и миграции `V22__system_object_types.sql`. Пользовательские узлы — по шаблону модели или `CUSTOM`.
 
 ## Безопасность в дереве
 
@@ -59,7 +77,7 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 
 Каждый узел содержит:
 
-- **Метаданные:** `id`, `path`, `displayName`, `description`, `templateId`, `createdAt`
+- **Метаданные:** `id`, `path`, `displayName`, `description`, `templateId`, `sortOrder`, `createdAt`
 - **Переменные** (`Variable`) — типизированные значения
 - **Функции** (`FunctionDescriptor`) — вызываемые операции
 - **События** (`EventDescriptor`) — публикуемые типы событий
@@ -162,14 +180,14 @@ Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`
 
 | Таблица | Содержимое |
 |---------|------------|
-| `object_nodes` | Узлы дерева |
+| `object_nodes` | Узлы дерева (в т.ч. alert rules и correlators) |
 | `object_variables` | Значения и binding_expr |
 | `variable_samples` | История телеметрии (time-series сэмплы) |
 | `event_history` | Журнал событий |
 | `workflow_instances` | Экземпляры BPMN |
 | `workflow_user_tasks` | Задачи оператора |
-| `alert_rules` | Правила алертов |
-| `event_correlators` | Корреляторы |
+| `correlator_hits` | Срабатывания correlators (runtime) |
+| `alert_rules` / `event_correlators` | Legacy; мигрируются в дерево при старте |
 
 При старте `ObjectManager` загружает дерево из БД или выполняет `PlatformBootstrap` (пустая БД).
 
@@ -200,6 +218,7 @@ Web Console подписывается через `useObjectWebSocket` и инв
 | Создать | `POST /api/v1/objects` |
 | Обновить | `PATCH /api/v1/objects/by-path?path=` |
 | Удалить | `DELETE /api/v1/objects/by-path?path=` |
+| Порядок дочерних | `PUT /api/v1/objects/reorder` (`parentPath`, `orderedPaths`) |
 | Переменные | `GET/PUT .../variables` |
 
 При создании `DASHBOARD` / `WORKFLOW` автоматически применяется соответствующая built-in модель.

@@ -71,13 +71,15 @@ graph LR
 
 | Тип узла | Назначение |
 |----------|------------|
+| `PLATFORM`, `DEVICES`, `DASHBOARDS`, … | Системные каталоги (`root.platform.*`) |
 | `DEVICE` | Физическое или виртуальное устройство с драйвером |
 | `DASHBOARD` | HMI-экран (layout JSON + виджеты) |
 | `WORKFLOW` | BPMN-процесс автоматизации |
+| `ALERT` / `CORRELATOR` | Правила автоматизации (узлы в дереве) |
 | `MODEL` | Шаблон (blueprint) для создания объектов |
 | `APPLICATION` | Зарегистрированное deploy-приложение |
 | `USER` / `ROLE` | Пользователи и роли (зеркало security API) |
-| `CUSTOM` | Произвольный контейнер |
+| `CUSTOM` | Произвольный контейнер (fallback) |
 
 Подробнее: [OBJECT_MODEL.md](OBJECT_MODEL.md), [GLOSSARY.md](GLOSSARY.md).
 
@@ -124,8 +126,8 @@ Dashboard Builder (админ) и Operator HMI (read-only) используют 
 ### 6. Автоматизация
 
 - **События** — типизированные уведомления с объектов; журнал + WebSocket.
-- **Alert rules** — CEL-условие на переменную → автоматический fire события.
-- **Event correlators** — цепочка событий → запуск workflow.
+- **Alert rules** — CEL-условие на переменную → автоматический fire события. Узлы `ALERT` в `root.platform.alert-rules`.
+- **Event correlators** — цепочка событий → запуск workflow. Узлы `CORRELATOR` в `root.platform.correlators`.
 
 Подробнее: [AUTOMATION.md](AUTOMATION.md).
 
@@ -178,7 +180,7 @@ flowchart TD
     ROLE -->|operator| OP[Operator HMI]
     ADMIN --> EXPLORER[Обозреватель объектов]
     ADMIN --> BUILDER[Dashboard / Workflow Builder]
-    ADMIN --> AUTO[Автоматизация]
+    EXPLORER --> AUTO[Alert rules / Correlators в дереве]
     ADMIN --> OPBTN[Кнопка «Оператор · demo»]
     OPBTN --> OP
     OP --> DASH[Дашборды read-only]

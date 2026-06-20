@@ -28,7 +28,7 @@ graph TB
 
 ### Platform Object
 
-Адресуемый узел: `root.platform.devices.pump-01`. Типы: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `CUSTOM`, …
+Адресуемый узел: `root.platform.devices.pump-01`. Типы: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `PLATFORM`, `ALERT_RULES`, … Системные каталоги имеют семантический `ObjectType`, не `CUSTOM`.
 
 ### DataRecord
 

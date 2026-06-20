@@ -82,7 +82,7 @@ http://localhost:5173?mode=operator
 2. Раскройте `devices` → `demo-sensor-01` — переменные температуры, порога, аларма.
 3. Дважды кликните `dashboards.demo-sensor` — откроется **Dashboard Builder**.
 4. Дважды кликните `workflows.demo-alarm-handler` — **Workflow Builder** с BPMN.
-5. Вкладка **Автоматизация** — alert rules и event correlators.
+5. Раскройте `alert-rules` и `correlators` — правила автоматизации в дереве; inspector справа для редактирования.
 
 ## 5. Запуск драйвера устройства
 

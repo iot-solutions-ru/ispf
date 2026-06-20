@@ -6,7 +6,7 @@
 
 ## A
 
-**Alert rule** — правило автоматизации: CEL-условие на переменную объекта. При истинности — автоматический fire события. Настраивается администратором на вкладке «Автоматизация».
+**Alert rule** — правило автоматизации: CEL-условие на переменную объекта. При истинности — автоматический fire события. Узел типа `ALERT` в `root.platform.alert-rules`.
 
 **Application (deploy-приложение)** — зарегистрированное прикладное решение с изолированной SQL-схемой, JSON-функциями и опциональным bundle. Регистрируется через `POST /applications`. Отображается в дереве под `root.platform.applications`.
 
@@ -52,7 +52,7 @@
 
 **Event** — типизированное уведомление с объекта. Имеет descriptor (имя, схема payload, уровень). Публикуется через `POST /events/fire` или alert rule.
 
-**Event correlator** — правило: цепочка событий → запуск workflow.
+**Event correlator** — правило: цепочка событий → запуск workflow. Узел типа `CORRELATOR` в `root.platform.correlators`.
 
 **Explorer** — панель просмотра свойств выбранного узла дерева в admin console.
 
@@ -100,7 +100,7 @@
 
 **Object tree** — иерархия узлов платформы с dot-path адресацией (`root.platform.devices.sensor-01`).
 
-**ObjectType** — тип узла: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `MODEL`, `APPLICATION`, `USER`, `CUSTOM`, …
+**ObjectType** — тип узла: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `MODEL`, `APPLICATION`, `USER`, `PLATFORM`, `ALERT_RULES`, … Системные папки имеют семантический тип, не `CUSTOM`.
 
 **Operator app** — конфигурация operator UI для конкретного приложения. Хранится в `operator_app_ui`, редактируется в `root.platform.operator-apps`.
 

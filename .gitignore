@@ -27,4 +27,5 @@ Thumbs.db
 # Logs & runtime data (repo root only)
 logs/
 /data/
+packages/ispf-server/data/
 *.log

@@ -2000,19 +2000,6 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   font-size: 0.75rem;
 }
 
-.automation-main {
-  padding: 1.25rem 1.5rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  width: 100%;
-}
-
-.automation-header h1 {
-  margin: 0 0 0.35rem;
-  font-size: 1.35rem;
-}
-
 .automation-panel {
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -2030,47 +2017,6 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 .automation-panel-head h2 {
   margin: 0 0 0.25rem;
   font-size: 1.05rem;
-}
-
-.automation-table-wrap {
-  overflow: auto;
-  margin-top: 0.75rem;
-}
-
-.automation-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.88rem;
-}
-
-.automation-table th,
-.automation-table td {
-  border-bottom: 1px solid var(--border);
-  padding: 0.55rem 0.65rem;
-  text-align: left;
-  vertical-align: top;
-}
-
-.automation-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.expr-cell {
-  display: block;
-  max-width: 280px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.automation-actions {
-  white-space: nowrap;
-  display: flex;
-  gap: 0.35rem;
 }
 
 .badge.ok {

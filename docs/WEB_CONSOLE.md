@@ -10,10 +10,9 @@ URL: `http://localhost:5173`
 
 | Область | Функции |
 |---------|---------|
-| Дерево объектов | Поиск, раскрытие, CRUD |
+| Дерево объектов | Поиск, раскрытие, CRUD, drag-and-drop порядок соседей |
 | Explorer | Список дочерних объектов |
-| Inspector | Свойства, переменные, события |
-| Вкладка «Автоматизация» | Alert rules, correlators |
+| Inspector | Свойства, переменные, события; alert rules и correlators |
 
 ### Редакторы по типу объекта
 
@@ -23,6 +22,8 @@ URL: `http://localhost:5173`
 |------------|-----------|
 | `DASHBOARD` | `DashboardBuilder` |
 | `WORKFLOW` | `WorkflowBuilder` |
+| `ALERT` | `AlertRuleInspector` |
+| `CORRELATOR` | `CorrelatorInspector` |
 | Остальные | `ObjectPropertiesEditor` |
 
 ### Operator HMI
@@ -90,7 +91,7 @@ src/
     ├── ObjectPropertiesEditor.tsx
     ├── dashboard/          # Builder + 14 widgets
     ├── workflow/           # BPMN editor/viewer
-    ├── automation/         # Alert/correlator CRUD
+    ├── automation/         # AlertRuleInspector, CorrelatorInspector, automationPath
     └── operator/           # OperatorView, OperatorDashboardApp, sidebar panels
 ```
 
