@@ -23,6 +23,7 @@ import org.snmp4j.smi.Address;
 import org.snmp4j.smi.GenericAddress;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.Null;
 import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
@@ -32,12 +33,13 @@ import org.snmp4j.security.SecurityProtocols;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * SNMP driver (v1/v2c/v3) — polls OIDs and maps values to ISPF object variables.
  * <p>
- * Point mapping: {@code oid} or {@code oid:VALUE_KIND} where VALUE_KIND is AUTO, INTEGER, STRING, BOOLEAN.
+ * Point mapping: {@code oid}, {@code oid:VALUE_KIND}, or {@code oid:VALUE_KIND:optional}.
  */
 public class SnmpDeviceDriver implements DeviceDriver {
 
@@ -81,6 +83,7 @@ public class SnmpDeviceDriver implements DeviceDriver {
     private int retries = 1;
 
     private final Map<String, SnmpPoint> points = new ConcurrentHashMap<>();
+    private final Set<String> optionalOidWarnings = ConcurrentHashMap.newKeySet();
     private volatile boolean connected;
 
     @Override
@@ -225,8 +228,21 @@ public class SnmpDeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             SnmpPoint point = SnmpPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            DataRecord record = getOid(point);
-            driverObject.updateVariable(entry.getKey(), record);
+            try {
+                DataRecord record = getOid(point);
+                driverObject.updateVariable(entry.getKey(), record);
+            } catch (DriverException e) {
+                if (point.optional()) {
+                    if (optionalOidWarnings.add(entry.getKey())) {
+                        driverObject.log(
+                                DeviceDriver.DriverLogLevel.DEBUG,
+                                "Optional SNMP point " + entry.getKey() + " (" + point.oid() + "): " + e.getMessage()
+                        );
+                    }
+                    continue;
+                }
+                throw e;
+            }
         }
     }
 
@@ -260,6 +276,9 @@ public class SnmpDeviceDriver implements DeviceDriver {
                 );
             }
             VariableBinding binding = event.getResponse().get(0);
+            if (binding == null || binding.getVariable() == null || binding.getVariable() instanceof Null) {
+                throw new DriverException("SNMP OID not available: " + point.oid());
+            }
             return SnmpValueMapper.toRecord(binding.getVariable(), point.valueKind());
         } catch (DriverException e) {
             throw e;

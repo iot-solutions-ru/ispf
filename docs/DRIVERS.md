@@ -104,7 +104,7 @@ j2mod, Modbus TCP.
 
 SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 
-Формат точки: `oid` или `oid:VALUE_KIND` (`STRING`, `INTEGER`, …).
+Формат точки: `oid`, `oid:VALUE_KIND` (`STRING`, `INTEGER`, …), или `oid:VALUE_KIND:optional` — последний вариант не прерывает poll при отсутствии OID (например `hrProcessorLoad` на Windows SNMP agent).
 
 Демо `snmp-localhost`: MIB-II + HOST-RESOURCES-MIB + IF-MIB (см. модель `snmp-agent-v1` и дашборд `snmp-host-monitoring`):
 
@@ -119,8 +119,9 @@ SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 | `hrSystemProcesses` | 1.3.6.1.2.1.25.1.6.0 |
 | `hrSystemNumUsers` | 1.3.6.1.2.1.25.1.5.0 |
 | `ifNumber` | 1.3.6.1.2.1.2.1.0 |
-| `ifInOctets` | 1.3.6.1.2.1.2.2.1.10.1 |
-| `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.1 |
+| `ifInOctets` | 1.3.6.1.2.1.2.2.1.10.2 (typical Linux NIC index 2) |
+| `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.2 |
+| `hrProcessorLoad` | 1.3.6.1.2.1.25.3.3.1.2.196608 (optional — Linux hrDevice index) |
 
 Конфиг v2c:
 
@@ -433,4 +434,4 @@ Point mapping: путь к файлу в share → `exists`, `size`.
 
 - Логи: `com.ispf.server.driver` (уровень DEBUG в `local`/`dev`)
 - `driverStatus` на объекте устройства
-- WARN в логе при ошибке poll (SNMP timeout, read-only variable)
+- WARN в логе при ошибке poll (SNMP timeout); optional OID — один раз DEBUG, poll продолжается

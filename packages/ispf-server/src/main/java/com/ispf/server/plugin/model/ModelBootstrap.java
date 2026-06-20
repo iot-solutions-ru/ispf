@@ -79,9 +79,9 @@ public class ModelBootstrap {
                     + "\"hrSystemProcesses\":\"1.3.6.1.2.1.25.1.6.0:INTEGER\","
                     + "\"hrSystemNumUsers\":\"1.3.6.1.2.1.25.1.5.0:INTEGER\","
                     + "\"ifNumber\":\"1.3.6.1.2.1.2.1.0:INTEGER\","
-                    + "\"ifInOctets\":\"1.3.6.1.2.1.2.2.1.10.1:INTEGER\","
-                    + "\"ifOutOctets\":\"1.3.6.1.2.1.2.2.1.16.1:INTEGER\","
-                    + "\"hrProcessorLoad\":\"1.3.6.1.2.1.25.3.3.1.2.1:INTEGER\"}";
+                    + "\"ifInOctets\":\"1.3.6.1.2.1.2.2.1.10.2:INTEGER\","
+                    + "\"ifOutOctets\":\"1.3.6.1.2.1.2.2.1.16.2:INTEGER\","
+                    + "\"hrProcessorLoad\":\"1.3.6.1.2.1.25.3.3.1.2.196608:INTEGER:optional\"}";
 
     private static final DataSchema SNMP_NUMERIC_SCHEMA = DataSchema.builder("snmpNumeric")
             .field("value", FieldType.DOUBLE)
@@ -830,7 +830,7 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifInOctets",
-                                "Inbound octets on primary interface (IF-MIB ifInOctets.1)",
+                                "Inbound octets on primary NIC (IF-MIB ifInOctets.2, typical Linux ens3)",
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
@@ -840,7 +840,7 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifOutOctets",
-                                "Outbound octets on primary interface (IF-MIB ifOutOctets.1)",
+                                "Outbound octets on primary NIC (IF-MIB ifOutOctets.2, typical Linux ens3)",
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
@@ -850,7 +850,7 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.withHistory(
                                 "hrProcessorLoad",
-                                "CPU load % (HOST-RESOURCES-MIB hrProcessorLoad.1)",
+                                "CPU load % (HOST-RESOURCES-MIB hrProcessorLoad, Linux index 196608)",
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,

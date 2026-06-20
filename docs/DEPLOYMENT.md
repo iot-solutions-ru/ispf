@@ -110,3 +110,48 @@ logging.level.com.ispf: DEBUG  # local/dev
 | dev | PostgreSQL volume `ispf_pg_data` |
 
 Очистка стенда: удалить H2 file или `docker compose down -v` (PostgreSQL).
+
+## Remote host (systemd + nginx)
+
+Скрипт `deploy/remote-setup-ispf.sh` — одноразовая установка на Linux VPS (Ubuntu 24.04+):
+
+1. Останавливает лишние сервисы на хосте (настраивается под конкретный сервер).
+2. Ставит Temurin JDK 25.
+3. Кладёт артефакты в `/opt/ispf`:
+   - `ispf-server.jar` ← `/tmp/ispf-server.jar`
+   - `web-console/` ← `/tmp/ispf-web-console-dist/`
+4. Создаёт `ispf-server.service` (порт **8080**, profile `local`, H2 в `/opt/ispf/data`).
+5. Настраивает nginx на **80** (`ai.iot-solutions.ru`): static UI + proxy `/api/`, `/ws/`, `/actuator/`.
+6. Опционально: если в `/tmp/snmpd-ispf.conf` — ставит snmpd для demo `snmp-localhost`.
+
+Подготовка и запуск на сервере:
+
+```bash
+# Локально: сборка
+./gradlew :packages:ispf-server:bootJar
+cd apps/web-console && npm run build
+scp packages/ispf-server/build/libs/ispf-server-*.jar user@host:/tmp/ispf-server.jar
+scp -r apps/web-console/dist user@host:/tmp/ispf-web-console-dist
+scp deploy/remote-setup-ispf.sh deploy/snmpd-ispf.conf user@host:/tmp/
+ssh user@host 'bash /tmp/remote-setup-ispf.sh'
+```
+
+Проверка: `http://host/` (UI), `http://host/api/v1/info`.
+
+Дополнительно:
+
+| Скрипт | Назначение |
+|--------|------------|
+| `deploy/remote-cleanup-apache-ispf-only.sh` | Убрать Apache/ISPmanager, оставить только ISPF на :80 |
+| `deploy/update-snmp-mappings.sh` | Обновить OID mappings на уже работающем сервере |
+| `deploy/start-snmp-driver.sh` | Login + start SNMP driver |
+
+### SNMP demo driver на remote
+
+После деплоя SNMP-агент на хосте (`127.0.0.1:161`, см. `deploy/snmpd-ispf.conf`) и устройство `root.platform.devices.snmp-localhost`:
+
+```bash
+bash deploy/start-snmp-driver.sh
+```
+
+Скрипт логинится (`admin`/`admin`), вызывает `POST /api/v1/drivers/runtime/start?devicePath=...` и печатает status. По умолчанию `API=http://127.0.0.1:8080` (JVM); через nginx: `API=http://127.0.0.1`.

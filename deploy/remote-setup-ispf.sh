@@ -29,6 +29,15 @@ mkdir -p /opt/ispf/data /opt/ispf/web-console
 mv -f /tmp/ispf-server.jar /opt/ispf/ispf-server.jar
 rm -rf /opt/ispf/web-console/*
 mv /tmp/ispf-web-console-dist/* /opt/ispf/web-console/
+chmod -R a+rX /opt/ispf/web-console
+find /opt/ispf/web-console -type d -exec chmod 755 {} +
+
+if [ -f /tmp/snmpd-ispf.conf ]; then
+  cp /tmp/snmpd-ispf.conf /etc/snmp/snmpd.conf.d/ispf.conf
+  sed -i '/^rocommunity/d; /^rocommunity6/d; /^agentaddress/d' /etc/snmp/snmpd.conf
+  systemctl enable snmpd
+  systemctl restart snmpd
+fi
 
 cat > /etc/systemd/system/ispf-server.service << 'EOF'
 [Unit]
@@ -39,7 +48,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/ispf
-Environment=ISPF_SERVER_PORT=18080
+Environment=ISPF_SERVER_PORT=8080
 ExecStart=/usr/bin/java -jar /opt/ispf/ispf-server.jar --spring.profiles.active=local
 Restart=always
 RestartSec=10
@@ -51,15 +60,16 @@ EOF
 
 cat > /etc/nginx/conf.d/ispf.conf << 'EOF'
 server {
-    listen 8090;
-    listen [::]:8090;
-    server_name _;
+    listen 80;
+    listen [::]:80;
+    server_name ai.iot-solutions.ru _;
 
     root /opt/ispf/web-console;
     index index.html;
+    client_max_body_size 128m;
 
     location /api/ {
-        proxy_pass http://127.0.0.1:18080;
+        proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -68,7 +78,7 @@ server {
     }
 
     location /ws/ {
-        proxy_pass http://127.0.0.1:18080;
+        proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -76,7 +86,7 @@ server {
     }
 
     location /actuator/ {
-        proxy_pass http://127.0.0.1:18080;
+        proxy_pass http://127.0.0.1:8080;
     }
 
     location / {
@@ -94,10 +104,10 @@ systemctl restart ispf-server
 
 sleep 20
 systemctl is-active ispf-server
-curl -sf http://127.0.0.1:18080/actuator/health
+curl -sf http://127.0.0.1:8080/actuator/health
 echo ""
-curl -sf -o /dev/null -w "Web UI HTTP %{http_code}\n" http://127.0.0.1:8090/
-curl -sf http://127.0.0.1:8090/api/v1/info
+curl -sf -o /dev/null -w "Web UI HTTP %{http_code}\n" http://127.0.0.1/
+curl -sf http://127.0.0.1/api/v1/info
 echo ""
 echo "=== Memory after cleanup ==="
 free -h
