@@ -2,6 +2,17 @@
 
 Каталог кандидатов на новые драйверы (roadmap): [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap) (REQ-PF-14).
 
+## Зрелость драйверов
+
+| Уровень | Значение |
+|---------|----------|
+| **production** | Полный poll/read/write, тесты, документированный config |
+| **beta** | Рабочий connectivity, ограниченный feature set |
+| **stub** | TCP/session check или connectivity shell (v0.1) |
+| **simulator** | Virtual/profile-based (см. PF-09) |
+
+Многие записи каталога REQ-PF-14 помечены как stub в [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap).
+
 ## Архитектура
 
 Драйверы реализуют SPI `DeviceDriver` (`packages/ispf-driver-api`):

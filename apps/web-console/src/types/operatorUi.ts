@@ -10,6 +10,8 @@ export interface OperatorUi {
   title: string;
   defaultDashboard: string;
   dashboards: OperatorUiDashboard[];
+  /** Optional object path filter for operator event journal sidebar. */
+  eventJournalObjectPath?: string;
 }
 
 export function resolveOperatorDashboard(

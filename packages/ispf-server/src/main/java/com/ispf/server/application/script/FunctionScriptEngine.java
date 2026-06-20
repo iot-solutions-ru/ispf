@@ -78,6 +78,11 @@ public class FunctionScriptEngine {
                         jdbcTemplate.update(sql, params.toArray());
                     }
                     case "setVar" -> vars.put(step.path("var").asText(), resolveStepValue(step.get("value"), vars));
+                    case "buildRecord" -> vars.put(
+                            step.path("var").asText(),
+                            resolveFields(step.get("fields"), vars)
+                    );
+                    case "map" -> vars.put(step.path("var").asText(), mapCollection(step, vars));
                     case "invoke_function" -> {
                         Map<String, Object> nestedInput = resolveInputObject(step.get("input"), vars);
                         DataRecord nestedOutput = context.invokeFunction(
@@ -183,6 +188,30 @@ public class FunctionScriptEngine {
         row.put("error_code", step.path("error_code").asText(step.path("code").asText("ERROR")));
         row.put("error_message", step.path("error_message").asText(step.path("message").asText("Script validation failed")));
         return toOutputRecord(outputSchema, row);
+    }
+
+    private List<Map<String, Object>> mapCollection(JsonNode step, Map<String, Object> vars) {
+        Object source = resolveStepValue(step.get("source"), vars);
+        if (!(source instanceof List<?> list)) {
+            throw new IllegalArgumentException("map source must be a list");
+        }
+        List<Map<String, Object>> mapped = new ArrayList<>();
+        for (Object element : list) {
+            Map<String, Object> scoped = new LinkedHashMap<>(vars);
+            if (element instanceof Map<?, ?> row) {
+                scoped.put("item", normalizeRow(toStringKeyMap(row)));
+            } else {
+                scoped.put("item", element);
+            }
+            mapped.add(resolveFields(step.get("fields"), scoped));
+        }
+        return mapped;
+    }
+
+    private static Map<String, Object> toStringKeyMap(Map<?, ?> row) {
+        Map<String, Object> normalized = new LinkedHashMap<>();
+        row.forEach((key, value) -> normalized.put(String.valueOf(key), value));
+        return normalized;
     }
 
     private Map<String, Object> resolveFields(JsonNode fieldsNode, Map<String, Object> vars) {

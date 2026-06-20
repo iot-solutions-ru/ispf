@@ -32,6 +32,7 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+        maxParallelForks = 1
     }
 
     dependencies {

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { getStoredSession } from "../auth/session";
 
 export interface ObjectWsMessage {
   type: "CREATED" | "UPDATED" | "DELETED" | "VARIABLE_UPDATED" | "EVENT_FIRED";
@@ -10,7 +11,13 @@ export interface ObjectWsMessage {
 
 function wsUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/ws/objects`;
+  const base = `${protocol}//${window.location.host}/ws/objects`;
+  const token = getStoredSession()?.token;
+  if (!token) {
+    return base;
+  }
+  const params = new URLSearchParams({ token });
+  return `${base}?${params.toString()}`;
 }
 
 export function useObjectWebSocket() {

@@ -211,6 +211,75 @@ class ApplicationPlatformApiTest {
     }
 
     @Test
+    void buildRecordAndMapScriptSteps() throws Exception {
+        String itemId = UUID.randomUUID().toString();
+
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "1.0.2-map",
+                                  "migrations": [
+                                    {
+                                      "id": "map_seed",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('%s', 'WH-001', 'ready'); INSERT INTO platform_item (id, item_code, status) VALUES ('%s', 'WH-002', 'assigned');"
+                                    }
+                                  ],
+                                  "functions": [
+                                    {
+                                      "objectPath": "%s",
+                                      "functionName": "platform_mapItems",
+                                      "version": "1",
+                                      "descriptor": {
+                                        "inputSchema": { "name": "in", "fields": [] },
+                                        "outputSchema": {
+                                          "name": "out",
+                                          "fields": [
+                                            {"name": "error_code", "type": "STRING"},
+                                            {"name": "error_message", "type": "STRING"},
+                                            {"name": "firstCode", "type": "STRING"},
+                                            {
+                                              "name": "rows",
+                                              "type": "RECORD_LIST",
+                                              "nestedSchema": {
+                                                "name": "mapped_row",
+                                                "fields": [
+                                                  {"name": "code", "type": "STRING"},
+                                                  {"name": "state", "type": "STRING"}
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "source": {
+                                        "type": "script",
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"items\\",\\"sql\\":\\"SELECT item_code, status FROM platform_item ORDER BY item_code\\"},{\\"type\\":\\"selectOne\\",\\"var\\":\\"first\\",\\"sql\\":\\"SELECT item_code FROM platform_item ORDER BY item_code LIMIT 1\\"},{\\"type\\":\\"map\\",\\"var\\":\\"mapped\\",\\"source\\":\\"${items}\\",\\"fields\\":{\\"code\\":\\"${item.item_code}\\",\\"state\\":\\"${item.status}\\"}},{\\"type\\":\\"buildRecord\\",\\"var\\":\\"header\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"firstCode\\":\\"${first.item_code}\\"}},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"${header.error_code}\\",\\"error_message\\":\\"${header.error_message}\\",\\"firstCode\\":\\"${header.firstCode}\\",\\"rows\\":\\"${mapped}\\"}}]}"
+                                      }
+                                    }
+                                  ]
+                                }
+                                """.formatted(itemId, UUID.randomUUID(), DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "platform_mapItems",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result.firstCode").value("WH-001"))
+                .andExpect(jsonPath("$.result.rows", hasSize(2)))
+                .andExpect(jsonPath("$.result.rows[0].code").value("WH-001"));
+    }
+
+    @Test
     void invokeFunctionPropagatesNestedError() throws Exception {
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)

@@ -5,11 +5,13 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,18 +20,23 @@ import java.util.Map;
 @Service
 public class PlatformSchedulerService {
 
+    private static final String SCHEDULER_LOCK = "platform_scheduler";
+
     private final JdbcTemplate jdbcTemplate;
     private final FunctionService functionService;
     private final ObjectMapper objectMapper;
+    private final PlatformLeaderLockService leaderLockService;
 
     public PlatformSchedulerService(
             JdbcTemplate jdbcTemplate,
             FunctionService functionService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformLeaderLockService leaderLockService
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.functionService = functionService;
         this.objectMapper = objectMapper;
+        this.leaderLockService = leaderLockService;
     }
 
     public void upsert(PlatformSchedule schedule) {
@@ -79,6 +86,17 @@ public class PlatformSchedulerService {
 
     @Scheduled(fixedDelay = 5000)
     public void tick() {
+        if (!leaderLockService.tryAcquire(SCHEDULER_LOCK, Duration.ofSeconds(30))) {
+            return;
+        }
+        try {
+            tickSchedules();
+        } finally {
+            leaderLockService.release(SCHEDULER_LOCK);
+        }
+    }
+
+    void tickSchedules() {
         List<Map<String, Object>> schedules = jdbcTemplate.queryForList(
                 "SELECT * FROM platform_schedules WHERE enabled = TRUE"
         );

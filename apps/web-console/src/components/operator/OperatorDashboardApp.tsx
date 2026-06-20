@@ -97,7 +97,7 @@ export default function OperatorDashboardApp({
           />
         </main>
         <aside className="operator-sidebar">
-          <OperatorSidebar operatorId={operatorId} />
+          <OperatorSidebar operatorId={operatorId} ui={ui} />
         </aside>
       </div>
     </div>

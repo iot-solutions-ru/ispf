@@ -14,6 +14,8 @@ public class FunctionScriptValidator {
             "selectMany",
             "exec",
             "setVar",
+            "buildRecord",
+            "map",
             "invoke_function",
             "cancel_workflows",
             "failIfNull",
@@ -67,6 +69,18 @@ public class FunctionScriptValidator {
                 require(step, "var");
                 if (!step.has("value")) {
                     throw new IllegalArgumentException("setVar step requires value");
+                }
+            }
+            case "buildRecord" -> {
+                require(step, "var");
+                if (!step.has("fields") || !step.get("fields").isObject()) {
+                    throw new IllegalArgumentException("buildRecord step requires fields object");
+                }
+            }
+            case "map" -> {
+                require(step, "var", "source");
+                if (!step.has("fields") || !step.get("fields").isObject()) {
+                    throw new IllegalArgumentException("map step requires fields object");
                 }
             }
             case "invoke_function" -> require(step, "objectPath", "functionName");

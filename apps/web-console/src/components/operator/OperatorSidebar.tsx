@@ -1,17 +1,18 @@
 import { useState } from "react";
+import type { OperatorUi } from "../../types/operatorUi";
 import WorkQueuePanel from "./WorkQueuePanel";
 import EventJournalPanel from "./EventJournalPanel";
 
-const DEMO_DEVICE = "root.platform.devices.demo-sensor-01";
-
 interface OperatorSidebarProps {
   operatorId?: string;
+  ui?: OperatorUi;
 }
 
 type SidebarTab = "tasks" | "events";
 
-export default function OperatorSidebar({ operatorId = "operator" }: OperatorSidebarProps) {
+export default function OperatorSidebar({ operatorId = "operator", ui }: OperatorSidebarProps) {
   const [tab, setTab] = useState<SidebarTab>("tasks");
+  const eventObjectPath = ui?.eventJournalObjectPath;
 
   return (
     <div className="operator-sidebar-inner">
@@ -34,7 +35,7 @@ export default function OperatorSidebar({ operatorId = "operator" }: OperatorSid
       {tab === "tasks" ? (
         <WorkQueuePanel operatorId={operatorId} />
       ) : (
-        <EventJournalPanel objectPath={DEMO_DEVICE} />
+        <EventJournalPanel objectPath={eventObjectPath} />
       )}
     </div>
   );

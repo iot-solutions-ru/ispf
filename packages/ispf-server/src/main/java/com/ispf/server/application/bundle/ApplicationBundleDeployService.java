@@ -2,6 +2,16 @@ package com.ispf.server.application.bundle;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.ObjectType;
+import com.ispf.plugin.model.ModelBindingDefinition;
+import com.ispf.plugin.model.ModelDefinition;
+import com.ispf.plugin.model.ModelEngine;
+import com.ispf.plugin.model.ModelException;
+import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.model.ModelType;
+import com.ispf.plugin.model.ModelVariableDefinition;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.api.ApplicationController;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
@@ -11,8 +21,10 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
+import com.ispf.server.plugin.model.ModelPersistenceService;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +42,9 @@ public class ApplicationBundleDeployService {
     private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationBundleSnapshotStore snapshotStore;
+    private final ModelEngine modelEngine;
+    private final ModelRegistry modelRegistry;
+    private final ModelPersistenceService modelPersistence;
     private final ObjectMapper objectMapper;
 
     public ApplicationBundleDeployService(
@@ -41,6 +56,9 @@ public class ApplicationBundleDeployService {
             ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
             ApplicationBundleSnapshotStore snapshotStore,
+            ModelEngine modelEngine,
+            ModelRegistry modelRegistry,
+            ModelPersistenceService modelPersistence,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
@@ -51,6 +69,9 @@ public class ApplicationBundleDeployService {
         this.reportService = reportService;
         this.objectTreeService = objectTreeService;
         this.snapshotStore = snapshotStore;
+        this.modelEngine = modelEngine;
+        this.modelRegistry = modelRegistry;
+        this.modelPersistence = modelPersistence;
         this.objectMapper = objectMapper;
     }
 
@@ -105,6 +126,17 @@ public class ApplicationBundleDeployService {
                     applied.add("workflow:" + workflow.path());
                 } catch (Exception ex) {
                     errors.add("workflow:" + workflow.path() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.models() != null) {
+            for (BundleModel model : manifest.models()) {
+                try {
+                    deployModel(model);
+                    applied.add("model:" + model.name());
+                } catch (Exception ex) {
+                    errors.add("model:" + model.name() + ": " + ex.getMessage());
                 }
             }
         }
@@ -325,6 +357,48 @@ public class ApplicationBundleDeployService {
         functionStore.deploy(deployed);
     }
 
+    private void deployModel(BundleModel model) throws ModelException {
+        Instant now = Instant.now();
+        ModelDefinition definition = modelRegistry.findByName(model.name())
+                .map(existing -> new ModelDefinition(
+                        existing.id(),
+                        model.name(),
+                        model.description(),
+                        model.type() != null ? model.type() : existing.type(),
+                        model.targetObjectType() != null ? model.targetObjectType() : existing.targetObjectType(),
+                        model.suitabilityExpression() != null
+                                ? model.suitabilityExpression()
+                                : existing.suitabilityExpression(),
+                        model.variables() != null ? model.variables() : existing.variables(),
+                        model.events() != null ? model.events() : existing.events(),
+                        model.functions() != null ? model.functions() : existing.functions(),
+                        model.bindings() != null ? model.bindings() : existing.bindings(),
+                        model.parameters() != null ? model.parameters() : existing.parameters(),
+                        existing.createdAt(),
+                        now
+                ))
+                .orElseGet(() -> new ModelDefinition(
+                        UUID.randomUUID().toString(),
+                        model.name(),
+                        model.description(),
+                        model.type(),
+                        model.targetObjectType(),
+                        model.suitabilityExpression(),
+                        model.variables() != null ? model.variables() : List.of(),
+                        model.events() != null ? model.events() : List.of(),
+                        model.functions() != null ? model.functions() : List.of(),
+                        model.bindings() != null ? model.bindings() : List.of(),
+                        model.parameters() != null ? model.parameters() : Map.of(),
+                        now,
+                        now
+                ));
+
+        ModelDefinition saved = modelRegistry.findByName(model.name()).isPresent()
+                ? modelEngine.updateModel(definition)
+                : modelEngine.createModel(definition);
+        modelPersistence.persist(saved, false);
+    }
+
     public record BundleManifest(
             String version,
             String displayName,
@@ -333,6 +407,7 @@ public class ApplicationBundleDeployService {
             List<BundleObject> objects,
             List<BundleDashboard> dashboards,
             List<BundleWorkflow> workflows,
+            List<BundleModel> models,
             List<BundleMigration> migrations,
             List<BundleFunction> functions,
             List<BundleSqlBinding> bindings,
@@ -365,6 +440,20 @@ public class ApplicationBundleDeployService {
             String path,
             String bpmnXml,
             String status
+    ) {
+    }
+
+    public record BundleModel(
+            String name,
+            String description,
+            ModelType type,
+            ObjectType targetObjectType,
+            String suitabilityExpression,
+            List<ModelVariableDefinition> variables,
+            List<EventDescriptor> events,
+            List<FunctionDescriptor> functions,
+            List<ModelBindingDefinition> bindings,
+            Map<String, String> parameters
     ) {
     }
 

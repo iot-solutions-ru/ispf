@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.object.Variable;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.PlatformLeaderLockService;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
@@ -29,11 +30,14 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class VariableHistoryService {
 
+    private static final String RETENTION_LOCK = "variable_history_retention";
+
     private final VariableHistoryProperties properties;
     private final VariableSampleRepository sampleRepository;
     private final ObjectVariableRepository variableRepository;
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
+    private final PlatformLeaderLockService leaderLockService;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -43,13 +47,15 @@ public class VariableHistoryService {
             VariableSampleRepository sampleRepository,
             ObjectVariableRepository variableRepository,
             ObjectManager objectManager,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformLeaderLockService leaderLockService
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
         this.variableRepository = variableRepository;
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
+        this.leaderLockService = leaderLockService;
     }
 
     @Transactional
@@ -340,6 +346,17 @@ public class VariableHistoryService {
         if (!properties.isEnabled()) {
             return;
         }
+        if (!leaderLockService.tryAcquire(RETENTION_LOCK, Duration.ofHours(1))) {
+            return;
+        }
+        try {
+            purgeExpiredSamplesInternal();
+        } finally {
+            leaderLockService.release(RETENTION_LOCK);
+        }
+    }
+
+    void purgeExpiredSamplesInternal() {
         Instant now = Instant.now();
         for (ObjectVariableEntity entity : variableRepository.findByHistoryEnabledTrue()) {
             int retentionDays = resolveRetentionDays(entity);
