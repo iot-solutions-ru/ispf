@@ -10,17 +10,19 @@ import {
 import type { ObjectSummary, VariableDto } from "../types";
 import { recordDisplayValue } from "../utils/tree";
 import EditVariableDialog from "./EditVariableDialog";
+import DeviceDriverPanel from "./DeviceDriverPanel";
 import IconPicker from "./icons/IconPicker";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 
 interface ObjectInspectorProps {
   path: string;
   onDeleted: () => void;
+  canManage?: boolean;
 }
 
-type Tab = "general" | "variables" | "events" | "functions";
+type Tab = "general" | "variables" | "events" | "functions" | "driver";
 
-export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProps) {
+export default function ObjectInspector({ path, onDeleted, canManage = false }: ObjectInspectorProps) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<Tab>("general");
   const [displayName, setDisplayName] = useState("");
@@ -50,6 +52,12 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
       setDescription(objectQuery.data.description);
     }
   }, [objectQuery.data]);
+
+  useEffect(() => {
+    if (objectQuery.data?.type !== "DEVICE" && tab === "driver") {
+      setTab("general");
+    }
+  }, [objectQuery.data?.type, path, tab]);
 
   const saveMutation = useMutation({
     mutationFn: () => updateObject(path, { displayName, description }),
@@ -86,6 +94,25 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
 
   const obj = objectQuery.data;
   const isRoot = path === "root";
+  const isDevice = obj.type === "DEVICE";
+  const tabs: Tab[] = isDevice
+    ? ["general", "driver", "variables", "events", "functions"]
+    : ["general", "variables", "events", "functions"];
+
+  const tabLabel = (t: Tab) => {
+    switch (t) {
+      case "general":
+        return "Свойства";
+      case "driver":
+        return "Драйвер";
+      case "variables":
+        return "Переменные";
+      case "events":
+        return "События";
+      case "functions":
+        return "Функции";
+    }
+  };
 
   return (
     <div className="inspector">
@@ -116,23 +143,23 @@ export default function ObjectInspector({ path, onDeleted }: ObjectInspectorProp
       </header>
 
       <nav className="tabs">
-        {(["general", "variables", "events", "functions"] as Tab[]).map((t) => (
+        {tabs.map((t) => (
           <button
             key={t}
             type="button"
             className={tab === t ? "active" : ""}
             onClick={() => setTab(t)}
           >
-            {t === "general"
-              ? "Свойства"
-              : t === "variables"
-                ? "Переменные"
-                : t === "events"
-                  ? "События"
-                  : "Функции"}
+            {tabLabel(t)}
           </button>
         ))}
       </nav>
+
+      {tab === "driver" && isDevice && (
+        <section className="panel">
+          <DeviceDriverPanel devicePath={path} canManage={canManage} />
+        </section>
+      )}
 
       {tab === "general" && (
         <section className="panel">

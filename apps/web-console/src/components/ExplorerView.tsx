@@ -31,7 +31,7 @@ export default function ExplorerView({
             : "Двойной щелчок по узлу также открывает редактор"}
         </span>
       </div>
-      <ObjectInspector path={selectedPath} onDeleted={onDeleted} />
+      <ObjectInspector path={selectedPath} onDeleted={onDeleted} canManage={isAdmin} />
       {selectedPath === "root.platform.security.users" && (
         <SecurityUsersPanel canManage={isAdmin} />
       )}

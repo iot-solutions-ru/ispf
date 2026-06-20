@@ -23,34 +23,40 @@
 
 ### Gate обобщения (обязателен для каждого PR в platform)
 
-| # | Вопрос | Если «нет» |
-|:---:|:---|:---|
-| 1 | API работает для **любого** `appId`, без отраслевых имён в Java? | Оставить в app bundle |
-| 2 | App-команда использует только **deploy REST**, без fork server? | Доработать API |
-| 3 | Есть **второй** сценарий на том же API? | Переформулировать абстракцию |
+
+| #   | Вопрос                                                           | Если «нет»                   |
+| --- | ---------------------------------------------------------------- | ---------------------------- |
+| 1   | API работает для **любого** `appId`, без отраслевых имён в Java? | Оставить в app bundle        |
+| 2   | App-команда использует только **deploy REST**, без fork server?  | Доработать API               |
+| 3   | Есть **второй** сценарий на том же API?                          | Переформулировать абстракцию |
+
 
 ### Запрещено vs правильно
 
-| Запрещено в `main` | Правильное обобщение |
-|:---|:---|
-| Industry `*Handler` в server | `ApplicationFunctionHandler` + script deploy |
-| Отраслевые BFF routes | `/bff/invoke` + wire profile |
-| App tables в platform Flyway | `applications/{id}/data/migrate` |
-| `@Scheduled` import jobs | `platform_schedules` |
-| Hardcoded domain script steps | `selectMany` + `exec` + app SQL |
+
+| Запрещено в `main`            | Правильное обобщение                         |
+| ----------------------------- | -------------------------------------------- |
+| Industry `*Handler` в server  | `ApplicationFunctionHandler` + script deploy |
+| Отраслевые BFF routes         | `/bff/invoke` + wire profile                 |
+| App tables в platform Flyway  | `applications/{id}/data/migrate`             |
+| `@Scheduled` import jobs      | `platform_schedules`                         |
+| Hardcoded domain script steps | `selectMany` + `exec` + app SQL              |
+
 
 ### Суть platform (не «модуль MES»)
 
-| Столп ISPF | REQ-PF | Потребитель |
-|:---|:---|:---|
-| Callable logic on objects | PF-01 script runtime | app functions |
-| App-owned data | PF-02 data layer | app schema |
-| Package deploy | PF-03 bundle | app manifest |
-| Process + operator tasks | PF-04, PF-10 workflow | app BPMN |
-| Cron / integration tick | PF-05 scheduler | app schedules |
-| HMI wire | PF-06 BFF gateway | operator manifest |
-| Models survive restart | PF-07 | app models |
-| Telemetry → HMI | PF-08, PF-09 bindings/simulator | demo dashboards |
+
+| Столп ISPF                | REQ-PF                          | Потребитель       |
+| ------------------------- | ------------------------------- | ----------------- |
+| Callable logic on objects | PF-01 script runtime            | app functions     |
+| App-owned data            | PF-02 data layer                | app schema        |
+| Package deploy            | PF-03 bundle                    | app manifest      |
+| Process + operator tasks  | PF-04, PF-10 workflow           | app BPMN          |
+| Cron / integration tick   | PF-05 scheduler                 | app schedules     |
+| HMI wire                  | PF-06 BFF gateway               | operator manifest |
+| Models survive restart    | PF-07                           | app models        |
+| Telemetry → HMI           | PF-08, PF-09 bindings/simulator | demo dashboards   |
+
 
 **Критерий зрелости:** второй app (`warehouse`, `appId=wh`) собирается **тем же** API без нового Java в platform.
 
@@ -98,20 +104,23 @@
 
 ## 3. Сводная матрица REQ-PF
 
-| ID | Capability | Статус на `main` | Осталось сделать | P |
-|:---|:---|:---|:---|:---:|
-| **PF-01** | Application Function Runtime | **Частично** | `map`/`buildRecord` (PF-01c), regression parity | P0 |
-| **PF-02** | Application Data Layer | **Готово** | — | P0 |
-| **PF-03** | Application Package Deploy | **Частично** | models в bundle (P2) | P1 |
-| **PF-04** | BPMN `invoke_function` | **Готово** | Regression tests с app functions | P1 |
-| **PF-05** | Platform Scheduler | **Готово** | — | P1 |
-| **PF-06** | BFF Wire Gateway | **Частично** | Custom field labels map (P2) | P1 |
-| **PF-07** | Model Registry Persistence | **Готово** | — | P2 |
-| **PF-08** | Variable ↔ SQL sync | **Да** | Declarative bindings (§4.5) | P2 |
-| **PF-09** | Integration Simulator SPI | **Да** | virtual driver profiles (§4.6) | P2 |
-| **PF-10** | Workflow cancel + signal | **Готово** | — | P1 |
-| **PF-11** | Function rollback / versions | **Да** | Deploy previous version (§4.8) | P2 |
-| **PF-12** | Application SQL reports | **Да** | PDF export (out of scope) | P2 |
+
+| ID        | Capability                   | Статус на `main` | Осталось сделать                                | P   |
+| --------- | ---------------------------- | ---------------- | ----------------------------------------------- | --- |
+| **PF-01** | Application Function Runtime | **Частично**     | `map`/`buildRecord` (PF-01c), regression parity | P0  |
+| **PF-02** | Application Data Layer       | **Готово**       | —                                               | P0  |
+| **PF-03** | Application Package Deploy   | **Частично**     | models в bundle (P2)                            | P1  |
+| **PF-04** | BPMN `invoke_function`       | **Готово**       | Regression tests с app functions                | P1  |
+| **PF-05** | Platform Scheduler           | **Готово**       | —                                               | P1  |
+| **PF-06** | BFF Wire Gateway             | **Частично**     | Custom field labels map (P2)                    | P1  |
+| **PF-07** | Model Registry Persistence   | **Готово**       | —                                               | P2  |
+| **PF-08** | Variable ↔ SQL sync          | **Да**           | Declarative bindings (§4.5)                     | P2  |
+| **PF-09** | Integration Simulator SPI    | **Да**           | virtual driver profiles (§4.6)                  | P2  |
+| **PF-10** | Workflow cancel + signal     | **Готово**       | —                                               | P1  |
+| **PF-11** | Function rollback / versions | **Да**           | Deploy previous version (§4.8)                  | P2  |
+| **PF-12** | Application SQL reports      | **Да**           | PDF export (out of scope)                       | P2  |
+| **PF-14** | Device driver catalog        | **Частично**     | 63 кандидата (§10), 4 в `main`                  | P3+ |
+
 
 ---
 
@@ -229,12 +238,14 @@ Idempotent INSERT для smoke (`demo_category`, `demo_item`, `demo_metric`).
 
 По контракту wire profile `anima-operator-v1` (см. [APPLICATIONS.md](APPLICATIONS.md)):
 
-| Правило | Реализация |
-|:---|:---|
-| Успех | `error_code === "OK"`, `error_message === ""` |
-| Ошибка | фронт не читает `result` |
-| Таблица | `result` = массив строк напрямую |
+
+| Правило | Реализация                                                  |
+| ------- | ----------------------------------------------------------- |
+| Успех   | `error_code === "OK"`, `error_message === ""`               |
+| Ошибка  | фронт не читает `result`                                    |
+| Таблица | `result` = массив строк напрямую                            |
 | Подписи | `result_field_labels` из descriptor функции или profile map |
+
 
 ```http
 POST /api/v1/bff/invoke
@@ -274,11 +285,13 @@ Declarative binding на object variable:
 
 Расширение **virtual driver** или object profile `simulator`:
 
-| Signal | Поведение |
-|:---|:---|
-| Meter | `litersPerSecond`, elapsed from `filling` status |
-| Weighbridge | `tareKg + actualLiters * density` |
-| Gas / grounding | boolean по rackId |
+
+| Signal          | Поведение                                        |
+| --------------- | ------------------------------------------------ |
+| Meter           | `litersPerSecond`, elapsed from `filling` status |
+| Weighbridge     | `tareKg + actualLiters * density`                |
+| Gas / grounding | boolean по rackId                                |
+
 
 Deploy profile из app bundle; prod — замена на real driver **без** смены function contract.
 
@@ -328,14 +341,16 @@ POST /api/v1/applications/{appId}/functions/rollback
 
 ## 5. Уже реализовано — не дублировать, только поддерживать
 
-| Компонент | Где |
-|:---|:---|
-| BPMN `invoke_function` | `WorkflowActionType.INVOKE_FUNCTION`, `docs/WORKFLOWS.md` |
-| Scheduler | `PlatformSchedulerService`, `platform_schedules`, `/api/v1/schedules` |
-| Model persist | `model_definitions`, restore on startup |
-| Generic BFF invoke | `BffController` `/api/v1/bff/invoke` |
-| Platform tables V10 | `V10__application_platform.sql` |
-| Smoke baseline | `ApplicationPlatformApiTest` |
+
+| Компонент              | Где                                                                   |
+| ---------------------- | --------------------------------------------------------------------- |
+| BPMN `invoke_function` | `WorkflowActionType.INVOKE_FUNCTION`, `docs/WORKFLOWS.md`             |
+| Scheduler              | `PlatformSchedulerService`, `platform_schedules`, `/api/v1/schedules` |
+| Model persist          | `model_definitions`, restore on startup                               |
+| Generic BFF invoke     | `BffController` `/api/v1/bff/invoke`                                  |
+| Platform tables V10    | `V10__application_platform.sql`                                       |
+| Smoke baseline         | `ApplicationPlatformApiTest`                                          |
+
 
 ---
 
@@ -353,18 +368,20 @@ Web Console (`apps/web-console`):
 
 Выполнить на H2/PostgreSQL без industry Java:
 
-| # | Step | Expected |
-|:---:|:---|:---|
-| 1 | `POST /applications` | 200 |
-| 2 | `POST .../deploy` bundle | status OK |
-| 3 | `GET .../data/status` | migrations applied |
-| 4 | `POST /bff/invoke` list function | error_code OK, result |
-| 5 | `POST .../data/seed` smoke-demo | idempotent applied/skipped |
-| 6 | `POST /schedules` invoke_function | tick fires |
-| 7 | `POST .../workflows/.../run` | instance progresses |
-| 8 | `POST .../workflows/.../signal` | WAITING instance resumes |
-| 9 | `POST .../deploy/rollback` | previous bundle restored |
-| 10 | Operator manifest UI | `bff/invoke` без 404 |
+
+| #   | Step                              | Expected                   |
+| --- | --------------------------------- | -------------------------- |
+| 1   | `POST /applications`              | 200                        |
+| 2   | `POST .../deploy` bundle          | status OK                  |
+| 3   | `GET .../data/status`             | migrations applied         |
+| 4   | `POST /bff/invoke` list function  | error_code OK, result      |
+| 5   | `POST .../data/seed` smoke-demo   | idempotent applied/skipped |
+| 6   | `POST /schedules` invoke_function | tick fires                 |
+| 7   | `POST .../workflows/.../run`      | instance progresses        |
+| 8   | `POST .../workflows/.../signal`   | WAITING instance resumes   |
+| 9   | `POST .../deploy/rollback`        | previous bundle restored   |
+| 10  | Operator manifest UI              | `bff/invoke` без 404       |
+
 
 Automate: `ApplicationPlatformApiTest`, `WorkflowSignalApiTest`.
 
@@ -395,38 +412,227 @@ Sprint D (P2) — polish
   PF-03b bundle rollback ✅
   ApplicationPlatformApiTest (generic platform API) ✅
   PF-10b BPMN signals ✅
+
+Post-PF (P3+) — platform evolution (см. §9, §10)
+  PF-13 distributed topology & object federation (vision)
+  PF-14 device driver catalog — 63 кандидата (§10)
 ```
 
 ---
 
-## 9. Вне scope platform (`main`)
+## 9. Распределённая архитектура и федерация (roadmap, P3+)
 
-| Артефакт | Где |
-|:---|:---|
-| Доменная модель, UC/US, канон БД app | Репозиторий приложения |
-| JSON script bodies, SQL migrations | App bundle deploy |
-| BPMN процессов app | App bundle deploy |
-| Operator UI экраны app | `operatorManifest` в bundle |
-| E2E smoke конкретного заказчика | CI репозитория приложения |
+**REQ-PF-13** — vision, **не реализовано** в `main`.
+
+### Текущее состояние
+
+
+| Аспект                                    | Сейчас                                                                                                               |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Путь объекта (`root.platform.devices...`) | Локальный идентификатор узла в **одном** экземпляре ISPF                                                             |
+| `root.platform`                           | Namespace (область) внутри дерева, **не** hostname и не URL другого сервера                                          |
+| Горизонтальное масштабирование            | Несколько реплик `ispf-server` + общая PostgreSQL — **одно** дерево, те же пути ([ARCHITECTURE.md](ARCHITECTURE.md)) |
+| Типы `TENANT`, `AGENT`                    | Зарезервированы в модели ([OBJECT_MODEL.md](OBJECT_MODEL.md)), без runtime federation                                |
+
+
+Запрос `GET /api/v1/objects/by-path?path=...` всегда обслуживается **тем сервером**, к которому подключена консоль.
+
+### Целевые сценарии (кандидаты на дизайн)
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  Центральная консоль / catalog                               │
+│  Единое дерево навигации (логическое, не обязательно одна БД)│
+└────────────┬─────────────────────────────┬───────────────────┘
+             │                             │
+     ┌───────▼────────┐            ┌───────▼────────┐
+     │  ISPF site A   │            │  ISPF site B   │
+     │  root.platform │            │  root.platform │
+     │  (локальное    │            │  (edge agent)  │
+     │   дерево)      │            │                │
+     └────────────────┘            └────────────────┘
+```
+
+
+| Сценарий                        | Идея пути / адресации                                          | Примечание                                                            |
+| ------------------------------- | -------------------------------------------------------------- | --------------------------------------------------------------------- |
+| **Multi-tenant** (один кластер) | `root.tenant.{tenantId}.devices...`                            | Логическое разделение арендаторов, не отдельный HTTP-host             |
+| **Edge / site**                 | Узел типа `AGENT` или `root.platform.sites.{siteId}`           | Локальное дерево на площадке, синхронизация каталога наверх           |
+| **Federation**                  | Proxy-узел в дереве + метаданные `remoteBaseUrl`, `remotePath` | Консоль резолвит запросы через gateway, dot-path сам по себе не = URL |
+| **Cross-server API**            | Явный endpoint peer: `/api/v1/federation/...`                  | Маршрутизация, trust, кэш, WebSocket fan-out — отдельный слой         |
+
+
+**Принцип:** object path и service endpoint **разделяются**. Путь остаётся стабильным идентификатором в каталоге; адрес удалённого инстанса — в метаданных узла или в federation registry, не в dot-notation.
+
+### Acceptance (когда брать в работу)
+
+1. Документирован контракт federation (proxy object, registry, auth между инстансами).
+2. В дереве можно зарегистрировать удалённую площадку; read path проксируется или кэшируется.
+3. Web Console показывает federated узлы без hardcoded URL в UI.
+4. Горизонтальные реплики (shared DB) и multi-site federation описаны как **разные** топологии в [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Не в scope PF-13 (явно)
+
+- Замена NATS/MQTT messaging на object-path routing.
+- Multi-tenant billing / quota (только дерево и ACL).
+- Автоматический merge конфликтующих деревьев без оператора.
+
+---
+
+## 10. Каталог драйверов устройств (roadmap)
+
+**REQ-PF-14** — каталог кандидатов на реализацию в ISPF, **не реализовано** (кроме отмеченных ✅).
+
+### Границы каталога
+
+- Каталог — целевой перечень протоколов connectivity для ISPF (IT, automation, IoT, structured data).
+- **Исключено:** vendor-specific драйверы
+- Отраслевые реализации по-прежнему могут идти **вне `main`** ([PLUGINS.md](PLUGINS.md)); таблица ниже — generic-каталог platform.
+- Каждый новый драйвер: модуль `ispf-driver-*` + SPI `DeviceDriver` + регистрация в `DriverCatalog` ([DRIVERS.md](DRIVERS.md)).
+
+### Уже в `main`
+
+
+| `driverId`   | Протокол                   | Статус                                 |
+| ------------ | -------------------------- | -------------------------------------- |
+| `virtual`    | Virtual Device (симулятор) | ✅                                      |
+| `mqtt`       | MQTT                       | ✅                                      |
+| `modbus-tcp` | Modbus TCP                 | ✅ частично (без RTU/ASCII/UDP)         |
+| `snmp`       | SNMP v1/v2c                | ✅ частично (без v3, traps, MIB editor) |
+
+
+### Кандидаты (63)
+
+
+| #   | Протокол / технология    | Драйвер (имя)          | ISPF                          |
+| --- | ------------------------ | ---------------------- | ----------------------------- |
+| 1   | Bash Script              | Application            | —                             |
+| 2   | Asterisk                 | Asterisk               | —                             |
+| 3   | BACnet IP / MS/TP        | BACnet                 | —                             |
+| 4   | CoAP                     | CoAP                   | —                             |
+| 5   | CORBA                    | CORBA                  | —                             |
+| 6   | CWMP (TR-069)            | CWMP                   | —                             |
+| 7   | SQL (JDBC/ODBC)          | Database               | частично (PF-08 SQL bindings) |
+| 8   | DLMS/COSEM               | DLMS/COSEM             | —                             |
+| 9   | DNP3                     | DNP3                   | —                             |
+| 10  | Ethernet/IP (CIP)        | Ethernet/IP            | —                             |
+| 11  | File System              | File                   | —                             |
+| 12  | TCP/UDP, Serial          | Flexible Driver        | —                             |
+| 13  | File System              | Folder                 | —                             |
+| 14  | GPS/GLONASS, M2M         | GPS Tracker            | —                             |
+| 15  | Gremlin / TinkerPop      | Graph Database         | —                             |
+| 16  | HTTP/HTTPS               | HTTP                   | —                             |
+| 17  | HTTP/HTTPS               | HTTP Server            | —                             |
+| 18  | IEC 60870-5-104          | IEC 60870-5-104        | —                             |
+| 19  | IEC 60870-5-104          | IEC 60870-5-104 Server | —                             |
+| 20  | HTTP/HTTPS               | IP Host (web)          | —                             |
+| 21  | ICMP                     | IP Host (ping)         | —                             |
+| 22  | LDAP                     | IP Host (LDAP)         | —                             |
+| 23  | DHCP                     | IP Host (DHCP)         | —                             |
+| 24  | DNS                      | IP Host (DNS)          | —                             |
+| 25  | FTP                      | IP Host (FTP)          | —                             |
+| 26  | IMAP                     | IP Host (IMAP)         | —                             |
+| 27  | POP3                     | IP Host (POP3)         | —                             |
+| 28  | RADIUS                   | IP Host (Radius)       | —                             |
+| 29  | SMB/CIFS                 | IP Host (SMB)          | —                             |
+| 30  | SMTP                     | IP Host (SMTP)         | —                             |
+| 31  | Telnet                   | IP Host (Telnet)       | —                             |
+| 32  | IPMI                     | IPMI                   | —                             |
+| 33  | JMX                      | JMX                    | —                             |
+| 34  | Apache Kafka             | Kafka                  | —                             |
+| 35  | Internal Protocol        | Local Agent            | —                             |
+| 36  | JMX (local)              | Local System           | —                             |
+| 37  | TCP/UDP, Serial          | Message Stream         | —                             |
+| 38  | M-Bus                    | Meter-Bus              | —                             |
+| 39  | Modbus RTU/ASCII/TCP/UDP | Modbus                 | частично (`modbus-tcp`)       |
+| 40  | GSM/GPRS (AT)            | Modem                  | —                             |
+| 41  | MQTT                     | MQTT                   | ✅                             |
+| 42  | NMEA 0183                | NMEA                   | —                             |
+| 43  | Omron FINS               | Omron FINS             | —                             |
+| 44  | ODBC                     | Database (ODBC)        | —                             |
+| 45  | OPC DA 2.0               | OPC                    | —                             |
+| 46  | LON / LonTalk            | OPC (bridge)           | —                             |
+| 47  | OPC DA/AE/HDA            | OPC + OPC Agent        | —                             |
+| 48  | OPC UA                   | OPC UA                 | —                             |
+| 49  | OPC UA                   | OPC UA Server          | —                             |
+| 50  | Siemens S7               | Siemens S7             | —                             |
+| 51  | SIP                      | SIP                    | —                             |
+| 52  | SMB/CIFS                 | Samba                  | —                             |
+| 53  | SMI-S                    | SMI-S                  | —                             |
+| 54  | SMPP                     | SMPP                   | —                             |
+| 55  | SNMP v1/v2c/v3           | SNMP                   | частично (`snmp`)             |
+| 56  | SOAP                     | SOAP                   | —                             |
+| 57  | SSH                      | SSH                    | —                             |
+| 58  | —                        | Virtual Device         | ✅ (`virtual`)                 |
+| 59  | VMware SOAP API          | VMware                 | —                             |
+| 60  | XMPP                     | XMPP                   | —                             |
+| 61  | JMS                      | WebSphere MQ           | —                             |
+| 62  | —                        | Web Transaction        | —                             |
+| 63  | WMI                      | WMI                    | —                             |
+
+
+### Приоритизация (черновик, P3+)
+
+Порядок внедрения уточняется по потребностям app-команд (gate ADR-0009). Типичные кластеры:
+
+
+| Кластер             | Драйверы (#)             | Заметка                                           |
+| ------------------- | ------------------------ | ------------------------------------------------- |
+| SCADA / энергетика  | 9, 18–19, 39, 48–50, 55  | DNP3, IEC 104, Modbus полный, OPC UA, S7, SNMP v3 |
+| Здания / IoT        | 3, 4, 41, 48             | BACnet, CoAP, MQTT, OPC UA                        |
+| IT / NMS            | 20–31, 32–33, 55, 57, 63 | IP Host family, IPMI, JMX, SNMP, SSH, WMI         |
+| Интеграция / шины   | 7, 16–17, 34, 56, 61     | HTTP, Kafka, DB, SOAP, MQ                         |
+| Edge / полевой слой | 12, 35–37, 40, 42        | Flexible Driver, Message Stream, Modem, NMEA      |
+| Симуляция / стенд   | 58                       | virtual (PF-09 ✅)                                 |
+
+
+### Acceptance (REQ-PF-14)
+
+1. Драйвер зарегистрирован в `DriverCatalog`, документирован в [DRIVERS.md](DRIVERS.md).
+2. Есть model или пример `driverConfigJson` / `driverPointMappingsJson`.
+3. Управление через Web Console (вкладка «Драйвер») и REST runtime API.
+4. Unit/integration test без внешнего железа (mock или loopback).
+
+---
+
+## 11. Вне scope platform (`main`)
+
+
+| Артефакт                             | Где                         |
+| ------------------------------------ | --------------------------- |
+| Доменная модель, UC/US, канон БД app | Репозиторий приложения      |
+| JSON script bodies, SQL migrations   | App bundle deploy           |
+| BPMN процессов app                   | App bundle deploy           |
+| Operator UI экраны app               | `operatorManifest` в bundle |
+| E2E smoke конкретного заказчика      | CI репозитория приложения   |
+
 
 Platform **не** содержит бизнес-правил отраслей — только исполнение deploy.
 
 ---
 
-## 10. Связанные документы
+## 12. Связанные документы
 
-| Документ | Где |
-|:---|:---|
-| Platform apps API | [APPLICATIONS.md](APPLICATIONS.md) |
-| Platform developer backlog | этот файл |
-| PLUGINS / main hygiene | [PLUGINS.md](PLUGINS.md) |
-| Workflows | [WORKFLOWS.md](WORKFLOWS.md) |
+
+| Документ                           | Где                                |
+| ---------------------------------- | ---------------------------------- |
+| Platform apps API                  | [APPLICATIONS.md](APPLICATIONS.md) |
+| Device drivers (реализовано + SPI) | [DRIVERS.md](DRIVERS.md)           |
+| Platform developer backlog         | этот файл                          |
+| PLUGINS / main hygiene             | [PLUGINS.md](PLUGINS.md)           |
+| Workflows                          | [WORKFLOWS.md](WORKFLOWS.md)       |
+
 
 ---
 
-## 11. История изменений
+## 13. История изменений
 
-| Дата | Изменение |
-|:---|:---|
-| 2026-06-19 | Первая consolidated версия: статус `main` + gap PF-01a…11 |
-| 2026-06-19 | Синхронизация в framework `docs/`; baseline Apache 2.0 |
+
+| Дата       | Изменение                                                                   |
+| ---------- | --------------------------------------------------------------------------- |
+| 2026-06-20 | REQ-PF-14: каталог 63 device drivers (roadmap)                              |
+| 2026-06-19 | REQ-PF-13: distributed topology & object federation — roadmap (P3+, vision) |
+| 2026-06-19 | Первая consolidated версия: статус `main` + gap PF-01a…11                   |
+| 2026-06-19 | Синхронизация в framework `docs/`; baseline Apache 2.0                      |
+
+

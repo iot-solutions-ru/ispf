@@ -1,5 +1,7 @@
 # Драйверы устройств
 
+Каталог кандидатов на новые драйверы (roadmap): [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap) (REQ-PF-14).
+
 ## Архитектура
 
 Драйверы реализуют SPI `DeviceDriver` (`packages/ispf-driver-api`):

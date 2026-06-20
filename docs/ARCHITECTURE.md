@@ -123,6 +123,8 @@ Event fire → event_history
 - Keycloak / OIDC
 - Static web-console behind CDN/ingress
 
+**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Несколько площадок / edge-агентов с единым каталогом в консоли — **roadmap P3+**, см. [REQ-PF-13](PLATFORM_DEVELOPER_BACKLOG.md#9-распределённая-архитектура-и-федерация-roadmap-p3).
+
 См. [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Extension Points
