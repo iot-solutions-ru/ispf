@@ -26,6 +26,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
   const [probePeerId, setProbePeerId] = useState<string>("");
   const [probeResult, setProbeResult] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
 
   const peersQuery = useQuery({
     queryKey: ["federation-peers"],
@@ -59,11 +60,18 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
 
   const syncMutation = useMutation({
     mutationFn: (id: string) => syncFederationCatalog(id),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setSyncFeedback(
+        `Catalog sync: ${result.localRoot} — created ${result.created}, updated ${result.updated} (remote ${result.remoteCount})`
+      );
+      setFormError(null);
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["federation-peers"] });
     },
-    onError: (error: Error) => setFormError(error.message),
+    onError: (error: Error) => {
+      setSyncFeedback(null);
+      setFormError(error.message);
+    },
   });
 
   const probeMutation = useMutation({
@@ -189,6 +197,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
             Добавить peer
           </button>
         </div>
+        {syncFeedback && <p className="hint success">{syncFeedback}</p>}
         {formError && <p className="hint error">{formError}</p>}
       </form>
 

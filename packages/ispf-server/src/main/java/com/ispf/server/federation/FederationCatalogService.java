@@ -46,11 +46,11 @@ public class FederationCatalogService {
         String prefix = normalizePrefix(peer.pathPrefix());
         List<RemoteEntry> entries = new ArrayList<>();
         for (JsonNode remote : remoteObjects) {
-            String remotePath = remote.path("path").asText(null);
+            String remotePath = textOrNull(remote, "path");
             if (remotePath == null || remotePath.isBlank()) {
                 continue;
             }
-            if (isFederationCatalogPath(remotePath)) {
+            if (FederationPaths.isCatalogMirrorPath(remotePath)) {
                 continue;
             }
             if (!remotePath.equals(prefix) && !remotePath.startsWith(prefix + ".")) {
@@ -107,9 +107,9 @@ public class FederationCatalogService {
         int lastDot = localPath.lastIndexOf('.');
         String parentPath = localPath.substring(0, lastDot);
         String name = localPath.substring(lastDot + 1);
-        ObjectType type = parseType(remote.path("type").asText("AGENT"));
-        String displayName = remote.path("displayName").asText(name);
-        String description = remote.path("description").asText("");
+        ObjectType type = parseType(textOrDefault(remote, "type", "AGENT"));
+        String displayName = textOrDefault(remote, "displayName", name);
+        String description = textOrDefault(remote, "description", "");
         objectManager.create(parentPath, name, type, displayName, description, null);
         markProxy(localPath, peerId, remotePath);
     }
@@ -139,9 +139,18 @@ public class FederationCatalogService {
         return trimmed;
     }
 
-    private static boolean isFederationCatalogPath(String path) {
-        return path.equals(FederationPaths.FEDERATION_ROOT)
-                || path.startsWith(FederationPaths.FEDERATION_ROOT + ".");
+    private static String textOrNull(JsonNode node, String field) {
+        JsonNode value = node.get(field);
+        if (value == null || value.isNull() || !value.isString()) {
+            return null;
+        }
+        String text = value.asString();
+        return text.isBlank() ? null : text;
+    }
+
+    private static String textOrDefault(JsonNode node, String field, String defaultValue) {
+        String text = textOrNull(node, field);
+        return text != null ? text : defaultValue;
     }
 
     public record SyncResult(String localRoot, int created, int updated, int remoteCount) {

@@ -11,6 +11,11 @@ public final class FederationPaths {
         return FEDERATION_ROOT + "." + slug(peerName);
     }
 
+    public static boolean isCatalogMirrorPath(String path) {
+        return path != null
+                && (path.equals(FEDERATION_ROOT) || path.startsWith(FEDERATION_ROOT + "."));
+    }
+
     static String slug(String peerName) {
         String normalized = peerName.trim().toLowerCase()
                 .replaceAll("[^a-z0-9-]+", "-")

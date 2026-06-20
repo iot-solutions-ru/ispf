@@ -39,8 +39,9 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web-console/package-lock.json
 
-      - name: Install and build
+      - name: Install, test, and build
         working-directory: apps/web-console
         run: |
           npm ci
+          npm test
           npm run build

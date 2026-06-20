@@ -9,7 +9,7 @@
 
 | Method | Path | Роли | Описание |
 |--------|------|------|----------|
-| GET | `/api/v1/info` | public | Имя и версия платформы |
+| GET | `/api/v1/info` | public | Имя, версия, `javaVersion`, `springBootVersion`, `capabilities[]` |
 | GET | `/api/v1/platform/metrics` | admin | Сводные метрики платформы (runtime, БД, дерево, драйверы, подключения, безопасность, historian, автоматизация) |
 | GET | `/api/v1/auth/me` | public | Principal и роли |
 | POST | `/api/v1/expressions/validate` | admin | Валидация CEL |

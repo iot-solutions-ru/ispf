@@ -10,6 +10,7 @@ import type {
 import type { DashboardView } from "./types/dashboard";
 import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
 import { getAuthHeaders } from "./auth/session";
+import { parseApiError } from "./utils/parseApiError";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
@@ -22,7 +23,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    throw new Error(parseApiError(text, `Request failed: ${response.status}`));
   }
   if (response.status === 204) {
     return undefined as T;

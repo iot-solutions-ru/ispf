@@ -1,4 +1,5 @@
 import { getAuthHeaders } from "../auth/session";
+import { parseApiError } from "../utils/parseApiError";
 
 export interface FederationPeer {
   id: string;
@@ -22,7 +23,7 @@ export interface FederationPeerPayload {
 export function fetchFederationPeers(): Promise<FederationPeer[]> {
   return fetch("/api/v1/federation/peers", { headers: getAuthHeaders() }).then(async (response) => {
     if (!response.ok) {
-      throw new Error(`Federation peers failed: ${response.status}`);
+      throw new Error(parseApiError(await response.text(), `Federation peers failed: ${response.status}`));
     }
     return response.json();
   });
@@ -35,7 +36,7 @@ export function createFederationPeer(payload: FederationPeerPayload): Promise<Fe
     body: JSON.stringify(payload),
   }).then(async (response) => {
     if (!response.ok) {
-      throw new Error(`Create peer failed: ${response.status}`);
+      throw new Error(parseApiError(await response.text(), `Create peer failed: ${response.status}`));
     }
     return response.json();
   });
@@ -47,7 +48,7 @@ export function deleteFederationPeer(id: string): Promise<void> {
     headers: getAuthHeaders(),
   }).then((response) => {
     if (!response.ok) {
-      throw new Error(`Delete peer failed: ${response.status}`);
+      throw new Error(parseApiError(await response.text(), `Delete peer failed: ${response.status}`));
     }
   });
 }
@@ -63,8 +64,7 @@ export function syncFederationCatalog(peerId: string): Promise<{
     headers: getAuthHeaders(),
   }).then(async (response) => {
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || `Sync catalog failed: ${response.status}`);
+      throw new Error(parseApiError(await response.text(), `Sync catalog failed: ${response.status}`));
     }
     return response.json();
   });
@@ -76,8 +76,7 @@ export function probeFederationObject(peerId: string, path: string): Promise<Rec
     headers: getAuthHeaders(),
   }).then(async (response) => {
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || `Proxy failed: ${response.status}`);
+      throw new Error(parseApiError(await response.text(), `Proxy failed: ${response.status}`));
     }
     return response.json();
   });

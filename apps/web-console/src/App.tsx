@@ -322,6 +322,8 @@ export default function App() {
             <span className="brand-sub">
               {session.displayName} · {primaryRole ?? "—"}
               {info.data?.version ? ` · v${info.data.version}` : ""}
+              {info.data?.springBootVersion ? ` · Boot ${info.data.springBootVersion}` : ""}
+              {info.data?.javaVersion ? ` · Java ${info.data.javaVersion}` : ""}
             </span>
           </div>
         </div>

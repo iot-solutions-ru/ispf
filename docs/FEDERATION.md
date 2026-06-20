@@ -34,6 +34,8 @@ root.platform.federation.{peer-name}.devices.demo-sensor-01
 
 Web Console: кнопка **Sync** на панели Federation peers.
 
+Повторный sync **идемпотентен**: уже импортированные узлы обновляют proxy-метаданные (`updated`), новые не дублируются. При loopback peer пути `root.platform.federation.*` на remote side игнорируются, чтобы не создавать вложенные зеркала каталога.
+
 ## pathPrefix
 
 Если peer обслуживает ту же иерархию, но консоль передаёт относительный путь:

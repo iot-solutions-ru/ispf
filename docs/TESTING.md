@@ -80,6 +80,7 @@ Web Console: открыть `demo-sensor` dashboard, убедиться в live-
 
 ```bash
 cd apps/web-console
+npm test        # vitest (routing, driver maturity)
 npm run build   # tsc + vite build
 ```
 
@@ -89,7 +90,7 @@ TypeScript strict check в CI-equivalent локально.
 
 ```bash
 ./gradlew test
-cd apps/web-console && npm ci && npm run build
+cd apps/web-console && npm ci && npm test && npm run build
 ```
 
 ## App bundle smoke (вне `main`)

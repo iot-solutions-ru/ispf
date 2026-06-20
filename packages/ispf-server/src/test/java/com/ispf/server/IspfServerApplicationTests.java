@@ -24,6 +24,9 @@ class IspfServerApplicationTests {
         mockMvc.perform(get("/api/v1/info"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("IoT Solutions Platform Framework"))
-                .andExpect(jsonPath("$.shortName").value("ISPF"));
+                .andExpect(jsonPath("$.shortName").value("ISPF"))
+                .andExpect(jsonPath("$.javaVersion").isString())
+                .andExpect(jsonPath("$.springBootVersion").isString())
+                .andExpect(jsonPath("$.capabilities[?(@=='federation')]").exists());
     }
 }

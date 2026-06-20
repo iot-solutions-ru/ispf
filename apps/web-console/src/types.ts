@@ -3,6 +3,8 @@ export interface PlatformInfo {
   shortName: string;
   version: string;
   timestamp: string;
+  javaVersion?: string;
+  springBootVersion?: string;
   capabilities: string[];
 }
 
