@@ -174,6 +174,27 @@ public class ApplicationFunctionStore {
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }
 
+    public int countDeployedVersions() {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM %s".formatted(functionsTable),
+                Integer.class
+        );
+        return count != null ? count : 0;
+    }
+
+    public int countDistinctFunctions() {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                        SELECT COUNT(*) FROM (
+                            SELECT DISTINCT app_id, object_path, function_name
+                            FROM %s
+                        ) t
+                        """.formatted(functionsTable),
+                Integer.class
+        );
+        return count != null ? count : 0;
+    }
+
     private ApplicationFunctionHandler.DeployedFunction mapDeployedFunction(java.sql.ResultSet rs, int rowNum)
             throws java.sql.SQLException {
         return new ApplicationFunctionHandler.DeployedFunction(

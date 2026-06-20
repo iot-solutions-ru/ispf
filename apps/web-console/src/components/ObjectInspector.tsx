@@ -15,6 +15,7 @@ import IconPicker from "./icons/IconPicker";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 import { formatHistoryRetention } from "./VariableHistoryFields";
+import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 
 interface ObjectInspectorProps {
@@ -318,6 +319,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                         <VariableHistoryPanel
                           objectPath={path}
                           variableName={v.name}
+                          fields={historizableFieldsFromVariable(v)}
                         />
                       </td>
                     </tr>

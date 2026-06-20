@@ -19,6 +19,22 @@ export type DashboardOpenMode = "navigate" | "modal";
 
 export type ChartStyle = "line" | "area";
 
+/** How chart/sparkline loads historian data. `live` = sliding window + live tail (default). */
+export type WidgetHistoryRange = "live" | "1h" | "6h" | "24h" | "7d" | "all";
+
+export const WIDGET_HISTORY_RANGE_OPTIONS: { id: WidgetHistoryRange; label: string }[] = [
+  { id: "live", label: "Live — последние N точек" },
+  { id: "1h", label: "1 час" },
+  { id: "6h", label: "6 часов" },
+  { id: "24h", label: "24 часа" },
+  { id: "7d", label: "7 дней (avg/1h)" },
+  { id: "all", label: "Весь retention (avg/6h)" },
+];
+
+export function widgetHistoryRangeLabel(range: WidgetHistoryRange | undefined): string | undefined {
+  return WIDGET_HISTORY_RANGE_OPTIONS.find((item) => item.id === (range ?? "live"))?.label;
+}
+
 export interface DashboardWidgetBase {
   id: string;
   type: WidgetType;
@@ -65,6 +81,7 @@ export interface ChartWidget extends DashboardWidgetBase {
   type: "chart";
   chartStyle?: ChartStyle;
   maxPoints?: number;
+  historyRange?: WidgetHistoryRange;
   color?: string;
   decimals?: number;
   unit?: string;
@@ -74,6 +91,7 @@ export interface ChartWidget extends DashboardWidgetBase {
 export interface SparklineWidget extends DashboardWidgetBase {
   type: "sparkline";
   maxPoints?: number;
+  historyRange?: WidgetHistoryRange;
   color?: string;
   decimals?: number;
 }

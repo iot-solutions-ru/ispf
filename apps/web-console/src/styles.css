@@ -31,6 +31,60 @@ code,
   font-family: Consolas, "Cascadia Code", monospace;
 }
 
+.system-metrics-view {
+  padding: 1.25rem 1.5rem;
+  overflow: auto;
+}
+
+.system-metrics-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.system-metrics-header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.system-metrics-updated {
+  margin: 0 0 1rem;
+}
+
+.system-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.system-metrics-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+
+.system-metrics-card h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+}
+
+.system-metrics-table th {
+  width: 55%;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  vertical-align: top;
+  padding: 0.35rem 0.5rem 0.35rem 0;
+}
+
+.system-metrics-table td {
+  font-size: 0.82rem;
+  padding: 0.35rem 0;
+  word-break: break-word;
+}
+
 .admin-shell {
   display: flex;
   flex-direction: column;
@@ -643,6 +697,50 @@ code,
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+}
+
+.variable-history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.variable-history-field-select select {
+  min-width: 5.5rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.variable-history-export {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.variable-history-export-error {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.variable-history-aggregate-hint {
+  opacity: 0.85;
 }
 
 .variable-history-chart {
@@ -1429,6 +1527,51 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   padding-right: 1.5rem;
 }
 
+.dash-chart-head-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.dash-widget-history-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.dash-widget-history-meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  max-width: 12rem;
+  text-align: right;
+}
+
+.dash-widget-history-btn {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.68rem;
+}
+
+.modal-variable-history {
+  max-width: 960px;
+  width: min(92vw, 960px);
+}
+
+.modal-variable-history-path {
+  margin: 0 1rem 0.75rem;
+  font-size: 0.78rem;
+}
+
+.modal-variable-history .variable-history-panel {
+  padding: 0 1rem 1rem;
+}
+
+.modal-variable-history .variable-history-chart {
+  height: 320px;
+}
+
 .dash-chart-stats {
   display: flex;
   flex-direction: column;
@@ -1466,11 +1609,19 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .dash-sparkline-body {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.35rem;
   flex: 1;
   min-height: 0;
   padding-right: 1rem;
+}
+
+.dash-sparkline-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .dash-sparkline-value {

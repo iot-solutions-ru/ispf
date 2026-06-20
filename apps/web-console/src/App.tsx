@@ -20,6 +20,7 @@ import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
 import AutomationView from "./components/automation/AutomationView";
+import SystemMetricsView from "./components/SystemMetricsView";
 import LoginView from "./components/LoginView";
 import ModelEditorPanel from "./components/ModelEditorPanel";
 import { isModelsPath } from "./types/models";
@@ -269,6 +270,15 @@ export default function App() {
         >
           Автоматизация
         </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className={workspaceTab === "system" ? "active" : ""}
+            onClick={() => setWorkspaceTab("system")}
+          >
+            Система
+          </button>
+        )}
         {editorTabs.map((tab) => (
           <button
             key={tab.id}
@@ -291,7 +301,7 @@ export default function App() {
       </nav>
 
       <div className="workspace">
-        {workspaceTab !== "automation" && (
+        {workspaceTab !== "automation" && workspaceTab !== "system" && (
           <aside className="sidebar">
             <div className="sidebar-head">
               <h3>Дерево объектов</h3>
@@ -334,6 +344,8 @@ export default function App() {
         )}
 
         {workspaceTab === "automation" && <AutomationView readOnly={!isAdmin} />}
+
+        {workspaceTab === "system" && isAdmin && <SystemMetricsView />}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
           <main className="main editor-main dashboard-main">

@@ -136,6 +136,22 @@ public class PlatformSchedulerService {
         return null;
     }
 
+    public int countSchedules() {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM platform_schedules",
+                Integer.class
+        );
+        return count != null ? count : 0;
+    }
+
+    public int countEnabledSchedules() {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM platform_schedules WHERE enabled = TRUE",
+                Integer.class
+        );
+        return count != null ? count : 0;
+    }
+
     public record PlatformSchedule(
             String scheduleId,
             String appId,

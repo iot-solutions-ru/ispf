@@ -10,6 +10,7 @@
 | Method | Path | Роли | Описание |
 |--------|------|------|----------|
 | GET | `/api/v1/info` | public | Имя и версия платформы |
+| GET | `/api/v1/platform/metrics` | admin | Сводные метрики платформы (runtime, БД, дерево, драйверы, подключения, безопасность, historian, автоматизация) |
 | GET | `/api/v1/auth/me` | public | Principal и роли |
 | POST | `/api/v1/expressions/validate` | admin | Валидация CEL |
 
@@ -26,6 +27,8 @@
 | GET | `/api/v1/objects/by-path/variables` | operator+ | Список переменных |
 | GET | `/api/v1/objects/by-path/variables/detail` | operator+ | Одна переменная (`name`) |
 | GET | `/api/v1/objects/by-path/variables/history` | operator+ | История переменной (`path`, `name`, `field`, `from`, `to`, `limit`; только при `historyEnabled`) |
+| GET | `/api/v1/objects/by-path/variables/history/aggregate` | operator+ | Агрегаты (`bucket`, `from`, `to`, `limit` — до 2000 интервалов; `avg`/`min`/`max`/`count`) |
+| GET | `/api/v1/objects/by-path/variables/history/export` | operator+ | Скачать историю (`format=csv\|json`, те же фильтры, `limit` до 10000) |
 | PATCH | `/api/v1/objects/by-path/variables/history` | admin | `historyEnabled`, `historyRetentionDays` |
 | PUT | `/api/v1/objects/by-path/variables` | admin | Записать значение |
 

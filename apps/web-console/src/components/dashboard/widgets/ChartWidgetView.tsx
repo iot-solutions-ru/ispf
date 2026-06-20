@@ -10,10 +10,12 @@ import {
   YAxis,
 } from "recharts";
 import type { ChartWidget } from "../../../types/dashboard";
+import { widgetHistoryRangeLabel } from "../../../types/dashboard";
 import { useTrendSeries } from "../../../hooks/useTrendSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
+import WidgetHistoryControls from "../WidgetHistoryControls";
 
 interface ChartWidgetViewProps {
   widget: ChartWidget;
@@ -27,19 +29,22 @@ export default function ChartWidgetView({
   editable = false,
 }: ChartWidgetViewProps) {
   const maxPoints = widget.maxPoints ?? 120;
+  const historyRange = widget.historyRange ?? "live";
   const color = widget.color ?? "#2f81f7";
   const chartStyle = widget.chartStyle ?? "area";
   const decimals = widget.decimals ?? 1;
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const styles = useWidgetStyles(widget.stylesJson);
 
-  const { points, stats, isLoading, isError, variable } = useTrendSeries(
-    objectPath,
-    widget.variableName ?? "",
-    widget.valueField,
-    refreshIntervalMs,
-    maxPoints
-  );
+  const { points, stats, isLoading, isError, variable, historyEnabled, aggregated, historyBucket } =
+    useTrendSeries(
+      objectPath,
+      widget.variableName ?? "",
+      widget.valueField,
+      refreshIntervalMs,
+      maxPoints,
+      historyRange
+    );
 
   const unitRow = variable?.value?.rows[0];
   const unit =
@@ -53,20 +58,33 @@ export default function ChartWidgetView({
         <div className="dash-widget-title" style={styles.title}>
           {widget.title}
         </div>
-        <div className="dash-chart-stats">
-          {stats.latest != null ? (
-            <span className="dash-chart-latest" style={styles.value}>
-              {stats.latest.toFixed(decimals)}
-              {unit ? ` ${unit}` : ""}
-            </span>
-          ) : (
-            <span className="dash-chart-latest muted">—</span>
-          )}
-          {stats.min != null && stats.max != null && (
-            <span className="dash-chart-range">
-              min {stats.min.toFixed(decimals)} · max {stats.max.toFixed(decimals)}
-            </span>
-          )}
+        <div className="dash-chart-head-side">
+          <div className="dash-chart-stats">
+            {stats.latest != null ? (
+              <span className="dash-chart-latest" style={styles.value}>
+                {stats.latest.toFixed(decimals)}
+                {unit ? ` ${unit}` : ""}
+              </span>
+            ) : (
+              <span className="dash-chart-latest muted">—</span>
+            )}
+            {stats.min != null && stats.max != null && (
+              <span className="dash-chart-range">
+                min {stats.min.toFixed(decimals)} · max {stats.max.toFixed(decimals)}
+                {aggregated && historyBucket ? ` · avg/${historyBucket}` : ""}
+              </span>
+            )}
+          </div>
+          <WidgetHistoryControls
+            objectPath={objectPath}
+            variableName={widget.variableName ?? ""}
+            valueField={widget.valueField}
+            title={widget.title}
+            historyEnabled={historyEnabled}
+            historyRangeLabel={
+              historyRange !== "live" ? widgetHistoryRangeLabel(historyRange) : undefined
+            }
+          />
         </div>
       </div>
       <div className="dash-chart-body" style={styles.chart}>

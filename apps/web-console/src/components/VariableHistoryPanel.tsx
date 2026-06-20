@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CartesianGrid,
   Line,
@@ -8,8 +8,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { downloadVariableHistoryExport } from "../api";
 import {
   type HistoryRange,
+  historyRangeFrom,
   useVariableHistory,
 } from "../hooks/useVariableHistory";
 
@@ -24,27 +26,57 @@ const RANGE_OPTIONS: { id: HistoryRange; label: string }[] = [
 interface VariableHistoryPanelProps {
   objectPath: string;
   variableName: string;
-  valueField?: string;
+  /** Numeric schema fields available for history (from variable definition). */
+  fields?: string[];
   refreshIntervalMs?: number;
 }
 
 export default function VariableHistoryPanel({
   objectPath,
   variableName,
-  valueField,
+  fields = ["value"],
   refreshIntervalMs = 15_000,
 }: VariableHistoryPanelProps) {
   const [range, setRange] = useState<HistoryRange>("24h");
-  const { points, stats, isLoading, isError, error } = useVariableHistory(
+  const [field, setField] = useState(fields[0] ?? "value");
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<"csv" | "json" | null>(null);
+
+  useEffect(() => {
+    if (!fields.includes(field)) {
+      setField(fields[0] ?? "value");
+    }
+  }, [fields, field]);
+
+  const { points, stats, isLoading, isError, error, aggregated, bucket } = useVariableHistory(
     objectPath,
     variableName,
     {
-      field: valueField,
+      field,
       range,
       limit: 1000,
       refreshIntervalMs,
     }
   );
+
+  const exportHistory = async (format: "csv" | "json") => {
+    setExportError(null);
+    setExporting(format);
+    try {
+      const from = historyRangeFrom(range);
+      await downloadVariableHistoryExport(objectPath, variableName, {
+        format,
+        field,
+        from,
+        to: new Date().toISOString(),
+        limit: 10_000,
+      });
+    } catch (err) {
+      setExportError(String(err));
+    } finally {
+      setExporting(null);
+    }
+  };
 
   return (
     <div className="variable-history-panel">
@@ -56,6 +88,9 @@ export default function VariableHistoryPanel({
               {stats.min != null && stats.max != null && (
                 <span className="variable-history-range">
                   min {stats.min.toFixed(2)} · max {stats.max.toFixed(2)}
+                  {aggregated && bucket && (
+                    <span className="variable-history-aggregate-hint"> · avg/{bucket}</span>
+                  )}
                 </span>
               )}
             </>
@@ -63,19 +98,53 @@ export default function VariableHistoryPanel({
             <span className="hint">Нет данных за выбранный период</span>
           )}
         </div>
-        <div className="variable-history-ranges">
-          {RANGE_OPTIONS.map((option) => (
+        <div className="variable-history-controls">
+          {fields.length > 1 && (
+            <label className="variable-history-field-select">
+              <span className="sr-only">Поле</span>
+              <select value={field} onChange={(e) => setField(e.target.value)}>
+                {fields.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div className="variable-history-ranges">
+            {RANGE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`btn tiny ${range === option.id ? "primary" : ""}`}
+                onClick={() => setRange(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="variable-history-export">
             <button
-              key={option.id}
               type="button"
-              className={`btn tiny ${range === option.id ? "primary" : ""}`}
-              onClick={() => setRange(option.id)}
+              className="btn tiny"
+              disabled={exporting != null}
+              onClick={() => exportHistory("csv")}
             >
-              {option.label}
+              {exporting === "csv" ? "…" : "CSV"}
             </button>
-          ))}
+            <button
+              type="button"
+              className="btn tiny"
+              disabled={exporting != null}
+              onClick={() => exportHistory("json")}
+            >
+              {exporting === "json" ? "…" : "JSON"}
+            </button>
+          </div>
         </div>
       </div>
+
+      {exportError && <p className="hint error variable-history-export-error">{exportError}</p>}
 
       <div className="variable-history-chart">
         {isLoading && points.length === 0 ? (

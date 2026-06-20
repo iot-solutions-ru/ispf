@@ -13,4 +13,6 @@ public interface WorkflowInstanceRepository extends JpaRepository<WorkflowInstan
     List<WorkflowInstanceEntity> findByStatusOrderByStartedAtDesc(String status);
 
     List<WorkflowInstanceEntity> findByWorkflowPathAndStatus(String workflowPath, String status);
+
+    long countByStatus(String status);
 }

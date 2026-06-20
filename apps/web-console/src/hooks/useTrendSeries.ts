@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVariableHistory } from "../api";
+import type { WidgetHistoryRange } from "../types/dashboard";
 import { useBoundVariable } from "./useBoundVariable";
+import { useVariableHistory, type HistoryRange } from "./useVariableHistory";
 import { readFieldValue } from "../types/dashboard";
 
 export interface TrendPoint {
@@ -33,31 +35,44 @@ function sampleToPoint(ts: string, value: number): TrendPoint {
   };
 }
 
+function isHistoryRange(range: WidgetHistoryRange): range is HistoryRange {
+  return range !== "live";
+}
+
 export function useTrendSeries(
   objectPath: string,
   variableName: string,
   valueField: string | undefined,
   refreshIntervalMs: number,
   maxPoints: number,
-  historyEnabled = false
+  historyRange: WidgetHistoryRange = "live"
 ) {
   const field = valueField ?? "value";
-  const query = useBoundVariable(objectPath, variableName, valueField, refreshIntervalMs);
-  const row = query.variable?.value?.rows[0];
+  const boundQuery = useBoundVariable(objectPath, variableName, valueField, refreshIntervalMs);
+  const row = boundQuery.variable?.value?.rows[0];
   const rawValue = readFieldValue(row, valueField);
   const [livePoints, setLivePoints] = useState<TrendPoint[]>([]);
-  const historyKey = `${objectPath}|${variableName}|${field}|${maxPoints}`;
+  const historyKey = `${objectPath}|${variableName}|${field}|${maxPoints}|${historyRange}`;
   const seededKeyRef = useRef<string | null>(null);
-  const recordHistory = historyEnabled || query.variable?.historyEnabled === true;
+  const recordHistory = boundQuery.variable?.historyEnabled === true;
+  const useRangedHistory = historyRange !== "live" && recordHistory;
 
-  const historyQuery = useQuery({
-    queryKey: ["variable-history", objectPath, variableName, field, maxPoints],
+  const rangedHistory = useVariableHistory(objectPath, variableName, {
+    field,
+    range: isHistoryRange(historyRange) ? historyRange : "24h",
+    limit: maxPoints,
+    enabled: useRangedHistory && Boolean(objectPath && variableName),
+    refreshIntervalMs,
+  });
+
+  const liveHistoryQuery = useQuery({
+    queryKey: ["variable-history", objectPath, variableName, field, maxPoints, "live"],
     queryFn: () =>
       fetchVariableHistory(objectPath, variableName, {
         field,
         limit: maxPoints,
       }),
-    enabled: Boolean(objectPath && variableName && recordHistory),
+    enabled: Boolean(objectPath && variableName && recordHistory && historyRange === "live"),
     staleTime: refreshIntervalMs,
   });
 
@@ -67,22 +82,30 @@ export function useTrendSeries(
   }, [historyKey]);
 
   useEffect(() => {
-    if (!historyQuery.data?.samples?.length) {
+    if (historyRange !== "live") {
+      return;
+    }
+    if (!liveHistoryQuery.data?.samples?.length) {
       return;
     }
     if (seededKeyRef.current === historyKey) {
       return;
     }
     seededKeyRef.current = historyKey;
-    const seeded = historyQuery.data.samples
+    const seeded = liveHistoryQuery.data.samples
       .filter((sample) => sample.value != null && Number.isFinite(sample.value))
       .map((sample) => sampleToPoint(sample.ts, sample.value as number));
     setLivePoints(seeded.length > maxPoints ? seeded.slice(-maxPoints) : seeded);
-  }, [historyQuery.data, historyKey, maxPoints]);
+  }, [liveHistoryQuery.data, historyKey, maxPoints, historyRange]);
 
   useEffect(() => {
+    if (historyRange !== "live") {
+      return;
+    }
     const numeric = toNumeric(rawValue);
-    if (numeric === null) return;
+    if (numeric === null) {
+      return;
+    }
 
     const now = Date.now();
     setLivePoints((prev) => {
@@ -98,27 +121,41 @@ export function useTrendSeries(
       const merged = [...prev, next];
       return merged.length > maxPoints ? merged.slice(-maxPoints) : merged;
     });
-  }, [rawValue, maxPoints, refreshIntervalMs]);
+  }, [rawValue, maxPoints, refreshIntervalMs, historyRange]);
 
-  const points = livePoints;
-
-  const stats = useMemo(() => {
-    if (points.length === 0) {
+  const liveStats = useMemo(() => {
+    if (livePoints.length === 0) {
       return { min: null, max: null, latest: null };
     }
-    const values = points.map((point) => point.value);
+    const values = livePoints.map((point) => point.value);
     return {
       min: Math.min(...values),
       max: Math.max(...values),
       latest: values[values.length - 1],
     };
-  }, [points]);
+  }, [livePoints]);
+
+  if (useRangedHistory) {
+    return {
+      ...boundQuery,
+      points: rangedHistory.points,
+      stats: rangedHistory.stats,
+      historyLoading: rangedHistory.isLoading,
+      historyEnabled: recordHistory,
+      historyRange,
+      aggregated: rangedHistory.aggregated,
+      historyBucket: rangedHistory.bucket,
+    };
+  }
 
   return {
-    ...query,
-    points,
-    stats,
-    historyLoading: recordHistory && historyQuery.isLoading,
+    ...boundQuery,
+    points: livePoints,
+    stats: liveStats,
+    historyLoading: recordHistory && liveHistoryQuery.isLoading,
     historyEnabled: recordHistory,
+    historyRange,
+    aggregated: false,
+    historyBucket: null as string | null,
   };
 }

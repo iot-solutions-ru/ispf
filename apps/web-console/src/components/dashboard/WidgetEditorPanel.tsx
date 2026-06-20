@@ -1,5 +1,5 @@
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
-import { WIDGET_TYPES } from "../../types/dashboard";
+import { WIDGET_HISTORY_RANGE_OPTIONS, WIDGET_TYPES } from "../../types/dashboard";
 import { WIDGET_STYLE_KEYS_HINT } from "./widgetStyles";
 
 interface WidgetEditorPanelProps {
@@ -127,6 +127,21 @@ export default function WidgetEditorPanel({
         {widget.type === "chart" && (
           <>
             <label>
+              Период истории
+              <select
+                value={widget.historyRange ?? "live"}
+                onChange={(e) =>
+                  update({ historyRange: e.target.value as typeof widget.historyRange })
+                }
+              >
+                {WIDGET_HISTORY_RANGE_OPTIONS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               Стиль графика
               <select
                 value={widget.chartStyle ?? "area"}
@@ -160,6 +175,21 @@ export default function WidgetEditorPanel({
         )}
         {widget.type === "sparkline" && (
           <>
+            <label>
+              Период истории
+              <select
+                value={widget.historyRange ?? "live"}
+                onChange={(e) =>
+                  update({ historyRange: e.target.value as typeof widget.historyRange })
+                }
+              >
+                {WIDGET_HISTORY_RANGE_OPTIONS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label>
               Точек тренда
               <input

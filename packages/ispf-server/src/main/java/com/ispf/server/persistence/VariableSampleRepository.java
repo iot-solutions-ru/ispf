@@ -27,6 +27,12 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
             Instant to
     );
 
+    @Query("SELECT MIN(s.sampledAt) FROM VariableSampleEntity s")
+    Instant findOldestSampledAt();
+
+    @Query("SELECT MAX(s.sampledAt) FROM VariableSampleEntity s")
+    Instant findNewestSampledAt();
+
     @Modifying
     @Query("DELETE FROM VariableSampleEntity s WHERE s.sampledAt < :cutoff")
     int deleteBySampledAtBefore(@Param("cutoff") Instant cutoff);

@@ -34,6 +34,10 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         sessions.remove(session);
     }
 
+    public int activeSessionCount() {
+        return (int) sessions.stream().filter(WebSocketSession::isOpen).count();
+    }
+
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) throws IOException {
         Map<String, Object> message = Map.of(

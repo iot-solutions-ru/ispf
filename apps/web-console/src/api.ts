@@ -81,6 +81,22 @@ export interface VariableHistoryResponse {
   samples: VariableHistorySample[];
 }
 
+export interface VariableHistoryBucket {
+  ts: string;
+  avg: number | null;
+  min: number | null;
+  max: number | null;
+  count: number;
+}
+
+export interface VariableHistoryAggregateResponse {
+  objectPath: string;
+  variableName: string;
+  field: string;
+  bucket: string;
+  buckets: VariableHistoryBucket[];
+}
+
 export function fetchVariableHistory(
   path: string,
   name: string,
@@ -92,6 +108,68 @@ export function fetchVariableHistory(
   if (options?.to) params.set("to", options.to);
   if (options?.limit != null) params.set("limit", String(options.limit));
   return request(`/api/v1/objects/by-path/variables/history?${params}`);
+}
+
+export function fetchVariableHistoryAggregate(
+  path: string,
+  name: string,
+  options: {
+    bucket: string;
+    field?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+  }
+): Promise<VariableHistoryAggregateResponse> {
+  const params = new URLSearchParams({ path, name, bucket: options.bucket });
+  if (options.field) params.set("field", options.field);
+  if (options.from) params.set("from", options.from);
+  if (options.to) params.set("to", options.to);
+  if (options.limit != null) params.set("limit", String(options.limit));
+  return request(`/api/v1/objects/by-path/variables/history/aggregate?${params}`);
+}
+
+export async function downloadVariableHistoryExport(
+  path: string,
+  name: string,
+  options: {
+    format: "csv" | "json";
+    field?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+  }
+): Promise<void> {
+  const params = new URLSearchParams({
+    path,
+    name,
+    format: options.format,
+  });
+  if (options.field) params.set("field", options.field);
+  if (options.from) params.set("from", options.from);
+  if (options.to) params.set("to", options.to);
+  if (options.limit != null) params.set("limit", String(options.limit));
+
+  const response = await fetch(
+    `/api/v1/objects/by-path/variables/history/export?${params}`,
+    { headers: getAuthHeaders() }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Export failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match?.[1] ?? `${name}-${options.field ?? "value"}.${options.format}`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 export function createObject(payload: CreateObjectPayload): Promise<ObjectSummary> {

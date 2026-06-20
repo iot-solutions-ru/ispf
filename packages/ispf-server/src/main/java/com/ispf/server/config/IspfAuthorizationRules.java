@@ -21,6 +21,9 @@ public final class IspfAuthorizationRules {
                 "/ws/**"
         ).permitAll();
 
+        auth.requestMatchers("/api/v1/platform/metrics")
+                .hasRole(IspfRoles.ADMIN);
+
         auth.requestMatchers("/api/v1/alert-rules/**", "/api/v1/correlators/**")
                 .hasRole(IspfRoles.ADMIN);
 

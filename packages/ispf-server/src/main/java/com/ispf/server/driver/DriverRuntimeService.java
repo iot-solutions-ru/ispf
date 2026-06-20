@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -282,5 +283,26 @@ public class DriverRuntimeService {
             int pollIntervalMs,
             String lastError
     ) {
+    }
+
+    public Map<String, Object> runtimeMetrics() {
+        long active = activeDrivers.size();
+        long connected = activeDrivers.values().stream()
+                .filter(entry -> entry.driver().isConnected())
+                .count();
+        long withError = activeDrivers.values().stream()
+                .filter(entry -> entry.lastError() != null)
+                .count();
+        long devices = objectManager.tree().all().stream()
+                .filter(node -> node.type() == ObjectType.DEVICE)
+                .count();
+
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("deviceObjects", devices);
+        metrics.put("activeDrivers", active);
+        metrics.put("connectedDrivers", connected);
+        metrics.put("driversWithError", withError);
+        metrics.put("stoppedDrivers", Math.max(0, devices - active));
+        return metrics;
     }
 }

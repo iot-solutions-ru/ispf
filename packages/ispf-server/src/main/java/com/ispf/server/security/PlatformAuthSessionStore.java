@@ -61,6 +61,15 @@ public class PlatformAuthSessionStore {
         );
     }
 
+    public int countValidSessions(Instant now) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM %s WHERE expires_at > ?".formatted(sessionsTable),
+                Integer.class,
+                Timestamp.from(now)
+        );
+        return count != null ? count : 0;
+    }
+
     public record AuthSession(String token, String username, Instant expiresAt) {
     }
 }
