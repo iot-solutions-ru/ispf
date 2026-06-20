@@ -27,8 +27,8 @@
               "nestedSchema": {
                 "name": "location_row",
                 "fields": [
-                  { "name": "code", "type": "STRING" },
-                  { "name": "state", "type": "STRING" }
+                  { "name": "code", "type": "STRING", "description": "Код ячейки" },
+                  { "name": "state", "type": "STRING", "description": "Статус ячейки" }
                 ]
               }
             }

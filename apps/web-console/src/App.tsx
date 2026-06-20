@@ -1,8 +1,15 @@
 import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { fetchObjects, fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { logout } from "./auth/login";
-import { getPrimaryRole, getStoredSession, isAdminSession, type AuthSession } from "./auth/session";
+import { getPrimaryRole, getStoredSession, isAdminSession, setStoredSession, type AuthSession } from "./auth/session";
+import {
+  clearOidcCallbackParams,
+  completeOidcLogin,
+  fetchAuthConfig,
+  readOidcCallback,
+} from "./auth/oidc";
 import {
   resolveInitialAppMode,
   resolveOperatorAppId,
@@ -11,6 +18,11 @@ import {
 import type { EditorTab } from "./types";
 import { buildObjectTree } from "./utils/tree";
 import { readSelectedPath, writeSelectedPath } from "./utils/treeExpanded";
+import {
+  clearInvalidAdminPathFromUrl,
+  resolveInitialAdminPath,
+  syncAdminPathToUrl,
+} from "./utils/adminRouting";
 import { useObjectWebSocket } from "./hooks/useObjectWebSocket";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
@@ -55,7 +67,48 @@ export default function App() {
   const [workspaceTab, setWorkspaceTab] = useState<"explorer" | string>("explorer");
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
   const [propertiesTabPath, setPropertiesTabPath] = useState<string | null>(null);
-  const [selectedPath, setSelectedPath] = useState<string | null>(() => readSelectedPath());
+  const [searchParams] = useSearchParams();
+  const [selectedPath, setSelectedPath] = useState<string | null>(() =>
+    resolveInitialAdminPath(window.location.search, readSelectedPath())
+  );
+  const [oidcBootstrapping, setOidcBootstrapping] = useState(() => readOidcCallback() != null);
+
+  useEffect(() => {
+    const callback = readOidcCallback();
+    if (!callback) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const config = await fetchAuthConfig();
+        const result = await completeOidcLogin(config, callback.code, callback.state);
+        if (cancelled) {
+          return;
+        }
+        const nextSession: AuthSession = {
+          token: result.accessToken,
+          username: result.principal,
+          displayName: result.principal,
+          roles: result.roles,
+        };
+        setStoredSession(nextSession);
+        setSession(nextSession);
+        clearOidcCallbackParams();
+      } catch (error) {
+        if (!cancelled) {
+          console.error(error);
+        }
+      } finally {
+        if (!cancelled) {
+          setOidcBootstrapping(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!session?.autoStartEnabled || !session.autoStartApp) {
@@ -75,10 +128,19 @@ export default function App() {
   }, [session, setAppMode]);
 
   useEffect(() => {
+    const fromUrl = searchParams.get("path");
+    if (fromUrl && fromUrl !== selectedPath) {
+      setSelectedPath(fromUrl);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (selectedPath) {
       writeSelectedPath(selectedPath);
+      syncAdminPathToUrl(selectedPath);
     }
   }, [selectedPath]);
+
   const [showCreate, setShowCreate] = useState(false);
   const [treeFilter, setTreeFilter] = useState("");
 
@@ -90,6 +152,18 @@ export default function App() {
     queryFn: () => fetchObjects(),
     refetchInterval: 30_000,
   });
+
+  useEffect(() => {
+    if (!objects.data || !selectedPath) {
+      return;
+    }
+    if (objects.data.some((obj) => obj.path === selectedPath)) {
+      return;
+    }
+    setSelectedPath("root");
+    writeSelectedPath("root");
+    clearInvalidAdminPathFromUrl();
+  }, [objects.data, selectedPath]);
 
   const reorderMutation = useMutation({
     mutationFn: ({ parentPath, orderedPaths }: { parentPath: string; orderedPaths: string[] }) =>
@@ -210,6 +284,16 @@ export default function App() {
       setAppMode("operator");
     }
   };
+
+  if (oidcBootstrapping) {
+    return (
+      <div className="login-shell">
+        <div className="login-card">
+          <p className="login-sub">Завершение OIDC входа…</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!session?.token) {
     return <LoginView onLoggedIn={handleLoggedIn} />;

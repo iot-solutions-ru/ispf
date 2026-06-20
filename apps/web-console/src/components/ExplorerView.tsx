@@ -4,23 +4,26 @@ import SecurityUsersPanel from "./SecurityUsersPanel";
 import SecurityUserInspector from "./SecurityUserInspector";
 import SecurityRolesPanel from "./SecurityRolesPanel";
 import SecurityRoleInspector from "./SecurityRoleInspector";
+import SystemFolderListPanel from "./SystemFolderListPanel";
+import FederationPeersPanel from "./FederationPeersPanel";
+import TenantsPanel from "./TenantsPanel";
 import { isModelsPath } from "../types/models";
 import type { ObjectSummary } from "../types";
 import {
   isOperatorAppChildPath,
-  isOperatorAppsRootPath,
 } from "../utils/operatorAppsPath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "../utils/securityUserPath";
 import { isSecurityRolePath, isSecurityRolesRoot } from "../utils/securityRolePath";
 import {
   isAlertRulePath,
-  isAlertRulesRoot,
   isCorrelatorPath,
-  isCorrelatorsRoot,
 } from "../utils/automationPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
-import { APPLICATIONS_ROOT, canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
+import { canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
+import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
+import { isFederationRoot } from "../utils/federationPath";
+import { isTenantsRoot } from "../utils/tenantPath";
 
 interface ExplorerViewProps {
   selectedPath: string | null;
@@ -46,28 +49,37 @@ export default function ExplorerView({
   }
 
   const isOperatorAppChild = isOperatorAppChildPath(selectedPath);
-  const isOperatorAppsRoot = isOperatorAppsRootPath(selectedPath);
-  const isApplicationsRoot = selectedPath === APPLICATIONS_ROOT;
   const isUsersRoot = isSecurityUsersRoot(selectedPath);
   const isUserObject = isSecurityUserPath(selectedPath);
   const isRolesRoot = isSecurityRolesRoot(selectedPath);
   const isRoleObject = isSecurityRolePath(selectedPath);
   const isAlertRule = isAlertRulePath(selectedPath);
   const isCorrelator = isCorrelatorPath(selectedPath);
-  const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
-  const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
+  const isFederation = isFederationRoot(selectedPath);
+  const isTenants = isTenantsRoot(selectedPath);
+  const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
   const showCreateButton =
     isAdmin
     && canCreateChildAt(selectedPath, selectedObject?.type)
     && !isUsersRoot
     && !isRolesRoot;
+  const hideToolbar =
+    isOperatorAppChild
+    || isUsersRoot
+    || isUserObject
+    || isRolesRoot
+    || isRoleObject
+    || isAlertRule
+    || isCorrelator
+    || isFederation
+    || isTenants
+    || isCatalogFolder;
 
   return (
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
     >
-      {!isOperatorAppChild && !isUsersRoot && !isUserObject && !isRolesRoot && !isRoleObject
-        && !isAlertRule && !isCorrelator && (
+      {!hideToolbar && (
         <div className="explorer-toolbar">
           {showCreateButton && (
             <button type="button" className="btn primary" onClick={onCreateChild}>
@@ -99,39 +111,23 @@ export default function ExplorerView({
         <AlertRuleInspector path={selectedPath} canManage={isAdmin} />
       ) : isCorrelator ? (
         <CorrelatorInspector path={selectedPath} canManage={isAdmin} />
+      ) : isFederation ? (
+        <FederationPeersPanel canManage={isAdmin} />
+      ) : isTenants ? (
+        <TenantsPanel canManage={isAdmin} onSelectPath={onSelectPath} />
+      ) : isCatalogFolder ? (
+        <SystemFolderListPanel
+          folderPath={selectedPath}
+          folderType={selectedObject?.type}
+          folderDisplayName={selectedObject?.displayName}
+          folderDescription={selectedObject?.description}
+          canManage={isAdmin}
+          createLabel={showCreateButton ? createActionLabel(selectedPath) : undefined}
+          onCreateChild={showCreateButton ? onCreateChild : undefined}
+          onSelectPath={onSelectPath}
+        />
       ) : (
-        <>
-          <ObjectInspector path={selectedPath} onDeleted={onDeleted} canManage={isAdmin} />
-          {isApplicationsRoot && (
-            <section className="operator-apps-folder-hint">
-              <p className="hint">
-                Deploy-приложения (функции, отчёты, bundle). Укажите App ID и название, затем
-                deploy bundle через API.
-              </p>
-            </section>
-          )}
-          {isOperatorAppsRoot && (
-            <section className="operator-apps-folder-hint">
-              <p className="hint">
-                Operator UI настраивается в дочерних объектах. Новое приложение — кнопка выше.
-              </p>
-            </section>
-          )}
-          {isAlertRulesFolder && (
-            <section className="operator-apps-folder-hint">
-              <p className="hint">
-                CEL-правила публикуют события при изменении переменных. Создайте правило кнопкой выше.
-              </p>
-            </section>
-          )}
-          {isCorrelatorsFolder && (
-            <section className="operator-apps-folder-hint">
-              <p className="hint">
-                Корреляторы реагируют на события и запускают workflow. Создайте коррелятор кнопкой выше.
-              </p>
-            </section>
-          )}
-        </>
+        <ObjectInspector path={selectedPath} onDeleted={onDeleted} canManage={isAdmin} />
       )}
     </div>
   );

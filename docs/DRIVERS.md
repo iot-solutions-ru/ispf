@@ -212,6 +212,8 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 
 ## Каталог зарегистрированных драйверов (58)
 
+Поле `maturity` в `GET /api/v1/drivers`: `PRODUCTION` (по умолчанию), `BETA`, `STUB`. Метки задаются в `DriverMaturityRegistry` на сервере и отображаются в Web Console при выборе драйвера.
+
 Полный список `driverId` в `DriverCatalog`:
 
 | `driverId` | Модуль | Назначение |

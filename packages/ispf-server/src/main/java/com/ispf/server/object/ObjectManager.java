@@ -301,6 +301,20 @@ public class ObjectManager {
                 "Event patterns that trigger workflows",
                 null
         );
+        ensureBootstrapNode(
+                "root.platform.federation",
+                ObjectType.AGENT,
+                "Federation",
+                "Remote ISPF sites — peer registry and cross-site object proxy (PF-13 spike)",
+                null
+        );
+        ensureBootstrapNode(
+                "root.tenant",
+                ObjectType.TENANT,
+                "Tenants",
+                "Multi-tenant namespaces (root.tenant.{id}.platform.*)",
+                null
+        );
     }
 
     private void ensureBootstrapNode(

@@ -1,8 +1,12 @@
 package com.ispf.server.api;
 
-import com.ispf.core.object.PlatformObject;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ispf.server.federation.FederationProxyService;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.api.dto.ObjectDto;
@@ -15,11 +19,14 @@ import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -46,6 +53,10 @@ public class ObjectController {
     private final ObjectUiIconService objectUiIconService;
     private final DeviceProvisioningService deviceProvisioningService;
     private final AutomationTreeService automationTreeService;
+    private final ObjectAccessService objectAccessService;
+    private final TenantScopeService tenantScopeService;
+    private final FederationProxyService federationProxyService;
+    private final ObjectMapper objectMapper;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -55,7 +66,11 @@ public class ObjectController {
             PlatformRoleService platformRoleService,
             ObjectUiIconService objectUiIconService,
             DeviceProvisioningService deviceProvisioningService,
-            AutomationTreeService automationTreeService
+            AutomationTreeService automationTreeService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            FederationProxyService federationProxyService,
+            ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
@@ -65,6 +80,10 @@ public class ObjectController {
         this.objectUiIconService = objectUiIconService;
         this.deviceProvisioningService = deviceProvisioningService;
         this.automationTreeService = automationTreeService;
+        this.objectAccessService = objectAccessService;
+        this.tenantScopeService = tenantScopeService;
+        this.federationProxyService = federationProxyService;
+        this.objectMapper = objectMapper;
     }
 
     private ObjectDto toDto(PlatformObject node) {
@@ -72,26 +91,52 @@ public class ObjectController {
     }
 
     @GetMapping
-    public List<ObjectDto> list(@RequestParam(required = false) String parent) {
+    public List<ObjectDto> list(
+            @RequestParam(required = false) String parent,
+            Authentication authentication
+    ) {
         var tree = objectManager.tree();
         if (parent == null || parent.isBlank()) {
-            return tree.all().stream().map(this::toDto).toList();
+            return tree.all().stream()
+                    .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
+                    .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                    .map(this::toDto)
+                    .toList();
         }
-        return tree.childrenOf(parent).stream().map(this::toDto).toList();
+        if (!tenantScopeService.isPathVisible(parent, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + parent);
+        }
+        objectAccessService.requireRead(parent, authentication);
+        return tree.childrenOf(parent).stream()
+                .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
+                .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                .map(this::toDto)
+                .toList();
     }
 
     @GetMapping("/by-path/editor")
-    public ObjectEditorDto editor(@RequestParam String path) {
+    public ObjectEditorDto editor(@RequestParam String path, Authentication authentication) {
+        if (!tenantScopeService.isPathVisible(path, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
+        }
+        objectAccessService.requireRead(path, authentication);
         return ObjectEditorDto.from(objectManager.require(path), objectUiIconService);
     }
 
     @GetMapping("/by-path")
-    public ObjectDto get(@RequestParam String path) {
-        return toDto(objectManager.require(path));
+    public ObjectDto get(@RequestParam String path, Authentication authentication) {
+        if (!tenantScopeService.isPathVisible(path, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
+        }
+        objectAccessService.requireRead(path, authentication);
+        return federationProxyService.resolve(path)
+                .map(target -> mapProxyObject(path, target))
+                .orElseGet(() -> toDto(objectManager.require(path)));
     }
 
     @PostMapping
-    public ObjectDto create(@Valid @RequestBody CreateObjectRequest request) {
+    public ObjectDto create(@Valid @RequestBody CreateObjectRequest request, Authentication authentication) {
+        objectAccessService.requireWrite(request.parentPath(), authentication);
         String fullPath = objectManager.tree().resolveChildPath(request.parentPath(), request.name());
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Object exists: " + fullPath);
@@ -129,7 +174,12 @@ public class ObjectController {
     }
 
     @PatchMapping("/by-path")
-    public ObjectDto update(@RequestParam String path, @Valid @RequestBody UpdateObjectRequest request) {
+    public ObjectDto update(
+            @RequestParam String path,
+            @Valid @RequestBody UpdateObjectRequest request,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
         try {
             if (request.iconId() != null) {
                 objectUiIconService.setIconId(path, request.iconId());
@@ -142,7 +192,8 @@ public class ObjectController {
     }
 
     @DeleteMapping("/by-path")
-    public void delete(@RequestParam String path) {
+    public void delete(@RequestParam String path, Authentication authentication) {
+        objectAccessService.requireWrite(path, authentication);
         try {
             if (platformUserService.isSecurityUserPath(path)) {
                 platformUserService.deleteUser(platformUserService.usernameFromPath(path));
@@ -168,7 +219,8 @@ public class ObjectController {
 
     @PutMapping("/reorder")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void reorder(@Valid @RequestBody ReorderObjectsRequest request) {
+    public void reorder(@Valid @RequestBody ReorderObjectsRequest request, Authentication authentication) {
+        objectAccessService.requireWrite(request.parentPath(), authentication);
         try {
             objectManager.reorderChildren(request.parentPath(), request.orderedPaths());
         } catch (IllegalArgumentException e) {
@@ -179,13 +231,27 @@ public class ObjectController {
     }
 
     @GetMapping("/by-path/variables")
-    public List<VariableDto> listVariables(@RequestParam String path) {
+    public List<VariableDto> listVariables(@RequestParam String path, Authentication authentication) {
+        if (!tenantScopeService.isPathVisible(path, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
+        }
+        objectAccessService.requireRead(path, authentication);
+        var proxy = federationProxyService.resolve(path);
+        if (proxy.isPresent()) {
+            JsonNode json = federationProxyService.proxyVariables(proxy.get());
+            return objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { });
+        }
         PlatformObject node = objectManager.require(path);
         return node.variables().values().stream().map(VariableDto::from).toList();
     }
 
     @GetMapping("/by-path/variables/detail")
-    public VariableDto getVariable(@RequestParam String path, @RequestParam String name) {
+    public VariableDto getVariable(
+            @RequestParam String path,
+            @RequestParam String name,
+            Authentication authentication
+    ) {
+        objectAccessService.requireRead(path, authentication);
         PlatformObject node = objectManager.require(path);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
@@ -196,8 +262,10 @@ public class ObjectController {
     public VariableDto setVariable(
             @RequestParam String path,
             @RequestParam String name,
-            @RequestBody DataRecord value
+            @RequestBody DataRecord value,
+            Authentication authentication
     ) {
+        objectAccessService.requireWrite(path, authentication);
         try {
             Variable variable = objectManager.setVariableValue(path, name, value);
             if (platformUserService.isSecurityUserPath(path)) {
@@ -213,8 +281,10 @@ public class ObjectController {
     public VariableDto updateVariableHistory(
             @RequestParam String path,
             @RequestParam String name,
-            @Valid @RequestBody UpdateVariableHistoryRequest request
+            @Valid @RequestBody UpdateVariableHistoryRequest request,
+            Authentication authentication
     ) {
+        objectAccessService.requireWrite(path, authentication);
         try {
             Variable variable = objectManager.updateVariableHistory(
                     path,
@@ -258,5 +328,23 @@ public class ObjectController {
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
+    }
+
+    private ObjectDto mapProxyObject(String localPath, FederationProxyService.FederationProxyTarget target) {
+        JsonNode json = federationProxyService.proxyObject(target);
+        ObjectDto remote = objectMapper.convertValue(json, ObjectDto.class);
+        return new ObjectDto(
+                remote.id(),
+                localPath,
+                remote.type(),
+                remote.displayName(),
+                remote.description(),
+                remote.templateId(),
+                remote.iconId(),
+                remote.createdAt(),
+                remote.sortOrder(),
+                remote.variableNames(),
+                remote.eventNames()
+        );
     }
 }

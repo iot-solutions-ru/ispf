@@ -128,6 +128,8 @@ public class DriverCatalog {
     );
 
     public List<DriverMetadata> list() {
-        return drivers;
+        return drivers.stream()
+                .map(driver -> driver.withMaturity(DriverMaturityRegistry.resolve(driver.id())))
+                .toList();
     }
 }

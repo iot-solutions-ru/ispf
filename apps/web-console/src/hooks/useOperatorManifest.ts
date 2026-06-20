@@ -24,6 +24,10 @@ async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> 
 }
 
 async function loadManifest(appId: string): Promise<OperatorManifest> {
+  console.warn(
+    "[ISPF] Static operator manifest (operator-apps/*.manifest.json) is deprecated. "
+    + "Use Application bundle operatorUi / wire profile instead."
+  );
   const fromApi = await loadManifestFromApi(appId);
   if (fromApi) {
     return fromApi;

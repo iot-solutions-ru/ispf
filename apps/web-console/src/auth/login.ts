@@ -9,6 +9,7 @@ export interface LoginResponse {
   expiresAt?: string;
   autoStartEnabled?: boolean;
   autoStartApp?: string;
+  tenantId?: string;
 }
 
 export async function login(username: string, password: string): Promise<AuthSession> {
@@ -30,6 +31,7 @@ export async function login(username: string, password: string): Promise<AuthSes
     expiresAt: data.expiresAt,
     autoStartEnabled: data.autoStartEnabled === true,
     autoStartApp: data.autoStartApp,
+    tenantId: data.tenantId,
   };
   setStoredSession(session);
   return session;

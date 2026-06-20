@@ -49,6 +49,10 @@ ispf:
   nats:
     enabled: ${ISPF_NATS_ENABLED:false}
     url: ${ISPF_NATS_URL:nats://localhost:4222}
+    replica-events-enabled: ${ISPF_NATS_REPLICA_EVENTS:true}
+    replica-id: ${ISPF_REPLICA_ID:}
+  security:
+    oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   variable-history:
     enabled: true
     min-interval-ms: 5000

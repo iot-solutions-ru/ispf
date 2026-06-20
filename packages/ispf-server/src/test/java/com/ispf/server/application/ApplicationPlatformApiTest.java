@@ -597,7 +597,153 @@ class ApplicationPlatformApiTest {
                 .andExpect(jsonPath("$.wireProfile").value("anima-operator-v1"))
                 .andExpect(jsonPath("$.result", hasSize(1)))
                 .andExpect(jsonPath("$.result[0].item_code").value("IT-WIRE-01"))
-                .andExpect(jsonPath("$.result_field_labels.item_code").value("item_code"));
+                .andExpect(jsonPath("$.result_field_labels.item_code").value("Код позиции"));
+    }
+
+    @Test
+    void wireProfileUsesSchemaDescriptionForFieldLabels() throws Exception {
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "3.1.0-labels",
+                                  "migrations": [
+                                    {
+                                      "id": "label_items",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM platform_item; INSERT INTO platform_item (id, item_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'LBL-01', 'ready');"
+                                    }
+                                  ],
+                                  "functions": [
+                                    {
+                                      "objectPath": "%s",
+                                      "functionName": "platform_labeled_list",
+                                      "version": "1",
+                                      "descriptor": {
+                                        "inputSchema": { "name": "in", "fields": [] },
+                                        "outputSchema": {
+                                          "name": "out",
+                                          "fields": [
+                                            {"name": "error_code", "type": "STRING"},
+                                            {"name": "error_message", "type": "STRING"},
+                                            {
+                                              "name": "rows",
+                                              "type": "RECORD_LIST",
+                                              "nestedSchema": {
+                                                "name": "order_row",
+                                                "fields": [
+                                                  {"name": "item_code", "type": "STRING", "description": "Артикул"},
+                                                  {"name": "status", "type": "STRING", "description": "Статус позиции"}
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "source": {
+                                        "type": "script",
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"orders\\",\\"sql\\":\\"SELECT item_code AS item_code, status AS status FROM platform_item\\"},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${orders}\\"}}]}"
+                                      }
+                                    }
+                                  ]
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "platform_labeled_list",
+                                  "wireProfile": "anima-operator-v1",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result_field_labels.item_code").value("Артикул"))
+                .andExpect(jsonPath("$.result_field_labels.status").value("Статус позиции"));
+    }
+
+    @Test
+    void warehouseReferenceAppUsesMapScriptOnly() throws Exception {
+        String whAppId = "warehouse";
+        mockMvc.perform(post("/api/v1/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "appId": "%s",
+                                  "displayName": "Warehouse Reference App",
+                                  "tablePrefix": "",
+                                  "schemaName": "app_warehouse"
+                                }
+                                """.formatted(whAppId)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(whAppId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "1.0.0",
+                                  "displayName": "Warehouse Reference App",
+                                  "schemaName": "app_warehouse",
+                                  "migrations": [
+                                    {
+                                      "id": "wh_schema",
+                                      "sql": "CREATE TABLE IF NOT EXISTS wh_location (id UUID PRIMARY KEY, location_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); DELETE FROM wh_location; INSERT INTO wh_location (id, location_code, status) VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'A-01', 'ready'); INSERT INTO wh_location (id, location_code, status) VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'B-02', 'assigned');"
+                                    }
+                                  ],
+                                  "functions": [
+                                    {
+                                      "objectPath": "%s",
+                                      "functionName": "warehouse_listLocations",
+                                      "version": "1",
+                                      "descriptor": {
+                                        "inputSchema": { "name": "in", "fields": [] },
+                                        "outputSchema": {
+                                          "name": "out",
+                                          "fields": [
+                                            {"name": "error_code", "type": "STRING"},
+                                            {"name": "error_message", "type": "STRING"},
+                                            {
+                                              "name": "rows",
+                                              "type": "RECORD_LIST",
+                                              "nestedSchema": {
+                                                "name": "location_row",
+                                                "fields": [
+                                                  {"name": "code", "type": "STRING", "description": "Код ячейки"},
+                                                  {"name": "state", "type": "STRING", "description": "Статус ячейки"}
+                                                ]
+                                              }
+                                            }
+                                          ]
+                                        }
+                                      },
+                                      "source": {
+                                        "type": "script",
+                                        "body": "{\\"steps\\":[{\\"type\\":\\"selectMany\\",\\"var\\":\\"locations\\",\\"sql\\":\\"SELECT location_code, status FROM wh_location ORDER BY location_code\\"},{\\"type\\":\\"map\\",\\"var\\":\\"rows\\",\\"source\\":\\"${locations}\\",\\"fields\\":{\\"code\\":\\"${item.location_code}\\",\\"state\\":\\"${item.status}\\"}},{\\"type\\":\\"return\\",\\"fields\\":{\\"error_code\\":\\"OK\\",\\"error_message\\":\\"\\",\\"rows\\":\\"${rows}\\"}}]}"
+                                      }
+                                    }
+                                  ]
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "%s",
+                                  "functionName": "warehouse_listLocations",
+                                  "wireProfile": "anima-operator-v1",
+                                  "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result", hasSize(2)))
+                .andExpect(jsonPath("$.result[0].code").value("A-01"))
+                .andExpect(jsonPath("$.result_field_labels.code").value("Код ячейки"))
+                .andExpect(jsonPath("$.result_field_labels.state").value("Статус ячейки"));
     }
 
     @Test

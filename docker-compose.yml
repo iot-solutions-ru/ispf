@@ -31,13 +31,15 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_HTTP_PORT: 8180
     ports:
       - "8180:8180"
+    volumes:
+      - ./deploy/keycloak/ispf-realm.json:/opt/keycloak/data/import/ispf-realm.json:ro
 
 volumes:
   ispf_pg_data:

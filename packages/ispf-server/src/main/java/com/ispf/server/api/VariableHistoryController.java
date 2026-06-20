@@ -1,5 +1,7 @@
 package com.ispf.server.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ispf.server.federation.FederationProxyService;
 import com.ispf.server.history.VariableHistoryService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
@@ -20,9 +22,17 @@ import java.util.Locale;
 public class VariableHistoryController {
 
     private final VariableHistoryService variableHistoryService;
+    private final FederationProxyService federationProxyService;
+    private final ObjectMapper objectMapper;
 
-    public VariableHistoryController(VariableHistoryService variableHistoryService) {
+    public VariableHistoryController(
+            VariableHistoryService variableHistoryService,
+            FederationProxyService federationProxyService,
+            ObjectMapper objectMapper
+    ) {
         this.variableHistoryService = variableHistoryService;
+        this.federationProxyService = federationProxyService;
+        this.objectMapper = objectMapper;
     }
 
     @GetMapping("/history")
@@ -35,7 +45,12 @@ public class VariableHistoryController {
             @RequestParam(required = false, defaultValue = "500") int limit
     ) {
         try {
-            return variableHistoryService.query(path, name, field, from, to, limit);
+            return federationProxyService.resolve(path)
+                    .map(target -> objectMapper.convertValue(
+                            federationProxyService.proxyVariableHistory(target, name, field, from, to, limit),
+                            VariableHistoryService.VariableHistoryResponse.class
+                    ))
+                    .orElseGet(() -> variableHistoryService.query(path, name, field, from, to, limit));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
         }
@@ -52,7 +67,14 @@ public class VariableHistoryController {
             @RequestParam(required = false, defaultValue = "500") int limit
     ) {
         try {
-            return variableHistoryService.aggregate(path, name, field, from, to, bucket, limit);
+            return federationProxyService.resolve(path)
+                    .map(target -> objectMapper.convertValue(
+                            federationProxyService.proxyVariableHistoryAggregate(
+                                    target, name, field, bucket, from, to, limit
+                            ),
+                            VariableHistoryService.VariableHistoryAggregateResponse.class
+                    ))
+                    .orElseGet(() -> variableHistoryService.aggregate(path, name, field, from, to, bucket, limit));
         } catch (IllegalArgumentException e) {
             HttpStatus status = e.getMessage() != null && e.getMessage().startsWith("Unsupported bucket")
                     ? HttpStatus.BAD_REQUEST

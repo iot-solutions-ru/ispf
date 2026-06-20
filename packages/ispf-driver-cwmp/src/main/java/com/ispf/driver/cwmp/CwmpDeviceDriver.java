@@ -36,15 +36,16 @@ public class CwmpDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "cwmp",
             "TR-069 CWMP Client Driver",
-            "0.1.0",
-            "Posts CWMP Inform SOAP to an ACS and maps parameter values from the response",
+            "0.2.0",
+            "TR-069 CPE client: Periodic Inform to ACS, parses ACS RPC responses and GetParameterValues results",
             "ISPF",
             Map.of(
                     "acsUrl", "http://127.0.0.1:7547/",
                     "deviceId", "000000-000000000000",
                     "periodicInformInterval", "300",
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "300000"
+                    "pollIntervalMs", "300000",
+                    "informParameters", "Device.DeviceInfo.SoftwareVersion,Device.DeviceInfo.HardwareVersion"
             )
     );
 
@@ -53,6 +54,7 @@ public class CwmpDeviceDriver implements DeviceDriver {
     private String deviceId = "000000-000000000000";
     private long periodicInformInterval = 300;
     private long timeoutMs = 5000;
+    private java.util.List<String> informParameters = java.util.List.of("Device.DeviceInfo.SoftwareVersion");
     private HttpClient client;
     private int lastStatusCode = -1;
     private volatile boolean lastInformOk;
@@ -80,8 +82,19 @@ public class CwmpDeviceDriver implements DeviceDriver {
             case "deviceId" -> deviceId = value.trim();
             case "periodicInformInterval" -> periodicInformInterval = Long.parseLong(value.trim());
             case "timeoutMs" -> timeoutMs = Long.parseLong(value.trim());
+            case "informParameters" -> informParameters = parseInformParameters(value.trim());
             default -> { }
         }
+    }
+
+    static java.util.List<String> parseInformParameters(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return java.util.List.of("Device.DeviceInfo.SoftwareVersion");
+        }
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(part -> !part.isEmpty())
+                .toList();
     }
 
     @Override
@@ -142,6 +155,7 @@ public class CwmpDeviceDriver implements DeviceDriver {
             lastParameters.clear();
             if (response.body() != null) {
                 parseParameters(response.body(), lastParameters);
+                handleAcsRpc(response.body());
             }
         } catch (Exception e) {
             lastInformOk = false;
@@ -175,7 +189,96 @@ public class CwmpDeviceDriver implements DeviceDriver {
         }
     }
 
+    private void handleAcsRpc(String responseBody) throws DriverException {
+        if (!responseBody.contains("GetParameterValues")) {
+            return;
+        }
+        java.util.List<String> requested = extractGetParameterNames(responseBody);
+        if (requested.isEmpty()) {
+            return;
+        }
+        String response = postSoap(buildGetParameterValuesResponse(requested));
+        parseParameters(response, lastParameters);
+    }
+
+    static java.util.List<String> extractGetParameterNames(String xml) {
+        Pattern pattern = Pattern.compile(
+                "<string>([^<]+)</string>",
+                Pattern.CASE_INSENSITIVE
+        );
+        Matcher matcher = pattern.matcher(xml);
+        java.util.List<String> names = new java.util.ArrayList<>();
+        while (matcher.find()) {
+            String name = matcher.group(1).trim();
+            if (name.startsWith("Device.") || name.startsWith("InternetGatewayDevice.")) {
+                names.add(name);
+            }
+        }
+        return names;
+    }
+
+    private String postSoap(String envelope) throws DriverException {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(acsUrl))
+                    .timeout(Duration.ofMillis(timeoutMs))
+                    .header("Content-Type", "text/xml; charset=utf-8")
+                    .POST(HttpRequest.BodyPublishers.ofString(envelope))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            lastStatusCode = response.statusCode();
+            return response.body() == null ? "" : response.body();
+        } catch (Exception e) {
+            throw new DriverException("CWMP SOAP exchange failed", e);
+        }
+    }
+
+    private String buildGetParameterValuesResponse(java.util.List<String> parameterNames) {
+        StringBuilder values = new StringBuilder();
+        for (String name : parameterNames) {
+            String value = lastParameters.getOrDefault(name, "ISPF-CWMP-PLACEHOLDER");
+            values.append("""
+                      <ParameterValueStruct>
+                        <Name>%s</Name>
+                        <Value>%s</Value>
+                      </ParameterValueStruct>
+                    """.formatted(name, escapeXml(value)));
+        }
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/"
+                                   xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
+                  <soap-env:Header>
+                    <cwmp:ID soap-env:mustUnderstand="1">2</cwmp:ID>
+                  </soap-env:Header>
+                  <soap-env:Body>
+                    <cwmp:GetParameterValuesResponse>
+                      <ParameterList soap-env:arrayType="cwmp:ParameterValueStruct[%d]">
+                %s
+                      </ParameterList>
+                    </cwmp:GetParameterValuesResponse>
+                  </soap-env:Body>
+                </soap-env:Envelope>
+                """.formatted(parameterNames.size(), values);
+    }
+
+    private static String escapeXml(String raw) {
+        return raw.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
+
     private String buildInformEnvelope() {
+        StringBuilder parameterValues = new StringBuilder();
+        for (String name : informParameters) {
+            parameterValues.append("""
+                        <ParameterValueStruct>
+                          <Name>%s</Name>
+                          <Value>ISPF</Value>
+                        </ParameterValueStruct>
+                    """.formatted(name));
+        }
         return """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/"
@@ -197,15 +300,12 @@ public class CwmpDeviceDriver implements DeviceDriver {
                       <MaxEnvelopes>1</MaxEnvelopes>
                       <CurrentTime>2020-01-01T00:00:00Z</CurrentTime>
                       <RetryCount>0</RetryCount>
-                      <ParameterList soap-env:arrayType="cwmp:ParameterValueStruct[1]">
-                        <ParameterValueStruct>
-                          <Name>Device.DeviceInfo.SoftwareVersion</Name>
-                          <Value>1.0</Value>
-                        </ParameterValueStruct>
+                      <ParameterList soap-env:arrayType="cwmp:ParameterValueStruct[%d]">
+                %s
                       </ParameterList>
                     </cwmp:Inform>
                   </soap-env:Body>
                 </soap-env:Envelope>
-                """.formatted(deviceId);
+                """.formatted(deviceId, informParameters.size(), parameterValues);
     }
 }

@@ -5,6 +5,7 @@ import { registerApplication } from "../api/applications";
 import { createOperatorApp } from "../api/operatorApps";
 import { fetchDrivers } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
+import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
 import {
   applicationObjectPath,
   operatorAppObjectPath,
@@ -210,17 +211,20 @@ export default function CreateObjectDialog({
               <>
                 <label>
                   Драйвер *
-                  <select
-                    value={driverId}
-                    onChange={(e) => handleDriverChange(e.target.value)}
-                    disabled={driversQuery.isLoading}
-                  >
-                    {(driversQuery.data ?? []).map((driver) => (
-                      <option key={driver.id} value={driver.id}>
-                        {driver.id} — {driver.name}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="inline-badge-wrap">
+                    <select
+                      value={driverId}
+                      onChange={(e) => handleDriverChange(e.target.value)}
+                      disabled={driversQuery.isLoading}
+                    >
+                      {(driversQuery.data ?? []).map((driver) => (
+                        <option key={driver.id} value={driver.id}>
+                          {formatDriverOptionLabel(driver.id, driver.name, driver.maturity)}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedDriver && <DriverMaturityBadge maturity={selectedDriver.maturity} />}
+                  </span>
                 </label>
                 <label>
                   Интервал опроса (мс)

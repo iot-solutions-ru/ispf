@@ -3,7 +3,6 @@ package com.ispf.server.workflow;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ObjectChangeEvent;
-import com.ispf.server.object.ObjectChangeType;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.Options;
@@ -32,6 +31,10 @@ public class NatsEventBridge {
         this.connection = properties.enabled() ? connect() : null;
     }
 
+    public Connection connection() {
+        return connection;
+    }
+
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) {
         if (!properties.enabled() || connection == null) {
@@ -39,16 +42,19 @@ public class NatsEventBridge {
         }
         try {
             String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase();
-            String payload = objectMapper.writeValueAsString(Map.of(
-                    "type", event.type().name(),
-                    "path", event.path(),
-                    "variableName", event.variableName(),
-                    "timestamp", event.timestamp().toString()
-            ));
+            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("type", event.type().name());
+            body.put("path", event.path());
+            if (event.variableName() != null) {
+                body.put("variableName", event.variableName());
+            }
+            body.put("timestamp", event.timestamp().toString());
+            body.put("source", properties.replicaId());
+            String payload = objectMapper.writeValueAsString(body);
             connection.publish(subject, payload.getBytes(StandardCharsets.UTF_8));
-            if (event.type() == ObjectChangeType.VARIABLE_UPDATED && event.variableName() != null) {
+            if (properties.replicaEventsEnabled()) {
                 connection.publish(
-                        "ispf.events.variable.updated",
+                        "ispf.events." + event.type().name().toLowerCase(),
                         payload.getBytes(StandardCharsets.UTF_8)
                 );
             }
@@ -74,6 +80,7 @@ public class NatsEventBridge {
             Map<String, Object> body = new java.util.HashMap<>(payload);
             body.put("workflowPath", workflowPath);
             body.put("event", event);
+            body.put("source", properties.replicaId());
             publish("ispf.workflow." + sanitize(workflowPath) + "." + event, objectMapper.writeValueAsString(body));
         } catch (Exception e) {
             log.warn("Failed to publish workflow NATS event: {}", e.getMessage());
@@ -99,7 +106,7 @@ public class NatsEventBridge {
         try {
             Options options = new Options.Builder()
                     .server(properties.url())
-                    .connectionName("ispf-server")
+                    .connectionName("ispf-server-" + properties.replicaId().substring(0, 8))
                     .connectionTimeout(Duration.ofSeconds(2))
                     .maxReconnects(3)
                     .build();

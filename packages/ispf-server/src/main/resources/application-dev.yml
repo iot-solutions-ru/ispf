@@ -12,6 +12,7 @@ ispf:
   nats:
     enabled: true
     url: nats://localhost:4222
+    replica-events-enabled: true
 
 logging:
   level:

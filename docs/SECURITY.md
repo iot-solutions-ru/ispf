@@ -9,7 +9,7 @@ ISPF использует **ролевой доступ** на уровне HTTP
 | `admin` | `ROLE_admin` |
 | `operator` | `ROLE_operator` |
 
-Per-object ACL — в roadmap ([ARCHITECTURE.md](ARCHITECTURE.md)).
+Per-object ACL — см. [SECURITY.md](SECURITY.md) (`object_acl_entries`, вкладка «Доступ» в Web Console).
 
 ## Профили аутентификации
 
@@ -33,7 +33,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 curl -H "Authorization: Bearer <token>" http://localhost:8080/api/v1/objects
 ```
 
-Web Console: экран входа; сессия хранится в `localStorage`. Админ управляет пользователями в дереве `root.platform.security.users`.
+Web Console: экран входа; сессия хранится в `localStorage`. В профиле `dev`/prod — **OIDC Authorization Code + PKCE** через Keycloak (кнопка «Войти через Keycloak»). Конфигурация: `GET /api/v1/auth/config`. Админ управляет пользователями в дереве `root.platform.security.users`.
 
 **Автозапуск приложения:** у пользователя можно включить `autoStartEnabled` и указать `autoStartApp` (id operator app, список — `GET /api/v1/operator-apps`). После входа Web Console открывает operator-приложение вместо админ-консоли.
 
@@ -48,6 +48,7 @@ Web Console: экран входа; сессия хранится в `localStora
 | `POST /api/v1/security/users/{username}/password` | Сменить пароль |
 | `POST /api/v1/auth/logout` | Завершить сессию |
 | `GET /api/v1/auth/me` | Текущий пользователь (с токеном) |
+| `GET /api/v1/auth/config` | Режим auth (`local` / `oidc`) для Web Console |
 
 Пользователи и роли синхронизируются в дерево объектов (см. [OBJECT_MODEL.md](OBJECT_MODEL.md)).
 
@@ -104,7 +105,18 @@ Docker Compose поднимает Keycloak на порту **8180**.
 5. Назначить роли пользователям
 6. Запуск сервера: `--spring.profiles.active=dev`
 
-Web Console (будущее): интеграция OIDC login; сейчас в dev можно использовать API напрямую с JWT.
+Web Console (профиль `dev`): кнопка **Войти через Keycloak** (OIDC PKCE, client `ispf-web-console`). Realm импортируется из `deploy/keycloak/ispf-realm.json` при `docker compose up`.
+
+### Per-object ACL
+
+| Endpoint | Описание |
+|----------|----------|
+| `GET /api/v1/objects/by-path/acl?path=` | Список правил ACL объекта |
+| `PUT /api/v1/objects/by-path/acl?path=` | Заменить правила ACL |
+
+Правила: `principalType` (`ROLE`/`USER`), `principalId`, `permission` (`READ`/`WRITE`/`INVOKE`). Если на объекте или предке нет правил — действует глобальный RBAC. `admin` всегда имеет полный доступ.
+
+Web Console: вкладка **Доступ** в инспекторе объекта (admin).
 
 ## Переменные
 

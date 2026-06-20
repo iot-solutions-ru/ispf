@@ -24,6 +24,16 @@ public class PlatformBootstrap {
         );
         tree.register(platform);
 
+        PlatformObject tenants = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.tenant",
+                ObjectType.TENANT,
+                "Tenants",
+                "Multi-tenant namespaces (root.tenant.{id}.platform.*)",
+                null
+        );
+        tree.register(tenants);
+
         PlatformObject devices = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.devices",
@@ -133,6 +143,16 @@ public class PlatformBootstrap {
                 null
         );
         tree.register(operatorApps);
+
+        PlatformObject federation = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.federation",
+                ObjectType.AGENT,
+                "Federation",
+                "Remote ISPF sites — peer registry and cross-site object proxy (PF-13 spike)",
+                null
+        );
+        tree.register(federation);
 
         PlatformObject demoWorkflow = new PlatformObject(
                 UUID.randomUUID().toString(),

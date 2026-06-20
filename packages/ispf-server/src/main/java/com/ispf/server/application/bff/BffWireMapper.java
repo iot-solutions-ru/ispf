@@ -22,7 +22,7 @@ final class BffWireMapper {
         String errorCode = stringValue(row.remove("error_code"), "OK");
         String errorMessage = stringValue(row.remove("error_message"), "");
 
-        if ("anima-operator-v1".equals(wireProfile)) {
+        if (AnimaOperatorWireProfile.ID.equals(wireProfile)) {
             return toAnimaOperatorWire(errorCode, errorMessage, row, outputSchema, wireProfile);
         }
 
@@ -45,6 +45,8 @@ final class BffWireMapper {
             DataSchema outputSchema,
             String wireProfile
     ) {
+        Map<String, String> profileDefaults = AnimaOperatorWireProfile.defaultFieldLabels();
+
         Map<String, Object> wire = new LinkedHashMap<>();
         wire.put("error_code", errorCode);
         wire.put("error_message", "OK".equals(errorCode) ? "" : errorMessage);
@@ -57,10 +59,10 @@ final class BffWireMapper {
         Object tableResult = unwrapTableResult(row);
         if (tableResult instanceof List<?>) {
             wire.put("result", tableResult);
-            wire.put("result_field_labels", tableLabels(outputSchema, (List<?>) tableResult));
+            wire.put("result_field_labels", tableLabels(outputSchema, (List<?>) tableResult, profileDefaults));
         } else if (!row.isEmpty()) {
             wire.put("result", row);
-            wire.put("result_field_labels", scalarLabels(row));
+            wire.put("result_field_labels", scalarLabels(row, outputSchema, profileDefaults));
         } else {
             wire.put("result", Map.of());
             wire.put("result_field_labels", Map.of());
@@ -83,31 +85,60 @@ final class BffWireMapper {
         return row;
     }
 
-    private static Map<String, String> tableLabels(DataSchema outputSchema, List<?> rows) {
+    private static Map<String, String> tableLabels(
+            DataSchema outputSchema,
+            List<?> rows,
+            Map<String, String> profileDefaults
+    ) {
         if (outputSchema != null) {
             for (FieldDefinition field : outputSchema.fields()) {
                 if (field.type() == FieldType.RECORD_LIST && field.nestedSchema() != null) {
-                    Map<String, String> labels = new LinkedHashMap<>();
-                    for (FieldDefinition nested : field.nestedSchema().fields()) {
-                        labels.put(nested.name(), nested.name());
-                    }
+                    Map<String, String> labels = AnimaOperatorWireProfile.labelsFromSchemaFields(
+                            field.nestedSchema().fields(),
+                            profileDefaults
+                    );
                     if (!labels.isEmpty()) {
                         return labels;
                     }
                 }
             }
+            Map<String, String> labels = AnimaOperatorWireProfile.labelsFromSchemaFields(
+                    outputSchema.fields(),
+                    profileDefaults
+            );
+            labels.remove("error_code");
+            labels.remove("error_message");
+            if (!labels.isEmpty()) {
+                return labels;
+            }
         }
         if (!rows.isEmpty() && rows.get(0) instanceof Map<?, ?> firstRow) {
             Map<String, String> labels = new LinkedHashMap<>();
-            firstRow.keySet().forEach(key -> labels.put(String.valueOf(key), String.valueOf(key)));
+            firstRow.keySet().forEach(key -> {
+                String name = String.valueOf(key);
+                labels.put(name, AnimaOperatorWireProfile.resolveLabel(name, null, profileDefaults));
+            });
             return labels;
         }
         return Map.of();
     }
 
-    private static Map<String, String> scalarLabels(Map<String, Object> row) {
+    private static Map<String, String> scalarLabels(
+            Map<String, Object> row,
+            DataSchema outputSchema,
+            Map<String, String> profileDefaults
+    ) {
+        Map<String, String> schemaByName = new LinkedHashMap<>();
+        if (outputSchema != null) {
+            for (FieldDefinition field : outputSchema.fields()) {
+                schemaByName.put(field.name(), field.description());
+            }
+        }
         Map<String, String> labels = new LinkedHashMap<>();
-        row.keySet().forEach(key -> labels.put(key, key));
+        row.keySet().forEach(key -> labels.put(
+                key,
+                AnimaOperatorWireProfile.resolveLabel(key, schemaByName.get(key), profileDefaults)
+        ));
         return labels;
     }
 

@@ -38,4 +38,29 @@ class CwmpPointTest {
         CwmpDeviceDriver.parseParameters(xml, params);
         assertEquals("2.1.0", params.get("Device.DeviceInfo.SoftwareVersion"));
     }
+
+    @Test
+    void parsesInformParametersConfig() {
+        assertEquals(
+                java.util.List.of("Device.DeviceInfo.SoftwareVersion", "Device.DeviceInfo.HardwareVersion"),
+                CwmpDeviceDriver.parseInformParameters(
+                        "Device.DeviceInfo.SoftwareVersion, Device.DeviceInfo.HardwareVersion"
+                )
+        );
+    }
+
+    @Test
+    void extractsGetParameterNamesFromAcsRpc() {
+        String xml = """
+                <GetParameterValues>
+                  <ParameterNames soap-enc:arrayType="xsd:string[1]">
+                    <string>Device.DeviceInfo.SerialNumber</string>
+                  </ParameterNames>
+                </GetParameterValues>
+                """;
+        assertEquals(
+                java.util.List.of("Device.DeviceInfo.SerialNumber"),
+                CwmpDeviceDriver.extractGetParameterNames(xml)
+        );
+    }
 }

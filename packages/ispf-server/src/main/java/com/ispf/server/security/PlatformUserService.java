@@ -8,6 +8,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.tenant.TenantStore;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ public class PlatformUserService {
     private final ObjectManager objectManager;
     private final PasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper;
+    private final TenantStore tenantStore;
 
     public PlatformUserService(
             PlatformUserStore userStore,
@@ -44,7 +46,8 @@ public class PlatformUserService {
             PlatformUserObjectTreeService objectTreeService,
             ObjectManager objectManager,
             PasswordEncoder passwordEncoder,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            TenantStore tenantStore
     ) {
         this.userStore = userStore;
         this.roleService = roleService;
@@ -53,6 +56,7 @@ public class PlatformUserService {
         this.objectManager = objectManager;
         this.passwordEncoder = passwordEncoder;
         this.objectMapper = objectMapper;
+        this.tenantStore = tenantStore;
     }
 
     @Transactional
@@ -90,6 +94,7 @@ public class PlatformUserService {
         if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
             response.put("autoStartApp", user.autoStartApp());
         }
+        tenantStore.findTenantIdForUser(user.username()).ifPresent(tenantId -> response.put("tenantId", tenantId));
         return response;
     }
 
@@ -276,6 +281,7 @@ public class PlatformUserService {
             summary.put("autoStartApp", user.autoStartApp());
         }
         summary.put("objectPath", user.objectPath());
+        tenantStore.findTenantIdForUser(user.username()).ifPresent(tenantId -> summary.put("tenantId", tenantId));
         summary.put("createdAt", user.createdAt().toString());
         summary.put("updatedAt", user.updatedAt().toString());
         return summary;

@@ -38,6 +38,7 @@ public class VariableHistoryService {
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
+    private final TimescaleHypertableInitializer timescaleHypertableInitializer;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -48,7 +49,8 @@ public class VariableHistoryService {
             ObjectVariableRepository variableRepository,
             ObjectManager objectManager,
             ObjectMapper objectMapper,
-            PlatformLeaderLockService leaderLockService
+            PlatformLeaderLockService leaderLockService,
+            TimescaleHypertableInitializer timescaleHypertableInitializer
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
@@ -56,6 +58,7 @@ public class VariableHistoryService {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
+        this.timescaleHypertableInitializer = timescaleHypertableInitializer;
     }
 
     @Transactional
@@ -357,6 +360,9 @@ public class VariableHistoryService {
     }
 
     void purgeExpiredSamplesInternal() {
+        if (timescaleHypertableInitializer.isTimescaleRetentionActive()) {
+            return;
+        }
         Instant now = Instant.now();
         for (ObjectVariableEntity entity : variableRepository.findByHistoryEnabledTrue()) {
             int retentionDays = resolveRetentionDays(entity);

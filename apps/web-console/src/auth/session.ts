@@ -8,6 +8,8 @@ export interface AuthSession {
   autoStartEnabled?: boolean;
   /** Operator manifest app id (e.g. demo, oil-terminal). */
   autoStartApp?: string;
+  /** Tenant namespace for scoped operators (root.tenant.{id}.*). */
+  tenantId?: string;
 }
 
 const SESSION_KEY = "ispf-auth-session";

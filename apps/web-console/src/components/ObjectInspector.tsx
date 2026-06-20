@@ -17,6 +17,9 @@ import VariableHistoryPanel from "./VariableHistoryPanel";
 import { formatHistoryRetention } from "./VariableHistoryFields";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import ApplicationDeployPanel from "./ApplicationDeployPanel";
+import ObjectAclPanel from "./ObjectAclPanel";
+import { resolveApplicationAppId } from "../utils/applicationPath";
 
 interface ObjectInspectorProps {
   path: string;
@@ -24,7 +27,7 @@ interface ObjectInspectorProps {
   canManage?: boolean;
 }
 
-type Tab = "general" | "variables" | "events" | "functions" | "driver";
+type Tab = "general" | "variables" | "events" | "functions" | "driver" | "deploy" | "access";
 
 export default function ObjectInspector({ path, onDeleted, canManage = false }: ObjectInspectorProps) {
   const queryClient = useQueryClient();
@@ -105,14 +108,24 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const isRoot = path === "root";
   const canDelete = canDeleteObjectPath(path);
   const isDevice = obj.type === "DEVICE";
+  const isApplication = obj.type === "APPLICATION";
+  const applicationAppId = isApplication ? resolveApplicationAppId(path, obj.description) : null;
   const tabs: Tab[] = isDevice
     ? ["general", "driver", "variables", "events", "functions"]
-    : ["general", "variables", "events", "functions"];
+    : isApplication
+      ? ["general", "deploy", "variables", "events", "functions"]
+      : canManage
+        ? ["general", "access", "variables", "events", "functions"]
+        : ["general", "variables", "events", "functions"];
 
   const tabLabel = (t: Tab) => {
     switch (t) {
       case "general":
         return "Свойства";
+      case "deploy":
+        return "Deploy";
+      case "access":
+        return "Доступ";
       case "driver":
         return "Драйвер";
       case "variables":
@@ -168,6 +181,24 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
       {tab === "driver" && isDevice && (
         <section className="panel">
           <DeviceDriverPanel devicePath={path} canManage={canManage} />
+        </section>
+      )}
+
+      {tab === "deploy" && isApplication && applicationAppId && (
+        <section className="panel">
+          <ApplicationDeployPanel appId={applicationAppId} canManage={canManage} />
+        </section>
+      )}
+
+      {tab === "deploy" && isApplication && !applicationAppId && (
+        <section className="panel">
+          <p className="op-muted">Не удалось определить appId для этого приложения.</p>
+        </section>
+      )}
+
+      {tab === "access" && canManage && (
+        <section className="panel">
+          <ObjectAclPanel objectPath={path} canManage={canManage} />
         </section>
       )}
 

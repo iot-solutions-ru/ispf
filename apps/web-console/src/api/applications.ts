@@ -7,6 +7,20 @@ export interface RegisterApplicationPayload {
   schemaName?: string;
 }
 
+export interface DeployHistoryEntry {
+  version: string;
+  deployedAt: string;
+  active: boolean;
+}
+
+export interface DeployRollbackResult {
+  status?: string;
+  rolledBackTo?: string;
+  applied?: string[];
+  skipped?: string[];
+  errors?: string[];
+}
+
 export async function registerApplication(
   payload: RegisterApplicationPayload
 ): Promise<{ appId: string; displayName: string }> {
@@ -28,4 +42,34 @@ export async function registerApplication(
     throw new Error(text || `Register application failed: ${response.status}`);
   }
   return response.json() as Promise<{ appId: string; displayName: string }>;
+}
+
+export async function fetchDeployHistory(appId: string): Promise<DeployHistoryEntry[]> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/deploy/history`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Deploy history failed: ${response.status}`);
+  }
+  return response.json() as Promise<DeployHistoryEntry[]>;
+}
+
+export async function rollbackDeploy(
+  appId: string,
+  version: string
+): Promise<DeployRollbackResult> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/deploy/rollback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ version }),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Deploy rollback failed: ${response.status}`);
+  }
+  return response.json() as Promise<DeployRollbackResult>;
 }

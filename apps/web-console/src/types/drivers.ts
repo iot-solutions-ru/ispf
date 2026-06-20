@@ -1,3 +1,5 @@
+export type DriverMaturity = "PRODUCTION" | "BETA" | "STUB";
+
 export interface DriverMetadata {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export interface DriverMetadata {
   description: string;
   vendor: string;
   configurationSchema: Record<string, string>;
+  maturity?: DriverMaturity;
 }
 
 export interface DriverRuntimeStatus {

@@ -1,10 +1,14 @@
 package com.ispf.server.api;
 
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,9 +27,38 @@ import java.util.Map;
 public class AuthController {
 
     private final PlatformUserService userService;
+    private final IspfSecurityProperties securityProperties;
+    private final Environment environment;
+    private final String oauthIssuerUri;
 
-    public AuthController(PlatformUserService userService) {
+    public AuthController(
+            PlatformUserService userService,
+            IspfSecurityProperties securityProperties,
+            Environment environment,
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri
+    ) {
         this.userService = userService;
+        this.securityProperties = securityProperties;
+        this.environment = environment;
+        this.oauthIssuerUri = oauthIssuerUri;
+    }
+
+    @GetMapping("/config")
+    public Map<String, Object> config() {
+        boolean localProfile = environment.acceptsProfiles(Profiles.of("local", "test"));
+        Map<String, Object> response = new LinkedHashMap<>();
+        if (localProfile) {
+            response.put("mode", "local");
+            response.put("localLoginEnabled", securityProperties.isTokenAuthEnabled());
+            return response;
+        }
+        response.put("mode", "oidc");
+        response.put("localLoginEnabled", false);
+        Map<String, Object> oidc = new LinkedHashMap<>();
+        oidc.put("issuer", oauthIssuerUri);
+        oidc.put("clientId", securityProperties.getOidcClientId());
+        response.put("oidc", oidc);
+        return response;
     }
 
     @PostMapping("/login")

@@ -3358,6 +3358,71 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .driver-panel-head h3 {
   margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.driver-maturity-badge {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+  vertical-align: middle;
+}
+
+.driver-maturity-badge.production {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.driver-maturity-badge.beta {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.driver-maturity-badge.stub {
+  color: #f97316;
+  border-color: rgba(249, 115, 22, 0.35);
+  background: rgba(249, 115, 22, 0.08);
+}
+
+.inline-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inline-badge-wrap select {
+  flex: 1 1 12rem;
+  min-width: 12rem;
+}
+
+.federation-probe {
+  margin-top: 1rem;
+}
+
+.federation-probe-result {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-2, #0f172a);
+  border-radius: 8px;
+  max-height: 240px;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+
+.btn.danger.compact {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 .driver-status-badge {

@@ -5,6 +5,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,19 +21,23 @@ public class BffController {
     private final FunctionService functionService;
     private final ApplicationFunctionStore functionStore;
     private final ObjectMapper objectMapper;
+    private final ObjectAccessService objectAccessService;
 
     public BffController(
             FunctionService functionService,
             ApplicationFunctionStore functionStore,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            ObjectAccessService objectAccessService
     ) {
         this.functionService = functionService;
         this.functionStore = functionStore;
         this.objectMapper = objectMapper;
+        this.objectAccessService = objectAccessService;
     }
 
     @PostMapping("/invoke")
-    public Map<String, Object> invoke(@RequestBody BffInvokeRequest request) {
+    public Map<String, Object> invoke(@RequestBody BffInvokeRequest request, Authentication authentication) {
+        objectAccessService.requireInvoke(request.objectPath(), authentication);
         DataRecord output = functionService.invoke(
                 request.objectPath(),
                 request.functionName(),

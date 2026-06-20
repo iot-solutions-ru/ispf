@@ -15,6 +15,7 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(
                 "/api/v1/info",
                 "/api/v1/auth/login",
+                "/api/v1/auth/config",
                 "/api/v1/auth/me",
                 "/actuator/health",
                 "/actuator/prometheus",
@@ -71,6 +72,12 @@ public final class IspfAuthorizationRules {
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
         auth.requestMatchers("/api/v1/security/**")
+                .hasRole(IspfRoles.ADMIN);
+
+        auth.requestMatchers("/api/v1/federation/**")
+                .hasRole(IspfRoles.ADMIN);
+
+        auth.requestMatchers("/api/v1/tenants/**")
                 .hasRole(IspfRoles.ADMIN);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/applications/*/reports/*/run")

@@ -27,7 +27,11 @@ export function readSelectedPath(): string {
   return sessionStorage.getItem(SELECTED_KEY) ?? "root";
 }
 
-export function writeSelectedPath(path: string): void {
+export function writeSelectedPath(path: string | null): void {
+  if (!path) {
+    sessionStorage.removeItem(SELECTED_KEY);
+    return;
+  }
   sessionStorage.setItem(SELECTED_KEY, path);
 }
 

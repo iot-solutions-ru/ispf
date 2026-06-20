@@ -21,6 +21,11 @@ public class IspfSecurityProperties {
      */
     private boolean tokenAuthEnabled = true;
 
+    /**
+     * OIDC client id for Web Console (Authorization Code + PKCE).
+     */
+    private String oidcClientId = "ispf-web-console";
+
     public boolean isRbacEnabled() {
         return rbacEnabled;
     }
@@ -43,5 +48,13 @@ public class IspfSecurityProperties {
 
     public void setTokenAuthEnabled(boolean tokenAuthEnabled) {
         this.tokenAuthEnabled = tokenAuthEnabled;
+    }
+
+    public String getOidcClientId() {
+        return oidcClientId;
+    }
+
+    public void setOidcClientId(String oidcClientId) {
+        this.oidcClientId = oidcClientId;
     }
 }

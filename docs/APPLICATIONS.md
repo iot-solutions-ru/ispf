@@ -208,7 +208,7 @@ Content-Type: application/json
 | Успех | `error_code === "OK"`, `error_message === ""` |
 | Ошибка | `result` отсутствует |
 | Таблица | `result` = массив строк (unwrap поля `rows`) |
-| Подписи | `result_field_labels` из output schema |
+| Подписи | `result_field_labels`: `description` поля output schema → profile map `anima-operator-v1` → имя поля |
 
 Ответ (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "anima-operator-v1" }`.
 

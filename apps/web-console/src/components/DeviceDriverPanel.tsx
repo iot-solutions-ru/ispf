@@ -9,6 +9,7 @@ import {
   stopDriver,
 } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
+import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
 import type { VariableDto } from "../types";
 
 interface DeviceDriverPanelProps {
@@ -185,7 +186,10 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
     <section className="driver-panel">
       <header className="driver-panel-head">
         <div>
-          <h3>Драйвер устройства</h3>
+          <h3>
+            Драйвер устройства
+            {selectedDriver && <DriverMaturityBadge maturity={selectedDriver.maturity} />}
+          </h3>
           <p className="hint">
             Управление poll loop и конфигурацией. Для SNMP/MQTT/Modbus сначала задайте конфигурацию, затем «Старт».
           </p>
@@ -276,7 +280,7 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                 >
                   {(driversQuery.data ?? []).map((driver) => (
                     <option key={driver.id} value={driver.id}>
-                      {driver.id} — {driver.name}
+                      {formatDriverOptionLabel(driver.id, driver.name, driver.maturity)}
                     </option>
                   ))}
                   {driversQuery.data && !driversQuery.data.some((d) => d.id === driverId) && driverId && (
