@@ -51,6 +51,7 @@ public class ReportController {
                 path,
                 new ReportService.SaveReportDefinitionRequest(
                         request.title(),
+                        request.dataSourcePath(),
                         request.appId(),
                         request.query(),
                         request.parameters(),
@@ -61,9 +62,18 @@ public class ReportController {
                                         .toList(),
                         request.defaultParameters(),
                         request.maxRows(),
-                        request.refreshIntervalMs()
+                        request.refreshIntervalMs(),
+                        request.layout()
                 )
         );
+    }
+
+    @PutMapping("/by-path/layout")
+    public ReportService.ReportView saveLayout(
+            @RequestParam String path,
+            @RequestBody LayoutRequest request
+    ) {
+        return reportService.saveLayout(path, request.layout());
     }
 
     @PostMapping("/by-path/run")
@@ -168,14 +178,19 @@ public class ReportController {
 
     public record SaveDefinitionRequest(
             String title,
+            String dataSourcePath,
             String appId,
             @NotBlank String query,
             List<String> parameters,
             List<ReportColumnDto> columns,
             Map<String, Object> defaultParameters,
             Integer maxRows,
-            Integer refreshIntervalMs
+            Integer refreshIntervalMs,
+            String layout
     ) {
+    }
+
+    public record LayoutRequest(String layout) {
     }
 
     public record ReportColumnDto(String field, String label) {

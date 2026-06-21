@@ -54,7 +54,7 @@ export default function CreateObjectDialog({
   const [driverId, setDriverId] = useState("virtual");
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [configPreview, setConfigPreview] = useState("{}");
-  const [reportAppId, setReportAppId] = useState("demo");
+  const [reportDataSourcePath, setReportDataSourcePath] = useState("root.platform.data-sources.demo");
 
   const dialogTitle = useMemo(() => {
     switch (mode) {
@@ -135,11 +135,11 @@ export default function CreateObjectDialog({
           description,
           templateId: "report-v1",
         });
-        const appId = reportAppId.trim();
-        if (appId) {
+        const dataSourcePath = reportDataSourcePath.trim();
+        if (dataSourcePath) {
           await saveReportDefinition(obj.path, {
             title: displayName || name,
-            appId,
+            dataSourcePath,
             query: "SELECT 1 AS value",
             parameters: [],
             columns: [{ field: "value", label: "Value" }],
@@ -212,11 +212,11 @@ export default function CreateObjectDialog({
                 SQL-отчёт в <code>{parentPath}</code>. После создания откроется редактор с preview и CSV.
               </p>
               <label>
-                appId deploy-приложения *
+                Data source path *
                 <input
-                  value={reportAppId}
-                  onChange={(e) => setReportAppId(e.target.value)}
-                  placeholder="demo"
+                  value={reportDataSourcePath}
+                  onChange={(e) => setReportDataSourcePath(e.target.value)}
+                  placeholder="root.platform.data-sources.demo"
                   required
                 />
               </label>

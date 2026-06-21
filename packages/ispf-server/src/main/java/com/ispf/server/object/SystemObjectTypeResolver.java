@@ -12,6 +12,10 @@ public final class SystemObjectTypeResolver {
             Map.entry("root.platform.devices", ObjectType.DEVICES),
             Map.entry("root.platform.dashboards", ObjectType.DASHBOARDS),
             Map.entry("root.platform.reports", ObjectType.REPORTS),
+            Map.entry("root.platform.data-sources", ObjectType.DATA_SOURCES),
+            Map.entry("root.platform.schedules", ObjectType.SCHEDULES),
+            Map.entry("root.platform.bindings", ObjectType.BINDINGS),
+            Map.entry("root.platform.migrations", ObjectType.MIGRATIONS),
             Map.entry("root.platform.workflows", ObjectType.WORKFLOWS),
             Map.entry("root.platform.alert-rules", ObjectType.ALERT_RULES),
             Map.entry("root.platform.correlators", ObjectType.CORRELATORS),
@@ -22,14 +26,18 @@ public final class SystemObjectTypeResolver {
             Map.entry("root.platform.security.roles", ObjectType.ROLES)
     );
 
-    private static final Map<String, ObjectType> BY_TEMPLATE = Map.of(
-            "platform-role-v1", ObjectType.ROLE,
-            "application-function-v1", ObjectType.FUNCTION,
-            "application-schedule-v1", ObjectType.SCHEDULE,
-            "application-binding-v1", ObjectType.BINDING,
-            "application-migration-v1", ObjectType.MIGRATION,
-            "operator-screen-v1", ObjectType.SCREEN,
-            "report-v1", ObjectType.REPORT
+    private static final Map<String, ObjectType> BY_TEMPLATE = Map.ofEntries(
+            Map.entry("platform-role-v1", ObjectType.ROLE),
+            Map.entry("application-function-v1", ObjectType.FUNCTION),
+            Map.entry("application-schedule-v1", ObjectType.SCHEDULE),
+            Map.entry("application-binding-v1", ObjectType.BINDING),
+            Map.entry("application-migration-v1", ObjectType.MIGRATION),
+            Map.entry("operator-screen-v1", ObjectType.SCREEN),
+            Map.entry("report-v1", ObjectType.REPORT),
+            Map.entry("data-source-v1", ObjectType.DATA_SOURCE),
+            Map.entry("schedule-v1", ObjectType.SCHEDULE),
+            Map.entry("sql-binding-v1", ObjectType.BINDING),
+            Map.entry("migration-v1", ObjectType.MIGRATION)
     );
 
     private SystemObjectTypeResolver() {
@@ -56,6 +64,9 @@ public final class SystemObjectTypeResolver {
     private static ObjectType resolveFolderSuffix(String path) {
         if (path.endsWith(".reports")) {
             return ObjectType.REPORTS;
+        }
+        if (path.endsWith(".data-sources")) {
+            return ObjectType.DATA_SOURCES;
         }
         if (path.endsWith(".functions")) {
             return ObjectType.FUNCTIONS;

@@ -39,6 +39,10 @@ public enum ObjectType {
     ROLES,
     /** Platform role definition. */
     ROLE,
+    /** SQL data source catalog folder. */
+    DATA_SOURCES,
+    /** JDBC schema reference for reports, bindings, script SQL. */
+    DATA_SOURCE,
     /** Application reports folder. */
     REPORTS,
     REPORT,

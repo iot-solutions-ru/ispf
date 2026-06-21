@@ -707,8 +707,8 @@ public class ModelBootstrap {
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Report"))
                         ),
                         ModelVariableDefinition.of(
-                                "appId",
-                                "Application id — SQL runs in app schema",
+                                "dataSourcePath",
+                                "Data source object path for SQL schema",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
@@ -779,6 +779,16 @@ public class ModelBootstrap {
                         ModelVariableDefinition.of(
                                 "templateFormat",
                                 "YARG template format: xlsx, docx, html (empty = no template)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "layout",
+                                "Report layout JSON (web designer)",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,

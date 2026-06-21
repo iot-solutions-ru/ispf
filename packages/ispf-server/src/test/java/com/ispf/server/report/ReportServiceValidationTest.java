@@ -20,16 +20,6 @@ class ReportServiceValidationTest {
     }
 
     @Test
-    void rejectsBlankAppId() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                ReportService.validateAppId(""));
-        assertEquals(
-                "Report appId is required — set deploy-application id (e.g. demo) in report editor",
-                ex.getMessage()
-        );
-    }
-
-    @Test
     void reportPathSanitizesReportId() {
         assertEquals("root.platform.reports.ready-items", ReportService.reportPath("ready-items"));
         assertEquals("root.platform.reports.tree-report", ReportService.reportPath("tree-report"));

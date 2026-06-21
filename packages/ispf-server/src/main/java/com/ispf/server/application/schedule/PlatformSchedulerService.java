@@ -5,6 +5,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,17 +27,20 @@ public class PlatformSchedulerService {
     private final FunctionService functionService;
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
+    private final ScheduleObjectService scheduleObjectService;
 
     public PlatformSchedulerService(
             JdbcTemplate jdbcTemplate,
             FunctionService functionService,
             ObjectMapper objectMapper,
-            PlatformLeaderLockService leaderLockService
+            PlatformLeaderLockService leaderLockService,
+            ScheduleObjectService scheduleObjectService
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.functionService = functionService;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
+        this.scheduleObjectService = scheduleObjectService;
     }
 
     public void upsert(PlatformSchedule schedule) {
@@ -97,6 +101,27 @@ public class PlatformSchedulerService {
     }
 
     void tickSchedules() {
+        tickTreeSchedules();
+        tickLegacySchedules();
+    }
+
+    private void tickTreeSchedules() {
+        Instant now = Instant.now();
+        for (com.ispf.server.schedule.ScheduleObjectService.ScheduleDefinition schedule : scheduleObjectService.listEnabled()) {
+            if (schedule.lastTickAt() != null
+                    && schedule.lastTickAt().plusMillis(schedule.intervalMs()).isAfter(now)) {
+                continue;
+            }
+            try {
+                executeAction(schedule.actionType(), schedule.actionJson());
+                scheduleObjectService.recordTick(schedule.path(), now, null);
+            } catch (Exception ex) {
+                scheduleObjectService.recordTick(schedule.path(), now, ex.getMessage());
+            }
+        }
+    }
+
+    private void tickLegacySchedules() {
         List<Map<String, Object>> schedules = jdbcTemplate.queryForList(
                 "SELECT * FROM platform_schedules WHERE enabled = TRUE"
         );

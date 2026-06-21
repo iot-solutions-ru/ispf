@@ -1,6 +1,7 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:ispf-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    # Unique DB per Spring context — avoids cross-test pollution when @TestPropertySource spins up extra contexts.
+    url: jdbc:h2:mem:ispf-${random.uuid};MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
     password:
     driver-class-name: org.h2.Driver

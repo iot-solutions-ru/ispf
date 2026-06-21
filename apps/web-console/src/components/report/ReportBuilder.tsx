@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchObjects } from "../../api";
 import {
   deleteReportTemplate,
   downloadReportCsvByPath,
@@ -10,10 +11,25 @@ import {
   saveReportDefinition,
   uploadReportTemplate,
   type ReportColumn,
+  type ReportDefinition,
   type ReportExportFormat,
   type SaveReportDefinitionPayload,
 } from "../../api/reports";
 import BffDataTable from "../operator/BffDataTable";
+import { DATA_SOURCES_ROOT } from "../../utils/systemFolderConfig";
+
+function effectiveDataSourcePath(
+  data?: Pick<ReportDefinition, "dataSourcePath" | "legacyAppId"> | null,
+  draftPath?: string
+): string {
+  const fromDraft = draftPath?.trim();
+  if (fromDraft) return fromDraft;
+  const fromReport = data?.dataSourcePath?.trim();
+  if (fromReport) return fromReport;
+  const legacy = data?.legacyAppId?.trim();
+  if (legacy) return `${DATA_SOURCES_ROOT}.${legacy}`;
+  return "";
+}
 
 interface ReportBuilderProps {
   path: string;
@@ -61,6 +77,12 @@ export default function ReportBuilder({
     queryFn: () => fetchReport(path),
   });
 
+  const dataSourcesQuery = useQuery({
+    queryKey: ["objects", "data-sources"],
+    queryFn: () => fetchObjects(),
+    select: (objects) => objects.filter((obj) => obj.type === "DATA_SOURCE"),
+  });
+
   useEffect(() => {
     if (!reportQuery.data || draft) return;
     setColumnsText(JSON.stringify(reportQuery.data.columns ?? [], null, 2));
@@ -81,12 +103,19 @@ export default function ReportBuilder({
     return {
       ...reportQuery.data,
       title: draft.title ?? reportQuery.data.title,
-      appId: draft.appId ?? reportQuery.data.appId,
+      dataSourcePath: draft.dataSourcePath ?? reportQuery.data.dataSourcePath,
       query: draft.query ?? reportQuery.data.query,
       maxRows: draft.maxRows ?? reportQuery.data.maxRows,
       refreshIntervalMs: draft.refreshIntervalMs ?? reportQuery.data.refreshIntervalMs,
     };
   }, [draft, reportQuery.data]);
+
+  const effectiveDataSource = effectiveDataSourcePath(effectiveDefinition, draft?.dataSourcePath);
+  const canRun = Boolean(effectiveDefinition?.query?.trim() && effectiveDataSource);
+  const hasTemplate = Boolean(reportQuery.data?.hasTemplate);
+  const exportParams = Object.fromEntries(
+    Object.entries(paramValues).filter(([, value]) => value.trim())
+  );
 
   const runParameters = useMemo(() => {
     const params: Record<string, unknown> = {};
@@ -97,13 +126,6 @@ export default function ReportBuilder({
     }
     return params;
   }, [paramValues]);
-
-  const effectiveAppId = effectiveDefinition?.appId?.trim() ?? "";
-  const canRun = Boolean(effectiveDefinition?.query?.trim() && effectiveAppId);
-  const hasTemplate = Boolean(reportQuery.data?.hasTemplate);
-  const exportParams = Object.fromEntries(
-    Object.entries(paramValues).filter(([, value]) => value.trim())
-  );
 
   async function handleExport(format: ReportExportFormat) {
     await downloadReportExportByPath(path, format, exportParams);
@@ -136,7 +158,7 @@ export default function ReportBuilder({
   }
 
   const runQuery = useQuery({
-    queryKey: ["report-run", path, runParameters, effectiveDefinition?.query, effectiveAppId],
+    queryKey: ["report-run", path, runParameters, effectiveDefinition?.query, effectiveDataSource],
     queryFn: () => runReportByPath(path, runParameters),
     enabled: canRun,
     refetchInterval: mode === "view" && canRun ? effectiveDefinition?.refreshIntervalMs : false,
@@ -145,17 +167,19 @@ export default function ReportBuilder({
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!reportQuery.data) return;
-      const appId = (draft?.appId ?? reportQuery.data.appId ?? "").trim();
+      const dataSourcePath = effectiveDataSourcePath(reportQuery.data, draft?.dataSourcePath);
       const query = (draft?.query ?? reportQuery.data.query ?? "").trim();
-      if (!appId) {
-        throw new Error("Укажите appId — id deploy-приложения, в схеме которого выполняется SQL (например demo).");
+      if (!dataSourcePath) {
+        throw new Error(
+          "Укажите data source — объект в root.platform.data-sources (импортируйте пакет или создайте вручную)."
+        );
       }
       if (!query) {
         throw new Error("Укажите SQL-запрос (SELECT или WITH).");
       }
       const payload: SaveReportDefinitionPayload = {
         title: draft?.title ?? reportQuery.data.title,
-        appId,
+        dataSourcePath,
         query,
         parameters: parseParametersText(parametersText),
         columns: parseColumnsJson(columnsText),
@@ -250,8 +274,8 @@ export default function ReportBuilder({
 
       {!canRun && !reportQuery.isLoading && (
         <div className="banner warning">
-          {!effectiveAppId
-            ? "Укажите appId deploy-приложения (например demo) и SQL-запрос в режиме «Редактировать», затем сохраните."
+          {!effectiveDataSource
+            ? "Укажите data source (root.platform.data-sources.*) и SQL-запрос в режиме «Редактировать», затем сохраните."
             : "Укажите SQL-запрос (SELECT / WITH) в режиме «Редактировать», затем сохраните."}
         </div>
       )}
@@ -350,7 +374,7 @@ export default function ReportBuilder({
                 setDraft((prev) => ({
                   query: prev?.query ?? reportQuery.data?.query ?? "",
                   title: e.target.value,
-                  appId: prev?.appId ?? reportQuery.data?.appId,
+                  dataSourcePath: prev?.dataSourcePath ?? reportQuery.data?.dataSourcePath,
                   maxRows: prev?.maxRows ?? reportQuery.data?.maxRows,
                   refreshIntervalMs: prev?.refreshIntervalMs ?? reportQuery.data?.refreshIntervalMs,
                 }))
@@ -358,23 +382,30 @@ export default function ReportBuilder({
             />
           </label>
           <label>
-            appId *
-            <input
-              value={draft?.appId ?? reportQuery.data?.appId ?? ""}
+            Data source *
+            <select
+              value={draft?.dataSourcePath ?? effectiveDataSourcePath(reportQuery.data) ?? ""}
               onChange={(e) =>
                 setDraft((prev) => ({
                   query: prev?.query ?? reportQuery.data?.query ?? "",
-                  appId: e.target.value,
+                  dataSourcePath: e.target.value,
                   title: prev?.title ?? reportQuery.data?.title,
                   maxRows: prev?.maxRows ?? reportQuery.data?.maxRows,
                   refreshIntervalMs: prev?.refreshIntervalMs ?? reportQuery.data?.refreshIntervalMs,
                 }))
               }
-              placeholder="demo"
-            />
+            >
+              <option value="">— выберите —</option>
+              {(dataSourcesQuery.data ?? []).map((source) => (
+                <option key={source.path} value={source.path}>
+                  {source.displayName} ({source.path})
+                </option>
+              ))}
+            </select>
           </label>
           <p className="hint full">
-            ID deploy-приложения из <code>root.platform.applications</code> — SQL выполняется в его схеме БД.
+            SQL выполняется в схеме, указанной на объекте data source. Импорт:{" "}
+            <code>POST /api/v1/platform/packages/import</code>.
           </p>
           <label className="full">
             SQL (SELECT / WITH)
@@ -385,7 +416,7 @@ export default function ReportBuilder({
               onChange={(e) =>
                 setDraft((prev) => ({
                   title: prev?.title ?? reportQuery.data?.title,
-                  appId: prev?.appId ?? reportQuery.data?.appId,
+                  dataSourcePath: prev?.dataSourcePath ?? reportQuery.data?.dataSourcePath,
                   query: e.target.value,
                   maxRows: prev?.maxRows ?? reportQuery.data?.maxRows,
                   refreshIntervalMs: prev?.refreshIntervalMs ?? reportQuery.data?.refreshIntervalMs,
@@ -419,7 +450,7 @@ export default function ReportBuilder({
                 setDraft((prev) => ({
                   query: prev?.query ?? reportQuery.data?.query ?? "",
                   title: prev?.title ?? reportQuery.data?.title,
-                  appId: prev?.appId ?? reportQuery.data?.appId,
+                  dataSourcePath: prev?.dataSourcePath ?? reportQuery.data?.dataSourcePath,
                   maxRows: Number(e.target.value),
                   refreshIntervalMs: prev?.refreshIntervalMs ?? reportQuery.data?.refreshIntervalMs,
                 }))
@@ -435,7 +466,7 @@ export default function ReportBuilder({
                 setDraft((prev) => ({
                   query: prev?.query ?? reportQuery.data?.query ?? "",
                   title: prev?.title ?? reportQuery.data?.title,
-                  appId: prev?.appId ?? reportQuery.data?.appId,
+                  dataSourcePath: prev?.dataSourcePath ?? reportQuery.data?.dataSourcePath,
                   maxRows: prev?.maxRows ?? reportQuery.data?.maxRows,
                   refreshIntervalMs: Number(e.target.value),
                 }))

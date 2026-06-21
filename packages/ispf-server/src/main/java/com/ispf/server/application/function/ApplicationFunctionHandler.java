@@ -1,7 +1,9 @@
 package com.ispf.server.application.function;
 
+import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.function.FunctionHandler;
+import com.ispf.server.object.ObjectManager;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -11,14 +13,26 @@ public class ApplicationFunctionHandler implements FunctionHandler {
 
     private final ApplicationFunctionStore store;
     private final ApplicationFunctionRuntime runtime;
+    private final ObjectManager objectManager;
 
-    public ApplicationFunctionHandler(ApplicationFunctionStore store, ApplicationFunctionRuntime runtime) {
+    public ApplicationFunctionHandler(
+            ApplicationFunctionStore store,
+            ApplicationFunctionRuntime runtime,
+            ObjectManager objectManager
+    ) {
         this.store = store;
         this.runtime = runtime;
+        this.objectManager = objectManager;
     }
 
     @Override
     public boolean supports(String objectPath, String functionName) {
+        FunctionDescriptor treeFn = objectManager.tree().findByPath(objectPath)
+                .map(node -> node.functions().get(functionName))
+                .orElse(null);
+        if (treeFn != null && treeFn.hasScriptBody()) {
+            return false;
+        }
         if (store.findLatest(objectPath, functionName).isPresent()) {
             return true;
         }

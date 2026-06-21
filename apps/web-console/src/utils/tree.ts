@@ -1,4 +1,9 @@
 import type { ObjectSummary, TreeNode } from "../types";
+import { APPLICATIONS_ROOT } from "./createObjectMode";
+
+function isHiddenLegacyApplicationPath(path: string): boolean {
+  return path === APPLICATIONS_ROOT || path.startsWith(`${APPLICATIONS_ROOT}.`);
+}
 
 function compareObjects(a: ObjectSummary, b: ObjectSummary): number {
   const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
@@ -36,7 +41,7 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   function build(parentPath: string): TreeNode[] {
     const children = childMap.get(parentPath) ?? [];
     return children
-      .filter((c) => byPath.has(c.path))
+      .filter((c) => byPath.has(c.path) && !isHiddenLegacyApplicationPath(c.path))
       .map((object) => ({
         object,
         children: build(object.path),

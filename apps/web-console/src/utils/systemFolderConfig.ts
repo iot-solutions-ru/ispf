@@ -21,6 +21,8 @@ const APPLICATION_SUBFOLDER_SUFFIXES = [
   ".screens",
 ] as const;
 
+export const DATA_SOURCES_ROOT = "root.platform.data-sources";
+
 const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
   "PLATFORM",
   "DEVICES",
@@ -28,7 +30,7 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
   "WORKFLOWS",
   "ALERT_RULES",
   "CORRELATORS",
-  "APPLICATIONS",
+  "DATA_SOURCES",
   "OPERATOR_APPS",
   "SECURITY",
   "FUNCTIONS",
@@ -45,6 +47,10 @@ const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   MODELS_ROOT,
   "root.platform.dashboards",
   "root.platform.reports",
+  "root.platform.data-sources",
+  "root.platform.schedules",
+  "root.platform.bindings",
+  "root.platform.migrations",
   "root.platform.workflows",
   "root.platform.alert-rules",
   "root.platform.correlators",
@@ -95,10 +101,30 @@ const META_BY_TYPE: Partial<Record<ObjectType, SystemFolderListMeta>> = {
       "Корреляторы в root.platform.correlators реагируют на события и запускают workflow.",
     idColumnLabel: "ID",
   },
-  APPLICATIONS: {
-    title: "Приложения",
+  DATA_SOURCES: {
+    title: "Источники данных",
     description:
-      "Deploy-приложения (функции, отчёты, bundle) в root.platform.applications.",
+      "SQL-схемы для отчётов, bindings и script-функций в root.platform.data-sources.",
+    idColumnLabel: "ID",
+  },
+  SCHEDULES: {
+    title: "Расписания",
+    description: "Планировщик платформы в root.platform.schedules.",
+    idColumnLabel: "ID",
+  },
+  BINDINGS: {
+    title: "SQL-привязки",
+    description: "Привязки переменных к SQL в root.platform.bindings.",
+    idColumnLabel: "ID",
+  },
+  MIGRATIONS: {
+    title: "Миграции",
+    description: "SQL-миграции схем в root.platform.migrations.",
+    idColumnLabel: "ID",
+  },
+  APPLICATIONS: {
+    title: "Приложения (legacy)",
+    description: "Устарело — используйте Package Import и каталоги платформы.",
     idColumnLabel: "App ID",
   },
   OPERATOR_APPS: {
@@ -121,21 +147,6 @@ const META_BY_TYPE: Partial<Record<ObjectType, SystemFolderListMeta>> = {
     title: "Отчёты",
     description:
       "SQL-отчёты в root.platform.reports. Двойной щелчок в дереве, «Открыть» в списке или кнопка «Открыть в редакторе».",
-    idColumnLabel: "ID",
-  },
-  SCHEDULES: {
-    title: "Расписания",
-    description: "Планировщики приложения.",
-    idColumnLabel: "ID",
-  },
-  BINDINGS: {
-    title: "Привязки",
-    description: "SQL-привязки переменных приложения.",
-    idColumnLabel: "ID",
-  },
-  MIGRATIONS: {
-    title: "Миграции",
-    description: "SQL-миграции схемы приложения.",
     idColumnLabel: "ID",
   },
   SCREENS: {
@@ -172,6 +183,10 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
       "root.platform.devices": "DEVICES",
       "root.platform.dashboards": "DASHBOARDS",
       "root.platform.reports": "REPORTS",
+      "root.platform.data-sources": "DATA_SOURCES",
+      "root.platform.schedules": "SCHEDULES",
+      "root.platform.bindings": "BINDINGS",
+      "root.platform.migrations": "MIGRATIONS",
       "root.platform.workflows": "WORKFLOWS",
       "root.platform.alert-rules": "ALERT_RULES",
       "root.platform.correlators": "CORRELATORS",

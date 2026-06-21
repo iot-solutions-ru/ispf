@@ -26,31 +26,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class ReportApiTest {
 
-    private static final String APP_ID = "platform-test";
+    private static final String PACKAGE_ID = "platform-test";
+    private static final String DATA_SOURCE_PATH = "root.platform.data-sources.platform-test";
     private static final String REPORT_PATH = "root.platform.reports.platform-test-report";
 
     @Autowired
     private MockMvc mockMvc;
 
     @BeforeEach
-    void ensureAppAndSchema() throws Exception {
-        mockMvc.perform(post("/api/v1/applications")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "appId": "%s",
-                                  "displayName": "Platform Test",
-                                  "tablePrefix": ""
-                                }
-                                """.formatted(APP_ID)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(APP_ID))
+    void ensureDataSourceAndSchema() throws Exception {
+        mockMvc.perform(post("/api/v1/platform/packages/import")
+                        .param("packageId", PACKAGE_ID)
+                        .header("X-ISPF-Role", "admin")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "version": "1.0.0",
-                                  "scripts": [
+                                  "displayName": "Platform Test",
+                                  "schemaName": "app_platform_test",
+                                  "migrations": [
                                     {
                                       "id": "platform_item",
                                       "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);"
@@ -84,17 +78,17 @@ class ReportApiTest {
                         .content("""
                                 {
                                   "title": "Platform Test Report",
-                                  "appId": "%s",
+                                  "dataSourcePath": "%s",
                                   "query": "SELECT item_code FROM platform_item",
                                   "parameters": [],
                                   "columns": [{ "field": "item_code", "label": "Code" }],
                                   "maxRows": 100,
                                   "refreshIntervalMs": 5000
                                 }
-                                """.formatted(APP_ID)))
+                                """.formatted(DATA_SOURCE_PATH)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.path").value(REPORT_PATH))
-                .andExpect(jsonPath("$.appId").value(APP_ID));
+                .andExpect(jsonPath("$.dataSourcePath").value(DATA_SOURCE_PATH));
 
         mockMvc.perform(get("/api/v1/reports/by-path")
                         .header("X-ISPF-Role", "admin")
@@ -140,13 +134,13 @@ class ReportApiTest {
                         .content("""
                                 {
                                   "title": "YARG Export Test",
-                                  "appId": "%s",
+                                  "dataSourcePath": "%s",
                                   "query": "SELECT item_code FROM platform_item",
                                   "parameters": [],
                                   "columns": [{ "field": "item_code", "label": "Code" }],
                                   "maxRows": 100
                                 }
-                                """.formatted(APP_ID)))
+                                """.formatted(DATA_SOURCE_PATH)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/reports/by-path/export")
@@ -180,13 +174,13 @@ class ReportApiTest {
                         .content("""
                                 {
                                   "title": "YARG Template Test",
-                                  "appId": "%s",
+                                  "dataSourcePath": "%s",
                                   "query": "SELECT item_code FROM platform_item",
                                   "parameters": [],
                                   "columns": [{ "field": "item_code", "label": "Code" }],
                                   "maxRows": 100
                                 }
-                                """.formatted(APP_ID)))
+                                """.formatted(DATA_SOURCE_PATH)))
                 .andExpect(status().isOk());
 
         byte[] template = ReportYargTemplateTestHelper.smokeTestTemplate();

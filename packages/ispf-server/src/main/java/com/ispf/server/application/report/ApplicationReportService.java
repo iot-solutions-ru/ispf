@@ -1,5 +1,8 @@
 package com.ispf.server.application.report;
 
+import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.application.data.ApplicationSchemaSupport;
+import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.report.YargReportService;
@@ -17,16 +20,31 @@ public class ApplicationReportService {
 
     private final ReportService reportService;
     private final YargReportService yargReportService;
+    private final DataSourceObjectService dataSourceObjectService;
+    private final ApplicationDataStore applicationDataStore;
 
-    public ApplicationReportService(ReportService reportService, YargReportService yargReportService) {
+    public ApplicationReportService(
+            ReportService reportService,
+            YargReportService yargReportService,
+            DataSourceObjectService dataSourceObjectService,
+            ApplicationDataStore applicationDataStore
+    ) {
         this.reportService = reportService;
         this.yargReportService = yargReportService;
+        this.dataSourceObjectService = dataSourceObjectService;
+        this.applicationDataStore = applicationDataStore;
     }
 
     @Transactional
     public void deploy(String appId, DeployReportRequest request) {
-        reportService.deploy(
+        dataSourceObjectService.ensureDataSource(
                 appId,
+                request.title() != null ? request.title() : appId,
+                inferSchema(appId),
+                "Bundle data source for " + appId
+        );
+        reportService.deploy(
+                dataSourceObjectService.pathForNodeName(appId),
                 request.reportId(),
                 request.title(),
                 request.description(),
@@ -44,7 +62,7 @@ public class ApplicationReportService {
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> list(String appId) {
-        return reportService.listByApp(appId);
+        return reportService.listByDataSource(dataSourceObjectService.pathForNodeName(appId));
     }
 
     @Transactional(readOnly = true)
@@ -65,6 +83,13 @@ public class ApplicationReportService {
             return new YargReportService.ExportedReport(csv, reportId + ".csv", ReportExportFormat.CSV.contentType());
         }
         return yargReportService.export(path, format, parameters);
+    }
+
+    private String inferSchema(String appId) {
+        return applicationDataStore.findApp(appId)
+                .map(row -> String.valueOf(row.get("schema_name")))
+                .filter(s -> s != null && !s.isBlank() && !"null".equals(s))
+                .orElse(ApplicationSchemaSupport.defaultSchemaName(appId));
     }
 
     public record ReportColumn(String field, String label) {

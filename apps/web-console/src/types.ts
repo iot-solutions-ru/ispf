@@ -30,6 +30,8 @@ export type ObjectType =
   | "CORRELATOR"
   | "APPLICATIONS"
   | "APPLICATION"
+  | "DATA_SOURCES"
+  | "DATA_SOURCE"
   | "OPERATOR_APPS"
   | "SECURITY"
   | "USERS"

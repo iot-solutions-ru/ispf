@@ -34,13 +34,14 @@ function isPlatformCatalogContainer(path: string): boolean {
     || path.endsWith(".workflows")
     || path.endsWith(".alert-rules")
     || path.endsWith(".correlators")
+    || path.endsWith(".data-sources")
+    || path.endsWith(".schedules")
+    || path.endsWith(".bindings")
+    || path.endsWith(".migrations")
   );
 }
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
-  if (parentPath === APPLICATIONS_ROOT) {
-    return "application";
-  }
   if (parentPath === OPERATOR_APPS_ROOT) {
     return "operator-app";
   }
@@ -79,12 +80,14 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     return false;
   }
   if (
-    path === APPLICATIONS_ROOT
-    || path === OPERATOR_APPS_ROOT
+    path === OPERATOR_APPS_ROOT
     || path === ALERT_RULES_ROOT
     || path === CORRELATORS_ROOT
   ) {
     return true;
+  }
+  if (path === APPLICATIONS_ROOT) {
+    return false;
   }
   if (isOperatorAppChildPath(path)) {
     return false;

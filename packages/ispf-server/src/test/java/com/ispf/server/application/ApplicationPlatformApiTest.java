@@ -41,6 +41,21 @@ class ApplicationPlatformApiTest {
                                 }
                                 """.formatted(APP_ID)))
                 .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/applications/%s/data/migrate".formatted(APP_ID))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "version": "1.0.0",
+                                  "scripts": [
+                                    {
+                                      "id": "platform_item",
+                                      "sql": "CREATE TABLE IF NOT EXISTS platform_item (id UUID PRIMARY KEY, item_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL);"
+                                    }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -71,8 +86,7 @@ class ApplicationPlatformApiTest {
                                   ]
                                 }
                                 """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.applied", hasItem("platform_item")));
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/applications/%s/data/status".formatted(APP_ID)))
                 .andExpect(status().isOk())
@@ -1266,7 +1280,7 @@ class ApplicationPlatformApiTest {
     }
 
     @Test
-    void syncsApplicationEntitiesIntoObjectTree() throws Exception {
+    void treeFirstDeployCreatesPlatformCatalogObjects() throws Exception {
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -1299,13 +1313,13 @@ class ApplicationPlatformApiTest {
                                 }
                                 """.formatted(APP_ID)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.objectTree").value("synced"));
+                .andExpect(jsonPath("$.objectTree").value("tree-first"))
+                .andExpect(jsonPath("$.dataSourcePath").value("root.platform.data-sources.platform-test"));
 
         mockMvc.perform(get("/api/v1/objects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test")))
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.data-sources.platform-test")))
                 .andExpect(jsonPath("$[*].path", hasItem("root.platform.reports.tree-report")))
-                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test.migrations.tree_items")))
-                .andExpect(jsonPath("$[*].path", hasItem("root.platform.applications.platform-test.screens.main")));
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.migrations.tree_items")));
     }
 }

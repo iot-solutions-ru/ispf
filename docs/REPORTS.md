@@ -1,8 +1,8 @@
 # Отчёты приложений (REQ-PF-12)
 
-Generic-слой SQL-отчётов для любого `appId`. **Tree-first (Phase 12):** определение хранится на объекте `REPORT` в каталоге `root.platform.reports.*` (модель `report-v1`), как дашборды в `root.platform.dashboards.*`.
+Generic-слой SQL-отчётов. **Tree-first (Phase 12–14):** определение на объекте `REPORT` в `root.platform.reports.*` (модель `report-v1`); SQL schema — через **`dataSourcePath`** → `root.platform.data-sources.*`.
 
-Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и делегирует в дерево.
+Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и делегирует в дерево. Импорт bundle: `POST /api/v1/platform/packages/import`.
 
 ## Object tree
 
@@ -16,7 +16,7 @@ Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и деле
 | Variable | Описание |
 |----------|----------|
 | `title` | Заголовок |
-| `appId` | Schema приложения для SQL |
+| `dataSourcePath` | Путь к `DATA_SOURCE` (`root.platform.data-sources.*`) — schema для SQL |
 | `query` | SELECT / WITH |
 | `parameters` | JSON array имён `?`-параметров |
 | `columns` | JSON array `{field, label}` |
@@ -114,12 +114,12 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 ## Ограничения
 
 - Только read-only SQL (без `INSERT`/`UPDATE`/`DELETE`/DDL).
-- Запрос выполняется в app schema (`appId` на объекте).
+- Запрос выполняется в schema объекта data source (`dataSourcePath`).
 - PDF/XLSX/HTML требуют загруженный YARG-шаблон.
 
 ## Пример
 
-[examples/demo-app/](../examples/demo-app/) — deploy на `demo`, отчёты в `root.platform.reports.*`.
+[examples/demo-app/](../examples/demo-app/) — `POST /api/v1/platform/packages/import?packageId=demo` или legacy deploy на `demo`, отчёты в `root.platform.reports.*`.
 
 ## Связанные документы
 

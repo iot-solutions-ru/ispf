@@ -18,6 +18,6 @@ public class ApplicationObjectTreeStartupSync {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE)
     public void syncApplicationsIntoObjectTree() {
-        treeService.syncAllApplications();
+        // Phase 14: legacy application mirror tree disabled — runtime uses platform object catalogs.
     }
 }

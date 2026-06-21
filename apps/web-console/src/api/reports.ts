@@ -8,7 +8,8 @@ export interface ReportColumn {
 export interface ReportDefinition {
   path: string;
   title: string;
-  appId: string;
+  dataSourcePath: string;
+  legacyAppId?: string;
   query: string;
   parameters: string[];
   columns: ReportColumn[];
@@ -31,6 +32,8 @@ export interface ReportRunResult {
 
 export interface SaveReportDefinitionPayload {
   title?: string;
+  dataSourcePath?: string;
+  /** @deprecated use dataSourcePath */
   appId?: string;
   query: string;
   parameters?: string[];

@@ -10,9 +10,10 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.report.ApplicationReportStore;
+import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Service
@@ -48,10 +48,11 @@ public class ReportService {
     private final ObjectManager objectManager;
     private final ModelRegistry modelRegistry;
     private final ModelEngine modelEngine;
-    private final ApplicationDataStore dataStore;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
     private final ReportTemplateStore templateStore;
+    private final DataSourcePathResolver dataSourcePathResolver;
+    private final DataSourceObjectService dataSourceObjectService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -59,20 +60,22 @@ public class ReportService {
             ObjectManager objectManager,
             ModelRegistry modelRegistry,
             ModelEngine modelEngine,
-            ApplicationDataStore dataStore,
             ApplicationSchemaSession schemaSession,
             ApplicationReportStore reportStore,
             ReportTemplateStore templateStore,
+            DataSourcePathResolver dataSourcePathResolver,
+            DataSourceObjectService dataSourceObjectService,
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
         this.modelEngine = modelEngine;
-        this.dataStore = dataStore;
         this.schemaSession = schemaSession;
         this.reportStore = reportStore;
         this.templateStore = templateStore;
+        this.dataSourcePathResolver = dataSourcePathResolver;
+        this.dataSourceObjectService = dataSourceObjectService;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
@@ -107,7 +110,7 @@ public class ReportService {
                     "reports",
                     ObjectType.REPORTS,
                     "Reports",
-                    "SQL reports (REQ-PF-12)",
+                    "SQL reports (tree-first)",
                     null
             );
         } else {
@@ -132,6 +135,42 @@ public class ReportService {
 
     @Transactional
     public void deploy(
+            String dataSourcePath,
+            String reportId,
+            String title,
+            String description,
+            String query,
+            List<String> parameters,
+            List<ReportColumn> columns,
+            Integer maxRows,
+            Map<String, Object> defaultParameters
+    ) {
+        validateDataSourcePath(dataSourcePath);
+        validateSelectQuery(query);
+        ensureReportsCatalog();
+        String path = reportPath(reportId);
+        ensureReportNode(path, title, description);
+        ensureReportStructure(path);
+        saveDefinitionInternal(
+                path,
+                new ReportDefinition(
+                        title,
+                        dataSourcePath,
+                        query.trim(),
+                        parameters != null ? parameters : List.of(),
+                        columns != null ? columns : List.of(),
+                        defaultParameters != null ? defaultParameters : Map.of(),
+                        maxRows != null && maxRows > 0 ? maxRows : 1000,
+                        30000,
+                        ""
+                )
+        );
+    }
+
+    /** @deprecated bundle import uses {@link #deploy(String, String, String, String, String, List, List, Integer, Map)} */
+    @Deprecated
+    @Transactional
+    public void deployLegacyApp(
             String appId,
             String reportId,
             String title,
@@ -142,26 +181,9 @@ public class ReportService {
             Integer maxRows,
             Map<String, Object> defaultParameters
     ) {
-        requireApp(appId);
-        validateSelectQuery(query);
-        ensureReportsCatalog();
-        String path = reportPath(reportId);
-        ensureReportNode(path, title, description);
-        ensureReportStructure(path);
-        saveDefinitionInternal(
-                path,
-                new ReportDefinition(
-                        title,
-                        appId,
-                        query.trim(),
-                        parameters != null ? parameters : List.of(),
-                        columns != null ? columns : List.of(),
-                        defaultParameters != null ? defaultParameters : Map.of(),
-                        maxRows != null && maxRows > 0 ? maxRows : 1000,
-                        30000
-                )
-        );
-        syncLegacyStore(appId, reportId, title, description, query, parameters, columns, maxRows);
+        String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
+        dataSourceObjectService.ensureDataSource(appId, appId, inferSchemaForApp(appId), "Legacy app data source");
+        deploy(dataSourcePath, reportId, title, description, query, parameters, columns, maxRows, defaultParameters);
     }
 
     public ReportView getReport(String path) {
@@ -180,29 +202,27 @@ public class ReportService {
         }
         validateSelectQuery(request.query());
         ReportView current = toView(path, node);
-        String appId = request.appId() != null ? request.appId() : current.appId();
-        requireAppId(appId);
+        String dataSourcePath = resolveDataSourcePathForSave(request, current);
+        validateDataSourcePath(dataSourcePath);
         ReportDefinition definition = new ReportDefinition(
                 request.title() != null ? request.title() : current.title(),
-                appId,
+                dataSourcePath,
                 request.query().trim(),
                 request.parameters() != null ? request.parameters() : current.parameters(),
                 request.columns() != null ? request.columns() : current.columns(),
                 request.defaultParameters() != null ? request.defaultParameters() : current.defaultParameters(),
                 request.maxRows() != null ? request.maxRows() : current.maxRows(),
-                request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs()
+                request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs(),
+                request.layout() != null ? request.layout() : current.layout()
         );
         saveDefinitionInternal(path, definition);
-        syncLegacyStore(
-                definition.appId(),
-                reportIdFromPath(path),
-                definition.title(),
-                node.description(),
-                definition.query(),
-                definition.parameters(),
-                definition.columns(),
-                definition.maxRows()
-        );
+        return getReport(path);
+    }
+
+    @Transactional
+    public ReportView saveLayout(String path, String layoutJson) {
+        getReport(path);
+        setString(path, "layout", layoutJson != null ? layoutJson : "");
         return getReport(path);
     }
 
@@ -219,9 +239,6 @@ public class ReportService {
             return runLegacy(appId, reportId, parameters);
         }
         ReportView report = getReport(path);
-        if (!appId.equals(report.appId())) {
-            throw new IllegalArgumentException("Report app mismatch: " + reportId);
-        }
         return runDefinition(report, parameters);
     }
 
@@ -267,8 +284,8 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> listByApp(String appId) {
-        requireApp(appId);
+    public List<Map<String, Object>> listByDataSource(String dataSourcePath) {
+        validateDataSourcePath(dataSourcePath);
         ensureReportsCatalog();
         List<Map<String, Object>> summaries = new ArrayList<>();
         if (objectManager.tree().findByPath(REPORTS_ROOT).isPresent()) {
@@ -277,23 +294,20 @@ public class ReportService {
                     continue;
                 }
                 ReportView view = toView(child.path(), child);
-                if (appId.equals(view.appId())) {
+                if (dataSourcePath.equals(view.dataSourcePath())) {
                     summaries.add(toSummary(view));
                 }
             }
-        }
-        if (summaries.isEmpty()) {
-            return reportStore.listByApp(appId).stream()
-                    .map(this::legacyToSummary)
-                    .toList();
         }
         return summaries;
     }
 
     private Map<String, Object> runDefinition(ReportView report, Map<String, Object> parameters) {
-        requireApp(report.appId());
         List<Object> paramValues = resolveParameterValues(report.parameters(), parameters);
-        String schemaName = schemaName(report.appId());
+        String schemaName = dataSourcePathResolver.resolveSchemaForReport(
+                report.dataSourcePath(),
+                report.legacyAppId()
+        );
 
         List<Map<String, Object>>[] result = new List[1];
         schemaSession.runInSchema(schemaName, () ->
@@ -322,7 +336,7 @@ public class ReportService {
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
         List<Object> paramValues = resolveParameterValues(paramNames, parameters);
-        String schemaName = schemaName(appId);
+        String schemaName = dataSourcePathResolver.resolveSchemaForReport(null, appId);
 
         List<Map<String, Object>>[] result = new List[1];
         schemaSession.runInSchema(schemaName, () ->
@@ -370,20 +384,27 @@ public class ReportService {
 
     private void saveDefinitionInternal(String path, ReportDefinition definition) {
         setString(path, "title", definition.title());
-        setString(path, "appId", definition.appId());
+        setString(path, "dataSourcePath", definition.dataSourcePath());
         setString(path, "query", definition.query());
         setString(path, "parameters", serialize(definition.parameters()));
         setString(path, "columns", serialize(definition.columns()));
         setString(path, "defaultParameters", serialize(definition.defaultParameters()));
         setInteger(path, "maxRows", definition.maxRows());
         setInteger(path, "refreshIntervalMs", definition.refreshIntervalMs());
+        setString(path, "layout", definition.layout());
     }
 
     private ReportView toView(String path, PlatformObject node) {
+        String dataSourcePath = readString(node, "dataSourcePath").orElse("");
+        String legacyAppId = readString(node, "appId").orElse("");
+        if (dataSourcePath.isBlank() && !legacyAppId.isBlank()) {
+            dataSourcePath = dataSourceObjectService.pathForNodeName(legacyAppId);
+        }
         return new ReportView(
                 path,
                 readString(node, "title").orElse(node.displayName()),
-                readString(node, "appId").orElse(""),
+                dataSourcePath,
+                legacyAppId,
                 readString(node, "query").orElse(""),
                 deserializeStringList(readString(node, "parameters").orElse("[]")),
                 deserializeReportColumns(readString(node, "columns").orElse("[]")),
@@ -391,32 +412,40 @@ public class ReportService {
                 readInteger(node, "maxRows").orElse(1000),
                 readInteger(node, "refreshIntervalMs").orElse(30000),
                 readString(node, "templateFormat").orElse(""),
+                readString(node, "layout").orElse(""),
                 templateStore.exists(path)
         );
     }
 
-    private void syncLegacyStore(
-            String appId,
-            String reportId,
-            String title,
-            String description,
-            String query,
-            List<String> parameters,
-            List<ReportColumn> columns,
-            Integer maxRows
-    ) {
-        int rows = maxRows != null && maxRows > 0 ? maxRows : 1000;
-        reportStore.upsert(new ApplicationReportStore.DeployedReport(
-                UUID.randomUUID(),
-                appId,
-                reportId,
-                title,
-                description,
-                query.trim(),
-                serialize(parameters != null ? parameters : List.of()),
-                serialize(columns != null ? columns : List.of()),
-                rows
-        ));
+    private String resolveDataSourcePathForSave(SaveReportDefinitionRequest request, ReportView current) {
+        if (request.dataSourcePath() != null && !request.dataSourcePath().isBlank()) {
+            return request.dataSourcePath();
+        }
+        if (request.appId() != null && !request.appId().isBlank()) {
+            return dataSourceObjectService.pathForNodeName(request.appId());
+        }
+        if (current.dataSourcePath() != null && !current.dataSourcePath().isBlank()) {
+            return current.dataSourcePath();
+        }
+        if (current.legacyAppId() != null && !current.legacyAppId().isBlank()) {
+            return dataSourceObjectService.pathForNodeName(current.legacyAppId());
+        }
+        throw new IllegalArgumentException("Report dataSourcePath is required");
+    }
+
+    private static void validateDataSourcePath(String dataSourcePath) {
+        if (dataSourcePath == null || dataSourcePath.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Report dataSourcePath is required — e.g. root.platform.data-sources.demo"
+            );
+        }
+    }
+
+    private String inferSchemaForApp(String appId) {
+        return dataSourcePathResolver.resolveSchemaForReport(
+                dataSourceObjectService.pathForNodeName(appId),
+                appId
+        );
     }
 
     private Map<String, Object> toSummary(ReportView view) {
@@ -424,23 +453,10 @@ public class ReportService {
         summary.put("reportId", reportIdFromPath(view.path()));
         summary.put("path", view.path());
         summary.put("title", view.title());
-        summary.put("appId", view.appId());
+        summary.put("dataSourcePath", view.dataSourcePath());
         summary.put("parameters", view.parameters());
         summary.put("columns", columnMaps(view.columns()));
         summary.put("maxRows", view.maxRows());
-        return summary;
-    }
-
-    private Map<String, Object> legacyToSummary(ApplicationReportStore.DeployedReport report) {
-        Map<String, Object> summary = new LinkedHashMap<>();
-        summary.put("reportId", report.reportId());
-        summary.put("path", reportPath(report.reportId()));
-        summary.put("title", report.title());
-        summary.put("description", report.description());
-        summary.put("appId", report.appId());
-        summary.put("parameters", deserializeStringList(report.parametersJson()));
-        summary.put("columns", deserializeColumns(report.columnsJson()));
-        summary.put("maxRows", report.maxRows());
         return summary;
     }
 
@@ -487,30 +503,6 @@ public class ReportService {
                 variable,
                 DataRecord.single(INTEGER_SCHEMA, Map.of("value", value))
         );
-    }
-
-    private void requireApp(String appId) {
-        requireAppId(appId);
-        dataStore.findApp(appId)
-                .orElseThrow(() -> new IllegalArgumentException("Application not registered: " + appId));
-    }
-
-    private static void requireAppId(String appId) {
-        validateAppId(appId);
-    }
-
-    static void validateAppId(String appId) {
-        if (appId == null || appId.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Report appId is required — set deploy-application id (e.g. demo) in report editor"
-            );
-        }
-    }
-
-    private String schemaName(String appId) {
-        return dataStore.findApp(appId)
-                .map(row -> (String) row.get("schema_name"))
-                .orElseThrow();
     }
 
     static void validateSelectQuery(String query) {
@@ -636,20 +628,22 @@ public class ReportService {
 
     public record ReportDefinition(
             String title,
-            String appId,
+            String dataSourcePath,
             String query,
             List<String> parameters,
             List<ReportColumn> columns,
             Map<String, Object> defaultParameters,
             int maxRows,
-            int refreshIntervalMs
+            int refreshIntervalMs,
+            String layout
     ) {
     }
 
     public record ReportView(
             String path,
             String title,
-            String appId,
+            String dataSourcePath,
+            String legacyAppId,
             String query,
             List<String> parameters,
             List<ReportColumn> columns,
@@ -657,19 +651,22 @@ public class ReportService {
             int maxRows,
             int refreshIntervalMs,
             String templateFormat,
+            String layout,
             boolean hasTemplate
     ) {
     }
 
     public record SaveReportDefinitionRequest(
             String title,
+            String dataSourcePath,
             String appId,
             String query,
             List<String> parameters,
             List<ReportColumn> columns,
             Map<String, Object> defaultParameters,
             Integer maxRows,
-            Integer refreshIntervalMs
+            Integer refreshIntervalMs,
+            String layout
     ) {
     }
 }

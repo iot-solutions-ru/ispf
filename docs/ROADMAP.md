@@ -131,6 +131,18 @@
 
 См. [REPORTS.md](REPORTS.md) (секция YARG templates).
 
+## Phase 14 — Tree-first platform catalogs
+
+| # | Тема | Статус |
+|---|------|--------|
+| 14.1 | `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1` models | Done |
+| 14.2 | Platform catalogs: `data-sources`, `schedules`, `bindings`, `migrations` | Done |
+| 14.3 | Reports: `dataSourcePath` вместо `appId`; `POST /platform/packages/import` | Done |
+| 14.4 | Script functions on tree (`FunctionDescriptor.sourceBody`) | Done |
+| 14.5 | Web Console: Report Builder data source picker, Package Import, hide legacy applications | Done |
+
+Application API (`/applications/{id}/deploy`) сохранён для совместимости; runtime — только дерево объектов.
+
 ## Platform baseline
 
 | # | Тема | Статус |

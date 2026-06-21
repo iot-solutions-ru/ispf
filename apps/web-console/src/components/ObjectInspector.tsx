@@ -25,6 +25,7 @@ import { formatHistoryRetention } from "./VariableHistoryFields";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
+import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
 import { resolveApplicationAppId } from "../utils/applicationPath";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
@@ -142,6 +143,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
 
   const obj = objectQuery.data;
   const isRoot = path === "root";
+  const isPlatformRoot = path === "root.platform";
   const canDelete = canDeleteObjectPath(path);
   const isDevice = obj.type === "DEVICE";
   const isApplication = obj.type === "APPLICATION";
@@ -247,7 +249,12 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
 
       {tab === "general" && (
         <section className="panel">
-          <form
+            {isPlatformRoot && canManage && (
+              <section className="panel">
+                <PackageImportPanel />
+              </section>
+            )}
+            <form
             className="form-grid"
             onSubmit={(e) => {
               e.preventDefault();

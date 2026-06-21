@@ -16,12 +16,18 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.api.ApplicationController;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.data.ApplicationDataService;
+import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
+import com.ispf.server.binding.SqlBindingObjectService;
+import com.ispf.server.datasource.DataSourceObjectService;
+import com.ispf.server.migration.MigrationObjectService;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.report.ReportService;
+import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import org.springframework.stereotype.Service;
 
@@ -47,6 +53,11 @@ public class ApplicationBundleDeployService {
     private final ModelRegistry modelRegistry;
     private final ModelPersistenceService modelPersistence;
     private final ObjectMapper objectMapper;
+    private final DataSourceObjectService dataSourceObjectService;
+    private final ScheduleObjectService scheduleObjectService;
+    private final SqlBindingObjectService sqlBindingObjectService;
+    private final MigrationObjectService migrationObjectService;
+    private final ObjectManager objectManager;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -60,7 +71,12 @@ public class ApplicationBundleDeployService {
             ModelEngine modelEngine,
             ModelRegistry modelRegistry,
             ModelPersistenceService modelPersistence,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            DataSourceObjectService dataSourceObjectService,
+            ScheduleObjectService scheduleObjectService,
+            SqlBindingObjectService sqlBindingObjectService,
+            MigrationObjectService migrationObjectService,
+            ObjectManager objectManager
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -74,6 +90,11 @@ public class ApplicationBundleDeployService {
         this.modelRegistry = modelRegistry;
         this.modelPersistence = modelPersistence;
         this.objectMapper = objectMapper;
+        this.dataSourceObjectService = dataSourceObjectService;
+        this.scheduleObjectService = scheduleObjectService;
+        this.sqlBindingObjectService = sqlBindingObjectService;
+        this.migrationObjectService = migrationObjectService;
+        this.objectManager = objectManager;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -93,6 +114,20 @@ public class ApplicationBundleDeployService {
             }
         } catch (Exception ex) {
             errors.add("register: " + ex.getMessage());
+        }
+
+        String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
+        try {
+            String schema = resolvePackageSchemaName(appId, manifest);
+            dataSourceObjectService.ensureDataSource(
+                    appId,
+                    manifest.displayName() != null ? manifest.displayName() : appId,
+                    schema,
+                    "Package import data source"
+            );
+            applied.add("dataSource:" + dataSourcePath);
+        } catch (Exception ex) {
+            errors.add("dataSource: " + ex.getMessage());
         }
 
         if (manifest.objects() != null) {
@@ -146,12 +181,17 @@ public class ApplicationBundleDeployService {
 
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
             try {
-                List<ApplicationDataService.MigrationScript> scripts = manifest.migrations().stream()
-                        .map(script -> new ApplicationDataService.MigrationScript(script.id(), script.sql()))
-                        .toList();
-                Map<String, Object> result = dataService.migrate(appId, manifest.version(), scripts);
-                applied.addAll((List<String>) result.get("applied"));
-                skipped.addAll((List<String>) result.get("skipped"));
+                for (BundleMigration script : manifest.migrations()) {
+                    migrationObjectService.upsert(new MigrationObjectService.MigrationDefinition(
+                            "",
+                            script.id(),
+                            manifest.version(),
+                            dataSourcePath,
+                            script.sql()
+                    ));
+                }
+                List<String> appliedMigrations = migrationObjectService.applyPending(manifest.version());
+                applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
             } catch (Exception ex) {
                 errors.add("migrations: " + ex.getMessage());
             }
@@ -160,7 +200,7 @@ public class ApplicationBundleDeployService {
         if (manifest.functions() != null) {
             for (BundleFunction function : manifest.functions()) {
                 try {
-                    deployFunction(appId, function);
+                    deployFunction(appId, dataSourcePath, function);
                     applied.add("function:" + function.functionName());
                 } catch (Exception ex) {
                     errors.add("function:" + function.functionName() + ": " + ex.getMessage());
@@ -171,16 +211,21 @@ public class ApplicationBundleDeployService {
         if (manifest.bindings() != null) {
             for (BundleSqlBinding binding : manifest.bindings()) {
                 try {
-                    sqlBindingService.deploy(appId, new ApplicationSqlBindingService.DeploySqlBindingRequest(
+                    String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
+                    sqlBindingObjectService.upsert(new SqlBindingObjectService.BindingDefinition(
+                            "",
+                            bindingId,
                             binding.objectPath(),
                             binding.variable(),
+                            dataSourcePath,
                             binding.query(),
-                            binding.refresh(),
-                            binding.refreshIntervalMs(),
                             binding.valueField(),
-                            binding.triggerObjectPath(),
-                            binding.triggerFunctionName(),
-                            binding.enabled()
+                            binding.refresh() != null ? binding.refresh() : "manual",
+                            binding.refreshIntervalMs() != null ? binding.refreshIntervalMs() : 30_000L,
+                            binding.triggerObjectPath() != null ? binding.triggerObjectPath() : "",
+                            binding.triggerFunctionName() != null ? binding.triggerFunctionName() : "",
+                            binding.enabled() == null || binding.enabled(),
+                            null
                     ));
                     applied.add("binding:" + binding.variable());
                 } catch (Exception ex) {
@@ -216,13 +261,15 @@ public class ApplicationBundleDeployService {
             for (BundleSchedule schedule : manifest.schedules()) {
                 try {
                     String actionJson = objectMapper.writeValueAsString(schedule.action());
-                    schedulerService.upsert(new PlatformSchedulerService.PlatformSchedule(
+                    scheduleObjectService.upsert(new ScheduleObjectService.ScheduleDefinition(
+                            "",
                             schedule.scheduleId(),
-                            appId,
                             schedule.enabled(),
                             schedule.intervalMs(),
                             schedule.actionType(),
-                            actionJson
+                            actionJson,
+                            null,
+                            null
                     ));
                     applied.add("schedule:" + schedule.scheduleId());
                 } catch (Exception ex) {
@@ -252,14 +299,8 @@ public class ApplicationBundleDeployService {
             response.put("errors", errors);
         }
 
-        try {
-            objectTreeService.syncApplication(appId);
-            response.put("objectTree", "synced");
-        } catch (Exception ex) {
-            errors.add("objectTree: " + ex.getMessage());
-            response.put("status", "PARTIAL");
-            response.put("errors", errors);
-        }
+        response.put("dataSourcePath", dataSourcePath);
+        response.put("objectTree", "tree-first");
 
         return response;
     }
@@ -371,7 +412,14 @@ public class ApplicationBundleDeployService {
         return buildOperatorUiFromBundle(appId, manifest);
     }
 
-    private void deployFunction(String appId, BundleFunction function) throws Exception {
+    private static String resolvePackageSchemaName(String appId, BundleManifest manifest) {
+        if (manifest.schemaName() != null && !manifest.schemaName().isBlank()) {
+            return manifest.schemaName();
+        }
+        return ApplicationSchemaSupport.defaultSchemaName(appId);
+    }
+
+    private void deployFunction(String appId, String dataSourcePath, BundleFunction function) throws Exception {
         String version = function.version() != null ? function.version() : "1";
         String inputSchemaJson = objectMapper.writeValueAsString(function.descriptor().inputSchema());
         String outputSchemaJson = objectMapper.writeValueAsString(function.descriptor().outputSchema());
@@ -388,6 +436,18 @@ public class ApplicationBundleDeployService {
                 outputSchemaJson
         );
         functionStore.deploy(deployed);
+
+        FunctionDescriptor treeFunction = new FunctionDescriptor(
+                function.functionName(),
+                "Script function " + function.functionName(),
+                function.descriptor().inputSchema(),
+                function.descriptor().outputSchema(),
+                function.source().type(),
+                function.source().body(),
+                dataSourcePath,
+                version
+        );
+        objectManager.upsertFunction(function.objectPath(), treeFunction);
     }
 
     private void deployModel(BundleModel model) throws ModelException {
