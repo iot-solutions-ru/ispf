@@ -10,8 +10,8 @@ class CounterRateBindingTest {
 
     @Test
     void matchesCounterRateSyntax() {
-        assertTrue(CounterRateBinding.matches("counterRate(ifInOctets)"));
-        assertTrue(CounterRateBinding.matches("counterRate(ifOutOctets, 4294967296, value)"));
+        assertTrue(CounterRateBinding.INSTANCE.matches("counterRate(ifInOctets)"));
+        assertTrue(CounterRateBinding.INSTANCE.matches("counterRate(ifOutOctets, 4294967296, value)"));
     }
 
     @Test

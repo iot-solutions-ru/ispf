@@ -25,8 +25,8 @@ class BindingEvaluatorTest {
             .build();
 
     @BeforeEach
-    void resetCounterRateState() {
-        CounterRateBinding.clearStateForTests();
+    void resetBindingState() {
+        PlatformBindingRegistry.clearStateForTests();
     }
 
     @Test

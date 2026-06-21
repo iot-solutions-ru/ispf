@@ -15,7 +15,7 @@ public final class BindingExpressionValidator {
             return;
         }
         String trimmed = expression.trim();
-        if (CounterRateBinding.matches(trimmed)) {
+        if (PlatformBindingRegistry.matches(trimmed)) {
             return;
         }
         ENGINE.compile(trimmed);

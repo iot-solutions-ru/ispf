@@ -31,9 +31,10 @@ public class BindingEvaluator {
         for (Variable variable : platformObject.variables().values()) {
             variable.bindingExpression().ifPresent(expr -> {
                 try {
-                    if (CounterRateBinding.matches(expr)) {
-                        CounterRateBinding.evaluate(platformObject, variable.name(), expr).ifPresent(rate -> {
-                            DataRecord record = toDataRecord(variable.schema(), rate);
+                    var platformBinding = PlatformBindingRegistry.find(expr);
+                    if (platformBinding.isPresent()) {
+                        platformBinding.get().evaluate(platformObject, variable.name(), expr).ifPresent(result -> {
+                            DataRecord record = toDataRecord(variable.schema(), result);
                             applyIfChanged(variable, record, changed);
                         });
                         return;

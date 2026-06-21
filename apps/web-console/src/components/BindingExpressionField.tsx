@@ -13,7 +13,7 @@ export default function BindingExpressionField({
   id,
   value,
   onChange,
-  placeholder = "self.varName.value или counterRate(sourceVar)",
+  placeholder = "CEL или platform: selectField, scale, clamp, format, delta, counterRate",
   disabled = false,
 }: BindingExpressionFieldProps) {
   const validateMutation = useMutation({

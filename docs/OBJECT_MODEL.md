@@ -139,6 +139,19 @@ self.temperature.value > self.threshold.value
 
 **Counter rate (SNMP Counter32):** binding без CEL — `counterRate(<sourceVariable>[, maxCounter[, field]])`. Пример: `counterRate(ifInOctets)` на переменной `ifInOctetsRate` вычисляет B/s из IF-MIB Counter32 с учётом переполнения 2³². Пересчитывается при обновлении source-переменной (poll драйвера).
 
+**Platform bindings (Phase 1):** вместо CEL можно указать одну встроенную функцию (вся строка `bindingExpression` = один вызов):
+
+| Функция | Сигнатура | Описание |
+|---------|-----------|----------|
+| `selectField` | `selectField(sourceVar[, field])` | Поле source-переменной (по умолчанию `value`) |
+| `scale` | `scale(sourceVar, inMin, inMax, outMin, outMax[, field])` | Линейное отображение числа |
+| `clamp` | `clamp(sourceVar, min, max[, field])` | Ограничение числа диапазоном |
+| `format` | `format("pattern", sourceVar[, field])` | `String.format` → STRING schema |
+| `delta` | `delta(sourceVar[, field])` | Разность с предыдущим sample (stateful) |
+| `counterRate` | `counterRate(sourceVar[, maxCounter[, field]])` | Скорость счётчика (stateful, wrap) |
+
+Идентификаторы: `[A-Za-z_][A-Za-z0-9_]*`. Опциональный `field` по умолчанию — `value`.
+
 Проверка выражения: `POST /api/v1/expressions/validate`.
 
 ## События

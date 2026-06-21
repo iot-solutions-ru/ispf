@@ -401,6 +401,16 @@ public class ModelBootstrap {
                                 DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
                         ),
                         ModelVariableDefinition.of(
+                                "temperaturePercent",
+                                "Temperature normalized to 0-100% (-20..50 °C)",
+                                "telemetry",
+                                THRESHOLD_SCHEMA,
+                                true,
+                                false,
+                                "scale(temperature, -20, 50, 0, 100)",
+                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 0.0))
+                        ),
+                        ModelVariableDefinition.of(
                                 "alarmActive",
                                 "Whether temperature exceeds threshold",
                                 "status",

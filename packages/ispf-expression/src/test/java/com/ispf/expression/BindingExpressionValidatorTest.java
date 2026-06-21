@@ -16,6 +16,20 @@ class BindingExpressionValidatorTest {
     }
 
     @Test
+    void acceptsPhaseOnePlatformBindings() {
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("selectField(temperature)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("scale(temperature, -20, 50, 0, 100)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("clamp(temperature, 0, 50)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("format(\"%.1f °C\", temperature)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("delta(counter)"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void acceptsCelExpression() {
         assertThatCode(() -> BindingExpressionValidator.validateOrThrow("self.temperature.value + 1.0"))
                 .doesNotThrowAnyException();
