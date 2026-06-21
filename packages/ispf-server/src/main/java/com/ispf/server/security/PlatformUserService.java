@@ -75,6 +75,15 @@ public class PlatformUserService {
     }
 
     @Transactional
+    public void ensureUser(String username, String displayName, String password, List<String> roles) {
+        String normalized = normalizeUsername(username);
+        if (userStore.findByUsername(normalized).isPresent()) {
+            return;
+        }
+        createUser(username, displayName, password, roles);
+    }
+
+    @Transactional
     public Map<String, Object> login(String username, String password) {
         PlatformUserStore.PlatformUser user = userStore.findByUsername(username.trim().toLowerCase())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));

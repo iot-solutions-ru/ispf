@@ -112,7 +112,7 @@ public class AutomationTreeService {
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 createAlertRuleNode(path, entity.getName(), entity.getObjectPath(), entity.getWatchVariable(),
                         entity.getConditionExpr(), entity.getEventName(), entity.getPayloadVariable(),
-                        entity.isEnabled(), entity.isEdgeTrigger(), entity.getLastConditionMet());
+                        entity.isEnabled(), entity.isEdgeTrigger(), 0, false, entity.getLastConditionMet());
             }
         }
         legacyAlertRuleRepository.deleteAll();
@@ -127,6 +127,7 @@ public class AutomationTreeService {
                         entity.getWindowSeconds(), entity.getMinOccurrences(), entity.getCooldownSeconds(),
                         0,
                         CorrelatorActionType.valueOf(entity.getActionType()), entity.getActionTarget(),
+                        "",
                         entity.isEnabled(), entity.getLastTriggeredAt());
             }
         }
@@ -168,17 +169,20 @@ public class AutomationTreeService {
             String eventName,
             String payloadVariable,
             boolean enabled,
-            boolean edgeTrigger
+            boolean edgeTrigger,
+            int delaySeconds,
+            boolean sustainWhileTrue
     ) {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
-                payloadVariable, enabled, edgeTrigger, null);
+                payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null);
         return getAlertRule(path);
     }
 
     @Transactional
     public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
-            String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger) {
+            String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
+            Integer delaySeconds, Boolean sustainWhileTrue) {
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
             objectManager.updateInfo(path, name, node.description());
@@ -204,8 +208,25 @@ public class AutomationTreeService {
         if (edgeTrigger != null) {
             setBoolean(path, "edgeTrigger", edgeTrigger);
         }
+        if (delaySeconds != null) {
+            setInteger(path, "delaySeconds", delaySeconds);
+        }
+        if (sustainWhileTrue != null) {
+            setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
+        }
         objectManager.persistNodeTree(path);
         return getAlertRule(path);
+    }
+
+    @Transactional
+    public void setAlertRuleConditionTrueSince(String path, Instant conditionTrueSince) {
+        setRuntimeString(path, "conditionTrueSince", conditionTrueSince != null ? conditionTrueSince.toString() : "");
+        objectManager.persistNodeTree(path);
+    }
+
+    @Transactional
+    public void clearAlertRuleConditionTrueSince(String path) {
+        setAlertRuleConditionTrueSince(path, null);
     }
 
     @Transactional
@@ -275,11 +296,13 @@ public class AutomationTreeService {
             int sequenceGapSeconds,
             CorrelatorActionType actionType,
             String actionTarget,
+            String payloadFilterExpr,
             boolean enabled
     ) {
         String path = uniqueCorrelatorPath(name);
         createCorrelatorNode(path, name, targetObjectPath, patternType, eventName, secondEventName,
-                windowSeconds, minOccurrences, cooldownSeconds, sequenceGapSeconds, actionType, actionTarget, enabled, null);
+                windowSeconds, minOccurrences, cooldownSeconds, sequenceGapSeconds, actionType, actionTarget,
+                payloadFilterExpr, enabled, null);
         return getCorrelator(path);
     }
 
@@ -297,6 +320,7 @@ public class AutomationTreeService {
             Integer sequenceGapSeconds,
             CorrelatorActionType actionType,
             String actionTarget,
+            String payloadFilterExpr,
             Boolean enabled
     ) {
         PlatformObject node = requireCorrelator(path);
@@ -332,6 +356,9 @@ public class AutomationTreeService {
         }
         if (actionTarget != null) {
             setString(path, "actionTarget", actionTarget);
+        }
+        if (payloadFilterExpr != null) {
+            setString(path, "payloadFilterExpr", payloadFilterExpr);
         }
         if (enabled != null) {
             setBoolean(path, "enabled", enabled);
@@ -373,7 +400,9 @@ public class AutomationTreeService {
                 "thresholdExceeded",
                 "temperature",
                 true,
-                true
+                true,
+                0,
+                false
         );
     }
 
@@ -395,6 +424,7 @@ public class AutomationTreeService {
                 0,
                 CorrelatorActionType.RUN_WORKFLOW,
                 "root.platform.workflows.demo-alarm-handler",
+                "",
                 true
         );
         createCorrelator(
@@ -409,6 +439,7 @@ public class AutomationTreeService {
                 0,
                 CorrelatorActionType.RUN_WORKFLOW,
                 "root.platform.workflows.demo-alarm-handler",
+                "",
                 false
         );
     }
@@ -431,6 +462,7 @@ public class AutomationTreeService {
                 0,
                 CorrelatorActionType.RUN_WORKFLOW,
                 "root.platform.workflows.demo-alarm-handler",
+                "",
                 true
         );
     }
@@ -445,6 +477,8 @@ public class AutomationTreeService {
             String payloadVariable,
             boolean enabled,
             boolean edgeTrigger,
+            int delaySeconds,
+            boolean sustainWhileTrue,
             Boolean lastConditionMet
     ) {
         ensureParent(path);
@@ -459,6 +493,8 @@ public class AutomationTreeService {
         setString(path, "payloadVariable", payloadVariable != null ? payloadVariable : "");
         setBoolean(path, "enabled", enabled);
         setBoolean(path, "edgeTrigger", edgeTrigger);
+        setInteger(path, "delaySeconds", delaySeconds);
+        setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
         if (lastConditionMet != null) {
             setRuntimeBoolean(path, "lastConditionMet", lastConditionMet);
         }
@@ -478,6 +514,7 @@ public class AutomationTreeService {
             int sequenceGapSeconds,
             CorrelatorActionType actionType,
             String actionTarget,
+            String payloadFilterExpr,
             boolean enabled,
             Instant lastTriggeredAt
     ) {
@@ -496,6 +533,7 @@ public class AutomationTreeService {
         setInteger(path, "sequenceGapSeconds", sequenceGapSeconds);
         setString(path, "actionType", actionType.name());
         setString(path, "actionTarget", actionTarget);
+        setString(path, "payloadFilterExpr", payloadFilterExpr != null ? payloadFilterExpr : "");
         setBoolean(path, "enabled", enabled);
         if (lastTriggeredAt != null) {
             setRuntimeString(path, "lastTriggeredAt", lastTriggeredAt.toString());
@@ -515,8 +553,11 @@ public class AutomationTreeService {
                 blankToNull(readString(node, "payloadVariable").orElse(null)),
                 readBoolean(node, "enabled").orElse(true),
                 readBoolean(node, "edgeTrigger").orElse(true),
+                readInteger(node, "delaySeconds").orElse(0),
+                readBoolean(node, "sustainWhileTrue").orElse(false),
                 readInteger(node, "rateLimitSeconds").orElse(0),
                 readBoolean(node, "lastConditionMet").orElse(null),
+                parseInstant(readString(node, "conditionTrueSince").orElse("")),
                 parseInstant(readString(node, "lastFiredAt").orElse("")),
                 createdAt,
                 createdAt
@@ -553,6 +594,7 @@ public class AutomationTreeService {
                 readInteger(node, "sequenceGapSeconds").orElse(0),
                 CorrelatorActionType.valueOf(actionRaw),
                 readString(node, "actionTarget").orElse(""),
+                blankToNull(readString(node, "payloadFilterExpr").orElse(null)),
                 readBoolean(node, "enabled").orElse(true),
                 lastTriggered,
                 createdAt,

@@ -13,8 +13,11 @@ import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.ModelType;
 import com.ispf.plugin.model.ModelVariableDefinition;
 import com.ispf.core.model.DataSchema;
-import com.ispf.server.application.api.ApplicationController;
+import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.correlator.CorrelatorActionType;
+import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
+import com.ispf.server.application.api.ApplicationController;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
@@ -28,6 +31,8 @@ import com.ispf.server.migration.MigrationObjectService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.schedule.ScheduleObjectService;
+import com.ispf.server.operator.OperatorAppObjectTreeService;
+import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import org.springframework.stereotype.Service;
 
@@ -58,6 +63,9 @@ public class ApplicationBundleDeployService {
     private final SqlBindingObjectService sqlBindingObjectService;
     private final MigrationObjectService migrationObjectService;
     private final ObjectManager objectManager;
+    private final AutomationTreeService automationTreeService;
+    private final OperatorAppUiStore operatorAppUiStore;
+    private final OperatorAppObjectTreeService operatorAppObjectTreeService;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -76,7 +84,10 @@ public class ApplicationBundleDeployService {
             ScheduleObjectService scheduleObjectService,
             SqlBindingObjectService sqlBindingObjectService,
             MigrationObjectService migrationObjectService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            AutomationTreeService automationTreeService,
+            OperatorAppUiStore operatorAppUiStore,
+            OperatorAppObjectTreeService operatorAppObjectTreeService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -95,6 +106,9 @@ public class ApplicationBundleDeployService {
         this.sqlBindingObjectService = sqlBindingObjectService;
         this.migrationObjectService = migrationObjectService;
         this.objectManager = objectManager;
+        this.automationTreeService = automationTreeService;
+        this.operatorAppUiStore = operatorAppUiStore;
+        this.operatorAppObjectTreeService = operatorAppObjectTreeService;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -103,15 +117,16 @@ public class ApplicationBundleDeployService {
         List<String> errors = new ArrayList<>();
 
         try {
-            if (manifest.displayName() != null) {
-                dataService.register(
-                        appId,
-                        manifest.displayName(),
-                        manifest.tablePrefix(),
-                        manifest.schemaName()
-                );
-                applied.add("register");
-            }
+            String displayName = manifest.displayName() != null && !manifest.displayName().isBlank()
+                    ? manifest.displayName()
+                    : appId;
+            dataService.register(
+                    appId,
+                    displayName,
+                    manifest.tablePrefix(),
+                    manifest.schemaName()
+            );
+            applied.add("register");
         } catch (Exception ex) {
             errors.add("register: " + ex.getMessage());
         }
@@ -241,6 +256,9 @@ public class ApplicationBundleDeployService {
                             report.reportId(),
                             report.title(),
                             report.description(),
+                            report.reportType(),
+                            report.devicePathPattern(),
+                            report.variableName(),
                             report.query(),
                             report.parameters(),
                             report.columns() == null
@@ -253,6 +271,28 @@ public class ApplicationBundleDeployService {
                     applied.add("report:" + report.reportId());
                 } catch (Exception ex) {
                     errors.add("report:" + report.reportId() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.alertRules() != null) {
+            for (BundleAlertRule rule : manifest.alertRules()) {
+                try {
+                    deployAlertRule(rule);
+                    applied.add("alertRule:" + rule.name());
+                } catch (Exception ex) {
+                    errors.add("alertRule:" + rule.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.correlators() != null) {
+            for (BundleCorrelator correlator : manifest.correlators()) {
+                try {
+                    deployCorrelator(correlator);
+                    applied.add("correlator:" + correlator.name());
+                } catch (Exception ex) {
+                    errors.add("correlator:" + correlator.name() + ": " + ex.getMessage());
                 }
             }
         }
@@ -301,8 +341,69 @@ public class ApplicationBundleDeployService {
 
         response.put("dataSourcePath", dataSourcePath);
         response.put("objectTree", "tree-first");
+        String applicationPath = applicationTreePath(appId);
+        response.put("applicationPath", applicationPath);
+
+        try {
+            objectTreeService.syncApplication(appId);
+            applied.add("applicationTree:" + applicationPath);
+            syncOperatorAppUi(appId, manifest);
+            applied.add("operatorApp:" + operatorAppTreePath(appId));
+            response.put("applied", applied);
+        } catch (Exception ex) {
+            errors.add("applicationSync: " + ex.getMessage());
+            response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
+            response.put("errors", errors);
+            response.put("applied", applied);
+        }
 
         return response;
+    }
+
+    private void syncOperatorAppUi(String appId, BundleManifest manifest) throws Exception {
+        if (!hasOperatorUiManifest(manifest)) {
+            return;
+        }
+        Map<String, Object> ui = manifest.operatorUi() != null && !manifest.operatorUi().isEmpty()
+                ? manifest.operatorUi()
+                : buildOperatorUiFromBundle(appId, manifest);
+        String title = ui.get("title") != null ? String.valueOf(ui.get("title")) : appId;
+        String defaultDashboard = ui.get("defaultDashboard") != null
+                ? String.valueOf(ui.get("defaultDashboard"))
+                : "";
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> dashboardEntries = (List<Map<String, Object>>) ui.get("dashboards");
+        if (dashboardEntries == null || dashboardEntries.isEmpty()) {
+            return;
+        }
+        List<Map<String, String>> dashboards = new ArrayList<>();
+        for (Map<String, Object> entry : dashboardEntries) {
+            Map<String, String> item = new LinkedHashMap<>();
+            item.put("path", String.valueOf(entry.get("path")));
+            item.put("title", entry.get("title") != null ? String.valueOf(entry.get("title")) : String.valueOf(entry.get("path")));
+            dashboards.add(item);
+        }
+        if (defaultDashboard.isBlank()) {
+            defaultDashboard = dashboards.get(0).get("path");
+        }
+        operatorAppUiStore.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
+                appId,
+                title,
+                defaultDashboard,
+                objectMapper.writeValueAsString(dashboards),
+                Instant.now()
+        ));
+        operatorAppObjectTreeService.syncAll();
+    }
+
+    public static String applicationTreePath(String appId) {
+        return ApplicationObjectTreeService.APPLICATIONS_ROOT + "."
+                + ApplicationObjectTreeService.sanitizeNodeName(appId);
+    }
+
+    public static String operatorAppTreePath(String appId) {
+        return OperatorAppObjectTreeService.OPERATOR_APPS_ROOT + "."
+                + ApplicationObjectTreeService.sanitizeNodeName(appId);
     }
 
     public Map<String, Object> rollback(String appId, String bundleVersion) throws Exception {
@@ -419,6 +520,82 @@ public class ApplicationBundleDeployService {
         return ApplicationSchemaSupport.defaultSchemaName(appId);
     }
 
+    private void deployAlertRule(BundleAlertRule rule) {
+        String path = AutomationTreeService.rulePathForName(rule.name());
+        if (objectManager.tree().findByPath(path).isPresent()) {
+            automationTreeService.updateAlertRule(
+                    path,
+                    rule.name(),
+                    rule.objectPath(),
+                    rule.watchVariable(),
+                    rule.conditionExpr(),
+                    rule.eventName(),
+                    rule.payloadVariable(),
+                    rule.enabled(),
+                    rule.edgeTrigger(),
+                    rule.delaySeconds(),
+                    rule.sustainWhileTrue()
+            );
+            return;
+        }
+        automationTreeService.createAlertRule(
+                rule.name(),
+                rule.objectPath(),
+                rule.watchVariable(),
+                rule.conditionExpr(),
+                rule.eventName(),
+                rule.payloadVariable(),
+                rule.enabled() == null || rule.enabled(),
+                rule.edgeTrigger() == null || rule.edgeTrigger(),
+                rule.delaySeconds() != null ? rule.delaySeconds() : 0,
+                rule.sustainWhileTrue() != null && rule.sustainWhileTrue()
+        );
+    }
+
+    private void deployCorrelator(BundleCorrelator correlator) {
+        String path = AutomationTreeService.correlatorPathForName(correlator.name());
+        CorrelatorPatternType patternType = CorrelatorPatternType.valueOf(
+                correlator.patternType() != null ? correlator.patternType() : "COUNT"
+        );
+        CorrelatorActionType actionType = CorrelatorActionType.valueOf(
+                correlator.actionType() != null ? correlator.actionType() : "RUN_WORKFLOW"
+        );
+        if (objectManager.tree().findByPath(path).isPresent()) {
+            automationTreeService.updateCorrelator(
+                    path,
+                    correlator.name(),
+                    correlator.objectPath(),
+                    patternType,
+                    correlator.eventName(),
+                    correlator.secondEventName(),
+                    correlator.windowSeconds(),
+                    correlator.minOccurrences(),
+                    correlator.cooldownSeconds(),
+                    correlator.sequenceGapSeconds(),
+                    actionType,
+                    correlator.actionTarget(),
+                    correlator.payloadFilterExpr(),
+                    correlator.enabled()
+            );
+            return;
+        }
+        automationTreeService.createCorrelator(
+                correlator.name(),
+                correlator.objectPath(),
+                patternType,
+                correlator.eventName(),
+                correlator.secondEventName(),
+                correlator.windowSeconds() != null ? correlator.windowSeconds() : 0,
+                correlator.minOccurrences() != null ? correlator.minOccurrences() : 1,
+                correlator.cooldownSeconds() != null ? correlator.cooldownSeconds() : 120,
+                correlator.sequenceGapSeconds() != null ? correlator.sequenceGapSeconds() : 0,
+                actionType,
+                correlator.actionTarget(),
+                correlator.payloadFilterExpr(),
+                correlator.enabled() == null || correlator.enabled()
+        );
+    }
+
     private void deployFunction(String appId, String dataSourcePath, BundleFunction function) throws Exception {
         String version = function.version() != null ? function.version() : "1";
         String inputSchemaJson = objectMapper.writeValueAsString(function.descriptor().inputSchema());
@@ -505,7 +682,10 @@ public class ApplicationBundleDeployService {
             List<BundleFunction> functions,
             List<BundleSqlBinding> bindings,
             List<BundleReport> reports,
+            List<BundleAlertRule> alertRules,
+            List<BundleCorrelator> correlators,
             List<BundleSchedule> schedules,
+            Map<String, Object> metadata,
             Map<String, Object> operatorUi,
             Map<String, Object> operatorManifest
     ) {
@@ -579,10 +759,44 @@ public class ApplicationBundleDeployService {
             String reportId,
             String title,
             String description,
+            String reportType,
+            String devicePathPattern,
+            String variableName,
             String query,
             List<String> parameters,
             List<BundleReportColumn> columns,
             Integer maxRows
+    ) {
+    }
+
+    public record BundleAlertRule(
+            String name,
+            String objectPath,
+            String watchVariable,
+            String conditionExpr,
+            String eventName,
+            String payloadVariable,
+            Boolean enabled,
+            Boolean edgeTrigger,
+            Integer delaySeconds,
+            Boolean sustainWhileTrue
+    ) {
+    }
+
+    public record BundleCorrelator(
+            String name,
+            String objectPath,
+            String patternType,
+            String eventName,
+            String secondEventName,
+            Integer windowSeconds,
+            Integer minOccurrences,
+            Integer cooldownSeconds,
+            Integer sequenceGapSeconds,
+            String actionType,
+            String actionTarget,
+            String payloadFilterExpr,
+            Boolean enabled
     ) {
     }
 

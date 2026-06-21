@@ -292,6 +292,26 @@ public class ModelBootstrap {
                                 DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
                         ModelVariableDefinition.of(
+                                "delaySeconds",
+                                "Seconds condition must stay true before firing (with sustainWhileTrue)",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                        ),
+                        ModelVariableDefinition.of(
+                                "sustainWhileTrue",
+                                "Require condition to remain true for delaySeconds before firing",
+                                "config",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                        ),
+                        ModelVariableDefinition.of(
                                 "rateLimitSeconds",
                                 "Minimum seconds between event fires (0 = no limit)",
                                 "config",
@@ -321,6 +341,16 @@ public class ModelBootstrap {
                         ModelVariableDefinition.of(
                                 "lastFiredAt",
                                 "Runtime: last event fire timestamp (ISO-8601)",
+                                "runtime",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                false,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "conditionTrueSince",
+                                "Runtime: when condition first became true (ISO-8601)",
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
@@ -439,7 +469,17 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.of(
                                 "actionTarget",
-                                "Workflow path for RUN_WORKFLOW",
+                                "Workflow path, event name, variable=value, or report path",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        ModelVariableDefinition.of(
+                                "payloadFilterExpr",
+                                "Optional CEL filter on latest event payload (payload map context)",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,

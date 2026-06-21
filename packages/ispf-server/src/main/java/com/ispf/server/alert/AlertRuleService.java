@@ -10,6 +10,7 @@ import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -53,7 +54,9 @@ public class AlertRuleService {
                 request.eventName(),
                 request.payloadVariable(),
                 request.enabled(),
-                request.edgeTrigger()
+                request.edgeTrigger(),
+                request.resolvedDelaySeconds(),
+                request.resolvedSustainWhileTrue()
         );
     }
 
@@ -76,7 +79,9 @@ public class AlertRuleService {
                 request.eventName(),
                 request.payloadVariable(),
                 request.enabled(),
-                request.edgeTrigger()
+                request.edgeTrigger(),
+                request.delaySeconds(),
+                request.sustainWhileTrue()
         );
     }
 
@@ -98,21 +103,46 @@ public class AlertRuleService {
                 continue;
             }
             boolean conditionMet = evaluateCondition(rule.conditionExpr(), node);
-            boolean shouldFire = conditionMet;
-            if (rule.edgeTrigger()) {
-                shouldFire = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
+            boolean shouldFire;
+
+            if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
+                if (!conditionMet) {
+                    automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
+                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), false);
+                    continue;
+                }
+                Instant conditionTrueSince = rule.conditionTrueSince();
+                if (conditionTrueSince == null) {
+                    automationTreeService.setAlertRuleConditionTrueSince(rule.id(), Instant.now());
+                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), true);
+                    continue;
+                }
+                if (conditionTrueSince.plusSeconds(rule.delaySeconds()).isAfter(Instant.now())) {
+                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), true);
+                    continue;
+                }
+                shouldFire = true;
+            } else {
+                shouldFire = conditionMet;
+                if (rule.edgeTrigger()) {
+                    shouldFire = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
+                }
             }
+
             automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
             if (shouldFire) {
                 if (rule.rateLimitSeconds() > 0) {
                     if (rule.lastFiredAt() != null
-                            && rule.lastFiredAt().plusSeconds(rule.rateLimitSeconds()).isAfter(java.time.Instant.now())) {
+                            && rule.lastFiredAt().plusSeconds(rule.rateLimitSeconds()).isAfter(Instant.now())) {
                         continue;
                     }
-                    automationTreeService.setAlertRuleLastFiredAt(rule.id(), java.time.Instant.now());
+                    automationTreeService.setAlertRuleLastFiredAt(rule.id(), Instant.now());
                 }
                 DataRecord payload = resolvePayload(node, rule.payloadVariable());
                 eventService.fire(objectPath, rule.eventName(), payload);
+                if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
+                    automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
+                }
             }
         }
     }
@@ -159,8 +189,17 @@ public class AlertRuleService {
             String eventName,
             String payloadVariable,
             boolean enabled,
-            boolean edgeTrigger
+            boolean edgeTrigger,
+            Integer delaySeconds,
+            Boolean sustainWhileTrue
     ) {
+        public int resolvedDelaySeconds() {
+            return delaySeconds != null ? delaySeconds : 0;
+        }
+
+        public boolean resolvedSustainWhileTrue() {
+            return sustainWhileTrue != null && sustainWhileTrue;
+        }
     }
 
     public record UpdateAlertRuleRequest(
@@ -171,7 +210,9 @@ public class AlertRuleService {
             String eventName,
             String payloadVariable,
             Boolean enabled,
-            Boolean edgeTrigger
+            Boolean edgeTrigger,
+            Integer delaySeconds,
+            Boolean sustainWhileTrue
     ) {
     }
 }

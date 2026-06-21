@@ -28,7 +28,8 @@
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
 | [Драйверы](DRIVERS.md) | 58 встроенных драйверов — полный каталог REQ-PF-14 |
-| [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, 14 типов виджетов, layout JSON, `objectPath` / `selectionKey` |
+| [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, виджеты, layout JSON, `objectPath` / `selectionKey` |
+| [Lab Training (18 заданий)](LAB_TRAINING.md) | Virtual lab device, bundle import, упражнения Phase 15 |
 | [Workflow / BPMN](WORKFLOWS.md) | Движок, ISPF-расширения, work queue |
 | [Автоматизация](AUTOMATION.md) | События, alert rules, correlators |
 | [Web Console](WEB_CONSOLE.md) | Админка, operator HMI, роли |

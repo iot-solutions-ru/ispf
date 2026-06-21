@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Simulated device driver for demos and integration tests.
- * Profiles: demo (temperature), meter, weighbridge, rack-signals.
+ * Profiles: demo (temperature), meter, weighbridge, rack-signals, lab (sine/sawtooth waves).
  */
 public class VirtualDeviceDriver implements DeviceDriver {
 
@@ -20,7 +20,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             "virtual",
             "Virtual Simulator Driver",
             "0.2.0",
-            "Synthetic telemetry: temperature demo, filling meter, weighbridge, rack safety signals",
+            "Synthetic telemetry: temperature demo, filling meter, weighbridge, rack safety signals, lab waves",
             "ISPF",
             Map.ofEntries(
                     Map.entry("profile", "demo"),
@@ -33,9 +33,15 @@ public class VirtualDeviceDriver implements DeviceDriver {
                     Map.entry("rackId", "rack-1"),
                     Map.entry("gasConnected", "true"),
                     Map.entry("groundConnected", "true"),
-                    Map.entry("pollIntervalMs", "2000")
+                    Map.entry("pollIntervalMs", "2000"),
+                    Map.entry("sineAmplitude", "10.0"),
+                    Map.entry("sawtoothAmplitude", "5.0")
             )
     );
+
+    private static final DataSchema WAVE_SCHEMA = DataSchema.builder("waveReading")
+            .field("value", FieldType.DOUBLE)
+            .build();
 
     private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
             .field("value", FieldType.DOUBLE)
@@ -74,6 +80,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private String profile = "demo";
     private double baseTemperature = 22.0;
     private double amplitude = 15.0;
+    private double sineAmplitude = 10.0;
+    private double sawtoothAmplitude = 5.0;
     private double periodSec = 60.0;
     private double litersPerSecond = 120.0;
     private double tareKg = 15_000.0;
@@ -99,6 +107,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
         readConfig("profile", value -> profile = value.toLowerCase());
         readConfig("baseTemperature", value -> baseTemperature = Double.parseDouble(value));
         readConfig("amplitude", value -> amplitude = Double.parseDouble(value));
+        readConfig("sineAmplitude", value -> sineAmplitude = Double.parseDouble(value));
+        readConfig("sawtoothAmplitude", value -> sawtoothAmplitude = Double.parseDouble(value));
         readConfig("periodSec", value -> periodSec = Double.parseDouble(value));
         readConfig("litersPerSecond", value -> litersPerSecond = Double.parseDouble(value));
         readConfig("tareKg", value -> tareKg = Double.parseDouble(value));
@@ -115,6 +125,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
             case "profile" -> profile = value.toLowerCase();
             case "baseTemperature" -> baseTemperature = Double.parseDouble(value);
             case "amplitude" -> amplitude = Double.parseDouble(value);
+            case "sineAmplitude" -> sineAmplitude = Double.parseDouble(value);
+            case "sawtoothAmplitude" -> sawtoothAmplitude = Double.parseDouble(value);
             case "periodSec" -> periodSec = Double.parseDouble(value);
             case "litersPerSecond" -> litersPerSecond = Double.parseDouble(value);
             case "tareKg" -> tareKg = Double.parseDouble(value);
@@ -153,6 +165,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             case "meter" -> readMeterProfile();
             case "weighbridge" -> readWeighbridgeProfile();
             case "rack-signals" -> readRackSignalsProfile();
+            case "lab" -> readLabProfile();
             default -> readDemoProfile();
         }
     }
@@ -207,6 +220,29 @@ public class VirtualDeviceDriver implements DeviceDriver {
         driverObject.updateVariable(
                 "tareKg",
                 DataRecord.single(WEIGHT_SCHEMA, Map.of("value", tareKg, "unit", "kg"))
+        );
+    }
+
+    private void readLabProfile() {
+        double effectiveSineAmplitude = sineAmplitude > 0 ? sineAmplitude : amplitude;
+        double elapsedSec = (System.currentTimeMillis() - startedAt) / 1000.0;
+        double sine = effectiveSineAmplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
+        double phase = elapsedSec % periodSec;
+        double sawtooth = sawtoothAmplitude * (2.0 * (phase / periodSec) - 1.0);
+        driverObject.updateVariable(
+                "sineWave",
+                DataRecord.single(WAVE_SCHEMA, Map.of("value", sine))
+        );
+        driverObject.updateVariable(
+                "sawtoothWave",
+                DataRecord.single(WAVE_SCHEMA, Map.of("value", sawtooth))
+        );
+        driverObject.updateVariable(
+                "status",
+                DataRecord.single(STATUS_SCHEMA, Map.of(
+                        "online", true,
+                        "lastSeen", Instant.now().toString()
+                ))
         );
     }
 

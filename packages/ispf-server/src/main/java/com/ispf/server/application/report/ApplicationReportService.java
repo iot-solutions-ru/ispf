@@ -37,6 +37,23 @@ public class ApplicationReportService {
 
     @Transactional
     public void deploy(String appId, DeployReportRequest request) {
+        List<ReportService.ReportColumn> columns = request.columns() == null
+                ? List.of()
+                : request.columns().stream()
+                        .map(col -> new ReportService.ReportColumn(col.field(), col.label()))
+                        .toList();
+        if (ReportService.REPORT_TYPE_TREE_VARIABLES.equals(request.reportType())) {
+            reportService.deployTreeVariables(
+                    request.reportId(),
+                    request.title(),
+                    request.description(),
+                    request.devicePathPattern(),
+                    request.variableName(),
+                    columns,
+                    request.maxRows()
+            );
+            return;
+        }
         dataSourceObjectService.ensureDataSource(
                 appId,
                 request.title() != null ? request.title() : appId,
@@ -50,11 +67,7 @@ public class ApplicationReportService {
                 request.description(),
                 request.query(),
                 request.parameters(),
-                request.columns() == null
-                        ? List.of()
-                        : request.columns().stream()
-                                .map(col -> new ReportService.ReportColumn(col.field(), col.label()))
-                                .toList(),
+                columns,
                 request.maxRows(),
                 Map.of()
         );
@@ -99,6 +112,9 @@ public class ApplicationReportService {
             String reportId,
             String title,
             String description,
+            String reportType,
+            String devicePathPattern,
+            String variableName,
             String query,
             List<String> parameters,
             List<ReportColumn> columns,

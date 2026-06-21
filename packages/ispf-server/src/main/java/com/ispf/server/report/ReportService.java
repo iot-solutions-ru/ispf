@@ -7,11 +7,13 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.report.ApplicationReportStore;
+import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
@@ -31,6 +33,13 @@ import java.util.regex.Pattern;
 public class ReportService {
 
     public static final String REPORTS_ROOT = "root.platform.reports";
+    public static final String REPORT_TYPE_TREE_VARIABLES = LabModelBootstrap.TREE_VARIABLES_REPORT_TYPE;
+
+    private static final List<ReportColumn> DEFAULT_TREE_VARIABLE_COLUMNS = List.of(
+            new ReportColumn("devicepath", "Device path"),
+            new ReportColumn("int", "Int"),
+            new ReportColumn("string", "String")
+    );
 
     private static final Pattern FORBIDDEN_SQL = Pattern.compile(
             "\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|MERGE|CALL|EXEC|GRANT|REVOKE)\\b",
@@ -124,10 +133,25 @@ public class ReportService {
         if (node.type() != ObjectType.REPORT) {
             throw new IllegalArgumentException("Not a report object: " + path);
         }
-        if (node.getVariable("query").isPresent()) {
+        if (node.getVariable("query").isPresent() || node.getVariable("reportType").isPresent()) {
             return;
         }
         modelRegistry.findByName("report-v1").ifPresent(model -> {
+            modelEngine.applyModel(model.id(), path);
+            objectManager.persistNodeTree(path);
+        });
+    }
+
+    @Transactional
+    public void ensureTreeVariablesReportStructure(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.REPORT) {
+            throw new IllegalArgumentException("Not a report object: " + path);
+        }
+        if (node.getVariable("reportType").isPresent()) {
+            return;
+        }
+        modelRegistry.findByName(LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL).ifPresent(model -> {
             modelEngine.applyModel(model.id(), path);
             objectManager.persistNodeTree(path);
         });
@@ -149,7 +173,7 @@ public class ReportService {
         validateSelectQuery(query);
         ensureReportsCatalog();
         String path = reportPath(reportId);
-        ensureReportNode(path, title, description);
+        ensureReportNode(path, title, description, "report-v1");
         ensureReportStructure(path);
         saveDefinitionInternal(
                 path,
@@ -167,7 +191,31 @@ public class ReportService {
         );
     }
 
-    /** @deprecated bundle import uses {@link #deploy(String, String, String, String, String, List, List, Integer, Map)} */
+    @Transactional
+    public void deployTreeVariables(
+            String reportId,
+            String title,
+            String description,
+            String devicePathPattern,
+            String variableName,
+            List<ReportColumn> columns,
+            Integer maxRows
+    ) {
+        ensureReportsCatalog();
+        String path = reportPath(reportId);
+        ensureReportNode(path, title, description, LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL);
+        ensureTreeVariablesReportStructure(path);
+        saveTreeVariablesDefinitionInternal(
+                path,
+                title,
+                devicePathPattern,
+                variableName,
+                columns != null && !columns.isEmpty() ? columns : DEFAULT_TREE_VARIABLE_COLUMNS,
+                maxRows != null && maxRows > 0 ? maxRows : 1000,
+                30000,
+                ""
+        );
+    }
     @Deprecated
     @Transactional
     public void deployLegacyApp(
@@ -303,6 +351,10 @@ public class ReportService {
     }
 
     private Map<String, Object> runDefinition(ReportView report, Map<String, Object> parameters) {
+        if (REPORT_TYPE_TREE_VARIABLES.equals(report.reportType())) {
+            return runTreeVariablesDefinition(report);
+        }
+
         List<Object> paramValues = resolveParameterValues(report.parameters(), parameters);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(
                 report.dataSourcePath(),
@@ -360,7 +412,92 @@ public class ReportService {
         );
     }
 
-    private void ensureReportNode(String path, String title, String description) {
+    private Map<String, Object> runTreeVariablesDefinition(ReportView report) {
+        String pattern = report.devicePathPattern();
+        String variableName = report.variableName();
+        if (pattern == null || pattern.isBlank()) {
+            throw new IllegalArgumentException("Report devicePathPattern is required for tree-variables reports");
+        }
+        if (variableName == null || variableName.isBlank()) {
+            throw new IllegalArgumentException("Report variableName is required for tree-variables reports");
+        }
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (PlatformObject node : objectManager.tree().all()) {
+            if (node.type() != ObjectType.DEVICE) {
+                continue;
+            }
+            if (!matchesDevicePathPattern(node.path(), pattern)) {
+                continue;
+            }
+            Optional<DataRecord> record = node.getVariable(variableName).flatMap(Variable::value);
+            if (record.isPresent()) {
+                flattenVariableToRows(node.path(), record.get(), rows);
+            }
+        }
+
+        boolean truncated = rows.size() > report.maxRows();
+        if (truncated) {
+            rows = new ArrayList<>(rows.subList(0, report.maxRows()));
+        }
+        rows = normalizeRowKeys(rows);
+        return Map.of(
+                "path", report.path(),
+                "reportId", reportIdFromPath(report.path()),
+                "title", report.title(),
+                "reportType", REPORT_TYPE_TREE_VARIABLES,
+                "columns", columnMaps(report.columns()),
+                "rows", rows,
+                "rowCount", rows.size(),
+                "truncated", truncated
+        );
+    }
+
+    static boolean matchesDevicePathPattern(String path, String pattern) {
+        if (path == null || pattern == null || pattern.isBlank()) {
+            return false;
+        }
+        if (pattern.contains("*")) {
+            String regex = "^" + pattern.replace(".", "\\.").replace("*", ".*") + "$";
+            return Pattern.compile(regex).matcher(path).matches();
+        }
+        return path.equals(pattern) || path.startsWith(pattern);
+    }
+
+    private static void flattenVariableToRows(
+            String devicePath,
+            DataRecord record,
+            List<Map<String, Object>> rows
+    ) {
+        Optional<String> listField = record.schema().fields().stream()
+                .filter(field -> field.type() == FieldType.RECORD_LIST)
+                .map(FieldDefinition::name)
+                .findFirst();
+        if (listField.isPresent() && record.rowCount() > 0) {
+            Object tableRowsObject = record.firstRow().get(listField.get());
+            if (tableRowsObject instanceof List<?> tableRows) {
+                for (Object rowObject : tableRows) {
+                    if (rowObject instanceof Map<?, ?> row) {
+                        rows.add(treeVariableRow(devicePath, row));
+                    }
+                }
+                return;
+            }
+        }
+        for (Map<String, Object> row : record.rows()) {
+            rows.add(treeVariableRow(devicePath, row));
+        }
+    }
+
+    private static Map<String, Object> treeVariableRow(String devicePath, Map<?, ?> row) {
+        Map<String, Object> mapped = new LinkedHashMap<>();
+        mapped.put("devicepath", devicePath);
+        mapped.put("int", row.get("int"));
+        mapped.put("string", row.get("string"));
+        return mapped;
+    }
+
+    private void ensureReportNode(String path, String title, String description, String templateId) {
         if (objectManager.tree().findByPath(path).isPresent()) {
             objectManager.updateInfo(path, title, description != null ? description : "");
             objectManager.reconcileType(path, ObjectType.REPORT);
@@ -378,8 +515,29 @@ public class ReportService {
                 ObjectType.REPORT,
                 title,
                 description != null ? description : "",
-                "report-v1"
+                templateId
         );
+    }
+
+    private void saveTreeVariablesDefinitionInternal(
+            String path,
+            String title,
+            String devicePathPattern,
+            String variableName,
+            List<ReportColumn> columns,
+            int maxRows,
+            int refreshIntervalMs,
+            String layout
+    ) {
+        setString(path, "title", title);
+        setString(path, "reportType", REPORT_TYPE_TREE_VARIABLES);
+        setString(path, "devicePathPattern", devicePathPattern);
+        setString(path, "variableName", variableName);
+        setString(path, "columns", serialize(columns));
+        setString(path, "defaultParameters", "{}");
+        setInteger(path, "maxRows", maxRows);
+        setInteger(path, "refreshIntervalMs", refreshIntervalMs);
+        setString(path, "layout", layout);
     }
 
     private void saveDefinitionInternal(String path, ReportDefinition definition) {
@@ -406,6 +564,9 @@ public class ReportService {
                 dataSourcePath,
                 legacyAppId,
                 readString(node, "query").orElse(""),
+                readString(node, "reportType").orElse(""),
+                readString(node, "devicePathPattern").orElse(""),
+                readString(node, "variableName").orElse(""),
                 deserializeStringList(readString(node, "parameters").orElse("[]")),
                 deserializeReportColumns(readString(node, "columns").orElse("[]")),
                 deserializeObjectMap(readString(node, "defaultParameters").orElse("{}")),
@@ -645,6 +806,9 @@ public class ReportService {
             String dataSourcePath,
             String legacyAppId,
             String query,
+            String reportType,
+            String devicePathPattern,
+            String variableName,
             List<String> parameters,
             List<ReportColumn> columns,
             Map<String, Object> defaultParameters,

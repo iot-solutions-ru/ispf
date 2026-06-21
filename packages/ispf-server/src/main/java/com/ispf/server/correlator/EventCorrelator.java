@@ -15,6 +15,7 @@ public record EventCorrelator(
         int sequenceGapSeconds,
         CorrelatorActionType actionType,
         String actionTarget,
+        String payloadFilterExpr,
         boolean enabled,
         Instant lastTriggeredAt,
         Instant createdAt,

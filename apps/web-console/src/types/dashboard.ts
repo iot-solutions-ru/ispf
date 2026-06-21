@@ -14,7 +14,12 @@ export type WidgetType =
   | "gauge"
   | "card-grid"
   | "dashboard-link"
-  | "report";
+  | "report"
+  | "pie-chart"
+  | "history-table"
+  | "variable-editor"
+  | "svg-widget"
+  | "composite-widget";
 
 export type DashboardOpenMode = "navigate" | "modal";
 
@@ -152,6 +157,8 @@ export interface EventFeedWidget extends DashboardWidgetBase {
   type: "event-feed";
   objectPathPrefix?: string;
   eventNamesJson?: string;
+  /** Client-side filter on payload row, e.g. `count>10 && name contains abc` */
+  payloadFilterExpr?: string;
   maxItems?: number;
 }
 
@@ -201,6 +208,37 @@ export interface ReportWidget extends DashboardWidgetBase {
   emptyMessage?: string;
 }
 
+export interface PieChartWidget extends DashboardWidgetBase {
+  type: "pie-chart";
+  labelField?: string;
+  decimals?: number;
+}
+
+export interface HistoryTableWidget extends DashboardWidgetBase {
+  type: "history-table";
+  decimals?: number;
+}
+
+export interface VariableEditorWidget extends DashboardWidgetBase {
+  type: "variable-editor";
+  /** JSON array of variable names; empty = all variables on object */
+  variablesJson?: string;
+}
+
+export interface SvgWidget extends DashboardWidgetBase {
+  type: "svg-widget";
+  svgUrl: string;
+  clickAction?: "function" | "toggle";
+  functionName?: string;
+  toggleVariable?: string;
+  confirmMessage?: string;
+}
+
+export interface CompositeWidget extends DashboardWidgetBase {
+  type: "composite-widget";
+  childrenJson?: string;
+}
+
 export type DashboardWidget =
   | ValueWidget
   | ToggleWidget
@@ -217,7 +255,12 @@ export type DashboardWidget =
   | GaugeWidget
   | CardGridWidget
   | DashboardLinkWidget
-  | ReportWidget;
+  | ReportWidget
+  | PieChartWidget
+  | HistoryTableWidget
+  | VariableEditorWidget
+  | SvgWidget
+  | CompositeWidget;
 
 export interface DashboardLayout {
   columns: number;
@@ -252,6 +295,11 @@ export const WIDGET_TYPES: Array<{ type: WidgetType; label: string }> = [
   { type: "card-grid", label: "Карточки объектов" },
   { type: "dashboard-link", label: "Переход / модальный дашборд" },
   { type: "report", label: "SQL-отчёт" },
+  { type: "pie-chart", label: "Круговая диаграмма" },
+  { type: "history-table", label: "Таблица истории (5 мин)" },
+  { type: "variable-editor", label: "Редактор переменных" },
+  { type: "svg-widget", label: "SVG (lab)" },
+  { type: "composite-widget", label: "Композитный виджет" },
 ];
 
 export function emptyLayout(): DashboardLayout {
@@ -425,6 +473,50 @@ export function newWidget(type: WidgetType, index: number): DashboardWidget {
         h: 4,
         reportPath: "",
         emptyMessage: "Нет строк",
+      };
+    case "pie-chart":
+      return {
+        ...base,
+        type: "pie-chart",
+        w: 4,
+        h: 4,
+        labelField: "name",
+        valueField: "value",
+        decimals: 1,
+      };
+    case "history-table":
+      return {
+        ...base,
+        type: "history-table",
+        w: 4,
+        h: 4,
+        decimals: 2,
+      };
+    case "variable-editor":
+      return {
+        ...base,
+        type: "variable-editor",
+        w: 4,
+        h: 5,
+        variablesJson: "[]",
+      };
+    case "svg-widget":
+      return {
+        ...base,
+        type: "svg-widget",
+        w: 2,
+        h: 2,
+        svgUrl: "/lab-assets/button.svg",
+        clickAction: "function",
+        functionName: "",
+      };
+    case "composite-widget":
+      return {
+        ...base,
+        type: "composite-widget",
+        w: 4,
+        h: 3,
+        childrenJson: "[]",
       };
     default:
       return { ...base, type: "value", decimals: 1 };

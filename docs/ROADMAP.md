@@ -143,6 +143,19 @@
 
 Application API (`/applications/{id}/deploy`) сохранён для совместимости; runtime — только дерево объектов.
 
+## Phase 15 — Lab Training Package
+
+| # | Тема | Статус |
+|---|------|--------|
+| 15.1 | Virtual driver profile `lab` + model `virtual-lab-v1` (waves, table, events, calculate) | Done |
+| 15.2 | Automation v2: alert `delaySeconds`/`sustainWhileTrue`, correlator `payloadFilterExpr`, `SET_VARIABLE`, `OPEN_OPERATOR_REPORT` | Done |
+| 15.3 | Report type `tree-variables` (cross-device RECORD_LIST) | Done |
+| 15.4 | Web Console widgets: `pie-chart`, `history-table`, `variable-editor`, `svg-widget`, `composite-widget`, event-feed filter | Done |
+| 15.5 | Importable bundle `examples/lab-training/` + lab users/ACL bootstrap | Done |
+| 15.6 | Docs [LAB_TRAINING.md](LAB_TRAINING.md), integration tests | Done |
+
+См. [LAB_TRAINING.md](LAB_TRAINING.md), [DASHBOARDS.md](DASHBOARDS.md) (Grid Layout form example).
+
 ## Platform baseline
 
 | # | Тема | Статус |

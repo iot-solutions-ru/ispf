@@ -34,6 +34,7 @@ public final class SystemObjectTypeResolver {
             Map.entry("application-migration-v1", ObjectType.MIGRATION),
             Map.entry("operator-screen-v1", ObjectType.SCREEN),
             Map.entry("report-v1", ObjectType.REPORT),
+            Map.entry("tree-variables-report-v1", ObjectType.REPORT),
             Map.entry("data-source-v1", ObjectType.DATA_SOURCE),
             Map.entry("schedule-v1", ObjectType.SCHEDULE),
             Map.entry("sql-binding-v1", ObjectType.BINDING),

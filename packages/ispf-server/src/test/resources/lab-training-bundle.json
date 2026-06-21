@@ -1,0 +1,191 @@
+{
+  "version": "2.0.0",
+  "displayName": "Lab Training",
+  "tablePrefix": "",
+  "schemaName": "app_lab_training",
+  "metadata": {
+    "usersNote": "Training users lab-user-a / lab-user-b and cross-device ACL are seeded by LabSecurityBootstrap on server start."
+  },
+  "alertRules": [
+    {
+      "name": "Lab sum range sustained alert",
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "watchVariable": "sumIntFloat",
+      "conditionExpr": "self.sumIntFloat[\"value\"] >= 50 && self.sumIntFloat[\"value\"] <= 100",
+      "eventName": "labSumRangeAlarm",
+      "payloadVariable": "sumIntFloat",
+      "enabled": true,
+      "edgeTrigger": false,
+      "delaySeconds": 10,
+      "sustainWhileTrue": true
+    },
+    {
+      "name": "Lab table sum threshold",
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "watchVariable": "tableIntSum",
+      "conditionExpr": "self.tableIntSum[\"value\"] > 100",
+      "eventName": "labTableSumExceeded",
+      "payloadVariable": "tableIntSum",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    }
+  ],
+  "correlators": [
+    {
+      "name": "Lab event1 latch on",
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "patternType": "COUNT",
+      "eventName": "event1",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 0,
+      "sequenceGapSeconds": 0,
+      "actionType": "SET_VARIABLE",
+      "actionTarget": "alarmLatched=true",
+      "enabled": true
+    },
+    {
+      "name": "Lab event2 unlatch",
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "patternType": "COUNT",
+      "eventName": "event2",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 0,
+      "sequenceGapSeconds": 0,
+      "actionType": "SET_VARIABLE",
+      "actionTarget": "alarmLatched=false",
+      "payloadFilterExpr": "payload[\"int\"] > 20",
+      "enabled": true
+    },
+    {
+      "name": "Lab open corrective report",
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "patternType": "COUNT",
+      "eventName": "labTableSumExceeded",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 0,
+      "sequenceGapSeconds": 0,
+      "actionType": "OPEN_OPERATOR_REPORT",
+      "actionTarget": "root.platform.reports.lab-table-corrective",
+      "enabled": true
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "lab-all-devices-table",
+      "title": "All lab devices table",
+      "description": "Tree-variables report: table rows from all lab virtual devices",
+      "reportType": "tree-variables",
+      "devicePathPattern": "root.platform.devices.lab-*",
+      "variableName": "table",
+      "columns": [
+        { "field": "devicepath", "label": "Device path" },
+        { "field": "int", "label": "Int" },
+        { "field": "string", "label": "String" }
+      ],
+      "maxRows": 1000
+    },
+    {
+      "reportId": "lab-table-corrective",
+      "title": "Corrective table report",
+      "description": "Opened when table int sum exceeds 100 (Task 4)",
+      "reportType": "tree-variables",
+      "devicePathPattern": "root.platform.devices.lab-*",
+      "variableName": "table",
+      "columns": [
+        { "field": "devicepath", "label": "Device path" },
+        { "field": "int", "label": "Int" },
+        { "field": "string", "label": "String" }
+      ],
+      "maxRows": 500
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.lab-form-grid",
+      "title": "Lab form grid",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"append-row\",\"type\":\"function-form\",\"title\":\"Append table row\",\"x\":0,\"y\":0,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"functionName\":\"appendTableRow\",\"buttonLabel\":\"Append\",\"fieldsJson\":\"[{\\\"name\\\":\\\"int\\\",\\\"label\\\":\\\"Int\\\",\\\"type\\\":\\\"number\\\"},{\\\"name\\\":\\\"string\\\",\\\"label\\\":\\\"String\\\",\\\"type\\\":\\\"text\\\"}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-calculator",
+      "title": "Lab calculator",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"calc-form\",\"type\":\"function-form\",\"title\":\"Calculator\",\"x\":0,\"y\":0,\"w\":5,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"functionName\":\"calculate\",\"buttonLabel\":\"Calculate\",\"fieldsJson\":\"[{\\\"name\\\":\\\"inputA\\\",\\\"label\\\":\\\"A\\\",\\\"type\\\":\\\"number\\\"},{\\\"name\\\":\\\"inputB\\\",\\\"label\\\":\\\"B\\\",\\\"type\\\":\\\"number\\\"}]\"},{\"id\":\"calc-result\",\"type\":\"value\",\"title\":\"Result\",\"x\":5,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sumIntFloat\",\"valueField\":\"value\",\"decimals\":2}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-event-gen",
+      "title": "Lab event generator",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"fire-event1\",\"type\":\"function-form\",\"title\":\"Fire event 1\",\"x\":0,\"y\":0,\"w\":4,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"functionName\":\"fireEvent1\",\"buttonLabel\":\"Fire event1\",\"fieldsJson\":\"[{\\\"name\\\":\\\"int\\\",\\\"label\\\":\\\"Int\\\",\\\"type\\\":\\\"number\\\"},{\\\"name\\\":\\\"string\\\",\\\"label\\\":\\\"String\\\",\\\"type\\\":\\\"text\\\"}]\"},{\"id\":\"fire-event2\",\"type\":\"function-form\",\"title\":\"Fire event 2\",\"x\":4,\"y\":0,\"w\":4,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"functionName\":\"fireEvent2\",\"buttonLabel\":\"Fire event2\",\"fieldsJson\":\"[{\\\"name\\\":\\\"int\\\",\\\"label\\\":\\\"Int\\\",\\\"type\\\":\\\"number\\\"},{\\\"name\\\":\\\"string\\\",\\\"label\\\":\\\"String\\\",\\\"type\\\":\\\"text\\\"}]\"},{\"id\":\"event1-feed\",\"type\":\"event-feed\",\"title\":\"Event 1 log\",\"x\":0,\"y\":4,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"eventNamesJson\":\"[\\\"event1\\\"]\",\"maxItems\":20},{\"id\":\"event2-feed\",\"type\":\"event-feed\",\"title\":\"Event 2 log (filtered)\",\"x\":6,\"y\":4,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"eventNamesJson\":\"[\\\"event2\\\"]\",\"payloadFilterExpr\":\"int > 10 || string contains abc\",\"maxItems\":20}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-charts",
+      "title": "Lab charts",
+      "refreshIntervalMs": 1000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sine-chart\",\"type\":\"chart\",\"title\":\"Sine wave\",\"x\":0,\"y\":0,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sineWave\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#2f81f7\",\"decimals\":2},{\"id\":\"saw-chart\",\"type\":\"chart\",\"title\":\"Sawtooth wave\",\"x\":6,\"y\":0,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sawtoothWave\",\"valueField\":\"value\",\"chartStyle\":\"line\",\"maxPoints\":120,\"historyRange\":\"live\",\"color\":\"#3fb950\",\"decimals\":2}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-pie",
+      "title": "Lab pie chart",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"table-pie\",\"type\":\"pie-chart\",\"title\":\"Table int distribution\",\"x\":0,\"y\":0,\"w\":12,\"h\":5,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"table\",\"labelField\":\"string\",\"valueField\":\"int\",\"decimals\":0}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-modal",
+      "title": "Lab modal link",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"open-charts\",\"type\":\"dashboard-link\",\"title\":\"Open charts\",\"x\":0,\"y\":0,\"w\":4,\"h\":2,\"targetDashboardPath\":\"root.platform.dashboards.lab-charts\",\"openMode\":\"modal\",\"buttonLabel\":\"Open charts modal\",\"modalTitle\":\"Lab charts\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-history",
+      "title": "Lab sine history",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sine-history-table\",\"type\":\"history-table\",\"title\":\"Sine history (5 min)\",\"x\":0,\"y\":0,\"w\":12,\"h\":5,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sineWave\",\"valueField\":\"value\",\"decimals\":2}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-fan-composite",
+      "title": "Lab fan composite",
+      "refreshIntervalMs": 2000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"fan-composite\",\"type\":\"composite-widget\",\"title\":\"Fan control\",\"x\":0,\"y\":0,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"childrenJson\":\"[{\\\"id\\\":\\\"fan-button\\\",\\\"type\\\":\\\"svg-widget\\\",\\\"title\\\":\\\"Start fan\\\",\\\"svgUrl\\\":\\\"/lab-assets/button.svg\\\",\\\"clickAction\\\":\\\"toggle\\\",\\\"objectPath\\\":\\\"root.platform.devices.lab-userA-01\\\",\\\"toggleVariable\\\":\\\"fanRunning\\\",\\\"valueField\\\":\\\"value\\\"},{\\\"id\\\":\\\"fan-blades\\\",\\\"type\\\":\\\"svg-widget\\\",\\\"title\\\":\\\"Fan\\\",\\\"svgUrl\\\":\\\"/lab-assets/fan.svg\\\",\\\"objectPath\\\":\\\"root.platform.devices.lab-userA-01\\\"}]\"},{\"id\":\"alarm-latched\",\"type\":\"indicator\",\"title\":\"Alarm latched\",\"x\":6,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"alarmLatched\",\"valueField\":\"value\",\"trueLabel\":\"Latched\",\"falseLabel\":\"Clear\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-virtual-overview",
+      "title": "Lab virtual overview",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sine-value\",\"type\":\"value\",\"title\":\"Sine\",\"x\":0,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sineWave\",\"valueField\":\"value\",\"decimals\":2},{\"id\":\"sum-waves\",\"type\":\"value\",\"title\":\"Sum waves\",\"x\":3,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"sumWaves\",\"valueField\":\"value\",\"decimals\":2},{\"id\":\"table-sum\",\"type\":\"value\",\"title\":\"Table int sum\",\"x\":6,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variableName\":\"tableIntSum\",\"valueField\":\"value\"},{\"id\":\"events-feed\",\"type\":\"event-feed\",\"title\":\"Events\",\"x\":0,\"y\":2,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"maxItems\":15},{\"id\":\"devices-table\",\"type\":\"report\",\"title\":\"All devices table\",\"x\":6,\"y\":2,\"w\":6,\"h\":4,\"reportPath\":\"root.platform.reports.lab-all-devices-table\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.lab-variable-editor",
+      "title": "Lab variable editor",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"editor-a\",\"type\":\"variable-editor\",\"title\":\"Lab user A variables\",\"x\":0,\"y\":0,\"w\":6,\"h\":5,\"objectPath\":\"root.platform.devices.lab-userA-01\",\"variablesJson\":\"[\\\"intValue\\\",\\\"floatValue\\\",\\\"sumIntFloat\\\"]\"},{\"id\":\"editor-b\",\"type\":\"variable-editor\",\"title\":\"Lab user B variables\",\"x\":6,\"y\":0,\"w\":6,\"h\":5,\"objectPath\":\"root.platform.devices.lab-userB-01\",\"variablesJson\":\"[\\\"intValue\\\",\\\"floatValue\\\",\\\"sumIntFloat\\\"]\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "lab-training",
+    "title": "Lab Training",
+    "defaultDashboard": "root.platform.dashboards.lab-form-grid",
+    "dashboards": [
+      { "path": "root.platform.dashboards.lab-form-grid", "title": "Form grid" },
+      { "path": "root.platform.dashboards.lab-calculator", "title": "Calculator" },
+      { "path": "root.platform.dashboards.lab-event-gen", "title": "Event generator" },
+      { "path": "root.platform.dashboards.lab-charts", "title": "Charts" },
+      { "path": "root.platform.dashboards.lab-pie", "title": "Pie chart" },
+      { "path": "root.platform.dashboards.lab-modal", "title": "Modal link" },
+      { "path": "root.platform.dashboards.lab-history", "title": "History" },
+      { "path": "root.platform.dashboards.lab-fan-composite", "title": "Fan composite" },
+      { "path": "root.platform.dashboards.lab-virtual-overview", "title": "Virtual overview" },
+      { "path": "root.platform.dashboards.lab-variable-editor", "title": "Variable editor" }
+    ],
+    "reports": [
+      { "path": "root.platform.reports.lab-all-devices-table", "title": "All lab devices table" },
+      { "path": "root.platform.reports.lab-table-corrective", "title": "Corrective table report" }
+    ],
+    "defaultReport": "root.platform.reports.lab-all-devices-table"
+  }
+}

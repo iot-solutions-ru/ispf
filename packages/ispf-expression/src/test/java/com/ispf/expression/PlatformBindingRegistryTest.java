@@ -32,6 +32,8 @@ class PlatformBindingRegistryTest {
         assertTrue(PlatformBindingRegistry.matches("callFunction(myFunc, inputVar)"));
         assertTrue(PlatformBindingRegistry.matches("callFunctionAt(\"root.remote\", myFunc)"));
         assertTrue(PlatformBindingRegistry.matches("callFunctionAt(\"root.remote\", myFunc, inputVar)"));
+        assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, int)"));
+        assertTrue(PlatformBindingRegistry.matches("sumRecordField(table, \"int\")"));
     }
 
     @Test

@@ -123,8 +123,9 @@ const META_BY_TYPE: Partial<Record<ObjectType, SystemFolderListMeta>> = {
     idColumnLabel: "ID",
   },
   APPLICATIONS: {
-    title: "Приложения (legacy)",
-    description: "Устарело — используйте Package Import и каталоги платформы.",
+    title: "Приложения",
+    description:
+      "Контейнеры bundle (Application): packageId при импорте = appId. Содержимое разворачивается в каталоги root.platform.*.",
     idColumnLabel: "App ID",
   },
   OPERATOR_APPS: {

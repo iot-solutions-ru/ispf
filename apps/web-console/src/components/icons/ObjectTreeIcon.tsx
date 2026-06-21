@@ -95,6 +95,9 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
   if (path.includes(".bindings")) {
     return "bindings";
   }
+  if (path.includes(".data-sources")) {
+    return "database";
+  }
   if (path.includes(".screens")) {
     return "screens";
   }
@@ -102,7 +105,7 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     return "application";
   }
   if (path.endsWith(".operator-apps")) {
-    return "folder";
+    return "screens";
   }
   if (path.includes(".reports")) {
     return "report";
@@ -136,8 +139,12 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
       return "alert";
     case "APPLICATIONS":
     case "APPLICATION":
-    case "OPERATOR_APPS":
       return "application";
+    case "OPERATOR_APPS":
+      return "screens";
+    case "DATA_SOURCES":
+    case "DATA_SOURCE":
+      return "database";
     case "REPORTS":
     case "REPORT":
       return "report";

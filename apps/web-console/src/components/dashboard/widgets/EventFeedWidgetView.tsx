@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../../api";
 import type { EventFeedWidget } from "../../../types/dashboard";
+import { matchesPayloadFilter } from "../../../utils/payloadFilter";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 
@@ -36,6 +37,10 @@ export default function EventFeedWidgetView({
       return false;
     }
     if (eventNames.length > 0 && !eventNames.includes(event.eventName)) {
+      return false;
+    }
+    const payloadRow = event.payload?.rows?.[0];
+    if (!matchesPayloadFilter(payloadRow, widget.payloadFilterExpr)) {
       return false;
     }
     return true;

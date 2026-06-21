@@ -207,6 +207,36 @@ sequenceDiagram
 - Сетка: 12 колонок, позиция `x,y`, размер `w,h` в единицах сетки
 - `rowHeight` — высота строки в пикселях
 
+## Grid Layout: форма function-form (Lab Task 6)
+
+Пример сетки из пакета **Lab Training** — дашборд `root.platform.dashboards.lab-form-grid`. Один виджет `function-form` вызывает функцию `appendTableRow` на virtual lab device и добавляет строку в переменную `table`:
+
+```json
+{
+  "columns": 12,
+  "rowHeight": 72,
+  "widgets": [
+    {
+      "id": "append-row",
+      "type": "function-form",
+      "title": "Append table row",
+      "x": 0,
+      "y": 0,
+      "w": 6,
+      "h": 4,
+      "objectPath": "root.platform.devices.lab-userA-01",
+      "functionName": "appendTableRow",
+      "buttonLabel": "Append",
+      "fieldsJson": "[{\"name\":\"int\",\"label\":\"Int\",\"type\":\"number\"},{\"name\":\"string\",\"label\":\"String\",\"type\":\"text\"}]"
+    }
+  ]
+}
+```
+
+Поля `fieldsJson` соответствуют аргументам функции модели `virtual-lab-v1`. Размер `w:6` на сетке 12 колонок — половина ширины экрана; `h:4` задаёт высоту в строках сетки (`rowHeight` × 4 px).
+
+Импорт готового layout: `POST /api/v1/platform/packages/import?packageId=lab-training` (см. [LAB_TRAINING.md](LAB_TRAINING.md)).
+
 ## Типы виджетов
 
 | type | Описание | Ключевые поля |
@@ -220,12 +250,18 @@ sequenceDiagram
 | `function-form` | Форма → invoke | `functionName`, `fieldsJson` |
 | `progress` | Прогресс-бар | `currentVariable`, `maxVariable`, `unit` |
 | `object-table` | Таблица дочерних объектов | `parentPath`, `columnsJson`, `selectionKey`, `rowTargetDashboard`, `rowOpenMode` |
-| `event-feed` | Лента событий | `objectPathPrefix`, `eventNamesJson`, `maxItems` |
+| `event-feed` | Лента событий | `objectPathPrefix`, `eventNamesJson`, `payloadFilterExpr`, `maxItems` |
 | `work-queue` | Очередь BPMN-задач | `operatorId`, `maxItems` |
 | `status-badge` | Badge статуса | `variableName`, `selectionKey` |
 | `gauge` | Шкала min–max | `minVariable`, `maxVariable`, `unit` |
 | `card-grid` | Карточки объектов | `parentPath`, `variablesJson`, `cardTargetDashboard`, `cardOpenMode`, `cardSelectionKey` |
 | `dashboard-link` | Переход / модальный дашборд | `targetDashboardPath`, `openMode`, `buttonLabel`, `modalTitle` |
+| `report` | Таблица отчёта | `reportPath`, `emptyMessage` |
+| `pie-chart` | Круговая диаграмма (RECORD_LIST) | `variableName`, `labelField`, `valueField` |
+| `history-table` | История переменной за 5 мин + среднее | `variableName`, `valueField`, `decimals` |
+| `variable-editor` | Список переменных с inline write | `variablesJson` |
+| `svg-widget` | SVG-кнопка / иконка | `svgUrl`, `clickAction`, `toggleVariable`, `functionName` |
+| `composite-widget` | Вложенные виджеты | `childrenJson` |
 
 Исходники типов: `apps/web-console/src/types/dashboard.ts`  
 View-компоненты: `apps/web-console/src/components/dashboard/widgets/`  

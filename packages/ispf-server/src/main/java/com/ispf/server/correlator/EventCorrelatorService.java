@@ -1,10 +1,18 @@
 package com.ispf.server.correlator;
 
-import com.ispf.plugin.workflow.WorkflowException;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.event.EventService;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.CorrelatorHitRepository;
+import com.ispf.server.persistence.EventHistoryRepository;
+import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.CorrelatorHitEntity;
+import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.workflow.WorkflowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,27 +25,56 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EventCorrelatorService {
 
     private static final Logger log = LoggerFactory.getLogger(EventCorrelatorService.class);
 
+    private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
+            .field("value", FieldType.STRING)
+            .build();
+    private static final DataSchema BOOLEAN_VALUE = DataSchema.builder("booleanValue")
+            .field("value", FieldType.BOOLEAN)
+            .build();
+    private static final DataSchema INTEGER_VALUE = DataSchema.builder("integerValue")
+            .field("value", FieldType.INTEGER)
+            .build();
+    private static final DataSchema DOUBLE_VALUE = DataSchema.builder("doubleValue")
+            .field("value", FieldType.DOUBLE)
+            .build();
+    private static final DataSchema REPORT_PATH_PAYLOAD = DataSchema.builder("openOperatorReportPayload")
+            .field("reportPath", FieldType.STRING)
+            .build();
+
     private final AutomationTreeService automationTreeService;
     private final CorrelatorHitRepository hitRepository;
+    private final EventHistoryRepository eventHistoryRepository;
     private final WorkflowService workflowService;
     private final EventService eventService;
+    private final ObjectManager objectManager;
+    private final ExpressionEngine expressionEngine;
+    private final ObjectEntityMapper entityMapper;
 
     public EventCorrelatorService(
             AutomationTreeService automationTreeService,
             CorrelatorHitRepository hitRepository,
+            EventHistoryRepository eventHistoryRepository,
             @Lazy WorkflowService workflowService,
-            EventService eventService
+            EventService eventService,
+            ObjectManager objectManager,
+            ExpressionEngine expressionEngine,
+            ObjectEntityMapper entityMapper
     ) {
         this.automationTreeService = automationTreeService;
         this.hitRepository = hitRepository;
+        this.eventHistoryRepository = eventHistoryRepository;
         this.workflowService = workflowService;
         this.eventService = eventService;
+        this.objectManager = objectManager;
+        this.expressionEngine = expressionEngine;
+        this.entityMapper = entityMapper;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +113,7 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds(),
                 request.actionType(),
                 request.actionTarget(),
+                request.payloadFilterExpr(),
                 request.enabled()
         );
     }
@@ -108,6 +146,7 @@ public class EventCorrelatorService {
                 request.sequenceGapSeconds(),
                 request.actionType(),
                 request.actionTarget(),
+                request.payloadFilterExpr(),
                 request.enabled()
         );
     }
@@ -130,6 +169,9 @@ public class EventCorrelatorService {
                 continue;
             }
             if (isInCooldown(correlator, now)) {
+                continue;
+            }
+            if (!passesPayloadFilter(correlator, objectPath, eventName)) {
                 continue;
             }
             boolean triggered = switch (correlator.patternType()) {
@@ -291,10 +333,79 @@ public class EventCorrelatorService {
         try {
             switch (correlator.actionType()) {
                 case RUN_WORKFLOW -> workflowService.runWorkflow(correlator.actionTarget(), objectPath);
-                case FIRE_EVENT -> eventService.fire(objectPath, correlator.actionTarget(), (com.ispf.core.model.DataRecord) null);
+                case FIRE_EVENT -> eventService.fire(objectPath, correlator.actionTarget(), (DataRecord) null);
+                case SET_VARIABLE -> executeSetVariable(objectPath, correlator.actionTarget());
+                case OPEN_OPERATOR_REPORT -> eventService.fire(
+                        objectPath,
+                        "openOperatorReport",
+                        DataRecord.single(REPORT_PATH_PAYLOAD, Map.of("reportPath", correlator.actionTarget()))
+                );
             }
         } catch (Exception e) {
             log.warn("Correlator {} action failed: {}", correlator.id(), e.getMessage());
+        }
+    }
+
+    private void executeSetVariable(String objectPath, String actionTarget) {
+        int separator = actionTarget.indexOf('=');
+        if (separator <= 0 || separator >= actionTarget.length() - 1) {
+            throw new IllegalArgumentException("SET_VARIABLE actionTarget must be variableName=value");
+        }
+        String variableName = actionTarget.substring(0, separator).trim();
+        String rawValue = actionTarget.substring(separator + 1).trim();
+        objectManager.setVariableValue(objectPath, variableName, parseVariableAssignment(rawValue));
+    }
+
+    private static DataRecord parseVariableAssignment(String rawValue) {
+        if ("true".equalsIgnoreCase(rawValue) || "false".equalsIgnoreCase(rawValue)) {
+            return DataRecord.single(BOOLEAN_VALUE, Map.of("value", Boolean.parseBoolean(rawValue)));
+        }
+        try {
+            if (rawValue.contains(".")) {
+                return DataRecord.single(DOUBLE_VALUE, Map.of("value", Double.parseDouble(rawValue)));
+            }
+            return DataRecord.single(INTEGER_VALUE, Map.of("value", Integer.parseInt(rawValue)));
+        } catch (NumberFormatException ignored) {
+            return DataRecord.single(STRING_VALUE, Map.of("value", rawValue));
+        }
+    }
+
+    private boolean passesPayloadFilter(EventCorrelator correlator, String objectPath, String eventName) {
+        String filterExpr = correlator.payloadFilterExpr();
+        if (filterExpr == null || filterExpr.isBlank()) {
+            return true;
+        }
+        return eventHistoryRepository.findFirstByObjectPathAndEventNameOrderByOccurredAtDesc(objectPath, eventName)
+                .map(entity -> evaluatePayloadFilter(filterExpr, entity))
+                .orElse(false);
+    }
+
+    private boolean evaluatePayloadFilter(String filterExpr, EventHistoryEntity entity) {
+        try {
+            Map<String, Object> payload = payloadMap(entity);
+            Object result = expressionEngine.evaluateWithPayload(filterExpr, payload);
+            if (result instanceof Boolean bool) {
+                return bool;
+            }
+            return Boolean.parseBoolean(String.valueOf(result));
+        } catch (ExpressionException e) {
+            log.warn("Payload filter evaluation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private Map<String, Object> payloadMap(EventHistoryEntity entity) {
+        if (entity.getPayloadJson() == null || entity.getPayloadJson().isBlank()) {
+            return Map.of();
+        }
+        try {
+            DataRecord record = entityMapper.readDataRecord(entity.getPayloadJson());
+            if (record == null || record.rowCount() == 0) {
+                return Map.of();
+            }
+            return new LinkedHashMap<>(record.firstRow());
+        } catch (Exception e) {
+            return Map.of();
         }
     }
 
@@ -362,6 +473,12 @@ public class EventCorrelatorService {
         if (actionType == CorrelatorActionType.FIRE_EVENT && (actionTarget == null || actionTarget.isBlank())) {
             throw new IllegalArgumentException("actionTarget event name is required for FIRE_EVENT");
         }
+        if (actionType == CorrelatorActionType.SET_VARIABLE && !actionTarget.contains("=")) {
+            throw new IllegalArgumentException("actionTarget must be variableName=value for SET_VARIABLE");
+        }
+        if (actionType == CorrelatorActionType.OPEN_OPERATOR_REPORT && (actionTarget == null || actionTarget.isBlank())) {
+            throw new IllegalArgumentException("actionTarget report path is required for OPEN_OPERATOR_REPORT");
+        }
         if (patternType == CorrelatorPatternType.SEQUENCE) {
             if (secondEventName == null || secondEventName.isBlank()) {
                 throw new IllegalArgumentException("secondEventName is required for SEQUENCE pattern");
@@ -392,8 +509,26 @@ public class EventCorrelatorService {
             int sequenceGapSeconds,
             CorrelatorActionType actionType,
             String actionTarget,
+            String payloadFilterExpr,
             boolean enabled
     ) {
+        public CreateCorrelatorRequest(
+                String name,
+                String objectPath,
+                CorrelatorPatternType patternType,
+                String eventName,
+                String secondEventName,
+                int windowSeconds,
+                int minOccurrences,
+                int cooldownSeconds,
+                int sequenceGapSeconds,
+                CorrelatorActionType actionType,
+                String actionTarget,
+                boolean enabled
+        ) {
+            this(name, objectPath, patternType, eventName, secondEventName, windowSeconds, minOccurrences,
+                    cooldownSeconds, sequenceGapSeconds, actionType, actionTarget, "", enabled);
+        }
     }
 
     public record UpdateCorrelatorRequest(
@@ -408,6 +543,7 @@ public class EventCorrelatorService {
             Integer sequenceGapSeconds,
             CorrelatorActionType actionType,
             String actionTarget,
+            String payloadFilterExpr,
             Boolean enabled
     ) {
     }

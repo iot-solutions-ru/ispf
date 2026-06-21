@@ -1,8 +1,17 @@
 import type { ObjectSummary, TreeNode } from "../types";
 import { APPLICATIONS_ROOT } from "./createObjectMode";
 
+/** Hide legacy mirror subfolders under an app; keep the Applications folder and app nodes visible. */
 function isHiddenLegacyApplicationPath(path: string): boolean {
-  return path === APPLICATIONS_ROOT || path.startsWith(`${APPLICATIONS_ROOT}.`);
+  if (path === APPLICATIONS_ROOT) {
+    return false;
+  }
+  const prefix = `${APPLICATIONS_ROOT}.`;
+  if (!path.startsWith(prefix)) {
+    return false;
+  }
+  const rest = path.slice(prefix.length);
+  return rest.includes(".");
 }
 
 function compareObjects(a: ObjectSummary, b: ObjectSummary): number {
@@ -63,6 +72,11 @@ export function objectIcon(type: string): string {
       return "▦";
     case "APPLICATION":
       return "▤";
+    case "DATA_SOURCES":
+    case "DATA_SOURCE":
+      return "🗄";
+    case "OPERATOR_APPS":
+      return "🖥";
     case "REPORT":
       return "▧";
     case "USER":

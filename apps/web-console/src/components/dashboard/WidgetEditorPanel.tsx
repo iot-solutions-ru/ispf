@@ -361,6 +361,14 @@ export default function WidgetEditorPanel({
                 onChange={(e) => update({ maxItems: Number(e.target.value) })}
               />
             </label>
+            <label>
+              Фильтр payload
+              <input
+                value={widget.payloadFilterExpr ?? ""}
+                onChange={(e) => update({ payloadFilterExpr: e.target.value || undefined })}
+                placeholder="count>10 && name contains abc"
+              />
+            </label>
           </>
         )}
         {widget.type === "work-queue" && (
@@ -512,6 +520,112 @@ export default function WidgetEditorPanel({
               />
             </label>
           </>
+        )}
+        {widget.type === "pie-chart" && (
+          <>
+            <label>
+              Поле подписи (labelField)
+              <input
+                value={widget.labelField ?? "name"}
+                onChange={(e) => update({ labelField: e.target.value })}
+              />
+            </label>
+            <label>
+              Десятичные знаки
+              <input
+                type="number"
+                min={0}
+                max={6}
+                value={widget.decimals ?? 1}
+                onChange={(e) => update({ decimals: Number(e.target.value) })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "history-table" && (
+          <label>
+            Десятичные знаки
+            <input
+              type="number"
+              min={0}
+              max={6}
+              value={widget.decimals ?? 2}
+              onChange={(e) => update({ decimals: Number(e.target.value) })}
+            />
+          </label>
+        )}
+        {widget.type === "variable-editor" && (
+          <label>
+            Переменные (JSON, пусто = все)
+            <textarea
+              rows={3}
+              value={widget.variablesJson ?? "[]"}
+              onChange={(e) => update({ variablesJson: e.target.value })}
+            />
+          </label>
+        )}
+        {widget.type === "svg-widget" && (
+          <>
+            <label>
+              SVG URL
+              <input
+                value={widget.svgUrl}
+                onChange={(e) => update({ svgUrl: e.target.value })}
+                placeholder="/lab-assets/button.svg"
+              />
+            </label>
+            <label>
+              Действие по клику
+              <select
+                value={widget.clickAction ?? ""}
+                onChange={(e) =>
+                  update({
+                    clickAction: (e.target.value || undefined) as "function" | "toggle" | undefined,
+                  })
+                }
+              >
+                <option value="">—</option>
+                <option value="function">Функция</option>
+                <option value="toggle">Toggle переменной</option>
+              </select>
+            </label>
+            {widget.clickAction === "function" && (
+              <label>
+                Имя функции
+                <input
+                  value={widget.functionName ?? ""}
+                  onChange={(e) => update({ functionName: e.target.value })}
+                />
+              </label>
+            )}
+            {widget.clickAction === "toggle" && (
+              <label>
+                Переменная toggle
+                <input
+                  value={widget.toggleVariable ?? widget.variableName ?? ""}
+                  onChange={(e) => update({ toggleVariable: e.target.value })}
+                />
+              </label>
+            )}
+            <label>
+              Подтверждение (опционально)
+              <input
+                value={widget.confirmMessage ?? ""}
+                onChange={(e) => update({ confirmMessage: e.target.value })}
+              />
+            </label>
+          </>
+        )}
+        {widget.type === "composite-widget" && (
+          <label className="full">
+            Дочерние виджеты (childrenJson)
+            <textarea
+              rows={8}
+              value={widget.childrenJson ?? "[]"}
+              onChange={(e) => update({ childrenJson: e.target.value })}
+              placeholder='[{"type":"svg-widget","title":"Fan","svgUrl":"/lab-assets/fan.svg"}]'
+            />
+          </label>
         )}
         <label className="full">
           Стили элементов (stylesJson)

@@ -25,6 +25,10 @@ public class ExpressionEngine {
             .addVar("parent", SimpleType.DYN)
             .build();
 
+    private final CelCompiler payloadCompiler = CelCompilerFactory.standardCelCompilerBuilder()
+            .addVar("payload", SimpleType.DYN)
+            .build();
+
     private final CelRuntime runtime = CelRuntimeFactory.standardCelRuntimeBuilder().build();
 
     public CompiledExpression compile(String expression) {
@@ -38,6 +42,20 @@ public class ExpressionEngine {
 
     public Object evaluate(String expression, PlatformObject platformObject) {
         return compile(expression).evaluate(platformObject);
+    }
+
+    public Object evaluateWithPayload(String expression, Map<String, Object> payload) {
+        try {
+            CelAbstractSyntaxTree ast = payloadCompiler.compile(expression).getAst();
+            CelRuntime.Program program = runtime.createProgram(ast);
+            Map<String, Object> bindings = new HashMap<>();
+            bindings.put("payload", payload != null ? payload : Map.of());
+            return program.eval(bindings);
+        } catch (CelValidationException e) {
+            throw new ExpressionException("Invalid expression: " + expression, e);
+        } catch (Exception e) {
+            throw new ExpressionException("Evaluation failed: " + expression, e);
+        }
     }
 
     public static final class CompiledExpression {

@@ -25,7 +25,8 @@ public final class PlatformBindingRegistry {
             ScaleBinding.INSTANCE,
             ClampBinding.INSTANCE,
             FormatBinding.INSTANCE,
-            DeltaBinding.INSTANCE
+            DeltaBinding.INSTANCE,
+            SumRecordFieldBinding.INSTANCE
     );
 
     private PlatformBindingRegistry() {

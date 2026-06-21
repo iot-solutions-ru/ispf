@@ -290,7 +290,7 @@ public class ApplicationObjectTreeService {
         };
     }
 
-    static String sanitizeNodeName(String name) {
+    public static String sanitizeNodeName(String name) {
         if (name == null || name.isBlank()) {
             return "node";
         }
