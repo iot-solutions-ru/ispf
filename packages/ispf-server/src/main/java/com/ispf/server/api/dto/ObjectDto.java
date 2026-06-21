@@ -3,6 +3,7 @@ package com.ispf.server.api.dto;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.federation.FederationProxyMetadata;
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectUiIconService;
 
 import java.time.Instant;
@@ -43,6 +44,7 @@ public record ObjectDto(
                 node.sortOrder(),
                 node.variables().keySet().stream()
                         .filter(name -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(name))
+                        .filter(name -> !BindingStateVariables.isReserved(name))
                         .filter(name -> !federated || !FederationProxyMetadata.isFederationVariable(name))
                         .sorted()
                         .toList(),

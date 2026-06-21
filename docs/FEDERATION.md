@@ -44,7 +44,7 @@ Spike реализации REQ-PF-13: реестр peer-инстансов, prox
 | Remote | Источник данных через metadata | То же |
 | UX | Sync на панели peers | Inspector → **Federation bind**; mirror → **Разместить локально…** |
 
-**Bind** («заражение»): существующий или новый локальный узел получает переменные `federationProxy`, `federationPeerId`, `federationRemotePath`. Read/write/history/dashboard проксируются через `FederationProxyService`. Локальный driver (DEVICE) останавливается при bind; local variables сохраняются, но скрыты до unbind.
+**Bind** («заражение»): существующий или новый локальный узел получает переменные `federationProxy`, `federationPeerId`, `federationRemotePath`. Read/write/history/dashboard проксируются через `FederationProxyService`. Локальный driver (DEVICE) останавливается при bind; local variables сохраняются, но скрыты до unbind. Перед overlay сохраняется snapshot (`displayName`, `description`, `type`, флаг running driver); **unbind** восстанавливает эти свойства и перезапускает driver, если он работал до bind.
 
 ```http
 POST /api/v1/federation/binds

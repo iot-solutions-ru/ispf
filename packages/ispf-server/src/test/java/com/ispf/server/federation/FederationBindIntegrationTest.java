@@ -116,7 +116,7 @@ class FederationBindIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.path").value(localPath))
                 .andExpect(jsonPath("$.federated").value(false))
-                .andExpect(jsonPath("$.displayName").value("Demo Sensor 01"));
+                .andExpect(jsonPath("$.displayName").value("Bind test device"));
 
         mockMvc.perform(delete("/api/v1/federation/peers/" + peerId)
                         .header("Authorization", "Bearer " + token))

@@ -1,6 +1,7 @@
 package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.EmbeddedServerPort;
@@ -8,6 +9,8 @@ import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +23,8 @@ import java.util.UUID;
 @Service
 public class FederationBindService {
 
+    private static final Logger log = LoggerFactory.getLogger(FederationBindService.class);
+
     private final FederationPeerStore peerStore;
     private final FederationService federationService;
     private final FederationProxyService federationProxyService;
@@ -27,6 +32,7 @@ public class FederationBindService {
     private final DriverRuntimeService driverRuntimeService;
     private final EmbeddedServerPort embeddedServerPort;
     private final Environment environment;
+    private final ObjectMapper objectMapper;
 
     public FederationBindService(
             FederationPeerStore peerStore,
@@ -35,7 +41,8 @@ public class FederationBindService {
             ObjectManager objectManager,
             DriverRuntimeService driverRuntimeService,
             EmbeddedServerPort embeddedServerPort,
-            Environment environment
+            Environment environment,
+            ObjectMapper objectMapper
     ) {
         this.peerStore = peerStore;
         this.federationService = federationService;
@@ -44,6 +51,7 @@ public class FederationBindService {
         this.driverRuntimeService = driverRuntimeService;
         this.embeddedServerPort = embeddedServerPort;
         this.environment = environment;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -59,6 +67,12 @@ public class FederationBindService {
             );
         }
         pauseLocalDriverIfNeeded(localPath);
+        FederationBindSnapshot.captureIfAbsent(
+                objectManager,
+                driverRuntimeService,
+                objectMapper,
+                localPath
+        );
         FederationProxyNodeHelper.syncFromRemoteProbe(objectManager, localPath, remote);
         FederationProxyNodeHelper.markProxy(objectManager, localPath, peer.id(), request.remotePath().trim());
         return toDto(objectManager.require(localPath), peer);
@@ -99,14 +113,21 @@ public class FederationBindService {
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_PROXY);
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_PEER_ID);
         objectManager.deleteVariable(localPath, FederationProxyMetadata.VAR_REMOTE_PATH);
+        Optional<FederationBindSnapshot.LocalState> restored = FederationBindSnapshot.restoreAndClear(
+                objectManager,
+                objectMapper,
+                localPath
+        );
+        restored.ifPresent(state -> resumeLocalDriverIfNeeded(localPath, state.driverWasRunning()));
         objectManager.persistNodeTree(localPath);
+        PlatformObject restoredNode = objectManager.require(localPath);
         return new FederationBindDto(
                 localPath,
                 null,
                 null,
                 null,
-                node.type(),
-                node.displayName(),
+                restoredNode.type(),
+                restoredNode.displayName(),
                 false
         );
     }
@@ -237,6 +258,21 @@ public class FederationBindService {
         PlatformObject node = objectManager.require(localPath);
         if (node.type() == ObjectType.DEVICE) {
             driverRuntimeService.stopIfRunning(localPath);
+        }
+    }
+
+    private void resumeLocalDriverIfNeeded(String localPath, boolean driverWasRunning) {
+        if (!driverWasRunning) {
+            return;
+        }
+        PlatformObject node = objectManager.require(localPath);
+        if (node.type() != ObjectType.DEVICE) {
+            return;
+        }
+        try {
+            driverRuntimeService.start(localPath);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to restart driver after federation unbind for {}: {}", localPath, ex.getMessage());
         }
     }
 

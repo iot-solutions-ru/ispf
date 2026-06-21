@@ -3,6 +3,8 @@ package com.ispf.server.api.dto;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.server.federation.FederationProxyMetadata;
+import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectUiIconService;
 
 import java.util.List;
@@ -28,6 +30,8 @@ public record ObjectEditorDto(
                 ObjectDto.from(node, iconId),
                 node.variables().values().stream()
                         .filter(v -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(v.name()))
+                        .filter(v -> !BindingStateVariables.isReserved(v.name()))
+                        .filter(v -> !FederationProxyMetadata.isFederationVariable(v.name()))
                         .map(VariableDto::from)
                         .sorted((a, b) -> a.name().compareTo(b.name()))
                         .toList(),

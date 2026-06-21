@@ -217,6 +217,7 @@ public class ObjectManager {
 
     @Transactional
     public Variable setVariableValue(String path, String name, DataRecord value) {
+        assertUserVariable(name);
         PlatformObject node = objectTree.require(path);
         node.setVariableValue(name, value);
         Variable variable = node.getVariable(name).orElseThrow();
@@ -228,6 +229,7 @@ public class ObjectManager {
 
     @Transactional
     public void deleteVariable(String path, String name) {
+        assertUserVariable(name);
         PlatformObject node = objectTree.require(path);
         if (node.getVariable(name).isEmpty()) {
             return;
@@ -252,7 +254,7 @@ public class ObjectManager {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Variable name is required");
         }
-        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name)) {
+        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name) || BindingStateVariables.isReserved(name)) {
             throw new IllegalArgumentException("Reserved variable name: " + name);
         }
         PlatformObject node = objectTree.require(path);
@@ -290,7 +292,7 @@ public class ObjectManager {
         PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
-        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name)) {
+        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name) || BindingStateVariables.isReserved(name)) {
             throw new IllegalArgumentException("Cannot modify reserved variable: " + name);
         }
         boolean nextReadable = readable != null ? readable : variable.readable();
@@ -395,6 +397,24 @@ public class ObjectManager {
         persistVariable(path, variable);
         publish(ObjectChangeEvent.variableUpdated(path, name));
         return variable;
+    }
+
+    @Transactional
+    public Variable upsertSystemVariable(
+            String path,
+            String name,
+            DataSchema schema,
+            DataRecord value
+    ) {
+        PlatformObject node = objectTree.require(path);
+        if (node.getVariable(name).isEmpty()) {
+            Variable created = new Variable(name, schema, false, false, null, value);
+            node.addVariable(created);
+            persistVariable(path, created);
+            publish(ObjectChangeEvent.variableUpdated(path, name));
+            return created;
+        }
+        return setSystemVariableValue(path, name, value);
     }
 
     private void propagateBindings(String path) {
@@ -576,5 +596,11 @@ public class ObjectManager {
 
     private void publish(ObjectChangeEvent event) {
         eventPublisher.publishEvent(event);
+    }
+
+    private static void assertUserVariable(String name) {
+        if (BindingStateVariables.isReserved(name)) {
+            throw new IllegalArgumentException("Cannot modify reserved variable: " + name);
+        }
     }
 }

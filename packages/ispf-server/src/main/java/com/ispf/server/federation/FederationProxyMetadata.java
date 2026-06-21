@@ -64,7 +64,10 @@ public final class FederationProxyMetadata {
     }
 
     public static boolean isFederationVariable(String name) {
-        return VAR_PROXY.equals(name) || VAR_PEER_ID.equals(name) || VAR_REMOTE_PATH.equals(name);
+        return VAR_PROXY.equals(name)
+                || VAR_PEER_ID.equals(name)
+                || VAR_REMOTE_PATH.equals(name)
+                || FederationBindSnapshot.isSnapshotVariable(name);
     }
 
     private static void setVariable(PlatformObject node, String name, DataSchema schema, DataRecord value) {

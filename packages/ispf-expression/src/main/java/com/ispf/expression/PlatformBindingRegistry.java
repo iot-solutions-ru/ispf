@@ -48,6 +48,10 @@ public final class PlatformBindingRegistry {
         return find(expression).isPresent();
     }
 
+    public static void setBindingStatePort(BindingStatePort bindingStatePort) {
+        BindingStateStore.setPort(bindingStatePort);
+    }
+
     static void clearStateForTests() {
         BINDINGS.forEach(PlatformBinding::clearStateForTests);
         BindingStateStore.clearForTests();

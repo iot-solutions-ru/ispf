@@ -1,49 +1,48 @@
 package com.ispf.expression;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * In-memory state for stateful platform bindings (per JVM, keyed by objectPath|targetVariable).
+ * Facade for stateful platform bindings; delegates to the active {@link BindingStatePort}.
  */
 final class BindingStateStore {
 
-    private static final ConcurrentHashMap<String, Double> LAST_DOUBLE = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Long> LAST_TIMESTAMP_MS = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, Boolean> LAST_BOOLEAN = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<String, List<TimedSample>> TIMED_SAMPLES = new ConcurrentHashMap<>();
+    private static volatile BindingStatePort port = new InMemoryBindingStatePort();
 
     private BindingStateStore() {
     }
 
-    record TimedSample(long timestampMs, double value) {
+    static void setPort(BindingStatePort bindingStatePort) {
+        port = bindingStatePort != null ? bindingStatePort : new InMemoryBindingStatePort();
+    }
+
+    static BindingStatePort port() {
+        return port;
     }
 
     static Optional<Double> previousDouble(String key) {
-        return Optional.ofNullable(LAST_DOUBLE.get(key));
+        return port.previousDouble(key);
     }
 
     static Double putDouble(String key, double value) {
-        return LAST_DOUBLE.put(key, value);
+        return port.putDouble(key, value);
     }
 
     static Optional<Long> previousTimestampMs(String key) {
-        return Optional.ofNullable(LAST_TIMESTAMP_MS.get(key));
+        return port.previousTimestampMs(key);
     }
 
     static void putTimestampMs(String key, long timestampMs) {
-        LAST_TIMESTAMP_MS.put(key, timestampMs);
+        port.putTimestampMs(key, timestampMs);
     }
 
     static Optional<Boolean> previousBoolean(String key) {
-        return Optional.ofNullable(LAST_BOOLEAN.get(key));
+        return port.previousBoolean(key);
     }
 
     static void putBoolean(String key, boolean value) {
-        LAST_BOOLEAN.put(key, value);
+        port.putBoolean(key, value);
     }
 
     static Optional<Double> aggregateTimedWindow(
@@ -53,43 +52,14 @@ final class BindingStateStore {
             long windowMs,
             DoubleBinaryOperator aggregator
     ) {
-        List<TimedSample> samples = TIMED_SAMPLES.computeIfAbsent(key, ignored -> new ArrayList<>());
-        synchronized (samples) {
-            samples.add(new TimedSample(timestampMs, value));
-            long cutoff = timestampMs - windowMs;
-            samples.removeIf(sample -> sample.timestampMs() < cutoff);
-            if (samples.isEmpty()) {
-                return Optional.empty();
-            }
-            double result = samples.getFirst().value();
-            for (int i = 1; i < samples.size(); i++) {
-                result = aggregator.applyAsDouble(result, samples.get(i).value());
-            }
-            return Optional.of(result);
-        }
+        return port.aggregateTimedWindow(key, timestampMs, value, windowMs, aggregator);
     }
 
     static Optional<Double> averageTimedWindow(String key, long timestampMs, double value, long windowMs) {
-        List<TimedSample> samples = TIMED_SAMPLES.computeIfAbsent(key, ignored -> new ArrayList<>());
-        synchronized (samples) {
-            samples.add(new TimedSample(timestampMs, value));
-            long cutoff = timestampMs - windowMs;
-            samples.removeIf(sample -> sample.timestampMs() < cutoff);
-            if (samples.isEmpty()) {
-                return Optional.empty();
-            }
-            double sum = 0;
-            for (TimedSample sample : samples) {
-                sum += sample.value();
-            }
-            return Optional.of(sum / samples.size());
-        }
+        return port.averageTimedWindow(key, timestampMs, value, windowMs);
     }
 
     static void clearForTests() {
-        LAST_DOUBLE.clear();
-        LAST_TIMESTAMP_MS.clear();
-        LAST_BOOLEAN.clear();
-        TIMED_SAMPLES.clear();
+        port.clearForTests();
     }
 }

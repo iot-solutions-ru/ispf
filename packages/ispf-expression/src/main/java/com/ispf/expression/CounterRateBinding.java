@@ -7,7 +7,6 @@ import com.ispf.core.model.DataRecord;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,8 +27,6 @@ public final class CounterRateBinding implements PlatformBinding {
             "counterRate\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
-
-    private static final ConcurrentHashMap<String, Sample> PREVIOUS = new ConcurrentHashMap<>();
 
     private CounterRateBinding() {
     }
@@ -75,17 +72,19 @@ public final class CounterRateBinding implements PlatformBinding {
         long nowMs = updatedAt.toEpochMilli();
 
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);
-        Sample previous = PREVIOUS.get(stateKey);
-        PREVIOUS.put(stateKey, new Sample(nowMs, current));
+        Optional<Long> previousTsOpt = BindingStateStore.previousTimestampMs(stateKey);
+        Optional<Double> previousValueOpt = BindingStateStore.previousDouble(stateKey);
+        BindingStateStore.putDouble(stateKey, current);
+        BindingStateStore.putTimestampMs(stateKey, nowMs);
 
-        if (previous == null) {
+        if (previousTsOpt.isEmpty() || previousValueOpt.isEmpty()) {
             return Optional.empty();
         }
-        long dtMs = nowMs - previous.timestampMs();
+        long dtMs = nowMs - previousTsOpt.get();
         if (dtMs < 500) {
             return Optional.empty();
         }
-        Double delta = counterDelta(current, previous.value(), maxCounter);
+        Double delta = counterDelta(current, previousValueOpt.get(), maxCounter);
         if (delta == null) {
             return Optional.empty();
         }
@@ -94,7 +93,7 @@ public final class CounterRateBinding implements PlatformBinding {
 
     @Override
     public void clearStateForTests() {
-        PREVIOUS.clear();
+        // state lives in BindingStateStore
     }
 
     static Double counterDelta(double current, double previous, long maxCounter) {
@@ -105,8 +104,5 @@ public final class CounterRateBinding implements PlatformBinding {
             return maxCounter - previous + current;
         }
         return null;
-    }
-
-    private record Sample(long timestampMs, double value) {
     }
 }

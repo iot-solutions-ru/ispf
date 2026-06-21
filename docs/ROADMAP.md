@@ -84,6 +84,20 @@
 | 7.1 | Auth lifecycle (service account auto-refresh, 401 retry) | Done |
 | 7.2 | Outbound WebSocket tunnel (NAT edge → public hub, full proxy) | Done |
 
+## Phase 8 — Federation bind (REQ-PF-13c)
+
+| # | Тема | Статус |
+|---|------|--------|
+| 8.1 | Bind overlay на локальный path + UI | Done |
+| 8.2 | Same-path remote overlay + cycle protection | Done (v0.5.1) |
+| 8.3 | Unbind restore local metadata snapshot | Done (v0.5.2) |
+
+## Phase 10 — North Star hardening
+
+| # | Тема | Статус |
+|---|------|--------|
+| 10.1 | Persistent binding state (`@bindingState`, hysteresis/deadband/movingAvg/counterRate) | Done (v0.6.0) |
+
 ## Platform baseline
 
 | # | Тема | Статус |
