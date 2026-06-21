@@ -17,7 +17,8 @@
 |--------|----------|
 | [Быстрый старт](GETTING_STARTED.md) | Установка, профили, первый запуск |
 | [Архитектура](ARCHITECTURE.md) | Видение, слои, расширяемость |
-| [Модель объектов](OBJECT_MODEL.md) | Дерево, переменные, события, функции, CEL |
+| [Модель объектов](OBJECT_MODEL.md) | Дерево, переменные, события, функции |
+| [Привязки переменных](BINDINGS.md) | CEL, platform bindings (`counterRate`, `scale`, …) |
 | [История переменных](VARIABLE_HISTORY.md) | Time-series, флаги, retention, roadmap |
 | [REST API](API.md) | Полный справочник endpoints |
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |

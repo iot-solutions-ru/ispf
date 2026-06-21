@@ -9,6 +9,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.expression.BindingEvaluator;
+import com.ispf.expression.BindingEvaluationContext;
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -52,7 +53,11 @@ public class ObjectManager {
     private final ObjectProvider<ModelPersistenceService> modelPersistence;
     private final ApplicationEventPublisher eventPublisher;
     private final BindingEvaluator bindingEvaluator;
+    private final BindingEvaluationContext bindingEvaluationContext;
     private volatile boolean initialized;
+
+    private static final int MAX_BINDING_PROPAGATION_DEPTH = 8;
+    private static final ThreadLocal<Integer> BINDING_PROPAGATION_DEPTH = ThreadLocal.withInitial(() -> 0);
 
     public ObjectManager(
             ObjectNodeRepository nodeRepository,
@@ -63,7 +68,8 @@ public class ObjectManager {
             ObjectProvider<ModelApplicationRunner> modelApplicationRunner,
             ObjectProvider<ModelPersistenceService> modelPersistence,
             ApplicationEventPublisher eventPublisher,
-            BindingEvaluator bindingEvaluator
+            BindingEvaluator bindingEvaluator,
+            BindingEvaluationContext bindingEvaluationContext
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -74,6 +80,7 @@ public class ObjectManager {
         this.modelPersistence = modelPersistence;
         this.eventPublisher = eventPublisher;
         this.bindingEvaluator = bindingEvaluator;
+        this.bindingEvaluationContext = bindingEvaluationContext;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -391,11 +398,23 @@ public class ObjectManager {
     }
 
     private void propagateBindings(String path) {
-        PlatformObject node = objectTree.require(path);
-        for (String changedName : bindingEvaluator.evaluateBindingsReturningChanges(node)) {
-            Variable changed = node.getVariable(changedName).orElseThrow();
-            persistVariable(path, changed);
-            publish(ObjectChangeEvent.variableUpdated(path, changedName));
+        int depth = BINDING_PROPAGATION_DEPTH.get();
+        if (depth >= MAX_BINDING_PROPAGATION_DEPTH) {
+            return;
+        }
+        BINDING_PROPAGATION_DEPTH.set(depth + 1);
+        try {
+            PlatformObject node = objectTree.require(path);
+            for (String changedName : bindingEvaluator.evaluateBindingsReturningChanges(
+                    node,
+                    bindingEvaluationContext
+            )) {
+                Variable changed = node.getVariable(changedName).orElseThrow();
+                persistVariable(path, changed);
+                publish(ObjectChangeEvent.variableUpdated(path, changedName));
+            }
+        } finally {
+            BINDING_PROPAGATION_DEPTH.set(depth);
         }
     }
 

@@ -7,20 +7,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Platform binding: {@code delta(sourceVariable[, field])}.
+ * Platform binding: {@code counterDelta(sourceVariable[, maxCounter[, field]])}.
  * <p>
- * Returns the difference from the previous sample of the source field (no time division, no wrap logic).
+ * Counter increment with wrap handling (like counterRate) but without time division.
  */
-public final class DeltaBinding implements PlatformBinding {
+public final class CounterDeltaBinding implements PlatformBinding {
 
-    static final DeltaBinding INSTANCE = new DeltaBinding();
+    static final CounterDeltaBinding INSTANCE = new CounterDeltaBinding();
 
     private static final Pattern PATTERN = Pattern.compile(
-            "delta\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*("
+            "counterDelta\\(\\s*(" + BindingSourceHelper.IDENT + ")\\s*(?:,\\s*(\\d+)\\s*)?(?:,\\s*("
                     + BindingSourceHelper.IDENT + ")\\s*)?\\)"
     );
 
-    private DeltaBinding() {
+    private CounterDeltaBinding() {
     }
 
     @Override
@@ -41,22 +41,33 @@ public final class DeltaBinding implements PlatformBinding {
         }
         BindingSourceHelper.SourceField source = BindingSourceHelper.sourceField(
                 matcher.group(1),
-                matcher.group(2),
+                matcher.group(3),
                 "value"
         );
-        Optional<Double> current = BindingSourceHelper.readNumericField(
+        long maxCounter = matcher.group(2) != null
+                ? Long.parseLong(matcher.group(2))
+                : CounterRateBinding.DEFAULT_COUNTER_MAX;
+
+        Optional<Double> currentOpt = BindingSourceHelper.readNumericField(
                 object,
                 source.sourceVariable(),
                 source.field()
         );
-        if (current.isEmpty()) {
+        if (currentOpt.isEmpty()) {
             return Optional.empty();
         }
+        double current = currentOpt.get();
         String stateKey = BindingSourceHelper.stateKey(object, targetVariable);
-        Double previous = BindingStateStore.putDouble(stateKey, current.get());
-        if (previous == null) {
+        Optional<Double> previousOpt = BindingStateStore.previousDouble(stateKey);
+        BindingStateStore.putDouble(stateKey, current);
+
+        if (previousOpt.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(current.get() - previous);
+        Double delta = CounterRateBinding.counterDelta(current, previousOpt.get(), maxCounter);
+        if (delta == null) {
+            return Optional.empty();
+        }
+        return Optional.of(delta);
     }
 }

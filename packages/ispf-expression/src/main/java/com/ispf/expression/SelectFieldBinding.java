@@ -29,7 +29,12 @@ public final class SelectFieldBinding implements PlatformBinding {
     }
 
     @Override
-    public Optional<Object> evaluate(PlatformObject object, String targetVariable, String expression) {
+    public Optional<Object> evaluate(
+            PlatformObject object,
+            String targetVariable,
+            String expression,
+            BindingEvaluationContext context
+    ) {
         Matcher matcher = PATTERN.matcher(expression.trim());
         if (!matcher.matches()) {
             return Optional.empty();

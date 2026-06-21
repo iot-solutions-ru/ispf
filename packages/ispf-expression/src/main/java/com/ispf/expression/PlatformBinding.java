@@ -11,7 +11,12 @@ public interface PlatformBinding {
 
     boolean matches(String expression);
 
-    Optional<Object> evaluate(PlatformObject object, String targetVariable, String expression);
+    Optional<Object> evaluate(
+            PlatformObject object,
+            String targetVariable,
+            String expression,
+            BindingEvaluationContext context
+    );
 
     default void clearStateForTests() {
     }

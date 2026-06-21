@@ -42,10 +42,11 @@ graph TB
 
 ### Expressions
 
-Google CEL для bindings, alert rules, workflow gateways:
+Google CEL для bindings, alert rules, workflow gateways. Переменные объектов также поддерживают **platform bindings** (`counterRate`, `scale`, `clamp`, …) — см. [BINDINGS.md](BINDINGS.md).
 
 ```
 self.temperature.value > self.threshold.value
+counterRate(ifInOctets)
 ```
 
 ## Runtime Layers

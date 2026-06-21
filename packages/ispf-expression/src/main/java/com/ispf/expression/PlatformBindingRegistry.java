@@ -9,7 +9,18 @@ import java.util.Optional;
 public final class PlatformBindingRegistry {
 
     private static final List<PlatformBinding> BINDINGS = List.of(
+            CallFunctionAtBinding.INSTANCE,
+            RefAtBinding.INSTANCE,
             CounterRateBinding.INSTANCE,
+            CounterDeltaBinding.INSTANCE,
+            CallFunctionBinding.INSTANCE,
+            MovingAvgBinding.INSTANCE,
+            MovingMinBinding.INSTANCE,
+            MovingMaxBinding.INSTANCE,
+            DeadbandBinding.INSTANCE,
+            HysteresisBinding.INSTANCE,
+            RateBinding.INSTANCE,
+            UnitConvertBinding.INSTANCE,
             SelectFieldBinding.INSTANCE,
             ScaleBinding.INSTANCE,
             ClampBinding.INSTANCE,
@@ -39,5 +50,6 @@ public final class PlatformBindingRegistry {
 
     static void clearStateForTests() {
         BINDINGS.forEach(PlatformBinding::clearStateForTests);
+        BindingStateStore.clearForTests();
     }
 }

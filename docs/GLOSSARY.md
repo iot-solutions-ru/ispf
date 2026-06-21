@@ -16,7 +16,7 @@
 
 ## B
 
-**Binding (CEL binding)** — вычисляемая привязка переменной. Значение пересчитывается при изменении зависимых переменных. Выражение — Google CEL.
+**Binding** — вычисляемая привязка переменной (`bindingExpression`). Значение пересчитывается при изменении переменных на том же объекте. Выражение — Google **CEL** или одна **platform function** (`counterRate`, `scale`, `clamp`, …). См. [BINDINGS.md](BINDINGS.md).
 
 **BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Wire profile `anima-operator-v1` — контракт для legacy manifest.
 

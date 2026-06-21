@@ -15,6 +15,7 @@ final class BindingSourceHelper {
     static final String IDENT = "[A-Za-z_][A-Za-z0-9_]*";
     static final Pattern IDENT_PATTERN = Pattern.compile(IDENT);
     static final String NUMERIC = "[-+]?\\d+(?:\\.\\d+)?";
+    static final String QUOTED_STRING = "\"([^\"]*)\"";
 
     private BindingSourceHelper() {
     }

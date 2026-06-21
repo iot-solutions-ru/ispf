@@ -120,39 +120,34 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 | `name` | Имя в объекте |
 | `schema` | `DataSchema` |
 | `readable` / `writable` | Права доступа |
-| `bindingExpression` | CEL-выражение (опционально) |
+| `bindingExpression` | CEL или platform binding (опционально) |
 | `value` | Текущий `DataRecord` |
 
-### Вычисляемые привязки (CEL)
+### Вычисляемые привязки (bindings)
 
-При изменении переменной `BindingEvaluator` пересчитывает зависимые binding-переменные.
+При изменении любой переменной на объекте `BindingEvaluator` пересчитывает все binding-переменные с непустым `bindingExpression`.
 
-Контекст выражения: `self.<variableName>.<field>`
+Два вида выражений:
 
-Пример из `mqtt-sensor-v1`:
+| Вид | Пример |
+|-----|--------|
+| **CEL** | `self.temperature.value > self.threshold.value` |
+| **Platform function** | `counterRate(ifInOctets)` |
 
-```
-self.temperature.value > self.threshold.value
-```
+**Полный справочник** всех функций, параметров, stateful-поведения и примеров: **[BINDINGS.md](BINDINGS.md)**.
 
-→ переменная `alarmActive` становится `true`.
+Краткий перечень platform bindings:
 
-**Counter rate (SNMP Counter32):** binding без CEL — `counterRate(<sourceVariable>[, maxCounter[, field]])`. Пример: `counterRate(ifInOctets)` на переменной `ifInOctetsRate` вычисляет B/s из IF-MIB Counter32 с учётом переполнения 2³². Пересчитывается при обновлении source-переменной (poll драйвера).
+| Функция | Назначение |
+|---------|------------|
+| `selectField` | Поле source-переменной |
+| `scale` | Линейное отображение диапазона |
+| `clamp` | Ограничение min…max |
+| `format` | Строка по шаблону `String.format` |
+| `delta` | Δ к предыдущему sample (stateful) |
+| `counterRate` | B/s из Counter32 с wrap (stateful) |
 
-**Platform bindings (Phase 1):** вместо CEL можно указать одну встроенную функцию (вся строка `bindingExpression` = один вызов):
-
-| Функция | Сигнатура | Описание |
-|---------|-----------|----------|
-| `selectField` | `selectField(sourceVar[, field])` | Поле source-переменной (по умолчанию `value`) |
-| `scale` | `scale(sourceVar, inMin, inMax, outMin, outMax[, field])` | Линейное отображение числа |
-| `clamp` | `clamp(sourceVar, min, max[, field])` | Ограничение числа диапазоном |
-| `format` | `format("pattern", sourceVar[, field])` | `String.format` → STRING schema |
-| `delta` | `delta(sourceVar[, field])` | Разность с предыдущим sample (stateful) |
-| `counterRate` | `counterRate(sourceVar[, maxCounter[, field]])` | Скорость счётчика (stateful, wrap) |
-
-Идентификаторы: `[A-Za-z_][A-Za-z0-9_]*`. Опциональный `field` по умолчанию — `value`.
-
-Проверка выражения: `POST /api/v1/expressions/validate`.
+Проверка: `POST /api/v1/expressions/validate`.
 
 ## События
 

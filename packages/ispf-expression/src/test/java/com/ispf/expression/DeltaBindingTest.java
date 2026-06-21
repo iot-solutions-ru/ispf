@@ -9,7 +9,7 @@ class DeltaBindingTest {
 
     @BeforeEach
     void resetState() {
-        DeltaBinding.INSTANCE.clearStateForTests();
+        PlatformBindingRegistry.clearStateForTests();
     }
 
     @Test

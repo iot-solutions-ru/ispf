@@ -30,6 +30,18 @@ class BindingExpressionValidatorTest {
     }
 
     @Test
+    void acceptsNewPlatformBindings() {
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("rate(gauge)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("movingAvg(gauge, 60)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("refAt(\"root.platform.devices.foo\", temperature)"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> BindingExpressionValidator.validateOrThrow("callFunctionAt(\"root.remote\", fn, input)"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     void acceptsCelExpression() {
         assertThatCode(() -> BindingExpressionValidator.validateOrThrow("self.temperature.value + 1.0"))
                 .doesNotThrowAnyException();

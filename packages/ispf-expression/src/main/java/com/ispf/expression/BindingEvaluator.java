@@ -27,13 +27,20 @@ public class BindingEvaluator {
      * Re-evaluates all binding expressions and returns variable names whose values changed.
      */
     public List<String> evaluateBindingsReturningChanges(PlatformObject platformObject) {
+        return evaluateBindingsReturningChanges(platformObject, BindingEvaluationContext.NONE);
+    }
+
+    public List<String> evaluateBindingsReturningChanges(
+            PlatformObject platformObject,
+            BindingEvaluationContext context
+    ) {
         List<String> changed = new ArrayList<>();
         for (Variable variable : platformObject.variables().values()) {
             variable.bindingExpression().ifPresent(expr -> {
                 try {
                     var platformBinding = PlatformBindingRegistry.find(expr);
                     if (platformBinding.isPresent()) {
-                        platformBinding.get().evaluate(platformObject, variable.name(), expr).ifPresent(result -> {
+                        platformBinding.get().evaluate(platformObject, variable.name(), expr, context).ifPresent(result -> {
                             DataRecord record = toDataRecord(variable.schema(), result);
                             applyIfChanged(variable, record, changed);
                         });
