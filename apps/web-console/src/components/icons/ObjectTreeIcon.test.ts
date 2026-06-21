@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { resolveTreeIconKind } from "./ObjectTreeIcon";
-import type { ObjectType } from "../../types";
 
 describe("resolveTreeIconKind", () => {
   it("uses database icon for data sources folder and entries", () => {
