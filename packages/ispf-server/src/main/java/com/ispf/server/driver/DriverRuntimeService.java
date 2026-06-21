@@ -8,18 +8,24 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
+import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
 import com.ispf.server.object.ObjectManager;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +48,7 @@ public class DriverRuntimeService {
     private final ObjectManager objectManager;
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
+    private final Environment environment;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r, "ispf-driver-runtime");
         thread.setDaemon(true);
@@ -52,11 +59,13 @@ public class DriverRuntimeService {
     public DriverRuntimeService(
             ObjectManager objectManager,
             DriverFactory driverFactory,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            Environment environment
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
+        this.environment = environment;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -67,6 +76,9 @@ public class DriverRuntimeService {
                 continue;
             }
             String path = node.path();
+            if (!shouldAutoStart(path)) {
+                continue;
+            }
             if (readBinding(path).isEmpty()) {
                 if ("root.platform.devices.demo-sensor-01".equals(path)) {
                     configure(path, DriverBinding.virtualDemo());
@@ -80,6 +92,39 @@ public class DriverRuntimeService {
                 log.warn("Failed to auto-start driver for {}: {}", path, e.getMessage());
             }
         }
+    }
+
+    @PreDestroy
+    void shutdownDrivers() {
+        for (String devicePath : new ArrayList<>(activeDrivers.keySet())) {
+            ActiveDriver active = activeDrivers.remove(devicePath);
+            if (active == null) {
+                continue;
+            }
+            active.future().cancel(false);
+            try {
+                active.driver().disconnect();
+            } catch (Exception ex) {
+                log.debug("Driver disconnect during shutdown for {}: {}", devicePath, ex.getMessage());
+            }
+        }
+        scheduler.shutdownNow();
+    }
+
+    private boolean shouldAutoStart(String devicePath) {
+        if (isLabTrainingDevice(devicePath)) {
+            return false;
+        }
+        if (environment.acceptsProfiles(Profiles.of("test"))
+                && "root.platform.devices.snmp-localhost".equals(devicePath)) {
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isLabTrainingDevice(String devicePath) {
+        return LabTrainingBundleLayouts.LAB_DEVICE_A.equals(devicePath)
+                || LabTrainingBundleLayouts.LAB_DEVICE_B.equals(devicePath);
     }
 
     public Optional<DriverRuntimeStatus> status(String devicePath) {
