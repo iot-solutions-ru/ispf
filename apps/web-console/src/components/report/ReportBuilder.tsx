@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  deleteReportTemplate,
   downloadReportCsvByPath,
+  downloadReportExportByPath,
+  downloadReportTemplate,
   fetchReport,
   runReportByPath,
   saveReportDefinition,
+  uploadReportTemplate,
   type ReportColumn,
+  type ReportExportFormat,
   type SaveReportDefinitionPayload,
 } from "../../api/reports";
 import BffDataTable from "../operator/BffDataTable";
@@ -39,6 +44,7 @@ export default function ReportBuilder({
   operatorMode = false,
 }: ReportBuilderProps) {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<"data" | "template">("data");
   const [mode, setMode] = useState<"view" | "edit">(operatorMode ? "view" : "view");
   const [draft, setDraft] = useState<SaveReportDefinitionPayload | null>(null);
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
@@ -46,6 +52,9 @@ export default function ReportBuilder({
   const [parametersText, setParametersText] = useState("");
   const [defaultParametersText, setDefaultParametersText] = useState("{}");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [templateFormat, setTemplateFormat] = useState("xlsx");
+  const [templateError, setTemplateError] = useState<string | null>(null);
+  const [templateBusy, setTemplateBusy] = useState(false);
 
   const reportQuery = useQuery({
     queryKey: ["report", path],
@@ -91,6 +100,40 @@ export default function ReportBuilder({
 
   const effectiveAppId = effectiveDefinition?.appId?.trim() ?? "";
   const canRun = Boolean(effectiveDefinition?.query?.trim() && effectiveAppId);
+  const hasTemplate = Boolean(reportQuery.data?.hasTemplate);
+  const exportParams = Object.fromEntries(
+    Object.entries(paramValues).filter(([, value]) => value.trim())
+  );
+
+  async function handleExport(format: ReportExportFormat) {
+    await downloadReportExportByPath(path, format, exportParams);
+  }
+
+  async function handleTemplateUpload(file: File) {
+    setTemplateBusy(true);
+    setTemplateError(null);
+    try {
+      await uploadReportTemplate(path, templateFormat, file);
+      await queryClient.invalidateQueries({ queryKey: ["report", path] });
+    } catch (error) {
+      setTemplateError((error as Error).message);
+    } finally {
+      setTemplateBusy(false);
+    }
+  }
+
+  async function handleTemplateDelete() {
+    setTemplateBusy(true);
+    setTemplateError(null);
+    try {
+      await deleteReportTemplate(path);
+      await queryClient.invalidateQueries({ queryKey: ["report", path] });
+    } catch (error) {
+      setTemplateError((error as Error).message);
+    } finally {
+      setTemplateBusy(false);
+    }
+  }
 
   const runQuery = useQuery({
     queryKey: ["report-run", path, runParameters, effectiveDefinition?.query, effectiveAppId],
@@ -172,16 +215,25 @@ export default function ReportBuilder({
             type="button"
             className="btn"
             disabled={!canRun}
-            onClick={() =>
-              downloadReportCsvByPath(
-                path,
-                Object.fromEntries(
-                  Object.entries(paramValues).filter(([, value]) => value.trim())
-                )
-              )
-            }
+            onClick={() => downloadReportCsvByPath(path, exportParams)}
           >
             CSV
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={!canRun || !hasTemplate}
+            onClick={() => void handleExport("xlsx")}
+          >
+            XLSX
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={!canRun || !hasTemplate}
+            onClick={() => void handleExport("pdf")}
+          >
+            PDF
           </button>
           {onOpenProperties && (
             <button type="button" className="btn" onClick={onOpenProperties}>
@@ -204,7 +256,91 @@ export default function ReportBuilder({
         </div>
       )}
 
-      {mode === "edit" && !operatorMode && (
+      <div className="report-tabs section-body">
+        <button
+          type="button"
+          className={`btn ${activeTab === "data" ? "primary" : ""}`}
+          onClick={() => setActiveTab("data")}
+        >
+          Данные
+        </button>
+        {!operatorMode && (
+          <button
+            type="button"
+            className={`btn ${activeTab === "template" ? "primary" : ""}`}
+            onClick={() => setActiveTab("template")}
+          >
+            Шаблон YARG
+          </button>
+        )}
+      </div>
+
+      {activeTab === "template" && !operatorMode && (
+        <div className="report-template-panel section-body">
+          <p className="hint">
+            Загрузите Excel/Word-шаблон с плейсхолдерами YARG: band <code>Band1</code>, поля{" "}
+            <code>${"{Band1.FIELD}"}</code> (имена колонок SQL в верхнем регистре, например{" "}
+            <code>${"{Band1.ITEM_CODE}"}</code>). См.{" "}
+            <a href="https://github.com/cuba-platform/yarg" target="_blank" rel="noreferrer">
+              YARG docs
+            </a>
+            .
+          </p>
+          <p className="hint">
+            Статус:{" "}
+            {hasTemplate
+              ? `шаблон загружен (${reportQuery.data?.templateFormat || "?"})`
+              : "шаблон не задан — доступен только CSV export"}
+          </p>
+          <label>
+            Формат шаблона
+            <select value={templateFormat} onChange={(e) => setTemplateFormat(e.target.value)}>
+              <option value="xlsx">xlsx</option>
+              <option value="xls">xls</option>
+              <option value="docx">docx</option>
+              <option value="html">html</option>
+            </select>
+          </label>
+          <label className="full">
+            Файл шаблона
+            <input
+              type="file"
+              accept=".xlsx,.xls,.docx,.doc,.html,.htm"
+              disabled={templateBusy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleTemplateUpload(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <div className="form-actions">
+            {hasTemplate && (
+              <>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={templateBusy}
+                  onClick={() => void downloadReportTemplate(path)}
+                >
+                  Скачать шаблон
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={templateBusy}
+                  onClick={() => void handleTemplateDelete()}
+                >
+                  Удалить шаблон
+                </button>
+              </>
+            )}
+          </div>
+          {templateError && <div className="banner error">{templateError}</div>}
+        </div>
+      )}
+
+      {activeTab === "data" && mode === "edit" && !operatorMode && (
         <div className="report-editor-form section-body">
           <label>
             Заголовок
@@ -326,7 +462,7 @@ export default function ReportBuilder({
         </div>
       )}
 
-      {(reportQuery.data?.parameters ?? []).length > 0 && (
+      {activeTab === "data" && (reportQuery.data?.parameters ?? []).length > 0 && (
         <div className="report-params section-body">
           {(reportQuery.data?.parameters ?? []).map((name) => (
             <label key={name}>
@@ -340,6 +476,7 @@ export default function ReportBuilder({
         </div>
       )}
 
+      {activeTab === "data" && (
       <div className="section-body">
         {reportQuery.isLoading && <p className="hint">Загрузка отчёта…</p>}
         {reportQuery.error && (
@@ -359,6 +496,7 @@ export default function ReportBuilder({
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

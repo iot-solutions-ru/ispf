@@ -6,13 +6,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -109,5 +114,116 @@ class ReportApiTest {
                         .header("X-ISPF-Role", "admin"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].path", hasItem(REPORT_PATH)));
+    }
+
+    @Test
+    void yargExportRequiresTemplate() throws Exception {
+        mockMvc.perform(post("/api/v1/objects")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "root.platform.reports",
+                                  "name": "yarg-export-test",
+                                  "type": "REPORT",
+                                  "displayName": "YARG Export Test",
+                                  "templateId": "report-v1"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        String path = "root.platform.reports.yarg-export-test";
+        mockMvc.perform(put("/api/v1/reports/by-path/definition")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "YARG Export Test",
+                                  "appId": "%s",
+                                  "query": "SELECT item_code FROM platform_item",
+                                  "parameters": [],
+                                  "columns": [{ "field": "item_code", "label": "Code" }],
+                                  "maxRows": 100
+                                }
+                                """.formatted(APP_ID)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/reports/by-path/export")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", path)
+                        .param("format", "xlsx"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void uploadTemplateAndExportXlsx() throws Exception {
+        mockMvc.perform(post("/api/v1/objects")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "root.platform.reports",
+                                  "name": "yarg-template-test",
+                                  "type": "REPORT",
+                                  "displayName": "YARG Template Test",
+                                  "templateId": "report-v1"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        String path = "root.platform.reports.yarg-template-test";
+        mockMvc.perform(put("/api/v1/reports/by-path/definition")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "YARG Template Test",
+                                  "appId": "%s",
+                                  "query": "SELECT item_code FROM platform_item",
+                                  "parameters": [],
+                                  "columns": [{ "field": "item_code", "label": "Code" }],
+                                  "maxRows": 100
+                                }
+                                """.formatted(APP_ID)))
+                .andExpect(status().isOk());
+
+        byte[] template = ReportYargTemplateTestHelper.smokeTestTemplate();
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "report.xls",
+                "application/vnd.ms-excel",
+                template
+        );
+
+        mockMvc.perform(multipart("/api/v1/reports/by-path/template")
+                        .file(file)
+                        .param("path", path)
+                        .param("format", "xls")
+                        .header("X-ISPF-Role", "admin"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasTemplate").value(true))
+                .andExpect(jsonPath("$.templateFormat").value("xls"));
+
+        mockMvc.perform(get("/api/v1/reports/by-path/template")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path))
+                .andExpect(status().isOk())
+                .andExpect(header().exists("Content-Disposition"));
+
+        mockMvc.perform(get("/api/v1/reports/by-path/export")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", path)
+                        .param("format", "xls"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Type", "application/vnd.ms-excel"))
+                .andExpect(result -> assertTrue(result.getResponse().getContentAsByteArray().length > 0));
+
+        mockMvc.perform(delete("/api/v1/reports/by-path/template")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasTemplate").value(false));
     }
 }

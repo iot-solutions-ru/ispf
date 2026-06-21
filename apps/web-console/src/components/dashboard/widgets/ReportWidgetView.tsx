@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { runReportByPath } from "../../../api/reports";
+import { downloadReportExportByPath, fetchReport, runReportByPath } from "../../../api/reports";
 import type { ReportWidget } from "../../../types/dashboard";
 import BffDataTable from "../../operator/BffDataTable";
 
@@ -15,6 +15,12 @@ export default function ReportWidgetView({
   refreshIntervalMs,
   editable = false,
 }: ReportWidgetViewProps) {
+  const reportMetaQuery = useQuery({
+    queryKey: ["report", widget.reportPath],
+    queryFn: () => fetchReport(widget.reportPath),
+    enabled: Boolean(widget.reportPath?.trim()) && !editable,
+  });
+
   const runQuery = useQuery({
     queryKey: ["report-widget", widget.reportPath],
     queryFn: () => runReportByPath(widget.reportPath, {}),
@@ -32,7 +38,19 @@ export default function ReportWidgetView({
 
   return (
     <div className="dash-widget dash-report-widget">
-      <div className="dash-widget-title">{widget.title}</div>
+      <div className="dash-widget-title">
+        {widget.title}
+        {reportMetaQuery.data?.hasTemplate && !editable && (
+          <button
+            type="button"
+            className="btn btn-sm"
+            style={{ marginLeft: "0.5rem" }}
+            onClick={() => void downloadReportExportByPath(widget.reportPath, "pdf")}
+          >
+            PDF
+          </button>
+        )}
+      </div>
       <div className="dash-widget-body">
         {!widget.reportPath?.trim() && <p className="hint">Укажите reportPath</p>}
         {runQuery.isLoading && <p className="hint">Загрузка…</p>}

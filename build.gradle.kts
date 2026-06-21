@@ -14,6 +14,10 @@ allprojects {
             name = "ias-releases"
             url = uri("https://maven.mangoautomation.net/repository/ias-release/")
         }
+        maven {
+            name = "haulmont"
+            url = uri("https://repo.cuba-platform.com/content/groups/work")
+        }
     }
 }
 

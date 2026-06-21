@@ -775,6 +775,16 @@ public class ModelBootstrap {
                                 true,
                                 null,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 30000))
+                        ),
+                        ModelVariableDefinition.of(
+                                "templateFormat",
+                                "YARG template format: xlsx, docx, html (empty = no template)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                null,
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),

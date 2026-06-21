@@ -16,6 +16,8 @@
 | Eclipse Paho MQTT | EPL 2.0 / EDL 1.0 | Драйвер MQTT |
 | Google CEL (`dev.cel:cel`) | Apache License 2.0 | |
 | JNATS | Apache License 2.0 | Опционально |
+| **YARG** (`com.haulmont.yarg:yarg`) | Apache License 2.0 | Серверный PDF/XLSX/HTML export отчётов |
+| **Apache POI** (transitive YARG) | Apache License 2.0 | Excel templates |
 
 Полный список версий: `./gradlew :packages:ispf-server:dependencies` и lockfiles Maven.
 

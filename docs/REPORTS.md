@@ -23,8 +23,11 @@ Legacy API `/api/v1/applications/{appId}/reports/*` сохранён и деле
 | `defaultParameters` | JSON object значений по умолчанию |
 | `maxRows` | Лимит строк (default 1000) |
 | `refreshIntervalMs` | Auto-refresh в UI (default 30000) |
+| `templateFormat` | Формат YARG-шаблона: `xlsx`, `docx`, `html` (пусто = нет шаблона) |
 
-Web Console: **Report Builder** при открытии объекта `REPORT` (редактирование SQL, preview, CSV).
+Бинарный шаблон хранится в таблице `report_templates` (не в object_variables).
+
+Web Console: **Report Builder** — SQL preview, CSV, вкладка **Шаблон YARG**, export PDF/XLSX/HTML.
 
 ## Path-based API (primary)
 
@@ -32,7 +35,10 @@ Web Console: **Report Builder** при открытии объекта `REPORT` 
 GET  /api/v1/reports/by-path?path=root.platform.reports.ready-items
 PUT  /api/v1/reports/by-path/definition?path=...
 POST /api/v1/reports/by-path/run?path=...
-GET  /api/v1/reports/by-path/export?path=...&status=ready
+GET  /api/v1/reports/by-path/export?path=...&format=csv|pdf|xlsx|html
+POST /api/v1/reports/by-path/template?path=...&format=xlsx   (multipart file)
+GET  /api/v1/reports/by-path/template?path=...
+DELETE /api/v1/reports/by-path/template?path=...
 ```
 
 ### Run (by path)
@@ -43,6 +49,16 @@ Content-Type: application/json
 
 { "parameters": { "status": "ready" } }
 ```
+
+## YARG templates (Phase 13)
+
+Серверный export через [YARG](https://github.com/cuba-platform/yarg) (Apache-2.0):
+
+1. Создайте шаблон в Excel/Word с band **`Band1`** и полями `${Band1.COLUMN}` (имена колонок SQL в **верхнем регистре**, например `${Band1.ITEM_CODE}`). Пример — [YARG smoke sample](https://github.com/cuba-platform/yarg/tree/master/core/modules/core/test/sample).
+2. Загрузите файл во вкладке **Шаблон YARG** в Report Builder (`POST .../template`).
+3. Export: `GET .../export?format=pdf|xlsx|html` — данные берутся из того же SQL run.
+
+Без шаблона доступен только `format=csv`.
 
 ## Deploy
 
@@ -77,7 +93,7 @@ POST /api/v1/applications/{appId}/reports/deploy
 ```http
 GET  /api/v1/applications/{appId}/reports
 POST /api/v1/applications/{appId}/reports/{reportId}/run
-GET  /api/v1/applications/{appId}/reports/{reportId}/export?status=ready
+GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|html
 ```
 
 ## Operator UI
@@ -91,7 +107,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?status=ready
 | Endpoint | Роль |
 |----------|------|
 | `GET .../reports/by-path`, export | `operator`, `admin` |
-| `PUT .../definition` | `admin` |
+| `PUT .../definition`, template upload/delete | `admin` |
 | `POST .../run` | `operator`, `admin` |
 | `POST .../applications/.../deploy` (reports) | `admin` |
 
@@ -99,7 +115,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?status=ready
 
 - Только read-only SQL (без `INSERT`/`UPDATE`/`DELETE`/DDL).
 - Запрос выполняется в app schema (`appId` на объекте).
-- PDF — вне scope platform.
+- PDF/XLSX/HTML требуют загруженный YARG-шаблон.
 
 ## Пример
 
@@ -109,4 +125,4 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?status=ready
 
 - [APPLICATIONS.md](APPLICATIONS.md) — bundle deploy
 - [DASHBOARDS.md](DASHBOARDS.md) — аналогичная tree-first модель
-- [ROADMAP.md](ROADMAP.md) — Phase 12
+- [ROADMAP.md](ROADMAP.md) — Phase 12–13

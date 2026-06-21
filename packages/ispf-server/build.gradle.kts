@@ -84,6 +84,8 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus")
 
+    implementation("com.haulmont.yarg:yarg:2.2.22")
+
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")

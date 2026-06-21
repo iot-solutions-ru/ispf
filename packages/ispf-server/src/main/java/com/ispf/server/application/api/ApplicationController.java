@@ -8,6 +8,7 @@ import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
+import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -241,18 +242,22 @@ public class ApplicationController {
         }
     }
 
-    @GetMapping(value = "/{appId}/reports/{reportId}/export", produces = "text/csv; charset=UTF-8")
+    @GetMapping("/{appId}/reports/{reportId}/export")
     public ResponseEntity<byte[]> exportReport(
             @PathVariable String appId,
             @PathVariable String reportId,
+            @RequestParam(defaultValue = "csv") String format,
             @RequestParam Map<String, String> queryParams
     ) {
         try {
             Map<String, Object> parameters = new LinkedHashMap<>(queryParams);
-            byte[] csv = reportService.exportCsv(appId, reportId, parameters);
+            parameters.remove("format");
+            ReportExportFormat exportFormat = ReportExportFormat.parse(format);
+            var exported = reportService.export(appId, reportId, exportFormat, parameters);
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + reportId + ".csv\"")
-                    .body(csv);
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + exported.filename() + "\"")
+                    .contentType(org.springframework.http.MediaType.parseMediaType(exported.contentType()))
+                    .body(exported.content());
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }

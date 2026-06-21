@@ -51,6 +51,7 @@ public class ReportService {
     private final ApplicationDataStore dataStore;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
+    private final ReportTemplateStore templateStore;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
@@ -61,6 +62,7 @@ public class ReportService {
             ApplicationDataStore dataStore,
             ApplicationSchemaSession schemaSession,
             ApplicationReportStore reportStore,
+            ReportTemplateStore templateStore,
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper
     ) {
@@ -70,6 +72,7 @@ public class ReportService {
         this.dataStore = dataStore;
         this.schemaSession = schemaSession;
         this.reportStore = reportStore;
+        this.templateStore = templateStore;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
@@ -234,6 +237,35 @@ public class ReportService {
         return toCsv(result);
     }
 
+    @Transactional
+    public ReportView saveTemplate(String path, String format, byte[] content) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.REPORT) {
+            throw new IllegalArgumentException("Not a report object: " + path);
+        }
+        ReportTemplateStore.validateFormat(format);
+        templateStore.save(path, format, content);
+        setString(path, "templateFormat", format.trim().toLowerCase());
+        return getReport(path);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<ReportTemplateStore.StoredTemplate> getTemplate(String path) {
+        getReport(path);
+        return templateStore.find(path);
+    }
+
+    @Transactional
+    public ReportView deleteTemplate(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.REPORT) {
+            throw new IllegalArgumentException("Not a report object: " + path);
+        }
+        templateStore.delete(path);
+        setString(path, "templateFormat", "");
+        return getReport(path);
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listByApp(String appId) {
         requireApp(appId);
@@ -357,7 +389,9 @@ public class ReportService {
                 deserializeReportColumns(readString(node, "columns").orElse("[]")),
                 deserializeObjectMap(readString(node, "defaultParameters").orElse("{}")),
                 readInteger(node, "maxRows").orElse(1000),
-                readInteger(node, "refreshIntervalMs").orElse(30000)
+                readInteger(node, "refreshIntervalMs").orElse(30000),
+                readString(node, "templateFormat").orElse(""),
+                templateStore.exists(path)
         );
     }
 
@@ -621,7 +655,9 @@ public class ReportService {
             List<ReportColumn> columns,
             Map<String, Object> defaultParameters,
             int maxRows,
-            int refreshIntervalMs
+            int refreshIntervalMs,
+            String templateFormat,
+            boolean hasTemplate
     ) {
     }
 

@@ -15,6 +15,8 @@ export interface ReportDefinition {
   defaultParameters: Record<string, unknown>;
   maxRows: number;
   refreshIntervalMs: number;
+  templateFormat: string;
+  hasTemplate: boolean;
 }
 
 export interface ReportRunResult {
@@ -100,12 +102,86 @@ export function runReportByPath(
   });
 }
 
+export type ReportExportFormat = "csv" | "pdf" | "xlsx" | "html";
+
+export function downloadReportExportByPath(
+  path: string,
+  format: ReportExportFormat,
+  parameters?: Record<string, string>
+): Promise<void> {
+  const params = new URLSearchParams(parameters ?? {});
+  params.set("path", path);
+  params.set("format", format);
+  return fetch(`/api/v1/reports/by-path/export?${params.toString()}`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Report export failed: ${response.status}`));
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${path.split(".").pop() ?? "report"}.${format === "pdf" ? "pdf" : format}`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+export function uploadReportTemplate(path: string, format: string, file: File): Promise<ReportDefinition> {
+  const params = new URLSearchParams({ path, format });
+  const body = new FormData();
+  body.append("file", file);
+  return fetch(`/api/v1/reports/by-path/template?${params}`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body,
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Failed to upload template: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function downloadReportTemplate(path: string): Promise<void> {
+  const params = new URLSearchParams({ path });
+  return fetch(`/api/v1/reports/by-path/template?${params}`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Failed to download template: ${response.status}`));
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${path.split(".").pop() ?? "report"}-template`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+export function deleteReportTemplate(path: string): Promise<ReportDefinition> {
+  const params = new URLSearchParams({ path });
+  return fetch(`/api/v1/reports/by-path/template?${params}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Failed to delete template: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
 export function downloadReportCsvByPath(
   path: string,
   parameters?: Record<string, string>
 ): Promise<void> {
   const params = new URLSearchParams(parameters ?? {});
   params.set("path", path);
+  params.set("format", "csv");
   return fetch(`/api/v1/reports/by-path/export?${params.toString()}`, {
     headers: getAuthHeaders(),
   }).then(async (response) => {

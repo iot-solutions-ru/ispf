@@ -1,6 +1,8 @@
 package com.ispf.server.application.report;
 
+import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.report.ReportService;
+import com.ispf.server.report.YargReportService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +16,11 @@ import java.util.Map;
 public class ApplicationReportService {
 
     private final ReportService reportService;
+    private final YargReportService yargReportService;
 
-    public ApplicationReportService(ReportService reportService) {
+    public ApplicationReportService(ReportService reportService, YargReportService yargReportService) {
         this.reportService = reportService;
+        this.yargReportService = yargReportService;
     }
 
     @Transactional
@@ -51,6 +55,16 @@ public class ApplicationReportService {
     @Transactional(readOnly = true)
     public byte[] exportCsv(String appId, String reportId, Map<String, Object> parameters) {
         return reportService.exportCsvByApp(appId, reportId, parameters);
+    }
+
+    @Transactional(readOnly = true)
+    public YargReportService.ExportedReport export(String appId, String reportId, ReportExportFormat format, Map<String, Object> parameters) {
+        String path = ReportService.reportPath(reportId);
+        if (format == ReportExportFormat.CSV) {
+            byte[] csv = reportService.exportCsvByApp(appId, reportId, parameters);
+            return new YargReportService.ExportedReport(csv, reportId + ".csv", ReportExportFormat.CSV.contentType());
+        }
+        return yargReportService.export(path, format, parameters);
     }
 
     public record ReportColumn(String field, String label) {

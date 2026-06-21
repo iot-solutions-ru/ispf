@@ -120,6 +120,17 @@
 
 См. [REPORTS.md](REPORTS.md).
 
+## Phase 13 — YARG server export
+
+| # | Тема | Статус |
+|---|------|--------|
+| 13.1 | `com.haulmont.yarg:yarg` + `report_templates` storage | Done |
+| 13.2 | `YargReportService` — PDF/XLSX/HTML from SQL + template | Done |
+| 13.3 | Template upload API + Report Builder «Шаблон YARG» tab | Done |
+| 13.4 | `export?format=pdf\|xlsx\|html` + widget PDF button | Done |
+
+См. [REPORTS.md](REPORTS.md) (секция YARG templates).
+
 ## Platform baseline
 
 | # | Тема | Статус |
