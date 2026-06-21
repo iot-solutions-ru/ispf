@@ -43,6 +43,8 @@ public class PlatformInfoController {
                 "federation",
                 "federation-issue-token",
                 "federation-remote-token",
+                "federation-auth-refresh",
+                "federation-tunnel",
                 "oidc-rbac"
         });
         return payload;

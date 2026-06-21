@@ -1,11 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
+  connectOutboundAgent,
   createFederationPeer,
+  createInboundRegistration,
+  createOutboundAgent,
   deleteFederationPeer,
+  deleteInboundRegistration,
+  deleteOutboundAgent,
   fetchFederationPeers,
+  fetchInboundRegistrations,
+  fetchOutboundAgents,
   fetchRemoteFederationToken,
+  fetchTunnelSessions,
+  formatTokenExpiry,
   probeFederationObject,
+  refreshPeerToken,
   syncFederationCatalog,
   type FederationPeerPayload,
 } from "../api/federation";
@@ -63,6 +73,20 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
 
   const [remoteLoginUsername, setRemoteLoginUsername] = useState("admin");
   const [remoteLoginPassword, setRemoteLoginPassword] = useState("");
+  const [useServiceAccount, setUseServiceAccount] = useState(false);
+  const [serviceAccountUsername, setServiceAccountUsername] = useState("admin");
+  const [serviceAccountPassword, setServiceAccountPassword] = useState("");
+
+  const [inboundName, setInboundName] = useState("");
+  const [inboundPathPrefix, setInboundPathPrefix] = useState("root.platform");
+  const [issuedRegistrationCode, setIssuedRegistrationCode] = useState<string | null>(null);
+
+  const [outboundForm, setOutboundForm] = useState({
+    name: "",
+    hubBaseUrl: defaultFederationBaseUrl(),
+    registrationCode: "",
+    pathPrefix: "root.platform",
+  });
 
   const peersQuery = useQuery({
     queryKey: ["federation-peers"],
@@ -82,11 +106,34 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
     enabled: canManage,
   });
 
+  const inboundQuery = useQuery({
+    queryKey: ["federation-inbound-registrations"],
+    queryFn: fetchInboundRegistrations,
+    enabled: canManage,
+  });
+
+  const outboundQuery = useQuery({
+    queryKey: ["federation-outbound-agents"],
+    queryFn: fetchOutboundAgents,
+    enabled: canManage,
+    refetchInterval: 5000,
+  });
+
+  const tunnelsQuery = useQuery({
+    queryKey: ["federation-tunnels"],
+    queryFn: fetchTunnelSessions,
+    enabled: canManage,
+    refetchInterval: 5000,
+  });
+
   const tokenApiSupported = platformInfoQuery.data
     ? platformInfoQuery.data.capabilities.includes("federation-issue-token") &&
       platformInfoQuery.data.capabilities.includes("federation-remote-token")
     : true;
   const tokenApiMissing = platformInfoQuery.isSuccess && !tokenApiSupported;
+  const tunnelApiSupported = platformInfoQuery.data
+    ? platformInfoQuery.data.capabilities.includes("federation-tunnel")
+    : true;
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -98,6 +145,9 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
         ...form,
         name: form.name.trim(),
         baseUrl: form.baseUrl.trim(),
+        authMode: useServiceAccount ? "SERVICE_ACCOUNT" : "STATIC_TOKEN",
+        authUsername: useServiceAccount ? serviceAccountUsername.trim() : undefined,
+        authPassword: useServiceAccount ? serviceAccountPassword : undefined,
       });
     },
     onSuccess: () => {
@@ -161,6 +211,68 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
       setIssuedTokenMeta(null);
       setTokenPanelError(error.message);
     },
+  });
+
+  const refreshTokenMutation = useMutation({
+    mutationFn: (peerId: string) => refreshPeerToken(peerId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["federation-peers"] });
+      setSyncFeedback("Токен peer обновлён");
+    },
+    onError: (error: Error) => setFormError(error.message),
+  });
+
+  const createInboundMutation = useMutation({
+    mutationFn: () => {
+      if (!inboundName.trim()) {
+        throw new Error("Укажите имя inbound registration");
+      }
+      return createInboundRegistration({
+        name: inboundName.trim(),
+        pathPrefix: inboundPathPrefix.trim() || "root.platform",
+      });
+    },
+    onSuccess: (data) => {
+      setIssuedRegistrationCode(data.registrationCode);
+      setInboundName("");
+      queryClient.invalidateQueries({ queryKey: ["federation-inbound-registrations"] });
+    },
+    onError: (error: Error) => setFormError(error.message),
+  });
+
+  const deleteInboundMutation = useMutation({
+    mutationFn: (id: string) => deleteInboundRegistration(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["federation-inbound-registrations"] }),
+  });
+
+  const createOutboundMutation = useMutation({
+    mutationFn: () => {
+      if (!outboundForm.name.trim() || !outboundForm.hubBaseUrl.trim() || !outboundForm.registrationCode.trim()) {
+        throw new Error("Укажите name, hub URL и registration code");
+      }
+      return createOutboundAgent({
+        name: outboundForm.name.trim(),
+        hubBaseUrl: outboundForm.hubBaseUrl.trim(),
+        registrationCode: outboundForm.registrationCode.trim(),
+        pathPrefix: outboundForm.pathPrefix.trim() || "root.platform",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["federation-outbound-agents"] });
+      queryClient.invalidateQueries({ queryKey: ["federation-peers"] });
+      setOutboundForm((prev) => ({ ...prev, name: "", registrationCode: "" }));
+    },
+    onError: (error: Error) => setFormError(error.message),
+  });
+
+  const connectOutboundMutation = useMutation({
+    mutationFn: (id: string) => connectOutboundAgent(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["federation-outbound-agents"] }),
+  });
+
+  const deleteOutboundMutation = useMutation({
+    mutationFn: (id: string) => deleteOutboundAgent(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["federation-outbound-agents"] }),
   });
 
   const remoteTokenMutation = useMutation({
@@ -290,6 +402,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
             <th>Имя</th>
             <th>Base URL</th>
             <th>Prefix</th>
+            <th>Auth</th>
             <th>Token</th>
             <th>Вкл.</th>
             <th />
@@ -298,12 +411,41 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
         <tbody>
           {(peersQuery.data ?? []).map((peer) => (
             <tr key={peer.id}>
-              <td><code>{peer.name}</code></td>
+              <td>
+                <code>{peer.name}</code>
+                {peer.connectionMode === "TUNNEL_INBOUND" && (
+                  <span className="badge">TUNNEL{peer.tunnelConnected ? "" : " (offline)"}</span>
+                )}
+              </td>
               <td>{peer.baseUrl}</td>
               <td><code>{peer.pathPrefix || "—"}</code></td>
+              <td>
+                {peer.authMode === "SERVICE_ACCOUNT" ? (
+                  <>
+                    <span className="badge">auto-refresh</span>
+                    {" "}
+                    <span className="op-muted">{formatTokenExpiry(peer.tokenExpiresAt)}</span>
+                    {peer.authStatus === "FAILED" && (
+                      <span className="badge danger">FAILED</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="op-muted">static</span>
+                )}
+              </td>
               <td>{peer.hasAuthToken ? "да" : "нет"}</td>
               <td>{peer.enabled ? "да" : "нет"}</td>
               <td>
+                {peer.authMode === "SERVICE_ACCOUNT" && (
+                  <button
+                    type="button"
+                    className="btn compact"
+                    disabled={refreshTokenMutation.isPending}
+                    onClick={() => refreshTokenMutation.mutate(peer.id)}
+                  >
+                    Refresh
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn compact"
@@ -371,6 +513,34 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
               onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
             />
           </label>
+          <label className="full">
+            <input
+              type="checkbox"
+              checked={useServiceAccount}
+              onChange={(e) => setUseServiceAccount(e.target.checked)}
+            />
+            {" "}
+            Auto-refresh (service account)
+          </label>
+          {useServiceAccount && (
+            <>
+              <label>
+                auth username
+                <input
+                  value={serviceAccountUsername}
+                  onChange={(e) => setServiceAccountUsername(e.target.value)}
+                />
+              </label>
+              <label>
+                auth password
+                <input
+                  type="password"
+                  value={serviceAccountPassword}
+                  onChange={(e) => setServiceAccountPassword(e.target.value)}
+                />
+              </label>
+            </>
+          )}
         </div>
 
         <section className="federation-remote-token">
@@ -466,6 +636,176 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
           <pre className="mono federation-probe-result">{probeResult}</pre>
         )}
       </section>
+
+      {tunnelApiSupported && (
+        <>
+          <section className="federation-inbound driver-config-form">
+            <h4>Inbound registrations (hub)</h4>
+            <p className="op-muted">
+              Выпустите одноразовый registration code для edge-агента за NAT. Код показывается один раз.
+            </p>
+            <div className="form-grid">
+              <label>
+                name *
+                <input value={inboundName} onChange={(e) => setInboundName(e.target.value)} />
+              </label>
+              <label>
+                pathPrefix
+                <input value={inboundPathPrefix} onChange={(e) => setInboundPathPrefix(e.target.value)} />
+              </label>
+            </div>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn primary"
+                disabled={createInboundMutation.isPending}
+                onClick={() => createInboundMutation.mutate()}
+              >
+                Создать registration code
+              </button>
+            </div>
+            {issuedRegistrationCode && (
+              <>
+                <p className="hint success">Registration code (скопируйте сейчас):</p>
+                <pre className="mono federation-probe-result">{issuedRegistrationCode}</pre>
+                <button
+                  type="button"
+                  className="btn compact"
+                  onClick={() => copyToClipboard(issuedRegistrationCode).then(() => setSyncFeedback("Code скопирован"))}
+                >
+                  Копировать code
+                </button>
+              </>
+            )}
+            <table className="op-table security-users-table security-users-table-compact">
+              <thead>
+                <tr>
+                  <th>Имя</th>
+                  <th>Prefix</th>
+                  <th>Expires</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(inboundQuery.data ?? []).map((reg) => (
+                  <tr key={reg.id}>
+                    <td><code>{reg.name}</code></td>
+                    <td><code>{reg.pathPrefix}</code></td>
+                    <td>{new Date(reg.expiresAt).toLocaleString()}</td>
+                    <td>{reg.consumedAt ? "consumed" : "pending"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn danger compact"
+                        disabled={deleteInboundMutation.isPending}
+                        onClick={() => deleteInboundMutation.mutate(reg.id)}
+                      >
+                        Удалить
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section className="federation-outbound driver-config-form">
+            <h4>Outbound agents (edge / NAT)</h4>
+            <p className="op-muted">
+              Исходящий WebSocket-туннель к public hub. Требуется <code>ispf.security.secrets-key</code> на edge.
+            </p>
+            <div className="form-grid">
+              <label>
+                name *
+                <input
+                  value={outboundForm.name}
+                  onChange={(e) => setOutboundForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+              </label>
+              <label>
+                hub baseUrl *
+                <input
+                  value={outboundForm.hubBaseUrl}
+                  onChange={(e) => setOutboundForm((prev) => ({ ...prev, hubBaseUrl: e.target.value }))}
+                />
+              </label>
+              <label>
+                registration code *
+                <input
+                  type="password"
+                  value={outboundForm.registrationCode}
+                  onChange={(e) => setOutboundForm((prev) => ({ ...prev, registrationCode: e.target.value }))}
+                />
+              </label>
+              <label>
+                pathPrefix
+                <input
+                  value={outboundForm.pathPrefix}
+                  onChange={(e) => setOutboundForm((prev) => ({ ...prev, pathPrefix: e.target.value }))}
+                />
+              </label>
+            </div>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn primary"
+                disabled={createOutboundMutation.isPending}
+                onClick={() => createOutboundMutation.mutate()}
+              >
+                Добавить agent
+              </button>
+            </div>
+            <table className="op-table security-users-table security-users-table-compact">
+              <thead>
+                <tr>
+                  <th>Имя</th>
+                  <th>Hub</th>
+                  <th>Status</th>
+                  <th>Peer</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(outboundQuery.data ?? []).map((agent) => (
+                  <tr key={agent.id}>
+                    <td><code>{agent.name}</code></td>
+                    <td>{agent.hubBaseUrl}</td>
+                    <td>
+                      {agent.tunnelStatus}
+                      {agent.lastError && <span className="op-muted"> — {agent.lastError}</span>}
+                    </td>
+                    <td>{agent.linkedPeerId ?? "—"}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="btn compact"
+                        disabled={connectOutboundMutation.isPending}
+                        onClick={() => connectOutboundMutation.mutate(agent.id)}
+                      >
+                        Connect
+                      </button>
+                      <button
+                        type="button"
+                        className="btn danger compact"
+                        disabled={deleteOutboundMutation.isPending}
+                        onClick={() => deleteOutboundMutation.mutate(agent.id)}
+                      >
+                        Удалить
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(tunnelsQuery.data ?? []).length > 0 && (
+              <p className="hint">
+                Active tunnel sessions on this hub: {(tunnelsQuery.data ?? []).length}
+              </p>
+            )}
+          </section>
+        </>
+      )}
     </section>
   );
 }

@@ -493,7 +493,13 @@ Post-PF (P3+) — platform evolution (см. §8.1, §9, §10)
 
 ## 9. Распределённая архитектура и федерация (roadmap, P3+)
 
-**REQ-PF-13** — spike **Done** в `main` (peers, proxy read/write, catalog sync, WS fan-out). Production gaps — tenant scope на все API, subscribe-by-path в Web Console, cross-tenant tests (см. [FEDERATION.md](FEDERATION.md)).
+**REQ-PF-13** — spike **Done** в `main` (peers, proxy read/write, catalog sync, WS fan-out). **Phase 7 Done:** auth auto-refresh (`SERVICE_ACCOUNT`), outbound WebSocket tunnel для NAT edge (см. [FEDERATION.md](FEDERATION.md)).
+
+**REQ-PF-13b acceptance (Phase 7):**
+
+1. Peer с service account автоматически обновляет token до expiry; после simulated expiry связь восстанавливается без ручного вмешательства.
+2. Local edge за NAT подключается только исходящим WS; remote hub видит federated catalog и выполняет read/write без inbound доступа к local.
+3. Reconnect после разрыва WS ≤ 30s (exponential backoff agent-side).
 
 ### Текущее состояние
 

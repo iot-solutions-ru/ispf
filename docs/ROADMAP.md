@@ -77,6 +77,13 @@
 | 6.4 | PF-09 virtual profiles bundle + PF-11 function rollback UI | Done |
 | 6.5 | Phase 5 polish (model diff, warehouse CI, correlator cooldown) | Done |
 
+## Phase 7 — Federation auth + outbound tunnel
+
+| # | Тема | Статус |
+|---|------|--------|
+| 7.1 | Auth lifecycle (service account auto-refresh, 401 retry) | Done |
+| 7.2 | Outbound WebSocket tunnel (NAT edge → public hub, full proxy) | Done |
+
 ## Platform baseline
 
 | # | Тема | Статус |

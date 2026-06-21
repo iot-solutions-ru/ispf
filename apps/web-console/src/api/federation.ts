@@ -1,6 +1,10 @@
 import { getAuthHeaders } from "../auth/session";
 import { parseApiError } from "../utils/parseApiError";
 
+export type FederationAuthMode = "STATIC_TOKEN" | "SERVICE_ACCOUNT";
+export type FederationAuthStatus = "OK" | "EXPIRING" | "FAILED";
+export type FederationConnectionMode = "HTTP_PULL" | "TUNNEL_INBOUND";
+
 export interface FederationPeer {
   id: string;
   name: string;
@@ -9,6 +13,11 @@ export interface FederationPeer {
   enabled: boolean;
   description: string | null;
   hasAuthToken: boolean;
+  connectionMode?: FederationConnectionMode;
+  authMode?: FederationAuthMode;
+  authStatus?: FederationAuthStatus;
+  tokenExpiresAt?: string | null;
+  tunnelConnected?: boolean;
 }
 
 export interface FederationPeerPayload {
@@ -18,6 +27,59 @@ export interface FederationPeerPayload {
   pathPrefix?: string;
   enabled?: boolean;
   description?: string;
+  authMode?: FederationAuthMode;
+  authUsername?: string;
+  authPassword?: string;
+}
+
+export interface FederationPeerAuthStatus {
+  peerId: string;
+  authMode: FederationAuthMode;
+  authStatus: FederationAuthStatus;
+  tokenExpiresAt: string | null;
+  lastAuthAt: string | null;
+  lastAuthError: string | null;
+  serviceAccountConfigured: boolean;
+}
+
+export interface InboundRegistration {
+  id: string;
+  name: string;
+  pathPrefix: string;
+  expiresAt: string;
+  consumedAt: string | null;
+}
+
+export interface CreatedInboundRegistration {
+  registration: InboundRegistration;
+  registrationCode: string;
+}
+
+export interface TunnelSession {
+  sessionId: string;
+  peerId: string;
+  registrationId: string | null;
+  connectedAt: string;
+  lastPingAt: string | null;
+}
+
+export interface OutboundAgent {
+  id: string;
+  name: string;
+  hubBaseUrl: string;
+  pathPrefix: string;
+  enabled: boolean;
+  tunnelStatus: string;
+  linkedPeerId: string | null;
+  lastError: string | null;
+  lastConnectedAt: string | null;
+}
+
+export interface CreateOutboundAgentPayload {
+  name: string;
+  hubBaseUrl: string;
+  registrationCode: string;
+  pathPrefix?: string;
 }
 
 export function fetchFederationPeers(): Promise<FederationPeer[]> {
@@ -50,6 +112,29 @@ export function deleteFederationPeer(id: string): Promise<void> {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Delete peer failed: ${response.status}`));
     }
+  });
+}
+
+export function fetchPeerAuthStatus(peerId: string): Promise<FederationPeerAuthStatus> {
+  return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/auth-status`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Auth status failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function refreshPeerToken(peerId: string): Promise<FederationPeerAuthStatus> {
+  return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/refresh-token`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Refresh token failed: ${response.status}`));
+    }
+    return response.json();
   });
 }
 
@@ -112,4 +197,111 @@ export function fetchRemoteFederationToken(payload: RemoteFederationTokenPayload
     }
     return response.json();
   });
+}
+
+export function fetchInboundRegistrations(): Promise<InboundRegistration[]> {
+  return fetch("/api/v1/federation/inbound/registrations", { headers: getAuthHeaders() }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Inbound registrations failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function createInboundRegistration(payload: {
+  name: string;
+  pathPrefix?: string;
+  ttlHours?: number;
+}): Promise<CreatedInboundRegistration> {
+  return fetch("/api/v1/federation/inbound/registrations", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Create registration failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function deleteInboundRegistration(id: string): Promise<void> {
+  return fetch(`/api/v1/federation/inbound/registrations/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Delete registration failed: ${response.status}`));
+    }
+  });
+}
+
+export function fetchTunnelSessions(): Promise<TunnelSession[]> {
+  return fetch("/api/v1/federation/tunnels", { headers: getAuthHeaders() }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Tunnel sessions failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function fetchOutboundAgents(): Promise<OutboundAgent[]> {
+  return fetch("/api/v1/federation/outbound/agents", { headers: getAuthHeaders() }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Outbound agents failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function createOutboundAgent(payload: CreateOutboundAgentPayload): Promise<OutboundAgent> {
+  return fetch("/api/v1/federation/outbound/agents", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Create outbound agent failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function deleteOutboundAgent(id: string): Promise<void> {
+  return fetch(`/api/v1/federation/outbound/agents/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Delete outbound agent failed: ${response.status}`));
+    }
+  });
+}
+
+export function connectOutboundAgent(id: string): Promise<OutboundAgent> {
+  return fetch(`/api/v1/federation/outbound/agents/${encodeURIComponent(id)}/connect`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Connect outbound agent failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function formatTokenExpiry(expiresAt: string | null | undefined): string {
+  if (!expiresAt) {
+    return "—";
+  }
+  const expiry = new Date(expiresAt);
+  const hoursLeft = Math.round((expiry.getTime() - Date.now()) / (1000 * 60 * 60));
+  if (hoursLeft <= 0) {
+    return "истёк";
+  }
+  if (hoursLeft < 24) {
+    return `истекает через ${hoursLeft} ч`;
+  }
+  const daysLeft = Math.round(hoursLeft / 24);
+  return `истекает через ${daysLeft} д`;
 }

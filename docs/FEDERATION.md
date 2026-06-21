@@ -12,8 +12,15 @@ Spike реализации REQ-PF-13: реестр peer-инстансов, prox
 
 | Компонент | Описание |
 |-----------|----------|
-| `federation_peers` (V26) | Таблица peer: name, baseUrl, authToken, pathPrefix, enabled |
+| `federation_peers` (V26, V29) | Таблица peer: name, baseUrl, authToken, pathPrefix, enabled, auth lifecycle (V29) |
+| `federation_inbound_registrations` (V30) | Одноразовые registration codes для inbound tunnel |
+| `federation_outbound_agents` (V30) | Конфиг исходящих tunnel-агентов на edge |
 | `GET/POST/PUT/DELETE /api/v1/federation/peers` | CRUD (admin) |
+| `GET/POST /api/v1/federation/peers/{id}/auth-status`, `refresh-token` | Auth lifecycle для service account peers |
+| `POST/GET/DELETE /api/v1/federation/inbound/registrations` | Hub: выпуск registration code |
+| `GET /api/v1/federation/tunnels` | Hub: активные tunnel sessions |
+| `POST/GET/PUT/DELETE /api/v1/federation/outbound/agents`, `connect` | Edge: CRUD outbound agent |
+| `/ws/federation/tunnel` | WebSocket tunnel (registration code или session reconnect) |
 | `POST /api/v1/federation/remote-token` | Логин на remote ISPF (server-side), возвращает Bearer для `authToken` |
 | `POST /api/v1/security/users/{username}/federation-token` | Выпуск Bearer-сессии для service user на **этом** узле |
 | `POST /api/v1/federation/peers/{id}/sync-catalog` | Импорт remote object list в локальное дерево |
@@ -63,6 +70,43 @@ Web Console: кнопка **Sync** на панели Federation peers.
    - **Получить токен с remote** — `POST /api/v1/federation/remote-token` с `baseUrl` из формы и учётными данными remote (пароль не сохраняется на сервере).
 
 Токены — обычные platform session tokens (TTL по умолчанию 12 ч, макс. 168 ч), не долгоживущие API keys. Нужен профиль `local` или `ispf.security.token-auth-enabled: true`.
+
+### Auth lifecycle (Phase 7.1)
+
+Peer может использовать `authMode`:
+
+| Режим | Описание |
+|-------|----------|
+| `STATIC_TOKEN` | Bearer вручную (по умолчанию) |
+| `SERVICE_ACCOUNT` | Логин/пароль на remote; пароль шифруется (`ispf.security.secrets-key`) |
+
+Для `SERVICE_ACCOUNT`:
+
+- `@Scheduled` refresh за ~20% TTL (мин. 1 ч) до expiry
+- При 401 от peer — один immediate retry после refresh
+- `GET /api/v1/federation/peers/{id}/auth-status` — диагностика
+- `POST /api/v1/federation/peers/{id}/refresh-token` — ручной refresh
+
+Рекомендуется dedicated user `federation-agent` с role operator/admin и tenant scope.
+
+### Outbound tunnel (NAT edge, Phase 7.2)
+
+Local edge за NAT **не доступен inbound**. Edge инициирует исходящий WebSocket к public hub:
+
+```text
+Edge (NAT) ──WS outbound──► Hub (public)
+Hub ──proxy_request──► Edge ──local services──► response
+```
+
+**Operator flow:**
+
+1. **Hub:** Federation → Inbound registration → имя + pathPrefix → **registration code** (один раз).
+2. **Edge:** Federation → Outbound agent → hub URL + code → Connect.
+3. Hub auto-creates peer `connection_mode=TUNNEL_INBOUND`.
+4. **Sync catalog** на hub → `root.platform.federation.{site}.*`.
+5. Read/write/invoke работают через tunnel; `event_notify` заменяет HTTP poll для WS subscribe.
+
+Требования prod: `ispf.security.secrets-key` на edge (хранение registration code / session token); reverse proxy с поддержкой `wss`.
 
 ## Ограничения spike / production gaps
 

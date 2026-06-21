@@ -2,6 +2,7 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -27,6 +28,8 @@ public class FederationService {
     private final FederationPeerStore peerStore;
     private final ObjectMapper objectMapper;
     private final FederationWebSocketFanoutService webSocketFanout;
+    private final FederationPeerAuthService authService;
+    private final FederationTunnelHubService tunnelHubService;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -34,26 +37,32 @@ public class FederationService {
     public FederationService(
             FederationPeerStore peerStore,
             ObjectMapper objectMapper,
-            FederationWebSocketFanoutService webSocketFanout
+            FederationWebSocketFanoutService webSocketFanout,
+            @Lazy FederationPeerAuthService authService,
+            @Lazy FederationTunnelHubService tunnelHubService
     ) {
         this.peerStore = peerStore;
         this.objectMapper = objectMapper;
         this.webSocketFanout = webSocketFanout;
+        this.authService = authService;
+        this.tunnelHubService = tunnelHubService;
     }
 
     public List<FederationPeer> listPeers() {
         return peerStore.listAll();
     }
 
-    public FederationPeer createPeer(FederationPeerDraft draft) {
+    public FederationPeer createPeer(FederationPeerDraft draft, FederationPeerAuthService.FederationPeerRequestAuth auth) {
         validateDraft(draft);
-        return peerStore.insert(draft);
+        FederationPeerDraft enriched = authService.enrichDraft(draft, auth);
+        return peerStore.insert(enriched);
     }
 
-    public FederationPeer updatePeer(UUID id, FederationPeerDraft draft) {
+    public FederationPeer updatePeer(UUID id, FederationPeerDraft draft, FederationPeerAuthService.FederationPeerRequestAuth auth) {
         validateDraft(draft);
         requirePeer(id);
-        return peerStore.update(id, draft);
+        FederationPeerDraft merged = authService.mergeUpdate(id, draft, auth);
+        return peerStore.update(id, merged);
     }
 
     public void deletePeer(UUID id) {
@@ -226,19 +235,41 @@ public class FederationService {
         if (!peer.enabled()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Peer is disabled: " + peer.name());
         }
-        String url = peer.baseUrl() + pathAndQuery;
+        if (peer.isTunnelInbound()) {
+            return tunnelHubService.dispatch(peer.id(), method, pathAndQuery, body);
+        }
+        return sendJsonHttp(peer, method, pathAndQuery, body, true);
+    }
+
+    private JsonNode sendGet(FederationPeer peer, String pathAndQuery) {
+        if (!peer.enabled()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Peer is disabled: " + peer.name());
+        }
+        if (peer.isTunnelInbound()) {
+            return tunnelHubService.dispatch(peer.id(), "GET", pathAndQuery, null);
+        }
+        return sendGetHttp(peer, pathAndQuery, true);
+    }
+
+    private JsonNode sendJsonHttp(FederationPeer peer, String method, String pathAndQuery, String body, boolean allowRefresh) {
+        FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
+        String url = current.baseUrl() + pathAndQuery;
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(15))
                     .header("Content-Type", "application/json")
                     .method(method, HttpRequest.BodyPublishers.ofString(body != null ? body : "{}"));
-            applyAuthorization(builder, peer);
+            applyAuthorization(builder, current);
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if ((response.statusCode() == 401 || response.statusCode() == 403) && allowRefresh
+                    && authService.refreshPeerIfUnauthorized(current.id())) {
+                return sendJsonHttp(peerStore.findById(current.id()).orElseThrow(), method, pathAndQuery, body, false);
+            }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
-                        "Peer " + peer.name() + " returned HTTP " + response.statusCode()
+                        "Peer " + current.name() + " returned HTTP " + response.statusCode()
                 );
             }
             return objectMapper.readTree(response.body());
@@ -249,32 +280,34 @@ public class FederationService {
         }
     }
 
-    private JsonNode sendGet(FederationPeer peer, String pathAndQuery) {
-        if (!peer.enabled()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Peer is disabled: " + peer.name());
-        }
-        String url = peer.baseUrl() + pathAndQuery;
+    private JsonNode sendGetHttp(FederationPeer peer, String pathAndQuery, boolean allowRefresh) {
+        FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
+        String url = current.baseUrl() + pathAndQuery;
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofSeconds(15))
                     .GET();
-            applyAuthorization(builder, peer);
+            applyAuthorization(builder, current);
             HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            if ((response.statusCode() == 401 || response.statusCode() == 403) && allowRefresh
+                    && authService.refreshPeerIfUnauthorized(current.id())) {
+                return sendGetHttp(peerStore.findById(current.id()).orElseThrow(), pathAndQuery, false);
+            }
             if (response.statusCode() == 404) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Remote resource not found: " + pathAndQuery);
             }
             if (response.statusCode() == 401 || response.statusCode() == 403) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
-                        "Peer " + peer.name() + " returned HTTP " + response.statusCode()
+                        "Peer " + current.name() + " returned HTTP " + response.statusCode()
                                 + ". Configure authToken on the peer or ensure the caller is authorized on the remote instance."
                 );
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
-                        "Peer " + peer.name() + " returned HTTP " + response.statusCode()
+                        "Peer " + current.name() + " returned HTTP " + response.statusCode()
                 );
             }
             return objectMapper.readTree(response.body());

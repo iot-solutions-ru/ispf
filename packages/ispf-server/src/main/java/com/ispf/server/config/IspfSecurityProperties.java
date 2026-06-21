@@ -26,6 +26,12 @@ public class IspfSecurityProperties {
      */
     private String oidcClientId = "ispf-web-console";
 
+    /**
+     * Master key for encrypting federation service-account passwords (AES-GCM).
+     * When blank, only static Bearer tokens can be stored on peers.
+     */
+    private String secretsKey = "";
+
     public boolean isRbacEnabled() {
         return rbacEnabled;
     }
@@ -56,5 +62,13 @@ public class IspfSecurityProperties {
 
     public void setOidcClientId(String oidcClientId) {
         this.oidcClientId = oidcClientId;
+    }
+
+    public String getSecretsKey() {
+        return secretsKey;
+    }
+
+    public void setSecretsKey(String secretsKey) {
+        this.secretsKey = secretsKey;
     }
 }

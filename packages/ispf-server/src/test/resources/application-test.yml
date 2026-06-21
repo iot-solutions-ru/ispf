@@ -18,6 +18,7 @@ spring:
 ispf:
   security:
     rbac-enabled: false
+    secrets-key: test-secret-key-for-federation-phase7
   mqtt:
     enabled: false
   nats:

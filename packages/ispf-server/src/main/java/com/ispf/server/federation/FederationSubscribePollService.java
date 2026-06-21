@@ -16,15 +16,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FederationSubscribePollService {
 
     private final FederationProxyService federationProxyService;
+    private final FederationPeerStore peerStore;
+    private final FederationTunnelHubService tunnelHubService;
     private final ApplicationEventPublisher eventPublisher;
     private final Set<String> subscribedPaths = ConcurrentHashMap.newKeySet();
     private final Map<String, String> lastSnapshot = new ConcurrentHashMap<>();
 
     public FederationSubscribePollService(
             FederationProxyService federationProxyService,
+            FederationPeerStore peerStore,
+            FederationTunnelHubService tunnelHubService,
             ApplicationEventPublisher eventPublisher
     ) {
         this.federationProxyService = federationProxyService;
+        this.peerStore = peerStore;
+        this.tunnelHubService = tunnelHubService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -40,6 +46,9 @@ public class FederationSubscribePollService {
     void pollSubscribedPaths() {
         for (String path : subscribedPaths) {
             federationProxyService.resolve(path).ifPresent(target -> {
+                if (shouldSkipPoll(target.peerId())) {
+                    return;
+                }
                 try {
                     var json = federationProxyService.proxyObject(target);
                     String snapshot = json == null ? "" : json.toString();
@@ -55,5 +64,12 @@ public class FederationSubscribePollService {
                 }
             });
         }
+    }
+
+    private boolean shouldSkipPoll(java.util.UUID peerId) {
+        return peerStore.findById(peerId)
+                .filter(FederationPeer::isTunnelInbound)
+                .filter(peer -> tunnelHubService.isConnected(peer.id()))
+                .isPresent();
     }
 }
