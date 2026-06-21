@@ -3,8 +3,10 @@ package com.ispf.server.federation;
 import tools.jackson.databind.JsonNode;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.config.EmbeddedServerPort;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.ObjectManager;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,19 +25,25 @@ public class FederationBindService {
     private final FederationProxyService federationProxyService;
     private final ObjectManager objectManager;
     private final DriverRuntimeService driverRuntimeService;
+    private final EmbeddedServerPort embeddedServerPort;
+    private final Environment environment;
 
     public FederationBindService(
             FederationPeerStore peerStore,
             FederationService federationService,
             FederationProxyService federationProxyService,
             ObjectManager objectManager,
-            DriverRuntimeService driverRuntimeService
+            DriverRuntimeService driverRuntimeService,
+            EmbeddedServerPort embeddedServerPort,
+            Environment environment
     ) {
         this.peerStore = peerStore;
         this.federationService = federationService;
         this.federationProxyService = federationProxyService;
         this.objectManager = objectManager;
         this.driverRuntimeService = driverRuntimeService;
+        this.embeddedServerPort = embeddedServerPort;
+        this.environment = environment;
     }
 
     @Transactional
@@ -43,7 +51,7 @@ public class FederationBindService {
         FederationPeer peer = requireEnabledPeer(request.peerId());
         JsonNode remote = probeRemote(peer.id(), request.remotePath());
         String localPath = resolveLocalPath(request);
-        assertBindTargetAllowed(localPath, request.remotePath());
+        assertBindTargetAllowed(localPath, request.remotePath(), peer);
         if (FederationProxyMetadata.isProxy(objectManager.require(localPath))) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
@@ -66,7 +74,7 @@ public class FederationBindService {
                     "Object is not federation-bound: " + request.localPath()
             );
         }
-        assertBindTargetAllowed(request.localPath(), request.remotePath());
+        assertBindTargetAllowed(request.localPath(), request.remotePath(), peer);
         JsonNode remote = probeRemote(peer.id(), request.remotePath());
         FederationProxyNodeHelper.syncFromRemoteProbe(objectManager, request.localPath(), remote);
         FederationProxyNodeHelper.markProxy(
@@ -188,23 +196,18 @@ public class FederationBindService {
         return fullPath;
     }
 
-    private void assertBindTargetAllowed(String localPath, String remotePath) {
-        if (remotePath == null || remotePath.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "remotePath is required");
-        }
-        String trimmedRemote = remotePath.trim();
-        federationProxyService.resolve(trimmedRemote).ifPresent(target -> {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "remotePath must not reference a local federation-bound path: " + trimmedRemote
-            );
-        });
-        if (trimmedRemote.equals(localPath)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "remotePath must differ from localPath"
-            );
-        }
+    private void assertBindTargetAllowed(String localPath, String remotePath, FederationPeer peer) {
+        FederationBindRules.validate(
+                localPath,
+                remotePath,
+                peer,
+                effectiveLocalServerPort(),
+                federationProxyService.resolve(remotePath.trim())
+        );
+    }
+
+    private int effectiveLocalServerPort() {
+        return embeddedServerPort.get(environment);
     }
 
     private JsonNode probeRemote(UUID peerId, String remotePath) {

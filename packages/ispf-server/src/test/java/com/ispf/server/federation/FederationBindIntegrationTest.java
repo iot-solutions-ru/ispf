@@ -172,6 +172,47 @@ class FederationBindIntegrationTest {
                 .andExpect(status().isNoContent());
     }
 
+    @Test
+    void bindSamePathOnLoopbackPeerRejected() throws Exception {
+        String token = loginAdmin();
+        String baseUrl = "http://127.0.0.1:" + port;
+        String path = "root.platform.devices.demo-sensor-01";
+
+        MvcResult peerCreated = mockMvc.perform(post("/api/v1/federation/peers")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "loopback-bind-%s",
+                                  "baseUrl": "%s",
+                                  "pathPrefix": "root.platform",
+                                  "enabled": true
+                                }
+                                """.formatted(System.nanoTime(), baseUrl)))
+                .andExpect(status().isOk())
+                .andReturn();
+        String peerId = extractJsonField(peerCreated.getResponse().getContentAsString(), "id");
+
+        mockMvc.perform(post("/api/v1/federation/binds")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "localPath": "%s",
+                                  "peerId": "%s",
+                                  "remotePath": "%s"
+                                }
+                                """.formatted(path, peerId, path)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value(
+                        org.hamcrest.Matchers.containsString("same ISPF instance")
+                ));
+
+        mockMvc.perform(delete("/api/v1/federation/peers/" + peerId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isNoContent());
+    }
+
     private String loginAdmin() throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

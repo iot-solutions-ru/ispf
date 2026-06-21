@@ -57,6 +57,23 @@ POST /api/v1/federation/binds
 
 Create + bind: `parentPath` + `name` вместо `localPath`. Rebind: `PATCH /api/v1/federation/binds`. Unbind: `DELETE /api/v1/federation/binds?localPath=...`.
 
+**Одинаковый путь на remote peer (типичный сценарий):** локальный `root.platform.devices.snmp-localhost` можно привязать к remote peer с тем же `remotePath` — данные берутся с edge, локальный driver и переменные заморожены. Пути совпадают **на разных инстансах**, это нормально.
+
+**Защита от циклов:**
+
+- Запрещено: `localPath` = `remotePath` на **том же** ISPF (loopback peer → бесконечный proxy).
+- Запрещено: `remotePath` указывает на **локальный** federation-bound узел (в т.ч. mirror `root.platform.federation.*`), особенно если его remote target уже равен bind `localPath`.
+- Один hop: нельзя chain через другой local federated path.
+
+```http
+POST /api/v1/federation/binds
+{
+  "localPath": "root.platform.devices.snmp-localhost",
+  "peerId": "<edge-tunnel-peer>",
+  "remotePath": "root.platform.devices.snmp-localhost"
+}
+```
+
 ## Catalog sync
 
 `POST /api/v1/federation/peers/{peerId}/sync-catalog` загружает список объектов с peer и создаёт локальные proxy-узлы:
