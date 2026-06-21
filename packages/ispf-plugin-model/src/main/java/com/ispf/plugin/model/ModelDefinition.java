@@ -7,6 +7,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Full model definition — blueprint for object structure and bindings.
@@ -44,5 +45,25 @@ public record ModelDefinition(
 
     public String objectPath(String modelsRoot) {
         return modelsRoot + "." + name;
+    }
+
+    /**
+     * Returns the binding expression for a variable from {@link #bindings()} or {@link ModelVariableDefinition#defaultBinding()}.
+     */
+    public String bindingFor(String variableName) {
+        if (variableName == null) {
+            return null;
+        }
+        for (ModelBindingDefinition binding : bindings) {
+            if (variableName.equals(binding.targetVariable())) {
+                return binding.expression();
+            }
+        }
+        return variables.stream()
+                .filter(variable -> variableName.equals(variable.name()))
+                .map(ModelVariableDefinition::defaultBinding)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 }

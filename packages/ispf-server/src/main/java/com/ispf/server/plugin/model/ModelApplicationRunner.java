@@ -227,13 +227,14 @@ public class ModelApplicationRunner {
                     ));
                     changed = true;
                 }
-                if (!Objects.equals(existing.bindingExpression().orElse(null), varDef.defaultBinding())) {
+                String expectedBinding = model.bindingFor(varDef.name());
+                if (!Objects.equals(existing.bindingExpression().orElse(null), expectedBinding)) {
                     target.addVariable(new Variable(
                             existing.name(),
                             existing.schema(),
                             existing.readable(),
                             existing.writable(),
-                            varDef.defaultBinding(),
+                            expectedBinding,
                             existing.value().orElse(varDef.defaultValue()),
                             existing.historyEnabled(),
                             existing.historyRetentionDays().orElse(null)

@@ -173,4 +173,60 @@ class ModelEngineTest {
                 Map.of()
         )).isInstanceOf(ModelException.class);
     }
+
+    @Test
+    void bindingForResolvesSeparateBindingsTableAndDefaultBinding() {
+        DataSchema alarmSchema = DataSchema.builder("alarmActive")
+                .field("value", FieldType.BOOLEAN)
+                .build();
+        DataSchema thresholdSchema = DataSchema.builder("threshold")
+                .field("value", FieldType.DOUBLE)
+                .build();
+
+        ModelDefinition model = new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "sensor",
+                "",
+                ModelType.RELATIVE,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        ModelVariableDefinition.of(
+                                "alarmActive",
+                                "",
+                                "status",
+                                alarmSchema,
+                                true,
+                                false,
+                                null,
+                                DataRecord.single(alarmSchema, Map.of("value", false))
+                        ),
+                        ModelVariableDefinition.of(
+                                "temperaturePercent",
+                                "",
+                                "telemetry",
+                                thresholdSchema,
+                                true,
+                                false,
+                                "scale(temperature, 0, 100, 0, 1)",
+                                DataRecord.single(thresholdSchema, Map.of("value", 0.0))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(new ModelBindingDefinition(
+                        "alarmActive",
+                        "self.temperature.value > self.threshold.value"
+                )),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+
+        assertThat(model.bindingFor("alarmActive"))
+                .isEqualTo("self.temperature.value > self.threshold.value");
+        assertThat(model.bindingFor("temperaturePercent"))
+                .isEqualTo("scale(temperature, 0, 100, 0, 1)");
+        assertThat(model.bindingFor("missing")).isNull();
+    }
 }
