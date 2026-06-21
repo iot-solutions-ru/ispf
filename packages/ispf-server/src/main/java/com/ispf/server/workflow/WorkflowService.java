@@ -327,7 +327,7 @@ public class WorkflowService {
             return;
         }
         try {
-            functionService.invoke(targetObject, functionName, null);
+            functionService.invoke(targetObject, functionName);
         } catch (Exception e) {
             log.warn("User task function {} on {} failed: {}", functionName, targetObject, e.getMessage());
         }

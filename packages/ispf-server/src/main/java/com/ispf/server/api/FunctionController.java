@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import org.springframework.security.core.Authentication;
@@ -26,7 +27,7 @@ public class FunctionController {
     public DataRecord invoke(
             @RequestParam String path,
             @RequestParam String name,
-            @RequestBody(required = false) DataRecord input,
+            @RequestBody(required = false) DataRecordPayloadRequest input,
             Authentication authentication
     ) {
         objectAccessService.requireInvoke(path, authentication);

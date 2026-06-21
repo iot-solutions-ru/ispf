@@ -329,7 +329,7 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           {(primaryRole === "admin" || primaryRole === "operator") && (
-            <button type="button" className="btn" onClick={() => setAppMode("operator")} title="Открыть operator UI (demo)">
+            <button type="button" className="btn" onClick={() => selectOperatorApp("demo")} title="Открыть operator UI (demo)">
               Оператор · demo
             </button>
           )}

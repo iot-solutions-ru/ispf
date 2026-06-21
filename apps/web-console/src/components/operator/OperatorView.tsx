@@ -1,6 +1,8 @@
 import type { AuthSession } from "../../auth/session";
+import { useOperatorUi } from "../../hooks/useOperatorUi";
 import OperatorAppLauncher from "./OperatorAppLauncher";
 import OperatorDashboardApp from "./OperatorDashboardApp";
+import OperatorManifestView from "./OperatorManifestView";
 
 interface OperatorViewProps {
   operatorId?: string;
@@ -29,7 +31,49 @@ export default function OperatorView({
   }
 
   return (
-    <OperatorDashboardApp
+    <OperatorAppEntry
+      appId={appId}
+      operatorId={operatorId}
+      onSwitchAdmin={onSwitchAdmin}
+      session={session}
+      onLogout={onLogout}
+    />
+  );
+}
+
+function OperatorAppEntry({
+  appId,
+  operatorId,
+  onSwitchAdmin,
+  session,
+  onLogout,
+}: {
+  appId: string;
+  operatorId: string;
+  onSwitchAdmin?: () => void;
+  session?: AuthSession;
+  onLogout?: () => void;
+}) {
+  const uiQuery = useOperatorUi(appId);
+
+  if (uiQuery.isLoading) {
+    return <div className="operator-shell op-loading">Загрузка operator UI…</div>;
+  }
+
+  if (uiQuery.data) {
+    return (
+      <OperatorDashboardApp
+        appId={appId}
+        operatorId={operatorId}
+        onSwitchAdmin={onSwitchAdmin}
+        session={session}
+        onLogout={onLogout}
+      />
+    );
+  }
+
+  return (
+    <OperatorManifestView
       appId={appId}
       operatorId={operatorId}
       onSwitchAdmin={onSwitchAdmin}

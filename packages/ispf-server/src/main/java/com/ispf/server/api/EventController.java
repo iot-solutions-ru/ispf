@@ -1,8 +1,10 @@
 package com.ispf.server.api;
 
 import com.ispf.core.object.ObjectEvent;
-import com.ispf.core.model.DataRecord;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.event.EventService;
+import com.ispf.server.security.acl.ObjectAccessService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,9 +19,11 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+    private final ObjectAccessService objectAccessService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, ObjectAccessService objectAccessService) {
         this.eventService = eventService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping
@@ -34,8 +38,10 @@ public class EventController {
     public ObjectEvent fire(
             @RequestParam String objectPath,
             @RequestParam String eventName,
-            @RequestBody(required = false) DataRecord payload
+            @RequestBody(required = false) DataRecordPayloadRequest payload,
+            Authentication authentication
     ) {
+        objectAccessService.requireInvoke(objectPath, authentication);
         return eventService.fire(objectPath, eventName, payload);
     }
 }

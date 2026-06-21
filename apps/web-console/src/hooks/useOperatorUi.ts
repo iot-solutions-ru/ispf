@@ -26,10 +26,14 @@ async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
   if (!response.ok) {
     return null;
   }
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    return null;
+  }
   return response.json() as Promise<OperatorUi>;
 }
 
-async function loadOperatorUi(appId: string): Promise<OperatorUi> {
+async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {
   const fromPlatformApi = await fetchOperatorAppUi(appId);
   if (fromPlatformApi) {
     return fromPlatformApi;
@@ -38,11 +42,7 @@ async function loadOperatorUi(appId: string): Promise<OperatorUi> {
   if (fromBundle) {
     return fromBundle;
   }
-  const fromPublic = await loadUiFromPublic(appId);
-  if (fromPublic) {
-    return fromPublic;
-  }
-  throw new Error(`Operator UI not found for app: ${appId}`);
+  return loadUiFromPublic(appId);
 }
 
 export function useOperatorUi(appId: string | null) {

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { invokeFunction } from "../../api";
-import type { FunctionDescriptor } from "../../types";
+import type { DataRecord, DataSchema, FunctionDescriptor } from "../../types";
 
 interface InvokeFunctionDialogProps {
   objectPath: string;
@@ -10,25 +10,39 @@ interface InvokeFunctionDialogProps {
   onInvoked: () => void;
 }
 
+function defaultInputJson(schema: DataSchema): string {
+  return JSON.stringify({ schema, rows: [] }, null, 2);
+}
+
+function isEmptyInput(input: DataRecord): boolean {
+  if (!input.rows || input.rows.length === 0) {
+    return true;
+  }
+  return input.rows.every((row) => Object.keys(row).length === 0);
+}
+
 export default function InvokeFunctionDialog({
   objectPath,
   fn,
   onClose,
   onInvoked,
 }: InvokeFunctionDialogProps) {
-  const [inputJson, setInputJson] = useState("{\n  \"rows\": [{}]\n}");
+  const [inputJson, setInputJson] = useState(() => defaultInputJson(fn.inputSchema));
   const [resultJson, setResultJson] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
     mutationFn: () => {
-      let input: unknown;
+      let input: DataRecord | undefined;
       const trimmed = inputJson.trim();
       if (trimmed) {
         try {
-          input = JSON.parse(trimmed);
+          input = JSON.parse(trimmed) as DataRecord;
         } catch {
           throw new Error("Некорректный JSON input");
+        }
+        if (isEmptyInput(input)) {
+          input = undefined;
         }
       }
       return invokeFunction(objectPath, fn.name, input);
@@ -65,6 +79,7 @@ export default function InvokeFunctionDialog({
               spellCheck={false}
             />
           </label>
+          <p className="hint">Пустой rows — платформа подставит inputSchema из descriptor.</p>
           {error && <p className="hint error">{error}</p>}
           {resultJson && (
             <label className="full">

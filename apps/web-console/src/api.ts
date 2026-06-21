@@ -372,7 +372,7 @@ export function completeWorkTask(
 export function invokeFunction(
   path: string,
   name: string,
-  input?: unknown
+  input?: DataRecord
 ): Promise<{ schema: unknown; rows: Array<Record<string, unknown>> }> {
   const params = new URLSearchParams({ path, name });
   return request(`/api/v1/objects/by-path/functions/invoke?${params}`, {

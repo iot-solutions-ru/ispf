@@ -5,6 +5,8 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.model.DataRecord;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
+import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.ObjectManager;
@@ -40,16 +42,21 @@ public class EventService {
     }
 
     @Transactional
-    public ObjectEvent fire(String objectPath, String eventName, DataRecord payload) {
+    public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
         PlatformObject node = objectManager.require(objectPath);
         EventDescriptor descriptor = Optional.ofNullable(node.events().get(eventName))
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event: " + eventName));
 
-        DataRecord resolvedPayload = payload != null ? payload : DataRecord.empty(descriptor.payloadSchema());
+        DataRecord resolvedPayload = DataRecordPayloadResolver.resolve(descriptor.payloadSchema(), payload);
         ObjectEvent event = ObjectEvent.of(objectPath, eventName, descriptor.level(), resolvedPayload);
         persist(event);
         eventPublisher.publishEvent(ObjectChangeEvent.eventFired(objectPath, eventName));
         return event;
+    }
+
+    @Transactional
+    public ObjectEvent fire(String objectPath, String eventName, DataRecord payload) {
+        return fire(objectPath, eventName, DataRecordPayloadResolver.fromRecord(payload));
     }
 
     @Transactional(readOnly = true)

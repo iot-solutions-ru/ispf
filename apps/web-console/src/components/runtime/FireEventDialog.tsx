@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { fireEvent } from "../../api";
 import type { EventDescriptor } from "../../types";
-import type { DataRecord } from "../../types";
+import type { DataRecord, DataSchema } from "../../types";
 
 interface FireEventDialogProps {
   objectPath: string;
@@ -11,8 +11,19 @@ interface FireEventDialogProps {
   onFired: () => void;
 }
 
+function defaultPayloadJson(schema: DataSchema): string {
+  return JSON.stringify({ schema, rows: [] }, null, 2);
+}
+
+function isEmptyPayload(payload: DataRecord): boolean {
+  if (!payload.rows || payload.rows.length === 0) {
+    return true;
+  }
+  return payload.rows.every((row) => Object.keys(row).length === 0);
+}
+
 export default function FireEventDialog({ objectPath, event, onClose, onFired }: FireEventDialogProps) {
-  const [payloadJson, setPayloadJson] = useState("{\n  \"rows\": [{}]\n}");
+  const [payloadJson, setPayloadJson] = useState(() => defaultPayloadJson(event.payloadSchema));
   const [error, setError] = useState<string | null>(null);
 
   const mutation = useMutation({
@@ -24,6 +35,9 @@ export default function FireEventDialog({ objectPath, event, onClose, onFired }:
           payload = JSON.parse(trimmed) as DataRecord;
         } catch {
           throw new Error("Некорректный JSON payload");
+        }
+        if (isEmptyPayload(payload)) {
+          payload = undefined;
         }
       }
       return fireEvent(objectPath, event.name, payload);
