@@ -830,7 +830,7 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifInOctets",
-                                "Inbound octets on primary NIC (IF-MIB ifInOctets.2, typical Linux ens3)",
+                                "IF-MIB ifInOctets Counter32 — total octets received on interface (monotonic, wraps at 2^32)",
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
@@ -840,12 +840,32 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifOutOctets",
-                                "Outbound octets on primary NIC (IF-MIB ifOutOctets.2, typical Linux ens3)",
+                                "IF-MIB ifOutOctets Counter32 — total octets sent on interface (monotonic, wraps at 2^32)",
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
                                 true,
                                 null,
+                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                        ),
+                        ModelVariableDefinition.withHistory(
+                                "ifInOctetsRate",
+                                "Inbound traffic rate B/s derived from ifInOctets Counter32",
+                                "telemetry",
+                                SNMP_NUMERIC_SCHEMA,
+                                true,
+                                false,
+                                "counterRate(ifInOctets)",
+                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                        ),
+                        ModelVariableDefinition.withHistory(
+                                "ifOutOctetsRate",
+                                "Outbound traffic rate B/s derived from ifOutOctets Counter32",
+                                "telemetry",
+                                SNMP_NUMERIC_SCHEMA,
+                                true,
+                                false,
+                                "counterRate(ifOutOctets)",
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(

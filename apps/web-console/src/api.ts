@@ -2,10 +2,13 @@ import type {
   ObjectSummary,
   CreateObjectPayload,
   DataRecord,
+  DataSchema,
   PlatformInfo,
   UpdateObjectPayload,
   VariableDto,
   ObjectEditorDto,
+  FunctionDescriptor,
+  EventDescriptor,
 } from "./types";
 import type { DashboardView } from "./types/dashboard";
 import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
@@ -225,6 +228,85 @@ export function updateVariableHistory(
   });
 }
 
+export interface CreateVariablePayload {
+  name: string;
+  schema?: DataSchema;
+  readable?: boolean;
+  writable?: boolean;
+  bindingExpression?: string | null;
+  initialValue?: DataRecord | null;
+  historyEnabled?: boolean;
+  historyRetentionDays?: number | null;
+}
+
+export function createVariable(path: string, payload: CreateVariablePayload): Promise<VariableDto> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/variables?${params}`, {
+    method: "POST",
+    body: JSON.stringify({
+      readable: true,
+      writable: false,
+      historyEnabled: false,
+      ...payload,
+    }),
+  });
+}
+
+export interface UpdateVariableDefinitionPayload {
+  bindingExpression?: string | null;
+  readable?: boolean;
+  writable?: boolean;
+}
+
+export function updateVariableDefinition(
+  path: string,
+  name: string,
+  payload: UpdateVariableDefinitionPayload
+): Promise<VariableDto> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/variables?${params}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteVariable(path: string, name: string): Promise<void> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/variables?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export function upsertFunction(path: string, functionDescriptor: FunctionDescriptor): Promise<FunctionDescriptor> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/functions?${params}`, {
+    method: "PUT",
+    body: JSON.stringify(functionDescriptor),
+  });
+}
+
+export function deleteFunction(path: string, name: string): Promise<void> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/functions?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export function upsertEvent(path: string, event: EventDescriptor): Promise<EventDescriptor> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/events?${params}`, {
+    method: "PUT",
+    body: JSON.stringify(event),
+  });
+}
+
+export function deleteEvent(path: string, name: string): Promise<void> {
+  const params = new URLSearchParams({ path, name });
+  return request(`/api/v1/objects/by-path/events?${params}`, {
+    method: "DELETE",
+  });
+}
+
 export function fetchDashboard(path: string): Promise<DashboardView> {
   return request(`/api/v1/dashboards/by-path?path=${encodeURIComponent(path)}`);
 }
@@ -305,6 +387,37 @@ export function fetchEvents(objectPath?: string, limit = 50): Promise<import("./
     params.set("objectPath", objectPath);
   }
   return request(`/api/v1/events?${params}`);
+}
+
+export function fireEvent(
+  objectPath: string,
+  eventName: string,
+  payload?: DataRecord
+): Promise<import("./types/event").ObjectEvent> {
+  const params = new URLSearchParams({ objectPath, eventName });
+  return request(`/api/v1/events/fire?${params}`, {
+    method: "POST",
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+}
+
+export function fetchFunctionInvocations(options: {
+  objectPath?: string;
+  functionName?: string;
+  success?: boolean;
+  limit?: number;
+} = {}): Promise<import("./types/runtime").FunctionInvokeAuditEntry[]> {
+  const params = new URLSearchParams({ limit: String(options.limit ?? 50) });
+  if (options.objectPath) {
+    params.set("objectPath", options.objectPath);
+  }
+  if (options.functionName) {
+    params.set("functionName", options.functionName);
+  }
+  if (typeof options.success === "boolean") {
+    params.set("success", String(options.success));
+  }
+  return request(`/api/v1/platform/function-invocations?${params}`);
 }
 
 export function fetchAlertRules(): Promise<import("./types/event").AlertRule[]> {

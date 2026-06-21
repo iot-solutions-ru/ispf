@@ -5,6 +5,7 @@ import {
   fetchObjectEditor,
   setVariable,
   updateObject,
+  updateVariableDefinition,
   updateVariableHistory,
 } from "../api";
 import type { ObjectEditorDto, DataRecord, VariableDto } from "../types";
@@ -22,6 +23,8 @@ import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import BindingExpressionField from "./BindingExpressionField";
+import CreateVariableDialog from "./CreateVariableDialog";
 
 interface ObjectPropertiesEditorProps {
   path: string;
@@ -37,6 +40,7 @@ interface EditorState {
   iconId: string | null;
   variables: Record<string, DataRecord>;
   variableHistory: Record<string, VariableHistoryState>;
+  variableBindings: Record<string, string>;
 }
 
 function historyFromVariable(v: VariableDto): VariableHistoryState {
@@ -56,12 +60,14 @@ function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean
 function buildState(data: ObjectEditorDto): EditorState {
   const variables: Record<string, DataRecord> = {};
   const variableHistory: Record<string, VariableHistoryState> = {};
+  const variableBindings: Record<string, string> = {};
   for (const v of data.variables) {
     if (v.name === "uiIcon") {
       continue;
     }
     variables[v.name] = ensureRecord(v);
     variableHistory[v.name] = historyFromVariable(v);
+    variableBindings[v.name] = v.bindingExpression ?? "";
   }
   return {
     displayName: data.object.displayName,
@@ -69,6 +75,7 @@ function buildState(data: ObjectEditorDto): EditorState {
     iconId: data.object.iconId ?? null,
     variables,
     variableHistory,
+    variableBindings,
   };
 }
 
@@ -78,27 +85,34 @@ function VariableEditorRow({
   baseline,
   history,
   historyBaseline,
+  bindingExpression,
+  bindingBaseline,
   onChange,
   onHistoryChange,
+  onBindingChange,
 }: {
   variable: VariableDto;
   record: DataRecord;
   baseline: DataRecord;
   history: VariableHistoryState;
   historyBaseline: VariableHistoryState;
+  bindingExpression: string;
+  bindingBaseline: string;
   onChange: (next: DataRecord) => void;
   onHistoryChange: (next: VariableHistoryState) => void;
+  onBindingChange: (next: string) => void;
 }) {
   const [showBinding, setShowBinding] = useState(false);
   const [showJson, setShowJson] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const dirty = !recordsEqual(record, baseline);
   const historyDirty = !historyEqual(history, historyBaseline);
+  const bindingDirty = bindingExpression.trim() !== bindingBaseline.trim();
   const row = record.rows[0] ?? {};
-  const disabled = !variable.writable || Boolean(variable.bindingExpression);
+  const disabled = !variable.writable || Boolean(bindingBaseline.trim());
 
   return (
-    <article className={`property-card ${dirty || historyDirty ? "dirty" : ""}`}>
+    <article className={`property-card ${dirty || historyDirty || bindingDirty ? "dirty" : ""}`}>
       <header className="property-card-header">
         <div>
           <code className="property-name">{variable.name}</code>
@@ -139,7 +153,10 @@ function VariableEditorRow({
       {showBinding && (
         <div className="binding-panel">
           <span className="field-label">Выражение привязки (CEL)</span>
-          <code className="binding-expr">{variable.bindingExpression ?? "—"}</code>
+          <BindingExpressionField
+            value={bindingExpression}
+            onChange={onBindingChange}
+          />
         </div>
       )}
 
@@ -197,6 +214,7 @@ export default function ObjectPropertiesEditor({
 
   const [state, setState] = useState<EditorState | null>(null);
   const [baseline, setBaseline] = useState<EditorState | null>(null);
+  const [showCreateVariable, setShowCreateVariable] = useState(false);
 
   useEffect(() => {
     if (editorQuery.data) {
@@ -218,6 +236,9 @@ export default function ObjectPropertiesEditor({
       if (!historyEqual(state.variableHistory[name], baseline.variableHistory[name])) {
         return true;
       }
+      if ((state.variableBindings[name] ?? "") !== (baseline.variableBindings[name] ?? "")) {
+        return true;
+      }
     }
     return false;
   }, [state, baseline]);
@@ -233,7 +254,16 @@ export default function ObjectPropertiesEditor({
       for (const variable of editorQuery.data.variables) {
         const current = state.variables[variable.name];
         const base = baseline.variables[variable.name];
-        if (variable.writable && !variable.bindingExpression && !recordsEqual(current, base)) {
+        const currentBinding = state.variableBindings[variable.name] ?? "";
+        const baseBinding = baseline.variableBindings[variable.name] ?? "";
+        if (currentBinding.trim() !== baseBinding.trim()) {
+          await updateVariableDefinition(path, variable.name, {
+            bindingExpression: currentBinding.trim() || "",
+          });
+        }
+        const writableWithoutBinding =
+          variable.writable && !currentBinding.trim() && !baseBinding.trim();
+        if (writableWithoutBinding && current && base && !recordsEqual(current, base)) {
           await setVariable(path, variable.name, current);
         }
         const currentHistory = state.variableHistory[variable.name];
@@ -274,6 +304,7 @@ export default function ObjectPropertiesEditor({
         variableHistory: Object.fromEntries(
           Object.entries(baseline.variableHistory).map(([k, v]) => [k, { ...v }])
         ),
+        variableBindings: { ...baseline.variableBindings },
       });
     }
   }, [baseline]);
@@ -409,6 +440,15 @@ export default function ObjectPropertiesEditor({
         </button>
         {openSections.variables && (
           <div className="section-body property-list">
+            <div className="panel-toolbar">
+              <button
+                type="button"
+                className="btn primary small"
+                onClick={() => setShowCreateVariable(true)}
+              >
+                + Переменная
+              </button>
+            </div>
             {editorQuery.data.variables.length === 0 && (
               <p className="hint">Нет переменных</p>
             )}
@@ -422,6 +462,8 @@ export default function ObjectPropertiesEditor({
                 baseline={baseline!.variables[variable.name]}
                 history={state.variableHistory[variable.name]}
                 historyBaseline={baseline!.variableHistory[variable.name]}
+                bindingExpression={state.variableBindings[variable.name] ?? ""}
+                bindingBaseline={baseline!.variableBindings[variable.name] ?? ""}
                 onChange={(next) =>
                   setState((s) =>
                     s ? { ...s, variables: { ...s.variables, [variable.name]: next } } : s
@@ -433,6 +475,16 @@ export default function ObjectPropertiesEditor({
                       ? {
                           ...s,
                           variableHistory: { ...s.variableHistory, [variable.name]: next },
+                        }
+                      : s
+                  )
+                }
+                onBindingChange={(next) =>
+                  setState((s) =>
+                    s
+                      ? {
+                          ...s,
+                          variableBindings: { ...s.variableBindings, [variable.name]: next },
                         }
                       : s
                   )
@@ -508,6 +560,21 @@ export default function ObjectPropertiesEditor({
           </div>
         )}
       </section>
+
+      {showCreateVariable && (
+        <CreateVariableDialog
+          objectPath={path}
+          onClose={() => setShowCreateVariable(false)}
+          onSaved={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+            const fresh = await fetchObjectEditor(path);
+            const next = buildState(fresh);
+            setState(next);
+            setBaseline(next);
+            setShowCreateVariable(false);
+          }}
+        />
+      )}
     </div>
   );
 }

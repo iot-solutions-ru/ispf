@@ -26,7 +26,6 @@ public class ApplicationFunctionRuntime {
     private final ApplicationSchemaSession schemaSession;
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
-    private final FunctionInvokeAuditService auditService;
     private final ApplicationSqlBindingService sqlBindingService;
 
     public ApplicationFunctionRuntime(
@@ -36,7 +35,6 @@ public class ApplicationFunctionRuntime {
             ApplicationSchemaSession schemaSession,
             ObjectManager objectManager,
             ObjectMapper objectMapper,
-            FunctionInvokeAuditService auditService,
             ApplicationSqlBindingService sqlBindingService
     ) {
         this.store = store;
@@ -45,7 +43,6 @@ public class ApplicationFunctionRuntime {
         this.schemaSession = schemaSession;
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
-        this.auditService = auditService;
         this.sqlBindingService = sqlBindingService;
     }
 
@@ -90,11 +87,9 @@ public class ApplicationFunctionRuntime {
                 );
                 default -> throw new IllegalStateException("Unsupported source type: " + deployed.sourceType());
             });
-            auditService.record(deployed.appId(), objectPath, functionName, true, null);
             sqlBindingService.refreshAfterFunction(deployed.appId(), objectPath, functionName);
             return outputHolder[0];
         } catch (RuntimeException ex) {
-            auditService.record(deployed.appId(), objectPath, functionName, false, ex.getMessage());
             throw ex;
         }
     }

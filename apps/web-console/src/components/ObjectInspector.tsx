@@ -1,13 +1,20 @@
 import { Fragment, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  deleteEvent,
+  deleteFunction,
   deleteObject,
   fetchObject,
   fetchObjectEditor,
   fetchVariables,
   updateObject,
 } from "../api";
-import type { ObjectSummary, VariableDto } from "../types";
+import type { EventDescriptor, FunctionDescriptor, ObjectSummary, VariableDto } from "../types";
+import CreateVariableDialog from "./CreateVariableDialog";
+import EditDescriptorDialog from "./EditDescriptorDialog";
+import FireEventDialog from "./runtime/FireEventDialog";
+import InvokeFunctionDialog from "./runtime/InvokeFunctionDialog";
+import EventJournalPanel from "./operator/EventJournalPanel";
 import { recordCompactValue } from "../utils/tree";
 import EditVariableDialog from "./EditVariableDialog";
 import DeviceDriverPanel from "./DeviceDriverPanel";
@@ -36,6 +43,12 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const [description, setDescription] = useState("");
   const [editingVariable, setEditingVariable] = useState<VariableDto | null>(null);
   const [historyVariable, setHistoryVariable] = useState<string | null>(null);
+  const [showCreateVariable, setShowCreateVariable] = useState(false);
+  const [descriptorDialog, setDescriptorDialog] = useState<
+    { kind: "function" | "event"; initial?: FunctionDescriptor | EventDescriptor } | null
+  >(null);
+  const [fireEventTarget, setFireEventTarget] = useState<EventDescriptor | null>(null);
+  const [invokeFunctionTarget, setInvokeFunctionTarget] = useState<FunctionDescriptor | null>(null);
 
   const objectQuery = useQuery({
     queryKey: ["object", path],
@@ -51,7 +64,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const editorQuery = useQuery({
     queryKey: ["object-editor", path],
     queryFn: () => fetchObjectEditor(path),
-    enabled: tab === "functions",
+    enabled: tab === "functions" || tab === "events",
   });
 
   useEffect(() => {
@@ -95,6 +108,28 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
       onDeleted();
     },
   });
+
+  const deleteFunctionMutation = useMutation({
+    mutationFn: (name: string) => deleteFunction(path, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+      queryClient.invalidateQueries({ queryKey: ["object", path] });
+    },
+  });
+
+  const deleteEventMutation = useMutation({
+    mutationFn: (name: string) => deleteEvent(path, name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+      queryClient.invalidateQueries({ queryKey: ["object", path] });
+    },
+  });
+
+  const refreshObjectEditor = () => {
+    queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
+    queryClient.invalidateQueries({ queryKey: ["variables", path] });
+    queryClient.invalidateQueries({ queryKey: ["object", path] });
+  };
 
   if (objectQuery.isLoading) {
     return <div className="inspector-empty">Загрузка объекта…</div>;
@@ -262,6 +297,17 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
 
       {tab === "variables" && (
         <section className="panel">
+          {canManage && (
+            <div className="panel-toolbar">
+              <button
+                type="button"
+                className="btn primary small"
+                onClick={() => setShowCreateVariable(true)}
+              >
+                + Переменная
+              </button>
+            </div>
+          )}
           {variablesQuery.isLoading && <p>Загрузка переменных…</p>}
           {variablesQuery.data && variablesQuery.data.length === 0 && (
             <p className="hint">Нет переменных</p>
@@ -367,32 +413,122 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
 
       {tab === "events" && (
         <section className="panel">
-          {obj.eventNames.length === 0 ? (
+          {canManage && (
+            <div className="panel-toolbar">
+              <button
+                type="button"
+                className="btn primary small"
+                onClick={() => setDescriptorDialog({ kind: "event" })}
+              >
+                + Событие
+              </button>
+            </div>
+          )}
+          {editorQuery.isLoading && <p>Загрузка…</p>}
+          {editorQuery.data && editorQuery.data.events.length === 0 && (
             <p className="hint">Нет событий</p>
-          ) : (
-            <ul className="event-list">
-              {obj.eventNames.map((name) => (
-                <li key={name}>
-                  <code>{name}</code>
+          )}
+          {editorQuery.data && editorQuery.data.events.length > 0 && (
+            <ul className="event-list editable-list">
+              {editorQuery.data.events.map((ev) => (
+                <li key={ev.name}>
+                  <code>{ev.name}</code>
+                  <span className="model-var-desc">{ev.description || ev.level}</span>
+                  <span className="list-actions">
+                    <button
+                      type="button"
+                      className="btn small primary"
+                      onClick={() => setFireEventTarget(ev)}
+                    >
+                      Опубликовать
+                    </button>
+                    {canManage && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => setDescriptorDialog({ kind: "event", initial: ev })}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          className="btn small danger"
+                          disabled={deleteEventMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Удалить событие «${ev.name}»?`)) {
+                              deleteEventMutation.mutate(ev.name);
+                            }
+                          }}
+                        >
+                          Удалить
+                        </button>
+                      </>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
+          <EventJournalPanel objectPath={path} limit={15} />
         </section>
       )}
 
       {tab === "functions" && (
         <section className="panel">
+          {canManage && (
+            <div className="panel-toolbar">
+              <button
+                type="button"
+                className="btn primary small"
+                onClick={() => setDescriptorDialog({ kind: "function" })}
+              >
+                + Функция
+              </button>
+            </div>
+          )}
           {editorQuery.isLoading && <p>Загрузка…</p>}
           {editorQuery.data && editorQuery.data.functions.length === 0 && (
             <p className="hint">Нет функций</p>
           )}
           {editorQuery.data && editorQuery.data.functions.length > 0 && (
-            <ul className="event-list">
+            <ul className="event-list editable-list">
               {editorQuery.data.functions.map((fn) => (
                 <li key={fn.name}>
                   <code>{fn.name}</code>
                   {fn.description && <span className="model-var-desc">{fn.description}</span>}
+                  <span className="list-actions">
+                    <button
+                      type="button"
+                      className="btn small primary"
+                      onClick={() => setInvokeFunctionTarget(fn)}
+                    >
+                      Вызвать
+                    </button>
+                    {canManage && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => setDescriptorDialog({ kind: "function", initial: fn })}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          className="btn small danger"
+                          disabled={deleteFunctionMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Удалить функцию «${fn.name}»?`)) {
+                              deleteFunctionMutation.mutate(fn.name);
+                            }
+                          }}
+                        >
+                          Удалить
+                        </button>
+                      </>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -405,10 +541,59 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
           objectPath={path}
           variable={editingVariable}
           canManageHistory={canManage}
+          canEditDefinition={canManage}
           onClose={() => setEditingVariable(null)}
           onSaved={() => {
-            queryClient.invalidateQueries({ queryKey: ["variables", path] });
+            refreshObjectEditor();
             setEditingVariable(null);
+          }}
+        />
+      )}
+
+      {showCreateVariable && (
+        <CreateVariableDialog
+          objectPath={path}
+          onClose={() => setShowCreateVariable(false)}
+          onSaved={() => {
+            refreshObjectEditor();
+            setShowCreateVariable(false);
+          }}
+        />
+      )}
+
+      {descriptorDialog && (
+        <EditDescriptorDialog
+          objectPath={path}
+          kind={descriptorDialog.kind}
+          initial={descriptorDialog.initial}
+          onClose={() => setDescriptorDialog(null)}
+          onSaved={() => {
+            refreshObjectEditor();
+            setDescriptorDialog(null);
+          }}
+        />
+      )}
+
+      {fireEventTarget && (
+        <FireEventDialog
+          objectPath={path}
+          event={fireEventTarget}
+          onClose={() => setFireEventTarget(null)}
+          onFired={() => {
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+          }}
+        />
+      )}
+
+      {invokeFunctionTarget && (
+        <InvokeFunctionDialog
+          objectPath={path}
+          fn={invokeFunctionTarget}
+          onClose={() => setInvokeFunctionTarget(null)}
+          onInvoked={() => {
+            queryClient.invalidateQueries({ queryKey: ["function-invocations"] });
+            queryClient.invalidateQueries({ queryKey: ["variables", path] });
+            queryClient.invalidateQueries({ queryKey: ["objects"] });
           }}
         />
       )}

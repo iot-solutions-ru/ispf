@@ -8,7 +8,11 @@ import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.api.dto.ObjectEditorDto;
 import com.ispf.server.api.dto.VariableDto;
@@ -298,6 +302,154 @@ public class ObjectController {
         }
     }
 
+    @PostMapping("/by-path/variables")
+    public VariableDto createVariable(
+            @RequestParam String path,
+            @Valid @RequestBody CreateVariableRequest request,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        try {
+            BindingExpressionValidator.validateOrThrow(request.bindingExpression());
+            Variable variable = objectManager.createVariable(
+                    path,
+                    request.name(),
+                    request.schema(),
+                    request.readable(),
+                    request.writable(),
+                    request.bindingExpression(),
+                    request.initialValue(),
+                    request.historyEnabled(),
+                    request.historyRetentionDays()
+            );
+            return VariableDto.from(variable);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PatchMapping("/by-path/variables")
+    public VariableDto updateVariableDefinition(
+            @RequestParam String path,
+            @RequestParam String name,
+            @Valid @RequestBody UpdateVariableDefinitionRequest request,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        try {
+            if (request.bindingExpression() != null) {
+                BindingExpressionValidator.validateOrThrow(request.bindingExpression());
+            }
+            Variable variable = objectManager.updateVariableDefinition(
+                    path,
+                    name,
+                    request.bindingExpression(),
+                    request.readable(),
+                    request.writable()
+            );
+            return VariableDto.from(variable);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/by-path/variables")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteVariable(
+            @RequestParam String path,
+            @RequestParam String name,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        try {
+            objectManager.deleteVariable(path, name);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PutMapping("/by-path/functions")
+    public FunctionDescriptor upsertFunction(
+            @RequestParam String path,
+            @Valid @RequestBody FunctionDescriptor function,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        try {
+            return objectManager.upsertFunction(path, function);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/by-path/functions")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFunction(
+            @RequestParam String path,
+            @RequestParam String name,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        objectManager.deleteFunction(path, name);
+    }
+
+    @PutMapping("/by-path/events")
+    public EventDescriptor upsertEvent(
+            @RequestParam String path,
+            @Valid @RequestBody EventDescriptor event,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        try {
+            return objectManager.upsertEvent(path, event);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/by-path/events")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteEvent(
+            @RequestParam String path,
+            @RequestParam String name,
+            Authentication authentication
+    ) {
+        objectAccessService.requireWrite(path, authentication);
+        objectManager.deleteEvent(path, name);
+    }
+
+    public record CreateVariableRequest(
+            @NotBlank String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            String bindingExpression,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
+        public CreateVariableRequest {
+            if (schema == null) {
+                schema = DataSchema.builder(name != null ? name : "value")
+                        .field("value", com.ispf.core.model.FieldType.STRING)
+                        .build();
+            }
+        }
+    }
+
+    public record UpdateVariableDefinitionRequest(
+            String bindingExpression,
+            Boolean readable,
+            Boolean writable
+    ) {
+    }
+
+    public record UpdateVariableHistoryRequest(
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
+    }
+
     public record CreateObjectRequest(
             @NotBlank String parentPath,
             @NotBlank String name,
@@ -321,12 +473,6 @@ public class ObjectController {
     public record ReorderObjectsRequest(
             @NotBlank String parentPath,
             @NotEmpty List<@NotBlank String> orderedPaths
-    ) {
-    }
-
-    public record UpdateVariableHistoryRequest(
-            boolean historyEnabled,
-            Integer historyRetentionDays
     ) {
     }
 

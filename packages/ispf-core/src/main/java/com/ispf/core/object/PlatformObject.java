@@ -135,8 +135,16 @@ public class PlatformObject {
         functions.put(function.name(), function);
     }
 
+    public void removeFunction(String name) {
+        functions.remove(name);
+    }
+
     public void addEvent(EventDescriptor event) {
         events.put(event.name(), event);
+    }
+
+    public void removeEvent(String name) {
+        events.remove(name);
     }
 
     public void updateInfo(String displayName, String description) {

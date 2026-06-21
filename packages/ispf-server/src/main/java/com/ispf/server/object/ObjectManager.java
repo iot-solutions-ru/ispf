@@ -10,6 +10,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.expression.BindingEvaluator;
 import com.ispf.server.bootstrap.PlatformBootstrap;
+import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -203,6 +204,7 @@ public class ObjectManager {
         variable.setComputedValue(value);
         persistVariable(path, variable);
         publish(ObjectChangeEvent.variableUpdated(path, name));
+        propagateBindings(path);
         return variable;
     }
 
@@ -226,6 +228,134 @@ public class ObjectManager {
         node.removeVariable(name);
         variableRepository.deleteByObjectPathAndName(path, name);
         publish(ObjectChangeEvent.variableUpdated(path, name));
+    }
+
+    @Transactional
+    public Variable createVariable(
+            String path,
+            String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            String bindingExpression,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Variable name is required");
+        }
+        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name)) {
+            throw new IllegalArgumentException("Reserved variable name: " + name);
+        }
+        PlatformObject node = objectTree.require(path);
+        if (node.getVariable(name).isPresent()) {
+            throw new IllegalArgumentException("Variable already exists: " + name);
+        }
+        String binding = normalizeBinding(bindingExpression);
+        Variable variable = new Variable(
+                name,
+                schema,
+                readable,
+                writable,
+                binding,
+                initialValue,
+                historyEnabled,
+                historyRetentionDays
+        );
+        node.addVariable(variable);
+        persistVariable(path, variable);
+        publish(ObjectChangeEvent.variableUpdated(path, name));
+        if (binding != null) {
+            propagateBindings(path);
+        }
+        return node.getVariable(name).orElseThrow();
+    }
+
+    @Transactional
+    public Variable updateVariableDefinition(
+            String path,
+            String name,
+            String bindingExpression,
+            Boolean readable,
+            Boolean writable
+    ) {
+        PlatformObject node = objectTree.require(path);
+        Variable variable = node.getVariable(name)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
+        if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name)) {
+            throw new IllegalArgumentException("Cannot modify reserved variable: " + name);
+        }
+        boolean nextReadable = readable != null ? readable : variable.readable();
+        boolean nextWritable = writable != null ? writable : variable.writable();
+        String nextBinding = bindingExpression != null
+                ? normalizeBinding(bindingExpression)
+                : variable.bindingExpression().orElse(null);
+        Variable updated = variable.withDefinition(
+                nextReadable,
+                nextWritable,
+                nextBinding,
+                variable.historyEnabled(),
+                variable.historyRetentionDays().orElse(null)
+        );
+        node.addVariable(updated);
+        persistVariable(path, updated);
+        publish(ObjectChangeEvent.variableUpdated(path, name));
+        propagateBindings(path);
+        return updated;
+    }
+
+    @Transactional
+    public FunctionDescriptor upsertFunction(String path, FunctionDescriptor function) {
+        if (function == null || function.name() == null || function.name().isBlank()) {
+            throw new IllegalArgumentException("Function name is required");
+        }
+        PlatformObject node = objectTree.require(path);
+        node.addFunction(function);
+        persistNode(node);
+        publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+        return function;
+    }
+
+    @Transactional
+    public void deleteFunction(String path, String name) {
+        PlatformObject node = objectTree.require(path);
+        if (!node.functions().containsKey(name)) {
+            return;
+        }
+        node.removeFunction(name);
+        persistNode(node);
+        publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+    }
+
+    @Transactional
+    public EventDescriptor upsertEvent(String path, EventDescriptor event) {
+        if (event == null || event.name() == null || event.name().isBlank()) {
+            throw new IllegalArgumentException("Event name is required");
+        }
+        PlatformObject node = objectTree.require(path);
+        node.addEvent(event);
+        persistNode(node);
+        publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+        return event;
+    }
+
+    @Transactional
+    public void deleteEvent(String path, String name) {
+        PlatformObject node = objectTree.require(path);
+        if (!node.events().containsKey(name)) {
+            return;
+        }
+        node.removeEvent(name);
+        persistNode(node);
+        publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+    }
+
+    private static String normalizeBinding(String bindingExpression) {
+        if (bindingExpression == null || bindingExpression.isBlank()) {
+            return null;
+        }
+        return bindingExpression.trim();
     }
 
     @Transactional

@@ -10,11 +10,12 @@ import {
   instantiateModel,
   updateModel,
 } from "../api/models";
-import type { ObjectType } from "../types";
+import type { EventDescriptor, FunctionDescriptor, ObjectType } from "../types";
 import {
   BUILTIN_MODEL_NAMES,
   MODELS_ROOT,
   modelNameFromPath,
+  type ModelBindingDefinition,
   type ModelDto,
   type ModelVariableDefinition,
 } from "../types/models";
@@ -54,16 +55,35 @@ function ModelDetail({
   const [parentPath, setParentPath] = useState("root.platform.devices");
   const [instanceName, setInstanceName] = useState("");
   const [variables, setVariables] = useState(model.variables);
+  const [bindings, setBindings] = useState(model.bindings);
+  const [events, setEvents] = useState(model.events);
+  const [functions, setFunctions] = useState(model.functions);
   const isBuiltin = BUILTIN_MODEL_NAMES.has(model.name);
 
   useEffect(() => {
     setVariables(model.variables);
-  }, [model.variables]);
+    setBindings(model.bindings);
+    setEvents(model.events);
+    setFunctions(model.functions);
+  }, [model.variables, model.bindings, model.events, model.functions]);
 
   const variablesDirty = useMemo(
     () => JSON.stringify(variables) !== JSON.stringify(model.variables),
     [variables, model.variables]
   );
+  const bindingsDirty = useMemo(
+    () => JSON.stringify(bindings) !== JSON.stringify(model.bindings),
+    [bindings, model.bindings]
+  );
+  const eventsDirty = useMemo(
+    () => JSON.stringify(events) !== JSON.stringify(model.events),
+    [events, model.events]
+  );
+  const functionsDirty = useMemo(
+    () => JSON.stringify(functions) !== JSON.stringify(model.functions),
+    [functions, model.functions]
+  );
+  const definitionDirty = variablesDirty || bindingsDirty || eventsDirty || functionsDirty;
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -71,6 +91,9 @@ function ModelDetail({
         description,
         suitabilityExpression: suitability,
         variables,
+        bindings,
+        events,
+        functions,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["model", model.name] });
@@ -114,6 +137,99 @@ function ModelDetail({
     setVariables((prev) =>
       prev.map((v) => (v.name === name ? { ...v, ...patch } : v))
     );
+  }
+
+  function patchVariableBinding(name: string, defaultBinding: string | null) {
+    setVariables((prev) =>
+      prev.map((v) =>
+        v.name === name ? { ...v, defaultBinding: defaultBinding?.trim() || null } : v
+      )
+    );
+  }
+
+  function addVariable() {
+    const baseName = `var${variables.length + 1}`;
+    setVariables((prev) => [
+      ...prev,
+      {
+        name: baseName,
+        description: "",
+        group: "default",
+        schema: { name: baseName, fields: [{ name: "value", type: "STRING" }] },
+        readable: true,
+        writable: false,
+        defaultBinding: null,
+        defaultValue: null,
+        historyEnabled: false,
+        historyRetentionDays: null,
+      },
+    ]);
+  }
+
+  function removeVariable(name: string) {
+    setVariables((prev) => prev.filter((v) => v.name !== name));
+    setBindings((prev) => prev.filter((b) => b.targetVariable !== name));
+  }
+
+  function patchBinding(index: number, patch: Partial<ModelBindingDefinition>) {
+    setBindings((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, ...patch } : b))
+    );
+  }
+
+  function addBinding() {
+    const target = variables[0]?.name ?? "value";
+    setBindings((prev) => [...prev, { targetVariable: target, expression: "" }]);
+  }
+
+  function removeBinding(index: number) {
+    setBindings((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function patchEvent(index: number, patch: Partial<EventDescriptor>) {
+    setEvents((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  }
+
+  function addEvent() {
+    setEvents((prev) => [
+      ...prev,
+      {
+        name: `event${prev.length + 1}`,
+        description: "",
+        payloadSchema: {
+          name: "payload",
+          fields: [{ name: "message", type: "STRING" }],
+        },
+        level: "INFO",
+      },
+    ]);
+  }
+
+  function removeEvent(index: number) {
+    setEvents((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function patchFunction(index: number, patch: Partial<FunctionDescriptor>) {
+    setFunctions((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+  }
+
+  function addFunction() {
+    setFunctions((prev) => [
+      ...prev,
+      {
+        name: `fn${prev.length + 1}`,
+        description: "",
+        inputSchema: { name: "input", fields: [] },
+        outputSchema: {
+          name: "output",
+          fields: [{ name: "ok", type: "BOOLEAN" }],
+        },
+      },
+    ]);
+  }
+
+  function removeFunction(index: number) {
+    setFunctions((prev) => prev.filter((_, i) => i !== index));
   }
 
   return (
@@ -167,8 +283,8 @@ function ModelDetail({
               Сохранить метаданные
             </button>
           )}
-          {!isBuiltin && variablesDirty && (
-            <p className="hint">Изменены настройки истории переменных — сохраните модель.</p>
+          {!isBuiltin && definitionDirty && (
+            <p className="hint">Изменено определение модели — сохраните изменения.</p>
           )}
           {saveMutation.error && (
             <p className="hint error">{String(saveMutation.error)}</p>
@@ -177,7 +293,14 @@ function ModelDetail({
       )}
 
       <section className="model-section">
-        <h4>Переменные ({variables.length})</h4>
+        <div className="model-section-header">
+          <h4>Переменные ({variables.length})</h4>
+          {canManage && !isBuiltin && (
+            <button type="button" className="btn small" onClick={addVariable}>
+              + Переменная
+            </button>
+          )}
+        </div>
         {variables.length === 0 ? (
           <p className="hint">Нет переменных</p>
         ) : (
@@ -191,13 +314,28 @@ function ModelDetail({
                 <th>Хранение</th>
                 <th>По умолчанию</th>
                 <th>Binding</th>
+                {canManage && !isBuiltin && <th />}
               </tr>
             </thead>
             <tbody>
               {variables.map((v) => (
                 <tr key={v.name}>
                   <td>
-                    <code>{v.name}</code>
+                    {canManage && !isBuiltin ? (
+                      <input
+                        className="model-inline-input"
+                        value={v.name}
+                        onChange={(e) =>
+                          setVariables((prev) =>
+                            prev.map((item) =>
+                              item.name === v.name ? { ...item, name: e.target.value } : item
+                            )
+                          )
+                        }
+                      />
+                    ) : (
+                      <code>{v.name}</code>
+                    )}
                     {v.description && (
                       <span className="model-var-desc">{v.description}</span>
                     )}
@@ -249,7 +387,29 @@ function ModelDetail({
                   <td className="mono small">
                     {v.defaultValue ? recordDisplayValue(v.defaultValue) : "—"}
                   </td>
-                  <td className="mono small">{v.defaultBinding ?? "—"}</td>
+                  <td className="mono small">
+                    {canManage && !isBuiltin ? (
+                      <input
+                        className="model-inline-input mono"
+                        value={v.defaultBinding ?? ""}
+                        placeholder="CEL / counterRate(...)"
+                        onChange={(e) => patchVariableBinding(v.name, e.target.value)}
+                      />
+                    ) : (
+                      v.defaultBinding ?? "—"
+                    )}
+                  </td>
+                  {canManage && !isBuiltin && (
+                    <td>
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        onClick={() => removeVariable(v.name)}
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -260,18 +420,25 @@ function ModelDetail({
             <button
               type="button"
               className="btn"
-              disabled={!variablesDirty || saveMutation.isPending}
+              disabled={!definitionDirty || saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
-              Сохранить настройки переменных
+              Сохранить определение модели
             </button>
           </div>
         )}
       </section>
 
       <section className="model-section">
-        <h4>Bindings ({model.bindings.length})</h4>
-        {model.bindings.length === 0 ? (
+        <div className="model-section-header">
+          <h4>Bindings ({bindings.length})</h4>
+          {canManage && !isBuiltin && (
+            <button type="button" className="btn small" onClick={addBinding}>
+              + Binding
+            </button>
+          )}
+        </div>
+        {bindings.length === 0 ? (
           <p className="hint">Нет вычисляемых привязок</p>
         ) : (
           <table className="data-table">
@@ -279,13 +446,45 @@ function ModelDetail({
               <tr>
                 <th>Переменная</th>
                 <th>CEL-выражение</th>
+                {canManage && !isBuiltin && <th />}
               </tr>
             </thead>
             <tbody>
-              {model.bindings.map((b) => (
-                <tr key={b.targetVariable}>
-                  <td><code>{b.targetVariable}</code></td>
-                  <td className="mono small">{b.expression}</td>
+              {bindings.map((b, index) => (
+                <tr key={`${b.targetVariable}-${index}`}>
+                  <td>
+                    {canManage && !isBuiltin ? (
+                      <input
+                        className="model-inline-input"
+                        value={b.targetVariable}
+                        onChange={(e) => patchBinding(index, { targetVariable: e.target.value })}
+                      />
+                    ) : (
+                      <code>{b.targetVariable}</code>
+                    )}
+                  </td>
+                  <td className="mono small">
+                    {canManage && !isBuiltin ? (
+                      <input
+                        className="model-inline-input mono"
+                        value={b.expression}
+                        onChange={(e) => patchBinding(index, { expression: e.target.value })}
+                      />
+                    ) : (
+                      b.expression
+                    )}
+                  </td>
+                  {canManage && !isBuiltin && (
+                    <td>
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        onClick={() => removeBinding(index)}
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -295,30 +494,94 @@ function ModelDetail({
 
       <section className="model-section model-section-inline">
         <div>
-          <h4>События ({model.events.length})</h4>
-          {model.events.length === 0 ? (
+          <div className="model-section-header">
+            <h4>События ({events.length})</h4>
+            {canManage && !isBuiltin && (
+              <button type="button" className="btn small" onClick={addEvent}>
+                + Событие
+              </button>
+            )}
+          </div>
+          {events.length === 0 ? (
             <p className="hint">Нет событий</p>
           ) : (
-            <ul className="event-list">
-              {model.events.map((e) => (
-                <li key={e.name}>
-                  <code>{e.name}</code>
-                  <span className="model-var-desc">{e.description}</span>
+            <ul className="event-list editable-list">
+              {events.map((e, index) => (
+                <li key={`${e.name}-${index}`}>
+                  {canManage && !isBuiltin ? (
+                    <>
+                      <input
+                        className="model-inline-input"
+                        value={e.name}
+                        onChange={(ev) => patchEvent(index, { name: ev.target.value })}
+                      />
+                      <input
+                        className="model-inline-input"
+                        value={e.description}
+                        placeholder="описание"
+                        onChange={(ev) => patchEvent(index, { description: ev.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        onClick={() => removeEvent(index)}
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <code>{e.name}</code>
+                      <span className="model-var-desc">{e.description}</span>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </div>
         <div>
-          <h4>Функции ({model.functions.length})</h4>
-          {model.functions.length === 0 ? (
+          <div className="model-section-header">
+            <h4>Функции ({functions.length})</h4>
+            {canManage && !isBuiltin && (
+              <button type="button" className="btn small" onClick={addFunction}>
+                + Функция
+              </button>
+            )}
+          </div>
+          {functions.length === 0 ? (
             <p className="hint">Нет функций</p>
           ) : (
-            <ul className="event-list">
-              {model.functions.map((f) => (
-                <li key={f.name}>
-                  <code>{f.name}</code>
-                  <span className="model-var-desc">{f.description}</span>
+            <ul className="event-list editable-list">
+              {functions.map((f, index) => (
+                <li key={`${f.name}-${index}`}>
+                  {canManage && !isBuiltin ? (
+                    <>
+                      <input
+                        className="model-inline-input"
+                        value={f.name}
+                        onChange={(ev) => patchFunction(index, { name: ev.target.value })}
+                      />
+                      <input
+                        className="model-inline-input"
+                        value={f.description}
+                        placeholder="описание"
+                        onChange={(ev) => patchFunction(index, { description: ev.target.value })}
+                      />
+                      <button
+                        type="button"
+                        className="btn small danger"
+                        onClick={() => removeFunction(index)}
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <code>{f.name}</code>
+                      <span className="model-var-desc">{f.description}</span>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>

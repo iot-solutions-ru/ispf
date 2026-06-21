@@ -42,6 +42,8 @@ class DashboardApiTest {
                 .andExpect(jsonPath("$.layout.theme").value("btop"))
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-cpu')].type").value("chart"))
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-net-down')].type").value("chart"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-net-down')].variableName").value("ifInOctetsRate"))
+                .andExpect(jsonPath("$.layout.widgets[?(@.id=='btop-net-down')].unit").value("B/s"))
                 .andExpect(jsonPath("$.layout.widgets[?(@.id=='uptime-chart')]").doesNotExist());
     }
 

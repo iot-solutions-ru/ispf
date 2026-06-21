@@ -89,15 +89,29 @@ public class Variable {
     }
 
     public Variable withHistorySettings(boolean enabled, Integer retentionDays) {
+        return withDefinition(readable, writable, bindingExpression, enabled, retentionDays);
+    }
+
+    public Variable withBindingExpression(String binding) {
+        return withDefinition(readable, writable, binding, historyEnabled, historyRetentionDays);
+    }
+
+    public Variable withDefinition(
+            boolean readable,
+            boolean writable,
+            String binding,
+            boolean historyEnabled,
+            Integer historyRetentionDays
+    ) {
         Variable copy = new Variable(
                 name,
                 schema,
                 readable,
                 writable,
-                bindingExpression,
+                binding,
                 value.get(),
-                enabled,
-                retentionDays
+                historyEnabled,
+                historyRetentionDays
         );
         copy.updatedAt = this.updatedAt;
         return copy;

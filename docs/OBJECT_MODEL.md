@@ -137,6 +137,8 @@ self.temperature.value > self.threshold.value
 
 → переменная `alarmActive` становится `true`.
 
+**Counter rate (SNMP Counter32):** binding без CEL — `counterRate(<sourceVariable>[, maxCounter[, field]])`. Пример: `counterRate(ifInOctets)` на переменной `ifInOctetsRate` вычисляет B/s из IF-MIB Counter32 с учётом переполнения 2³². Пересчитывается при обновлении source-переменной (poll драйвера).
+
 Проверка выражения: `POST /api/v1/expressions/validate`.
 
 ## События

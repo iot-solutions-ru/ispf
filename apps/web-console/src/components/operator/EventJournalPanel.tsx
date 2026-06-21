@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../api";
 import type { ObjectEvent } from "../../types/event";
@@ -5,12 +6,19 @@ import type { ObjectEvent } from "../../types/event";
 interface EventJournalPanelProps {
   objectPath?: string;
   limit?: number;
+  showFilters?: boolean;
+  objectPathFilter?: string;
 }
 
 export default function EventJournalPanel({
-  objectPath,
+  objectPath: fixedObjectPath,
   limit = 40,
+  showFilters = false,
+  objectPathFilter: initialFilter = "",
 }: EventJournalPanelProps) {
+  const [filterPath, setFilterPath] = useState(initialFilter);
+  const objectPath = fixedObjectPath ?? (filterPath.trim() || undefined);
+
   const events = useQuery({
     queryKey: ["events", objectPath ?? "all", limit],
     queryFn: () => fetchEvents(objectPath, limit),
@@ -22,9 +30,26 @@ export default function EventJournalPanel({
   return (
     <section className="event-journal-panel">
       <header className="event-journal-head">
-        <h3>Журнал событий</h3>
+        <div>
+          <h3>Журнал событий</h3>
+          {objectPath && <p className="hint">Фильтр: <code>{objectPath}</code></p>}
+        </div>
         <span className="badge">{items.length}</span>
       </header>
+
+      {showFilters && !fixedObjectPath && (
+        <div className="runtime-journal-filters">
+          <label>
+            objectPath
+            <input
+              value={filterPath}
+              onChange={(e) => setFilterPath(e.target.value)}
+              placeholder="пусто = все объекты"
+            />
+          </label>
+        </div>
+      )}
+
       {events.isLoading && <p className="hint">Загрузка…</p>}
       {events.error && <p className="hint error">Не удалось загрузить журнал</p>}
       {items.length === 0 && !events.isLoading && (

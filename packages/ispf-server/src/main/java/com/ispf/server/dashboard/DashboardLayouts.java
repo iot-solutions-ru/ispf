@@ -263,13 +263,13 @@ public final class DashboardLayouts {
                   "w": 6,
                   "h": 4,
                   "selectionKey": "device",
-                  "variableName": "ifInOctets",
+                  "variableName": "ifInOctetsRate",
                   "valueField": "value",
                   "chartStyle": "area",
                   "maxPoints": 120,
                   "color": "#56d4dd",
-                  "decimals": 0,
-                  "unit": "B",
+                  "decimals": 1,
+                  "unit": "B/s",
                   "stylesJson": "{\\"card\\":{\\"backgroundColor\\":\\"#0a0e14\\",\\"border\\":\\"1px solid #1f2937\\",\\"borderRadius\\":\\"4px\\",\\"padding\\":\\"6px 8px\\"},\\"title\\":{\\"color\\":\\"#56d4dd\\",\\"fontSize\\":\\"0.65rem\\",\\"fontWeight\\":\\"700\\",\\"letterSpacing\\":\\"0.12em\\",\\"fontFamily\\":\\"Consolas, monospace\\"},\\"value\\":{\\"color\\":\\"#56d4dd\\",\\"fontFamily\\":\\"Consolas, monospace\\",\\"fontSize\\":\\"0.82rem\\",\\"fontWeight\\":\\"700\\"}}"
                 },
                 {
@@ -281,13 +281,13 @@ public final class DashboardLayouts {
                   "w": 6,
                   "h": 4,
                   "selectionKey": "device",
-                  "variableName": "ifOutOctets",
+                  "variableName": "ifOutOctetsRate",
                   "valueField": "value",
                   "chartStyle": "area",
                   "maxPoints": 120,
                   "color": "#d2a8ff",
-                  "decimals": 0,
-                  "unit": "B",
+                  "decimals": 1,
+                  "unit": "B/s",
                   "stylesJson": "{\\"card\\":{\\"backgroundColor\\":\\"#0a0e14\\",\\"border\\":\\"1px solid #1f2937\\",\\"borderRadius\\":\\"4px\\",\\"padding\\":\\"6px 8px\\"},\\"title\\":{\\"color\\":\\"#d2a8ff\\",\\"fontSize\\":\\"0.65rem\\",\\"fontWeight\\":\\"700\\",\\"letterSpacing\\":\\"0.12em\\",\\"fontFamily\\":\\"Consolas, monospace\\"},\\"value\\":{\\"color\\":\\"#d2a8ff\\",\\"fontFamily\\":\\"Consolas, monospace\\",\\"fontSize\\":\\"0.82rem\\",\\"fontWeight\\":\\"700\\"}}"
                 },
                 {

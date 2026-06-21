@@ -96,32 +96,47 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
   );
 }
 
-export default function SystemMetricsView() {
+export default function SystemMetricsView({ embedded = false }: { embedded?: boolean }) {
   const metricsQuery = useQuery({
     queryKey: ["platform-metrics"],
     queryFn: fetchPlatformMetrics,
     refetchInterval: 30_000,
   });
 
-  return (
-    <main className="main system-metrics-view">
-      <header className="system-metrics-header">
-        <div>
-          <h2>Система</h2>
-          <p className="op-muted">
-            Сводные метрики платформы для администратора. Внешний scrape Prometheus по-прежнему
-            доступен на <code>/actuator/prometheus</code> (health-check).
-          </p>
+  const content = (
+    <>
+      {!embedded && (
+        <header className="system-metrics-header">
+          <div>
+            <h2>Система</h2>
+            <p className="op-muted">
+              Сводные метрики платформы для администратора. Внешний scrape Prometheus по-прежнему
+              доступен на <code>/actuator/prometheus</code> (health-check).
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            disabled={metricsQuery.isFetching}
+            onClick={() => metricsQuery.refetch()}
+          >
+            Обновить
+          </button>
+        </header>
+      )}
+
+      {embedded && (
+        <div className="system-embedded-toolbar">
+          <button
+            type="button"
+            className="btn"
+            disabled={metricsQuery.isFetching}
+            onClick={() => metricsQuery.refetch()}
+          >
+            Обновить метрики
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn"
-          disabled={metricsQuery.isFetching}
-          onClick={() => metricsQuery.refetch()}
-        >
-          Обновить
-        </button>
-      </header>
+      )}
 
       {metricsQuery.error && (
         <div className="op-alert op-alert-error">{String(metricsQuery.error)}</div>
@@ -141,6 +156,16 @@ export default function SystemMetricsView() {
           </div>
         </>
       )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="system-metrics-embedded">{content}</div>;
+  }
+
+  return (
+    <main className="main system-metrics-view">
+      {content}
     </main>
   );
 }

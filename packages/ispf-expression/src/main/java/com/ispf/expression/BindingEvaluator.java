@@ -31,19 +31,30 @@ public class BindingEvaluator {
         for (Variable variable : platformObject.variables().values()) {
             variable.bindingExpression().ifPresent(expr -> {
                 try {
+                    if (CounterRateBinding.matches(expr)) {
+                        CounterRateBinding.evaluate(platformObject, variable.name(), expr).ifPresent(rate -> {
+                            DataRecord record = toDataRecord(variable.schema(), rate);
+                            applyIfChanged(variable, record, changed);
+                        });
+                        return;
+                    }
                     Object result = engine.evaluate(expr, platformObject);
                     DataRecord record = toDataRecord(variable.schema(), result);
-                    DataRecord previous = variable.value().orElse(null);
-                    if (!recordsEqual(previous, record)) {
-                        variable.setComputedValue(record);
-                        changed.add(variable.name());
-                    }
+                    applyIfChanged(variable, record, changed);
                 } catch (ExpressionException ignored) {
                     // Binding stays at default value until dependencies are available
                 }
             });
         }
         return changed;
+    }
+
+    private static void applyIfChanged(Variable variable, DataRecord record, List<String> changed) {
+        DataRecord previous = variable.value().orElse(null);
+        if (!recordsEqual(previous, record)) {
+            variable.setComputedValue(record);
+            changed.add(variable.name());
+        }
     }
 
     private static boolean recordsEqual(DataRecord left, DataRecord right) {
@@ -65,7 +76,37 @@ public class BindingEvaluator {
             }
             return DataRecord.single(schema, row);
         }
+        if (isScalarResult(result)) {
+            return scalarToRecord(schema, result);
+        }
         throw new ExpressionException("Cannot map expression result to schema: " + schema.name());
+    }
+
+    private static boolean isScalarResult(Object result) {
+        return result instanceof Number || result instanceof Boolean || result instanceof String;
+    }
+
+    /**
+     * Maps a scalar binding result (e.g. counterRate B/s) into multi-field schemas such as snmpNumeric.
+     */
+    private static DataRecord scalarToRecord(DataSchema schema, Object result) {
+        Map<String, Object> row = new java.util.LinkedHashMap<>();
+        FieldDefinition primary = schema.fields().stream()
+                .filter(field -> "value".equals(field.name()))
+                .findFirst()
+                .orElse(schema.fields().getFirst());
+        for (FieldDefinition field : schema.fields()) {
+            if (field.name().equals(primary.name())) {
+                row.put(field.name(), coerce(result, field));
+            } else if ("raw".equals(field.name()) && result instanceof Number number) {
+                row.put(field.name(), String.valueOf(number.doubleValue()));
+            } else if (field.type() == FieldType.STRING) {
+                row.put(field.name(), "");
+            } else {
+                row.put(field.name(), null);
+            }
+        }
+        return DataRecord.single(schema, row);
     }
 
     private static Object coerce(Object value, FieldDefinition field) {

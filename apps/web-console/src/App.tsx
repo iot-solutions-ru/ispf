@@ -31,7 +31,7 @@ import DashboardBuilder from "./components/dashboard/DashboardBuilder";
 import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
-import SystemMetricsView from "./components/SystemMetricsView";
+import SystemView from "./components/SystemView";
 import LoginView from "./components/LoginView";
 import ModelEditorPanel from "./components/ModelEditorPanel";
 import { isModelsPath } from "./types/models";
@@ -431,7 +431,7 @@ export default function App() {
           </main>
         )}
 
-        {workspaceTab === "system" && isAdmin && <SystemMetricsView />}
+        {workspaceTab === "system" && isAdmin && <SystemView />}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
           <main className="main editor-main dashboard-main">

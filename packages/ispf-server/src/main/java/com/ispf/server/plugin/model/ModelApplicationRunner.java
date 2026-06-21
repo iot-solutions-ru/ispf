@@ -227,6 +227,19 @@ public class ModelApplicationRunner {
                     ));
                     changed = true;
                 }
+                if (!Objects.equals(existing.bindingExpression().orElse(null), varDef.defaultBinding())) {
+                    target.addVariable(new Variable(
+                            existing.name(),
+                            existing.schema(),
+                            existing.readable(),
+                            existing.writable(),
+                            varDef.defaultBinding(),
+                            existing.value().orElse(varDef.defaultValue()),
+                            existing.historyEnabled(),
+                            existing.historyRetentionDays().orElse(null)
+                    ));
+                    changed = true;
+                }
             } else {
                 target.addVariable(new Variable(
                         varDef.name(),
