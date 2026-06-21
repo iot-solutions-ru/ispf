@@ -6,7 +6,7 @@ git clone --depth 1 https://github.com/Michaael/IoT-Solutions-Platform.git ispf-
 cd ispf-build
 chmod +x gradlew
 ./gradlew :packages:ispf-server:bootJar -x test --no-daemon
-JAR="$(ls packages/ispf-server/build/libs/ispf-server-*.jar | grep -v plain | head -1)"
+JAR="$(ls packages/ispf-server/build/libs/ispf-server*.jar | grep -v plain | head -1)"
 install -m 644 "$JAR" /opt/ispf/ispf-server.jar
 systemctl restart ispf-server
 for i in $(seq 1 90); do
