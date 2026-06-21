@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateAlertRule, validateExpression, fetchVariables } from "../../api";
 import type { CreateAlertRulePayload } from "../../types/automation";
 import { variableBoolean, variableString } from "../../utils/variableFieldValue";
+import ObjectFederationBindSection from "../ObjectFederationBindSection";
 
 interface AlertRuleInspectorProps {
   path: string;
@@ -152,6 +153,7 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
           <p className="hint error full">{String(saveMutation.error)}</p>
         )}
       </form>
+      <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>
   );
 }

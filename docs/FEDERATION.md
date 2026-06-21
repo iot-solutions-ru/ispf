@@ -32,6 +32,30 @@ Spike реализации REQ-PF-13: реестр peer-инстансов, prox
 | `GET /api/v1/dashboards/by-path` | Proxy layout; widget paths remapped на `root.platform.federation.{peer}.*` |
 | `GET /api/v1/objects/by-path/variables/history*` | Proxy historian для federated paths |
 | `FederationWebSocketFanoutService` | Fan-out platform events к подписчикам federated paths (базовый notify) |
+| `POST/PATCH/DELETE /api/v1/federation/binds` | Federation bind: overlay remote peer на **локальный** путь (REQ-PF-13c) |
+| `POST /api/v1/federation/binds/probe` | Проверка remote target перед bind |
+
+## Catalog sync vs federation bind (REQ-PF-13c)
+
+| | Catalog sync | Federation bind |
+|--|--------------|-----------------|
+| Назначение | Bulk-обзор всего каталога edge | Production-структура: объект «свой» по локальному пути |
+| Локальный путь | `root.platform.federation.{peer}.*` | Любой путь оператора, напр. `root.platform.devices.edge-pump` |
+| Remote | Источник данных через metadata | То же |
+| UX | Sync на панели peers | Inspector → **Federation bind**; mirror → **Разместить локально…** |
+
+**Bind** («заражение»): существующий или новый локальный узел получает переменные `federationProxy`, `federationPeerId`, `federationRemotePath`. Read/write/history/dashboard проксируются через `FederationProxyService`. Локальный driver (DEVICE) останавливается при bind; local variables сохраняются, но скрыты до unbind.
+
+```http
+POST /api/v1/federation/binds
+{
+  "localPath": "root.platform.devices.edge-pump",
+  "peerId": "<uuid>",
+  "remotePath": "root.platform.devices.demo-sensor-01"
+}
+```
+
+Create + bind: `parentPath` + `name` вместо `localPath`. Rebind: `PATCH /api/v1/federation/binds`. Unbind: `DELETE /api/v1/federation/binds?localPath=...`.
 
 ## Catalog sync
 

@@ -165,6 +165,12 @@ public class DriverRuntimeService {
         );
     }
 
+    public void stopIfRunning(String devicePath) {
+        if (activeDrivers.containsKey(devicePath)) {
+            stop(devicePath);
+        }
+    }
+
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
         objectManager.setVariableValue(

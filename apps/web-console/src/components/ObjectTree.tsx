@@ -173,6 +173,7 @@ function TreeItem({
             path={node.object.path}
             type={node.object.type}
             iconId={node.object.iconId}
+            federated={node.object.federated}
           />
         </span>
         <span className="tree-label">{node.object.displayName}</span>

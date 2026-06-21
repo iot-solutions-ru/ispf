@@ -57,6 +57,16 @@ public final class FederationProxyMetadata {
         setVariable(node, VAR_REMOTE_PATH, STRING_VALUE, remotePathValue(remotePath));
     }
 
+    public static void clearFrom(PlatformObject node) {
+        node.removeVariable(VAR_PROXY);
+        node.removeVariable(VAR_PEER_ID);
+        node.removeVariable(VAR_REMOTE_PATH);
+    }
+
+    public static boolean isFederationVariable(String name) {
+        return VAR_PROXY.equals(name) || VAR_PEER_ID.equals(name) || VAR_REMOTE_PATH.equals(name);
+    }
+
     private static void setVariable(PlatformObject node, String name, DataSchema schema, DataRecord value) {
         if (node.getVariable(name).isEmpty()) {
             node.addVariable(new Variable(name, schema, true, false, null, value));

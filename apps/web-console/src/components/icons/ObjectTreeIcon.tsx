@@ -380,15 +380,22 @@ export default function ObjectTreeIcon({
   path,
   type,
   iconId,
+  federated,
   className,
   size,
 }: {
   path: string;
   type: ObjectType;
   iconId?: string | null;
+  federated?: boolean;
   className?: string;
   size?: number;
 }) {
   const kind = resolveObjectTreeIcon(path, type, iconId);
-  return <TreeIconSvg kind={kind} className={className} size={size} />;
+  return (
+    <span className={`tree-icon-wrap${federated ? " tree-icon-wrap--federated" : ""}`}>
+      <TreeIconSvg kind={kind} className={className} size={size} />
+      {federated && <span className="tree-federated-badge" title="Federation bind">F</span>}
+    </span>
+  );
 }

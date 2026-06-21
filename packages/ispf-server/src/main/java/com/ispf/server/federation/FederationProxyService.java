@@ -132,6 +132,16 @@ public class FederationProxyService {
         );
     }
 
+    public JsonNode proxyVariablePut(FederationProxyTarget target, String variableName, String bodyJson) {
+        JsonNode result = federationService.proxyVariablePut(
+                target.peerId(),
+                target.remotePath(),
+                variableName,
+                bodyJson
+        );
+        return result;
+    }
+
     private FederationPeer requirePeer(UUID peerId) {
         return peerStore.findById(peerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Peer not found: " + peerId));

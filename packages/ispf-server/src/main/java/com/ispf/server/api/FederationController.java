@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.federation.FederationAccessService;
 import com.ispf.server.federation.FederationAuthMode;
 import com.ispf.server.federation.FederationAuthStatus;
+import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.federation.FederationCatalogService;
 import com.ispf.server.federation.FederationConnectionMode;
 import com.ispf.server.federation.FederationInboundRegistrationService;
@@ -44,6 +45,7 @@ public class FederationController {
 
     private final FederationService federationService;
     private final FederationCatalogService federationCatalogService;
+    private final FederationBindService federationBindService;
     private final FederationAccessService federationAccessService;
     private final FederationPeerAuthService authService;
     private final FederationInboundRegistrationService inboundRegistrationService;
@@ -56,6 +58,7 @@ public class FederationController {
     public FederationController(
             FederationService federationService,
             FederationCatalogService federationCatalogService,
+            FederationBindService federationBindService,
             FederationAccessService federationAccessService,
             FederationPeerAuthService authService,
             FederationInboundRegistrationService inboundRegistrationService,
@@ -67,6 +70,7 @@ public class FederationController {
     ) {
         this.federationService = federationService;
         this.federationCatalogService = federationCatalogService;
+        this.federationBindService = federationBindService;
         this.federationAccessService = federationAccessService;
         this.authService = authService;
         this.inboundRegistrationService = inboundRegistrationService;
@@ -137,6 +141,61 @@ public class FederationController {
         federationAccessService.requireAdmin(authentication);
         FederationCatalogService.SyncResult result = federationCatalogService.syncCatalog(id);
         return new SyncCatalogResponse(result.localRoot(), result.created(), result.updated(), result.remoteCount());
+    }
+
+    @GetMapping("/binds")
+    public List<FederationBindService.FederationBindDto> listBinds(
+            Authentication authentication,
+            @RequestParam(defaultValue = "true") boolean excludeCatalogMirror
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        return federationBindService.list(excludeCatalogMirror);
+    }
+
+    @PostMapping("/binds")
+    public FederationBindService.FederationBindDto createBind(
+            Authentication authentication,
+            @Valid @RequestBody CreateFederationBindRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        return federationBindService.bind(new FederationBindService.BindRequest(
+                request.localPath(),
+                request.parentPath(),
+                request.name(),
+                request.peerId(),
+                request.remotePath(),
+                request.displayName(),
+                request.description()
+        ));
+    }
+
+    @PatchMapping("/binds")
+    public FederationBindService.FederationBindDto rebind(
+            Authentication authentication,
+            @Valid @RequestBody RebindFederationBindRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        return federationBindService.rebind(new FederationBindService.RebindRequest(
+                request.localPath(),
+                request.peerId(),
+                request.remotePath()
+        ));
+    }
+
+    @DeleteMapping("/binds")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unbind(Authentication authentication, @RequestParam @NotBlank String localPath) {
+        federationAccessService.requireAdmin(authentication);
+        federationBindService.unbind(localPath);
+    }
+
+    @PostMapping("/binds/probe")
+    public FederationBindService.FederationBindProbeResult probeBind(
+            Authentication authentication,
+            @Valid @RequestBody ProbeFederationBindRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        return federationBindService.probe(request.peerId(), request.remotePath());
     }
 
     @GetMapping("/proxy/objects/by-path")
@@ -492,6 +551,30 @@ public class FederationController {
 
     public record ConfigureSecretsKeyRequest(
             @NotBlank String secretsKey
+    ) {
+    }
+
+    public record CreateFederationBindRequest(
+            String localPath,
+            String parentPath,
+            String name,
+            UUID peerId,
+            @NotBlank String remotePath,
+            String displayName,
+            String description
+    ) {
+    }
+
+    public record RebindFederationBindRequest(
+            @NotBlank String localPath,
+            UUID peerId,
+            @NotBlank String remotePath
+    ) {
+    }
+
+    public record ProbeFederationBindRequest(
+            UUID peerId,
+            @NotBlank String remotePath
     ) {
     }
 }

@@ -27,6 +27,7 @@ import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
 import { resolveApplicationAppId } from "../utils/applicationPath";
+import ObjectFederationBindSection from "./ObjectFederationBindSection";
 
 interface ObjectInspectorProps {
   path: string;
@@ -34,7 +35,7 @@ interface ObjectInspectorProps {
   canManage?: boolean;
 }
 
-type Tab = "general" | "variables" | "events" | "functions" | "driver" | "deploy" | "access";
+type Tab = "general" | "federation" | "variables" | "events" | "functions" | "driver" | "deploy" | "access";
 
 export default function ObjectInspector({ path, onDeleted, canManage = false }: ObjectInspectorProps) {
   const queryClient = useQueryClient();
@@ -144,19 +145,23 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const canDelete = canDeleteObjectPath(path);
   const isDevice = obj.type === "DEVICE";
   const isApplication = obj.type === "APPLICATION";
+  const showFederationBind = canManage && path !== "root" && !isRoot;
   const applicationAppId = isApplication ? resolveApplicationAppId(path, obj.description) : null;
-  const tabs: Tab[] = isDevice
-    ? ["general", "driver", "variables", "events", "functions"]
+  const tabs = (isDevice
+    ? (["general", "federation", "driver", "variables", "events", "functions"] as const)
     : isApplication
-      ? ["general", "deploy", "variables", "events", "functions"]
+      ? (["general", "federation", "deploy", "variables", "events", "functions"] as const)
       : canManage
-        ? ["general", "access", "variables", "events", "functions"]
-        : ["general", "variables", "events", "functions"];
+        ? (["general", "federation", "access", "variables", "events", "functions"] as const)
+        : (["general", "federation", "variables", "events", "functions"] as const)
+  ).filter((tabName): tabName is Tab => tabName !== "federation" || showFederationBind);
 
   const tabLabel = (t: Tab) => {
     switch (t) {
       case "general":
         return "Свойства";
+      case "federation":
+        return "Federation";
       case "deploy":
         return "Deploy";
       case "access":
@@ -178,7 +183,10 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
         <div className="inspector-title-row">
           <ObjectTreeIcon path={obj.path} type={obj.type} iconId={obj.iconId} size={22} />
           <div>
-            <h2>{obj.displayName}</h2>
+            <h2>
+              {obj.displayName}
+              {obj.federated && <span className="inline-badge federated-inline-badge">federated</span>}
+            </h2>
             <code className="path-code">{obj.path}</code>
           </div>
         </div>
@@ -295,9 +303,15 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
         </section>
       )}
 
+      {tab === "federation" && showFederationBind && (
+        <section className="panel">
+          <ObjectFederationBindSection path={path} canManage={canManage} object={obj} />
+        </section>
+      )}
+
       {tab === "variables" && (
         <section className="panel">
-          {canManage && (
+          {canManage && !obj.federated && (
             <div className="panel-toolbar">
               <button
                 type="button"
@@ -307,6 +321,9 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                 + Переменная
               </button>
             </div>
+          )}
+          {obj.federated && (
+            <p className="hint">Переменные проксируются с remote peer. Локальные переменные скрыты пока активен bind.</p>
           )}
           {variablesQuery.isLoading && <p>Загрузка переменных…</p>}
           {variablesQuery.data && variablesQuery.data.length === 0 && (

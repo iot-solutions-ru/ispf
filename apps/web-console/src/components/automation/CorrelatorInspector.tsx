@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { updateCorrelator, fetchVariables } from "../../api";
 import type { CorrelatorActionType, CorrelatorPatternType, CreateCorrelatorPayload } from "../../types/automation";
 import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
+import ObjectFederationBindSection from "../ObjectFederationBindSection";
 
 interface CorrelatorInspectorProps {
   path: string;
@@ -164,6 +165,7 @@ export default function CorrelatorInspector({ path, canManage = false }: Correla
           <p className="hint error full">{String(saveMutation.error)}</p>
         )}
       </form>
+      <ObjectFederationBindSection path={path} canManage={canManage} />
     </section>
   );
 }

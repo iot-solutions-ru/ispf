@@ -501,6 +501,13 @@ Post-PF (P3+) — platform evolution (см. §8.1, §9, §10)
 2. Local edge за NAT подключается только исходящим WS; remote hub видит federated catalog и выполняет read/write без inbound доступа к local.
 3. Reconnect после разрыва WS ≤ 30s (exponential backoff agent-side).
 
+**REQ-PF-13c acceptance (Phase 8 — federation bind):**
+
+1. Admin bind существующего local DEVICE к remote через loopback/tunnel peer — в Explorer локальный path, `federated: true`, remote metadata.
+2. `GET /api/v1/objects/by-path?path=<local>` возвращает `path` = local; variable write проксируется на remote.
+3. Rebind меняет `remotePath` без смены local path; unbind снимает overlay, local shell остаётся.
+4. Create+bind и «Разместить локально» из sync mirror; документация в [FEDERATION.md](FEDERATION.md).
+
 ### Текущее состояние
 
 

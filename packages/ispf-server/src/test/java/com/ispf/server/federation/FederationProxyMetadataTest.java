@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class FederationProxyMetadataTest {
@@ -29,5 +30,9 @@ class FederationProxyMetadataTest {
 
         assertDoesNotThrow(() -> FederationProxyMetadata.applyTo(node, peerId, remotePath));
         assertTrue(FederationProxyMetadata.remotePath(node).orElse("").equals(remotePath));
+
+        FederationProxyMetadata.clearFrom(node);
+        assertFalse(FederationProxyMetadata.isProxy(node));
+        assertTrue(FederationProxyMetadata.peerId(node).isEmpty());
     }
 }

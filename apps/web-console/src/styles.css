@@ -331,6 +331,55 @@ code,
   flex-shrink: 0;
 }
 
+.tree-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-federated-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 4px;
+  background: #0ea5e9;
+  color: #fff;
+  pointer-events: none;
+}
+
+.federation-bind-panel {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border, rgba(148, 163, 184, 0.25));
+}
+
+.federation-bind-panel h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.editor-section .section-toggle .inline-badge {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.federated-inline-badge {
+  margin-left: 0.5rem;
+  font-size: 0.65rem;
+  vertical-align: middle;
+  background: #0ea5e9;
+  color: #fff;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .tree-icon-svg {
   display: block;
 }

@@ -471,6 +471,7 @@ export default function App() {
             ) : (
               <ObjectPropertiesEditor
                 path={activeEditor.path}
+                canManage={isAdmin}
                 onClose={() => closeEditor(activeEditor.id)}
                 onDeleted={() => {
                   setSelectedPath("root");
@@ -485,6 +486,7 @@ export default function App() {
           <main className="main editor-main">
             <ObjectPropertiesEditor
               path={activeEditor.path}
+              canManage={isAdmin}
               onClose={() => {
                 setPropertiesTabPath(null);
                 if (!isSpecializedEditor) {

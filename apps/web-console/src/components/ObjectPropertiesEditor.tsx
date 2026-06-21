@@ -25,14 +25,16 @@ import VariableHistoryFields, {
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 import BindingExpressionField from "./BindingExpressionField";
 import CreateVariableDialog from "./CreateVariableDialog";
+import ObjectFederationBindSection from "./ObjectFederationBindSection";
 
 interface ObjectPropertiesEditorProps {
   path: string;
   onClose: () => void;
   onDeleted: () => void;
+  canManage?: boolean;
 }
 
-type SectionKey = "info" | "variables" | "events" | "functions";
+type SectionKey = "info" | "federation" | "variables" | "events" | "functions";
 
 interface EditorState {
   displayName: string;
@@ -198,10 +200,12 @@ export default function ObjectPropertiesEditor({
   path,
   onClose,
   onDeleted,
+  canManage = false,
 }: ObjectPropertiesEditorProps) {
   const queryClient = useQueryClient();
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     info: true,
+    federation: true,
     variables: true,
     events: true,
     functions: true,
@@ -373,10 +377,21 @@ export default function ObjectPropertiesEditor({
 
       <div className="properties-editor-header">
         <span className="ctx-icon">
-          <ObjectTreeIcon path={ctx.path} type={ctx.type} iconId={state.iconId} size={24} />
+          <ObjectTreeIcon
+            path={ctx.path}
+            type={ctx.type}
+            iconId={state.iconId}
+            federated={ctx.federated}
+            size={24}
+          />
         </span>
         <div>
-          <h2>{ctx.displayName}</h2>
+          <h2>
+            {ctx.displayName}
+            {ctx.federated && (
+              <span className="inline-badge federated-inline-badge">federated</span>
+            )}
+          </h2>
           <p className="hint">{ctx.description || "Универсальный редактор объекта"}</p>
         </div>
         {isDirty && <span className="dirty-pill">Изменено</span>}
@@ -434,21 +449,42 @@ export default function ObjectPropertiesEditor({
         )}
       </section>
 
+      {path !== "root" && (
+        <section className="editor-section">
+          <button type="button" className="section-toggle" onClick={() => toggleSection("federation")}>
+            <span>{openSections.federation ? "▾" : "▸"}</span> Federation
+            {ctx.federated && <span className="inline-badge federated-inline-badge">active</span>}
+          </button>
+          {openSections.federation && (
+            <div className="section-body">
+              <ObjectFederationBindSection path={path} canManage={canManage} object={ctx} />
+            </div>
+          )}
+        </section>
+      )}
+
       <section className="editor-section">
         <button type="button" className="section-toggle" onClick={() => toggleSection("variables")}>
           <span>{openSections.variables ? "▾" : "▸"}</span> Переменные ({editorQuery.data.variables.length})
         </button>
         {openSections.variables && (
           <div className="section-body property-list">
-            <div className="panel-toolbar">
-              <button
-                type="button"
-                className="btn primary small"
-                onClick={() => setShowCreateVariable(true)}
-              >
-                + Переменная
-              </button>
-            </div>
+            {ctx.federated && (
+              <p className="hint">
+                Переменные проксируются с remote peer. Локальные переменные скрыты пока активен bind.
+              </p>
+            )}
+            {canManage && !ctx.federated && (
+              <div className="panel-toolbar">
+                <button
+                  type="button"
+                  className="btn primary small"
+                  onClick={() => setShowCreateVariable(true)}
+                >
+                  + Переменная
+                </button>
+              </div>
+            )}
             {editorQuery.data.variables.length === 0 && (
               <p className="hint">Нет переменных</p>
             )}

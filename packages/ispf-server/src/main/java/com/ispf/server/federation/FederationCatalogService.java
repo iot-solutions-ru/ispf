@@ -2,7 +2,6 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import com.ispf.core.object.ObjectType;
-import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -104,28 +102,19 @@ public class FederationCatalogService {
             UUID peerId,
             String remotePath
     ) {
-        int lastDot = localPath.lastIndexOf('.');
-        String parentPath = localPath.substring(0, lastDot);
-        String name = localPath.substring(lastDot + 1);
-        ObjectType type = parseType(textOrDefault(remote, "type", "AGENT"));
-        String displayName = textOrDefault(remote, "displayName", name);
-        String description = textOrDefault(remote, "description", "");
-        objectManager.create(parentPath, name, type, displayName, description, null);
-        markProxy(localPath, peerId, remotePath);
+        FederationProxyNodeHelper.createProxyNode(objectManager, localPath, remote, peerId, remotePath);
     }
 
     private void markProxy(String localPath, UUID peerId, String remotePath) {
-        PlatformObject node = objectManager.require(localPath);
-        FederationProxyMetadata.applyTo(node, peerId, remotePath);
-        objectManager.persistNodeTree(localPath);
+        FederationProxyNodeHelper.markProxy(objectManager, localPath, peerId, remotePath);
     }
 
-    private static ObjectType parseType(String raw) {
-        try {
-            return ObjectType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            return ObjectType.AGENT;
-        }
+    private static String textOrNull(JsonNode node, String field) {
+        return FederationProxyNodeHelper.textOrNull(node, field);
+    }
+
+    private static String textOrDefault(JsonNode node, String field, String defaultValue) {
+        return FederationProxyNodeHelper.textOrDefault(node, field, defaultValue);
     }
 
     private static String normalizePrefix(String pathPrefix) {
@@ -137,20 +126,6 @@ public class FederationCatalogService {
             trimmed = trimmed.substring(0, trimmed.length() - 1);
         }
         return trimmed;
-    }
-
-    private static String textOrNull(JsonNode node, String field) {
-        JsonNode value = node.get(field);
-        if (value == null || value.isNull() || !value.isString()) {
-            return null;
-        }
-        String text = value.asString();
-        return text.isBlank() ? null : text;
-    }
-
-    private static String textOrDefault(JsonNode node, String field, String defaultValue) {
-        String text = textOrNull(node, field);
-        return text != null ? text : defaultValue;
     }
 
     public record SyncResult(String localRoot, int created, int updated, int remoteCount) {

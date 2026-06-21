@@ -203,11 +203,36 @@ public class FederationService {
     public JsonNode proxyVariablePatch(UUID peerId, String objectPath, String variableName, String bodyJson) {
         FederationPeer peer = requirePeer(peerId);
         String remotePath = resolveRemotePath(peer.pathPrefix(), objectPath);
+        return proxyVariablePatchAtRemotePath(peer, remotePath, objectPath, variableName, bodyJson);
+    }
+
+    public JsonNode proxyVariablePut(UUID peerId, String remotePath, String variableName, String bodyJson) {
+        FederationPeer peer = requirePeer(peerId);
+        String resolvedRemotePath = resolveRemotePath(peer.pathPrefix(), remotePath);
+        JsonNode result = sendJson(
+                peer,
+                "PUT",
+                "/api/v1/objects/by-path/variables?path="
+                        + URLEncoder.encode(resolvedRemotePath, StandardCharsets.UTF_8)
+                        + "&name=" + URLEncoder.encode(variableName, StandardCharsets.UTF_8),
+                bodyJson
+        );
+        webSocketFanout.notifyFederatedPathUpdated(localMirrorPath(peer, remotePath), variableName);
+        return result;
+    }
+
+    private JsonNode proxyVariablePatchAtRemotePath(
+            FederationPeer peer,
+            String remotePath,
+            String fanoutObjectPath,
+            String variableName,
+            String bodyJson
+    ) {
         String path = "/api/v1/objects/by-path/variables/value?path="
                 + URLEncoder.encode(remotePath, StandardCharsets.UTF_8)
                 + "&name=" + URLEncoder.encode(variableName, StandardCharsets.UTF_8);
         JsonNode result = sendJson(peer, "PATCH", path, bodyJson);
-        webSocketFanout.notifyFederatedPathUpdated(localMirrorPath(peer, objectPath), variableName);
+        webSocketFanout.notifyFederatedPathUpdated(localMirrorPath(peer, fanoutObjectPath), variableName);
         return result;
     }
 

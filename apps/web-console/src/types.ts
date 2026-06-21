@@ -61,6 +61,9 @@ export interface ObjectSummary {
   sortOrder: number;
   variableNames: string[];
   eventNames: string[];
+  federated?: boolean;
+  federationPeerId?: string | null;
+  federationRemotePath?: string | null;
 }
 
 export interface DataSchema {

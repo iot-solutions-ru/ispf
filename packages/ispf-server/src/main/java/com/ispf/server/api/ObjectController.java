@@ -3,6 +3,7 @@ package com.ispf.server.api;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.federation.FederationProxyService;
 import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.ObjectType;
@@ -60,6 +61,7 @@ public class ObjectController {
     private final ObjectAccessService objectAccessService;
     private final TenantScopeService tenantScopeService;
     private final FederationProxyService federationProxyService;
+    private final FederationBindService federationBindService;
     private final ObjectMapper objectMapper;
 
     public ObjectController(
@@ -74,6 +76,7 @@ public class ObjectController {
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             FederationProxyService federationProxyService,
+            FederationBindService federationBindService,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
@@ -87,6 +90,7 @@ public class ObjectController {
         this.objectAccessService = objectAccessService;
         this.tenantScopeService = tenantScopeService;
         this.federationProxyService = federationProxyService;
+        this.federationBindService = federationBindService;
         this.objectMapper = objectMapper;
     }
 
@@ -141,6 +145,7 @@ public class ObjectController {
     @PostMapping
     public ObjectDto create(@Valid @RequestBody CreateObjectRequest request, Authentication authentication) {
         objectAccessService.requireWrite(request.parentPath(), authentication);
+        federationBindService.assertParentAllowsChildren(request.parentPath());
         String fullPath = objectManager.tree().resolveChildPath(request.parentPath(), request.name());
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Object exists: " + fullPath);
@@ -270,6 +275,19 @@ public class ObjectController {
             Authentication authentication
     ) {
         objectAccessService.requireWrite(path, authentication);
+        var proxy = federationProxyService.resolve(path);
+        if (proxy.isPresent()) {
+            try {
+                JsonNode json = federationProxyService.proxyVariablePut(
+                        proxy.get(),
+                        name,
+                        objectMapper.writeValueAsString(value)
+                );
+                return objectMapper.convertValue(json, VariableDto.class);
+            } catch (tools.jackson.core.JacksonException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+            }
+        }
         try {
             Variable variable = objectManager.setVariableValue(path, name, value);
             if (platformUserService.isSecurityUserPath(path)) {
@@ -309,6 +327,7 @@ public class ObjectController {
             Authentication authentication
     ) {
         objectAccessService.requireWrite(path, authentication);
+        assertNotFederationBound(path);
         try {
             BindingExpressionValidator.validateOrThrow(request.bindingExpression());
             Variable variable = objectManager.createVariable(
@@ -490,7 +509,19 @@ public class ObjectController {
                 remote.createdAt(),
                 remote.sortOrder(),
                 remote.variableNames(),
-                remote.eventNames()
+                remote.eventNames(),
+                true,
+                target.peerId().toString(),
+                target.remotePath()
         );
+    }
+
+    private void assertNotFederationBound(String path) {
+        if (federationProxyService.resolve(path).isPresent()) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Federation-bound objects use remote variables: " + path
+            );
+        }
     }
 }

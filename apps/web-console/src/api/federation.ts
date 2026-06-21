@@ -318,6 +318,96 @@ export function connectOutboundAgent(id: string): Promise<OutboundAgent> {
   });
 }
 
+export interface FederationBind {
+  localPath: string;
+  peerId: string | null;
+  peerName: string | null;
+  remotePath: string | null;
+  type: string;
+  displayName: string;
+  bound: boolean;
+}
+
+export interface FederationBindProbeResult {
+  remotePath: string;
+  type: string;
+  displayName: string;
+  description: string;
+}
+
+export function fetchFederationBinds(excludeCatalogMirror = true): Promise<FederationBind[]> {
+  const params = new URLSearchParams({ excludeCatalogMirror: String(excludeCatalogMirror) });
+  return fetch(`/api/v1/federation/binds?${params.toString()}`, { headers: getAuthHeaders() }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `List binds failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function createFederationBind(payload: {
+  localPath?: string;
+  parentPath?: string;
+  name?: string;
+  peerId: string;
+  remotePath: string;
+  displayName?: string;
+  description?: string;
+}): Promise<FederationBind> {
+  return fetch("/api/v1/federation/binds", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Create bind failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function rebindFederationObject(payload: {
+  localPath: string;
+  peerId: string;
+  remotePath: string;
+}): Promise<FederationBind> {
+  return fetch("/api/v1/federation/binds", {
+    method: "PATCH",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Rebind failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function unbindFederationObject(localPath: string): Promise<void> {
+  const params = new URLSearchParams({ localPath });
+  return fetch(`/api/v1/federation/binds?${params.toString()}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Unbind failed: ${response.status}`));
+    }
+  });
+}
+
+export function probeFederationBind(peerId: string, remotePath: string): Promise<FederationBindProbeResult> {
+  return fetch("/api/v1/federation/binds/probe", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ peerId, remotePath }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Probe failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
 export function formatTokenExpiry(expiresAt: string | null | undefined): string {
   if (!expiresAt) {
     return "—";
