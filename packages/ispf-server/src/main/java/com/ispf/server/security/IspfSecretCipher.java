@@ -1,6 +1,6 @@
 package com.ispf.server.security;
 
-import com.ispf.server.config.IspfSecurityProperties;
+import com.ispf.server.federation.FederationSecretsKeyService;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -17,16 +17,15 @@ public class IspfSecretCipher {
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
 
-    private final IspfSecurityProperties securityProperties;
+    private final FederationSecretsKeyService secretsKeyService;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public IspfSecretCipher(IspfSecurityProperties securityProperties) {
-        this.securityProperties = securityProperties;
+    public IspfSecretCipher(FederationSecretsKeyService secretsKeyService) {
+        this.secretsKeyService = secretsKeyService;
     }
 
     public boolean isEnabled() {
-        String key = securityProperties.getSecretsKey();
-        return key != null && !key.isBlank();
+        return activeKey() != null;
     }
 
     public String encrypt(String plaintext) {
@@ -73,8 +72,16 @@ public class IspfSecretCipher {
     }
 
     private SecretKeySpec secretKey() throws Exception {
+        String key = activeKey();
+        if (key == null) {
+            throw new IllegalStateException("ispf.security.secrets-key is required");
+        }
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] keyBytes = digest.digest(securityProperties.getSecretsKey().trim().getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = digest.digest(key.getBytes(StandardCharsets.UTF_8));
         return new SecretKeySpec(keyBytes, "AES");
+    }
+
+    private String activeKey() {
+        return secretsKeyService.resolveKeyOrNull();
     }
 }

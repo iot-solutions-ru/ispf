@@ -82,6 +82,34 @@ export interface CreateOutboundAgentPayload {
   pathPrefix?: string;
 }
 
+export interface FederationSecretsKeyStatus {
+  configured: boolean;
+  source: "NONE" | "YAML" | "DATABASE";
+  uiConfigurable: boolean;
+}
+
+export function fetchFederationSecretsKeyStatus(): Promise<FederationSecretsKeyStatus> {
+  return fetch("/api/v1/federation/secrets-key/status", { headers: getAuthHeaders() }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Secrets key status failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function configureFederationSecretsKey(secretsKey: string): Promise<FederationSecretsKeyStatus> {
+  return fetch("/api/v1/federation/secrets-key", {
+    method: "POST",
+    headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify({ secretsKey }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Configure secrets key failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
 export function fetchFederationPeers(): Promise<FederationPeer[]> {
   return fetch("/api/v1/federation/peers", { headers: getAuthHeaders() }).then(async (response) => {
     if (!response.ok) {

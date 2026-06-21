@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.server.federation.FederationSecretsKeyService;
 import com.ispf.server.platform.update.PlatformVersionSupport;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.boot.info.BuildProperties;
@@ -17,9 +18,14 @@ import java.util.Optional;
 public class PlatformInfoController {
 
     private final Optional<BuildProperties> buildProperties;
+    private final FederationSecretsKeyService secretsKeyService;
 
-    public PlatformInfoController(Optional<BuildProperties> buildProperties) {
+    public PlatformInfoController(
+            Optional<BuildProperties> buildProperties,
+            FederationSecretsKeyService secretsKeyService
+    ) {
         this.buildProperties = buildProperties;
+        this.secretsKeyService = secretsKeyService;
     }
 
     @GetMapping("/info")
@@ -45,8 +51,11 @@ public class PlatformInfoController {
                 "federation-remote-token",
                 "federation-auth-refresh",
                 "federation-tunnel",
+                "federation-secrets-key",
                 "oidc-rbac"
         });
+        payload.put("federationSecretsKeyConfigured", secretsKeyService.isConfigured());
+        payload.put("federationSecretsKeySource", secretsKeyService.source().name());
         return payload;
     }
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   connectOutboundAgent,
+  configureFederationSecretsKey,
   createFederationPeer,
   createInboundRegistration,
   createOutboundAgent,
@@ -11,6 +12,7 @@ import {
   fetchFederationPeers,
   fetchInboundRegistrations,
   fetchOutboundAgents,
+  fetchFederationSecretsKeyStatus,
   fetchRemoteFederationToken,
   fetchTunnelSessions,
   formatTokenExpiry,
@@ -87,6 +89,9 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
     registrationCode: "",
     pathPrefix: "root.platform",
   });
+  const [secretsKeyInput, setSecretsKeyInput] = useState("");
+  const [secretsKeyError, setSecretsKeyError] = useState<string | null>(null);
+  const [secretsKeyFeedback, setSecretsKeyFeedback] = useState<string | null>(null);
 
   const peersQuery = useQuery({
     queryKey: ["federation-peers"],
@@ -112,20 +117,6 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
     enabled: canManage,
   });
 
-  const outboundQuery = useQuery({
-    queryKey: ["federation-outbound-agents"],
-    queryFn: fetchOutboundAgents,
-    enabled: canManage,
-    refetchInterval: 5000,
-  });
-
-  const tunnelsQuery = useQuery({
-    queryKey: ["federation-tunnels"],
-    queryFn: fetchTunnelSessions,
-    enabled: canManage,
-    refetchInterval: 5000,
-  });
-
   const tokenApiSupported = platformInfoQuery.data
     ? platformInfoQuery.data.capabilities.includes("federation-issue-token") &&
       platformInfoQuery.data.capabilities.includes("federation-remote-token")
@@ -134,6 +125,26 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
   const tunnelApiSupported = platformInfoQuery.data
     ? platformInfoQuery.data.capabilities.includes("federation-tunnel")
     : true;
+
+  const outboundQuery = useQuery({
+    queryKey: ["federation-outbound-agents"],
+    queryFn: fetchOutboundAgents,
+    enabled: canManage,
+    refetchInterval: 5000,
+  });
+
+  const secretsKeyQuery = useQuery({
+    queryKey: ["federation-secrets-key"],
+    queryFn: fetchFederationSecretsKeyStatus,
+    enabled: canManage && tunnelApiSupported,
+  });
+
+  const tunnelsQuery = useQuery({
+    queryKey: ["federation-tunnels"],
+    queryFn: fetchTunnelSessions,
+    enabled: canManage,
+    refetchInterval: 5000,
+  });
 
   const createMutation = useMutation({
     mutationFn: () => {
@@ -275,6 +286,31 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["federation-outbound-agents"] }),
   });
 
+  const configureSecretsKeyMutation = useMutation({
+    mutationFn: () => {
+      setSecretsKeyError(null);
+      setSecretsKeyFeedback(null);
+      if (!secretsKeyInput.trim()) {
+        throw new Error("Укажите ispf.security.secrets-key");
+      }
+      if (secretsKeyInput.trim().length < 16) {
+        throw new Error("Ключ должен быть не короче 16 символов");
+      }
+      return configureFederationSecretsKey(secretsKeyInput.trim());
+    },
+    onSuccess: (status) => {
+      setSecretsKeyInput("");
+      setSecretsKeyFeedback(
+        status.source === "YAML"
+          ? "Ключ задан в конфигурации сервера (YAML/env)."
+          : "Ключ шифрования сохранён на edge. Можно добавлять outbound agent."
+      );
+      queryClient.invalidateQueries({ queryKey: ["federation-secrets-key"] });
+      queryClient.invalidateQueries({ queryKey: ["platform-info"] });
+    },
+    onError: (error: Error) => setSecretsKeyError(error.message),
+  });
+
   const remoteTokenMutation = useMutation({
     mutationFn: () => {
       setTokenPanelError(null);
@@ -309,6 +345,9 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
   }
 
   const userOptions = usersQuery.data ?? [];
+  const secretsKeyConfigured = secretsKeyQuery.data?.configured ?? platformInfoQuery.data?.federationSecretsKeyConfigured ?? false;
+  const secretsKeySource = secretsKeyQuery.data?.source ?? platformInfoQuery.data?.federationSecretsKeySource ?? "NONE";
+  const secretsKeyUiConfigurable = secretsKeyQuery.data?.uiConfigurable ?? true;
 
   return (
     <section className="federation-peers-panel">
@@ -713,8 +752,63 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
           <section className="federation-outbound driver-config-form">
             <h4>Outbound agents (edge / NAT)</h4>
             <p className="op-muted">
-              Исходящий WebSocket-туннель к public hub. Требуется <code>ispf.security.secrets-key</code> на edge.
+              Исходящий WebSocket-туннель к public hub. На edge нужен ключ шифрования для хранения registration code
+              и session token (<code>ispf.security.secrets-key</code>).
             </p>
+
+            <section className="federation-secrets-key driver-config-form">
+              <h5>Ключ шифрования edge (ispf.security.secrets-key)</h5>
+              {secretsKeyConfigured ? (
+                <div className="op-alert op-alert-success">
+                  Ключ настроен
+                  {secretsKeySource === "YAML" && " — задан в application.yml или переменной ISPF_SECURITY_SECRETS_KEY"}
+                  {secretsKeySource === "DATABASE" && " — сохранён через Web Console"}
+                  .
+                </div>
+              ) : (
+                <div className="op-alert op-alert-error">
+                  Ключ не настроен. Укажите его ниже или задайте{" "}
+                  <code>ispf.security.secrets-key</code> в конфиге сервера и перезапустите ISPF.
+                </div>
+              )}
+              {secretsKeyFeedback && <div className="op-alert op-alert-success">{secretsKeyFeedback}</div>}
+              {secretsKeyError && <div className="op-alert op-alert-error">{secretsKeyError}</div>}
+              {secretsKeyUiConfigurable && !secretsKeyConfigured && (
+                <>
+                  <div className="form-grid">
+                    <label>
+                      secrets-key *
+                      <input
+                        type="password"
+                        autoComplete="new-password"
+                        placeholder="минимум 16 символов"
+                        value={secretsKeyInput}
+                        onChange={(e) => setSecretsKeyInput(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                  <p className="hint">
+                    Сохраните ключ в надёжном месте. При смене ключа существующие outbound agents перестанут работать.
+                  </p>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={configureSecretsKeyMutation.isPending}
+                      onClick={() => configureSecretsKeyMutation.mutate()}
+                    >
+                      Сохранить secrets-key
+                    </button>
+                  </div>
+                </>
+              )}
+              {secretsKeyUiConfigurable && secretsKeyConfigured && secretsKeySource === "DATABASE" && (
+                <p className="hint">
+                  Чтобы сменить ключ, удалите все outbound agents и сохраните новый secrets-key.
+                </p>
+              )}
+            </section>
+
             <div className="form-grid">
               <label>
                 name *
@@ -750,7 +844,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
               <button
                 type="button"
                 className="btn primary"
-                disabled={createOutboundMutation.isPending}
+                disabled={createOutboundMutation.isPending || !secretsKeyConfigured}
                 onClick={() => createOutboundMutation.mutate()}
               >
                 Добавить agent

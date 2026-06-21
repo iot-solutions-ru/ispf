@@ -13,6 +13,7 @@ import com.ispf.server.federation.FederationOutboundAgentService;
 import com.ispf.server.federation.FederationPeer;
 import com.ispf.server.federation.FederationPeerAuthService;
 import com.ispf.server.federation.FederationPeerDraft;
+import com.ispf.server.federation.FederationSecretsKeyService;
 import com.ispf.server.federation.FederationService;
 import com.ispf.server.federation.FederationTunnelHubService;
 import com.ispf.server.federation.FederationTunnelSessionStore;
@@ -47,6 +48,7 @@ public class FederationController {
     private final FederationPeerAuthService authService;
     private final FederationInboundRegistrationService inboundRegistrationService;
     private final FederationOutboundAgentService outboundAgentService;
+    private final FederationSecretsKeyService secretsKeyService;
     private final FederationTunnelHubService tunnelHubService;
     private final FederationTunnelSessionStore tunnelSessionStore;
     private final ObjectMapper objectMapper;
@@ -58,6 +60,7 @@ public class FederationController {
             FederationPeerAuthService authService,
             FederationInboundRegistrationService inboundRegistrationService,
             FederationOutboundAgentService outboundAgentService,
+            FederationSecretsKeyService secretsKeyService,
             FederationTunnelHubService tunnelHubService,
             FederationTunnelSessionStore tunnelSessionStore,
             ObjectMapper objectMapper
@@ -68,6 +71,7 @@ public class FederationController {
         this.authService = authService;
         this.inboundRegistrationService = inboundRegistrationService;
         this.outboundAgentService = outboundAgentService;
+        this.secretsKeyService = secretsKeyService;
         this.tunnelHubService = tunnelHubService;
         this.tunnelSessionStore = tunnelSessionStore;
         this.objectMapper = objectMapper;
@@ -227,6 +231,22 @@ public class FederationController {
     public List<TunnelSessionDto> listTunnelSessions(Authentication authentication) {
         federationAccessService.requireAdmin(authentication);
         return tunnelSessionStore.listActive().stream().map(TunnelSessionDto::from).toList();
+    }
+
+    @GetMapping("/secrets-key/status")
+    public SecretsKeyStatusDto secretsKeyStatus(Authentication authentication) {
+        federationAccessService.requireAdmin(authentication);
+        return SecretsKeyStatusDto.from(secretsKeyService);
+    }
+
+    @PostMapping("/secrets-key")
+    public SecretsKeyStatusDto configureSecretsKey(
+            Authentication authentication,
+            @Valid @RequestBody ConfigureSecretsKeyRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        secretsKeyService.setUiKey(request.secretsKey());
+        return SecretsKeyStatusDto.from(secretsKeyService);
     }
 
     @GetMapping("/outbound/agents")
@@ -453,6 +473,25 @@ public class FederationController {
             String registrationCode,
             String pathPrefix,
             Boolean enabled
+    ) {
+    }
+
+    public record SecretsKeyStatusDto(
+            boolean configured,
+            String source,
+            boolean uiConfigurable
+    ) {
+        static SecretsKeyStatusDto from(FederationSecretsKeyService service) {
+            return new SecretsKeyStatusDto(
+                    service.isConfigured(),
+                    service.source().name(),
+                    service.isUiConfigurable()
+            );
+        }
+    }
+
+    public record ConfigureSecretsKeyRequest(
+            @NotBlank String secretsKey
     ) {
     }
 }

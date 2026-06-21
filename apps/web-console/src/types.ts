@@ -6,6 +6,8 @@ export interface PlatformInfo {
   javaVersion?: string;
   springBootVersion?: string;
   capabilities: string[];
+  federationSecretsKeyConfigured?: boolean;
+  federationSecretsKeySource?: "NONE" | "YAML" | "DATABASE";
 }
 
 export type ObjectType =

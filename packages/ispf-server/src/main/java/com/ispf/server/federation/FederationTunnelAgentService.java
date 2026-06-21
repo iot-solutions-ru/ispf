@@ -46,6 +46,7 @@ public class FederationTunnelAgentService {
         return thread;
     });
     private final Map<UUID, AgentRuntime> runtimes = new ConcurrentHashMap<>();
+    private final Map<UUID, Object> connectLocks = new ConcurrentHashMap<>();
 
     public FederationTunnelAgentService(
             FederationOutboundAgentStore agentStore,
@@ -72,34 +73,69 @@ public class FederationTunnelAgentService {
     }
 
     public void connectNow(UUID agentId) {
-        FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
-        if (agent == null || !agent.enabled()) {
-            return;
-        }
-        disconnect(agentId);
-        agentStore.updateStatus(agentId, FederationTunnelStatus.CONNECTING, null, null, null, null);
-        try {
-            AgentRuntime runtime = new AgentRuntime(agentId);
-            runtimes.put(agentId, runtime);
-            URI uri = buildUri(agent);
-            WebSocket webSocket = httpClient.newWebSocketBuilder()
-                    .connectTimeout(Duration.ofSeconds(15))
-                    .buildAsync(uri, new AgentListener(agentId, runtime))
-                    .join();
-            runtime.webSocket = webSocket;
-        } catch (Exception e) {
-            log.warn("Failed to connect outbound agent {}: {}", agent.name(), e.getMessage());
-            agentStore.updateStatus(agentId, FederationTunnelStatus.FAILED, null, e.getMessage(), null, null);
-            scheduleReconnect(agentId, 10);
+        Object lock = connectLocks.computeIfAbsent(agentId, ignored -> new Object());
+        synchronized (lock) {
+            FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
+            if (agent == null || !agent.enabled()) {
+                return;
+            }
+            disconnectRuntime(agentId);
+            agentStore.updateStatus(
+                    agentId,
+                    FederationTunnelStatus.CONNECTING,
+                    agent.linkedPeerId(),
+                    null,
+                    null,
+                    agent.sessionTokenEnc()
+            );
+            try {
+                AgentRuntime runtime = new AgentRuntime(agentId);
+                runtimes.put(agentId, runtime);
+                URI uri = buildUri(agentStore.findById(agentId).orElseThrow());
+                WebSocket webSocket = httpClient.newWebSocketBuilder()
+                        .connectTimeout(Duration.ofSeconds(15))
+                        .buildAsync(uri, new AgentListener(agentId, runtime))
+                        .join();
+                runtime.webSocket = webSocket;
+            } catch (Exception e) {
+                log.warn("Failed to connect outbound agent {}: {}", agent.name(), e.getMessage());
+                FederationOutboundAgent current = agentStore.findById(agentId).orElse(agent);
+                agentStore.updateStatus(
+                        agentId,
+                        FederationTunnelStatus.FAILED,
+                        current.linkedPeerId(),
+                        e.getMessage(),
+                        null,
+                        current.sessionTokenEnc()
+                );
+                scheduleReconnect(agentId, 10);
+            }
         }
     }
 
     public void disconnect(UUID agentId) {
+        synchronized (connectLocks.computeIfAbsent(agentId, ignored -> new Object())) {
+            disconnectRuntime(agentId);
+            FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
+            if (agent == null) {
+                return;
+            }
+            agentStore.updateStatus(
+                    agentId,
+                    FederationTunnelStatus.DISCONNECTED,
+                    agent.linkedPeerId(),
+                    null,
+                    agent.lastConnectedAt(),
+                    agent.sessionTokenEnc()
+            );
+        }
+    }
+
+    private void disconnectRuntime(UUID agentId) {
         AgentRuntime runtime = runtimes.remove(agentId);
         if (runtime != null && runtime.webSocket != null) {
             runtime.webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown").join();
         }
-        agentStore.updateStatus(agentId, FederationTunnelStatus.DISCONNECTED, null, null, null, null);
     }
 
     @EventListener
@@ -209,13 +245,17 @@ public class FederationTunnelAgentService {
 
     private void onClose(UUID agentId, int statusCode) {
         runtimes.remove(agentId);
+        FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
+        if (agent == null || !agent.enabled()) {
+            return;
+        }
         agentStore.updateStatus(
                 agentId,
                 FederationTunnelStatus.RECONNECTING,
-                null,
+                agent.linkedPeerId(),
                 "WebSocket closed: " + statusCode,
-                null,
-                null
+                agent.lastConnectedAt(),
+                agent.sessionTokenEnc()
         );
         scheduleReconnect(agentId, 5);
     }

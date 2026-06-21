@@ -9,6 +9,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +29,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class FederationTunnelIntegrationTest {
 
+    private static final long TUNNEL_CONNECT_TIMEOUT_SECONDS = 60;
+
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @org.springframework.boot.test.web.server.LocalServerPort
     private int port;
@@ -73,8 +80,7 @@ class FederationTunnelIntegrationTest {
 
         String agentId = extractJsonField(agentCreated.getResponse().getContentAsString(), "id");
 
-        String peerId = waitForTunnelPeer(token, siteName);
-        Thread.sleep(500);
+        String peerId = waitForConnectedTunnelPeer(token, agentId, siteName);
 
         mockMvc.perform(get("/api/v1/federation/proxy/objects/by-path")
                         .header("Authorization", "Bearer " + token)
@@ -101,33 +107,58 @@ class FederationTunnelIntegrationTest {
                 .andExpect(jsonPath("$.displayName").value("Demo Sensor 01"));
     }
 
-    private String waitForTunnelPeer(String token, String siteName) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+    private String waitForConnectedTunnelPeer(String token, String agentId, String siteName) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TUNNEL_CONNECT_TIMEOUT_SECONDS);
+        String lastAgentStatus = null;
+        String lastError = null;
         while (System.nanoTime() < deadline) {
-            MvcResult peers = mockMvc.perform(get("/api/v1/federation/peers")
+            MvcResult agentsResult = mockMvc.perform(get("/api/v1/federation/outbound/agents")
                             .header("Authorization", "Bearer " + token))
                     .andExpect(status().isOk())
                     .andReturn();
-            String body = peers.getResponse().getContentAsString();
-            if (body.contains("\"name\":\"" + siteName + "\"") && body.contains("\"tunnelConnected\":true")) {
-                java.util.regex.Matcher matcher = java.util.regex.Pattern
-                        .compile("\\\"name\\\":\\\"" + java.util.regex.Pattern.quote(siteName)
-                                + "\\\"[^}]*\\\"id\\\":\\\"([^\\\"]+)\\\"")
-                        .matcher(body);
-                if (matcher.find()) {
-                    return matcher.group(1);
+            JsonNode agents = objectMapper.readTree(agentsResult.getResponse().getContentAsString());
+            for (JsonNode agent : agents) {
+                if (!agentId.equals(agent.path("id").asString(null))) {
+                    continue;
                 }
-                matcher = java.util.regex.Pattern
-                        .compile("\\\"id\\\":\\\"([^\\\"]+)\\\"[^}]*\\\"name\\\":\\\""
-                                + java.util.regex.Pattern.quote(siteName) + "\\\"")
-                        .matcher(body);
-                if (matcher.find()) {
-                    return matcher.group(1);
+                lastAgentStatus = agent.path("tunnelStatus").asString(null);
+                lastError = agent.path("lastError").asString(null);
+                if ("FAILED".equals(lastAgentStatus)) {
+                    throw new IllegalStateException("Outbound agent failed: " + lastError);
+                }
+                JsonNode linkedPeerIdNode = agent.get("linkedPeerId");
+                if ("CONNECTED".equals(lastAgentStatus)
+                        && linkedPeerIdNode != null
+                        && !linkedPeerIdNode.isNull()) {
+                    String peerId = linkedPeerIdNode.asString();
+                    if (isPeerTunnelConnected(token, peerId)) {
+                        return peerId;
+                    }
                 }
             }
-            Thread.sleep(250);
+            Thread.sleep(500);
         }
-        throw new IllegalStateException("Timed out waiting for tunnel peer: " + siteName);
+        throw new IllegalStateException(String.format(
+                "Timed out waiting for tunnel peer (agent=%s, site=%s, lastStatus=%s, lastError=%s)",
+                agentId,
+                siteName,
+                lastAgentStatus,
+                lastError
+        ));
+    }
+
+    private boolean isPeerTunnelConnected(String token, String peerId) throws Exception {
+        MvcResult peersResult = mockMvc.perform(get("/api/v1/federation/peers")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode peers = objectMapper.readTree(peersResult.getResponse().getContentAsString());
+        for (JsonNode peer : peers) {
+            if (peerId.equals(peer.path("id").asString(null)) && peer.path("tunnelConnected").asBoolean(false)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String loginAdmin() throws Exception {
