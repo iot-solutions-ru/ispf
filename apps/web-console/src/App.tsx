@@ -408,24 +408,26 @@ export default function App() {
                 onChange={(e) => setTreeFilter(e.target.value)}
               />
             </div>
-            {objects.isLoading && <p className="sidebar-msg">Загрузка…</p>}
-            {objects.error && (
-              <p className="sidebar-msg error">
-                Ошибка API. Запустите сервер с профилем <code>local</code>.
-              </p>
-            )}
-            {tree.length > 0 && (
-              <ObjectTree
-                nodes={tree}
-                selectedPath={selectedPath}
-                onSelect={selectPathInExplorer}
-                onOpenEditor={openEditor}
-                canReorder={isAdmin && !treeFilter.trim()}
-                onReorder={(parentPath, orderedPaths) =>
-                  reorderMutation.mutate({ parentPath, orderedPaths })
-                }
-              />
-            )}
+            <div className="sidebar-body">
+              {objects.isLoading && <p className="sidebar-msg">Загрузка…</p>}
+              {objects.error && (
+                <p className="sidebar-msg error">
+                  Ошибка API. Запустите сервер с профилем <code>local</code>.
+                </p>
+              )}
+              {tree.length > 0 && (
+                <ObjectTree
+                  nodes={tree}
+                  selectedPath={selectedPath}
+                  onSelect={selectPathInExplorer}
+                  onOpenEditor={openEditor}
+                  canReorder={isAdmin && !treeFilter.trim()}
+                  onReorder={(parentPath, orderedPaths) =>
+                    reorderMutation.mutate({ parentPath, orderedPaths })
+                  }
+                />
+              )}
+            </div>
           </aside>
         )}
 

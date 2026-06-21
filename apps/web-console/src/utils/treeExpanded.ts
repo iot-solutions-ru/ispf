@@ -44,17 +44,29 @@ export function ancestorPaths(path: string): string[] {
   return ancestors;
 }
 
+/** Do not auto-expand folders that would reveal more than this many immediate children. */
+export const DEFAULT_EXPAND_MAX_CHILDREN = 25;
+
 /** Paths expanded by default on first visit (depth 0..maxDepth-1 with children). */
-export function defaultExpandedPaths(nodes: TreeNode[], maxDepth = 2, depth = 0): string[] {
+export function defaultExpandedPaths(
+  nodes: TreeNode[],
+  maxDepth = 2,
+  depth = 0,
+  maxChildren = DEFAULT_EXPAND_MAX_CHILDREN,
+): string[] {
   const paths: string[] = [];
   for (const node of nodes) {
     if (node.children.length === 0) {
       continue;
     }
-    if (depth < maxDepth) {
-      paths.push(node.object.path);
-      paths.push(...defaultExpandedPaths(node.children, maxDepth, depth + 1));
+    if (depth >= maxDepth) {
+      continue;
     }
+    if (node.children.length > maxChildren) {
+      continue;
+    }
+    paths.push(node.object.path);
+    paths.push(...defaultExpandedPaths(node.children, maxDepth, depth + 1, maxChildren));
   }
   return paths;
 }
