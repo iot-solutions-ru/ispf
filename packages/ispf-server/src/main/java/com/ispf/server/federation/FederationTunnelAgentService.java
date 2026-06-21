@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -42,6 +43,11 @@ public class FederationTunnelAgentService {
             .build();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread thread = new Thread(r, "federation-tunnel-agent");
+        thread.setDaemon(true);
+        return thread;
+    });
+    private final ExecutorService proxyExecutor = Executors.newCachedThreadPool(r -> {
+        Thread thread = new Thread(r, "federation-tunnel-proxy");
         thread.setDaemon(true);
         return thread;
     });
@@ -180,6 +186,7 @@ public class FederationTunnelAgentService {
     @PreDestroy
     public void shutdown() {
         scheduler.shutdownNow();
+        proxyExecutor.shutdownNow();
         runtimes.keySet().forEach(this::disconnect);
     }
 
@@ -204,7 +211,17 @@ public class FederationTunnelAgentService {
             switch (type) {
                 case FederationTunnelProtocol.TYPE_REGISTERED -> handleRegistered(agentId, node);
                 case FederationTunnelProtocol.TYPE_TOKEN_REFRESH -> handleTokenRefresh(agentId, node);
-                case FederationTunnelProtocol.TYPE_PROXY_REQUEST -> handleProxyRequest(agentId, node);
+                case FederationTunnelProtocol.TYPE_PROXY_REQUEST -> {
+                    JsonNode requestNode = node;
+                    proxyExecutor.execute(() -> {
+                        try {
+                            handleProxyRequest(agentId, requestNode);
+                        } catch (Exception e) {
+                            log.warn("Agent {} proxy request failed: {}", agentId, e.getMessage());
+                            handleProxyFailure(agentId, requestNode, e);
+                        }
+                    });
+                }
                 case FederationTunnelProtocol.TYPE_PONG -> { /* keepalive */ }
                 default -> log.debug("Agent {} ignored message type {}", agentId, type);
             }
@@ -279,22 +296,24 @@ public class FederationTunnelAgentService {
     private void handleProxyRequest(UUID agentId, JsonNode node) throws Exception {
         AgentRuntime runtime = runtimes.get(agentId);
         if (runtime == null || runtime.webSocket == null) {
-            return;
+            throw new IllegalStateException("Tunnel agent runtime is not ready");
         }
         String id = node.path("id").asString();
         String method = node.path("method").asString("GET");
         String path = node.path("path").asString();
         String query = node.path("query").asString(null);
         String body = node.has("body") ? objectMapper.writeValueAsString(node.get("body")) : null;
+        log.debug("Agent {} handling tunnel proxy {} {}", agentId, method, path);
         var result = localProxyService.dispatch(method, path, query, body);
         JsonNode responseBody = result.body();
         if (result.error() != null && responseBody == null) {
             responseBody = objectMapper.createObjectNode().put("error", result.error());
         }
-        runtime.webSocket.sendText(
-                FederationTunnelProtocol.proxyResponse(id, result.status(), responseBody, objectMapper),
-                true
-        ).join();
+        String responseJson = FederationTunnelProtocol.proxyResponse(id, result.status(), responseBody, objectMapper);
+        if (responseJson.length() > 3_000_000) {
+            log.warn("Agent {} proxy response for {} is {} bytes", agentId, path, responseJson.length());
+        }
+        runtime.webSocket.sendText(responseJson, true).join();
     }
 
     private void sendPing(UUID agentId) {

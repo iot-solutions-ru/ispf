@@ -27,7 +27,7 @@ import java.util.concurrent.TimeoutException;
 public class FederationTunnelHubService {
 
     private static final Logger log = LoggerFactory.getLogger(FederationTunnelHubService.class);
-    private static final long PROXY_TIMEOUT_SECONDS = 30;
+    private static final long PROXY_TIMEOUT_SECONDS = 120;
 
     private final ObjectMapper objectMapper;
     private final FederationWebSocketFanoutService webSocketFanout;
@@ -119,6 +119,7 @@ public class FederationTunnelHubService {
             return future.get(PROXY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             pending.remove(requestId);
+            log.warn("Tunnel proxy timed out for peer {} {} {}", peerId, method, path);
             throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Tunnel proxy request timed out");
         } catch (Exception e) {
             pending.remove(requestId);
