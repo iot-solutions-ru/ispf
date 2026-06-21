@@ -1,0 +1,28 @@
+{
+  "version": "1.0.0",
+  "displayName": "Virtual Simulator Profiles",
+  "tablePrefix": "",
+  "schemaName": "app_simulator_pf09",
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "sim-meter-pf09",
+      "type": "DEVICE",
+      "displayName": "Simulator Meter",
+      "description": "PF-09 virtual driver profile: meter"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "sim-bridge-pf09",
+      "type": "DEVICE",
+      "displayName": "Simulator Weighbridge",
+      "description": "PF-09 virtual driver profile: weighbridge"
+    }
+  ],
+  "operatorUi": {
+    "appId": "simulator-pf09",
+    "title": "Simulator Profiles",
+    "defaultDashboard": "",
+    "dashboards": []
+  }
+}

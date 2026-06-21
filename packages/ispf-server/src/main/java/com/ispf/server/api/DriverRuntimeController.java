@@ -38,6 +38,11 @@ public class DriverRuntimeController {
         return driverRuntimeService.stop(devicePath);
     }
 
+    @PostMapping("/poll")
+    public DriverRuntimeService.DriverRuntimeStatus poll(@RequestParam String devicePath) {
+        return driverRuntimeService.pollNow(devicePath);
+    }
+
     @PutMapping("/configure")
     public DriverRuntimeService.DriverRuntimeStatus configure(
             @RequestParam String devicePath,

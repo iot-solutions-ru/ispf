@@ -23,6 +23,17 @@
 
 **Tree-first convergence (Phase 5.5):** после `POST .../deploy` функции адресуются как `{appId}.functions.{name}` на object path; SQL bindings могут жить как `bindingExpression: sqlBinding('appId','var')` на переменной; `objects[]` в bundle обновляет существующие узлы (reconcile), а не только создаёт новые.
 
+> **Не используйте application layer как runtime.** Запись `applications` — реестр и изолированная SQL-schema; invoke, workflow, alerts и dashboards работают через **object tree API**. Если bundle ещё вызывает только `/applications/{appId}/functions/invoke` без tree paths — мигрируйте на tree-first (см. [APPLICATIONS.md § Deprecation path](APPLICATIONS.md#deprecation-path-pf-03-phase-55)).
+
+### Миграция legacy bundle на tree-first
+
+| Было (legacy) | Стало (north star) |
+|---------------|-------------------|
+| Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или `objects/by-path/functions/invoke` по `{appId}.functions.*` |
+| `screens[]` в operator manifest | `operatorUi` + dashboards в `dashboards[]` / дереве |
+| Новые `objects[]` только create | Reconcile: повторный deploy обновляет существующие узлы |
+| Imperative sync Java → variables | CEL bindings, `sqlBinding()`, script steps |
+
 ---
 
 ## Жизненный цикл решения

@@ -198,7 +198,7 @@ public class FederationService {
                 + URLEncoder.encode(remotePath, StandardCharsets.UTF_8)
                 + "&name=" + URLEncoder.encode(variableName, StandardCharsets.UTF_8);
         JsonNode result = sendJson(peer, "PATCH", path, bodyJson);
-        webSocketFanout.notifyFederatedPathUpdated(objectPath, variableName);
+        webSocketFanout.notifyFederatedPathUpdated(localMirrorPath(peer, objectPath), variableName);
         return result;
     }
 
@@ -209,8 +209,17 @@ public class FederationService {
                 + URLEncoder.encode(remotePath, StandardCharsets.UTF_8)
                 + "&name=" + URLEncoder.encode(functionName, StandardCharsets.UTF_8);
         JsonNode result = sendJson(peer, "POST", path, bodyJson);
-        webSocketFanout.notifyFederatedPathUpdated(objectPath, null);
+        webSocketFanout.notifyFederatedPathUpdated(localMirrorPath(peer, objectPath), null);
         return result;
+    }
+
+    static String localMirrorPath(FederationPeer peer, String objectPath) {
+        String prefix = peer.pathPrefix() == null || peer.pathPrefix().isBlank()
+                ? "root.platform"
+                : peer.pathPrefix().trim().replaceAll("\\.+$", "");
+        String remotePath = resolveRemotePath(prefix, objectPath);
+        String suffix = remotePath.equals(prefix) ? "" : remotePath.substring(prefix.length());
+        return FederationPaths.peerCatalogRoot(peer.name()) + suffix;
     }
 
     private JsonNode sendJson(FederationPeer peer, String method, String pathAndQuery, String body) {

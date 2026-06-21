@@ -200,6 +200,12 @@ public class DriverRuntimeService {
         return status(devicePath).orElseThrow();
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DriverRuntimeStatus pollNow(String devicePath) {
+        poll(devicePath);
+        return status(devicePath).orElseThrow();
+    }
+
     private void poll(String devicePath) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {

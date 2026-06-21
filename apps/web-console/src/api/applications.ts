@@ -55,6 +55,61 @@ export async function fetchDeployHistory(appId: string): Promise<DeployHistoryEn
   return response.json() as Promise<DeployHistoryEntry[]>;
 }
 
+export interface FunctionVersionEntry {
+  version: string;
+  deployedAt?: string;
+  active?: boolean;
+}
+
+export interface FunctionRollbackResult {
+  appId: string;
+  objectPath: string;
+  functionName: string;
+  version: string;
+  status: string;
+}
+
+export async function listFunctionVersions(
+  appId: string,
+  objectPath: string,
+  functionName: string
+): Promise<FunctionVersionEntry[]> {
+  const params = new URLSearchParams({ objectPath, functionName });
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/functions?${params.toString()}`,
+    { headers: getAuthHeaders() }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `List function versions failed: ${response.status}`);
+  }
+  return response.json() as Promise<FunctionVersionEntry[]>;
+}
+
+export async function rollbackFunction(
+  appId: string,
+  objectPath: string,
+  functionName: string,
+  version: string
+): Promise<FunctionRollbackResult> {
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/functions/rollback`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ objectPath, functionName, version }),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Function rollback failed: ${response.status}`);
+  }
+  return response.json() as Promise<FunctionRollbackResult>;
+}
+
 export async function rollbackDeploy(
   appId: string,
   version: string

@@ -380,6 +380,25 @@ Point mapping: sentence type (`GGA`, `RMC`) или `raw`.
 
 Point mapping: `consume` (последнее сообщение) или `produce:payload`.
 
+### cwmp (`ispf-driver-cwmp`) — PRODUCTION
+
+TR-069 CPE client: Periodic Inform к ACS, обработка `GetParameterValues` RPC.
+
+Конфиг (`driverConfigJson`):
+
+```json
+{
+  "acsUrl": "http://acs.example:7547/",
+  "deviceId": "000000-000000000000",
+  "timeoutMs": "5000",
+  "informParameters": "Device.DeviceInfo.SoftwareVersion"
+}
+```
+
+Point mapping: TR-069 parameter name (например `Device.DeviceInfo.SoftwareVersion`) или `connected` (статус последнего Inform).
+
+Ограничения: read-only; write SetParameterValues — backlog.
+
 ### gps-tracker (`ispf-driver-gps-tracker`)
 
 TCP **server** — устройства подключаются к платформе. Конфиг: `listenPort`, `bufferSize`.

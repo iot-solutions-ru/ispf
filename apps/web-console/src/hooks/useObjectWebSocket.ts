@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getStoredSession } from "../auth/session";
+import { isFederatedCatalogPath } from "../utils/federationPath";
 
 export interface ObjectWsMessage {
   type: "CREATED" | "UPDATED" | "DELETED" | "VARIABLE_UPDATED" | "EVENT_FIRED";
@@ -8,6 +9,8 @@ export interface ObjectWsMessage {
   variableName: string;
   timestamp: string;
 }
+
+let activeSocket: WebSocket | null = null;
 
 function wsUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -18,6 +21,14 @@ function wsUrl(): string {
   }
   const params = new URLSearchParams({ token });
   return `${base}?${params.toString()}`;
+}
+
+export function subscribeObjectPaths(paths: string[]) {
+  const unique = [...new Set(paths.filter((path) => path.trim().length > 0))];
+  if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) {
+    return;
+  }
+  activeSocket.send(JSON.stringify({ type: "subscribe", paths: unique }));
 }
 
 export function useObjectWebSocket() {
@@ -31,6 +42,11 @@ export function useObjectWebSocket() {
     const connect = () => {
       if (!active) return;
       socket = new WebSocket(wsUrl());
+      activeSocket = socket;
+
+      socket.onopen = () => {
+        // reconnect subscriptions happen via useFederatedPathSubscription
+      };
 
       socket.onmessage = (event) => {
         try {
@@ -57,6 +73,9 @@ export function useObjectWebSocket() {
       };
 
       socket.onclose = () => {
+        if (activeSocket === socket) {
+          activeSocket = null;
+        }
         if (active) {
           retryTimer = window.setTimeout(connect, 3000);
         }
@@ -70,7 +89,29 @@ export function useObjectWebSocket() {
       if (retryTimer) {
         window.clearTimeout(retryTimer);
       }
+      if (activeSocket === socket) {
+        activeSocket = null;
+      }
       socket?.close();
     };
   }, [queryClient]);
+}
+
+/** Subscribe WebSocket to a federated object/dashboard path for background refresh. */
+export function useFederatedPathSubscription(path: string | null | undefined) {
+  const previous = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!path || !isFederatedCatalogPath(path)) {
+      previous.current = null;
+      return;
+    }
+    if (previous.current === path) {
+      return;
+    }
+    previous.current = path;
+    subscribeObjectPaths([path]);
+    const retry = window.setInterval(() => subscribeObjectPaths([path]), 4000);
+    return () => window.clearInterval(retry);
+  }, [path]);
 }

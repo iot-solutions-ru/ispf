@@ -1,5 +1,7 @@
 package com.ispf.server.automation;
 
+import com.ispf.server.automation.AutomationTreeService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -28,6 +31,23 @@ class EscalationChainAcceptanceTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @AfterEach
+    void deleteTestCorrelators() throws Exception {
+        deleteCorrelatorIfExists("Cooldown gate v030");
+        deleteCorrelatorIfExists("Min occurrences gate");
+    }
+
+    private void deleteCorrelatorIfExists(String name) throws Exception {
+        String path = AutomationTreeService.correlatorPathForName(name);
+        if (mockMvc.perform(get("/api/v1/correlators/by-path").param("path", path))
+                .andReturn()
+                .getResponse()
+                .getStatus() == 200) {
+            mockMvc.perform(delete("/api/v1/correlators/by-path").param("path", path))
+                    .andExpect(status().isOk());
+        }
+    }
 
     @Test
     void nEventsInWindowStartWorkflowWithUserTask() throws Exception {
@@ -67,7 +87,7 @@ class EscalationChainAcceptanceTest {
 
     @Test
     void minOccurrencesNotMetDoesNotFireActionEvent() throws Exception {
-        mockMvc.perform(post("/api/v1/correlators")
+        String correlatorPath = mockMvc.perform(post("/api/v1/correlators")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -79,12 +99,16 @@ class EscalationChainAcceptanceTest {
                                   "minOccurrences": 5,
                                   "cooldownSeconds": 0,
                                   "sequenceGapSeconds": 0,
-                                  "actionType": "FIRE_EVENT",
-                                  "actionTarget": "probeMinOccFired",
+                                  "actionType": "RUN_WORKFLOW",
+                                  "actionTarget": "root.platform.workflows.demo-alarm-handler",
                                   "enabled": true
                                 }
                                 """.formatted(DEMO_DEVICE)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String correlatorId = com.jayway.jsonpath.JsonPath.read(correlatorPath, "$.id");
 
         for (int i = 0; i < 2; i++) {
             mockMvc.perform(post("/api/v1/events/fire")
@@ -93,8 +117,57 @@ class EscalationChainAcceptanceTest {
                     .andExpect(status().isOk());
         }
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "20"))
+        mockMvc.perform(get("/api/v1/correlators/by-path").param("path", correlatorId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].eventName", org.hamcrest.Matchers.not(hasItem("probeMinOccFired"))));
+                .andExpect(jsonPath("$.lastTriggeredAt").isEmpty());
+    }
+
+    @Test
+    void cooldownBlocksSecondActionWithinWindow() throws Exception {
+        String correlatorPath = mockMvc.perform(post("/api/v1/correlators")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Cooldown gate v030",
+                                  "objectPath": "%s",
+                                  "patternType": "COUNT",
+                                  "eventName": "thresholdExceeded",
+                                  "windowSeconds": 300,
+                                  "minOccurrences": 1,
+                                  "cooldownSeconds": 3600,
+                                  "sequenceGapSeconds": 0,
+                                  "actionType": "RUN_WORKFLOW",
+                                  "actionTarget": "root.platform.workflows.demo-alarm-handler",
+                                  "enabled": true
+                                }
+                                """.formatted(DEMO_DEVICE)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").exists())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String correlatorId = com.jayway.jsonpath.JsonPath.read(correlatorPath, "$.id");
+
+        mockMvc.perform(post("/api/v1/events/fire")
+                        .param("objectPath", DEMO_DEVICE)
+                        .param("eventName", "thresholdExceeded"))
+                .andExpect(status().isOk());
+
+        String triggeredAt = mockMvc.perform(get("/api/v1/correlators/by-path").param("path", correlatorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastTriggeredAt").isNotEmpty())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        String firstTriggeredAt = com.jayway.jsonpath.JsonPath.read(triggeredAt, "$.lastTriggeredAt");
+
+        mockMvc.perform(post("/api/v1/events/fire")
+                        .param("objectPath", DEMO_DEVICE)
+                        .param("eventName", "thresholdExceeded"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/correlators/by-path").param("path", correlatorId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.lastTriggeredAt").value(firstTriggeredAt));
     }
 }

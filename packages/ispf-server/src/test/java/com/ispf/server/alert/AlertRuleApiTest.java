@@ -150,6 +150,8 @@ class AlertRuleApiTest {
                                 """))
                 .andExpect(status().isOk());
 
+        int afterFirstBreach = countThresholdExceededEvents();
+
         mockMvc.perform(put("/api/v1/objects/by-path/variables")
                         .param("path", DEMO_DEVICE)
                         .param("name", "temperature")
@@ -186,8 +188,17 @@ class AlertRuleApiTest {
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "50"))
+        org.junit.jupiter.api.Assertions.assertEquals(afterFirstBreach, countThresholdExceededEvents());
+    }
+
+    private int countThresholdExceededEvents() throws Exception {
+        String body = mockMvc.perform(get("/api/v1/events").param("objectPath", DEMO_DEVICE).param("limit", "50"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.eventName == 'thresholdExceeded')]").value(org.hamcrest.Matchers.hasSize(1)));
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        java.util.List<?> matches = com.jayway.jsonpath.JsonPath.read(
+                body, "$[?(@.eventName == 'thresholdExceeded')]");
+        return matches.size();
     }
 }

@@ -33,13 +33,30 @@ class MesPlatformApiTest {
                 .andExpect(jsonPath("$[?(@.id=='virtual')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='snmp')]").exists())
                 .andExpect(jsonPath("$[?(@.id=='dnp3')].maturity").value("STUB"))
-                .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("BETA"))
+                .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='dlms')].maturity").value("BETA"));
     }
 
     @Test
     void autoStartsVirtualDriverOnDemoDevice() throws Exception {
-        mockMvc.perform(post("/api/v1/drivers/runtime/start").param("devicePath", DEMO_DEVICE))
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", DEMO_DEVICE))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", DEMO_DEVICE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "virtual",
+                                  "pollIntervalMs": 2000,
+                                  "configuration": {
+                                    "baseTemperature": "22.0",
+                                    "amplitude": "15.0",
+                                    "periodSec": "60"
+                                  },
+                                  "pointMappings": {"temperature": "sim"},
+                                  "autoStart": true
+                                }
+                                """))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/drivers/runtime/status").param("devicePath", DEMO_DEVICE))

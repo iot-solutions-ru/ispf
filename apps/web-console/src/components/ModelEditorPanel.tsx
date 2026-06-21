@@ -7,6 +7,7 @@ import {
   deleteModel,
   fetchModelByName,
   fetchModelInstances,
+  fetchModelDiff,
   fetchModels,
   instantiateModel,
   updateModel,
@@ -118,6 +119,12 @@ function ModelDetail({
   const instancesQuery = useQuery({
     queryKey: ["model-instances", model.id],
     queryFn: () => fetchModelInstances(model.id),
+  });
+
+  const diffQuery = useQuery({
+    queryKey: ["model-diff", model.id, applyPath],
+    queryFn: () => fetchModelDiff(model.id, applyPath.trim()),
+    enabled: Boolean(applyPath.trim()),
   });
 
   const upgradeOneMutation = useMutation({
@@ -667,6 +674,31 @@ function ModelDetail({
                   </li>
                 ))}
               </ul>
+            )}
+            {applyPath.trim() && diffQuery.data && (
+              <div className="model-diff-preview hint">
+                <strong>Diff preview</strong> (v{diffQuery.data.modelVersion} →{" "}
+                <code>{diffQuery.data.objectPath}</code>)
+                <ul>
+                  {diffQuery.data.variablesToAdd.length > 0 && (
+                    <li>+ variables: {diffQuery.data.variablesToAdd.join(", ")}</li>
+                  )}
+                  {diffQuery.data.eventsToAdd.length > 0 && (
+                    <li>+ events: {diffQuery.data.eventsToAdd.join(", ")}</li>
+                  )}
+                  {diffQuery.data.functionsToAdd.length > 0 && (
+                    <li>+ functions: {diffQuery.data.functionsToAdd.join(", ")}</li>
+                  )}
+                  {diffQuery.data.variablesOnlyOnObject.length > 0 && (
+                    <li>object-only variables: {diffQuery.data.variablesOnlyOnObject.join(", ")}</li>
+                  )}
+                  {diffQuery.data.variablesToAdd.length === 0 &&
+                    diffQuery.data.eventsToAdd.length === 0 &&
+                    diffQuery.data.functionsToAdd.length === 0 && (
+                      <li>Нет новых полей — upgrade пере-применит bindings/definitions.</li>
+                    )}
+                </ul>
+              </div>
             )}
             <div className="model-action-row">
               <button

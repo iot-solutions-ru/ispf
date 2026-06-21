@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "displayName": "Warehouse Reference App",
+  "tablePrefix": "",
+  "schemaName": "app_warehouse",
+  "migrations": [
+    {
+      "id": "wh_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS wh_location (id UUID PRIMARY KEY, location_code VARCHAR(64) NOT NULL, status VARCHAR(32) NOT NULL); INSERT INTO wh_location (id, location_code, status) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'A-01', 'ready' WHERE NOT EXISTS (SELECT 1 FROM wh_location WHERE location_code = 'A-01'); INSERT INTO wh_location (id, location_code, status) SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'B-02', 'assigned' WHERE NOT EXISTS (SELECT 1 FROM wh_location WHERE location_code = 'B-02');"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "warehouse_listLocations",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "location_row",
+                "fields": [
+                  { "name": "code", "type": "STRING" },
+                  { "name": "state", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"locations\",\"sql\":\"SELECT location_code, status FROM wh_location ORDER BY location_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${locations}\",\"fields\":{\"code\":\"${item.location_code}\",\"state\":\"${item.status}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "operatorUi": {
+    "appId": "warehouse",
+    "title": "Warehouse",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
+  }
+}

@@ -383,6 +383,27 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (�
 - [PLUGINS.md](PLUGINS.md) — границы ядра и коммерческих плагинов
 - [SECURITY.md](SECURITY.md) — матрица RBAC
 
+## Deprecation path (PF-03, Phase 5.5)
+
+Таблица `applications` и REST `/api/v1/applications/*` — **только metadata и schema isolation** (реестр app, миграции SQL, deploy history). Это не параллельный runtime.
+
+После `POST /api/v1/applications/{appId}/deploy`:
+
+- Функции адресуются через object tree: `{appId}.functions.{name}` на path узла приложения.
+- Объекты, dashboards, workflows, models из bundle — узлы дерева (`objects[]` reconcile, не только create).
+- Invoke: `POST /api/v1/bff/invoke` или `POST /api/v1/objects/by-path/functions/invoke` по tree path.
+- SQL bindings: `bindingExpression: sqlBinding('appId','var')` на переменной узла.
+
+**Legacy (deprecated, warn-only):** operator manifest `screens[]` в bundle — Phase 3.5; предпочтительно `operatorUi` + dashboards в дереве. См. [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md).
+
 ## Следующие шаги (backlog)
 
-См. [ROADMAP.md](ROADMAP.md) — **Phase 5**: усиление механизмов object tree (модели, script steps, correlators, workflow actions, bundle = упаковка дерева). Детали: [PLATFORM_DEVELOPER_BACKLOG.md §8.1](PLATFORM_DEVELOPER_BACKLOG.md#81-усиление-механизмов-phase-5).
+Phase 5 закрыт в v0.2.0. Текущая волна — [ROADMAP.md § Phase 6](ROADMAP.md#phase-6--post-v020-production-v030):
+
+- **6.1** Doc sync + PF-03 deprecation (этот раздел)
+- **6.2** Driver maturity (CWMP, flexible, gps-tracker)
+- **6.3** PF-13 federation production (tenant scope, WS subscribe-by-path)
+- **6.4** PF-09 virtual profiles bundle + PF-11 function rollback UI
+- **6.5** Model diff UI, warehouse CI smoke, correlator polish
+
+Детали: [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md).

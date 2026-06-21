@@ -261,6 +261,50 @@ public class ModelController {
         }
     }
 
+    @GetMapping("/{id}/diff")
+    public Map<String, Object> diff(
+            @PathVariable String id,
+            @RequestParam @NotBlank String objectPath
+    ) {
+        ModelDefinition model = modelRegistry.requireById(id);
+        PlatformObject object = objectManager.require(objectPath);
+        LinkedHashSet<String> modelVariables = model.variables().stream()
+                .map(ModelVariableDefinition::name)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        LinkedHashSet<String> objectVariables = new LinkedHashSet<>(object.variables().keySet());
+        LinkedHashSet<String> modelEvents = model.events().stream()
+                .map(EventDescriptor::name)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        LinkedHashSet<String> objectEvents = new LinkedHashSet<>(object.events().keySet());
+        LinkedHashSet<String> modelFunctions = model.functions().stream()
+                .map(FunctionDescriptor::name)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        LinkedHashSet<String> objectFunctions = new LinkedHashSet<>(object.functions().keySet());
+
+        List<String> variablesToAdd = modelVariables.stream()
+                .filter(name -> !objectVariables.contains(name))
+                .toList();
+        List<String> variablesOnlyOnObject = objectVariables.stream()
+                .filter(name -> !modelVariables.contains(name))
+                .toList();
+        List<String> eventsToAdd = modelEvents.stream()
+                .filter(name -> !objectEvents.contains(name))
+                .toList();
+        List<String> functionsToAdd = modelFunctions.stream()
+                .filter(name -> !objectFunctions.contains(name))
+                .toList();
+
+        return Map.of(
+                "objectPath", objectPath,
+                "modelVersion", model.modelVersion(),
+                "variablesToAdd", variablesToAdd,
+                "variablesOnlyOnObject", variablesOnlyOnObject,
+                "eventsToAdd", eventsToAdd,
+                "functionsToAdd", functionsToAdd,
+                "bindingsCount", model.bindings().size()
+        );
+    }
+
     @GetMapping("/{id}/instances")
     public List<Map<String, String>> listInstances(@PathVariable String id) {
         ModelDefinition model = modelRegistry.requireById(id);

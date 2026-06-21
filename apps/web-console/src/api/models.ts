@@ -115,3 +115,18 @@ export function upgradeModel(
     method: "POST",
   });
 }
+
+export interface ModelDiffResult {
+  objectPath: string;
+  modelVersion: string;
+  variablesToAdd: string[];
+  variablesOnlyOnObject: string[];
+  eventsToAdd: string[];
+  functionsToAdd: string[];
+  bindingsCount: number;
+}
+
+export function fetchModelDiff(modelId: string, objectPath: string): Promise<ModelDiffResult> {
+  const params = new URLSearchParams({ objectPath });
+  return request(`/api/v1/models/${encodeURIComponent(modelId)}/diff?${params}`);
+}

@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.federation.FederationAccessService;
 import com.ispf.server.federation.FederationCatalogService;
 import com.ispf.server.federation.FederationPeer;
 import com.ispf.server.federation.FederationPeerDraft;
@@ -9,6 +10,7 @@ import com.ispf.server.federation.FederationService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,61 +33,80 @@ public class FederationController {
 
     private final FederationService federationService;
     private final FederationCatalogService federationCatalogService;
+    private final FederationAccessService federationAccessService;
     private final ObjectMapper objectMapper;
 
     public FederationController(
             FederationService federationService,
             FederationCatalogService federationCatalogService,
+            FederationAccessService federationAccessService,
             ObjectMapper objectMapper
     ) {
         this.federationService = federationService;
         this.federationCatalogService = federationCatalogService;
+        this.federationAccessService = federationAccessService;
         this.objectMapper = objectMapper;
     }
 
     @GetMapping("/peers")
-    public List<FederationPeerDto> listPeers() {
+    public List<FederationPeerDto> listPeers(Authentication authentication) {
+        federationAccessService.requireAdmin(authentication);
         return federationService.listPeers().stream().map(FederationPeerDto::from).toList();
     }
 
     @PostMapping("/peers")
-    public FederationPeerDto createPeer(@Valid @RequestBody FederationPeerRequest request) {
+    public FederationPeerDto createPeer(
+            Authentication authentication,
+            @Valid @RequestBody FederationPeerRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
         return FederationPeerDto.from(federationService.createPeer(request.toDraft()));
     }
 
     @PutMapping("/peers/{id}")
-    public FederationPeerDto updatePeer(@PathVariable UUID id, @Valid @RequestBody FederationPeerRequest request) {
+    public FederationPeerDto updatePeer(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @Valid @RequestBody FederationPeerRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
         return FederationPeerDto.from(federationService.updatePeer(id, request.toDraft()));
     }
 
     @DeleteMapping("/peers/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePeer(@PathVariable UUID id) {
+    public void deletePeer(Authentication authentication, @PathVariable UUID id) {
+        federationAccessService.requireAdmin(authentication);
         federationService.deletePeer(id);
     }
 
     @PostMapping("/peers/{id}/sync-catalog")
-    public SyncCatalogResponse syncCatalog(@PathVariable UUID id) {
+    public SyncCatalogResponse syncCatalog(Authentication authentication, @PathVariable UUID id) {
+        federationAccessService.requireAdmin(authentication);
         FederationCatalogService.SyncResult result = federationCatalogService.syncCatalog(id);
         return new SyncCatalogResponse(result.localRoot(), result.created(), result.updated(), result.remoteCount());
     }
 
     @GetMapping("/proxy/objects/by-path")
     public Object proxyObject(
+            Authentication authentication,
             @RequestParam UUID peerId,
             @RequestParam String path
     ) {
+        federationAccessService.assertProxyPathVisible(authentication, peerId, path);
         JsonNode json = federationService.proxyObjectByPath(peerId, path);
         return objectMapper.convertValue(json, Object.class);
     }
 
     @PatchMapping("/proxy/objects/by-path/variables/value")
     public Object proxyVariablePatch(
+            Authentication authentication,
             @RequestParam UUID peerId,
             @RequestParam String path,
             @RequestParam String name,
             @RequestBody(required = false) Map<String, Object> body
     ) throws tools.jackson.core.JacksonException {
+        federationAccessService.assertProxyPathVisible(authentication, peerId, path);
         JsonNode json = federationService.proxyVariablePatch(
                 peerId,
                 path,
@@ -97,11 +118,13 @@ public class FederationController {
 
     @PostMapping("/proxy/objects/by-path/functions/invoke")
     public Object proxyFunctionInvoke(
+            Authentication authentication,
             @RequestParam UUID peerId,
             @RequestParam String path,
             @RequestParam String name,
             @RequestBody(required = false) Map<String, Object> body
     ) throws tools.jackson.core.JacksonException {
+        federationAccessService.assertProxyPathVisible(authentication, peerId, path);
         JsonNode json = federationService.proxyFunctionInvoke(
                 peerId,
                 path,
@@ -112,7 +135,11 @@ public class FederationController {
     }
 
     @PostMapping("/remote-token")
-    public Map<String, Object> fetchRemoteToken(@Valid @RequestBody RemoteTokenRequest request) {
+    public Map<String, Object> fetchRemoteToken(
+            Authentication authentication,
+            @Valid @RequestBody RemoteTokenRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
         return federationService.fetchRemoteLoginToken(request.baseUrl(), request.username(), request.password());
     }
 

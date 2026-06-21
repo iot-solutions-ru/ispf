@@ -41,7 +41,7 @@
 | # | Тема | Статус |
 |---|------|--------|
 | 3.1 | Driver maturity labels (production/beta/stub) | Done |
-| 3.2 | Stub-драйверы → production по demand | In progress (CWMP→BETA, flexible/gps-tracker→PRODUCTION) |
+| 3.2 | Stub-драйверы → production по demand | Done (CWMP→PRODUCTION + flexible/gps-tracker acceptance) |
 | 3.3 | React Router / deep links в admin | Done |
 | 3.4 | Frontend smoke tests (vitest/playwright) | Done (vitest) |
 | 3.5 | Legacy operator manifest deprecation | Done (console warn) |
@@ -64,6 +64,18 @@
 | 5.3 | **События + correlators** | Сложнее паттерны (окна, цепочки, агрегации); эскалация без Java | Done (`EVENT_CHAIN`, `sequenceGapSeconds`, N-in-window demo) |
 | 5.4 | **Workflow** | Больше `serviceTask` через platform primitives (`fire_event`, `read_variable`, `start_workflow`, …) | Done (BPMN properties panel + acceptance tests) |
 | 5.5 | **Bundle / application layer** | Bundle = упаковка объектов дерева; tree-first invoke; reconcile `objects[]` | Done |
+
+## Phase 6 — Post-v0.2.0 production (v0.3.0)
+
+Волна после Phase 5: **production readiness**, закрытие хвостов REQ-PF §3, federation hardening. Целевой релиз — **v0.3.0**.
+
+| # | Тема | Статус |
+|---|------|--------|
+| 6.1 | Doc sync + PF-03 deprecation | Done |
+| 6.2 | Driver maturity (CWMP, flexible, gps-tracker) | Done |
+| 6.3 | PF-13 federation production | Done |
+| 6.4 | PF-09 virtual profiles bundle + PF-11 function rollback UI | Done |
+| 6.5 | Phase 5 polish (model diff, warehouse CI, correlator cooldown) | Done |
 
 ## Platform baseline
 

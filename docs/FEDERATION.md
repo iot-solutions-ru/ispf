@@ -68,8 +68,8 @@ Web Console: кнопка **Sync** на панели Federation peers.
 
 - Write proxy — variable patch и function invoke; полная двусторонняя синхронизация дерева не поддерживается.
 - Catalog sync — только import (не merge конфликтов без оператора).
-- WS fan-out — базовый notify; subscribe-by-path в Web Console — backlog.
-- Tenant scope на federation API — частично (см. §9 backlog).
+- ~~Tenant scope на federation API~~ — **Done v0.3.0** (`FederationAccessService`, peer CRUD admin-only, proxy scoped).
+- ~~WS subscribe-by-path~~ — **Done v0.3.0** (`ObjectWebSocketHandler` + `FederationSubscribePollService` + Web Console hook).
 
 ## Пример
 

@@ -126,15 +126,15 @@ REQ-PF и bundle deploy — способ **загрузить** declarative-ко
 | --------- | ---------------------------- | ---------------- | ----------------------------------------------- | --- |
 | **PF-01** | Application Function Runtime | **Готово**       | — (§4.1 acceptance закрыт v0.2.0)               | P0  |
 | **PF-02** | Application Data Layer       | **Готово**       | —                                               | P0  |
-| **PF-03** | Application Package Deploy   | **Готово**       | Deprecation path в docs (`applications` = metadata) | P1  |
+| **PF-03** | Application Package Deploy   | **Готово**       | — (deprecation path в [APPLICATIONS.md](APPLICATIONS.md), v0.3.0) | P1  |
 | **PF-04** | BPMN `invoke_function`       | **Готово**       | —                                               | P1  |
 | **PF-05** | Platform Scheduler           | **Готово**       | —                                               | P1  |
 | **PF-06** | BFF Wire Gateway             | **Готово**       | —                                               | P1  |
 | **PF-07** | Model Registry Persistence   | **Готово**       | — (inheritance, version, bulk upgrade API)      | P2  |
 | **PF-08** | Variable ↔ SQL sync          | **Готово**       | — (`on_event`, typed values, `sqlBinding()`)    | P2  |
-| **PF-09** | Integration Simulator SPI    | **Да**           | virtual driver profiles (§4.6)                  | P2  |
+| **PF-09** | Integration Simulator SPI    | **Готово**       | — (virtual profiles bundle + acceptance v0.3.0) | P2  |
 | **PF-10** | Workflow cancel + signal     | **Готово**       | —                                               | P1  |
-| **PF-11** | Function rollback / versions | **Да**           | Deploy previous version (§4.8)                  | P2  |
+| **PF-11** | Function rollback / versions | **Готово**       | — (API + Web Console deploy tab v0.3.0)         | P2  |
 | **PF-12** | Application SQL reports      | **Да**           | PDF export (out of scope)                       | P2  |
 | **PF-14** | Device driver catalog        | **Готово**       | 58 `driverId` в `main` (§10)                    | P3+ |
 
@@ -696,6 +696,8 @@ Platform **не** содержит отраслевую бизнес-логик�
 
 | Дата       | Изменение                                                                   |
 | ---------- | --------------------------------------------------------------------------- |
+| 2026-06-21 | Phase 6 closure v0.3.0: drivers, federation production, PF-09/11, model diff, warehouse CI |
+| 2026-06-21 | Phase 6 kickoff v0.3.0: PF-03 deprecation docs, ROADMAP §6, doc sync       |
 | 2026-06-21 | Phase 5 closure v0.2.0: acceptance §8.1, doc sync, bulk model upgrade, BPMN panel |
 | 2026-06-21 | §0.1 north star: бизнес-логика в механизмах object tree; §8.1 Phase 5 priorities |
 | 2026-06-20 | REQ-PF-14: финальная волна — 58 `driverId`, каталог §10 закрыт            |

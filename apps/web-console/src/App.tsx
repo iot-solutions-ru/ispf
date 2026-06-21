@@ -23,7 +23,7 @@ import {
   resolveInitialAdminPath,
   syncAdminPathToUrl,
 } from "./utils/adminRouting";
-import { useObjectWebSocket } from "./hooks/useObjectWebSocket";
+import { useObjectWebSocket, useFederatedPathSubscription } from "./hooks/useObjectWebSocket";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
@@ -146,6 +146,7 @@ export default function App() {
   const [treeFilter, setTreeFilter] = useState("");
 
   useObjectWebSocket();
+  useFederatedPathSubscription(selectedPath);
 
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
   const objects = useQuery({

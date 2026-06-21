@@ -17,7 +17,7 @@ final class DriverMaturityRegistry {
             Map.entry("corba", DriverMaturity.STUB),
             Map.entry("vmware", DriverMaturity.STUB),
             Map.entry("smi-s", DriverMaturity.STUB),
-            Map.entry("cwmp", DriverMaturity.BETA),
+            Map.entry("cwmp", DriverMaturity.PRODUCTION),
             Map.entry("dlms", DriverMaturity.BETA),
             Map.entry("wmi", DriverMaturity.BETA),
             Map.entry("odbc", DriverMaturity.BETA),
