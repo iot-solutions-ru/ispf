@@ -57,7 +57,12 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
       }));
   }
 
-  return build("");
+  const fromEmptyParent = build("");
+  if (fromEmptyParent.length > 0) {
+    return fromEmptyParent;
+  }
+  // Lazy-loaded subsets return children of root without the root node itself.
+  return build("root");
 }
 
 export function objectIcon(type: string): string {

@@ -3,11 +3,10 @@ import { fetchObjects } from "../api";
 import type { ObjectSummary, TreeNode } from "../types";
 import { buildObjectTree, parentObjectPath } from "../utils/tree";
 import type { ObjectWsMessage } from "./useObjectWebSocket";
-import { OBJECT_WS_EVENT } from "./useObjectWebSocket";
 
 const BOOTSTRAP_PARENTS = ["root", "root.platform"];
 
-export function useLazyObjectTree() {
+export function useLazyObjectTree(enabled = true) {
   const objectsRef = useRef(new Map<string, ObjectSummary>());
   const loadedParentsRef = useRef(new Set<string>());
   const loadingParentsRef = useRef(new Set<string>());
@@ -39,6 +38,10 @@ export function useLazyObjectTree() {
         const children = await fetchObjects(parentPath, true);
         mergeObjects(children);
         loadedParentsRef.current.add(parentPath);
+      } catch (error) {
+        loadedParentsRef.current.delete(parentPath);
+        console.error(`Failed to load tree children for ${parentPath}`, error);
+        throw error;
       } finally {
         loadingParentsRef.current.delete(parentPath);
       }
@@ -54,13 +57,23 @@ export function useLazyObjectTree() {
     [loadChildren],
   );
 
+  const [treeLoadError, setTreeLoadError] = useState<string | null>(null);
+
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     void (async () => {
-      for (const parent of BOOTSTRAP_PARENTS) {
-        await loadChildren(parent);
+      try {
+        setTreeLoadError(null);
+        for (const parent of BOOTSTRAP_PARENTS) {
+          await loadChildren(parent);
+        }
+      } catch (error) {
+        setTreeLoadError(error instanceof Error ? error.message : "Не удалось загрузить дерево объектов");
       }
     })();
-  }, [loadChildren]);
+  }, [loadChildren, enabled]);
 
   useEffect(() => {
     const onStructureChange = (event: Event) => {
@@ -100,6 +113,7 @@ export function useLazyObjectTree() {
     loadChildren,
     refreshParent,
     invalidateAll,
+    treeLoadError,
     loadingParents: loadingParentsRef.current,
   };
 }

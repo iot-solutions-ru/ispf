@@ -50,4 +50,16 @@ describe("buildObjectTree", () => {
     expect(labApp).toBeDefined();
     expect(labApp!.children).toHaveLength(0);
   });
+
+  it("builds from root children when root node is omitted (lazy API load)", () => {
+    const objects = [
+      node("root.platform", "PLATFORM"),
+      node("root.tenant", "TENANT"),
+      node("root.platform.devices", "DEVICES"),
+    ];
+
+    const tree = buildObjectTree(objects);
+    expect(tree).toHaveLength(2);
+    expect(tree.map((n) => n.object.path).sort()).toEqual(["root.platform", "root.tenant"]);
+  });
 });

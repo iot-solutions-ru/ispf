@@ -152,7 +152,8 @@ export default function App() {
   useFederatedPathSubscription(selectedPath);
 
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
-  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll } = useLazyObjectTree();
+  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll, treeLoadError } =
+    useLazyObjectTree(Boolean(session));
 
   useEffect(() => {
     if (!objectList.length || !selectedPath) {
@@ -406,8 +407,9 @@ export default function App() {
               />
             </div>
             <div className="sidebar-body">
-              {objectList.length === 0 && <p className="sidebar-msg">Загрузка…</p>}
-              {tree.length > 0 && (
+              {treeLoadError && <p className="sidebar-msg error">{treeLoadError}</p>}
+              {!treeLoadError && objectList.length === 0 && <p className="sidebar-msg">Загрузка…</p>}
+              {!treeLoadError && tree.length > 0 && (
                 <ObjectTree
                   nodes={tree}
                   selectedPath={selectedPath}
