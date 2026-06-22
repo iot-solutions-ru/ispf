@@ -62,6 +62,21 @@ CLI: [tools/license-builder/README.md](../tools/license-builder/README.md).
 | `license` + `enforce=false` | WARN при ошибке, deploy продолжается |
 | `license` + `enforce=true` + invalid | HTTP 403 |
 
+## Production key rotation (ops)
+
+Ротация RSA-ключей поставщика **без** смены installation ID:
+
+| Шаг | Действие |
+|-----|----------|
+| 1 | Сгенерировать новую пару ключей (`tools/license-builder/`); сохранить старый private key до конца grace period |
+| 2 | На platform: задеплоить **новый** PEM в `ISPF_LICENSE_PUBLIC_KEY_PEM` (или multi-line config); при dual-key — временно держать оба public key в ops runbook и проверять signature против любого из них *(если один ключ — просто заменить и перевыпустить лицензии)* |
+| 3 | Перевыпустить commercial bundle / driver pack signatures для активных клиентов |
+| 4 | Grace period (рекомендуется ≥30 дней): старые подписи ещё принимаются только если public key не меняли; после замены ключа старые лицензии **невалидны** — планировать окно обслуживания |
+| 5 | `enforce=true` на staging до prod; мониторить WARN/403 в deploy logs |
+| 6 | Уничтожить старый private key после подтверждения, что все установки на новых лицензиях |
+
+Installation ID (`GET /api/v1/platform/installation-id`) при ротации **не меняется**. Licensed driver packs используют тот же `ispf.license.public-key-pem` — см. [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md).
+
 ## Связанные документы
 
 - [PLUGINS.md](PLUGINS.md)

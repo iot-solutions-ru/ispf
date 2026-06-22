@@ -7,6 +7,7 @@ import com.ispf.core.object.EventLevel;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
+import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.ObjectManager;
@@ -28,21 +29,32 @@ public class EventService {
     private final EventHistoryRepository eventHistoryRepository;
     private final ObjectEntityMapper mapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final EventCatalogPayloadValidator catalogPayloadValidator;
 
     public EventService(
             ObjectManager objectManager,
             EventHistoryRepository eventHistoryRepository,
             ObjectEntityMapper mapper,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            EventCatalogPayloadValidator catalogPayloadValidator
     ) {
         this.objectManager = objectManager;
         this.eventHistoryRepository = eventHistoryRepository;
         this.mapper = mapper;
         this.eventPublisher = eventPublisher;
+        this.catalogPayloadValidator = catalogPayloadValidator;
     }
 
     @Transactional
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
+        return fire(objectPath, eventName, payload, null);
+    }
+
+    @Transactional
+    public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload, String appId) {
+        if (appId != null && !appId.isBlank()) {
+            catalogPayloadValidator.validateAtFire(appId, eventName, payload);
+        }
         PlatformObject node = objectManager.require(objectPath);
         EventDescriptor descriptor = Optional.ofNullable(node.events().get(eventName))
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event: " + eventName));

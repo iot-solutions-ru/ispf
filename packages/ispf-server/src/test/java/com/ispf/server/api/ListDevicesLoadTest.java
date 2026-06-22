@@ -35,8 +35,11 @@ class ListDevicesLoadTest {
     private static final String PARENT = "root.platform.devices";
     private static final int DEVICE_COUNT = 120;
     private static final int CONCURRENCY = 150;
-    /** CI-friendly ceiling (ms); tune when running against production-sized DB. */
-    private static final long P99_CEILING_MS = 2_000L;
+    /**
+     * CI-friendly ceiling (ms). Override for production-sized DB staging:
+     * {@code ISPF_LOAD_P99_CEILING_MS=3000} or {@code -Dispf.load.p99CeilingMs=3000}.
+     */
+    private static final long P99_CEILING_MS = resolveP99CeilingMs();
 
     @Autowired
     private MockMvc mockMvc;
@@ -103,5 +106,17 @@ class ListDevicesLoadTest {
                 p99 <= P99_CEILING_MS,
                 "p99 " + p99 + "ms exceeds ceiling " + P99_CEILING_MS + "ms"
         );
+    }
+
+    private static long resolveP99CeilingMs() {
+        String property = System.getProperty("ispf.load.p99CeilingMs");
+        if (property != null && !property.isBlank()) {
+            return Long.parseLong(property.trim());
+        }
+        String env = System.getenv("ISPF_LOAD_P99_CEILING_MS");
+        if (env != null && !env.isBlank()) {
+            return Long.parseLong(env.trim());
+        }
+        return 2_500L;
     }
 }

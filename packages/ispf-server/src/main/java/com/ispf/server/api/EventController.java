@@ -38,10 +38,11 @@ public class EventController {
     public ObjectEvent fire(
             @RequestParam String objectPath,
             @RequestParam String eventName,
+            @RequestParam(required = false) String appId,
             @RequestBody(required = false) DataRecordPayloadRequest payload,
             Authentication authentication
     ) {
         objectAccessService.requireInvoke(objectPath, authentication);
-        return eventService.fire(objectPath, eventName, payload);
+        return eventService.fire(objectPath, eventName, payload, appId);
     }
 }

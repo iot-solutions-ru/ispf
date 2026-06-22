@@ -36,6 +36,15 @@
 
 ## Bundle manifest (semver)
 
+Поле `version` в manifest — **semver** (`MAJOR.MINOR.PATCH`). Сравнение при `requires[].minVersion` и `license.minPlatformVersion` — numeric semver (platform `GET /api/v1/info`).
+
+| Изменение | Уровень | Пример |
+|-----------|---------|--------|
+| Удаление/переименование function, event, object | **MAJOR** | удалён `mes_listOrders` |
+| Изменение input/output schema существующей function | **MAJOR** | новое обязательное поле input |
+| Добавление optional events, objects, dashboards | **MINOR** | новый `events[]` id |
+| Исправление описаний, seed data, non-breaking script | **PATCH** | текст operatorUi |
+
 | Поле | Стабильность |
 |------|--------------|
 | `version` | Semver bundle; история deploy |

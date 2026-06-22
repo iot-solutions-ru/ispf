@@ -422,18 +422,6 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          {(primaryRole === "admin" || primaryRole === "operator") && (
-            <button type="button" className="btn" onClick={() => selectOperatorApp("demo")} title="Открыть operator UI (demo)">
-              Оператор · demo
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void invalidateAll()}
-          >
-            Обновить
-          </button>
           <button type="button" className="btn" onClick={() => void handleLogout()}>
             Выйти
           </button>

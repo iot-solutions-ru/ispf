@@ -78,6 +78,51 @@ Federation proxy — sync read через HTTP; не замена event bus.
 - Deploy загружает каталог в `application_event_catalog`
 - `GET /api/v1/applications/{appId}/events` — список для solution developers
 - WS `subscribe_events` проверяет роли (admin bypass)
+- `POST /api/v1/events/fire?appId={appId}` — optional **fire-time** проверка `payloadSchema` из каталога (FW-31); object-level `EventDescriptor.payloadSchema` применяется всегда
+
+## External NATS consumers
+
+Для интеграции внешних систем с event bus platform (при `ispf.nats.enabled=true`):
+
+### Подключение
+
+```text
+NATS_URL=nats://ispf-nats:4222   # тот же кластер, что ispf.nats.url
+```
+
+Подписка — **core NATS** (не JetStream по умолчанию). Аутентификация NATS — на уровне сети/VPN; platform не добавляет JWT на subject.
+
+### Рекомендуемые subject patterns
+
+| Pattern | Когда подписываться |
+|---------|---------------------|
+| `ispf.object.>` | Все object change (VARIABLE_UPDATED, …) |
+| `ispf.object.root.platform.devices.*.VARIABLE_UPDATED` | Узкий фильтр по устройствам |
+| `ispf.workflow.>` | BPMN lifecycle side-effects |
+| Custom из `publish_nats` task | Subject из workflow definition |
+
+### Payload (object change)
+
+```json
+{
+  "path": "root.platform.devices.demo-sensor-01",
+  "type": "VARIABLE_UPDATED",
+  "variableName": "temperature",
+  "timestamp": "2026-06-22T12:00:00Z",
+  "source": "platform"
+}
+```
+
+Поля стабильны для `NatsEventBridge`; не полагаться на недокументированные ключи.
+
+### Практика consumer
+
+1. Один durable consumer process на интеграцию; idempotent обработка по `(path, variableName, timestamp)`.
+2. Не блокировать platform — тяжёлая обработка в своей очереди/worker.
+3. Read-after-write для консистентности — `GET /api/v1/objects/by-path` (sync), не ожидать полного снимка из NATS.
+4. Federation events не дублируются на hub NATS автоматически — только локальные изменения инстанса.
+
+Пример (nats-cli): `nats sub 'ispf.object.>'`
 
 ## Bundle dependencies (FW-12)
 

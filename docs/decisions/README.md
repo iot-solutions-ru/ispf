@@ -20,6 +20,9 @@
 | [0011](0011-ai-artifact-generation-gates.md) | AI artifact generation + validation gates | Accepted |
 | [0012](0012-tree-first-ai-agent.md) | Tree-first AI agent (FW-44) | Accepted |
 | [0013](0013-mcp-agent-tool-adapter.md) | MCP adapter over platform agent tools | Accepted |
+| [0014](0014-bundle-tree-packaging.md) | Bundle = tree packaging | Accepted |
+| [0015](0015-federation-topology.md) | Federation hub–spoke topology | Accepted |
+| [0016](0016-timescaledb-retention.md) | TimescaleDB variable history retention | Accepted |
 
 ## Шаблон нового ADR
 

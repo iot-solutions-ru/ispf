@@ -25,11 +25,14 @@
 | driverId | Было | Стало | Примечание |
 |----------|------|-------|------------|
 | `dnp3` | STUB | **BETA** | TCP session + point index mapping; full Class 0/1/2/3 poll needs native stack |
-| `cwmp` | STUB | **BETA** | Inform + ответ на ACS `GetParameterValues`, configurable `informParameters` |
+| `cwmp` | STUB | **PRODUCTION** | Inform + ACS `GetParameterValues`; TR-069 acceptance tests |
 | `flexible` | BETA | **PRODUCTION** | TCP/UDP request/response |
 | `gps-tracker` | BETA | **PRODUCTION** | GPS/M2M TCP server |
 | `corba` | STUB | **BETA** | IIOP TCP reachability + point parser tests |
 | `ethernet-ip` | STUB | **BETA** | CIP session registration + tag path mapping |
 | `opc-da` | STUB | **BETA** | DCOM/TCP connectivity shell + parser tests |
+| `opc-bridge` | STUB | **BETA** | Bridge point mapping + parser tests; full OPC stack via external bridge |
+| `vmware` | STUB | **BETA** | vSphere API point parser + connectivity shell |
+| `smi-s` | STUB | **BETA** | SMI-S CIM point parser + connectivity shell |
 
-Stub-драйверы (`opc-bridge`, `vmware`, `smi-s`, …) требуют native/bridge — promotion только по конкретному запросу.
+Остальные stub-драйверы требуют native stack или commercial pack — promotion только по конкретному запросу ([LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md)).

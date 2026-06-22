@@ -25,6 +25,7 @@
 | 4 | Виртуальный счётчик | `virtual` driver profile `meter` + `filling=true` | `meterLiters`, `flowRate` | См. [MesPlatformApiTest](../packages/ispf-server/src/test/java/com/ispf/server/mes/MesPlatformApiTest.java) |
 | 5 | Завершение | BFF `mes_completeFilling` | status → `completed` | Operator confirm |
 | 6 | Перегрев эстакады | alert `mesRackOverTemp` при `temperature > 85` | correlator → `alarmActive=true` | Alarm panel |
+| 7 | *(опционально)* BPMN workflow | `workflows[]` в bundle → deploy | side-effect через `publish_nats` или `fire_event` | Admin / automation |
 
 ## Привязка к REQ-PF
 
