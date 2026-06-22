@@ -15,6 +15,7 @@ import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -109,6 +110,58 @@ public class DashboardService {
                 DataRecord.single(TITLE_SCHEMA, Map.of("value", title))
         );
         return getDashboard(path);
+    }
+
+    public String resolveTemplateLayout(String template) {
+        if (template == null || template.isBlank()) {
+            throw new IllegalArgumentException("template is required");
+        }
+        return switch (template.trim().toLowerCase()) {
+            case "snmp-host-monitoring", "snmp" -> DashboardLayouts.SNMP_HOST_MONITORING_DASHBOARD.trim();
+            case "demo-sensor", "demo" -> DashboardLayouts.DEMO_SENSOR_DASHBOARD.trim();
+            case "empty" -> DashboardLayouts.EMPTY_DASHBOARD.trim();
+            default -> throw new IllegalArgumentException(
+                    "Unknown template: " + template + ". Use snmp-host-monitoring, demo-sensor, or empty."
+            );
+        };
+    }
+
+    @Transactional
+    public DashboardView applyTemplateLayout(String path, String template) {
+        return saveLayout(path, resolveTemplateLayout(template));
+    }
+
+    @Transactional
+    @SuppressWarnings("unchecked")
+    public DashboardView addWidget(String path, Map<String, Object> widget) {
+        if (widget == null || widget.isEmpty()) {
+            throw new IllegalArgumentException("widget object is required");
+        }
+        DashboardView current = getDashboard(path);
+        try {
+            var root = objectMapper.readTree(current.layoutJson());
+            if (!root.isObject() || !root.has("widgets") || !root.get("widgets").isArray()) {
+                throw new IllegalArgumentException("Dashboard layout must contain a widgets array");
+            }
+            var widgets = (tools.jackson.databind.node.ArrayNode) root.get("widgets");
+            String widgetId = widget.containsKey("id") ? String.valueOf(widget.get("id")) : null;
+            if (widgetId != null && !widgetId.isBlank()) {
+                for (int i = widgets.size() - 1; i >= 0; i--) {
+                    var existing = widgets.get(i);
+                    if (existing.isObject() && widgetId.equals(existing.path("id").asString(null))) {
+                        widgets.remove(i);
+                    }
+                }
+            }
+            widgets.add(objectMapper.valueToTree(widget));
+            return saveLayout(path, objectMapper.writeValueAsString(root));
+        } catch (JacksonException e) {
+            throw new IllegalArgumentException("Invalid layout JSON", e);
+        }
+    }
+
+    public static List<String> layoutTemplateNames() {
+        return List.of("snmp-host-monitoring", "demo-sensor", "empty");
     }
 
     private void validateLayoutJson(String layoutJson) {

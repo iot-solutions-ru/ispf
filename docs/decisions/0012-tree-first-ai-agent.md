@@ -13,7 +13,7 @@ FW-40…43 provide one-shot bundle generation with validation gates. Solution de
 1. **Tree-first agent runs on the platform** (`TreeFirstAgentService`) with a bounded ReAct loop (default 12 steps).
 2. **Platform tools** are first-class Java handlers (not only REST wrappers for humans):
    - `search_context` — ContextPack + doc slices
-   - `list_objects`, `get_object`, `create_object` — object tree API semantics
+   - `list_objects`, `get_object`, `create_object`, `delete_object` — object tree API semantics
    - `validate_bundle`, `dry_run_deploy`, `import_package` — ADR-0011 gates before deploy
 3. **LLM protocol**: assistant replies with a single JSON object `{"type":"tool",...}` or `{"type":"finish",...}`; tool results are appended to the conversation.
 4. **Audit**: each run and tool invocation recorded in `ai_tool_audit`.

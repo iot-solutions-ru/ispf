@@ -28,6 +28,10 @@ public final class AgentStepHumanizer {
             case "list_objects" -> "Смотрю содержимое «" + orDefault(arg(arguments, "parent"), "root") + "»";
             case "get_object" -> "Открываю объект «" + arg(arguments, "path") + "»";
             case "create_object" -> "Создаю " + arg(arguments, "type") + " «" + arg(arguments, "name") + "»";
+            case "delete_object" -> "Удаляю объект «" + arg(arguments, "path") + "»";
+            case "get_dashboard_layout" -> "Читаю layout дашборда «" + orDefault(arg(arguments, "path"), arg(arguments, "template")) + "»";
+            case "set_dashboard_layout" -> "Обновляю layout «" + arg(arguments, "path") + "»";
+            case "add_dashboard_widget" -> "Добавляю виджет на «" + arg(arguments, "path") + "»";
             case "list_variables" -> "Читаю переменные «" + arg(arguments, "path") + "»";
             case "set_variable" -> "Обновляю «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
             case "configure_driver" -> "Настраиваю драйвер на «" + arg(arguments, "devicePath") + "»";

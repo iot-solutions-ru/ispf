@@ -113,6 +113,10 @@ Platform tools (Java handlers, ACL-aware):
 | `list_objects` | List tree children |
 | `get_object` | Read one node |
 | `create_object` | Create DEVICE, DASHBOARD, CUSTOM, … |
+| `delete_object` | Delete tree node by path (stops device driver if running) |
+| `get_dashboard_layout` | Read layout JSON from dashboard path or built-in template |
+| `set_dashboard_layout` | Replace layout from JSON or template (`snmp-host-monitoring`, …) |
+| `add_dashboard_widget` | Append one widget to `layout.widgets[]` |
 | `list_variables` | Read object variables + values |
 | `set_variable` | Update variable (config, dashboard layout, …) |
 | `configure_driver` | SNMP/driver config + mappings + optional start |
@@ -123,12 +127,27 @@ Platform tools (Java handlers, ACL-aware):
 
 LLM replies with one JSON object per turn: `{"type":"tool","name":"...","arguments":{...}}` or `{"type":"finish","summary":"...","result":{...}}`.
 
+### Agent reliability (failure modes)
+
+| Failure | Mitigation |
+|---------|------------|
+| Model returns prose / markdown | `AgentLlmActionResolver` retries with JSON-only nudge (`ispf.ai.agent-parse-retries`, default **3**) |
+| `type:function` / missing `type` / nested `function` | `AgentJsonProtocol` normalizes common LLM variants |
+| Widget JSON picked instead of action | Parser scores only `tool`/`finish` (and aliases); ignores `type:DASHBOARD` in arguments |
+| Playbook `%s` crash (`Format specifier`) | Playbooks use concatenation only; `AgentPromptStartupValidator` fails boot if `%s` remains |
+| `search_context` loop | `AgentLoopGuard` injects stop hints after 3 repeats; dashboard tools documented in prompt |
+| Step budget exhausted | Near-limit hint to emit `finish`; turn ends with `ERROR` summary (not HTTP 400) |
+| Unparseable response after retries | Turn returns `status: ERROR` + human summary (session kept); audit `agent_parse_error` |
+
+Session history replays compact assistant summaries (800 chars max per turn).
+
 Configure max steps:
 
 ```yaml
 ispf:
   ai:
     agent-max-steps: 18
+    agent-parse-retries: 3
     agent-session-ttl-hours: 24
     agent-max-history-turns: 50
 ```

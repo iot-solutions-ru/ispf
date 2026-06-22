@@ -88,6 +88,9 @@ class AiToolApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tools[?(@.name == 'list_objects')]").exists())
                 .andExpect(jsonPath("$.tools[?(@.name == 'create_object')]").exists())
+                .andExpect(jsonPath("$.tools[?(@.name == 'delete_object')]").exists())
+                .andExpect(jsonPath("$.tools[?(@.name == 'get_dashboard_layout')]").exists())
+                .andExpect(jsonPath("$.tools[?(@.name == 'set_dashboard_layout')]").exists())
                 .andExpect(jsonPath("$.tools[?(@.name == 'list_variables')]").exists())
                 .andExpect(jsonPath("$.tools[?(@.name == 'configure_driver')]").exists());
     }

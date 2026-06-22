@@ -31,4 +31,17 @@ class AgentStepHumanizerTest {
         );
         assertTrue(label.contains("SNMP localhost"));
     }
+
+    @Test
+    void labelsDeleteObject() {
+        String label = AgentStepHumanizer.label(
+                "tool",
+                "delete_object",
+                Map.of("path", "root.platform.devices.snmp-localhost"),
+                null,
+                null
+        );
+        assertTrue(label.contains("snmp-localhost"));
+        assertTrue(label.contains("Удаляю"));
+    }
 }

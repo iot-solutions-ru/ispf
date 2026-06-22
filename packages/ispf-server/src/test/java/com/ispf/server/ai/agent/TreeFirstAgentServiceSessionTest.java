@@ -114,4 +114,43 @@ class TreeFirstAgentServiceSessionTest {
         assertTrue(messages.stream().anyMatch(m -> "user".equals(m.role()) && "second task".equals(m.content())));
         assertEquals(2, session.turns().size());
     }
+
+    @Test
+    void retriesLlmWhenFirstResponseIsNotValidJson() throws Exception {
+        when(llmProviderRegistry.complete(any()))
+                .thenReturn(new LlmResponse(
+                        "Sure, I will list devices for you.",
+                        "test-model",
+                        new LlmUsage(1, 1, 2)
+                ))
+                .thenReturn(new LlmResponse(
+                        "{\"type\":\"finish\",\"summary\":\"devices listed\",\"result\":{}}",
+                        "test-model",
+                        new LlmUsage(1, 1, 2)
+                ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "list devices", auth, "admin");
+
+        assertEquals("OK", result.get("status"));
+        verify(llmProviderRegistry, org.mockito.Mockito.times(2)).complete(any());
+    }
+
+    @Test
+    void returnsStructuredErrorWhenParseNeverSucceeds() throws Exception {
+        aiProperties.setAgentParseRetries(2);
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "I will help you with that task in plain language.",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(session, "do something", auth, "admin");
+
+        assertEquals("ERROR", result.get("status"));
+        assertTrue(String.valueOf(result.get("summary")).contains("разобрать ответ модели"));
+    }
 }

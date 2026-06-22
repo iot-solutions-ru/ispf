@@ -81,6 +81,13 @@ public class ModelBootstrap {
                     + "\"ifNumber\":\"1.3.6.1.2.1.2.1.0:INTEGER\","
                     + "\"ifInOctets\":\"1.3.6.1.2.1.2.2.1.10.2:INTEGER\","
                     + "\"ifOutOctets\":\"1.3.6.1.2.1.2.2.1.16.2:INTEGER\","
+                    + "\"ifDescr\":\"1.3.6.1.2.1.2.2.1.2.2:STRING\","
+                    + "\"ifSpeed\":\"1.3.6.1.2.1.2.2.1.5.2:INTEGER\","
+                    + "\"ifOperStatus\":\"1.3.6.1.2.1.2.2.1.8.2:INTEGER\","
+                    + "\"ifInErrors\":\"1.3.6.1.2.1.2.2.1.14.2:INTEGER\","
+                    + "\"ifOutErrors\":\"1.3.6.1.2.1.2.2.1.20.2:INTEGER\","
+                    + "\"ifInUcastPkts\":\"1.3.6.1.2.1.2.2.1.11.2:INTEGER\","
+                    + "\"ifOutUcastPkts\":\"1.3.6.1.2.1.2.2.1.17.2:INTEGER\","
                     + "\"hrProcessorLoad\":\"1.3.6.1.2.1.25.3.3.1.2.196608:INTEGER:optional\"}";
 
     private static final DataSchema SNMP_NUMERIC_SCHEMA = DataSchema.builder("snmpNumeric")

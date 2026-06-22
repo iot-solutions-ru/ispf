@@ -70,4 +70,75 @@ class AgentJsonProtocolTest {
         assertEquals("create_object", action.toolName());
         assertEquals("DASHBOARD", action.arguments().get("type"));
     }
+
+    @Test
+    void parsesJsonEmbeddedInProseAfterThinking() throws Exception {
+        String content = """
+                I will list devices now.
+                </think>
+
+                Here are the devices... Actually:
+                {"type":"tool","name":"list_objects","arguments":{"parent":"root.platform.devices","lite":true}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_objects", action.toolName());
+    }
+
+    @Test
+    void parsesFunctionStyleToolCall() throws Exception {
+        String content = """
+                {"type":"function","name":"add_dashboard_widget","parameters":{"path":"root.platform.dashboards.snmp-host-monitoring","widget":{"id":"if-speed"}}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("add_dashboard_widget", action.toolName());
+        assertEquals("root.platform.dashboards.snmp-host-monitoring", action.arguments().get("path"));
+    }
+
+    @Test
+    void parsesToolWithoutTypeField() throws Exception {
+        String content = """
+                {"name":"list_variables","arguments":{"path":"root.platform.devices.snmp-localhost"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_variables", action.toolName());
+    }
+
+    @Test
+    void parsesNestedFunctionObject() throws Exception {
+        String content = """
+                {"type":"tool","function":{"name":"set_variable","arguments":{"path":"x","name":"layout","value":"{}"}}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("set_variable", action.toolName());
+    }
+
+    @Test
+    void parsesActionFromJsonArray() throws Exception {
+        String content = """
+                [{"type":"tool","name":"get_dashboard_layout","arguments":{"path":"root.platform.dashboards.snmp-host-monitoring"}}]
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("get_dashboard_layout", action.toolName());
+    }
+
+    @Test
+    void parsesActionEmbeddedInMessageWrapper() throws Exception {
+        String content = """
+                {"type":"message","content":"{\\"type\\":\\"tool\\",\\"name\\":\\"list_variables\\",\\"arguments\\":{\\"path\\":\\"root\\"}}"}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("list_variables", action.toolName());
+    }
+
+    @Test
+    void parsesPlainCodeFence() throws Exception {
+        String content = """
+                ```
+                {"type":"finish","summary":"done","result":{}}
+                ```
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+    }
 }

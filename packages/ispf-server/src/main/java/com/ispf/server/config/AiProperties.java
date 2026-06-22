@@ -21,6 +21,7 @@ public class AiProperties {
     private int agentSessionTtlHours = 24;
     private int agentMaxHistoryTurns = 50;
     private boolean agentDisableThinking = true;
+    private int agentParseRetries = 3;
 
     public boolean isEnabled() {
         return enabled;
@@ -132,6 +133,14 @@ public class AiProperties {
 
     public void setAgentDisableThinking(boolean agentDisableThinking) {
         this.agentDisableThinking = agentDisableThinking;
+    }
+
+    public int getAgentParseRetries() {
+        return agentParseRetries;
+    }
+
+    public void setAgentParseRetries(int agentParseRetries) {
+        this.agentParseRetries = agentParseRetries;
     }
 
     public Duration timeout() {

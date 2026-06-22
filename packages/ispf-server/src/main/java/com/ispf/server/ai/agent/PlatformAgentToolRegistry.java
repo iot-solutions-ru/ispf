@@ -21,6 +21,8 @@ import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.report.ReportService;
+import com.ispf.server.security.PlatformRoleService;
+import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkflowService;
@@ -54,6 +56,8 @@ public class PlatformAgentToolRegistry {
             DeviceProvisioningService deviceProvisioningService,
             FederationBindService federationBindService,
             DriverRuntimeService driverRuntimeService,
+            PlatformUserService platformUserService,
+            PlatformRoleService platformRoleService,
             AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService,
             ObjectMapper objectMapper
@@ -79,6 +83,18 @@ public class PlatformAgentToolRegistry {
                         federationBindService,
                         objectUiIconService
                 ),
+                deleteObjectTool(
+                        objectManager,
+                        objectAccessService,
+                        tenantScopeService,
+                        driverRuntimeService,
+                        platformUserService,
+                        platformRoleService,
+                        automationTreeService
+                ),
+                getDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService),
+                setDashboardLayoutTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
+                addDashboardWidgetTool(dashboardService, objectAccessService, tenantScopeService, objectMapper),
                 validateBundleTool(objectMapper, aiToolRegistry),
                 dryRunDeployTool(objectMapper, aiToolRegistry),
                 importPackageTool(objectMapper, bundleDeployService)
@@ -158,17 +174,36 @@ public class PlatformAgentToolRegistry {
                     }
                 }
 
-                return Map.of(
-                        "status", "OK",
-                        "query", query,
-                        "contextPackVersion", pack.getOrDefault("contextPackVersion", "unknown"),
-                        "hits", hits.stream().limit(8).toList(),
-                        "scriptSteps", pack.get("scriptSteps"),
-                        "widgetTypes", pack.get("widgetTypes"),
-                        "bundleManifestFields", ((Map<?, ?>) pack.getOrDefault("bundleManifest", Map.of())).get("fields")
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("status", "OK");
+                result.put("query", query);
+                result.put("contextPackVersion", pack.getOrDefault("contextPackVersion", "unknown"));
+                result.put("hits", hits.stream().limit(8).toList());
+                result.put("scriptSteps", pack.get("scriptSteps"));
+                result.put("widgetTypes", pack.get("widgetTypes"));
+                result.put(
+                        "bundleManifestFields",
+                        ((Map<?, ?>) pack.getOrDefault("bundleManifest", Map.of())).get("fields")
                 );
+                if (isDashboardQuery(q)) {
+                    result.put("dashboardHint", """
+                            Dashboard widgets live ONLY in variable layout (JSON string with widgets[]).
+                            Do NOT set_variable name=widgets. Use get_dashboard_layout, set_dashboard_layout,
+                            or add_dashboard_widget. Templates: snmp-host-monitoring, demo-sensor, empty.
+                            """);
+                    result.put("dashboardTemplates", DashboardService.layoutTemplateNames());
+                }
+                return result;
             }
         };
+    }
+
+    private static boolean isDashboardQuery(String query) {
+        return query.contains("dashboard")
+                || query.contains("layout")
+                || query.contains("widget")
+                || query.contains("дашборд")
+                || query.contains("виджет");
     }
 
     private static void appendDocHits(
@@ -357,6 +392,245 @@ public class PlatformAgentToolRegistry {
                 return Map.of("status", "OK", "path", node.path(), "object", created);
             }
         };
+    }
+
+    private static PlatformAgentTool deleteObjectTool(
+            ObjectManager objectManager,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            DriverRuntimeService driverRuntimeService,
+            PlatformUserService platformUserService,
+            PlatformRoleService platformRoleService,
+            AutomationTreeService automationTreeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "delete_object";
+            }
+
+            @Override
+            public String description() {
+                return "Delete object tree node by path (and descendants). Args: path (required). "
+                        + "Stops device driver if running. Cannot delete root.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                if ("root".equals(path)) {
+                    return Map.of("status", "ERROR", "error", "Cannot delete root object");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    if (objectManager.tree().findByPath(path).isEmpty()) {
+                        return Map.of("status", "ERROR", "error", "Object not found: " + path);
+                    }
+                    if (platformUserService.isSecurityUserPath(path)) {
+                        platformUserService.deleteUser(platformUserService.usernameFromPath(path));
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    if (platformRoleService.isSecurityRolePath(path)) {
+                        platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    if (objectManager.tree().findByPath(path)
+                            .filter(node -> node.type() == ObjectType.CORRELATOR)
+                            .isPresent()) {
+                        automationTreeService.deleteCorrelator(path);
+                        return Map.of("status", "OK", "path", path, "deleted", true);
+                    }
+                    objectManager.tree().findByPath(path)
+                            .filter(node -> node.type() == ObjectType.DEVICE)
+                            .ifPresent(node -> driverRuntimeService.stopIfRunning(path));
+                    objectManager.delete(path);
+                    return Map.of("status", "OK", "path", path, "deleted", true);
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool getDashboardLayoutTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "get_dashboard_layout";
+            }
+
+            @Override
+            public String description() {
+                return "Read dashboard layout JSON. Args: path (dashboard object path) OR template "
+                        + "(snmp-host-monitoring | demo-sensor | empty). Returns full layoutJson for set_dashboard_layout.";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                String template = optionalString(arguments, "template");
+                try {
+                    String layoutJson;
+                    String source;
+                    if (template != null) {
+                        layoutJson = dashboardService.resolveTemplateLayout(template);
+                        source = "template:" + template;
+                    } else if (!path.isBlank()) {
+                        var auth = context.authentication();
+                        if (!tenantScopeService.isPathVisible(path, auth)) {
+                            return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                        }
+                        objectAccessService.requireRead(path, auth);
+                        DashboardService.DashboardView view = dashboardService.getDashboard(path);
+                        layoutJson = view.layoutJson();
+                        source = "path:" + path;
+                    } else {
+                        return Map.of("status", "ERROR", "error", "path or template is required");
+                    }
+                    return Map.of(
+                            "status", "OK",
+                            "source", source,
+                            "layoutJson", layoutJson,
+                            "templates", DashboardService.layoutTemplateNames(),
+                            "hint", "Widgets are inside layout JSON only. Use set_dashboard_layout or add_dashboard_widget."
+                    );
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool setDashboardLayoutTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "set_dashboard_layout";
+            }
+
+            @Override
+            public String description() {
+                return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
+                        + "OR template (snmp-host-monitoring | demo-sensor | empty).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    String template = optionalString(arguments, "template");
+                    DashboardService.DashboardView view;
+                    if (template != null) {
+                        view = dashboardService.applyTemplateLayout(path, template);
+                    } else {
+                        String layoutJson = optionalString(arguments, "layoutJson");
+                        if (layoutJson == null) {
+                            layoutJson = optionalString(arguments, "layout");
+                        }
+                        if (layoutJson == null || layoutJson.isBlank()) {
+                            return Map.of(
+                                    "status", "ERROR",
+                                    "error",
+                                    "layoutJson or template is required"
+                            );
+                        }
+                        view = dashboardService.saveLayout(path, layoutJson);
+                    }
+                    return Map.of(
+                            "status", "OK",
+                            "path", view.path(),
+                            "title", view.title(),
+                            "widgetCount", widgetCount(objectMapper, view.layoutJson())
+                    );
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static PlatformAgentTool addDashboardWidgetTool(
+            DashboardService dashboardService,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            ObjectMapper objectMapper
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "add_dashboard_widget";
+            }
+
+            @Override
+            public String description() {
+                return "Append or replace one widget in dashboard layout.widgets[]. Args: path (required), "
+                        + "widget (object with id, type, title, x, y, w, h, variableName, selectionKey or objectPath).";
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                Object widgetRaw = arguments.get("widget");
+                if (path.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path is required");
+                }
+                if (!(widgetRaw instanceof Map<?, ?> widgetMap) || widgetMap.isEmpty()) {
+                    return Map.of("status", "ERROR", "error", "widget object is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    DashboardService.DashboardView view = dashboardService.addWidget(
+                            path,
+                            (Map<String, Object>) widgetMap
+                    );
+                    return Map.of(
+                            "status", "OK",
+                            "path", view.path(),
+                            "widgetCount", widgetCount(objectMapper, view.layoutJson())
+                    );
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
+    private static int widgetCount(ObjectMapper objectMapper, String layoutJson) {
+        try {
+            tools.jackson.databind.JsonNode root = objectMapper.readTree(layoutJson);
+            return root.path("widgets").isArray() ? root.path("widgets").size() : 0;
+        } catch (Exception ex) {
+            return -1;
+        }
     }
 
     private static PlatformAgentTool listVariablesTool(
