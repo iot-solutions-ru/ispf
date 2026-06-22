@@ -19,6 +19,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,23 +50,26 @@ public class DriverRuntimeService {
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
     private final Environment environment;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread thread = new Thread(r, "ispf-driver-runtime");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final ScheduledExecutorService scheduler;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
     public DriverRuntimeService(
             ObjectManager objectManager,
             DriverFactory driverFactory,
             ObjectMapper objectMapper,
-            Environment environment
+            Environment environment,
+            @Value("${ispf.driver.scheduler-threads:4}") int schedulerThreads
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
         this.environment = environment;
+        int threads = Math.max(1, schedulerThreads);
+        this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
+            Thread thread = new Thread(r, "ispf-driver-runtime");
+            thread.setDaemon(true);
+            return thread;
+        });
     }
 
     @EventListener(ApplicationReadyEvent.class)

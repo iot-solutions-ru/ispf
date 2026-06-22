@@ -14,6 +14,8 @@ public class ObjectTree {
 
     private final Map<String, PlatformObject> nodesByPath = new ConcurrentHashMap<>();
     private final Map<String, PlatformObject> nodesById = new ConcurrentHashMap<>();
+    /** Direct children by parent path — avoids O(n) scan on every childrenOf(). */
+    private final Map<String, java.util.Set<String>> childPathsByParent = new ConcurrentHashMap<>();
 
     public ObjectTree() {
         PlatformObject root = new PlatformObject(
@@ -32,6 +34,9 @@ public class ObjectTree {
             throw new IllegalArgumentException("Object already exists: " + node.path());
         }
         nodesById.put(node.id(), node);
+        parentPathOf(node.path()).ifPresent(parent ->
+                childPathsByParent.computeIfAbsent(parent, ignored -> ConcurrentHashMap.newKeySet()).add(node.path())
+        );
         return node;
     }
 
@@ -44,14 +49,15 @@ public class ObjectTree {
     }
 
     public List<PlatformObject> childrenOf(String parentPath) {
-        String prefix = parentPath.endsWith(".") ? parentPath : parentPath + ".";
-        List<PlatformObject> children = new ArrayList<>();
-        for (PlatformObject node : nodesByPath.values()) {
-            if (node.path().startsWith(prefix)) {
-                String remainder = node.path().substring(prefix.length());
-                if (!remainder.contains(".")) {
-                    children.add(node);
-                }
+        java.util.Set<String> childPaths = childPathsByParent.get(parentPath);
+        if (childPaths == null || childPaths.isEmpty()) {
+            return List.of();
+        }
+        List<PlatformObject> children = new ArrayList<>(childPaths.size());
+        for (String path : childPaths) {
+            PlatformObject node = nodesByPath.get(path);
+            if (node != null) {
+                children.add(node);
             }
         }
         children.sort(Comparator.comparingInt(PlatformObject::sortOrder)
@@ -86,7 +92,28 @@ public class ObjectTree {
             PlatformObject removed = nodesByPath.remove(p);
             if (removed != null) {
                 nodesById.remove(removed.id());
+                parentPathOf(p).ifPresent(parent -> {
+                    java.util.Set<String> siblings = childPathsByParent.get(parent);
+                    if (siblings != null) {
+                        siblings.remove(p);
+                        if (siblings.isEmpty()) {
+                            childPathsByParent.remove(parent);
+                        }
+                    }
+                });
+                childPathsByParent.remove(p);
             }
         }
+    }
+
+    private static Optional<String> parentPathOf(String path) {
+        if ("root".equals(path)) {
+            return Optional.empty();
+        }
+        int dot = path.lastIndexOf('.');
+        if (dot <= 0) {
+            return Optional.empty();
+        }
+        return Optional.of(path.substring(0, dot));
     }
 }

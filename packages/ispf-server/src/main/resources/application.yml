@@ -7,6 +7,10 @@ spring:
     username: ${ISPF_DB_USER:ispf}
     password: ${ISPF_DB_PASSWORD:ispf}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${ISPF_DB_POOL_SIZE:20}
+      minimum-idle: ${ISPF_DB_POOL_MIN_IDLE:5}
+      connection-timeout: 10000
 
   jpa:
     hibernate:
@@ -29,6 +33,10 @@ spring:
 
 server:
   port: ${ISPF_SERVER_PORT:8080}
+  tomcat:
+    threads:
+      max: ${ISPF_TOMCAT_THREADS_MAX:200}
+      min-spare: ${ISPF_TOMCAT_THREADS_MIN:10}
 
 management:
   endpoints:
@@ -65,6 +73,8 @@ ispf:
     enabled: true
     min-interval-ms: 5000
     retention-days: 90
+  driver:
+    scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:4}
 
 logging:
   level:
