@@ -1,0 +1,500 @@
+{
+  "snapshot_before": {
+    "version": "0.7.3",
+    "runtime": {
+      "uptimeMs": 117820,
+      "uptimeHuman": "1m 57s",
+      "heapUsedBytes": 149398048,
+      "heapMaxBytes": 2059403264,
+      "heapUsedMb": 142.5,
+      "heapMaxMb": 1964.0,
+      "nonHeapUsedMb": 187.5,
+      "processors": 4,
+      "threadCount": 32,
+      "peakThreadCount": 34
+    },
+    "database": {
+      "poolName": "HikariPool-1",
+      "activeConnections": 0,
+      "idleConnections": 10,
+      "totalConnections": 10,
+      "threadsAwaitingConnection": 0,
+      "maxPoolSize": 10
+    },
+    "drivers": {
+      "deviceObjects": 5,
+      "activeDrivers": 2,
+      "connectedDrivers": 2,
+      "driversWithError": 0,
+      "stoppedDrivers": 3
+    },
+    "variableHistory": {
+      "enabled": true,
+      "minIntervalMs": 5000,
+      "defaultRetentionDays": 90,
+      "historizedVariables": 22,
+      "sampleCount": 1205,
+      "oldestSampleAt": "2026-06-21T23:52:44.363012Z",
+      "newestSampleAt": "2026-06-22T00:23:37.161051Z"
+    },
+    "health": "UP"
+  },
+  "snapshot_after": {
+    "version": "0.7.3",
+    "runtime": {
+      "uptimeMs": 542471,
+      "uptimeHuman": "9m 2s",
+      "heapUsedBytes": 210220424,
+      "heapMaxBytes": 2059403264,
+      "heapUsedMb": 200.5,
+      "heapMaxMb": 1964.0,
+      "nonHeapUsedMb": 166.8,
+      "processors": 4,
+      "threadCount": 122,
+      "peakThreadCount": 122
+    },
+    "database": {
+      "poolName": "HikariPool-1",
+      "activeConnections": 1,
+      "idleConnections": 9,
+      "totalConnections": 10,
+      "threadsAwaitingConnection": 0,
+      "maxPoolSize": 10
+    },
+    "drivers": {
+      "deviceObjects": 155,
+      "activeDrivers": 53,
+      "connectedDrivers": 53,
+      "driversWithError": 0,
+      "stoppedDrivers": 102
+    },
+    "variableHistory": {
+      "enabled": true,
+      "minIntervalMs": 5000,
+      "defaultRetentionDays": 90,
+      "historizedVariables": 22,
+      "sampleCount": 2185,
+      "oldestSampleAt": "2026-06-21T23:52:44.363012Z",
+      "newestSampleAt": "2026-06-22T00:30:43.157512Z"
+    },
+    "health": "UP"
+  },
+  "phases": [
+    {
+      "concurrency": 10,
+      "total": 4453,
+      "ok": 3330,
+      "fail": 1123,
+      "rps": 66.5,
+      "fail_rate_pct": 25.22,
+      "latency_ms": {
+        "p50": 103.8,
+        "p95": 200.8,
+        "p99": 291.2,
+        "avg": 114.8,
+        "max": 1029.4
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 90.2,
+          "p95": 178.1,
+          "p99": 216.7,
+          "avg": 97.5,
+          "max": 364.2
+        },
+        "get_object": {
+          "p50": 91.6,
+          "p95": 175.0,
+          "p99": 253.4,
+          "avg": 99.6,
+          "max": 458.3
+        },
+        "info": {
+          "p50": 106.9,
+          "p95": 193.8,
+          "p99": 228.5,
+          "avg": 114.8,
+          "max": 247.7
+        },
+        "list_devices": {
+          "p50": 126.9,
+          "p95": 231.3,
+          "p99": 441.9,
+          "avg": 140.9,
+          "max": 1029.4
+        },
+        "list_variables": {
+          "p50": 90.3,
+          "p95": 176.5,
+          "p99": 239.0,
+          "avg": 100.5,
+          "max": 831.6
+        },
+        "platform_metrics": {
+          "p50": 148.6,
+          "p95": 264.3,
+          "p99": 304.3,
+          "avg": 159.2,
+          "max": 903.4
+        }
+      }
+    },
+    {
+      "concurrency": 25,
+      "total": 6896,
+      "ok": 5162,
+      "fail": 1734,
+      "rps": 100.3,
+      "fail_rate_pct": 25.15,
+      "latency_ms": {
+        "p50": 154.3,
+        "p95": 326.7,
+        "p99": 1026.7,
+        "avg": 183.8,
+        "max": 2814.5
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 140.0,
+          "p95": 276.2,
+          "p99": 1020.6,
+          "avg": 167.1,
+          "max": 1866.7
+        },
+        "get_object": {
+          "p50": 137.3,
+          "p95": 273.1,
+          "p99": 653.1,
+          "avg": 156.3,
+          "max": 1682.1
+        },
+        "info": {
+          "p50": 155.4,
+          "p95": 309.1,
+          "p99": 430.8,
+          "avg": 183.3,
+          "max": 1725.4
+        },
+        "list_devices": {
+          "p50": 186.8,
+          "p95": 417.4,
+          "p99": 1491.1,
+          "avg": 229.8,
+          "max": 2814.5
+        },
+        "list_variables": {
+          "p50": 143.3,
+          "p95": 257.8,
+          "p99": 548.9,
+          "avg": 160.0,
+          "max": 1684.4
+        },
+        "platform_metrics": {
+          "p50": 183.1,
+          "p95": 340.5,
+          "p99": 718.0,
+          "avg": 208.2,
+          "max": 1733.6
+        }
+      }
+    },
+    {
+      "concurrency": 50,
+      "total": 10780,
+      "ok": 8132,
+      "fail": 2648,
+      "rps": 162.2,
+      "fail_rate_pct": 24.56,
+      "latency_ms": {
+        "p50": 193.8,
+        "p95": 435.3,
+        "p99": 1283.7,
+        "avg": 240.1,
+        "max": 4004.5
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 173.9,
+          "p95": 305.1,
+          "p99": 700.5,
+          "avg": 197.9,
+          "max": 3614.0
+        },
+        "get_object": {
+          "p50": 171.8,
+          "p95": 295.0,
+          "p99": 516.2,
+          "avg": 199.4,
+          "max": 3626.9
+        },
+        "info": {
+          "p50": 186.9,
+          "p95": 331.9,
+          "p99": 3270.3,
+          "avg": 246.1,
+          "max": 3609.2
+        },
+        "list_devices": {
+          "p50": 258.8,
+          "p95": 617.8,
+          "p99": 1941.0,
+          "avg": 328.0,
+          "max": 4004.5
+        },
+        "list_variables": {
+          "p50": 173.1,
+          "p95": 310.7,
+          "p99": 727.5,
+          "avg": 202.3,
+          "max": 3635.7
+        },
+        "platform_metrics": {
+          "p50": 244.3,
+          "p95": 349.5,
+          "p99": 418.0,
+          "avg": 246.6,
+          "max": 1005.7
+        }
+      }
+    },
+    {
+      "concurrency": 75,
+      "total": 8969,
+      "ok": 6754,
+      "fail": 2215,
+      "rps": 133.3,
+      "fail_rate_pct": 24.7,
+      "latency_ms": {
+        "p50": 327.3,
+        "p95": 943.1,
+        "p99": 4067.0,
+        "avg": 439.1,
+        "max": 9212.5
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 295.8,
+          "p95": 555.0,
+          "p99": 4401.7,
+          "avg": 372.7,
+          "max": 5287.5
+        },
+        "get_object": {
+          "p50": 298.5,
+          "p95": 586.4,
+          "p99": 4590.0,
+          "avg": 386.3,
+          "max": 5301.4
+        },
+        "info": {
+          "p50": 319.4,
+          "p95": 527.5,
+          "p99": 765.1,
+          "avg": 350.1,
+          "max": 5063.8
+        },
+        "list_devices": {
+          "p50": 416.0,
+          "p95": 1559.8,
+          "p99": 4525.5,
+          "avg": 610.7,
+          "max": 9212.5
+        },
+        "list_variables": {
+          "p50": 291.2,
+          "p95": 551.9,
+          "p99": 2375.8,
+          "avg": 352.8,
+          "max": 5297.1
+        },
+        "platform_metrics": {
+          "p50": 388.3,
+          "p95": 677.7,
+          "p99": 816.0,
+          "avg": 409.5,
+          "max": 2972.1
+        }
+      }
+    },
+    {
+      "concurrency": 100,
+      "total": 8787,
+      "ok": 6595,
+      "fail": 2192,
+      "rps": 95.3,
+      "fail_rate_pct": 24.95,
+      "latency_ms": {
+        "p50": 313.3,
+        "p95": 2241.5,
+        "p99": 6407.7,
+        "avg": 654.7,
+        "max": 22908.2
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 273.7,
+          "p95": 1045.5,
+          "p99": 5862.5,
+          "avg": 419.3,
+          "max": 6605.1
+        },
+        "get_object": {
+          "p50": 260.3,
+          "p95": 813.8,
+          "p99": 6148.7,
+          "avg": 407.1,
+          "max": 7394.0
+        },
+        "info": {
+          "p50": 279.0,
+          "p95": 1064.3,
+          "p99": 6077.1,
+          "avg": 485.0,
+          "max": 7392.0
+        },
+        "list_devices": {
+          "p50": 797.9,
+          "p95": 3641.2,
+          "p99": 7812.4,
+          "avg": 1215.2,
+          "max": 22908.2
+        },
+        "list_variables": {
+          "p50": 265.5,
+          "p95": 1122.7,
+          "p99": 6060.7,
+          "avg": 431.3,
+          "max": 7355.0
+        },
+        "platform_metrics": {
+          "p50": 303.6,
+          "p95": 888.1,
+          "p99": 3226.6,
+          "avg": 419.2,
+          "max": 7225.8
+        }
+      }
+    },
+    {
+      "concurrency": 125,
+      "total": 8622,
+      "ok": 6528,
+      "fail": 2094,
+      "rps": 112.3,
+      "fail_rate_pct": 24.29,
+      "latency_ms": {
+        "p50": 365.1,
+        "p95": 2732.8,
+        "p99": 9273.7,
+        "avg": 814.3,
+        "max": 36126.6
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 294.3,
+          "p95": 1189.4,
+          "p99": 9171.0,
+          "avg": 568.1,
+          "max": 9346.7
+        },
+        "get_object": {
+          "p50": 275.8,
+          "p95": 758.9,
+          "p99": 8695.8,
+          "avg": 432.5,
+          "max": 9322.0
+        },
+        "info": {
+          "p50": 275.8,
+          "p95": 729.6,
+          "p99": 1567.1,
+          "avg": 399.7,
+          "max": 9177.0
+        },
+        "list_devices": {
+          "p50": 943.4,
+          "p95": 5214.3,
+          "p99": 9883.0,
+          "avg": 1613.6,
+          "max": 36126.6
+        },
+        "list_variables": {
+          "p50": 297.4,
+          "p95": 1015.8,
+          "p99": 8704.7,
+          "avg": 477.3,
+          "max": 9347.8
+        },
+        "platform_metrics": {
+          "p50": 304.1,
+          "p95": 1025.7,
+          "p99": 8631.1,
+          "avg": 503.2,
+          "max": 9347.4
+        }
+      }
+    },
+    {
+      "concurrency": 150,
+      "total": 8823,
+      "ok": 6604,
+      "fail": 2219,
+      "rps": 124.3,
+      "fail_rate_pct": 25.15,
+      "latency_ms": {
+        "p50": 577.0,
+        "p95": 2231.0,
+        "p99": 10546.0,
+        "avg": 896.3,
+        "max": 19893.2
+      },
+      "by_op": {
+        "get_dashboard": {
+          "p50": 504.3,
+          "p95": 1258.0,
+          "p99": 10486.2,
+          "avg": 711.3,
+          "max": 11285.2
+        },
+        "get_object": {
+          "p50": 497.0,
+          "p95": 1136.2,
+          "p99": 10303.7,
+          "avg": 646.6,
+          "max": 11368.7
+        },
+        "info": {
+          "p50": 552.6,
+          "p95": 1379.1,
+          "p99": 10505.2,
+          "avg": 886.0,
+          "max": 11329.5
+        },
+        "list_devices": {
+          "p50": 808.6,
+          "p95": 4140.7,
+          "p99": 10687.5,
+          "avg": 1306.4,
+          "max": 19893.2
+        },
+        "list_variables": {
+          "p50": 509.8,
+          "p95": 1261.6,
+          "p99": 10898.8,
+          "avg": 745.9,
+          "max": 11487.0
+        },
+        "platform_metrics": {
+          "p50": 629.3,
+          "p95": 1325.6,
+          "p99": 10545.6,
+          "avg": 896.8,
+          "max": 11478.7
+        }
+      }
+    }
+  ],
+  "devices": 150,
+  "dashboards": 40,
+  "drivers_started": 60
+}

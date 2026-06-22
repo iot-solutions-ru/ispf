@@ -22,6 +22,7 @@ import com.ispf.server.object.ObjectRevisionConflictException;
 import com.ispf.server.object.ObjectEditLeaseService;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.report.ReportService;
@@ -61,6 +62,7 @@ import java.util.Map;
 public class ObjectController {
 
     private final ObjectManager objectManager;
+    private final ObjectTemplateService objectTemplateService;
     private final DashboardService dashboardService;
     private final ReportService reportService;
     private final WorkflowService workflowService;
@@ -78,6 +80,7 @@ public class ObjectController {
 
     public ObjectController(
             ObjectManager objectManager,
+            ObjectTemplateService objectTemplateService,
             DashboardService dashboardService,
             ReportService reportService,
             WorkflowService workflowService,
@@ -94,6 +97,7 @@ public class ObjectController {
             ObjectEditLeaseService editLeaseService
     ) {
         this.objectManager = objectManager;
+        this.objectTemplateService = objectTemplateService;
         this.dashboardService = dashboardService;
         this.reportService = reportService;
         this.workflowService = workflowService;
@@ -248,6 +252,7 @@ public class ObjectController {
                 request.description(),
                 request.templateId()
         );
+        objectTemplateService.applyTemplate(node.path(), request.templateId());
         if (request.type() == ObjectType.DASHBOARD) {
             dashboardService.ensureDashboardStructure(node.path());
         }

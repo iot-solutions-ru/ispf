@@ -156,6 +156,22 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 
 См. [LAB_TRAINING.md](LAB_TRAINING.md), [DASHBOARDS.md](DASHBOARDS.md) (Grid Layout form example).
 
+## Phase 16 — Platform evolution (REQ-FW)
+
+Документация процесса, коммерческие bundle, reference MES, public API, messaging, AI, licensed drivers — без смены north star (§0.1). Детали — [PLATFORM_DEVELOPER_BACKLOG.md §12](PLATFORM_DEVELOPER_BACKLOG.md#12-дополнительные-требования-platform-req-fw).
+
+| # | Тема | Track | Статус |
+|---|------|-------|--------|
+| 16.1 | ADR `docs/decisions/` + gap-registry process | DOC | Planned |
+| 16.2 | RSA licensing + `installationId` + LicenseBuilder | LIC | Planned |
+| 16.3 | MES reference walkthrough + synthetic demo | REF | Planned |
+| 16.4 | Solution public API boundary + event catalog in bundle | API | Planned |
+| 16.5 | Messaging contract (event bus vs sync RPC) | NET | Planned |
+| 16.6 | AI Layer (LlmProvider, ContextPack, tools) + Studio | AI | Planned |
+| 16.7 | Licensed driver JAR contract | DRV | Planned |
+
+Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.md#8-приоритет-реализации-roadmap).
+
 ## Platform baseline
 
 | # | Тема | Статус |
@@ -166,7 +182,7 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 
 ## Связанные документы
 
-- [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF детали
+- [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF + REQ-FW (§12)
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [DEPLOYMENT.md](DEPLOYMENT.md) — prod topology
 - [SECURITY.md](SECURITY.md) — auth/RBAC

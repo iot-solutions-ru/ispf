@@ -8,6 +8,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.object.ObjectManager;
@@ -58,10 +59,19 @@ public class DashboardService {
         if (node.getVariable("layout").isPresent()) {
             return;
         }
-        modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
+        String templateId = node.templateId().orElse("dashboard-v1");
+        resolveModel(templateId).ifPresent(model -> {
             modelEngine.applyModel(model.id(), path);
             objectManager.persistNodeTree(path);
         });
+    }
+
+    private Optional<ModelDefinition> resolveModel(String templateId) {
+        if (templateId == null || templateId.isBlank()) {
+            return modelRegistry.findByName("dashboard-v1");
+        }
+        return modelRegistry.findById(templateId)
+                .or(() -> modelRegistry.findByName(templateId));
     }
 
     public DashboardView getDashboard(String path) {

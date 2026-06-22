@@ -1,0 +1,789 @@
+{
+  "snapshot_before": {
+    "version": "unspecified",
+    "runtime": {
+      "uptimeMs": 1312717,
+      "uptimeHuman": "21m 52s",
+      "heapUsedBytes": 130869752,
+      "heapMaxBytes": 2059403264,
+      "heapUsedMb": 124.8,
+      "heapMaxMb": 1964.0,
+      "nonHeapUsedMb": 169.1,
+      "processors": 4,
+      "threadCount": 140,
+      "peakThreadCount": 141
+    },
+    "database": {
+      "poolName": "HikariPool-1",
+      "activeConnections": 0,
+      "idleConnections": 30,
+      "totalConnections": 30,
+      "threadsAwaitingConnection": 0,
+      "maxPoolSize": 30
+    },
+    "drivers": {
+      "deviceObjects": 9737,
+      "activeDrivers": 50,
+      "connectedDrivers": 50,
+      "driversWithError": 0,
+      "stoppedDrivers": 9687
+    },
+    "variableHistory": {
+      "enabled": true,
+      "minIntervalMs": 5000,
+      "defaultRetentionDays": 90,
+      "historizedVariables": 22,
+      "sampleCount": 7607,
+      "oldestSampleAt": "2026-06-21T23:52:44.363012Z",
+      "newestSampleAt": "2026-06-22T01:15:52.681344Z"
+    },
+    "health": "UP"
+  },
+  "snapshot_after": {
+    "version": "unspecified",
+    "runtime": {
+      "uptimeMs": 1766227,
+      "uptimeHuman": "29m 26s",
+      "heapUsedBytes": 161919328,
+      "heapMaxBytes": 2059403264,
+      "heapUsedMb": 154.4,
+      "heapMaxMb": 1964.0,
+      "nonHeapUsedMb": 177.6,
+      "processors": 4,
+      "threadCount": 137,
+      "peakThreadCount": 142
+    },
+    "database": {
+      "poolName": "HikariPool-1",
+      "activeConnections": 0,
+      "idleConnections": 16,
+      "totalConnections": 16,
+      "threadsAwaitingConnection": 0,
+      "maxPoolSize": 30
+    },
+    "drivers": {
+      "deviceObjects": 10065,
+      "activeDrivers": 50,
+      "connectedDrivers": 50,
+      "driversWithError": 3,
+      "stoppedDrivers": 10015
+    },
+    "variableHistory": {
+      "enabled": true,
+      "minIntervalMs": 5000,
+      "defaultRetentionDays": 90,
+      "historizedVariables": 22,
+      "sampleCount": 8475,
+      "oldestSampleAt": "2026-06-21T23:52:44.363012Z",
+      "newestSampleAt": "2026-06-22T01:23:27.659882Z"
+    },
+    "health": "UP"
+  },
+  "phases": [
+    {
+      "concurrency": 10,
+      "total": 227,
+      "ok": 220,
+      "fail": 7,
+      "rps": 3.4,
+      "fail_rate_pct": 3.08,
+      "latency_ms": {
+        "p50": 621.5,
+        "p95": 15138.9,
+        "p99": 48712.6,
+        "avg": 2839.0,
+        "max": 55140.2
+      },
+      "by_op": {
+        "driver_status": {
+          "p50": 386.4,
+          "p95": 1655.3,
+          "p99": 1655.3,
+          "avg": 641.4,
+          "max": 1655.3
+        },
+        "fire_event": {
+          "p50": 270.0,
+          "p95": 963.2,
+          "p99": 1215.0,
+          "avg": 480.3,
+          "max": 1215.0
+        },
+        "function_invocations": {
+          "p50": 259.3,
+          "p95": 259.3,
+          "p99": 259.3,
+          "avg": 259.3,
+          "max": 259.3
+        },
+        "get_alert_rule": {
+          "p50": 435.7,
+          "p95": 2267.4,
+          "p99": 2267.4,
+          "avg": 772.9,
+          "max": 2267.4
+        },
+        "get_correlator": {
+          "p50": 520.5,
+          "p95": 2264.3,
+          "p99": 2264.3,
+          "avg": 653.5,
+          "max": 2264.3
+        },
+        "get_dashboard": {
+          "p50": 527.3,
+          "p95": 2256.6,
+          "p99": 2256.6,
+          "avg": 822.8,
+          "max": 2256.6
+        },
+        "get_object": {
+          "p50": 540.8,
+          "p95": 1104.6,
+          "p99": 1104.6,
+          "avg": 671.3,
+          "max": 1104.6
+        },
+        "get_report": {
+          "p50": 623.4,
+          "p95": 1331.0,
+          "p99": 1331.0,
+          "avg": 655.3,
+          "max": 1331.0
+        },
+        "get_workflow": {
+          "p50": 622.1,
+          "p95": 2039.6,
+          "p99": 2281.8,
+          "avg": 746.5,
+          "max": 2281.8
+        },
+        "info": {
+          "p50": 338.5,
+          "p95": 338.5,
+          "p99": 338.5,
+          "avg": 338.5,
+          "max": 338.5
+        },
+        "invoke_calculate": {
+          "p50": 391.2,
+          "p95": 890.6,
+          "p99": 890.6,
+          "avg": 490.2,
+          "max": 890.6
+        },
+        "list_alert_rules": {
+          "p50": 2753.7,
+          "p95": 6931.0,
+          "p99": 6931.0,
+          "avg": 2690.2,
+          "max": 6931.0
+        },
+        "list_alert_rules_tree": {
+          "p50": 3429.9,
+          "p95": 7101.0,
+          "p99": 7101.0,
+          "avg": 4033.2,
+          "max": 7101.0
+        },
+        "list_correlators": {
+          "p50": 1768.6,
+          "p95": 3502.4,
+          "p99": 3502.4,
+          "avg": 1905.1,
+          "max": 3502.4
+        },
+        "list_correlators_tree": {
+          "p50": 1611.1,
+          "p95": 2771.6,
+          "p99": 2771.6,
+          "avg": 1521.3,
+          "max": 2771.6
+        },
+        "list_devices": {
+          "p50": 22002.5,
+          "p95": 53286.8,
+          "p99": 55140.2,
+          "avg": 27931.0,
+          "max": 55140.2
+        },
+        "list_events": {
+          "p50": 631.0,
+          "p95": 3272.6,
+          "p99": 3272.6,
+          "avg": 1184.8,
+          "max": 3272.6
+        },
+        "list_events_device": {
+          "p50": 464.4,
+          "p95": 570.2,
+          "p99": 570.2,
+          "avg": 371.9,
+          "max": 570.2
+        },
+        "list_models": {
+          "p50": 2092.6,
+          "p95": 2400.3,
+          "p99": 2400.3,
+          "avg": 1947.9,
+          "max": 2400.3
+        },
+        "list_reports_tree": {
+          "p50": 546.0,
+          "p95": 611.0,
+          "p99": 611.0,
+          "avg": 407.1,
+          "max": 611.0
+        },
+        "list_schedules_tree": {
+          "p50": 435.3,
+          "p95": 975.9,
+          "p99": 975.9,
+          "avg": 617.9,
+          "max": 975.9
+        },
+        "list_variables": {
+          "p50": 481.1,
+          "p95": 2262.7,
+          "p99": 2262.7,
+          "avg": 613.2,
+          "max": 2262.7
+        },
+        "list_workflows_tree": {
+          "p50": 611.2,
+          "p95": 6018.3,
+          "p99": 6018.3,
+          "avg": 1144.6,
+          "max": 6018.3
+        },
+        "platform_metrics": {
+          "p50": 2432.0,
+          "p95": 3678.6,
+          "p99": 3678.6,
+          "avg": 3055.3,
+          "max": 3678.6
+        },
+        "run_workflow": {
+          "p50": 673.4,
+          "p95": 877.6,
+          "p99": 1612.3,
+          "avg": 613.4,
+          "max": 1612.3
+        },
+        "variable_detail": {
+          "p50": 295.8,
+          "p95": 537.3,
+          "p99": 537.3,
+          "avg": 347.6,
+          "max": 537.3
+        },
+        "variable_history": {
+          "p50": 368.5,
+          "p95": 896.3,
+          "p99": 896.3,
+          "avg": 427.1,
+          "max": 896.3
+        },
+        "work_queue": {
+          "p50": 678.9,
+          "p95": 2264.2,
+          "p99": 2264.2,
+          "avg": 775.4,
+          "max": 2264.2
+        },
+        "write_variable": {
+          "p50": 751.0,
+          "p95": 2313.1,
+          "p99": 2313.1,
+          "avg": 849.7,
+          "max": 2313.1
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 2,
+        "run_workflow": 2,
+        "variable_detail": 2,
+        "write_variable": 1
+      },
+      "fail_by_status": {
+        "400": 3,
+        "403": 1,
+        "404": 2,
+        "409": 1
+      }
+    },
+    {
+      "concurrency": 25,
+      "total": 355,
+      "ok": 344,
+      "fail": 11,
+      "rps": 2.7,
+      "fail_rate_pct": 3.1,
+      "latency_ms": {
+        "p50": 847.9,
+        "p95": 73806.5,
+        "p99": 102101.9,
+        "avg": 7542.1,
+        "max": 117152.6
+      },
+      "by_op": {
+        "driver_status": {
+          "p50": 408.7,
+          "p95": 3291.6,
+          "p99": 3291.6,
+          "avg": 803.7,
+          "max": 3291.6
+        },
+        "fire_event": {
+          "p50": 512.2,
+          "p95": 1929.6,
+          "p99": 2481.2,
+          "avg": 738.0,
+          "max": 2481.2
+        },
+        "function_invocations": {
+          "p50": 443.2,
+          "p95": 6178.1,
+          "p99": 6178.1,
+          "avg": 1534.8,
+          "max": 6178.1
+        },
+        "get_alert_rule": {
+          "p50": 731.7,
+          "p95": 1781.7,
+          "p99": 2485.0,
+          "avg": 781.7,
+          "max": 2485.0
+        },
+        "get_correlator": {
+          "p50": 464.6,
+          "p95": 2463.6,
+          "p99": 2463.6,
+          "avg": 748.0,
+          "max": 2463.6
+        },
+        "get_dashboard": {
+          "p50": 1147.6,
+          "p95": 10419.2,
+          "p99": 10621.0,
+          "avg": 2237.8,
+          "max": 10621.0
+        },
+        "get_object": {
+          "p50": 620.7,
+          "p95": 2482.4,
+          "p99": 2991.3,
+          "avg": 848.0,
+          "max": 2991.3
+        },
+        "get_report": {
+          "p50": 467.1,
+          "p95": 3814.5,
+          "p99": 3814.5,
+          "avg": 995.6,
+          "max": 3814.5
+        },
+        "get_workflow": {
+          "p50": 452.1,
+          "p95": 1175.9,
+          "p99": 1193.8,
+          "avg": 576.4,
+          "max": 1193.8
+        },
+        "info": {
+          "p50": 656.5,
+          "p95": 1661.8,
+          "p99": 1661.8,
+          "avg": 1159.1,
+          "max": 1661.8
+        },
+        "invoke_calculate": {
+          "p50": 389.4,
+          "p95": 1898.3,
+          "p99": 3812.3,
+          "avg": 783.5,
+          "max": 3812.3
+        },
+        "list_alert_rules": {
+          "p50": 6209.3,
+          "p95": 11457.7,
+          "p99": 14609.3,
+          "avg": 6989.3,
+          "max": 14609.3
+        },
+        "list_alert_rules_tree": {
+          "p50": 5958.0,
+          "p95": 10311.5,
+          "p99": 10311.5,
+          "avg": 6079.5,
+          "max": 10311.5
+        },
+        "list_correlators": {
+          "p50": 3254.0,
+          "p95": 9078.2,
+          "p99": 12189.8,
+          "avg": 4041.5,
+          "max": 12189.8
+        },
+        "list_correlators_tree": {
+          "p50": 1327.4,
+          "p95": 4778.5,
+          "p99": 4778.5,
+          "avg": 2182.4,
+          "max": 4778.5
+        },
+        "list_devices": {
+          "p50": 87028.6,
+          "p95": 112188.4,
+          "p99": 117152.6,
+          "avg": 82895.0,
+          "max": 117152.6
+        },
+        "list_events": {
+          "p50": 639.8,
+          "p95": 15967.7,
+          "p99": 15967.7,
+          "avg": 2666.8,
+          "max": 15967.7
+        },
+        "list_events_device": {
+          "p50": 466.0,
+          "p95": 1518.9,
+          "p99": 1518.9,
+          "avg": 657.0,
+          "max": 1518.9
+        },
+        "list_models": {
+          "p50": 2485.3,
+          "p95": 14822.3,
+          "p99": 14822.3,
+          "avg": 5026.1,
+          "max": 14822.3
+        },
+        "list_reports_tree": {
+          "p50": 727.6,
+          "p95": 3146.9,
+          "p99": 3146.9,
+          "avg": 1224.7,
+          "max": 3146.9
+        },
+        "list_schedules_tree": {
+          "p50": 596.1,
+          "p95": 1887.0,
+          "p99": 1887.0,
+          "avg": 934.8,
+          "max": 1887.0
+        },
+        "list_variables": {
+          "p50": 1148.1,
+          "p95": 2327.5,
+          "p99": 3181.4,
+          "avg": 1275.9,
+          "max": 3181.4
+        },
+        "list_workflows_tree": {
+          "p50": 1020.2,
+          "p95": 7874.1,
+          "p99": 7874.1,
+          "avg": 2342.9,
+          "max": 7874.1
+        },
+        "platform_metrics": {
+          "p50": 589.4,
+          "p95": 2862.9,
+          "p99": 2862.9,
+          "avg": 1274.5,
+          "max": 2862.9
+        },
+        "run_workflow": {
+          "p50": 452.1,
+          "p95": 1172.8,
+          "p99": 2518.5,
+          "avg": 627.0,
+          "max": 2518.5
+        },
+        "variable_detail": {
+          "p50": 466.5,
+          "p95": 2537.7,
+          "p99": 2537.7,
+          "avg": 838.2,
+          "max": 2537.7
+        },
+        "variable_history": {
+          "p50": 495.8,
+          "p95": 2481.9,
+          "p99": 3964.3,
+          "avg": 1177.8,
+          "max": 3964.3
+        },
+        "work_queue": {
+          "p50": 295.9,
+          "p95": 2427.3,
+          "p99": 2427.3,
+          "avg": 613.1,
+          "max": 2427.3
+        },
+        "write_variable": {
+          "p50": 629.6,
+          "p95": 3817.2,
+          "p99": 7001.4,
+          "avg": 1432.1,
+          "max": 7001.4
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 3,
+        "invoke_calculate": 2,
+        "run_workflow": 1,
+        "write_variable": 5
+      },
+      "fail_by_status": {
+        "400": 7,
+        "403": 1,
+        "409": 3
+      }
+    },
+    {
+      "concurrency": 50,
+      "total": 769,
+      "ok": 751,
+      "fail": 18,
+      "rps": 7.6,
+      "fail_rate_pct": 2.34,
+      "latency_ms": {
+        "p50": 515.2,
+        "p95": 44706.2,
+        "p99": 77599.6,
+        "avg": 5251.2,
+        "max": 89764.9
+      },
+      "by_op": {
+        "driver_status": {
+          "p50": 325.1,
+          "p95": 3750.6,
+          "p99": 3763.5,
+          "avg": 764.9,
+          "max": 3763.5
+        },
+        "fire_event": {
+          "p50": 346.5,
+          "p95": 1346.9,
+          "p99": 2048.0,
+          "avg": 482.9,
+          "max": 2048.0
+        },
+        "function_invocations": {
+          "p50": 236.1,
+          "p95": 3890.2,
+          "p99": 3890.2,
+          "avg": 646.8,
+          "max": 3890.2
+        },
+        "get_alert_rule": {
+          "p50": 375.9,
+          "p95": 1733.7,
+          "p99": 1926.9,
+          "avg": 540.6,
+          "max": 1926.9
+        },
+        "get_correlator": {
+          "p50": 468.5,
+          "p95": 1107.6,
+          "p99": 3777.1,
+          "avg": 571.0,
+          "max": 3777.1
+        },
+        "get_dashboard": {
+          "p50": 366.2,
+          "p95": 3733.8,
+          "p99": 3744.6,
+          "avg": 678.7,
+          "max": 3744.6
+        },
+        "get_object": {
+          "p50": 352.7,
+          "p95": 2404.1,
+          "p99": 3766.0,
+          "avg": 652.6,
+          "max": 3766.0
+        },
+        "get_report": {
+          "p50": 524.2,
+          "p95": 3777.5,
+          "p99": 3804.9,
+          "avg": 982.8,
+          "max": 3804.9
+        },
+        "get_workflow": {
+          "p50": 360.3,
+          "p95": 2442.9,
+          "p99": 3805.4,
+          "avg": 721.6,
+          "max": 3805.4
+        },
+        "info": {
+          "p50": 474.1,
+          "p95": 828.9,
+          "p99": 828.9,
+          "avg": 460.5,
+          "max": 828.9
+        },
+        "invoke_calculate": {
+          "p50": 483.3,
+          "p95": 3140.6,
+          "p99": 3261.4,
+          "avg": 750.0,
+          "max": 3261.4
+        },
+        "list_alert_rules": {
+          "p50": 1780.1,
+          "p95": 11797.2,
+          "p99": 12785.8,
+          "avg": 3451.9,
+          "max": 12785.8
+        },
+        "list_alert_rules_tree": {
+          "p50": 3077.0,
+          "p95": 10022.8,
+          "p99": 11125.9,
+          "avg": 3658.6,
+          "max": 11125.9
+        },
+        "list_correlators": {
+          "p50": 2014.3,
+          "p95": 9173.0,
+          "p99": 13165.9,
+          "avg": 2866.6,
+          "max": 13165.9
+        },
+        "list_correlators_tree": {
+          "p50": 2255.6,
+          "p95": 19534.9,
+          "p99": 23513.8,
+          "avg": 3821.2,
+          "max": 23513.8
+        },
+        "list_devices": {
+          "p50": 50819.0,
+          "p95": 82654.8,
+          "p99": 87915.1,
+          "avg": 54317.5,
+          "max": 89764.9
+        },
+        "list_events": {
+          "p50": 572.0,
+          "p95": 4062.6,
+          "p99": 4180.9,
+          "avg": 1189.2,
+          "max": 4180.9
+        },
+        "list_events_device": {
+          "p50": 413.5,
+          "p95": 3306.7,
+          "p99": 3804.3,
+          "avg": 761.7,
+          "max": 3804.3
+        },
+        "list_models": {
+          "p50": 3013.8,
+          "p95": 5094.5,
+          "p99": 5094.5,
+          "avg": 2702.1,
+          "max": 5094.5
+        },
+        "list_reports_tree": {
+          "p50": 566.1,
+          "p95": 944.6,
+          "p99": 3643.4,
+          "avg": 751.2,
+          "max": 3643.4
+        },
+        "list_schedules_tree": {
+          "p50": 384.9,
+          "p95": 3738.3,
+          "p99": 3755.1,
+          "avg": 1096.0,
+          "max": 3755.1
+        },
+        "list_variables": {
+          "p50": 311.0,
+          "p95": 1605.7,
+          "p99": 3257.5,
+          "avg": 547.3,
+          "max": 3257.5
+        },
+        "list_workflows_tree": {
+          "p50": 2120.1,
+          "p95": 4123.6,
+          "p99": 5750.5,
+          "avg": 2130.9,
+          "max": 5750.5
+        },
+        "platform_metrics": {
+          "p50": 495.0,
+          "p95": 797.3,
+          "p99": 805.7,
+          "avg": 538.9,
+          "max": 805.7
+        },
+        "run_workflow": {
+          "p50": 364.7,
+          "p95": 1079.8,
+          "p99": 3694.7,
+          "avg": 561.6,
+          "max": 3694.7
+        },
+        "variable_detail": {
+          "p50": 437.1,
+          "p95": 1247.8,
+          "p99": 3735.8,
+          "avg": 594.9,
+          "max": 3735.8
+        },
+        "variable_history": {
+          "p50": 359.9,
+          "p95": 1203.5,
+          "p99": 3305.0,
+          "avg": 546.7,
+          "max": 3305.0
+        },
+        "work_queue": {
+          "p50": 494.7,
+          "p95": 2419.6,
+          "p99": 3755.9,
+          "avg": 684.4,
+          "max": 3755.9
+        },
+        "write_variable": {
+          "p50": 431.1,
+          "p95": 3663.6,
+          "p99": 3827.0,
+          "avg": 769.2,
+          "max": 3827.0
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 1,
+        "invoke_calculate": 3,
+        "list_devices": 1,
+        "run_workflow": 3,
+        "variable_detail": 3,
+        "variable_history": 1,
+        "write_variable": 6
+      },
+      "fail_by_status": {
+        "400": 10,
+        "404": 4,
+        "409": 3,
+        "exc": 1
+      }
+    }
+  ],
+  "devices": 1000,
+  "dashboards": 10,
+  "workflows": 50,
+  "alert_rules": 194,
+  "correlators": 100,
+  "reports": 20,
+  "drivers_started": 50
+}

@@ -1,9 +1,8 @@
 package com.ispf.server.bootstrap;
 
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectTemplateService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
@@ -20,19 +19,16 @@ public class LabPlatformBootstrap {
     private static final String DEVICES_ROOT = "root.platform.devices";
 
     private final LabModelBootstrap labModelBootstrap;
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final ObjectTemplateService objectTemplateService;
     private final ObjectManager objectManager;
 
     public LabPlatformBootstrap(
             LabModelBootstrap labModelBootstrap,
-            ModelEngine modelEngine,
-            ModelRegistry modelRegistry,
+            ObjectTemplateService objectTemplateService,
             ObjectManager objectManager
     ) {
         this.labModelBootstrap = labModelBootstrap;
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+        this.objectTemplateService = objectTemplateService;
         this.objectManager = objectManager;
     }
 
@@ -68,13 +64,6 @@ public class LabPlatformBootstrap {
             objectManager.reconcileType(path, ObjectType.DEVICE);
         }
 
-        modelRegistry.findByName(LabModelBootstrap.VIRTUAL_LAB_MODEL).ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
-        modelRegistry.findByName(LabModelBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL).ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        objectTemplateService.applyTemplate(path, LabModelBootstrap.VIRTUAL_LAB_MODEL);
     }
 }
