@@ -33,6 +33,7 @@
 | [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, виджеты, layout JSON, `objectPath` / `selectionKey` |
 | [Lab Training (18 заданий)](LAB_TRAINING.md) | Virtual lab device, bundle import, упражнения Phase 15 |
 | [MES reference walkthrough](REFERENCE_MES_WALKTHROUGH.md) | Сквозной MES demo (`examples/mes-reference/`) |
+| [Messaging contract](MESSAGING.md) | NATS, WebSocket, sync RPC |
 | [Commercial bundle licensing](COMMERCIAL_LICENSING.md) | RSA license при deploy commercial bundle |
 | [Workflow / BPMN](WORKFLOWS.md) | Движок, ISPF-расширения, work queue |
 | [Автоматизация](AUTOMATION.md) | События, alert rules, correlators |

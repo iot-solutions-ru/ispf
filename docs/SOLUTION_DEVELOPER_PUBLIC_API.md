@@ -19,7 +19,9 @@
 | Automation | Alert rules, correlators в дереве | CEL, correlator patterns |
 | Operator UI | `operatorUi` / `dashboards[]` в bundle | `GET .../operator-ui` |
 | Reports | Tree-first `root.platform.reports.*` | SQL + optional YARG |
-| WebSocket | `/ws` object + event subscriptions | Token query param |
+| WebSocket | `/ws/objects` — `subscribe`, `subscribe_events` | Token query param; см. [MESSAGING.md](MESSAGING.md) |
+| Event catalog | `events[]` в bundle, `GET .../events` | Роли для WS subscribe (FW-31) |
+| Bundle dependencies | `requires[]` в bundle | minVersion другого appId (FW-12) |
 | Drivers | SPI `DeviceDriver` в отдельном JAR | [DRIVERS.md](DRIVERS.md) |
 
 ## Запрещено
@@ -39,8 +41,9 @@
 | `schemaName`, `migrations`, `functions` | Stable |
 | `objects`, `dashboards`, `workflows`, `models` | Stable (Phase 5 tree-first) |
 | `alertRules`, `correlators`, `operatorUi` | Stable |
+| `events[]` | Stable — id, roles, optional payloadSchema |
+| `requires[]` | Stable — appId, minVersion |
 | `license` | Optional; commercial — [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) |
-| `requires[]` | Planned (FW-12) |
 
 ## Версия platform
 
@@ -54,5 +57,6 @@
 ## Связанные документы
 
 - [APPLICATIONS.md](APPLICATIONS.md) — полный deploy API
+- [MESSAGING.md](MESSAGING.md) — async vs sync, NATS subjects, WS events
 - [API.md](API.md) — REST справочник
 - [PLUGINS.md](PLUGINS.md) — границы `main`

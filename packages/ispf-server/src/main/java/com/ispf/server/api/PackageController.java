@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.license.CommercialLicenseException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,8 @@ public class PackageController {
             return bundleDeployService.deploy(packageId, manifest);
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        } catch (BundleDependencyException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
     }
 }

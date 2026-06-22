@@ -51,7 +51,13 @@ public class WebSocketAuthHandshakeInterceptor implements HandshakeInterceptor {
         if (token == null || token.isBlank()) {
             return false;
         }
-        return userService.authenticateToken(token).isPresent();
+        return userService.authenticateToken(token)
+                .map(user -> {
+                    attributes.put("username", user.username());
+                    attributes.put("roles", user.roles());
+                    return true;
+                })
+                .orElse(false);
     }
 
     @Override

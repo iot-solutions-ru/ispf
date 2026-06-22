@@ -116,6 +116,16 @@
       "sustainWhileTrue": false
     }
   ],
+  "events": [
+    {
+      "id": "mesRackOverTemp",
+      "roles": ["admin"]
+    },
+    {
+      "id": "mesOrderUpdated",
+      "roles": ["operator", "admin"]
+    }
+  ],
   "correlators": [
     {
       "name": "MES latch alarm on rack over-temp",

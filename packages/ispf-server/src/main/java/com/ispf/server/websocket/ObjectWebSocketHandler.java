@@ -2,6 +2,8 @@ package com.ispf.server.websocket;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.application.catalog.ApplicationEventCatalogService;
+import com.ispf.server.config.IspfRoles;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
@@ -14,7 +16,9 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,17 +33,20 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final FederationSubscribePollService federationSubscribePollService;
     private final ObjectPresenceService presenceService;
     private final ObjectManager objectManager;
+    private final ApplicationEventCatalogService eventCatalogService;
 
     public ObjectWebSocketHandler(
             ObjectMapper objectMapper,
             FederationSubscribePollService federationSubscribePollService,
             ObjectPresenceService presenceService,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            ApplicationEventCatalogService eventCatalogService
     ) {
         this.objectMapper = objectMapper;
         this.federationSubscribePollService = federationSubscribePollService;
         this.presenceService = presenceService;
         this.objectManager = objectManager;
+        this.eventCatalogService = eventCatalogService;
     }
 
     @Override
@@ -66,9 +73,64 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             handleSubscribe(session, node);
             return;
         }
+        if ("subscribe_events".equals(type)) {
+            handleSubscribeEvents(session, node);
+            return;
+        }
         if ("presence".equals(type)) {
             handlePresence(session, node);
         }
+    }
+
+    private void handleSubscribeEvents(WebSocketSession session, JsonNode node) throws IOException {
+        String appId = node.path("appId").asString(null);
+        if (appId == null || appId.isBlank()) {
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(Map.of(
+                    "type", "subscribe_events_result",
+                    "accepted", List.of(),
+                    "rejected", List.of(Map.of("event", "*", "reason", "APP_ID_REQUIRED"))
+            ))));
+            return;
+        }
+        List<String> events = new ArrayList<>();
+        JsonNode eventsNode = node.get("events");
+        if (eventsNode != null && eventsNode.isArray()) {
+            eventsNode.forEach(entry -> {
+                if (entry.isString()) {
+                    String eventId = entry.asString().trim();
+                    if (!eventId.isBlank()) {
+                        events.add(eventId);
+                    }
+                }
+            });
+        }
+        Map<String, Object> result = eventCatalogService.filterSubscribableEvents(
+                appId,
+                events,
+                sessionRoles(session)
+        );
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("type", "subscribe_events_result");
+        response.put("appId", appId);
+        response.putAll(result);
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> sessionRoles(WebSocketSession session) {
+        Object raw = session.getAttributes().get("roles");
+        if (raw instanceof List<?> roles) {
+            List<String> normalized = new ArrayList<>();
+            for (Object role : roles) {
+                if (role instanceof String value && !value.isBlank()) {
+                    normalized.add(value);
+                }
+            }
+            if (!normalized.isEmpty()) {
+                return normalized;
+            }
+        }
+        return List.of(IspfRoles.ADMIN);
     }
 
     private void handleSubscribe(WebSocketSession session, JsonNode node) throws IOException {

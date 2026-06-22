@@ -33,6 +33,7 @@ import com.ispf.server.report.ReportService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
 import com.ispf.server.operator.OperatorAppUiStore;
+import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import org.springframework.stereotype.Service;
@@ -68,6 +69,8 @@ public class ApplicationBundleDeployService {
     private final OperatorAppUiStore operatorAppUiStore;
     private final OperatorAppObjectTreeService operatorAppObjectTreeService;
     private final CommercialBundleLicenseVerifier licenseVerifier;
+    private final BundleDependencyVerifier dependencyVerifier;
+    private final ApplicationEventCatalogService eventCatalogService;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -90,7 +93,9 @@ public class ApplicationBundleDeployService {
             AutomationTreeService automationTreeService,
             OperatorAppUiStore operatorAppUiStore,
             OperatorAppObjectTreeService operatorAppObjectTreeService,
-            CommercialBundleLicenseVerifier licenseVerifier
+            CommercialBundleLicenseVerifier licenseVerifier,
+            BundleDependencyVerifier dependencyVerifier,
+            ApplicationEventCatalogService eventCatalogService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -113,10 +118,13 @@ public class ApplicationBundleDeployService {
         this.operatorAppUiStore = operatorAppUiStore;
         this.operatorAppObjectTreeService = operatorAppObjectTreeService;
         this.licenseVerifier = licenseVerifier;
+        this.dependencyVerifier = dependencyVerifier;
+        this.eventCatalogService = eventCatalogService;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
         licenseVerifier.verifyOrWarn(appId, manifest);
+        dependencyVerifier.verify(appId, manifest.requires());
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -320,6 +328,21 @@ public class ApplicationBundleDeployService {
                 } catch (Exception ex) {
                     errors.add("schedule:" + schedule.scheduleId() + ": " + ex.getMessage());
                 }
+            }
+        }
+
+        if (manifest.events() != null) {
+            try {
+                eventCatalogService.replaceFromBundle(appId, manifest.events().stream()
+                        .map(event -> new ApplicationEventCatalogService.BundleEventDefinition(
+                                event.id(),
+                                event.roles(),
+                                event.payloadSchema()
+                        ))
+                        .toList());
+                applied.add("events:" + manifest.events().size());
+            } catch (Exception ex) {
+                errors.add("events: " + ex.getMessage());
             }
         }
 
@@ -690,6 +713,8 @@ public class ApplicationBundleDeployService {
             List<BundleAlertRule> alertRules,
             List<BundleCorrelator> correlators,
             List<BundleSchedule> schedules,
+            List<BundleEvent> events,
+            List<BundleDependency> requires,
             Map<String, Object> license,
             Map<String, Object> metadata,
             Map<String, Object> operatorUi,
@@ -815,6 +840,19 @@ public class ApplicationBundleDeployService {
             long intervalMs,
             String actionType,
             Map<String, Object> action
+    ) {
+    }
+
+    public record BundleEvent(
+            String id,
+            List<String> roles,
+            Object payloadSchema
+    ) {
+    }
+
+    public record BundleDependency(
+            String appId,
+            String minVersion
     ) {
     }
 }

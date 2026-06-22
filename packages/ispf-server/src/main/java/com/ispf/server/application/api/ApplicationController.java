@@ -10,6 +10,8 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
+import com.ispf.server.application.bundle.BundleDependencyException;
+import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,6 +41,7 @@ public class ApplicationController {
     private final ApplicationSqlBindingService sqlBindingService;
     private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
+    private final ApplicationEventCatalogService eventCatalogService;
     private final ObjectMapper objectMapper;
 
     public ApplicationController(
@@ -48,6 +51,7 @@ public class ApplicationController {
             ApplicationSqlBindingService sqlBindingService,
             ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
+            ApplicationEventCatalogService eventCatalogService,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
@@ -56,6 +60,7 @@ public class ApplicationController {
         this.sqlBindingService = sqlBindingService;
         this.reportService = reportService;
         this.objectTreeService = objectTreeService;
+        this.eventCatalogService = eventCatalogService;
         this.objectMapper = objectMapper;
     }
 
@@ -68,7 +73,14 @@ public class ApplicationController {
             return bundleDeployService.deploy(appId, manifest);
         } catch (CommercialLicenseException ex) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        } catch (BundleDependencyException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
+    }
+
+    @GetMapping("/{appId}/events")
+    public List<Map<String, Object>> listEventCatalog(@PathVariable String appId) {
+        return eventCatalogService.listEvents(appId);
     }
 
     @GetMapping("/{appId}/deploy/history")
