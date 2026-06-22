@@ -103,6 +103,9 @@ public final class LlmHttpSupport {
         if (request.temperature() != null) {
             root.put("temperature", request.temperature());
         }
+        if (request.providerOptions() != null && !request.providerOptions().isEmpty()) {
+            request.providerOptions().forEach((key, value) -> root.set(key, MAPPER.valueToTree(value)));
+        }
         return root;
     }
 

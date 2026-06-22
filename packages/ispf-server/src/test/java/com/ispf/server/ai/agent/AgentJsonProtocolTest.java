@@ -45,4 +45,29 @@ class AgentJsonProtocolTest {
         assertEquals("search_context", action.toolName());
         assertEquals("DEVICE template", action.arguments().get("query"));
     }
+
+    @Test
+    void parsesJsonAfterRedactedThinkingBlock() throws Exception {
+        String content = """
+                Long reasoning about list_objects...
+                </think>
+
+                {"type":"tool","name":"list_objects","arguments":{"parent":"root.platform.devices"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("list_objects", action.toolName());
+    }
+
+    @Test
+    void ignoresNestedObjectTypeInToolArguments() throws Exception {
+        String content = """
+                Let me create a dashboard.
+                {"type":"tool","name":"create_object","arguments":{"parentPath":"root.platform.dashboards","name":"dash","type":"DASHBOARD","templateId":"dashboard-v1"}}
+                """;
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("tool", action.type());
+        assertEquals("create_object", action.toolName());
+        assertEquals("DASHBOARD", action.arguments().get("type"));
+    }
 }

@@ -55,12 +55,10 @@ public class OllamaLlmProvider implements LlmProvider {
             throw new LlmException("Ollama provider is not configured");
         }
         String model = request.model() != null && !request.model().isBlank() ? request.model() : defaultModel;
-        var body = LlmHttpSupport.ollamaChatBody(new LlmRequest(
-                model,
-                request.messages(),
-                request.maxTokens(),
-                request.temperature()
-        ));
+        LlmRequest effective = request.model() != null && !request.model().isBlank()
+                ? request
+                : new LlmRequest(model, request.messages(), request.maxTokens(), request.temperature(), request.providerOptions());
+        var body = LlmHttpSupport.ollamaChatBody(effective);
         String json = LlmHttpSupport.postJson(
                 httpClient,
                 timeout,

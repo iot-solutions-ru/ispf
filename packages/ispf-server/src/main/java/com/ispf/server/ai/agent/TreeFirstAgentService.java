@@ -72,12 +72,7 @@ public class TreeFirstAgentService {
         int maxSteps = Math.max(1, aiProperties.getAgentMaxSteps());
 
         for (int step = 1; step <= maxSteps; step++) {
-            LlmResponse response = llmProviderRegistry.complete(new LlmRequest(
-                    aiProperties.getModel(),
-                    messages,
-                    aiProperties.getMaxTokens(),
-                    aiProperties.getTemperature()
-            ));
+            LlmResponse response = llmProviderRegistry.complete(buildAgentLlmRequest(messages));
 
             AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, response.content());
             if ("finish".equals(action.type())) {
@@ -165,6 +160,19 @@ public class TreeFirstAgentService {
         result.put("provider", llmProviderRegistry.status());
         result.put("contextPackVersion", contextPackService.contextPackVersion());
         return result;
+    }
+
+    private LlmRequest buildAgentLlmRequest(List<LlmMessage> messages) {
+        Map<String, Object> providerOptions = aiProperties.isAgentDisableThinking()
+                ? Map.of("chat_template_kwargs", Map.of("enable_thinking", false))
+                : Map.of();
+        return new LlmRequest(
+                aiProperties.getModel(),
+                messages,
+                aiProperties.getMaxTokens(),
+                aiProperties.getTemperature(),
+                providerOptions
+        );
     }
 
     private List<LlmMessage> buildMessagesWithHistory(AgentSession session, String userMessage) {

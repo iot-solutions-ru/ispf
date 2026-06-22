@@ -20,6 +20,7 @@ public class AiProperties {
     private int agentMaxSteps = 18;
     private int agentSessionTtlHours = 24;
     private int agentMaxHistoryTurns = 20;
+    private boolean agentDisableThinking = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -123,6 +124,14 @@ public class AiProperties {
 
     public void setAgentMaxHistoryTurns(int agentMaxHistoryTurns) {
         this.agentMaxHistoryTurns = agentMaxHistoryTurns;
+    }
+
+    public boolean isAgentDisableThinking() {
+        return agentDisableThinking;
+    }
+
+    public void setAgentDisableThinking(boolean agentDisableThinking) {
+        this.agentDisableThinking = agentDisableThinking;
     }
 
     public Duration timeout() {

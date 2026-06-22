@@ -20,7 +20,8 @@ public final class AgentJsonProtocol {
     }
 
     public static AgentAction parse(ObjectMapper objectMapper, String content) throws Exception {
-        String json = extractJsonObject(objectMapper, content);
+        String normalized = normalizeModelContent(content);
+        String json = extractJsonObject(objectMapper, normalized);
         JsonNode node = objectMapper.readTree(json);
         String type = node.path("type").asString("").trim();
         if ("finish".equalsIgnoreCase(type)) {
@@ -44,10 +45,31 @@ public final class AgentJsonProtocol {
         throw new IllegalArgumentException("Agent action must be {\"type\":\"tool\",...} or {\"type\":\"finish\",...}");
     }
 
+    private static String normalizeModelContent(String content) {
+        String trimmed = content != null ? content.trim() : "";
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        int redactedEnd = trimmed.lastIndexOf("</think>");
+        if (redactedEnd >= 0) {
+            trimmed = trimmed.substring(redactedEnd + "</think>".length()).trim();
+        }
+        int fenceStart = trimmed.indexOf("```json");
+        if (fenceStart >= 0) {
+            int bodyStart = fenceStart + "```json".length();
+            int fenceEnd = trimmed.indexOf("```", bodyStart);
+            if (fenceEnd > bodyStart) {
+                return trimmed.substring(bodyStart, fenceEnd).trim();
+            }
+        }
+        return trimmed;
+    }
+
     private static String extractJsonObject(ObjectMapper objectMapper, String content) throws Exception {
         String trimmed = content != null ? content.trim() : "";
         String best = null;
         int bestScore = -1;
+        int bestStart = -1;
         for (int start = trimmed.indexOf('{'); start >= 0; start = trimmed.indexOf('{', start + 1)) {
             int end = findJsonObjectEnd(trimmed, start);
             if (end < 0) {
@@ -59,15 +81,20 @@ public final class AgentJsonProtocol {
                 if (!node.isObject() || node.isEmpty()) {
                     continue;
                 }
+                String type = node.path("type").asString("").trim();
+                if (!type.isEmpty() && !"tool".equalsIgnoreCase(type) && !"finish".equalsIgnoreCase(type)) {
+                    continue;
+                }
                 int score = node.size();
-                if (node.has("type")) {
-                    score += 20;
+                if ("tool".equalsIgnoreCase(type) || "finish".equalsIgnoreCase(type)) {
+                    score += 100;
                 }
                 if (node.has("name") || node.has("tool")) {
                     score += 10;
                 }
-                if (score > bestScore) {
+                if (score > bestScore || (score == bestScore && start > bestStart)) {
                     bestScore = score;
+                    bestStart = start;
                     best = candidate;
                 }
             } catch (Exception ignored) {

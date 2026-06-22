@@ -1,6 +1,7 @@
 package com.ispf.server.ai.agent;
 
 import com.ispf.ai.LlmMessage;
+import com.ispf.ai.LlmProvider;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
 import com.ispf.ai.LlmUsage;
@@ -65,6 +66,28 @@ class TreeFirstAgentServiceSessionTest {
         when(toolRegistry.toolCatalog()).thenReturn(List.of());
         when(contextPackService.contextPackVersion()).thenReturn("test-pack");
         when(llmProviderRegistry.status()).thenReturn(Map.of("providerId", "test"));
+        LlmProvider provider = org.mockito.Mockito.mock(LlmProvider.class);
+        when(provider.providerId()).thenReturn("test");
+        when(llmProviderRegistry.activeProvider()).thenReturn(provider);
+    }
+
+    @Test
+    void agentRequestDisablesThinkingByDefault() throws Exception {
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                "{\"type\":\"finish\",\"summary\":\"done\",\"result\":{}}",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        agentService.runTurn(session, "hello", auth, "admin");
+
+        ArgumentCaptor<LlmRequest> captor = ArgumentCaptor.forClass(LlmRequest.class);
+        verify(llmProviderRegistry).complete(captor.capture());
+        assertEquals(
+                false,
+                ((Map<?, ?>) captor.getValue().providerOptions().get("chat_template_kwargs")).get("enable_thinking")
+        );
     }
 
     @Test
