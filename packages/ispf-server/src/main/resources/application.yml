@@ -87,9 +87,13 @@ ispf:
     api-key: ${ISPF_AI_API_KEY:}
     api-key-env: ${ISPF_AI_API_KEY_ENV:OPENAI_API_KEY}
     timeout-seconds: ${ISPF_AI_TIMEOUT_SECONDS:60}
-    max-tokens: ${ISPF_AI_MAX_TOKENS:4096}
+    max-tokens: ${ISPF_AI_MAX_TOKENS:262144}
     temperature: ${ISPF_AI_TEMPERATURE:0.2}
     context-pack-classpath: classpath:ai/context-pack.json
+    agent-max-steps: ${ISPF_AI_AGENT_MAX_STEPS:18}
+    agent-session-ttl-hours: ${ISPF_AI_AGENT_SESSION_TTL_HOURS:24}
+    agent-max-history-turns: ${ISPF_AI_AGENT_MAX_HISTORY_TURNS:50}
+    agent-disable-thinking: ${ISPF_AI_AGENT_DISABLE_THINKING:true}
 
 logging:
   level:
