@@ -84,6 +84,7 @@ ispf:
     provider: ${ISPF_AI_PROVIDER:noop}
     base-url: ${ISPF_AI_BASE_URL:}
     model: ${ISPF_AI_MODEL:gpt-4o-mini}
+    api-key: ${ISPF_AI_API_KEY:}
     api-key-env: ${ISPF_AI_API_KEY_ENV:OPENAI_API_KEY}
     timeout-seconds: ${ISPF_AI_TIMEOUT_SECONDS:60}
     max-tokens: ${ISPF_AI_MAX_TOKENS:4096}

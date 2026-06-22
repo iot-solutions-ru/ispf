@@ -11,6 +11,7 @@ public class AiProperties {
     private String provider = "noop";
     private String baseUrl = "";
     private String model = "gpt-4o-mini";
+    private String apiKey = "";
     private String apiKeyEnv = "OPENAI_API_KEY";
     private int timeoutSeconds = 60;
     private int maxTokens = 4096;
@@ -47,6 +48,14 @@ public class AiProperties {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public String getApiKey() {
+        return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+        this.apiKey = apiKey;
     }
 
     public String getApiKeyEnv() {

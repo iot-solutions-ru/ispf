@@ -112,6 +112,9 @@ public class LlmProviderRegistry {
     }
 
     private String resolveApiKey() {
+        if (properties.getApiKey() != null && !properties.getApiKey().isBlank()) {
+            return properties.getApiKey();
+        }
         String envName = properties.getApiKeyEnv();
         if (envName == null || envName.isBlank()) {
             return "";

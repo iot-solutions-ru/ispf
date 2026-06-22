@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-VERSION=0.7.3
+VERSION="${1:-0.7.4}"
 STAGING=/opt/ispf/staging/$VERSION
 REPO=Michaael/IoT-Solutions-Platform
 mkdir -p "$STAGING"
