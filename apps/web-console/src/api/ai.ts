@@ -32,6 +32,73 @@ export interface AiGenerateResult {
   provider: AiProviderStatus;
 }
 
+export interface AiAgentTool {
+  name: string;
+  description: string;
+}
+
+export interface AiAgentStep {
+  step: number;
+  type: "tool" | "finish";
+  tool?: string;
+  label?: string;
+  arguments?: Record<string, unknown>;
+  result?: Record<string, unknown>;
+  summary?: string;
+}
+
+export interface AiAgentTurn {
+  turnId: string;
+  userMessage: string;
+  assistantSummary: string;
+  status: string;
+  steps: AiAgentStep[];
+  result: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface AiAgentSessionSummary {
+  sessionId: string;
+  title: string;
+  rootPath: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiAgentSession extends AiAgentSessionSummary {
+  turns: AiAgentTurn[];
+}
+
+export interface AiAgentChatResponse {
+  status: string;
+  sessionId: string;
+  turnId: string;
+  title: string;
+  message: string;
+  rootPath: string;
+  steps: AiAgentStep[];
+  summary: string;
+  result: Record<string, unknown>;
+  provider: AiProviderStatus;
+  contextPackVersion: string;
+}
+
+export interface AiAgentRunResult {
+  status: string;
+  sessionId?: string;
+  turnId?: string;
+  title?: string;
+  goal?: string;
+  message?: string;
+  rootPath: string;
+  steps: AiAgentStep[];
+  summary: string;
+  result: Record<string, unknown>;
+  tools?: AiAgentTool[];
+  provider: AiProviderStatus;
+  contextPackVersion: string;
+}
+
 async function parseError(response: Response, fallback: string): Promise<string> {
   const text = await response.text();
   return text || fallback;
@@ -106,6 +173,92 @@ export function generateAiBundle(
   }).then(async (response) => {
     if (!response.ok) {
       throw new Error(await parseError(response, `Generate failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function fetchAiAgentTools(): Promise<{ tools: AiAgentTool[] }> {
+  return fetch("/api/v1/ai/agent/tools", {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Agent tools failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function runAiAgent(goal: string, rootPath?: string): Promise<AiAgentRunResult> {
+  return fetch("/api/v1/ai/agent/run", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ goal, rootPath: rootPath || "root" }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Agent run failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function createAgentSession(rootPath?: string): Promise<AiAgentSessionSummary> {
+  return fetch("/api/v1/ai/agent/sessions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ rootPath: rootPath || "root" }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Create session failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function fetchAgentSession(sessionId: string): Promise<AiAgentSession> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Fetch session failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function sendAgentMessage(
+  sessionId: string,
+  message: string,
+  rootPath?: string
+): Promise<AiAgentChatResponse> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ message, rootPath }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Send message failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function deleteAgentSession(sessionId: string): Promise<{ status: string; sessionId: string }> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Delete session failed: ${response.status}`));
     }
     return response.json();
   });

@@ -9,11 +9,14 @@ import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.ai.tool.AiToolRegistry;
 import com.ispf.server.ai.validation.BundleValidationResult;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.BundleManifestJsonSupport;
 import com.ispf.server.config.AiProperties;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +70,13 @@ public class AiBundleGenerationService {
                 aiProperties.getTemperature()
         ));
 
-        ApplicationBundleDeployService.BundleManifest generated = parseBundleManifest(
+        BundleManifestJsonSupport.ParseResult parsed = parseBundleManifest(
                 response.content(),
+                appId,
                 baseManifest
         );
+        ApplicationBundleDeployService.BundleManifest generated = parsed.manifest();
+        Map<String, Object> artifact = parsed.artifact();
 
         Map<String, Object> validation = toolRegistry.validateBundle(appId, generated, actor);
         Map<String, Object> dryRun = toolRegistry.dryRunDeploy(appId, generated, actor);
@@ -91,12 +97,15 @@ public class AiBundleGenerationService {
         );
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("artifact", objectMapper.convertValue(generated, Map.class));
+        result.put("artifact", artifact);
         result.put("validation", validation);
         result.put("dryRun", dryRun);
         result.put("publishable", publishable);
         result.put("auditId", auditId);
         result.put("provider", llmProviderRegistry.status());
+        if (!publishable) {
+            result.put("llmPreview", truncate(response.content(), 2000));
+        }
         return result;
     }
 
@@ -118,54 +127,129 @@ public class AiBundleGenerationService {
     }
 
     private String buildSystemPrompt(String appId) {
-        Map<String, Object> pack = contextPackService.loadPack();
         return """
                 You are an ISPF solution developer assistant.
-                Generate ONLY a valid bundle manifest JSON object.
-                Do NOT output Java, React, explanations, or markdown fences.
+                Generate ONLY one JSON object — a complete bundle manifest.
+                Do NOT output Java, React, markdown fences, or prose.
+                Use camelCase field names exactly as in the example (displayName, schemaName, objectPath, functionName, layoutJson).
+                Never set fields to null. Omit unused sections instead of null placeholders.
                 Target appId: %s
-                Allowed artifacts: bundle JSON with migrations, functions, dashboards, operatorUi, events, reports, models, workflows.
-                Forbidden: Java in ispf-server, custom BFF routes, platform Flyway for app tables.
-                Context pack:
+                schemaName should be app_<appId> with hyphens replaced by underscores.
+                Required: version (semver e.g. 1.0.0), displayName, schemaName, and at least one of migrations[], functions[], dashboards[], operatorUi.
+                migrations[] entries MUST use {id, sql}. functions[] MUST use {objectPath, functionName, version, source:{type,body}}.
+                Reference example (adapt to the user prompt):
                 %s
-                """.formatted(appId, writeJson(pack));
+                """.formatted(appId, referenceExampleManifest());
     }
 
-    private ApplicationBundleDeployService.BundleManifest parseBundleManifest(
-            String content,
-            ApplicationBundleDeployService.BundleManifest baseManifest
-    ) throws Exception {
-        String json = extractJsonObject(content);
-        if (baseManifest != null) {
-            Map<String, Object> merged = objectMapper.convertValue(baseManifest, Map.class);
-            Map<String, Object> generated = objectMapper.readValue(json, Map.class);
-            merged.putAll(generated);
-            return objectMapper.convertValue(merged, ApplicationBundleDeployService.BundleManifest.class);
-        }
-        return objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);
-    }
-
-    private String extractJsonObject(String content) throws Exception {
-        String trimmed = content != null ? content.trim() : "";
-        if (trimmed.startsWith("```")) {
-            int start = trimmed.indexOf('{');
-            int end = trimmed.lastIndexOf('}');
-            if (start >= 0 && end > start) {
-                trimmed = trimmed.substring(start, end + 1);
-            }
-        }
-        JsonNode node = objectMapper.readTree(trimmed);
-        if (node.isObject()) {
-            return objectMapper.writeValueAsString(node);
-        }
-        throw new IllegalArgumentException("LLM response is not a JSON object");
-    }
-
-    private String writeJson(Object value) {
+    private String referenceExampleManifest() {
         try {
-            return objectMapper.writeValueAsString(value);
+            return new ClassPathResource("warehouse-bundle.json")
+                    .getContentAsString(StandardCharsets.UTF_8)
+                    .trim();
         } catch (Exception ex) {
             return "{}";
         }
+    }
+
+    private BundleManifestJsonSupport.ParseResult parseBundleManifest(
+            String content,
+            String appId,
+            ApplicationBundleDeployService.BundleManifest baseManifest
+    ) throws Exception {
+        String json = extractJsonObject(content);
+        Map<String, Object> base = baseManifest != null
+                ? objectMapper.convertValue(baseManifest, Map.class)
+                : BundleManifestJsonSupport.defaultBaseMap(appId);
+        return BundleManifestJsonSupport.mergeAndParseWithArtifact(objectMapper, base, json);
+    }
+
+    String extractJsonObject(String content) throws Exception {
+        String trimmed = content != null ? content.trim() : "";
+        String bestCandidate = null;
+        int bestScore = -1;
+
+        for (int start = trimmed.indexOf('{'); start >= 0; start = trimmed.indexOf('{', start + 1)) {
+            int end = findJsonObjectEnd(trimmed, start);
+            if (end < 0) {
+                continue;
+            }
+
+            String candidate = trimmed.substring(start, end + 1);
+            try {
+                JsonNode node = objectMapper.readTree(candidate);
+                if (!node.isObject() || node.isEmpty()) {
+                    continue;
+                }
+                int score = node.size();
+                if (node.has("version")) {
+                    score += 20;
+                }
+                if (node.has("migrations")) {
+                    score += 10;
+                }
+                if (node.has("functions")) {
+                    score += 10;
+                }
+                if (node.has("operatorUi")) {
+                    score += 10;
+                }
+                if (node.has("schemaName")) {
+                    score += 5;
+                }
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestCandidate = objectMapper.writeValueAsString(node);
+                }
+            } catch (Exception ignored) {
+                // Keep scanning in case prose before the real manifest contains brace-delimited text.
+            }
+        }
+
+        if (bestCandidate == null) {
+            throw new IllegalArgumentException("LLM response does not contain a JSON object");
+        }
+        return bestCandidate;
+    }
+
+    private int findJsonObjectEnd(String content, int start) {
+        int depth = 0;
+        boolean inString = false;
+        boolean escaped = false;
+
+        for (int i = start; i < content.length(); i++) {
+            char ch = content.charAt(i);
+
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (ch == '\\') {
+                    escaped = true;
+                } else if (ch == '"') {
+                    inString = false;
+                }
+                continue;
+            }
+
+            if (ch == '"') {
+                inString = true;
+            } else if (ch == '{') {
+                depth++;
+            } else if (ch == '}') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    private static String truncate(String value, int maxLen) {
+        if (value == null) {
+            return "";
+        }
+        return value.length() <= maxLen ? value : value.substring(0, maxLen) + "...";
     }
 }

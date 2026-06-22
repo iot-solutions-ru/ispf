@@ -8,7 +8,7 @@ CREATE TABLE ai_tool_audit (
     provider_id VARCHAR(64),
     model_id VARCHAR(128),
     context_pack_version VARCHAR(64),
-    errors_json CLOB,
+    errors_json TEXT,
     created_at TIMESTAMP NOT NULL
 );
 

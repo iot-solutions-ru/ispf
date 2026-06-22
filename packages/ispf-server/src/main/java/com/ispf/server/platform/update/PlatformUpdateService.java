@@ -213,7 +213,8 @@ public class PlatformUpdateService {
         }
 
         status.set(copyStatus(current, "RESTARTING", "Перезапуск сервера с версией " + release.tagName(), Instant.now()));
-        launchApplyScript(applyScript, stagingRoot);
+        PlatformUpdateApplyLauncher.launch(applyScript, stagingRoot);
+        log.info("Started detached platform update apply script for staging {}", stagingRoot);
         return status.get();
     }
 
@@ -223,18 +224,6 @@ public class PlatformUpdateService {
             return;
         }
         refreshCheck();
-    }
-
-    private void launchApplyScript(Path applyScript, Path stagingRoot) throws IOException {
-        ProcessBuilder builder = new ProcessBuilder(
-                "bash",
-                applyScript.toString(),
-                stagingRoot.toString()
-        );
-        builder.redirectOutput(ProcessBuilder.Redirect.appendTo(stagingRoot.resolve("apply.log").toFile()));
-        builder.redirectError(ProcessBuilder.Redirect.appendTo(stagingRoot.resolve("apply.log").toFile()));
-        builder.start();
-        log.info("Started platform update apply script for staging {}", stagingRoot);
     }
 
     private PlatformUpdateStatus copyStatus(

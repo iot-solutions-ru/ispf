@@ -1,10 +1,10 @@
-# AI Development Layer (REQ-FW-40…43)
+# AI Development Layer (REQ-FW-40…44)
 
-Platform-side development infrastructure for solution developers. AI reads curated context, generates **declarative bundle JSON**, runs validation gates, and publishes through the existing deploy API.
+Platform-side development infrastructure for solution developers. AI reads curated context, generates **declarative bundle JSON**, runs validation gates, and publishes through the existing deploy API. The **tree-first agent** (FW-44) operates on the live object tree step-by-step.
 
-**North star:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events).
+**North star:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
-See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md).
+See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md) and [ADR-0012](decisions/0012-tree-first-ai-agent.md).
 
 ---
 
@@ -16,6 +16,7 @@ See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md).
 | FW-41 | ContextPack | `ai/context/`, `tools/ai-pack/build.py`, classpath `ai/context-pack.json` |
 | FW-42 | ToolRegistry | `com.ispf.server.ai.tool.AiToolRegistry`, REST `/api/v1/ai/tools/**` |
 | FW-43 | Platform Studio | Web Console tab **AI Studio** (`apps/web-console`) |
+| FW-44 | Tree-first agent | `com.ispf.server.ai.agent.*`, REST `/api/v1/ai/agent/**` |
 
 ---
 
@@ -63,6 +64,79 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 
 ---
 
+## Tree-first agent (FW-44)
+
+ReAct loop on the platform with bounded steps (default 18, `ispf.ai.agent-max-steps`). Admin-only.
+
+**Multi-turn sessions** (Cursor-like): each chat is a server-side in-memory session with turn history replayed to the LLM (compact user/assistant summaries, no raw tool JSON). `AgentRunState` (validate → import gates) persists for the whole chat.
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/ai/agent/tools` | Catalog of platform tools |
+| `POST /api/v1/ai/agent/sessions` | Create empty session `{ sessionId, title: "New chat", ... }` |
+| `GET /api/v1/ai/agent/sessions/{id}` | Restore chat turns for UI (403/404 if wrong actor or expired) |
+| `POST /api/v1/ai/agent/sessions/{id}/messages` | Send message → run turn → `{ summary, steps, status, turnId }` |
+| `DELETE /api/v1/ai/agent/sessions/{id}` | Delete session (clear context) |
+| `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
+
+Create session:
+
+```json
+{ "rootPath": "root" }
+```
+
+Send message:
+
+```json
+{
+  "message": "Создай SNMP localhost и дашборд с CPU",
+  "rootPath": "root"
+}
+```
+
+Legacy one-shot run (still supported):
+
+```json
+{
+  "goal": "List devices under root.platform.devices and create lab-sensor-1",
+  "rootPath": "root"
+}
+```
+
+Response includes `steps[]` (tool calls + results), `summary`, and `status` (`OK` when the model emitted `finish`).
+
+Platform tools (Java handlers, ACL-aware):
+
+| Tool | Purpose |
+|------|---------|
+| `search_context` | Query ContextPack docs and examples |
+| `list_objects` | List tree children |
+| `get_object` | Read one node |
+| `create_object` | Create DEVICE, DASHBOARD, CUSTOM, … |
+| `list_variables` | Read object variables + values |
+| `set_variable` | Update variable (config, dashboard layout, …) |
+| `configure_driver` | SNMP/driver config + mappings + optional start |
+| `driver_control` | start / stop / poll / status |
+| `validate_bundle` | ADR-0011 gate (no DB writes) |
+| `dry_run_deploy` | Validate + `wouldApply` |
+| `import_package` | Deploy bundle (requires prior validate/dry-run OK in same run) |
+
+LLM replies with one JSON object per turn: `{"type":"tool","name":"...","arguments":{...}}` or `{"type":"finish","summary":"...","result":{...}}`.
+
+Configure max steps:
+
+```yaml
+ispf:
+  ai:
+    agent-max-steps: 18
+    agent-session-ttl-hours: 24
+    agent-max-history-turns: 20
+```
+
+Sessions are **in-memory** on the server (TTL default 24h). JVM restart or TTL expiry drops server state; the Web Console keeps a chat index in `localStorage` and shows “session expired” when `GET session` returns 404.
+
+---
+
 ## LlmProvider SPI (FW-40)
 
 Configure via `application.yml` or env:
@@ -94,6 +168,18 @@ API keys are read from env var name in `api-key-env`; never stored in audit log.
 ## Platform Studio (FW-43)
 
 Web Console → **AI Studio** tab (admin only):
+
+**Tree-first agent** (default tab):
+
+1. Sidebar lists chats; **New chat** creates a fresh session
+2. Опишите задачу обычным языком — follow-up messages keep context in the same chat
+3. Агент выполняет шаги на платформе и отвечает понятным текстом
+4. В «Подробности» — список шагов; ссылки на устройство и дашборд
+5. Delete chat or New chat clears server context for that thread
+
+Пример: *«Создай SNMP localhost, метрики CPU/RAM/сеть и дашборд»* — устройство `snmp-localhost`, драйвер `snmp`, дашборд `snmp-host-monitoring`.
+
+**Bundle generate**:
 
 1. Choose `appId`
 2. Enter prompt → **Generate bundle** (requires configured LLM)

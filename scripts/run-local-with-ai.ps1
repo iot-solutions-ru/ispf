@@ -12,8 +12,8 @@ if (Test-Path $envFile) {
     }
     Write-Host "Loaded $envFile"
 } else {
-    Write-Warning "No .env file at $envFile — set ISPF_AI_API_KEY manually."
+    Write-Warning "No .env file at $envFile - set ISPF_AI_API_KEY manually."
 }
 
 Set-Location $root
-.\gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+.\gradlew :packages:ispf-server:bootRun --args='--spring.profiles.active=local'

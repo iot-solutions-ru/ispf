@@ -74,6 +74,35 @@ class BundleManifestValidatorTest {
         assertEquals(BundleValidationResult.ERROR, result.status());
     }
 
+    @Test
+    void rejectsVersionOnlyManifest() {
+        ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
+                "1",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+        BundleValidationResult result = validator.validate("ai-generated", manifest);
+        assertEquals(BundleValidationResult.ERROR, result.status());
+    }
+
     private ApplicationBundleDeployService.BundleManifest readBundle(String resource) throws Exception {
         String json = new ClassPathResource(resource).getContentAsString(StandardCharsets.UTF_8);
         return objectMapper.readValue(json, ApplicationBundleDeployService.BundleManifest.class);

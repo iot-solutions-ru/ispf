@@ -17,7 +17,11 @@ if [ ! -f "$JAR_PATH" ] || [ ! -f "$UI_ZIP" ]; then
   exit 1
 fi
 
+exec >>"$STAGING_DIR/apply.log" 2>&1
+
 echo "=== ISPF platform update from $STAGING_DIR ==="
+echo "Started at $(date -Is) pid=$$"
+
 sleep 3
 
 systemctl stop "$SERVICE_NAME"
@@ -38,4 +42,15 @@ chmod -R a+rX "$INSTALL_ROOT/web-console"
 find "$INSTALL_ROOT/web-console" -type d -exec chmod 755 {} +
 
 systemctl start "$SERVICE_NAME"
-echo "=== Update complete ==="
+
+for i in $(seq 1 60); do
+  if curl -sf http://127.0.0.1:8080/actuator/health >/dev/null 2>&1; then
+    echo "=== Update complete (health UP after ${i} checks) ==="
+    exit 0
+  fi
+  sleep 2
+done
+
+echo "=== Update FAILED: ispf-server did not become healthy within 120s ==="
+systemctl status "$SERVICE_NAME" --no-pager -l || true
+exit 1

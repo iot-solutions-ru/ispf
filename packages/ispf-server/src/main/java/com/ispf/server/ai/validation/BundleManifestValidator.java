@@ -12,6 +12,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -61,6 +62,13 @@ public class BundleManifestValidator {
         if (manifest.version() == null || manifest.version().isBlank()) {
             builder.addError("manifest.version is required");
         }
+        if (manifest.displayName() == null || manifest.displayName().isBlank()) {
+            builder.addError("manifest.displayName is required");
+        }
+        if (manifest.schemaName() == null || manifest.schemaName().isBlank()) {
+            builder.addError("manifest.schemaName is required");
+        }
+        validateMinimumContent(manifest, builder);
 
         String tablePrefix = manifest.tablePrefix() != null ? manifest.tablePrefix() : "";
         validateMigrations(manifest, tablePrefix, builder);
@@ -79,6 +87,40 @@ public class BundleManifestValidator {
         return builder.build();
     }
 
+    private void validateMinimumContent(
+            ApplicationBundleDeployService.BundleManifest manifest,
+            BundleValidationResult.Builder builder
+    ) {
+        if (hasNonEmptyList(manifest.migrations())
+                || hasNonEmptyList(manifest.functions())
+                || hasNonEmptyList(manifest.dashboards())
+                || hasNonEmptyList(manifest.objects())
+                || hasNonEmptyList(manifest.workflows())
+                || hasNonEmptyList(manifest.models())
+                || hasNonEmptyList(manifest.bindings())
+                || hasNonEmptyList(manifest.reports())
+                || hasNonEmptyList(manifest.alertRules())
+                || hasNonEmptyList(manifest.correlators())
+                || hasNonEmptyList(manifest.schedules())
+                || hasNonEmptyList(manifest.events())
+                || hasNonEmptyMap(manifest.operatorUi())
+                || hasNonEmptyMap(manifest.operatorManifest())) {
+            return;
+        }
+        builder.addError(
+                "manifest must include at least one deployable section "
+                        + "(migrations, functions, dashboards, operatorUi, objects, workflows, models, reports, events, ...)"
+        );
+    }
+
+    private static boolean hasNonEmptyList(List<?> values) {
+        return values != null && !values.isEmpty();
+    }
+
+    private static boolean hasNonEmptyMap(Map<?, ?> values) {
+        return values != null && !values.isEmpty();
+    }
+
     private void validateMigrations(
             ApplicationBundleDeployService.BundleManifest manifest,
             String tablePrefix,
@@ -88,6 +130,10 @@ public class BundleManifestValidator {
             return;
         }
         for (ApplicationBundleDeployService.BundleMigration migration : manifest.migrations()) {
+            if (migration.id() == null || migration.id().isBlank()) {
+                builder.addError("migration: id is required (use {id, sql} objects, not declarative column schemas)");
+                continue;
+            }
             if (migration.sql() == null || migration.sql().isBlank()) {
                 builder.addError("migration " + migration.id() + ": sql is required");
                 continue;

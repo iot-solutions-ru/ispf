@@ -17,6 +17,9 @@ public class AiProperties {
     private int maxTokens = 4096;
     private double temperature = 0.2;
     private String contextPackClasspath = "classpath:ai/context-pack.json";
+    private int agentMaxSteps = 18;
+    private int agentSessionTtlHours = 24;
+    private int agentMaxHistoryTurns = 20;
 
     public boolean isEnabled() {
         return enabled;
@@ -96,6 +99,30 @@ public class AiProperties {
 
     public void setContextPackClasspath(String contextPackClasspath) {
         this.contextPackClasspath = contextPackClasspath;
+    }
+
+    public int getAgentMaxSteps() {
+        return agentMaxSteps;
+    }
+
+    public void setAgentMaxSteps(int agentMaxSteps) {
+        this.agentMaxSteps = agentMaxSteps;
+    }
+
+    public int getAgentSessionTtlHours() {
+        return agentSessionTtlHours;
+    }
+
+    public void setAgentSessionTtlHours(int agentSessionTtlHours) {
+        this.agentSessionTtlHours = agentSessionTtlHours;
+    }
+
+    public int getAgentMaxHistoryTurns() {
+        return agentMaxHistoryTurns;
+    }
+
+    public void setAgentMaxHistoryTurns(int agentMaxHistoryTurns) {
+        this.agentMaxHistoryTurns = agentMaxHistoryTurns;
     }
 
     public Duration timeout() {
