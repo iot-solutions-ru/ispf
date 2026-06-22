@@ -3605,11 +3605,103 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
     flex-direction: column;
   }
 
+  .workspace-mobile {
+    min-height: 0;
+  }
+
+  .workspace-mobile.workspace-mobile-tree .sidebar {
+    flex: 1 1 0;
+    width: 100%;
+    max-height: none;
+    min-height: 0;
+    border-right: none;
+    border-bottom: none;
+  }
+
+  .workspace-mobile.workspace-mobile-detail .explorer-main {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 0.75rem;
+  }
+
   .sidebar {
     width: 100%;
     max-height: 40vh;
     border-right: none;
     border-bottom: 1px solid var(--border);
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .brand-sub {
+    display: none;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .topbar-actions .btn {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.82rem;
+  }
+
+  .workspace-tabs {
+    padding: 0 0.5rem;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .workspace-tabs button {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.88rem;
+  }
+
+  .explorer-mobile-nav {
+    margin-bottom: 0.75rem;
+  }
+
+  .explorer-back-btn {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .explorer-view .explorer-toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .explorer-view .explorer-toolbar .hint {
+    flex: 1 1 100%;
+    font-size: 0.8rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-main {
+    max-width: none;
+    padding: 0.5rem;
+  }
+
+  .main {
+    padding: 0.75rem;
+  }
+
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabs button {
+    flex-shrink: 0;
   }
 }
 

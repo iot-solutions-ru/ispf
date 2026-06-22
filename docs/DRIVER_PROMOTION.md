@@ -28,5 +28,8 @@
 | `cwmp` | STUB | **BETA** | Inform + ответ на ACS `GetParameterValues`, configurable `informParameters` |
 | `flexible` | BETA | **PRODUCTION** | TCP/UDP request/response |
 | `gps-tracker` | BETA | **PRODUCTION** | GPS/M2M TCP server |
+| `corba` | STUB | **BETA** | IIOP TCP reachability + point parser tests |
+| `ethernet-ip` | STUB | **BETA** | CIP session registration + tag path mapping |
+| `opc-da` | STUB | **BETA** | DCOM/TCP connectivity shell + parser tests |
 
-Stub-драйверы (`dnp3`, `ethernet-ip`, `opc-da`, …) требуют native/bridge — promotion только по конкретному запросу.
+Stub-драйверы (`opc-bridge`, `vmware`, `smi-s`, …) требуют native/bridge — promotion только по конкретному запросу.

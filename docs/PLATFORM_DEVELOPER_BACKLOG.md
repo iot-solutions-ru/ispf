@@ -159,7 +159,7 @@ REQ-PF и bundle deploy — способ **загрузить** declarative-ко
 | **FW-42**  | ToolRegistry (validate/deploy)     | **Done** | AI    | P3+ |
 | **FW-43**  | Platform Studio / AI copilot UI  | **Done** | AI    | P3+ |
 | **FW-44**  | Tree-first agent (sessions, tools, reliability) | **Done** | AI | P3+ |
-| **FW-50**  | Licensed driver JAR contract       | **In progress** | DRV   | P3+ |
+| **FW-50**  | Licensed driver JAR contract       | **Done** | DRV   | P3+ |
 
 
 ---
@@ -863,7 +863,7 @@ Platform **не** содержит отраслевую бизнес-логик�
 - [x] Dashboard/SNMP/driver tools + playbooks
 - [x] Reliability: parse retries, loop guard, startup validator, graceful ERROR turns
 - [x] Persistent DB sessions (`agent_sessions`, `agent_turns`, TTL eviction)
-- [ ] MCP adapter ([ADR-0013](decisions/0013-mcp-agent-tool-adapter.md))
+- [x] MCP adapter ([ADR-0013](decisions/0013-mcp-agent-tool-adapter.md))
 
 ---
 
@@ -874,7 +874,7 @@ Platform **не** содержит отраслевую бизнес-логик�
 - [x] SPI расширение: `DeviceDriver` + license check + `driver-pack.json` manifest (spike).
 - [x] Lifecycle: load from `drivers/` dir, совместимость с [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).
 - [x] Документ поставки: JAR + license + min ISPF version — [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md).
-- [ ] Commercial driver pack pilot (signed JAR on staging).
+- [x] Commercial driver pack pilot (signed JAR on staging — `LicensedDriverPackPilotTest`, [examples/licensed-driver-pack-pilot](../examples/licensed-driver-pack-pilot/)).
 
 **Acceptance:** licensed driver pack загружается при valid license; без license — skip + WARN; core Apache drivers без изменений.
 

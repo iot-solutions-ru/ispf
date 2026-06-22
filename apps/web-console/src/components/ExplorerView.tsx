@@ -34,6 +34,8 @@ interface ExplorerViewProps {
   onDeleted: () => void;
   onSelectPath: (path: string) => void;
   isAdmin: boolean;
+  showBackToTree?: boolean;
+  onBackToTree?: () => void;
 }
 
 export default function ExplorerView({
@@ -44,6 +46,8 @@ export default function ExplorerView({
   onDeleted,
   onSelectPath,
   isAdmin,
+  showBackToTree = false,
+  onBackToTree,
 }: ExplorerViewProps) {
   if (!selectedPath) {
     return <div className="inspector-empty">Выберите объект в дереве</div>;
@@ -84,6 +88,13 @@ export default function ExplorerView({
     <div
       className={`explorer-view${isOperatorAppChild ? " explorer-view-operator-app" : ""}`}
     >
+      {showBackToTree && onBackToTree && (
+        <div className="explorer-mobile-nav">
+          <button type="button" className="btn explorer-back-btn" onClick={onBackToTree}>
+            ← Дерево объектов
+          </button>
+        </div>
+      )}
       {!hideToolbar && (
         <div className="explorer-toolbar">
           {showCreateButton && (

@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
@@ -26,6 +26,7 @@ import {
 } from "./utils/adminRouting";
 import { useObjectWebSocket, useFederatedPathSubscription } from "./hooks/useObjectWebSocket";
 import { useLazyObjectTree } from "./hooks/useLazyObjectTree";
+import { useMobileLayout } from "./hooks/useMobileLayout";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
@@ -167,6 +168,10 @@ export default function App() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [treeFilter, setTreeFilter] = useState("");
+  const isMobileLayout = useMobileLayout();
+  const [mobileExplorerPane, setMobileExplorerPane] = useState<"tree" | "detail">("tree");
+  const sidebarRef = useRef<HTMLElement | null>(null);
+  const explorerMainRef = useRef<HTMLElement | null>(null);
 
   useObjectWebSocket();
   useFederatedPathSubscription(selectedPath);
@@ -217,7 +222,67 @@ export default function App() {
   const selectPathInExplorer = (path: string) => {
     setSelectedPath(path);
     setWorkspaceTab("explorer");
+    if (isMobileLayout) {
+      setMobileExplorerPane("detail");
+    }
   };
+
+  const showObjectTreeSidebar =
+    workspaceTab !== "system"
+    && workspaceTab !== "ai-studio"
+    && (!isMobileLayout || (workspaceTab === "explorer" && mobileExplorerPane === "tree"));
+
+  const showExplorerMain =
+    workspaceTab === "explorer"
+    && (!isMobileLayout || mobileExplorerPane === "detail");
+
+  // #region agent log
+  useEffect(() => {
+    if (!session?.token) {
+      return;
+    }
+    const sidebarEl = sidebarRef.current;
+    const mainEl = explorerMainRef.current;
+    const sidebarBody = sidebarEl?.querySelector(".sidebar-body");
+    const objectTree = sidebarEl?.querySelector(".object-tree");
+    fetch("http://127.0.0.1:7392/ingest/0ec6eb83-ec4e-4401-81d3-b94e141e1b03", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "31e315" },
+      body: JSON.stringify({
+        sessionId: "31e315",
+        runId: "mobile-layout",
+        hypothesisId: "A-D",
+        location: "App.tsx:mobileLayoutProbe",
+        message: "explorer mobile layout probe",
+        data: {
+          innerWidth: window.innerWidth,
+          innerHeight: window.innerHeight,
+          isMobileLayout,
+          workspaceTab,
+          mobileExplorerPane,
+          showObjectTreeSidebar,
+          showExplorerMain,
+          selectedPath,
+          treeNodeCount: tree.length,
+          sidebarHeight: sidebarEl?.getBoundingClientRect().height ?? 0,
+          sidebarBodyHeight: sidebarBody?.getBoundingClientRect().height ?? 0,
+          objectTreeHeight: objectTree?.getBoundingClientRect().height ?? 0,
+          explorerMainHeight: mainEl?.getBoundingClientRect().height ?? 0,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }, [
+    session?.token,
+    isMobileLayout,
+    workspaceTab,
+    mobileExplorerPane,
+    showObjectTreeSidebar,
+    showExplorerMain,
+    selectedPath,
+    tree.length,
+  ]);
+  // #endregion
 
   const openEditor = (path: string) => {
     const existing = editorTabs.find((t) => t.path === path);
@@ -381,7 +446,12 @@ export default function App() {
         <button
           type="button"
           className={workspaceTab === "explorer" ? "active" : ""}
-          onClick={() => setWorkspaceTab("explorer")}
+          onClick={() => {
+            setWorkspaceTab("explorer");
+            if (isMobileLayout) {
+              setMobileExplorerPane("tree");
+            }
+          }}
         >
           Обозреватель
         </button>
@@ -426,9 +496,11 @@ export default function App() {
         onOpenAiStudio={() => setWorkspaceTab("ai-studio")}
       />
 
-      <div className="workspace">
-        {workspaceTab !== "system" && workspaceTab !== "ai-studio" && (
-          <aside className="sidebar">
+      <div
+        className={`workspace${isMobileLayout && workspaceTab === "explorer" ? ` workspace-mobile workspace-mobile-${mobileExplorerPane}` : ""}`}
+      >
+        {showObjectTreeSidebar && (
+          <aside className="sidebar" ref={sidebarRef}>
             <div className="sidebar-head">
               <h3>Дерево объектов</h3>
               <input
@@ -458,16 +530,23 @@ export default function App() {
           </aside>
         )}
 
-        {workspaceTab === "explorer" && (
-          <main className="main">
+        {showExplorerMain && (
+          <main className="main explorer-main" ref={explorerMainRef}>
             <ExplorerView
               selectedPath={selectedPath}
               selectedObject={selectedObject}
               onOpenEditor={openEditor}
               onCreateChild={() => setShowCreate(true)}
-              onDeleted={() => setSelectedPath("root")}
-              onSelectPath={setSelectedPath}
+              onDeleted={() => {
+                setSelectedPath("root");
+                if (isMobileLayout) {
+                  setMobileExplorerPane("tree");
+                }
+              }}
+              onSelectPath={selectPathInExplorer}
               isAdmin={isAdmin}
+              showBackToTree={isMobileLayout}
+              onBackToTree={() => setMobileExplorerPane("tree")}
             />
           </main>
         )}

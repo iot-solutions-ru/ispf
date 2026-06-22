@@ -1,0 +1,5 @@
+ispf:
+  mcp:
+    enabled: true
+    server-name: ispf-platform
+    stdio-enabled: false

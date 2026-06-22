@@ -17,6 +17,7 @@ See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md) and [ADR-0012](de
 | FW-42 | ToolRegistry | `com.ispf.server.ai.tool.AiToolRegistry`, REST `/api/v1/ai/tools/**` |
 | FW-43 | Platform Studio | Web Console tab **AI Studio** (`apps/web-console`) |
 | FW-44 | Tree-first agent | `com.ispf.server.ai.agent.*`, REST `/api/v1/ai/agent/**` |
+| FW-44b | MCP adapter | `com.ispf.server.ai.mcp.*`, profile `mcp`, REST `/api/v1/ai/mcp` |
 
 ---
 
@@ -155,6 +156,48 @@ ispf:
 `max-tokens` (default **16384**, env `ISPF_AI_MAX_TOKENS`) — лимит **ответа** на один вызов (`max_tokens` в API), не размер всего окна. У Qwen/vLLM окно **~256k** суммарно (промпт + ответ); не ставьте `max_tokens` равным 262144 — иначе под промпт не останется места.
 
 Sessions are **persisted in PostgreSQL** (`agent_sessions`, `agent_turns`) with TTL eviction (default 24h, `ispf.ai.agent-session-ttl-hours`). JVM restart keeps chat history until TTL; the Web Console keeps a chat index in `localStorage` and refetches turns via `GET session`.
+
+---
+
+## MCP adapter (ADR-0013)
+
+Optional profile **`mcp`** exposes the same platform agent tools to external MCP clients (Cursor, CI) without duplicating handlers.
+
+| Transport | Endpoint / mode | Auth |
+|-----------|-----------------|------|
+| HTTP JSON-RPC | `POST /api/v1/ai/mcp` | Same as agent API (admin Bearer / local role header) |
+| stdio | `ispf.mcp.stdio-enabled=true` | Actor `mcp-stdio` (local dev only) |
+
+Enable:
+
+```yaml
+spring:
+  profiles:
+    active: local,mcp
+
+ispf:
+  mcp:
+    enabled: true
+    server-name: ispf-platform
+    stdio-enabled: false   # true for Cursor stdio subprocess
+```
+
+Methods: `initialize`, `tools/list`, `tools/call`, `ping`. Tool calls delegate to `PlatformAgentToolRegistry`; optional `sessionId` in arguments attaches to DB agent sessions. Audit entries use `source=mcp` and tool prefix `mcp_<name>`.
+
+Cursor example (HTTP to local server):
+
+```json
+{
+  "mcpServers": {
+    "ispf": {
+      "url": "http://localhost:8080/api/v1/ai/mcp",
+      "headers": { "Authorization": "Bearer <admin-token>" }
+    }
+  }
+}
+```
+
+See [ADR-0013](decisions/0013-mcp-agent-tool-adapter.md).
 
 ---
 

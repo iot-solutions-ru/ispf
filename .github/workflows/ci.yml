@@ -31,6 +31,14 @@ jobs:
           --no-daemon
           -Dorg.gradle.workers.max=2
 
+      - name: Scale gate — list_devices p99 baseline
+        run: >
+          ./gradlew
+          :packages:ispf-server:test
+          --tests com.ispf.server.api.ListDevicesLoadTest
+          --no-daemon
+          -Dorg.gradle.workers.max=2
+
   web-console:
     runs-on: ubuntu-latest
     steps:

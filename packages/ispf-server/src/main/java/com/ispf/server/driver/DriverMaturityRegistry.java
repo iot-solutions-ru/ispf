@@ -11,10 +11,10 @@ final class DriverMaturityRegistry {
 
     private static final Map<String, DriverMaturity> MATURITIES = Map.ofEntries(
             Map.entry("dnp3", DriverMaturity.BETA),
-            Map.entry("ethernet-ip", DriverMaturity.STUB),
-            Map.entry("opc-da", DriverMaturity.STUB),
+            Map.entry("ethernet-ip", DriverMaturity.BETA),
+            Map.entry("opc-da", DriverMaturity.BETA),
             Map.entry("opc-bridge", DriverMaturity.STUB),
-            Map.entry("corba", DriverMaturity.STUB),
+            Map.entry("corba", DriverMaturity.BETA),
             Map.entry("vmware", DriverMaturity.STUB),
             Map.entry("smi-s", DriverMaturity.STUB),
             Map.entry("cwmp", DriverMaturity.PRODUCTION),
