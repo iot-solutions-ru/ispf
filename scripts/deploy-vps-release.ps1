@@ -29,7 +29,10 @@ npm run build
 Pop-Location
 Push-Location apps/web-console/dist
 if (Test-Path ..\web-console.zip) { Remove-Item ..\web-console.zip -Force }
-Compress-Archive -Path * -DestinationPath ..\web-console.zip
+python -c "import zipfile; from pathlib import Path; dist=Path('.'); out=Path('..')/'web-console.zip';
+import zipfile as zf
+with zf.ZipFile(out,'w',zf.ZIP_DEFLATED) as z:
+ [z.write(f, f.relative_to(dist).as_posix()) for f in dist.rglob('*') if f.is_file()]"
 Pop-Location
 
 $jar = Get-ChildItem packages/ispf-server/build/libs/ispf-server-*.jar | Where-Object { $_.Name -notmatch 'plain' } | Select-Object -First 1
@@ -44,7 +47,7 @@ if ($status) {
 git tag -f "v$Version"
 git push origin main
 git push -f origin "v$Version"
-gh release delete "v$Version" -y 2>$null
+gh release delete "v$Version" -y 2>$null | Out-Null
 gh release create "v$Version" --title "ISPF v$Version" --notes @"
 ## Summary
 - AI Studio: fix agent chat send/session race, agent API availability banner, clearer 403/401 errors
