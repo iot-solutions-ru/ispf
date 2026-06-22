@@ -90,7 +90,7 @@ public class ObjectManager {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE)
     @Transactional
-    public void initialize() {
+    public synchronized void initialize() {
         if (initialized) {
             return;
         }
@@ -582,7 +582,9 @@ public class ObjectManager {
             for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
                 node.addFunction(function);
             }
-            objectTree.register(node);
+            if (objectTree.findByPath(entity.getPath()).isEmpty()) {
+                objectTree.register(node);
+            }
         }
         for (ObjectNodeEntity entity : nodes) {
             if ("root".equals(entity.getPath())) {
