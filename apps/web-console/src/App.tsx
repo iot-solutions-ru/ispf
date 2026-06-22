@@ -36,14 +36,32 @@ import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
 import SystemView from "./components/SystemView";
 import AiStudioPanel from "./components/AiStudioPanel";
+import AgentChatStatusBar from "./components/AgentChatStatusBar";
 import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import ModelEditorPanel from "./components/ModelEditorPanel";
+import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
 import { isModelsPath } from "./types/models";
 import { isOperatorAppChildPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
 let tabCounter = 1;
+
+function AiStudioWorkspaceTabButton({
+  active,
+  onClick,
+}: {
+  active: boolean;
+  onClick: () => void;
+}) {
+  const chat = useAgentChatOptional();
+  return (
+    <button type="button" className={active ? "active" : ""} onClick={onClick}>
+      AI Studio
+      {chat?.isPending && <span className="tab-pending-dot" title="Агент выполняет задачу" />}
+    </button>
+  );
+}
 
 function useAppMode(session: AuthSession | null): ["admin" | "operator", (mode: "admin" | "operator") => void] {
   const [mode, setModeState] = useState<"admin" | "operator">(() => resolveInitialAppMode(session));
@@ -322,6 +340,7 @@ export default function App() {
   }
 
   return (
+    <AgentChatProvider enabled={isAdmin}>
     <div className="admin-shell">
       <header className="topbar">
         <div className="brand">
@@ -375,13 +394,10 @@ export default function App() {
           </button>
         )}
         {isAdmin && (
-          <button
-            type="button"
-            className={workspaceTab === "ai-studio" ? "active" : ""}
+          <AiStudioWorkspaceTabButton
+            active={workspaceTab === "ai-studio"}
             onClick={() => setWorkspaceTab("ai-studio")}
-          >
-            AI Studio
-          </button>
+          />
         )}
         {editorTabs.map((tab) => (
           <button
@@ -403,6 +419,11 @@ export default function App() {
           </button>
         ))}
       </nav>
+
+      <AgentChatStatusBar
+        workspaceTab={workspaceTab}
+        onOpenAiStudio={() => setWorkspaceTab("ai-studio")}
+      />
 
       <div className="workspace">
         {workspaceTab !== "system" && workspaceTab !== "ai-studio" && (
@@ -452,8 +473,8 @@ export default function App() {
 
         {workspaceTab === "system" && isAdmin && <SystemView />}
 
-        {workspaceTab === "ai-studio" && isAdmin && (
-          <main className="main ai-studio-main">
+        {isAdmin && (
+          <main className="main ai-studio-main" hidden={workspaceTab !== "ai-studio"}>
             <AiStudioPanel />
           </main>
         )}
@@ -542,5 +563,6 @@ export default function App() {
         />
       )}
     </div>
+    </AgentChatProvider>
   );
 }

@@ -1,41 +1,34 @@
 package com.ispf.server.ai.agent;
 
 import com.ispf.server.config.AiProperties;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AgentSessionStore {
 
-    private final Map<String, AgentSession> sessionsById = new ConcurrentHashMap<>();
+    private final AgentSessionRepository repository;
     private final AiProperties aiProperties;
 
-    public AgentSessionStore(AiProperties aiProperties) {
+    public AgentSessionStore(AgentSessionRepository repository, AiProperties aiProperties) {
+        this.repository = repository;
         this.aiProperties = aiProperties;
     }
 
     public AgentSession create(String actor, String rootPath) {
         evictExpired();
         AgentSession session = AgentSession.create(actor, rootPath);
-        sessionsById.put(session.sessionId(), session);
+        repository.insert(session);
         return session;
     }
 
     public Optional<AgentSession> get(String sessionId, String actor) {
         evictExpired();
-        AgentSession session = sessionsById.get(sessionId);
-        if (session == null) {
-            return Optional.empty();
-        }
-        if (!session.actor().equals(actor)) {
-            return Optional.empty();
-        }
-        return Optional.of(session);
+        return repository.find(sessionId, actor);
     }
 
     public Optional<AgentSession> require(String sessionId, String actor) {
@@ -43,20 +36,21 @@ public class AgentSessionStore {
     }
 
     public boolean delete(String sessionId, String actor) {
-        AgentSession session = sessionsById.get(sessionId);
-        if (session == null) {
-            return false;
-        }
-        if (!session.actor().equals(actor)) {
-            return false;
-        }
-        sessionsById.remove(sessionId);
-        return true;
+        return repository.delete(sessionId, actor);
     }
 
-    private void evictExpired() {
+    public void persistAfterTurn(AgentSession session, AgentTurn turn) {
+        repository.saveTurn(session, turn);
+    }
+
+    public void persistState(AgentSession session) {
+        repository.update(session);
+    }
+
+    @Scheduled(fixedDelayString = "${ispf.ai.agent-eviction-interval-ms:3600000}")
+    public void evictExpired() {
         Duration ttl = Duration.ofHours(Math.max(1, aiProperties.getAgentSessionTtlHours()));
         Instant cutoff = Instant.now().minus(ttl);
-        sessionsById.entrySet().removeIf(entry -> entry.getValue().updatedAt().isBefore(cutoff));
+        repository.deleteExpired(cutoff);
     }
 }

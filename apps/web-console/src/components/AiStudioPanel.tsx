@@ -1,278 +1,102 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import AiAgentChat from "./AiAgentChat";
-import {
-  dryRunAiDeploy,
-  fetchAiContextPack,
-  fetchAiProviderStatus,
-  generateAiBundle,
-  validateAiBundle,
-} from "../api/ai";
-import { fetchDeployHistory, rollbackDeploy } from "../api/applications";
-import { importPackage } from "../api/packages";
+import AiStudioBundleTab, { defaultBundleManifest } from "./AiStudioBundleTab";
+import AiStudioSettingsTab from "./AiStudioSettingsTab";
+import { useAgentChat } from "../context/AgentChatContext";
+import { loadAiStudioPrefs, saveAiStudioPrefs } from "../utils/agentChatStorage";
 
-const DEFAULT_MANIFEST = `{
-  "version": "1.0.0",
-  "displayName": "AI generated app",
-  "schemaName": "app_ai_generated",
-  "migrations": []
-}`;
+type StudioMode = "agent" | "bundle" | "settings";
 
-type StudioMode = "agent" | "bundle";
+const MODE_LABELS: Record<StudioMode, string> = {
+  agent: "Агент",
+  bundle: "Пакет bundle",
+  settings: "Настройки",
+};
 
 export default function AiStudioPanel() {
-  const queryClient = useQueryClient();
-  const [mode, setMode] = useState<StudioMode>("agent");
-  const [appId, setAppId] = useState("ai-generated");
+  const { isPending, provider, providerLoading } = useAgentChat();
+  const [mode, setMode] = useState<StudioMode>(() => loadAiStudioPrefs().lastTab);
+  const [appId, setAppId] = useState(() => loadAiStudioPrefs().defaultAppId);
   const [prompt, setPrompt] = useState(
     "Create a minimal warehouse-style bundle with one migration table, one script function, and operatorUi with a single dashboard."
   );
-  const [manifestText, setManifestText] = useState(DEFAULT_MANIFEST);
+  const [manifestText, setManifestText] = useState(defaultBundleManifest);
   const [validationText, setValidationText] = useState<string | null>(null);
   const [dryRunText, setDryRunText] = useState<string | null>(null);
 
-  const contextPackQuery = useQuery({
-    queryKey: ["ai-context-pack"],
-    queryFn: fetchAiContextPack,
-  });
+  useEffect(() => {
+    const prefs = loadAiStudioPrefs();
+    saveAiStudioPrefs({ ...prefs, lastTab: mode });
+  }, [mode]);
 
-  const providerQuery = useQuery({
-    queryKey: ["ai-provider"],
-    queryFn: fetchAiProviderStatus,
-  });
-
-  const historyQuery = useQuery({
-    queryKey: ["deploy-history", appId],
-    queryFn: () => fetchDeployHistory(appId.trim()),
-    enabled: Boolean(appId.trim()) && mode === "bundle",
-  });
-
-  const rollbackMutation = useMutation({
-    mutationFn: (version: string) => rollbackDeploy(appId.trim(), version),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["deploy-history", appId] });
-      queryClient.invalidateQueries({ queryKey: ["objects"] });
-    },
-  });
-
-  const validateMutation = useMutation({
-    mutationFn: () => {
-      const manifest = JSON.parse(manifestText) as unknown;
-      return validateAiBundle(appId.trim(), manifest);
-    },
-    onSuccess: (data) => setValidationText(JSON.stringify(data, null, 2)),
-  });
-
-  const dryRunMutation = useMutation({
-    mutationFn: () => {
-      const manifest = JSON.parse(manifestText) as unknown;
-      return dryRunAiDeploy(appId.trim(), manifest);
-    },
-    onSuccess: (data) => setDryRunText(JSON.stringify(data, null, 2)),
-  });
-
-  const generateMutation = useMutation({
-    mutationFn: () => generateAiBundle(appId.trim(), prompt),
-    onSuccess: (data) => {
-      const artifact = data.artifact as Record<string, unknown> | undefined;
-      if (data.publishable && artifact && Object.keys(artifact).length > 0) {
-        setManifestText(JSON.stringify(artifact, null, 2));
-      }
-      setValidationText(JSON.stringify(data.validation, null, 2));
-      setDryRunText(JSON.stringify(data.dryRun, null, 2));
-    },
-  });
-
-  const publishMutation = useMutation({
-    mutationFn: () => {
-      const manifest = JSON.parse(manifestText) as unknown;
-      return importPackage(appId.trim(), manifest);
-    },
-  });
-
-  const provider = providerQuery.data;
-  const previewUrl = appId.trim()
-    ? `/?mode=operator&app=${encodeURIComponent(appId.trim())}`
-    : "/?mode=operator";
+  const setStudioMode = (next: StudioMode) => setMode(next);
 
   return (
     <div className="ai-studio-panel">
-      <h3>AI Studio</h3>
-      <p className="op-muted">
-        Агент выполняет задачи на платформе (устройства, SNMP, дашборды). Режим Bundle — генерация пакетов.
-      </p>
-
-      <div className="ai-studio-mode-tabs">
-        <button
-          type="button"
-          className={mode === "agent" ? "btn active" : "btn"}
-          onClick={() => setMode("agent")}
-        >
-          Agent
-        </button>
-        <button
-          type="button"
-          className={mode === "bundle" ? "btn active" : "btn"}
-          onClick={() => setMode("bundle")}
-        >
-          Bundle
-        </button>
-      </div>
-
-      <div className="ai-studio-meta">
+      <header className="ai-studio-head">
         <div>
-          <strong>ContextPack:</strong>{" "}
-          {contextPackQuery.data?.contextPackVersion ?? "loading..."}
+          <h3>AI Studio</h3>
+          <p className="op-muted">Студия разработки — агент, генерация пакетов и настройки провайдера.</p>
         </div>
-        <div>
-          <strong>Provider:</strong>{" "}
-          {provider ? `${provider.providerId} (${provider.available ? "ready" : "not configured"})` : "loading..."}
-        </div>
-      </div>
-
-      {mode === "agent" && !provider?.available && (
-        <div className="op-alert op-alert-error">
-          LLM не настроен — агент недоступен. Задайте ispf.ai.provider и base-url на сервере.
-        </div>
-      )}
-
-      {mode === "agent" && provider?.available && <AiAgentChat />}
-
-      {mode === "bundle" && (
-        <>
-          <label>
-            appId / packageId
-            <input value={appId} onChange={(e) => setAppId(e.target.value)} />
-          </label>
-
-          <label className="full">
-            prompt
-            <textarea
-              className="mono"
-              rows={4}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              spellCheck={false}
-            />
-          </label>
-
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn"
-              disabled={generateMutation.isPending || !provider?.available}
-              onClick={() => generateMutation.mutate()}
-            >
-              Generate bundle
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={validateMutation.isPending}
-              onClick={() => validateMutation.mutate()}
-            >
-              Validate
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={dryRunMutation.isPending}
-              onClick={() => dryRunMutation.mutate()}
-            >
-              Dry-run deploy
-            </button>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={publishMutation.isPending || !appId.trim()}
-              onClick={() => publishMutation.mutate()}
-            >
-              Publish
-            </button>
-            <a className="btn" href={previewUrl} target="_blank" rel="noreferrer">
-              Preview operator
-            </a>
+        {isPending && mode !== "agent" && (
+          <div className="ai-studio-background-hint" role="status">
+            <span className="ai-agent-status-bar-pulse" aria-hidden />
+            Агент выполняет задачу в фоне — переключитесь на вкладку «Агент»
           </div>
+        )}
+      </header>
 
-          {generateMutation.data && !generateMutation.data.publishable && (
-            <div className="op-alert op-alert-error">
-              Generated bundle is not publishable — fix validation errors or adjust the prompt and regenerate.
-            </div>
-          )}
+      <nav className="tabs" aria-label="Разделы AI Studio">
+        {(Object.keys(MODE_LABELS) as StudioMode[]).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={mode === tab ? "active" : ""}
+            onClick={() => setStudioMode(tab)}
+          >
+            {MODE_LABELS[tab]}
+            {tab === "agent" && isPending && <span className="tab-pending-dot" title="Выполняется запрос" />}
+          </button>
+        ))}
+      </nav>
 
-          {(generateMutation.error || validateMutation.error || dryRunMutation.error || publishMutation.error) && (
-            <div className="op-alert op-alert-error">
-              {String(
-                generateMutation.error
-                  || validateMutation.error
-                  || dryRunMutation.error
-                  || publishMutation.error
-              )}
-            </div>
-          )}
+      <div className="ai-studio-status-row">
+        <span className={`ai-studio-badge ${provider?.available ? "ok" : "warn"}`}>
+          Провайдер:{" "}
+          {providerLoading
+            ? "загрузка…"
+            : provider
+              ? provider.available
+                ? "готов"
+                : "не настроен"
+              : "—"}
+        </span>
+        {isPending && (
+          <span className="ai-studio-badge warn">Запрос выполняется…</span>
+        )}
+      </div>
 
-          {publishMutation.data && (
-            <pre className="mono small">{JSON.stringify(publishMutation.data, null, 2)}</pre>
-          )}
+      <AiAgentChat visible={mode === "agent"} />
 
-          <section className="ai-studio-history">
-            <h4>Deploy history / rollback</h4>
-            {historyQuery.isLoading && <p className="op-muted">Loading history…</p>}
-            {historyQuery.data && historyQuery.data.length === 0 && (
-              <p className="op-muted">No deploy history for this appId yet.</p>
-            )}
-            {historyQuery.data && historyQuery.data.length > 0 && (
-              <ul className="deploy-history-list">
-                {historyQuery.data.map((entry) => (
-                  <li key={entry.version}>
-                    <span>
-                      v{entry.version}
-                      {entry.active ? " (active)" : ""}
-                      {entry.deployedAt ? ` — ${entry.deployedAt}` : ""}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn small"
-                      disabled={rollbackMutation.isPending || entry.active}
-                      onClick={() => rollbackMutation.mutate(entry.version)}
-                    >
-                      Rollback
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {rollbackMutation.error && (
-              <div className="op-alert op-alert-error">{String(rollbackMutation.error)}</div>
-            )}
-          </section>
+      <div className={`ai-studio-tab-panel ${mode === "bundle" ? "active" : ""}`} hidden={mode !== "bundle"}>
+        <AiStudioBundleTab
+          appId={appId}
+          setAppId={setAppId}
+          prompt={prompt}
+          setPrompt={setPrompt}
+          manifestText={manifestText}
+          setManifestText={setManifestText}
+          validationText={validationText}
+          setValidationText={setValidationText}
+          dryRunText={dryRunText}
+          setDryRunText={setDryRunText}
+          provider={provider}
+        />
+      </div>
 
-          <label className="full">
-            bundle manifest JSON
-            <textarea
-              className="mono"
-              rows={16}
-              value={manifestText}
-              onChange={(e) => setManifestText(e.target.value)}
-              spellCheck={false}
-            />
-          </label>
-
-          {validationText && (
-            <label className="full">
-              validation
-              <textarea className="mono" rows={8} readOnly value={validationText} />
-            </label>
-          )}
-
-          {dryRunText && (
-            <label className="full">
-              dry-run
-              <textarea className="mono" rows={8} readOnly value={dryRunText} />
-            </label>
-          )}
-        </>
-      )}
+      <div className={`ai-studio-tab-panel ${mode === "settings" ? "active" : ""}`} hidden={mode !== "settings"}>
+        <AiStudioSettingsTab />
+      </div>
     </div>
   );
 }

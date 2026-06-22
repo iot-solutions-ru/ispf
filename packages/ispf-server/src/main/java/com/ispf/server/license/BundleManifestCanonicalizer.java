@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-final class BundleManifestCanonicalizer {
+public final class BundleManifestCanonicalizer {
 
     private static final ObjectMapper CANONICAL_MAPPER = new ObjectMapper();
 
@@ -31,7 +31,7 @@ final class BundleManifestCanonicalizer {
         }
     }
 
-    static String canonicalJson(Map<String, String> sortedClaims) {
+    public static String canonicalJson(Map<String, String> sortedClaims) {
         try {
             return CANONICAL_MAPPER.writeValueAsString(new TreeMap<>(sortedClaims));
         } catch (Exception ex) {

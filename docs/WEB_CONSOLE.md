@@ -133,6 +133,33 @@ npm run dev      # dev server
 npm run build    # production dist/
 ```
 
+## Федерация
+
+Раздел **Федерация** (`root.platform.federation`, только admin) — вкладки:
+
+| Вкладка | Содержимое |
+|---------|------------|
+| **Узлы** | Таблица peers, форма нового узла, получение authToken |
+| **Токены** | Выпуск локального federation-токена для другого ISPF |
+| **Туннель** | Inbound registrations, outbound agents, secrets-key (если capability `federation-tunnel`) |
+| **Проверка** | Proxy read probe по выбранному узлу |
+
+На объекте устройства/дашборда — панель **Привязка к федерации** (`FederationBindPanel`): проверка remote path, bind/rebind, inline-подтверждение отвязки. Для зеркала каталога — callout «Разместить локально».
+
+Компоненты: `FederationPeersPanel`, `components/federation/*`, `FederationBindPanel`.
+
+## AI Studio
+
+Вкладка **AI Studio** (admin): режимы **Агент** | **Пакет bundle** | **Настройки** (`.tabs`).
+
+- **Агент** — боковая панель чатов; состояние в `AgentChatProvider` (не размонтируется при переключении вкладок или разделов консоли)
+- **Настройки** — провайдер LLM, Context Pack, корневой путь сессий, список инструментов, очистка локального кэша чатов
+- **Пакет bundle** — промпт, генерация/валидация/dry-run/publish, история deploy
+
+Фоновое выполнение: HTTP-запрос агента продолжается при переходе в Обозреватель; индикатор в шапке и точка на вкладке AI Studio. После закрытия окна незавершённый запрос восстанавливается из `localStorage` (poll сессии на сервере).
+
+См. [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md#platform-studio-fw-43).
+
 ## Зависимости UI
 
 | Пакет | Назначение |

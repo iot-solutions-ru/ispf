@@ -1,24 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  createAgentSession,
-  deleteAgentSession,
-  fetchAgentSession,
-  fetchAiAgentTools,
-  fetchAiProviderStatus,
-  sendAgentMessage,
-  type AiAgentChatResponse,
-  type AiAgentSessionSummary,
-  type AiAgentStep,
-  type AiAgentTurn,
-} from "../api/ai";
-import {
-  loadAgentChatIndex,
-  removeChatEntry,
-  saveAgentChatIndex,
-  upsertChatEntry,
-  type AgentChatIndex,
-} from "../utils/agentChatStorage";
+import { useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchAiAgentTools } from "../api/ai";
+import { useAgentChat } from "../context/AgentChatContext";
 
 const EXAMPLE_PROMPTS = [
   "Создай SNMP-устройство localhost, выведи метрики мониторинга ресурсов системы и создай дашборд, где они будут отображаться.",
@@ -26,20 +9,21 @@ const EXAMPLE_PROMPTS = [
   "Проверь, работает ли SNMP localhost, и запусти опрос драйвера если нужно.",
 ];
 
-const WELCOME_TEXT =
-  "Опишите задачу обычным языком — например, создать SNMP-устройство, настроить метрики и дашборд. Контекст чата сохраняется, пока вы не начнёте новый.";
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent";
-  text: string;
-  steps?: AiAgentStep[];
-  result?: Record<string, unknown>;
-  status?: string;
+interface AiAgentChatProps {
+  visible: boolean;
 }
 
-function newId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function formatChatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
 }
 
 function dashboardLink(path: string | undefined): string | null {
@@ -49,338 +33,186 @@ function dashboardLink(path: string | undefined): string | null {
   return `/?path=${encodeURIComponent(path)}`;
 }
 
-function turnsToMessages(turns: AiAgentTurn[]): ChatMessage[] {
-  const messages: ChatMessage[] = [];
-  for (const turn of turns) {
-    messages.push({ id: turn.turnId + "-u", role: "user", text: turn.userMessage });
-    messages.push({
-      id: turn.turnId + "-a",
-      role: "agent",
-      text: turn.assistantSummary,
-      steps: turn.steps,
-      result: turn.result,
-      status: turn.status,
-    });
-  }
-  return messages;
-}
-
-function responseToAgentMessage(data: AiAgentChatResponse): ChatMessage {
-  return {
-    id: data.turnId + "-a",
-    role: "agent",
-    text: data.summary,
-    steps: data.steps,
-    result: data.result,
-    status: data.status,
-  };
-}
-
-export default function AiAgentChat() {
-  const queryClient = useQueryClient();
-  const [chatIndex, setChatIndex] = useState<AgentChatIndex>(() => loadAgentChatIndex());
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(
-    () => loadAgentChatIndex().activeSessionId
-  );
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: "welcome", role: "agent", text: WELCOME_TEXT },
-  ]);
-  const [input, setInput] = useState("");
-  const [loadingSession, setLoadingSession] = useState(true);
+export default function AiAgentChat({ visible }: AiAgentChatProps) {
+  const {
+    provider,
+    chatIndex,
+    activeSessionId,
+    messages,
+    input,
+    setInput,
+    loadingSession,
+    isPending,
+    startNewChat,
+    switchSession,
+    deleteChat,
+    sendMessage,
+  } = useAgentChat();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const providerQuery = useQuery({
-    queryKey: ["ai-provider"],
-    queryFn: fetchAiProviderStatus,
-  });
 
   const agentToolsQuery = useQuery({
     queryKey: ["ai-agent-tools"],
     queryFn: fetchAiAgentTools,
   });
 
-  const persistIndex = useCallback((index: AgentChatIndex) => {
-    setChatIndex(index);
-    saveAgentChatIndex(index);
-  }, []);
-
-  const applySession = useCallback(
-    (session: AiAgentSessionSummary, index: AgentChatIndex, turns: AiAgentTurn[] = []) => {
-      const entry = {
-        id: session.sessionId,
-        title: session.title,
-        updatedAt: session.updatedAt,
-      };
-      const next = upsertChatEntry(index, entry);
-      persistIndex({ ...next, activeSessionId: session.sessionId });
-      setActiveSessionId(session.sessionId);
-      const turnMessages = turnsToMessages(turns);
-      setMessages(
-        turnMessages.length > 0
-          ? turnMessages
-          : [{ id: "welcome", role: "agent", text: WELCOME_TEXT }]
-      );
-    },
-    [persistIndex]
-  );
-
-  const startNewChat = useCallback(async () => {
-    const session = await createAgentSession("root");
-    const entry = {
-      id: session.sessionId,
-      title: session.title,
-      updatedAt: session.updatedAt,
-    };
-    const next = upsertChatEntry(chatIndex, entry);
-    persistIndex({ ...next, activeSessionId: session.sessionId });
-    setActiveSessionId(session.sessionId);
-    setMessages([{ id: "welcome", role: "agent", text: WELCOME_TEXT }]);
-  }, [chatIndex, persistIndex]);
-
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoadingSession(true);
-      try {
-        const index = loadAgentChatIndex();
-        setChatIndex(index);
-        if (index.activeSessionId) {
-          try {
-            const session = await fetchAgentSession(index.activeSessionId);
-            if (!cancelled) {
-              applySession(session, index, session.turns);
-            }
-          } catch {
-            const cleaned = removeChatEntry(index, index.activeSessionId);
-            persistIndex(cleaned);
-            if (!cancelled) {
-              setActiveSessionId(null);
-              setMessages([{ id: "welcome", role: "agent", text: WELCOME_TEXT }]);
-            }
-          }
-        } else if (index.chats.length === 0) {
-          const session = await createAgentSession("root");
-          if (!cancelled) {
-            applySession(session, index);
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingSession(false);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [applySession, persistIndex]);
-
-  const sendMutation = useMutation({
-    mutationFn: ({ sessionId, text }: { sessionId: string; text: string }) =>
-      sendAgentMessage(sessionId, text),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["objects"] });
-      setMessages((prev) => [...prev, responseToAgentMessage(data)]);
-      const entry = {
-        id: data.sessionId,
-        title: data.title,
-        updatedAt: new Date().toISOString(),
-      };
-      persistIndex(
-        upsertChatEntry({ ...chatIndex, activeSessionId: data.sessionId }, entry)
-      );
+    if (visible && isPending) {
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    },
-    onError: (error) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: "agent",
-          text: `Не удалось выполнить задачу: ${String(error)}`,
-        },
-      ]);
-    },
-  });
-
-  const switchSession = async (sessionId: string) => {
-    if (sessionId === activeSessionId || sendMutation.isPending) {
-      return;
     }
-    try {
-      const session = await fetchAgentSession(sessionId);
-      applySession(session, { ...chatIndex, activeSessionId: sessionId }, session.turns);
-    } catch {
-      const cleaned = removeChatEntry(chatIndex, sessionId);
-      persistIndex(cleaned);
-    }
-  };
-
-  const handleDeleteChat = async (sessionId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    try {
-      await deleteAgentSession(sessionId);
-    } catch {
-      // session may already be gone on server
-    }
-    const cleaned = removeChatEntry(chatIndex, sessionId);
-    persistIndex(cleaned);
-    if (activeSessionId === sessionId) {
-      if (cleaned.chats.length > 0 && cleaned.activeSessionId) {
-        await switchSession(cleaned.activeSessionId);
-      } else {
-        await startNewChat();
-      }
-    }
-  };
-
-  const sendMessage = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || sendMutation.isPending) {
-      return;
-    }
-    let sessionId = activeSessionId;
-    if (!sessionId) {
-      const session = await createAgentSession("root");
-      sessionId = session.sessionId;
-      applySession(session, chatIndex);
-    }
-    setMessages((prev) => [...prev, { id: newId(), role: "user", text: trimmed }]);
-    setInput("");
-    sendMutation.mutate({ sessionId, text: trimmed });
-    setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-  };
-
-  const provider = providerQuery.data;
+  }, [visible, isPending, messages.length]);
 
   if (loadingSession) {
-    return <p className="op-muted">Загрузка чата…</p>;
+    return (
+      <div className="ai-studio-tab-panel active" hidden={!visible}>
+        <p className="op-muted">Загрузка чата…</p>
+      </div>
+    );
   }
 
+  const providerReady = provider?.available ?? false;
+
   return (
-    <div className="ai-agent-chat-layout">
-      <aside className="ai-agent-sidebar">
-        <button
-          type="button"
-          className="btn primary ai-agent-new-chat"
-          disabled={sendMutation.isPending}
-          onClick={() => void startNewChat()}
-        >
-          + New chat
-        </button>
-        <ul className="ai-agent-chat-list">
-          {chatIndex.chats.map((chat) => (
-            <li key={chat.id}>
-              <button
-                type="button"
-                className={
-                  chat.id === activeSessionId
-                    ? "ai-agent-chat-item active"
-                    : "ai-agent-chat-item"
-                }
-                onClick={() => void switchSession(chat.id)}
-              >
-                <span className="ai-agent-chat-title">{chat.title}</span>
-                <span
-                  className="ai-agent-chat-delete"
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Delete chat"
-                  onClick={(e) => void handleDeleteChat(chat.id, e)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      void handleDeleteChat(chat.id, e as unknown as React.MouseEvent);
-                    }
-                  }}
-                >
-                  ×
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </aside>
-
-      <div className="ai-agent-chat-main">
-        <div className="ai-agent-chat-examples">
-          <span className="op-muted">Примеры:</span>
-          {EXAMPLE_PROMPTS.map((example) => (
-            <button
-              key={example}
-              type="button"
-              className="btn small ai-agent-example-chip"
-              disabled={sendMutation.isPending || !provider?.available}
-              onClick={() => void sendMessage(example)}
-            >
-              {example.length > 72 ? `${example.slice(0, 72)}…` : example}
-            </button>
-          ))}
+    <div className={`ai-studio-tab-panel ${visible ? "active" : ""}`} hidden={!visible} aria-hidden={!visible}>
+      {!providerReady && (
+        <div className="op-alert op-alert-error">
+          LLM не настроен — агент недоступен. Настройте провайдер на вкладке «Настройки».
         </div>
+      )}
 
-        <div className="ai-agent-chat-log">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={
-                message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"
-              }
-            >
-              <div className="ai-agent-bubble-text">{message.text}</div>
-              {message.steps && message.steps.length > 0 && (
-                <AgentRunDetails
-                  steps={message.steps}
-                  status={message.status}
-                  result={message.result}
-                />
-              )}
-            </div>
-          ))}
-          {sendMutation.isPending && (
-            <div className="ai-agent-bubble agent ai-agent-bubble-pending">
-              <div className="ai-agent-bubble-text">Выполняю…</div>
-            </div>
-          )}
-          <div ref={scrollRef} />
-        </div>
-
-        <div className="ai-agent-chat-compose">
-          <textarea
-            rows={3}
-            value={input}
-            placeholder="Например: теперь добавь на дашборд виджет CPU…"
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void sendMessage(input);
-              }
-            }}
-            disabled={sendMutation.isPending || !provider?.available}
-          />
+      <div className="ai-agent-chat ai-agent-chat-layout">
+        <aside className="ai-agent-sidebar">
           <button
             type="button"
-            className="btn primary"
-            disabled={sendMutation.isPending || !provider?.available || !input.trim()}
-            onClick={() => void sendMessage(input)}
+            className="btn primary ai-agent-new-chat"
+            disabled={isPending}
+            onClick={() => void startNewChat()}
           >
-            Отправить
+            + Новый чат
           </button>
-        </div>
+          <ul className="ai-agent-chat-list">
+            {chatIndex.chats.map((chat) => (
+              <li
+                key={chat.id}
+                className={chat.id === activeSessionId ? "ai-agent-chat-row active" : "ai-agent-chat-row"}
+              >
+                <button
+                  type="button"
+                  className="ai-agent-chat-item"
+                  onClick={() => void switchSession(chat.id)}
+                >
+                  <span className="ai-agent-chat-title">{chat.title}</span>
+                  {chat.updatedAt && (
+                    <span className="ai-agent-chat-date">{formatChatDate(chat.updatedAt)}</span>
+                  )}
+                </button>
+                {isPending && chat.id === activeSessionId && (
+                  <span className="ai-agent-chat-pending-dot" title="Выполняется запрос" />
+                )}
+                <button
+                  type="button"
+                  className="ai-agent-chat-delete"
+                  aria-label={`Удалить чат «${chat.title}»`}
+                  disabled={isPending}
+                  onClick={() => void deleteChat(chat.id)}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+          {agentToolsQuery.data && (
+            <details className="ai-agent-sidebar-tools">
+              <summary>Инструменты ({agentToolsQuery.data.tools.length})</summary>
+              <ul>
+                {agentToolsQuery.data.tools.map((tool) => (
+                  <li key={tool.name}>
+                    <code>{tool.name}</code> — {tool.description}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </aside>
 
-        {agentToolsQuery.data && (
-          <details className="ai-agent-tools">
-            <summary>Инструменты агента ({agentToolsQuery.data.tools.length})</summary>
-            <ul>
-              {agentToolsQuery.data.tools.map((tool) => (
-                <li key={tool.name}>
-                  <code>{tool.name}</code> — {tool.description}
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
+        <div className="ai-agent-chat-main">
+          <div className="ai-agent-chat-examples">
+            <span className="op-muted">Примеры:</span>
+            {EXAMPLE_PROMPTS.map((example) => (
+              <button
+                key={example}
+                type="button"
+                className="btn small ai-agent-example-chip"
+                title={example}
+                disabled={isPending || !providerReady}
+                onClick={() => void sendMessage(example)}
+              >
+                {example.length > 72 ? `${example.slice(0, 72)}…` : example}
+              </button>
+            ))}
+          </div>
+
+          <div className="ai-agent-chat-log">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={
+                  message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"
+                }
+              >
+                <div className="ai-agent-bubble-text">{message.text}</div>
+                {message.steps && message.steps.length > 0 && (
+                  <AgentRunDetails
+                    steps={message.steps}
+                    status={message.status}
+                    result={message.result}
+                  />
+                )}
+              </div>
+            ))}
+            {isPending && (
+              <div className="ai-agent-bubble agent ai-agent-bubble-pending">
+                <div className="ai-agent-bubble-text">Выполняю…</div>
+              </div>
+            )}
+            <div ref={scrollRef} />
+          </div>
+
+          <div className="ai-agent-chat-compose">
+            <textarea
+              rows={3}
+              value={input}
+              placeholder="Например: теперь добавь на дашборд виджет CPU…"
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void sendMessage(input);
+                }
+              }}
+              disabled={isPending || !providerReady}
+            />
+            <button
+              type="button"
+              className="btn primary"
+              disabled={isPending || !providerReady || !input.trim()}
+              onClick={() => void sendMessage(input)}
+            >
+              Отправить
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+function stepStatusBadge(status: string | undefined): React.ReactNode {
+  if (!status) {
+    return null;
+  }
+  const ok = status === "OK" || status === "SUCCESS";
+  return (
+    <span className={`badge ${ok ? "ok" : "danger"}`}>{ok ? "OK" : status}</span>
   );
 }
 
@@ -389,7 +221,7 @@ function AgentRunDetails({
   status,
   result,
 }: {
-  steps: AiAgentStep[];
+  steps: import("../api/ai").AiAgentStep[];
   status?: string;
   result?: Record<string, unknown>;
 }) {
@@ -408,7 +240,17 @@ function AgentRunDetails({
         <ol className="ai-agent-step-list">
           {toolSteps.map((step) => (
             <li key={step.step}>
-              {step.label || step.tool}
+              <code>{step.tool}</code>
+              {" "}
+              {step.label || ""}
+              {" "}
+              {stepStatusBadge(
+                step.result?.status === "ERROR"
+                  ? "ERROR"
+                  : step.result?.status === "OK"
+                    ? "OK"
+                    : undefined
+              )}
               {step.result?.status === "ERROR" && (
                 <span className="ai-agent-step-error">
                   {" "}
@@ -422,7 +264,7 @@ function AgentRunDetails({
       <div className="ai-agent-run-links">
         {devicePath && (
           <a className="btn small" href={dashboardLink(devicePath) ?? "#"}>
-            Устройство
+            Открыть устройство
           </a>
         )}
         {dashboardPath && (

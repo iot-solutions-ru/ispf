@@ -154,7 +154,7 @@ ispf:
 
 `max-tokens` (default **16384**, env `ISPF_AI_MAX_TOKENS`) — лимит **ответа** на один вызов (`max_tokens` в API), не размер всего окна. У Qwen/vLLM окно **~256k** суммарно (промпт + ответ); не ставьте `max_tokens` равным 262144 — иначе под промпт не останется места.
 
-Sessions are **in-memory** on the server (TTL default 24h). JVM restart or TTL expiry drops server state; the Web Console keeps a chat index in `localStorage` and shows “session expired” when `GET session` returns 404.
+Sessions are **persisted in PostgreSQL** (`agent_sessions`, `agent_turns`) with TTL eviction (default 24h, `ispf.ai.agent-session-ttl-hours`). JVM restart keeps chat history until TTL; the Web Console keeps a chat index in `localStorage` and refetches turns via `GET session`.
 
 ---
 
@@ -188,27 +188,34 @@ API keys are read from env var name in `api-key-env`; never stored in audit log.
 
 ## Platform Studio (FW-43)
 
-Web Console → **AI Studio** tab (admin only):
+Web Console → **AI Studio** tab (admin only). Интерфейс на русском; разделы: **Агент** | **Пакет bundle** | **Настройки**.
 
-**Tree-first agent** (default tab):
+**Tree-first agent** (вкладка «Агент»):
 
-1. Sidebar lists chats; **New chat** creates a fresh session
+1. Боковая панель: список чатов с датой обновления; **+ Новый чат** создаёт сессию
 2. Опишите задачу обычным языком — follow-up messages keep context in the same chat
 3. Агент выполняет шаги на платформе и отвечает понятным текстом
-4. В «Подробности» — список шагов; ссылки на устройство и дашборд
-5. Delete chat or New chat clears server context for that thread
+4. В «Подробности (N шагов)» — нумерованный список с `<code>` tool name и badge статуса; ссылки «Открыть устройство» / «Открыть дашборд»
+5. Удаление чата — отдельная кнопка (a11y); сессия на сервере не создаётся до первого сообщения или «Новый чат»
+6. Чат не размонтируется при переключении вкладок AI Studio или раздела «Обозреватель»; HTTP-запрос продолжается на сервере
+7. При закрытии вкладки браузера во время запроса — восстановление ответа при следующем открытии (poll `GET /agent/sessions/{id}`)
+8. На ширине &lt; 900px sidebar чатов стекируется сверху
+
+**Настройки**: статус провайдера и Context Pack, `defaultRootPath`, `defaultAppId`, восстановление последнего чата, список agent tools.
 
 Пример: *«Создай SNMP localhost, метрики CPU/RAM/сеть и дашборд»* — устройство `snmp-localhost`, драйвер `snmp`, дашборд `snmp-host-monitoring`.
 
-**Bundle generate**:
+**Bundle generate** (вкладка «Пакет bundle»):
 
-1. Choose `appId`
-2. Enter prompt → **Generate bundle** (requires configured LLM)
-3. **Validate** / **Dry-run deploy**
-4. **Publish** → `POST /api/v1/platform/packages/import`
-5. **Preview operator** → `?mode=operator&app={appId}`
+1. Укажите `appId`
+2. Промпт → **Сгенерировать** (требуется настроенный LLM)
+3. **Проверить** / **Пробный deploy**
+4. **Опубликовать** → `POST /api/v1/platform/packages/import`
+5. **Предпросмотр оператора** → `?mode=operator&app={appId}`
 
 Studio does not add new bundle sections; it uses the same manifest contract as manual import.
+
+**Федерация** (отдельный раздел `root.platform.federation`): вкладки Узлы / Токены / Туннель / Проверка — см. [WEB_CONSOLE.md](WEB_CONSOLE.md#федерация).
 
 ---
 

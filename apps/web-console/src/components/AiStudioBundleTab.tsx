@@ -1,0 +1,239 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  dryRunAiDeploy,
+  generateAiBundle,
+  validateAiBundle,
+  type AiProviderStatus,
+} from "../api/ai";
+import { fetchDeployHistory, rollbackDeploy } from "../api/applications";
+import { importPackage } from "../api/packages";
+
+const DEFAULT_MANIFEST = `{
+  "version": "1.0.0",
+  "displayName": "AI generated app",
+  "schemaName": "app_ai_generated",
+  "migrations": []
+}`;
+
+interface AiStudioBundleTabProps {
+  appId: string;
+  setAppId: (value: string) => void;
+  prompt: string;
+  setPrompt: (value: string) => void;
+  manifestText: string;
+  setManifestText: (value: string) => void;
+  validationText: string | null;
+  setValidationText: (value: string | null) => void;
+  dryRunText: string | null;
+  setDryRunText: (value: string | null) => void;
+  provider: AiProviderStatus | undefined;
+}
+
+export function defaultBundleManifest(): string {
+  return DEFAULT_MANIFEST;
+}
+
+export default function AiStudioBundleTab({
+  appId,
+  setAppId,
+  prompt,
+  setPrompt,
+  manifestText,
+  setManifestText,
+  validationText,
+  setValidationText,
+  dryRunText,
+  setDryRunText,
+  provider,
+}: AiStudioBundleTabProps) {
+  const queryClient = useQueryClient();
+
+  const historyQuery = useQuery({
+    queryKey: ["deploy-history", appId],
+    queryFn: () => fetchDeployHistory(appId.trim()),
+    enabled: Boolean(appId.trim()),
+  });
+
+  const rollbackMutation = useMutation({
+    mutationFn: (version: string) => rollbackDeploy(appId.trim(), version),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deploy-history", appId] });
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+    },
+  });
+
+  const validateMutation = useMutation({
+    mutationFn: () => {
+      const manifest = JSON.parse(manifestText) as unknown;
+      return validateAiBundle(appId.trim(), manifest);
+    },
+    onSuccess: (data) => setValidationText(JSON.stringify(data, null, 2)),
+  });
+
+  const dryRunMutation = useMutation({
+    mutationFn: () => {
+      const manifest = JSON.parse(manifestText) as unknown;
+      return dryRunAiDeploy(appId.trim(), manifest);
+    },
+    onSuccess: (data) => setDryRunText(JSON.stringify(data, null, 2)),
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: () => generateAiBundle(appId.trim(), prompt),
+    onSuccess: (data) => {
+      const artifact = data.artifact as Record<string, unknown> | undefined;
+      if (data.publishable && artifact && Object.keys(artifact).length > 0) {
+        setManifestText(JSON.stringify(artifact, null, 2));
+      }
+      setValidationText(JSON.stringify(data.validation, null, 2));
+      setDryRunText(JSON.stringify(data.dryRun, null, 2));
+    },
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: () => {
+      const manifest = JSON.parse(manifestText) as unknown;
+      return importPackage(appId.trim(), manifest);
+    },
+  });
+
+  const previewUrl = appId.trim()
+    ? `/?mode=operator&app=${encodeURIComponent(appId.trim())}`
+    : "/?mode=operator";
+
+  return (
+    <div className="panel-card">
+      <label>
+        ID приложения (appId)
+        <input value={appId} onChange={(e) => setAppId(e.target.value)} />
+      </label>
+
+      <label className="full">
+        Промпт
+        <textarea
+          className="mono"
+          rows={4}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          spellCheck={false}
+        />
+      </label>
+
+      <div className="form-actions">
+        <button
+          type="button"
+          className="btn primary"
+          disabled={generateMutation.isPending || !provider?.available}
+          onClick={() => generateMutation.mutate()}
+        >
+          {generateMutation.isPending ? "Генерация…" : "Сгенерировать"}
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={validateMutation.isPending}
+          onClick={() => validateMutation.mutate()}
+        >
+          Проверить
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={dryRunMutation.isPending}
+          onClick={() => dryRunMutation.mutate()}
+        >
+          Пробный deploy
+        </button>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={publishMutation.isPending || !appId.trim()}
+          onClick={() => publishMutation.mutate()}
+        >
+          Опубликовать
+        </button>
+        <a className="btn" href={previewUrl} target="_blank" rel="noreferrer">
+          Предпросмотр оператора
+        </a>
+      </div>
+
+      {generateMutation.data && !generateMutation.data.publishable && (
+        <div className="op-alert op-alert-error">
+          Сгенерированный пакет нельзя опубликовать — исправьте ошибки валидации или измените промпт.
+        </div>
+      )}
+
+      {(generateMutation.error || validateMutation.error || dryRunMutation.error || publishMutation.error) && (
+        <div className="op-alert op-alert-error">
+          {String(
+            generateMutation.error
+              || validateMutation.error
+              || dryRunMutation.error
+              || publishMutation.error
+          )}
+        </div>
+      )}
+
+      {publishMutation.data && (
+        <pre className="mono small">{JSON.stringify(publishMutation.data, null, 2)}</pre>
+      )}
+
+      <section className="ai-studio-history">
+        <h4>История развёртываний</h4>
+        {historyQuery.isLoading && <p className="op-muted">Загрузка истории…</p>}
+        {historyQuery.data && historyQuery.data.length === 0 && (
+          <p className="op-muted">Для этого appId пока нет истории развёртываний.</p>
+        )}
+        {historyQuery.data && historyQuery.data.length > 0 && (
+          <ul className="deploy-history-list">
+            {historyQuery.data.map((entry) => (
+              <li key={entry.version}>
+                <span>
+                  v{entry.version}
+                  {entry.active ? " (активна)" : ""}
+                  {entry.deployedAt ? ` — ${entry.deployedAt}` : ""}
+                </span>
+                <button
+                  type="button"
+                  className="btn small"
+                  disabled={rollbackMutation.isPending || entry.active}
+                  onClick={() => rollbackMutation.mutate(entry.version)}
+                >
+                  Откатить
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {rollbackMutation.error && (
+          <div className="op-alert op-alert-error">{String(rollbackMutation.error)}</div>
+        )}
+      </section>
+
+      <label className="full">
+        Манифест bundle (JSON)
+        <textarea
+          className="mono"
+          rows={16}
+          value={manifestText}
+          onChange={(e) => setManifestText(e.target.value)}
+          spellCheck={false}
+        />
+      </label>
+
+      {validationText && (
+        <label className="full">
+          Результат проверки
+          <textarea className="mono" rows={8} readOnly value={validationText} />
+        </label>
+      )}
+
+      {dryRunText && (
+        <label className="full">
+          Пробный deploy
+          <textarea className="mono" rows={8} readOnly value={dryRunText} />
+        </label>
+      )}
+    </div>
+  );
+}

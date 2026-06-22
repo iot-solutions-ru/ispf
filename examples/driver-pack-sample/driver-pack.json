@@ -1,0 +1,19 @@
+{
+  "packId": "example-licensed-pack",
+  "minPlatformVersion": "0.7.5",
+  "jarFile": "example-licensed-pack.jar",
+  "drivers": [
+    {
+      "driverId": "example-licensed-pack",
+      "driverClass": "com.example.ExampleLicensedDeviceDriver"
+    }
+  ],
+  "license": {
+    "packId": "example-licensed-pack",
+    "minPlatformVersion": "0.7.5",
+    "installationId": "REPLACE_WITH_INSTALLATION_ID",
+    "jarSha256": "REPLACE_WITH_JAR_SHA256",
+    "expiresAt": "2027-12-31T23:59:59Z",
+    "signature": "REPLACE_WITH_RSA_SIGNATURE"
+  }
+}

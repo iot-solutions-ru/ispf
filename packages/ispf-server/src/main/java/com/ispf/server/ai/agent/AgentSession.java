@@ -21,18 +21,53 @@ public final class AgentSession {
     private String title;
     private Instant updatedAt;
 
-    private AgentSession(String sessionId, String actor, String rootPath) {
+    private AgentSession(
+            String sessionId,
+            String actor,
+            String rootPath,
+            String title,
+            Instant createdAt,
+            Instant updatedAt,
+            AgentRunState runState
+    ) {
         this.sessionId = sessionId;
         this.actor = actor;
         this.rootPath = rootPath != null && !rootPath.isBlank() ? rootPath.trim() : "root";
-        this.title = DEFAULT_TITLE;
-        this.createdAt = Instant.now();
-        this.updatedAt = this.createdAt;
-        this.runState = new AgentRunState();
+        this.title = title;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.runState = runState;
     }
 
     public static AgentSession create(String actor, String rootPath) {
-        return new AgentSession(UUID.randomUUID().toString(), actor, rootPath);
+        return new AgentSession(UUID.randomUUID().toString(), actor, rootPath, DEFAULT_TITLE, Instant.now(), Instant.now(), new AgentRunState());
+    }
+
+    public static AgentSession restore(
+            String sessionId,
+            String actor,
+            String rootPath,
+            String title,
+            Instant createdAt,
+            Instant updatedAt,
+            AgentRunState runState,
+            List<AgentTurn> restoredTurns
+    ) {
+        AgentSession session = new AgentSession(
+                sessionId,
+                actor,
+                rootPath,
+                title != null && !title.isBlank() ? title : DEFAULT_TITLE,
+                createdAt != null ? createdAt : Instant.now(),
+                updatedAt != null ? updatedAt : Instant.now(),
+                runState != null ? runState : new AgentRunState()
+        );
+        if (restoredTurns != null) {
+            synchronized (session.turns) {
+                session.turns.addAll(restoredTurns);
+            }
+        }
+        return session;
     }
 
     public String sessionId() {

@@ -1,10 +1,10 @@
 package com.ispf.server.ai.agent;
 
-import com.ispf.server.config.AiProperties;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -12,25 +12,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SpringBootTest
+@ActiveProfiles("test")
 class AgentSessionStoreTest {
 
+    @Autowired
     private AgentSessionStore store;
 
-    @BeforeEach
-    void setUp() {
-        AiProperties properties = new AiProperties();
-        properties.setAgentSessionTtlHours(24);
-        store = new AgentSessionStore(properties);
-    }
-
     @Test
-    void createGetAndDeleteSession() {
+    void createGetPersistAndDeleteSession() {
         AgentSession created = store.create("admin", "root");
         assertTrue(store.get(created.sessionId(), "admin").isPresent());
         assertFalse(store.get(created.sessionId(), "other").isPresent());
 
         created.addTurn(AgentTurn.create("hello", "done", "OK", List.of(), Map.of()));
-        assertEquals("hello", store.get(created.sessionId(), "admin").orElseThrow().title());
+        store.persistAfterTurn(created, created.turns().getLast());
+
+        AgentSession reloaded = store.get(created.sessionId(), "admin").orElseThrow();
+        assertEquals("hello", reloaded.title());
+        assertEquals(1, reloaded.turns().size());
 
         assertTrue(store.delete(created.sessionId(), "admin"));
         assertFalse(store.get(created.sessionId(), "admin").isPresent());
@@ -39,14 +39,17 @@ class AgentSessionStoreTest {
     @Test
     void truncatesTitleOnFirstTurn() {
         AgentSession session = store.create("admin", "root");
-        session.addTurn(AgentTurn.create(
+        AgentTurn turn = AgentTurn.create(
                 "Создай SNMP localhost с метриками CPU RAM network dashboard",
                 "ok",
                 "OK",
                 List.of(),
                 Map.of()
-        ));
-        assertTrue(session.title().length() <= 60);
-        assertFalse(session.title().equals("New chat"));
+        );
+        session.addTurn(turn);
+        store.persistAfterTurn(session, turn);
+        AgentSession reloaded = store.get(session.sessionId(), "admin").orElseThrow();
+        assertTrue(reloaded.title().length() <= 60);
+        assertFalse(reloaded.title().equals("New chat"));
     }
 }

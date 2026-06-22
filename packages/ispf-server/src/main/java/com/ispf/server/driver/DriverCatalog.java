@@ -59,14 +59,18 @@ import com.ispf.driver.telnet.TelnetDeviceDriver;
 import com.ispf.driver.virtual.VirtualDeviceDriver;
 import com.ispf.driver.vmware.VmwareDeviceDriver;
 import com.ispf.driver.webtransaction.WebTransactionDeviceDriver;
+import com.ispf.server.driver.pack.LicensedDriverRegistry;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Service
 public class DriverCatalog {
 
-    private final List<DriverMetadata> drivers = List.of(
+    private final LicensedDriverRegistry licensedDriverRegistry;
+    private final List<DriverMetadata> builtInDrivers = List.of(
             new VirtualDeviceDriver().metadata(),
             new MqttDeviceDriver().metadata(),
             new ModbusTcpDeviceDriver().metadata(),
@@ -127,8 +131,19 @@ public class DriverCatalog {
             new WmiDeviceDriver().metadata()
     );
 
+    public DriverCatalog(LicensedDriverRegistry licensedDriverRegistry) {
+        this.licensedDriverRegistry = licensedDriverRegistry;
+    }
+
     public List<DriverMetadata> list() {
-        return drivers.stream()
+        Map<String, DriverMetadata> merged = new LinkedHashMap<>();
+        for (DriverMetadata driver : builtInDrivers) {
+            merged.put(driver.id(), driver);
+        }
+        for (DriverMetadata licensed : licensedDriverRegistry.metadata()) {
+            merged.putIfAbsent(licensed.id(), licensed);
+        }
+        return merged.values().stream()
                 .map(driver -> driver.withMaturity(DriverMaturityRegistry.resolve(driver.id())))
                 .toList();
     }

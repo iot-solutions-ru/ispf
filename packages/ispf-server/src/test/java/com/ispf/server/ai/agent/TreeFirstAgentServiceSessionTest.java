@@ -39,6 +39,8 @@ class TreeFirstAgentServiceSessionTest {
     private ContextPackService contextPackService;
     @Mock
     private AiToolAuditService auditService;
+    @Mock
+    private AgentSessionStore sessionStore;
 
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
@@ -59,7 +61,8 @@ class TreeFirstAgentServiceSessionTest {
                 contextPackService,
                 auditService,
                 aiProperties,
-                objectMapper
+                objectMapper,
+                sessionStore
         );
 
         when(llmProviderRegistry.isGenerationAvailable()).thenReturn(true);

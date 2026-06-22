@@ -28,6 +28,7 @@ public class TreeFirstAgentService {
     private final AiToolAuditService auditService;
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
+    private final AgentSessionStore sessionStore;
 
     public TreeFirstAgentService(
             LlmProviderRegistry llmProviderRegistry,
@@ -35,7 +36,8 @@ public class TreeFirstAgentService {
             ContextPackService contextPackService,
             AiToolAuditService auditService,
             AiProperties aiProperties,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AgentSessionStore sessionStore
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -43,6 +45,7 @@ public class TreeFirstAgentService {
         this.auditService = auditService;
         this.aiProperties = aiProperties;
         this.objectMapper = objectMapper;
+        this.sessionStore = sessionStore;
     }
 
     public Map<String, Object> run(String goal, String rootPath, Authentication authentication, String actor)
@@ -179,6 +182,7 @@ public class TreeFirstAgentService {
 
         AgentTurn turn = AgentTurn.create(userMessage, finishSummary, finalStatus, steps, finishResult);
         session.addTurn(turn);
+        sessionStore.persistAfterTurn(session, turn);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", finalStatus);

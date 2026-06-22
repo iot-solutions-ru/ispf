@@ -24,6 +24,7 @@
 
 | driverId | Было | Стало | Примечание |
 |----------|------|-------|------------|
+| `dnp3` | STUB | **BETA** | TCP session + point index mapping; full Class 0/1/2/3 poll needs native stack |
 | `cwmp` | STUB | **BETA** | Inform + ответ на ACS `GetParameterValues`, configurable `informParameters` |
 | `flexible` | BETA | **PRODUCTION** | TCP/UDP request/response |
 | `gps-tracker` | BETA | **PRODUCTION** | GPS/M2M TCP server |

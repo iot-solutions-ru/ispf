@@ -18,6 +18,8 @@
 | [0009](0009-dogfooding-gate.md) | Gate обобщения перед PR в platform | Accepted |
 | [0010](0010-commercial-bundle-licensing.md) | RSA-лицензирование commercial bundle | Accepted |
 | [0011](0011-ai-artifact-generation-gates.md) | AI artifact generation + validation gates | Accepted |
+| [0012](0012-tree-first-ai-agent.md) | Tree-first AI agent (FW-44) | Accepted |
+| [0013](0013-mcp-agent-tool-adapter.md) | MCP adapter over platform agent tools | Proposed |
 
 ## Шаблон нового ADR
 

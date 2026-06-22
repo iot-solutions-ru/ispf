@@ -168,7 +168,8 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 | 16.4 | Solution public API boundary + event catalog in bundle | API | Done |
 | 16.5 | Messaging contract (event bus vs sync RPC) | NET | Done |
 | 16.6 | AI Layer (LlmProvider, ContextPack, tools) + Studio | AI | Done |
-| 16.7 | Licensed driver JAR contract | DRV | Planned |
+| 16.8 | Tree-first agent (FW-44): sessions, dashboard/SNMP tools, reliability | AI | Done (v0.7.5) |
+| 16.7 | Licensed driver JAR contract | DRV | In progress (spike) |
 
 Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.md#8-приоритет-реализации-roadmap).
 

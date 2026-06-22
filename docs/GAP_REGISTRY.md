@@ -16,7 +16,8 @@
 |-----------|---------|------|
 | **Низкий** | REQ-PF baseline | Stub drivers по demand |
 | **Средний** | Scale | p99 `list_devices` при высокой concurrency |
-| **Средний** | Sprint G | AI Layer, licensed driver JAR packs |
+| **Средний** | Sprint G | Licensed driver JAR packs (FW-50 spike) |
+| **Средний** | AI wave 2 | MCP adapter, persistent agent sessions |
 
 ## Таблица подсистем
 
@@ -30,13 +31,15 @@
 | Solution public API doc | ~100% | semver policy для bundle schema | [SOLUTION_DEVELOPER_PUBLIC_API.md](SOLUTION_DEVELOPER_PUBLIC_API.md) |
 | Event catalog (declarative) | ~100% | payload schema validation at fire-time | FW-31, [MESSAGING.md](MESSAGING.md) |
 | Messaging contract doc | ~100% | external NATS consumers guide | FW-32, [MESSAGING.md](MESSAGING.md) |
-| AI Development Layer | ~100% | optional live tenant context in ContextPack | FW-40…43, [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) |
-| Licensed driver packs | 0% | все drivers in-tree | FW-50 |
-| Scale (load test) | ~70% | p99 `list_devices` при 150 concurrent | ROADMAP Phase 6+ |
+| AI Development Layer | ~100% | optional live tenant context in ContextPack | FW-40…44, [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) |
+| Tree-first agent (FW-44) | ~100% | persistent DB sessions, MCP adapter | [ADR-0012](decisions/0012-tree-first-ai-agent.md), v0.7.5 |
+| Licensed driver packs | ~30% | spike: manifest + loader; commercial pack pilot | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
+| Scale (load test) | ~85% | baseline test + p99 gate в CI | `ListDevicesLoadTest` |
 
 ## История
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-21 | FW-44 agent v0.7.5: sessions, reliability layer; FW-50 spike; persistent sessions; MCP ADR-0013 |
 | 2026-06-22 | Sprint G (FW-40…43): AI Layer — LlmProvider SPI, ContextPack, ToolRegistry, Studio |
 | 2026-06-22 | Sprint F (FW-12,31,32): events catalog, requires[], MESSAGING.md |

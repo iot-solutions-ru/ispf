@@ -10,7 +10,7 @@ import java.util.Map;
 final class DriverMaturityRegistry {
 
     private static final Map<String, DriverMaturity> MATURITIES = Map.ofEntries(
-            Map.entry("dnp3", DriverMaturity.STUB),
+            Map.entry("dnp3", DriverMaturity.BETA),
             Map.entry("ethernet-ip", DriverMaturity.STUB),
             Map.entry("opc-da", DriverMaturity.STUB),
             Map.entry("opc-bridge", DriverMaturity.STUB),

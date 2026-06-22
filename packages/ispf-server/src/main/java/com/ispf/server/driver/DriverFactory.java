@@ -58,12 +58,22 @@ import com.ispf.driver.telnet.TelnetDeviceDriver;
 import com.ispf.driver.virtual.VirtualDeviceDriver;
 import com.ispf.driver.vmware.VmwareDeviceDriver;
 import com.ispf.driver.webtransaction.WebTransactionDeviceDriver;
+import com.ispf.server.driver.pack.LicensedDriverRegistry;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DriverFactory {
 
+    private final LicensedDriverRegistry licensedDriverRegistry;
+
+    public DriverFactory(LicensedDriverRegistry licensedDriverRegistry) {
+        this.licensedDriverRegistry = licensedDriverRegistry;
+    }
+
     public com.ispf.driver.DeviceDriver create(String driverId) {
+        if (licensedDriverRegistry.contains(driverId)) {
+            return licensedDriverRegistry.create(driverId);
+        }
         return switch (driverId) {
             case "virtual" -> new VirtualDeviceDriver();
             case "modbus-tcp" -> new ModbusTcpDeviceDriver();

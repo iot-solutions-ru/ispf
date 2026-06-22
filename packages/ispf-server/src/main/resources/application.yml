@@ -75,6 +75,7 @@ ispf:
     retention-days: 90
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
+    packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
@@ -93,6 +94,7 @@ ispf:
     agent-max-steps: ${ISPF_AI_AGENT_MAX_STEPS:18}
     agent-session-ttl-hours: ${ISPF_AI_AGENT_SESSION_TTL_HOURS:24}
     agent-max-history-turns: ${ISPF_AI_AGENT_MAX_HISTORY_TURNS:50}
+    agent-eviction-interval-ms: ${ISPF_AI_AGENT_EVICTION_INTERVAL_MS:3600000}
     agent-disable-thinking: ${ISPF_AI_AGENT_DISABLE_THINKING:true}
 
 logging:
