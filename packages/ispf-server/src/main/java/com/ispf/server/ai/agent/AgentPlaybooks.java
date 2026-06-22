@@ -286,7 +286,7 @@ public final class AgentPlaybooks {
                 + VIRT_CLUSTER_OVERVIEW
                 + ",title:Virtual cluster overview},{path:"
                 + VIRT_CLUSTER_DETAIL
-                + ",title:Virtual cluster detail}]
+                + ",title:Virtual cluster detail}]"
                 
                 11. driver_control poll each device; list_variables on hub (clusterError)
                 12. finish: summary + paths (folder, devices, hub, dashboards, alert, operator default)
