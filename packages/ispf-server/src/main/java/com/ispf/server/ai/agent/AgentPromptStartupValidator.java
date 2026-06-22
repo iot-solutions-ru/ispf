@@ -35,7 +35,9 @@ class AgentPromptStartupValidator {
         for (String playbook : List.of(
                 AgentPlaybooks.snmpLocalhostMonitoring(),
                 AgentPlaybooks.dashboardLayoutEditing(),
-                AgentPlaybooks.snmpIfMibExtension()
+                AgentPlaybooks.snmpIfMibExtension(),
+                AgentPlaybooks.virtualClusterMonitoring(),
+                AgentPlaybooks.platformObjectTypesGuide()
         )) {
             if (playbook.contains("%s")) {
                 throw new IllegalStateException("Agent playbook contains forbidden %s placeholder");

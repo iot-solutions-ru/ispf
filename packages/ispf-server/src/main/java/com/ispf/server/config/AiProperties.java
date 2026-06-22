@@ -17,7 +17,7 @@ public class AiProperties {
     private int maxTokens = 16384;
     private double temperature = 0.2;
     private String contextPackClasspath = "classpath:ai/context-pack.json";
-    private int agentMaxSteps = 18;
+    private int agentMaxSteps = 28;
     private int agentSessionTtlHours = 24;
     private int agentMaxHistoryTurns = 50;
     private boolean agentDisableThinking = true;

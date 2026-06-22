@@ -1,12 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useAgentChat } from "../context/AgentChatContext";
 
-const EXAMPLE_PROMPTS = [
-  "Создай SNMP-устройство localhost, выведи метрики мониторинга ресурсов системы и создай дашборд, где они будут отображаться.",
-  "Покажи, какие устройства есть в root.platform.devices.",
-  "Проверь, работает ли SNMP localhost, и запусти опрос драйвера если нужно.",
-];
-
 function formatChatDate(iso: string): string {
   try {
     return new Date(iso).toLocaleString(undefined, {
@@ -32,7 +26,6 @@ export default function AiAgentChat() {
     provider,
     agentApiReady,
     agentApiBanner,
-    agentTools,
     chatIndex,
     activeSessionId,
     messages,
@@ -62,7 +55,7 @@ export default function AiAgentChat() {
   const chatEnabled = providerReady && agentApiReady;
 
   return (
-    <>
+    <div className="ai-agent-chat">
       {agentApiBanner && (
         <div className="op-alert op-alert-error" role="alert">
           {agentApiBanner}
@@ -71,40 +64,46 @@ export default function AiAgentChat() {
 
       {!providerReady && !agentApiBanner && (
         <div className="op-alert op-alert-error">
-          LLM не настроен — агент недоступен. Настройте провайдер на вкладке «Настройки».
+          LLM не настроен — откройте вкладку «Настройки».
         </div>
       )}
 
-      <div className="ai-agent-chat ai-agent-chat-layout">
-        <aside className="ai-agent-sidebar">
-          <button
-            type="button"
-            className="btn primary ai-agent-new-chat"
-            disabled={sending || !chatEnabled}
-            onClick={() => void startNewChat()}
-          >
-            + Новый чат
-          </button>
-          <ul className="ai-agent-chat-list">
-            {chatIndex.chats.map((chat) => (
-              <li
+      <div className="ai-agent-toolbar" role="toolbar" aria-label="Чаты агента">
+        <button
+          type="button"
+          className="btn primary ai-agent-new-chat"
+          disabled={sending || !chatEnabled}
+          onClick={() => void startNewChat()}
+          title="Новый чат"
+        >
+          <span className="ai-agent-new-chat-label">+ Новый</span>
+        </button>
+        <div className="ai-agent-chat-strip" role="tablist" aria-label="Список чатов">
+          {chatIndex.chats.length === 0 && (
+            <span className="ai-agent-chat-strip-empty op-muted">Нет чатов</span>
+          )}
+          {chatIndex.chats.map((chat) => {
+            const active = chat.id === activeSessionId;
+            return (
+              <div
                 key={chat.id}
-                className={chat.id === activeSessionId ? "ai-agent-chat-row active" : "ai-agent-chat-row"}
+                className={active ? "ai-agent-chat-pill active" : "ai-agent-chat-pill"}
+                role="presentation"
               >
                 <button
                   type="button"
-                  className="ai-agent-chat-item"
+                  role="tab"
+                  aria-selected={active}
+                  className="ai-agent-chat-pill-btn"
                   disabled={sending}
                   onClick={() => void switchSession(chat.id)}
+                  title={chat.updatedAt ? formatChatDate(chat.updatedAt) : chat.title}
                 >
                   <span className="ai-agent-chat-title">{chat.title}</span>
-                  {chat.updatedAt && (
-                    <span className="ai-agent-chat-date">{formatChatDate(chat.updatedAt)}</span>
+                  {isPending && active && (
+                    <span className="ai-agent-chat-pending-dot" title="Выполняется запрос" />
                   )}
                 </button>
-                {isPending && chat.id === activeSessionId && (
-                  <span className="ai-agent-chat-pending-dot" title="Выполняется запрос" />
-                )}
                 <button
                   type="button"
                   className="ai-agent-chat-delete"
@@ -114,97 +113,75 @@ export default function AiAgentChat() {
                 >
                   ×
                 </button>
-              </li>
-            ))}
-          </ul>
-          {agentTools && agentTools.length > 0 && (
-            <details className="ai-agent-sidebar-tools">
-              <summary>Инструменты ({agentTools.length})</summary>
-              <ul>
-                {agentTools.map((tool) => (
-                  <li key={tool.name}>
-                    <code>{tool.name}</code> — {tool.description}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </aside>
-
-        <div className="ai-agent-chat-main">
-          <div className="ai-agent-chat-examples">
-            <span className="op-muted">Примеры:</span>
-            {EXAMPLE_PROMPTS.map((example) => (
-              <button
-                key={example}
-                type="button"
-                className="btn small ai-agent-example-chip"
-                title={example}
-                disabled={sending || !chatEnabled}
-                onClick={() => void sendMessage(example)}
-              >
-                {example.length > 72 ? `${example.slice(0, 72)}…` : example}
-              </button>
-            ))}
-          </div>
-
-          <div className="ai-agent-chat-log">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={
-                  message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"
-                }
-              >
-                <div className="ai-agent-bubble-text">{message.text}</div>
-                {message.steps && message.steps.length > 0 && (
-                  <AgentRunDetails
-                    steps={message.steps}
-                    status={message.status}
-                    result={message.result}
-                  />
-                )}
               </div>
-            ))}
-            {isPending && (
-              <div className="ai-agent-bubble agent ai-agent-bubble-pending">
-                <div className="ai-agent-bubble-text">Выполняю…</div>
-              </div>
-            )}
-            <div ref={scrollRef} />
-          </div>
-
-          <form
-            className="ai-agent-chat-compose"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void sendMessage(input);
-            }}
-          >
-            <textarea
-              rows={3}
-              value={input}
-              placeholder="Например: теперь добавь на дашборд виджет CPU…"
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  e.currentTarget.form?.requestSubmit();
-                }
-              }}
-              disabled={sending || !chatEnabled}
-            />
-            <button
-              type="submit"
-              className="btn primary"
-              disabled={sending || !chatEnabled || !input.trim()}
-            >
-              Отправить
-            </button>
-          </form>
+            );
+          })}
         </div>
+        {isPending && <span className="ai-agent-toolbar-busy op-muted">Выполняю…</span>}
       </div>
-    </>
+
+      <div className="ai-agent-chat-main">
+        <div className="ai-agent-chat-log">
+          {messages.length === 0 && !isPending && (
+            <p className="ai-agent-chat-empty op-muted">
+              Опишите задачу — агент выполнит шаги на платформе и ответит текстом.
+            </p>
+          )}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={
+                message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"
+              }
+            >
+              <div className="ai-agent-bubble-text">{message.text}</div>
+              {message.steps && message.steps.length > 0 && (
+                <AgentRunDetails
+                  steps={message.steps}
+                  status={message.status}
+                  result={message.result}
+                />
+              )}
+            </div>
+          ))}
+          {isPending && (
+            <div className="ai-agent-bubble agent ai-agent-bubble-pending">
+              <div className="ai-agent-bubble-text">Выполняю…</div>
+            </div>
+          )}
+          <div ref={scrollRef} />
+        </div>
+
+        <form
+          className="ai-agent-chat-compose"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void sendMessage(input);
+          }}
+        >
+          <textarea
+            rows={2}
+            value={input}
+            placeholder="Сообщение агенту…"
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+            disabled={sending || !chatEnabled}
+          />
+          <button
+            type="submit"
+            className="btn primary"
+            disabled={sending || !chatEnabled || !input.trim()}
+          >
+            Отправить
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }
 

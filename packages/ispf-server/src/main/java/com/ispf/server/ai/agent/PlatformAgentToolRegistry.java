@@ -25,7 +25,7 @@ import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.function.FunctionService;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.operator.OperatorAppUiService;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.report.ReportService;
@@ -76,6 +76,7 @@ public class PlatformAgentToolRegistry {
             PlatformRoleService platformRoleService,
             AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService,
+            OperatorAppUiService operatorAppUiService,
             ObjectMapper objectMapper
     ) {
         this.objectMapper = objectMapper;
@@ -102,6 +103,14 @@ public class PlatformAgentToolRegistry {
                 tenantScopeService,
                 eventService,
                 modelRegistry,
+                objectMapper
+        ));
+        tools.addAll(AgentAutomationTools.all(
+                automationTreeService,
+                operatorAppUiService,
+                objectManager,
+                objectAccessService,
+                tenantScopeService,
                 objectMapper
         ));
         tools.addAll(List.of(
@@ -407,7 +416,8 @@ public class PlatformAgentToolRegistry {
             @Override
             public String description() {
                 return "Read dashboard layout JSON. Args: path (dashboard object path) OR template "
-                        + "(snmp-host-monitoring | demo-sensor | empty). Returns full layoutJson for set_dashboard_layout.";
+                        + "(snmp-host-monitoring | demo-sensor | virtual-cluster-overview | virtual-cluster-detail | empty). "
+                        + "Returns full layoutJson for set_dashboard_layout.";
             }
 
             @Override
@@ -461,7 +471,8 @@ public class PlatformAgentToolRegistry {
             @Override
             public String description() {
                 return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
-                        + "OR template (snmp-host-monitoring | demo-sensor | empty).";
+                        + "OR template (snmp-host-monitoring | demo-sensor | virtual-cluster-overview | "
+                        + "virtual-cluster-detail | empty).";
             }
 
             @Override

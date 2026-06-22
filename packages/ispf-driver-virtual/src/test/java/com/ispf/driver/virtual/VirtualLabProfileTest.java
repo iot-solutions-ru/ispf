@@ -56,6 +56,7 @@ class VirtualLabProfileTest {
 
         assertTrue(updates.containsKey("sineWave"));
         assertTrue(updates.containsKey("sawtoothWave"));
+        assertTrue(updates.containsKey("triangleWave"));
         assertTrue(updates.containsKey("status"));
         assertFalse(updates.containsKey("intValue"));
         assertFalse(updates.containsKey("floatValue"));

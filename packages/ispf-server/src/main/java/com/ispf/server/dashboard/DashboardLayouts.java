@@ -307,6 +307,141 @@ public final class DashboardLayouts {
             }
             """;
 
+    public static final String VIRTUAL_CLUSTER_OVERVIEW = """
+            {
+              "columns": 12,
+              "rowHeight": 56,
+              "widgets": [
+                {
+                  "id": "cluster-error",
+                  "type": "indicator",
+                  "title": "Cluster ERROR",
+                  "x": 0,
+                  "y": 0,
+                  "w": 3,
+                  "h": 2,
+                  "objectPath": "root.platform.devices.virt-cluster.hub",
+                  "variableName": "clusterError",
+                  "valueField": "value",
+                  "trueLabel": "ERROR",
+                  "falseLabel": "OK",
+                  "trueColor": "#f85149",
+                  "falseColor": "#3fb950"
+                },
+                {
+                  "id": "cluster-devices",
+                  "type": "object-table",
+                  "title": "Virtual cluster devices",
+                  "x": 0,
+                  "y": 2,
+                  "w": 12,
+                  "h": 5,
+                  "parentPath": "root.platform.devices.virt-cluster",
+                  "selectionKey": "device",
+                  "rowTargetDashboard": "root.platform.dashboards.virt-cluster-detail",
+                  "rowOpenMode": "navigate",
+                  "columnsJson": "[{\\"variable\\":\\"sineWave\\",\\"label\\":\\"sine\\"},{\\"variable\\":\\"sawtoothWave\\",\\"label\\":\\"saw\\"},{\\"variable\\":\\"triangleWave\\",\\"label\\":\\"tri\\"},{\\"variable\\":\\"status\\",\\"label\\":\\"online\\",\\"field\\":\\"online\\"}]"
+                }
+              ]
+            }
+            """;
+
+    public static final String VIRTUAL_CLUSTER_DETAIL = """
+            {
+              "columns": 12,
+              "rowHeight": 72,
+              "widgets": [
+                {
+                  "id": "sine-value",
+                  "type": "value",
+                  "title": "Sine",
+                  "x": 0,
+                  "y": 0,
+                  "w": 4,
+                  "h": 2,
+                  "selectionKey": "device",
+                  "variableName": "sineWave",
+                  "valueField": "value",
+                  "decimals": 2
+                },
+                {
+                  "id": "saw-value",
+                  "type": "value",
+                  "title": "Sawtooth",
+                  "x": 4,
+                  "y": 0,
+                  "w": 4,
+                  "h": 2,
+                  "selectionKey": "device",
+                  "variableName": "sawtoothWave",
+                  "valueField": "value",
+                  "decimals": 2
+                },
+                {
+                  "id": "tri-value",
+                  "type": "value",
+                  "title": "Triangle",
+                  "x": 8,
+                  "y": 0,
+                  "w": 4,
+                  "h": 2,
+                  "selectionKey": "device",
+                  "variableName": "triangleWave",
+                  "valueField": "value",
+                  "decimals": 2
+                },
+                {
+                  "id": "sine-chart",
+                  "type": "chart",
+                  "title": "Sine trend",
+                  "x": 0,
+                  "y": 2,
+                  "w": 12,
+                  "h": 4,
+                  "selectionKey": "device",
+                  "variableName": "sineWave",
+                  "valueField": "value",
+                  "chartStyle": "area",
+                  "maxPoints": 120,
+                  "color": "#2f81f7",
+                  "decimals": 2
+                },
+                {
+                  "id": "saw-chart",
+                  "type": "chart",
+                  "title": "Sawtooth trend",
+                  "x": 0,
+                  "y": 6,
+                  "w": 6,
+                  "h": 4,
+                  "selectionKey": "device",
+                  "variableName": "sawtoothWave",
+                  "valueField": "value",
+                  "chartStyle": "line",
+                  "maxPoints": 120,
+                  "color": "#ffa657",
+                  "decimals": 2
+                },
+                {
+                  "id": "tri-chart",
+                  "type": "chart",
+                  "title": "Triangle trend",
+                  "x": 6,
+                  "y": 6,
+                  "w": 6,
+                  "h": 4,
+                  "selectionKey": "device",
+                  "variableName": "triangleWave",
+                  "valueField": "value",
+                  "chartStyle": "line",
+                  "maxPoints": 120,
+                  "color": "#3fb950",
+                  "decimals": 2
+                }
+              ]
+            }
+            """;
+
     public static final String EMPTY_DASHBOARD = """
             {
               "columns": 12,

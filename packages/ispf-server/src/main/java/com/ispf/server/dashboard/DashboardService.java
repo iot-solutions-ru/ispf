@@ -119,9 +119,14 @@ public class DashboardService {
         return switch (template.trim().toLowerCase()) {
             case "snmp-host-monitoring", "snmp" -> DashboardLayouts.SNMP_HOST_MONITORING_DASHBOARD.trim();
             case "demo-sensor", "demo" -> DashboardLayouts.DEMO_SENSOR_DASHBOARD.trim();
+            case "virtual-cluster-overview", "virt-cluster-overview" ->
+                    DashboardLayouts.VIRTUAL_CLUSTER_OVERVIEW.trim();
+            case "virtual-cluster-detail", "virt-cluster-detail" ->
+                    DashboardLayouts.VIRTUAL_CLUSTER_DETAIL.trim();
             case "empty" -> DashboardLayouts.EMPTY_DASHBOARD.trim();
             default -> throw new IllegalArgumentException(
-                    "Unknown template: " + template + ". Use snmp-host-monitoring, demo-sensor, or empty."
+                    "Unknown template: " + template + ". Use snmp-host-monitoring, demo-sensor, "
+                            + "virtual-cluster-overview, virtual-cluster-detail, or empty."
             );
         };
     }
@@ -161,7 +166,13 @@ public class DashboardService {
     }
 
     public static List<String> layoutTemplateNames() {
-        return List.of("snmp-host-monitoring", "demo-sensor", "empty");
+        return List.of(
+                "snmp-host-monitoring",
+                "demo-sensor",
+                "virtual-cluster-overview",
+                "virtual-cluster-detail",
+                "empty"
+        );
     }
 
     private void validateLayoutJson(String layoutJson) {

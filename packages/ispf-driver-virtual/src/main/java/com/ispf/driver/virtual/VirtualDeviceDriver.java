@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Simulated device driver for demos and integration tests.
- * Profiles: demo (temperature), meter, weighbridge, rack-signals, lab (sine/sawtooth waves).
+ * Profiles: demo (temperature), meter, weighbridge, rack-signals, lab (sine/sawtooth/triangle waves).
  */
 public class VirtualDeviceDriver implements DeviceDriver {
 
@@ -20,7 +20,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             "virtual",
             "Virtual Simulator Driver",
             "0.2.0",
-            "Synthetic telemetry: temperature demo, filling meter, weighbridge, rack safety signals, lab waves",
+            "Synthetic telemetry: temperature demo, filling meter, weighbridge, rack safety signals, lab waves (sine/saw/triangle)",
             "ISPF",
             Map.ofEntries(
                     Map.entry("profile", "demo"),
@@ -35,7 +35,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
                     Map.entry("groundConnected", "true"),
                     Map.entry("pollIntervalMs", "2000"),
                     Map.entry("sineAmplitude", "10.0"),
-                    Map.entry("sawtoothAmplitude", "5.0")
+                    Map.entry("sawtoothAmplitude", "5.0"),
+                    Map.entry("triangleAmplitude", "5.0")
             )
     );
 
@@ -82,6 +83,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private double amplitude = 15.0;
     private double sineAmplitude = 10.0;
     private double sawtoothAmplitude = 5.0;
+    private double triangleAmplitude = 5.0;
     private double periodSec = 60.0;
     private double litersPerSecond = 120.0;
     private double tareKg = 15_000.0;
@@ -109,6 +111,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
         readConfig("amplitude", value -> amplitude = Double.parseDouble(value));
         readConfig("sineAmplitude", value -> sineAmplitude = Double.parseDouble(value));
         readConfig("sawtoothAmplitude", value -> sawtoothAmplitude = Double.parseDouble(value));
+        readConfig("triangleAmplitude", value -> triangleAmplitude = Double.parseDouble(value));
         readConfig("periodSec", value -> periodSec = Double.parseDouble(value));
         readConfig("litersPerSecond", value -> litersPerSecond = Double.parseDouble(value));
         readConfig("tareKg", value -> tareKg = Double.parseDouble(value));
@@ -127,6 +130,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             case "amplitude" -> amplitude = Double.parseDouble(value);
             case "sineAmplitude" -> sineAmplitude = Double.parseDouble(value);
             case "sawtoothAmplitude" -> sawtoothAmplitude = Double.parseDouble(value);
+            case "triangleAmplitude" -> triangleAmplitude = Double.parseDouble(value);
             case "periodSec" -> periodSec = Double.parseDouble(value);
             case "litersPerSecond" -> litersPerSecond = Double.parseDouble(value);
             case "tareKg" -> tareKg = Double.parseDouble(value);
@@ -229,6 +233,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
         double sine = effectiveSineAmplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
         double phase = elapsedSec % periodSec;
         double sawtooth = sawtoothAmplitude * (2.0 * (phase / periodSec) - 1.0);
+        double phaseNorm = phase / periodSec;
+        double triangle = triangleAmplitude * (phaseNorm < 0.5 ? 4.0 * phaseNorm - 1.0 : 3.0 - 4.0 * phaseNorm);
         driverObject.updateVariable(
                 "sineWave",
                 DataRecord.single(WAVE_SCHEMA, Map.of("value", sine))
@@ -236,6 +242,10 @@ public class VirtualDeviceDriver implements DeviceDriver {
         driverObject.updateVariable(
                 "sawtoothWave",
                 DataRecord.single(WAVE_SCHEMA, Map.of("value", sawtooth))
+        );
+        driverObject.updateVariable(
+                "triangleWave",
+                DataRecord.single(WAVE_SCHEMA, Map.of("value", triangle))
         );
         driverObject.updateVariable(
                 "status",

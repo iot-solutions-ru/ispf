@@ -33,7 +33,15 @@ public final class AgentPromptBuilder {
             - delete_object path=<full path> — remove tree node; stops device driver first
             - SNMP device: templateId snmp-agent-v1, driverId snmp, host 127.0.0.1:161 community public
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
-            - Virtual lab: driverId virtual, profile meter|demo|weighbridge|rack-signals in driverConfigJson
+            - Virtual lab: driverId virtual, profile meter|demo|weighbridge|rack-signals|lab in driverConfigJson;
+              lab vars: sineWave, sawtoothWave, triangleWave
+            - Automation: get_automation_schema → configure_alert, configure_correlator (parents alert-rules / correlators)
+            - Cross-device logic: CUSTOM hub + create_variable refAt(...) + CEL clusterError + configure_alert on hub
+            - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
+            - create_variable for bindings; describe_variables before set_variable on existing vars
+            - Dashboard templates: snmp-host-monitoring, demo-sensor, virtual-cluster-overview, virtual-cluster-detail, empty
+            - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
+            - Complete end-to-end projects with tools; never tell user to configure dashboards/alerts/operator in UI when tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
             - Dashboard layout: variable name is layout (JSON string with widgets[]). NEVER set_variable name=widgets.
               Use get_dashboard_layout, set_dashboard_layout (or template=snmp-host-monitoring), add_dashboard_widget.
@@ -79,6 +87,10 @@ public final class AgentPromptBuilder {
         prompt.append(AgentPlaybooks.mesReferenceLifecycle());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.modbusTcpDevice());
+        prompt.append("\n\n");
+        prompt.append(AgentPlaybooks.virtualClusterMonitoring());
+        prompt.append("\n\n");
+        prompt.append(AgentPlaybooks.platformObjectTypesGuide());
         prompt.append(RULES);
         prompt.append("- Reuse existing demo paths when present: ")
                 .append(AgentPlaybooks.SNMP_DEVICE_PATH)

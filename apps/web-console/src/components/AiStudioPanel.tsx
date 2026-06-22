@@ -14,7 +14,7 @@ const MODE_LABELS: Record<StudioMode, string> = {
 };
 
 export default function AiStudioPanel() {
-  const { isPending, provider, providerLoading } = useAgentChat();
+  const { isPending } = useAgentChat();
   const [mode, setMode] = useState<StudioMode>(() => loadAiStudioPrefs().lastTab);
   const [appId, setAppId] = useState(() => loadAiStudioPrefs().defaultAppId);
   const [prompt, setPrompt] = useState(
@@ -34,10 +34,7 @@ export default function AiStudioPanel() {
   return (
     <div className="ai-studio-panel">
       <header className="ai-studio-head">
-        <div>
-          <h3>AI Studio</h3>
-          <p className="op-muted">Студия разработки — агент, генерация пакетов и настройки провайдера.</p>
-        </div>
+        <h3>AI Studio</h3>
         {backgroundBusy && mode !== "agent" && (
           <div className="ai-studio-background-hint" role="status">
             <span className="ai-agent-status-bar-pulse" aria-hidden />
@@ -62,20 +59,6 @@ export default function AiStudioPanel() {
         ))}
       </nav>
 
-      <div className="ai-studio-status-row">
-        <span className={`ai-studio-badge ${provider?.available ? "ok" : "warn"}`}>
-          Провайдер:{" "}
-          {providerLoading
-            ? "загрузка…"
-            : provider
-              ? provider.available
-                ? "готов"
-                : "не настроен"
-              : "—"}
-        </span>
-        {isPending && <span className="ai-studio-badge warn">Запрос выполняется…</span>}
-      </div>
-
       <div className="ai-studio-body">
         <div className={`ai-studio-tab-layer ${mode === "agent" ? "active" : "dormant"}`}>
           <AiAgentChat />
@@ -93,7 +76,6 @@ export default function AiStudioPanel() {
             setValidationText={setValidationText}
             dryRunText={dryRunText}
             setDryRunText={setDryRunText}
-            provider={provider}
           />
         </div>
 

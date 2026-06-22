@@ -3,10 +3,10 @@ import {
   dryRunAiDeploy,
   generateAiBundle,
   validateAiBundle,
-  type AiProviderStatus,
 } from "../api/ai";
 import { fetchDeployHistory, rollbackDeploy } from "../api/applications";
 import { importPackage } from "../api/packages";
+import { useAgentChat } from "../context/AgentChatContext";
 
 const DEFAULT_MANIFEST = `{
   "version": "1.0.0",
@@ -26,7 +26,6 @@ interface AiStudioBundleTabProps {
   setValidationText: (value: string | null) => void;
   dryRunText: string | null;
   setDryRunText: (value: string | null) => void;
-  provider: AiProviderStatus | undefined;
 }
 
 export function defaultBundleManifest(): string {
@@ -44,8 +43,8 @@ export default function AiStudioBundleTab({
   setValidationText,
   dryRunText,
   setDryRunText,
-  provider,
 }: AiStudioBundleTabProps) {
+  const { provider } = useAgentChat();
   const queryClient = useQueryClient();
 
   const historyQuery = useQuery({

@@ -20,6 +20,7 @@ See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md) and [ADR-0012](de
 | FW-44b | MCP adapter | `com.ispf.server.ai.mcp.*`, profile `mcp`, REST `/api/v1/ai/mcp` |
 | FW-45 | Platform knowledge briefing | `PlatformBriefingService`, `ContextPackSearchService`, agent tools |
 | FW-47 | Agent discovery tools | `AgentDiscoveryTools` — functions, events, variable schemas |
+| FW-48 | Agent automation tools | `AgentAutomationTools` — alerts, correlators, operator UI, `create_variable`, cluster playbooks |
 
 ---
 
@@ -96,7 +97,7 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 
 ## Tree-first agent (FW-44)
 
-ReAct loop on the platform with bounded steps (default 18, `ispf.ai.agent-max-steps`). Admin-only.
+ReAct loop on the platform with bounded steps (default 28, `ispf.ai.agent-max-steps`). Admin-only.
 
 **Multi-turn sessions** (Cursor-like): each chat is a server-side in-memory session with turn history replayed to the LLM (compact user/assistant summaries, no raw tool JSON). `AgentRunState` (validate → import gates) persists for the whole chat.
 
@@ -161,8 +162,14 @@ Platform tools (Java handlers, ACL-aware):
 | `create_object` | Create DEVICE, DASHBOARD, CUSTOM, … |
 | `delete_object` | Delete tree node by path (stops device driver if running) |
 | `get_dashboard_layout` | Read layout JSON from dashboard path or built-in template |
-| `set_dashboard_layout` | Replace layout from JSON or template (`snmp-host-monitoring`, …) |
+| `set_dashboard_layout` | Replace layout from JSON or template (`snmp-host-monitoring`, `virtual-cluster-overview`, …) |
 | `add_dashboard_widget` | Append one widget to `layout.widgets[]` |
+| `configure_alert` | Create/update ALERT rule (CEL condition → event) |
+| `configure_correlator` | Create/update event correlator |
+| `configure_operator_ui` | Operator HMI default dashboard + menu |
+| `create_variable` | New variable with refAt/CEL binding (CUSTOM hub logic) |
+| `list_automation` | List alert rules and correlators |
+| `get_automation_schema` | Reference for alert/correlator/dashboard/binding/operator fields |
 | `list_variables` | Read object variables + values |
 | `set_variable` | Update variable (config, dashboard layout, …) |
 | `configure_driver` | SNMP/driver config + mappings + optional start |
@@ -192,7 +199,7 @@ Configure max steps:
 ```yaml
 ispf:
   ai:
-    agent-max-steps: 18
+    agent-max-steps: 28
     agent-parse-retries: 3
     agent-session-ttl-hours: 24
     agent-max-history-turns: 50
@@ -280,14 +287,14 @@ Web Console → **AI Studio** tab (admin only). Интерфейс на русс
 
 **Tree-first agent** (вкладка «Агент»):
 
-1. Боковая панель: список чатов с датой обновления; **+ Новый чат** создаёт сессию
+1. Боковая панель: горизонтальная полоса чатов + «+ Новый»; список инструментов — вкладка «Настройки»
 2. Опишите задачу обычным языком — follow-up messages keep context in the same chat
 3. Агент выполняет шаги на платформе и отвечает понятным текстом
 4. В «Подробности (N шагов)» — нумерованный список с `<code>` tool name и badge статуса; ссылки «Открыть устройство» / «Открыть дашборд»
-5. Удаление чата — отдельная кнопка (a11y); сессия на сервере не создаётся до первого сообщения или «Новый чат»
+5. Удаление чата — кнопка × на pill чата
 6. Чат не размонтируется при переключении вкладок AI Studio или раздела «Обозреватель»; HTTP-запрос продолжается на сервере
 7. При закрытии вкладки браузера во время запроса — восстановление ответа при следующем открытии (poll `GET /agent/sessions/{id}`)
-8. На ширине &lt; 900px sidebar чатов стекируется сверху
+8. На телефоне: компактная toolbar, поле ввода на всю ширину
 
 **Настройки**: статус провайдера и Context Pack, `defaultRootPath`, `defaultAppId`, восстановление последнего чата, список agent tools.
 

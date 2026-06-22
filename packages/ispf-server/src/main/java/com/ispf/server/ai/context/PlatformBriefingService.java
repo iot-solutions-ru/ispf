@@ -28,7 +28,8 @@ public class PlatformBriefingService {
             feature("bundles", "Bundle deploy", "manifest JSON, migrations, functions, dashboards", "bundle deploy import"),
             feature("bff", "BFF invoke", "POST /api/v1/bff/invoke application functions", "bff invoke function"),
             feature("workflows", "BPMN workflows", "workflows[] in bundle, publish_nats, fire_event tasks", "workflow bpmn"),
-            feature("correlators", "Event correlators", "alertRules + correlators in bundle", "correlator alert"),
+            feature("correlators", "Event correlators & alerts", "configure_alert, configure_correlator, list_automation", "correlator alert automation"),
+            feature("operator-ui", "Operator HMI", "configure_operator_ui defaultDashboard dashboards[]", "operator hmi default dashboard"),
             feature("federation", "Federation bind", "overlay remote peer on local path", "federation peer bind"),
             feature("dashboards", "Dashboards", "DASHBOARD objects, layout.widgets[], widget types", "dashboard widget layout"),
             feature("events", "Event catalog", "events[] in bundle, WS subscribe_events", "event catalog subscribe"),
@@ -41,7 +42,8 @@ public class PlatformBriefingService {
             Map.of("profile", "demo", "vars", "temperature, status", "use", "default simulator"),
             Map.of("profile", "meter", "vars", "meterLiters, flowRate, filling", "use", "filling simulation"),
             Map.of("profile", "weighbridge", "vars", "grossWeight, tareKg", "use", "weighbridge + meter"),
-            Map.of("profile", "rack-signals", "vars", "gasPresent, groundConnected", "use", "rack safety signals")
+            Map.of("profile", "rack-signals", "vars", "gasPresent, groundConnected", "use", "rack safety signals"),
+            Map.of("profile", "lab", "vars", "sineWave, sawtoothWave, triangleWave, status", "use", "wave simulators / virtual cluster")
     );
 
     private final AiProperties aiProperties;

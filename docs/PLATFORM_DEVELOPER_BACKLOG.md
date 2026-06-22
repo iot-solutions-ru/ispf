@@ -162,6 +162,7 @@ REQ-PF и bundle deploy — способ **загрузить** declarative-ко
 | **FW-45**  | Platform knowledge for agent (briefing + tools) | **Done** | AI | P3+ |
 | **FW-46**  | Agent action tools (invoke, search, events, models) | **Done** | AI | P3+ |
 | **FW-47**  | Agent discovery tools (functions, events, schemas) | **Done** | AI | P3+ |
+| **FW-48**  | Agent automation tools (alert, correlator, operator UI, bindings) | **Done** | AI | P3+ |
 | **FW-50**  | Licensed driver JAR contract       | **Done** | DRV   | P3+ |
 
 
@@ -890,6 +891,17 @@ Platform **не** содержит отраслевую бизнес-логик�
 - [x] `list_event_catalog`, `get_event_schema` — bundle catalog + object events
 - [x] `describe_variables` — variable schemas before `set_variable`
 - [x] MES playbook: list_functions → get_function → invoke_bff
+
+#### FW-48 — Agent automation tools
+
+- [x] `configure_alert`, `configure_correlator` — AutomationTreeService wrappers (create + update)
+- [x] `configure_operator_ui` — OperatorAppUiService default dashboard + menu
+- [x] `create_variable` — refAt/CEL bindings for CUSTOM hub logic
+- [x] `list_automation`, `get_automation_schema` — reference for object types and fields
+- [x] Dashboard templates: `virtual-cluster-overview`, `virtual-cluster-detail`
+- [x] Virtual driver lab profile: `triangleWave`
+- [x] Playbook: virtual cluster end-to-end (devices, hub, alert, dashboards, operator UI)
+- [x] Agent max steps default 28
 
 ---
 

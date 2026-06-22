@@ -16,6 +16,18 @@ public final class AgentPlaybooks {
     public static final String SNMP_MODEL = ModelBootstrap.SNMP_AGENT_MODEL;
     public static final String SNMP_DRIVER_ID = "snmp";
 
+    public static final String VIRT_CLUSTER_FOLDER = "root.platform.devices.virt-cluster";
+    public static final String VIRT_CLUSTER_HUB = VIRT_CLUSTER_FOLDER + ".hub";
+    public static final String VIRT_CLUSTER_DEV_01 = VIRT_CLUSTER_FOLDER + ".dev-01";
+    public static final String VIRT_CLUSTER_DEV_02 = VIRT_CLUSTER_FOLDER + ".dev-02";
+    public static final String VIRT_CLUSTER_DEV_03 = VIRT_CLUSTER_FOLDER + ".dev-03";
+    public static final String VIRT_CLUSTER_OVERVIEW = "root.platform.dashboards.virt-cluster-overview";
+    public static final String VIRT_CLUSTER_DETAIL = "root.platform.dashboards.virt-cluster-detail";
+    public static final String VIRT_CLUSTER_ALERT = "root.platform.alert-rules.virt-cluster-error";
+    public static final String VIRT_CLUSTER_LAB_CONFIG =
+            "{\"profile\":\"lab\",\"sineAmplitude\":\"10\",\"sawtoothAmplitude\":\"5\","
+                    + "\"triangleAmplitude\":\"5\",\"periodSec\":\"30\"}";
+
     private AgentPlaybooks() {
     }
 
@@ -192,6 +204,110 @@ public final class AgentPlaybooks {
                 3. set_variable name=driverPointMappingsJson value={"temperature":"40001"}
                 4. configure_driver driverId=modbus-tcp autoStart=true
                 5. finish
+                """;
+    }
+
+    public static String virtualClusterMonitoring() {
+        return """
+                ## Virtual cluster — полный проект (3 устройства, hub, alert, dashboards, operator UI)
+                
+                Цель: lab-style кластер виртуальных устройств lab-профиля, ERROR когда все 3 sine > 0,
+                overview + drill-down detail с графиками, авто-открытие в Operator UI.
+                НЕ откладывай на «настройку в UI» — все шаги через инструменты.
+                
+                0. get_automation_schema topic=all (once)
+                
+                1. create_object parentPath=root.platform.devices name=virt-cluster type=CUSTOM
+                   displayName=Virtual cluster folder
+                2. Для dev-01, dev-02, dev-03:
+                   create_object parentPath="""
+                + VIRT_CLUSTER_FOLDER
+                + """
+                 name=dev-0N type=DEVICE displayName=Virt cluster dev-0N
+                   templateId=device-v1 driverId=virtual autoStartDriver=false
+                   set_variable path=... name=driverConfigJson value="""
+                + VIRT_CLUSTER_LAB_CONFIG
+                + """
+                
+                   configure_driver devicePath=... driverId=virtual autoStart=true
+                
+                3. create_object parentPath="""
+                + VIRT_CLUSTER_FOLDER
+                + """
+                 name=hub type=CUSTOM displayName=Cluster hub
+                4. create_variable path="""
+                + VIRT_CLUSTER_HUB
+                + " name=member1Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + VIRT_CLUSTER_DEV_01
+                + "\", sineWave)\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=member2Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + VIRT_CLUSTER_DEV_02
+                + "\", sineWave)\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=member3Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + VIRT_CLUSTER_DEV_03
+                + "\", sineWave)\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=clusterError valueType=BOOLEAN bindingExpression="
+                + "self.member1Sine[\"value\"] > 0 && self.member2Sine[\"value\"] > 0 && self.member3Sine[\"value\"] > 0\n"
+                + """
+                
+                5. configure_alert name=virt-cluster-error
+                   targetObjectPath="""
+                + VIRT_CLUSTER_HUB
+                + """
+                 watchVariable=clusterError
+                   conditionExpr=self.clusterError["value"] == true
+                   eventName=virtClusterError enabled=true edgeTrigger=true
+                
+                6. create_object parentPath=root.platform.dashboards name=virt-cluster-overview type=DASHBOARD
+                   displayName=Virtual cluster overview templateId=dashboard-v1
+                7. set_dashboard_layout path="""
+                + VIRT_CLUSTER_OVERVIEW
+                + """
+                 template=virtual-cluster-overview
+                8. create_object parentPath=root.platform.dashboards name=virt-cluster-detail type=DASHBOARD
+                   displayName=Virtual cluster detail templateId=dashboard-v1
+                9. set_dashboard_layout path="""
+                + VIRT_CLUSTER_DETAIL
+                + """
+                 template=virtual-cluster-detail
+                
+                10. configure_operator_ui appId=platform title=Platform HMI
+                    defaultDashboard="""
+                + VIRT_CLUSTER_OVERVIEW
+                + """
+                
+                    dashboards=[{path:"""
+                + VIRT_CLUSTER_OVERVIEW
+                + ",title:Virtual cluster overview},{path:"
+                + VIRT_CLUSTER_DETAIL
+                + ",title:Virtual cluster detail}]
+                
+                11. driver_control poll each device; list_variables on hub (clusterError)
+                12. finish: summary + paths (folder, devices, hub, dashboards, alert, operator default)
+                """;
+    }
+
+    public static String platformObjectTypesGuide() {
+        return """
+                ## Справочник типов объектов и переменных (кратко)
+                
+                - DEVICE: driverConfigJson, driverPointMappingsJson, status; virtual lab → sineWave, sawtoothWave, triangleWave
+                - DASHBOARD: title, layout (JSON widgets[]), refreshIntervalMs — НЕ переменная widgets
+                - ALERT: parent root.platform.alert-rules — targetObjectPath, watchVariable, conditionExpr (CEL), eventName
+                - CORRELATOR: parent root.platform.correlators — patternType COUNT|SEQUENCE|EVENT_CHAIN
+                - CUSTOM: логика через create_variable + refAt(...) или CEL bindings
+                - Operator UI: configure_operator_ui — defaultDashboard + dashboards[]
+                
+                Инструменты: get_automation_schema, configure_alert, configure_correlator, create_variable,
+                configure_operator_ui, get_dashboard_layout template=..., set_dashboard_layout template=...
+                
+                Завершай проект полностью инструментами; не пиши «настройте вручную в UI», если есть tool.
                 """;
     }
 }
