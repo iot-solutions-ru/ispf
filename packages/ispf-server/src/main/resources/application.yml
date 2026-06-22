@@ -75,6 +75,10 @@ ispf:
     retention-days: 90
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
+  license:
+    data-dir: ${ISPF_DATA_DIR:./data}
+    public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
+    enforce: ${ISPF_LICENSE_ENFORCE:false}
 
 logging:
   level:

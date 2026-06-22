@@ -162,10 +162,10 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 
 | # | Тема | Track | Статус |
 |---|------|-------|--------|
-| 16.1 | ADR `docs/decisions/` + gap-registry process | DOC | Planned |
-| 16.2 | RSA licensing + `installationId` + LicenseBuilder | LIC | Planned |
-| 16.3 | MES reference walkthrough + synthetic demo | REF | Planned |
-| 16.4 | Solution public API boundary + event catalog in bundle | API | Planned |
+| 16.1 | ADR `docs/decisions/` + gap-registry process | DOC | Done |
+| 16.2 | RSA licensing + `installationId` + LicenseBuilder | LIC | Done |
+| 16.3 | MES reference walkthrough + synthetic demo | REF | Done |
+| 16.4 | Solution public API boundary + event catalog in bundle | API | Done (public API doc; event catalog → 16.5 / FW-31) |
 | 16.5 | Messaging contract (event bus vs sync RPC) | NET | Planned |
 | 16.6 | AI Layer (LlmProvider, ContextPack, tools) + Studio | AI | Planned |
 | 16.7 | Licensed driver JAR contract | DRV | Planned |

@@ -1,6 +1,6 @@
 # Приложения на платформе (REQ-PF)
 
-Платформенный слой для развёртывания прикладных решений **без Java-кода отрасли в `ispf-server`**. Соответствует ADR-0008 и требованиям REQ-PF.
+Платформенный слой для развёртывания прикладных решений **без Java-кода отрасли в `ispf-server`**. Соответствует [ADR-0008](decisions/0008-app-platform-boundary.md) и требованиям REQ-PF.
 
 **Полный backlog и gap-анализ:** [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md).
 

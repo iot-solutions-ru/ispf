@@ -1,13 +1,16 @@
 package com.ispf.server.api;
 
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.license.CommercialLicenseException;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -29,6 +32,10 @@ public class PackageController {
             @RequestParam(defaultValue = "default") String packageId,
             @Valid @RequestBody ApplicationBundleDeployService.BundleManifest manifest
     ) {
-        return bundleDeployService.deploy(packageId, manifest);
+        try {
+            return bundleDeployService.deploy(packageId, manifest);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        }
     }
 }

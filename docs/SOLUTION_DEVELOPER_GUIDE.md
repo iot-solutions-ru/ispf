@@ -2,7 +2,7 @@
 
 Как создать прикладное решение на ISPF **без изменения Java ядра**: регистрация приложения, SQL-данные, JSON-функции, bundle deploy, operator UI и отчёты.
 
-Обзор продукта: [PRODUCT.md](PRODUCT.md). Полный API: [APPLICATIONS.md](APPLICATIONS.md).
+Обзор продукта: [PRODUCT.md](PRODUCT.md). Полный API: [APPLICATIONS.md](APPLICATIONS.md). **Стабильная граница platform ↔ solution:** [SOLUTION_DEVELOPER_PUBLIC_API.md](SOLUTION_DEVELOPER_PUBLIC_API.md).
 
 ---
 

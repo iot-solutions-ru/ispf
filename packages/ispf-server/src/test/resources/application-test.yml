@@ -30,3 +30,6 @@ ispf:
     update:
       check-enabled: false
       apply-enabled: false
+  license:
+    data-dir: ${java.io.tmpdir}/ispf-test-license
+    enforce: false

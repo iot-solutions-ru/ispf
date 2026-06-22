@@ -33,6 +33,7 @@ import com.ispf.server.report.ReportService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
 import com.ispf.server.operator.OperatorAppUiStore;
+import com.ispf.server.license.CommercialBundleLicenseVerifier;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import org.springframework.stereotype.Service;
 
@@ -66,6 +67,7 @@ public class ApplicationBundleDeployService {
     private final AutomationTreeService automationTreeService;
     private final OperatorAppUiStore operatorAppUiStore;
     private final OperatorAppObjectTreeService operatorAppObjectTreeService;
+    private final CommercialBundleLicenseVerifier licenseVerifier;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -87,7 +89,8 @@ public class ApplicationBundleDeployService {
             ObjectManager objectManager,
             AutomationTreeService automationTreeService,
             OperatorAppUiStore operatorAppUiStore,
-            OperatorAppObjectTreeService operatorAppObjectTreeService
+            OperatorAppObjectTreeService operatorAppObjectTreeService,
+            CommercialBundleLicenseVerifier licenseVerifier
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -109,9 +112,11 @@ public class ApplicationBundleDeployService {
         this.automationTreeService = automationTreeService;
         this.operatorAppUiStore = operatorAppUiStore;
         this.operatorAppObjectTreeService = operatorAppObjectTreeService;
+        this.licenseVerifier = licenseVerifier;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
+        licenseVerifier.verifyOrWarn(appId, manifest);
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         List<String> errors = new ArrayList<>();
@@ -685,6 +690,7 @@ public class ApplicationBundleDeployService {
             List<BundleAlertRule> alertRules,
             List<BundleCorrelator> correlators,
             List<BundleSchedule> schedules,
+            Map<String, Object> license,
             Map<String, Object> metadata,
             Map<String, Object> operatorUi,
             Map<String, Object> operatorManifest

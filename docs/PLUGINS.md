@@ -33,6 +33,8 @@
 - `README` с ограничениями использования и контактом правообладателя
 - Версию и список совместимых версий ISPF
 
+Commercial bundle с секцией `license` — см. [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) и [ADR-0010](decisions/0010-commercial-bundle-licensing.md).
+
 Плагин **не коммитится** в `packages/ispf-server/` и **не** вливается в `main` без отдельного решения о open-source.
 
 ## Чеклист перед PR в `main`
@@ -46,3 +48,4 @@
 
 - [LICENSE.md](LICENSE.md) — Apache 2.0 ядра vs коммерческие модули
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
+- [decisions/](decisions/) — ADR (0008 boundary, 0009 gate, 0010 licensing)

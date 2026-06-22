@@ -1,0 +1,10 @@
+{
+  "description": "Optional idempotent seed descriptor for MES reference demo (applied via bundle migration mes_schema).",
+  "tanks": [
+    { "tankCode": "T-01", "levelPct": 72 }
+  ],
+  "dispatchOrders": [
+    { "orderNo": "DO-1001", "tankCode": "T-01", "volumeLiters": 12000, "status": "pending" },
+    { "orderNo": "DO-1002", "tankCode": "T-01", "volumeLiters": 8000, "status": "pending" }
+  ]
+}

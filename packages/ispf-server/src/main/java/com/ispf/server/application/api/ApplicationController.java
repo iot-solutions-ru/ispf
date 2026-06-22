@@ -10,6 +10,7 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
+import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,7 +64,11 @@ public class ApplicationController {
             @PathVariable String appId,
             @RequestBody ApplicationBundleDeployService.BundleManifest manifest
     ) {
-        return bundleDeployService.deploy(appId, manifest);
+        try {
+            return bundleDeployService.deploy(appId, manifest);
+        } catch (CommercialLicenseException ex) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage(), ex);
+        }
     }
 
     @GetMapping("/{appId}/deploy/history")

@@ -21,7 +21,8 @@ public final class IspfAuthorizationRules {
                 "/ws/**"
         ).permitAll();
 
-        auth.requestMatchers("/api/v1/platform/metrics", "/api/v1/platform/function-invocations")
+        auth.requestMatchers("/api/v1/platform/metrics", "/api/v1/platform/function-invocations",
+                        "/api/v1/platform/installation-id")
                 .hasRole(IspfRoles.ADMIN);
 
         auth.requestMatchers("/api/v1/platform/update/**")

@@ -12,7 +12,7 @@ public final class PlatformVersionSupport {
     public static String currentVersion(Optional<BuildProperties> buildProperties) {
         return buildProperties
                 .map(BuildProperties::getVersion)
-                .filter(version -> !version.isBlank())
+                .filter(version -> !version.isBlank() && !"unspecified".equalsIgnoreCase(version))
                 .orElse("0.1.0-SNAPSHOT");
     }
 

@@ -76,6 +76,11 @@ ISPF строится вокруг **иерархического дерева �
 | Обзор продукта | [docs/PRODUCT.md](docs/PRODUCT.md) |
 | Руководство оператора | [docs/OPERATOR_GUIDE.md](docs/OPERATOR_GUIDE.md) |
 | Разработчик решений | [docs/SOLUTION_DEVELOPER_GUIDE.md](docs/SOLUTION_DEVELOPER_GUIDE.md) |
+| Public API (solution) | [docs/SOLUTION_DEVELOPER_PUBLIC_API.md](docs/SOLUTION_DEVELOPER_PUBLIC_API.md) |
+| ADR (архитектурные решения) | [docs/decisions/README.md](docs/decisions/README.md) |
+| Gap registry | [docs/GAP_REGISTRY.md](docs/GAP_REGISTRY.md) |
+| Commercial bundle licensing | [docs/COMMERCIAL_LICENSING.md](docs/COMMERCIAL_LICENSING.md) |
+| MES reference walkthrough | [docs/REFERENCE_MES_WALKTHROUGH.md](docs/REFERENCE_MES_WALKTHROUGH.md) |
 | Глоссарий | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
 | Быстрый старт | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
 | Архитектура | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
@@ -113,7 +118,8 @@ iot-solutions-platform-framework/
 │   ├── ispf-plugin-workflow/   # BPMN engine
 │   └── ispf-server/            # Spring Boot API + JPA + Flyway
 ├── apps/web-console/           # React-консоль (Explorer, System, Operator)
-├── examples/                   # demo-app, warehouse-app (reference bundles)
+├── examples/                   # demo-app, warehouse-app, mes-reference, lab-training
+├── tools/license-builder/      # RSA keys + sign commercial bundle
 ├── docs/                       # Документация (Apache 2.0)
 ├── deploy/                     # Mosquitto config
 └── docker-compose.yml
@@ -185,9 +191,11 @@ cd apps/web-console && npm install && npm run dev
 - [x] Object tree: drag-and-drop порядок, семантические типы узлов
 - [x] Документация синхронизирована с object-tree моделью автоматизации
 - [x] CI (GitHub Actions), PF-01c map/buildRecord, models[] в bundle, leader locks, WebSocket auth
+- [x] **Phase 16 (REQ-FW Sprint E):** ADR, gap-registry, RSA bundle licensing, MES reference, public API doc
 
 ### В работе / далее
 
+- **Sprint F (REQ-FW):** event catalog в bundle, messaging contract, bundle `requires[]`
 - **Phase 3.2** — stub-драйверы → production по demand
 - **Phase 5** — усиление механизмов object tree (модели, функции, события, workflow, bundle как упаковка дерева)
 

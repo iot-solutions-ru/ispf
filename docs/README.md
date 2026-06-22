@@ -9,6 +9,7 @@
 | **[Обзор продукта](PRODUCT.md)** | Все | Возможности, сценарии, карта документации |
 | [Руководство оператора](OPERATOR_GUIDE.md) | Оператор | HMI, work queue, события |
 | [Руководство разработчика решений](SOLUTION_DEVELOPER_GUIDE.md) | App developer | Deploy приложений, operator UI, bundle |
+| [Public API (solution developer)](SOLUTION_DEVELOPER_PUBLIC_API.md) | App developer | Стабильная граница platform ↔ bundle |
 | [Глоссарий](GLOSSARY.md) | Все | Термины и определения |
 
 ## Техническая документация
@@ -23,13 +24,16 @@
 | [REST API](API.md) | Полный справочник endpoints |
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
-| [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), gap §12.10, sprint roadmap, каталог драйверов (§10) |
+| [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), [gap registry](GAP_REGISTRY.md), sprint roadmap |
+| [ADR (архитектурные решения)](decisions/README.md) | ADR-0008…0010 |
 | [Roadmap](ROADMAP.md) | Единый roadmap platform + production ops; **Phase 5** — усиление механизмов |
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
 | [Драйверы](DRIVERS.md) | 58 встроенных драйверов — полный каталог REQ-PF-14 |
 | [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, виджеты, layout JSON, `objectPath` / `selectionKey` |
 | [Lab Training (18 заданий)](LAB_TRAINING.md) | Virtual lab device, bundle import, упражнения Phase 15 |
+| [MES reference walkthrough](REFERENCE_MES_WALKTHROUGH.md) | Сквозной MES demo (`examples/mes-reference/`) |
+| [Commercial bundle licensing](COMMERCIAL_LICENSING.md) | RSA license при deploy commercial bundle |
 | [Workflow / BPMN](WORKFLOWS.md) | Движок, ISPF-расширения, work queue |
 | [Автоматизация](AUTOMATION.md) | События, alert rules, correlators |
 | [Web Console](WEB_CONSOLE.md) | Админка, operator HMI, роли |

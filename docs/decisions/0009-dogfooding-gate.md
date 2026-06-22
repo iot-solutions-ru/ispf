@@ -1,0 +1,36 @@
+# ADR-0009: Dogfooding gate для изменений platform
+
+Статус: **Accepted**  
+Дата: 2026-06-19 (формализовано 2026-06-22)
+
+## Контекст
+
+Потребности app-команд легко приводят к отраслевому коду в platform repo. Нужен обязательный фильтр: расширять механизм object tree, а не добавлять частный Java.
+
+## Решение
+
+Развитие platform идёт через **dogfooding** с gate перед каждым PR в `main`:
+
+```text
+Потребность app-команды → REQ-PF (generic) → PR в platform → bundle deploy → smoke
+```
+
+### Gate обобщения (все три — «да»)
+
+| # | Вопрос | Если «нет» |
+|---|--------|------------|
+| 1 | Потребность выражается через **механизм object tree** (или обобщённый REQ-PF), без отраслевых имён в Java? | Оставить в declarative-конфигурации решения |
+| 2 | App-команда использует только **deploy REST**, без fork server? | Доработать API |
+| 3 | Есть **второй** сценарий на том же API? | Переформулировать абстракцию |
+
+Критерий нового REQ-PF: *можно ли выразить потребность через существующий или обобщённый механизм дерева объектов?* Если да — расширяем механизм; если нет — gate ADR-0009 (отдельное ADR или отказ).
+
+## Последствия
+
+- Platform developer backlog — единый реестр REQ-PF.
+- Reference bundles (`warehouse-app`, `lab-training`, `mes-reference`) — доказательство dogfooding, не код в server.
+
+## Связанные материалы
+
+- [PLATFORM_DEVELOPER_BACKLOG.md §0.2](../PLATFORM_DEVELOPER_BACKLOG.md)
+- [ADR-0008](0008-app-platform-boundary.md)

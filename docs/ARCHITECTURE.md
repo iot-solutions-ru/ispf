@@ -22,7 +22,7 @@
 
 Bundle deploy ([APPLICATIONS.md](APPLICATIONS.md)) — **упаковка и доставка** конфигурации в дерево объектов и app schema, а не отдельный runtime вне платформы.
 
-**Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree.
+**Запрещено в `main`:** отраслевой Java в `ispf-server`, hardcoded BFF routes, дублирование логики вне object tree. См. [ADR-0008](decisions/0008-app-platform-boundary.md).
 
 **Развитие platform:** усиление выразительности механизмов object tree (Phase 5), чтобы больше логики выражалось declarative, без custom code. См. [ROADMAP.md § Phase 5](ROADMAP.md#phase-5--усиление-механизмов-north-star), [PLATFORM_DEVELOPER_BACKLOG.md §8.1](PLATFORM_DEVELOPER_BACKLOG.md#81-усиление-механизмов-phase-5).
 
