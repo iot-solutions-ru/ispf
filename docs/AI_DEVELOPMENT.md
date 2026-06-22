@@ -97,7 +97,7 @@ Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 
 ## Tree-first agent (FW-44)
 
-ReAct loop on the platform with bounded steps (default 28, `ispf.ai.agent-max-steps`). Admin-only.
+ReAct loop on the platform with a hard step cap (default 96, `ispf.ai.agent-max-steps`). The agent runs until it finishes or hits the cap — **no mid-run pauses**. Cooperative **cancel** while running (`POST .../cancel`); live steps via `GET .../progress` (UI polls ~1s). Admin-only.
 
 **Multi-turn sessions** (Cursor-like): each chat is a server-side in-memory session with turn history replayed to the LLM (compact user/assistant summaries, no raw tool JSON). `AgentRunState` (validate → import gates) persists for the whole chat.
 
@@ -105,8 +105,10 @@ ReAct loop on the platform with bounded steps (default 28, `ispf.ai.agent-max-st
 |----------|---------|
 | `GET /api/v1/ai/agent/tools` | Catalog of platform tools |
 | `POST /api/v1/ai/agent/sessions` | Create empty session `{ sessionId, title: "New chat", ... }` |
-| `GET /api/v1/ai/agent/sessions/{id}` | Restore chat turns for UI (403/404 if wrong actor or expired) |
-| `POST /api/v1/ai/agent/sessions/{id}/messages` | Send message → run turn → `{ summary, steps, status, turnId }` |
+| `GET /api/v1/ai/agent/sessions/{id}` | Restore chat turns for UI |
+| `GET /api/v1/ai/agent/sessions/{id}/progress` | Live steps while a turn is running (`running`, `steps[]`) |
+| `POST /api/v1/ai/agent/sessions/{id}/messages` | Send message → run until finish/cancel/limit |
+| `POST /api/v1/ai/agent/sessions/{id}/cancel` | Request cooperative cancel of in-flight turn |
 | `DELETE /api/v1/ai/agent/sessions/{id}` | Delete session (clear context) |
 | `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
 
@@ -134,7 +136,7 @@ Legacy one-shot run (still supported):
 }
 ```
 
-Response includes `steps[]` (tool calls + results), `summary`, and `status` (`OK` when the model emitted `finish`).
+Response includes `steps[]` (tool calls + results), `summary`, and `status` (`OK` when the model emitted `finish`; `CANCELLED` on user abort; `ERROR` on parse failure or step cap).
 
 Platform tools (Java handlers, ACL-aware):
 
@@ -189,21 +191,23 @@ LLM replies with one JSON object per turn: `{"type":"tool","name":"...","argumen
 | Widget JSON picked instead of action | Parser scores only `tool`/`finish` (and aliases); ignores `type:DASHBOARD` in arguments |
 | Playbook `%s` crash (`Format specifier`) | Playbooks use concatenation only; `AgentPromptStartupValidator` fails boot if `%s` remains |
 | `search_context` loop | `AgentLoopGuard` injects stop hints after 3 repeats; dashboard tools documented in prompt |
-| Step budget exhausted | Near-limit hint to emit `finish`; turn ends with `ERROR` summary (not HTTP 400) |
+| Step cap reached | Turn ends with `ERROR` summary (`agent-max-steps`, default 96) |
 | Unparseable response after retries | Turn returns `status: ERROR` + human summary (session kept); audit `agent_parse_error` |
 
 Session history replays compact assistant summaries (800 chars max per turn).
 
-Configure max steps:
+Configure step limit:
 
 ```yaml
 ispf:
   ai:
-    agent-max-steps: 28
+    agent-max-steps: 96
     agent-parse-retries: 3
     agent-session-ttl-hours: 24
     agent-max-history-turns: 50
 ```
+
+Env: `ISPF_AI_AGENT_MAX_STEPS`.
 
 `max-tokens` (default **16384**, env `ISPF_AI_MAX_TOKENS`) — лимит **ответа** на один вызов (`max_tokens` в API), не размер всего окна. У Qwen/vLLM окно **~256k** суммарно (промпт + ответ); не ставьте `max_tokens` равным 262144 — иначе под промпт не останется места.
 

@@ -8,16 +8,19 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   agentApiUnavailableMessage,
+  cancelAgentRun,
   createAgentSession,
   deleteAgentSession,
+  fetchAgentRunProgress,
   fetchAgentSession,
   fetchAiAgentTools,
   fetchAiProviderStatus,
   sendAgentMessage,
   type AiAgentChatResponse,
+  type AiAgentSession,
   type AiAgentSessionSummary,
   type AiAgentStep,
   type AiAgentTool,
@@ -62,12 +65,14 @@ interface AgentChatContextValue {
   setInput: (value: string) => void;
   loadingSession: boolean;
   isPending: boolean;
+  liveSteps: AiAgentStep[];
   pendingUserMessage: string | null;
   defaultRootPath: string;
   startNewChat: () => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
   deleteChat: (sessionId: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
+  cancelRun: () => Promise<void>;
   clearLocalChatIndex: () => void;
 }
 
@@ -95,7 +100,7 @@ function turnsToMessages(turns: AiAgentTurn[]): ChatMessage[] {
 
 function responseToAgentMessage(data: AiAgentChatResponse): ChatMessage {
   return {
-    id: data.turnId + "-a",
+    id: `${data.turnId ?? newId()}-a`,
     role: "agent",
     text: data.summary,
     steps: data.steps,
@@ -125,7 +130,8 @@ export function AgentChatProvider({
   ]);
   const [input, setInput] = useState("");
   const [loadingSession, setLoadingSession] = useState(enabled);
-  const [isSending, setIsSending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [liveSteps, setLiveSteps] = useState<AiAgentStep[]>([]);
   const turnCountRef = useRef(0);
   const pendingMessageRef = useRef<string | null>(null);
   const activeSessionIdRef = useRef<string | null>(null);
@@ -182,10 +188,11 @@ export function AgentChatProvider({
   );
 
   const applySession = useCallback(
-    (session: AiAgentSessionSummary, index: AgentChatIndex, turns: AiAgentTurn[] = []) => {
+    (session: AiAgentSession, index: AgentChatIndex) => {
       registerSession(session, index, session.sessionId);
-      turnCountRef.current = turns.length;
-      const turnMessages = turnsToMessages(turns);
+      turnCountRef.current = session.turns.length;
+      const turnMessages = turnsToMessages(session.turns);
+      setLiveSteps([]);
       setMessages(
         turnMessages.length > 0
           ? turnMessages
@@ -194,6 +201,41 @@ export function AgentChatProvider({
     },
     [registerSession]
   );
+
+  const handleAgentResponse = useCallback(
+    (data: AiAgentChatResponse) => {
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+      setLiveSteps([]);
+      setMessages((prev) => [...prev, responseToAgentMessage(data)]);
+      turnCountRef.current += 1;
+
+      const entry = {
+        id: data.sessionId,
+        title: data.title,
+        updatedAt: new Date().toISOString(),
+      };
+      setChatIndex((prev) => {
+        const next = upsertChatEntry({ ...prev, activeSessionId: data.sessionId }, entry);
+        persistIndex(next);
+        return next;
+      });
+      setActiveSessionId(data.sessionId);
+      activeSessionIdRef.current = data.sessionId;
+    },
+    [persistIndex, queryClient]
+  );
+
+  const handleAgentError = useCallback((error: unknown, prefix: string) => {
+    setLiveSteps([]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: newId(),
+        role: "agent",
+        text: `${prefix}: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    ]);
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -211,7 +253,7 @@ export function AgentChatProvider({
           try {
             const session = await fetchAgentSession(index.activeSessionId);
             if (!cancelled) {
-              applySession(session, index, session.turns);
+              applySession(session, index);
             }
           } catch {
             const cleaned = removeChatEntry(index, index.activeSessionId);
@@ -219,6 +261,7 @@ export function AgentChatProvider({
             if (!cancelled) {
               setActiveSessionId(null);
               activeSessionIdRef.current = null;
+              setLiveSteps([]);
               setMessages([{ id: "welcome", role: "agent", text: WELCOME_TEXT }]);
             }
           }
@@ -237,45 +280,35 @@ export function AgentChatProvider({
     };
   }, [applySession, enabled, initialPrefs.restoreLastChat, persistIndex]);
 
-  const sendMutation = useMutation({
-    mutationFn: ({ sessionId, text, rootPath }: { sessionId: string; text: string; rootPath: string }) =>
-      sendAgentMessage(sessionId, text, rootPath),
-    onSuccess: (data) => {
-      pendingMessageRef.current = null;
-      setIsSending(false);
-      queryClient.invalidateQueries({ queryKey: ["objects"] });
-      setMessages((prev) => [...prev, responseToAgentMessage(data)]);
-      turnCountRef.current += 1;
-      const entry = {
-        id: data.sessionId,
-        title: data.title,
-        updatedAt: new Date().toISOString(),
-      };
-      setChatIndex((prev) => {
-        const next = upsertChatEntry({ ...prev, activeSessionId: data.sessionId }, entry);
-        persistIndex(next);
-        return next;
-      });
-      setActiveSessionId(data.sessionId);
-      activeSessionIdRef.current = data.sessionId;
-    },
-    onError: (error) => {
-      pendingMessageRef.current = null;
-      setIsSending(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: newId(),
-          role: "agent",
-          text: `Не удалось выполнить задачу: ${error instanceof Error ? error.message : String(error)}`,
-        },
-      ]);
-    },
-  });
+  useEffect(() => {
+    if (!isPending || !activeSessionId) {
+      return;
+    }
+    let cancelled = false;
+
+    const poll = async () => {
+      try {
+        const progress = await fetchAgentRunProgress(activeSessionId);
+        if (!cancelled && progress.running && progress.steps) {
+          setLiveSteps(progress.steps);
+        }
+      } catch {
+        // ignore transient poll errors while run is in flight
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [activeSessionId, isPending]);
 
   const startNewChat = useCallback(async () => {
     pendingMessageRef.current = null;
-    setIsSending(false);
+    setIsPending(false);
+    setLiveSteps([]);
     const session = await createAgentSession(resolveRootPath());
     registerSession(session, loadAgentChatIndex(), session.sessionId);
     turnCountRef.current = 0;
@@ -285,18 +318,18 @@ export function AgentChatProvider({
 
   const switchSession = useCallback(
     async (sessionId: string) => {
-      if (sessionId === activeSessionIdRef.current || isSending || sendMutation.isPending) {
+      if (sessionId === activeSessionIdRef.current || isPending) {
         return;
       }
       try {
         const session = await fetchAgentSession(sessionId);
-        applySession(session, chatIndex, session.turns);
+        applySession(session, chatIndex);
       } catch {
         const cleaned = removeChatEntry(chatIndex, sessionId);
         persistIndex(cleaned);
       }
     },
-    [applySession, chatIndex, isSending, persistIndex, sendMutation.isPending]
+    [applySession, chatIndex, isPending, persistIndex]
   );
 
   const deleteChat = useCallback(
@@ -315,6 +348,7 @@ export function AgentChatProvider({
           setActiveSessionId(null);
           activeSessionIdRef.current = null;
           turnCountRef.current = 0;
+          setLiveSteps([]);
           setMessages([{ id: "welcome", role: "agent", text: WELCOME_TEXT }]);
         }
       }
@@ -325,13 +359,13 @@ export function AgentChatProvider({
   const sendMessage = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || isSending || sendMutation.isPending) {
+      if (!trimmed || isPending) {
         return;
       }
 
-      setIsSending(true);
       pendingMessageRef.current = trimmed;
       setInput("");
+      setLiveSteps([]);
       setMessages((prev) => [...prev, { id: newId(), role: "user", text: trimmed }]);
 
       try {
@@ -345,27 +379,36 @@ export function AgentChatProvider({
           turnCountRef.current = 0;
         }
 
-        await sendMutation.mutateAsync({ sessionId, text: trimmed, rootPath });
+        setIsPending(true);
+        const data = await sendAgentMessage(sessionId, trimmed, rootPath);
+        pendingMessageRef.current = null;
+        handleAgentResponse(data);
       } catch (error) {
         pendingMessageRef.current = null;
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: newId(),
-            role: "agent",
-            text: `Не удалось отправить сообщение: ${error instanceof Error ? error.message : String(error)}`,
-          },
-        ]);
+        handleAgentError(error, "Не удалось отправить сообщение");
       } finally {
-        setIsSending(false);
+        setIsPending(false);
       }
     },
-    [isSending, registerSession, sendMutation]
+    [handleAgentError, handleAgentResponse, isPending, registerSession]
   );
+
+  const cancelRun = useCallback(async () => {
+    const sessionId = activeSessionIdRef.current;
+    if (!sessionId || !isPending) {
+      return;
+    }
+    try {
+      await cancelAgentRun(sessionId);
+    } catch (error) {
+      handleAgentError(error, "Не удалось прервать выполнение");
+    }
+  }, [handleAgentError, isPending]);
 
   const clearLocalChatIndex = useCallback(() => {
     pendingMessageRef.current = null;
-    setIsSending(false);
+    setIsPending(false);
+    setLiveSteps([]);
     const cleared = clearAgentChatIndex();
     setChatIndex(cleared);
     setActiveSessionId(null);
@@ -374,7 +417,6 @@ export function AgentChatProvider({
     setMessages([{ id: "welcome", role: "agent", text: WELCOME_TEXT }]);
   }, []);
 
-  const isPending = sendMutation.isPending || isSending;
   const pendingUserMessage = isPending ? pendingMessageRef.current : null;
 
   const value = useMemo<AgentChatContextValue>(
@@ -393,12 +435,14 @@ export function AgentChatProvider({
       setInput,
       loadingSession,
       isPending,
+      liveSteps,
       pendingUserMessage,
       defaultRootPath: resolveRootPath(),
       startNewChat,
       switchSession,
       deleteChat,
       sendMessage,
+      cancelRun,
       clearLocalChatIndex,
     }),
     [
@@ -415,11 +459,13 @@ export function AgentChatProvider({
       input,
       loadingSession,
       isPending,
+      liveSteps,
       pendingUserMessage,
       startNewChat,
       switchSession,
       deleteChat,
       sendMessage,
+      cancelRun,
       clearLocalChatIndex,
     ]
   );

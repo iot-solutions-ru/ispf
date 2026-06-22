@@ -4363,6 +4363,10 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   white-space: nowrap;
 }
 
+.ai-agent-cancel-run {
+  flex-shrink: 0;
+}
+
 .ai-agent-chat-main {
   flex: 1;
   min-width: 0;

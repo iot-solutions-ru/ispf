@@ -2,6 +2,7 @@ package com.ispf.server.ai.agent;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -121,14 +122,15 @@ public final class AgentSession {
     }
 
     public Map<String, Object> toMap() {
-        return Map.of(
-                "sessionId", sessionId,
-                "title", title,
-                "rootPath", rootPath,
-                "createdAt", createdAt.toString(),
-                "updatedAt", updatedAt.toString(),
-                "turns", turns().stream().map(AgentTurn::toMap).toList()
-        );
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("sessionId", sessionId);
+        map.put("title", title);
+        map.put("rootPath", rootPath);
+        map.put("createdAt", createdAt.toString());
+        map.put("updatedAt", updatedAt.toString());
+        map.put("turns", turns().stream().map(AgentTurn::toMap).toList());
+        map.put("hasPendingRun", runState.hasPending());
+        return map;
     }
 
     public Map<String, Object> toSummaryMap() {

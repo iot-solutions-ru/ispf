@@ -120,16 +120,29 @@ public class AiController {
         return session.toMap();
     }
 
+    @GetMapping("/agent/sessions/{sessionId}/progress")
+    public Map<String, Object> getAgentRunProgress(
+            Authentication authentication,
+            @PathVariable String sessionId
+    ) {
+        agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        return agentService.runProgress(sessionId);
+    }
+
     @PostMapping("/agent/sessions/{sessionId}/messages")
     public Map<String, Object> sendAgentMessage(
             Authentication authentication,
             @PathVariable String sessionId,
-            @Valid @RequestBody AgentMessageRequest request
+            @RequestBody AgentMessageRequest request
     ) {
         AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
-        if (request.rootPath() != null && !request.rootPath().isBlank()) {
+        if (request != null && request.rootPath() != null && !request.rootPath().isBlank()) {
             session.setRootPath(request.rootPath());
+        }
+        if (request == null || request.message() == null || request.message().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "message is required");
         }
         try {
             return agentService.runTurn(
@@ -140,9 +153,21 @@ public class AiController {
             );
         } catch (IllegalStateException ex) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), ex);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         }
+    }
+
+    @PostMapping("/agent/sessions/{sessionId}/cancel")
+    public Map<String, Object> cancelAgentRun(
+            Authentication authentication,
+            @PathVariable String sessionId
+    ) {
+        agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        return agentService.cancelRun(sessionId);
     }
 
     @DeleteMapping("/agent/sessions/{sessionId}")
@@ -234,7 +259,7 @@ public class AiController {
     }
 
     public record AgentMessageRequest(
-            @NotBlank String message,
+            String message,
             String rootPath
     ) {
     }

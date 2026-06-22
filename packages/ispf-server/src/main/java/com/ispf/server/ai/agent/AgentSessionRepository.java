@@ -166,22 +166,29 @@ public class AgentSessionRepository {
         );
     }
 
+    private String writeRunState(AgentRunState runState) {
+        return writeJson(runState.snapshot(objectMapper));
+    }
+
     private AgentRunState readRunState(String json) {
         AgentRunState state = new AgentRunState();
         if (json == null || json.isBlank()) {
             return state;
         }
         try {
-            Map<String, Boolean> restored = objectMapper.readValue(json, new TypeReference<>() {});
-            state.restore(restored);
+            Map<String, Object> restored = objectMapper.readValue(json, new TypeReference<>() {});
+            state.restore(objectMapper, restored);
+            return state;
+        } catch (Exception ignored) {
+            // legacy: validated bundle map only
+        }
+        try {
+            Map<String, Boolean> legacy = objectMapper.readValue(json, new TypeReference<>() {});
+            state.restore(legacy);
         } catch (Exception ignored) {
             // keep empty state
         }
         return state;
-    }
-
-    private String writeRunState(AgentRunState runState) {
-        return writeJson(runState.snapshot());
     }
 
     private String writeJson(Object value) {

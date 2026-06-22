@@ -18,7 +18,7 @@ class AgentLoopGuardTest {
                 step("search_context"),
                 step("search_context")
         );
-        String hint = AgentLoopGuard.continuationHint("search_context", steps, 18);
+        String hint = AgentLoopGuard.continuationHint("search_context", steps, 96);
         assertTrue(hint.toLowerCase().contains("search_context"));
     }
 

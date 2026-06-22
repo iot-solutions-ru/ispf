@@ -41,12 +41,13 @@ export interface AiAgentTool {
 
 export interface AiAgentStep {
   step: number;
-  type: "tool" | "finish";
+  type: "tool" | "finish" | "error";
   tool?: string;
   label?: string;
   arguments?: Record<string, unknown>;
   result?: Record<string, unknown>;
   summary?: string;
+  error?: string;
 }
 
 export interface AiAgentTurn {
@@ -71,10 +72,18 @@ export interface AiAgentSession extends AiAgentSessionSummary {
   turns: AiAgentTurn[];
 }
 
+export interface AiAgentRunProgress {
+  running: boolean;
+  sessionId?: string;
+  userMessage?: string;
+  steps?: AiAgentStep[];
+  stepsCompleted?: number;
+}
+
 export interface AiAgentChatResponse {
   status: string;
   sessionId: string;
-  turnId: string;
+  turnId?: string;
   title: string;
   message: string;
   rootPath: string;
@@ -83,6 +92,9 @@ export interface AiAgentChatResponse {
   result: Record<string, unknown>;
   provider: AiProviderStatus;
   contextPackVersion: string;
+  stepsCompleted?: number;
+  maxSteps?: number;
+  running?: boolean;
 }
 
 export interface AiAgentRunResult {
@@ -267,6 +279,31 @@ export function sendAgentMessage(
   }).then(async (response) => {
     if (!response.ok) {
       return throwAiHttpError(response, `Send message failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export function fetchAgentRunProgress(sessionId: string): Promise<AiAgentRunProgress> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/progress`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Fetch progress failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export function cancelAgentRun(
+  sessionId: string
+): Promise<{ status: string; sessionId: string; cancelRequested: boolean }> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/cancel`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Cancel run failed: ${response.status}`);
     }
     return response.json();
   });

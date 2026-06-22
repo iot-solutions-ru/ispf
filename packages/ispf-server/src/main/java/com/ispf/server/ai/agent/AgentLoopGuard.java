@@ -13,9 +13,13 @@ final class AgentLoopGuard {
     private AgentLoopGuard() {
     }
 
-    static String continuationHint(String lastTool, List<Map<String, Object>> steps, int maxSteps) {
+    static String continuationHint(
+            String lastTool,
+            List<Map<String, Object>> steps,
+            int maxStepsTotal
+    ) {
         if (steps == null || steps.isEmpty()) {
-            return defaultHint(maxSteps, steps);
+            return defaultHint(steps, maxStepsTotal);
         }
         if (isRepeatedTool(lastTool, steps)) {
             return """
@@ -31,13 +35,15 @@ final class AgentLoopGuard {
                     get_example_bundle, or concrete tree tools (set_variable, configure_driver). \
                     Finish with {"type":"finish",...} when done.""";
         }
-        return defaultHint(maxSteps, steps);
+        return defaultHint(steps, maxStepsTotal);
     }
 
-    private static String defaultHint(int maxSteps, List<Map<String, Object>> steps) {
+    private static String defaultHint(List<Map<String, Object>> steps, int maxStepsTotal) {
         int stepCount = steps != null ? steps.size() : 0;
-        if (stepCount >= Math.max(1, maxSteps - 3)) {
-            return "Step budget is almost exhausted — finish now with {\"type\":\"finish\",\"summary\":\"...\",\"result\":{...}}.";
+        int remainingTotal = Math.max(0, maxStepsTotal - stepCount);
+        if (remainingTotal <= 3) {
+            return "Step limit almost reached (" + stepCount + "/" + maxStepsTotal
+                    + ") — finish now with {\"type\":\"finish\",\"summary\":\"...\",\"result\":{...}}.";
         }
         return "Continue with another tool action or finish when the goal is complete.";
     }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useAgentChat } from "../context/AgentChatContext";
+import type { AiAgentStep } from "../api/ai";
 
 function formatChatDate(iso: string): string {
   try {
@@ -33,10 +34,12 @@ export default function AiAgentChat() {
     setInput,
     loadingSession,
     isPending,
+    liveSteps,
     startNewChat,
     switchSession,
     deleteChat,
     sendMessage,
+    cancelRun,
   } = useAgentChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +47,7 @@ export default function AiAgentChat() {
     if (isPending) {
       scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [isPending, messages.length]);
+  }, [isPending, liveSteps.length, messages.length]);
 
   if (loadingSession) {
     return <p className="op-muted">Загрузка чата…</p>;
@@ -53,6 +56,7 @@ export default function AiAgentChat() {
   const providerReady = provider?.available ?? false;
   const sending = isPending;
   const chatEnabled = providerReady && agentApiReady;
+  const toolStepCount = liveSteps.filter((s) => s.type === "tool").length;
 
   return (
     <div className="ai-agent-chat">
@@ -117,7 +121,22 @@ export default function AiAgentChat() {
             );
           })}
         </div>
-        {isPending && <span className="ai-agent-toolbar-busy op-muted">Выполняю…</span>}
+        {isPending && (
+          <button
+            type="button"
+            className="btn danger ai-agent-cancel-run"
+            disabled={!chatEnabled}
+            onClick={() => void cancelRun()}
+            title="Прервать выполнение"
+          >
+            Прервать
+          </button>
+        )}
+        {isPending && (
+          <span className="ai-agent-toolbar-busy op-muted">
+            {toolStepCount > 0 ? `Шаг ${toolStepCount}…` : "Думаю…"}
+          </span>
+        )}
       </div>
 
       <div className="ai-agent-chat-main">
@@ -146,7 +165,14 @@ export default function AiAgentChat() {
           ))}
           {isPending && (
             <div className="ai-agent-bubble agent ai-agent-bubble-pending">
-              <div className="ai-agent-bubble-text">Выполняю…</div>
+              <div className="ai-agent-bubble-text">
+                {toolStepCount > 0
+                  ? `Выполняю… (${toolStepCount} ${toolStepLabel(toolStepCount)})`
+                  : "Думаю…"}
+              </div>
+              {liveSteps.length > 0 && (
+                <AgentRunDetails steps={liveSteps} status="RUNNING" open />
+              )}
             </div>
           )}
           <div ref={scrollRef} />
@@ -185,35 +211,56 @@ export default function AiAgentChat() {
   );
 }
 
+function toolStepLabel(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) {
+    return "шаг";
+  }
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return "шага";
+  }
+  return "шагов";
+}
+
 function stepStatusBadge(status: string | undefined): React.ReactNode {
   if (!status) {
     return null;
   }
   const ok = status === "OK" || status === "SUCCESS";
-  return (
-    <span className={`badge ${ok ? "ok" : "danger"}`}>{ok ? "OK" : status}</span>
-  );
+  const running = status === "RUNNING";
+  const cancelled = status === "CANCELLED" || status === "STOPPED";
+  const badgeClass = ok ? "ok" : running || cancelled ? "hist" : "danger";
+  const label = ok ? "OK" : running ? "…" : status;
+  return <span className={`badge ${badgeClass}`}>{label}</span>;
 }
 
 function AgentRunDetails({
   steps,
   status,
   result,
+  open = false,
 }: {
-  steps: import("../api/ai").AiAgentStep[];
+  steps: AiAgentStep[];
   status?: string;
   result?: Record<string, unknown>;
+  open?: boolean;
 }) {
   const devicePath = typeof result?.devicePath === "string" ? result.devicePath : undefined;
   const dashboardPath =
     typeof result?.dashboardPath === "string" ? result.dashboardPath : undefined;
   const toolSteps = steps.filter((s) => s.type === "tool");
+  const isRunning = status === "RUNNING";
 
   return (
-    <details className="ai-agent-run-details">
+    <details className="ai-agent-run-details" open={open || undefined}>
       <summary>
-        {status === "OK" ? "Подробности" : "Что пошло не так"}
-        {toolSteps.length > 0 ? ` (${toolSteps.length} шагов)` : ""}
+        {isRunning
+          ? "Текущие шаги"
+          : status === "OK"
+            ? "Подробности"
+            : "Что пошло не так"}
+        {toolSteps.length > 0 ? ` (${toolSteps.length})` : ""}
       </summary>
       {toolSteps.length > 0 && (
         <ol className="ai-agent-step-list">
@@ -228,7 +275,9 @@ function AgentRunDetails({
                   ? "ERROR"
                   : step.result?.status === "OK"
                     ? "OK"
-                    : undefined
+                    : isRunning
+                      ? "RUNNING"
+                      : undefined
               )}
               {step.result?.status === "ERROR" && (
                 <span className="ai-agent-step-error">
@@ -240,18 +289,20 @@ function AgentRunDetails({
           ))}
         </ol>
       )}
-      <div className="ai-agent-run-links">
-        {devicePath && (
-          <a className="btn small" href={dashboardLink(devicePath) ?? "#"}>
-            Открыть устройство
-          </a>
-        )}
-        {dashboardPath && (
-          <a className="btn small" href={dashboardLink(dashboardPath) ?? "#"}>
-            Открыть дашборд
-          </a>
-        )}
-      </div>
+      {!isRunning && (
+        <div className="ai-agent-run-links">
+          {devicePath && (
+            <a className="btn small" href={dashboardLink(devicePath) ?? "#"}>
+              Открыть устройство
+            </a>
+          )}
+          {dashboardPath && (
+            <a className="btn small" href={dashboardLink(dashboardPath) ?? "#"}>
+              Открыть дашборд
+            </a>
+          )}
+        </div>
+      )}
     </details>
   );
 }
