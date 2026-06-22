@@ -33,9 +33,9 @@ public final class AgentPromptBuilder {
             - delete_object path=<full path> — remove tree node; stops device driver first
             - SNMP device: templateId snmp-agent-v1, driverId snmp, host 127.0.0.1:161 community public
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
-            - Virtual lab: driverId virtual, profile meter|demo|weighbridge|rack-signals|lab in driverConfigJson;
-              lab vars: sineWave, sawtoothWave, triangleWave
-            - Automation: get_automation_schema → configure_alert, configure_correlator (parents alert-rules / correlators)
+            - Virtual lab devices: templateId virtual-lab-v1; vars sineWave, sawtoothWave, triangleWave
+            - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
+            - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history
             - Cross-device logic: CUSTOM hub + create_variable refAt(...) + CEL clusterError + configure_alert on hub
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
             - create_variable for bindings; describe_variables before set_variable on existing vars

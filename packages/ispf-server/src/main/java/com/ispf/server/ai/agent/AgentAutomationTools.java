@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.core.object.Variable;
 import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
@@ -46,6 +47,7 @@ final class AgentAutomationTools {
                 listAutomationTool(automationTreeService, objectAccessService, tenantScopeService),
                 getAutomationSchemaTool(),
                 createVariableTool(objectManager, objectAccessService, tenantScopeService, objectMapper),
+                configureVariableHistoryTool(objectManager, objectAccessService, tenantScopeService),
                 configureOperatorUiTool(operatorAppUiService)
         );
     }
@@ -429,6 +431,60 @@ final class AgentAutomationTools {
         };
     }
 
+    private static PlatformAgentTool configureVariableHistoryTool(
+            ObjectManager objectManager,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "configure_variable_history";
+            }
+
+            @Override
+            public String description() {
+                return "Enable or disable historian for an existing variable (required for chart/sparkline widgets). "
+                        + "Args: path (object path), name (variable name), historyEnabled (boolean), "
+                        + "optional historyRetentionDays (integer).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                String name = stringArg(arguments, "name");
+                if (path.isBlank() || name.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path and name are required");
+                }
+                Boolean historyEnabled = boolArg(arguments, "historyEnabled", null);
+                if (historyEnabled == null) {
+                    return Map.of("status", "ERROR", "error", "historyEnabled is required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    Integer retentionDays = intArg(arguments, "historyRetentionDays", null);
+                    Variable updated = objectManager.updateVariableHistory(
+                            path,
+                            name,
+                            historyEnabled,
+                            retentionDays
+                    );
+                    Map<String, Object> preview = new LinkedHashMap<>();
+                    preview.put("name", updated.name());
+                    preview.put("historyEnabled", updated.historyEnabled());
+                    updated.historyRetentionDays().ifPresent(days -> preview.put("historyRetentionDays", days));
+                    return Map.of("status", "OK", "path", path, "variable", preview);
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+        };
+    }
+
     private static PlatformAgentTool configureOperatorUiTool(OperatorAppUiService operatorAppUiService) {
         return new PlatformAgentTool() {
             @Override
@@ -570,7 +626,13 @@ final class AgentAutomationTools {
                         "value", "indicator", "chart", "sparkline", "object-table", "function", "status-badge"
                 ),
                 "drillDown", "object-table: selectionKey + rowTargetDashboard + rowOpenMode=navigate; detail widgets use same selectionKey",
-                "tools", List.of("get_dashboard_layout", "set_dashboard_layout", "add_dashboard_widget")
+                "historian", "chart/sparkline widgets require historyEnabled=true on bound variables; use configure_variable_history",
+                "tools", List.of(
+                        "get_dashboard_layout",
+                        "set_dashboard_layout",
+                        "add_dashboard_widget",
+                        "configure_variable_history"
+                )
         );
     }
 

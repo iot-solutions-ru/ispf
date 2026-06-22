@@ -2,6 +2,7 @@ package com.ispf.server.ai.agent;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.object.ObjectManager;
@@ -75,25 +76,6 @@ class AgentAutomationToolsTest {
         PlatformObject node = new PlatformObject("1", path, ObjectType.ALERT, "Test rule", "", null);
         when(objectManager.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
-        when(automationTreeService.getAlertRule(path)).thenReturn(new AlertRule(
-                path,
-                "Test rule",
-                "root.platform.devices.demo-sensor-01",
-                "temperature",
-                "self.temperature[\"value\"] > 80",
-                "highTemp",
-                "",
-                true,
-                true,
-                0,
-                false,
-                0,
-                false,
-                null,
-                null,
-                null,
-                null
-        ));
         when(automationTreeService.updateAlertRule(
                 eq(path),
                 eq("Test rule"),
@@ -183,6 +165,36 @@ class AgentAutomationToolsTest {
                 eq("root.platform.dashboards.virt-cluster-overview"),
                 any()
         );
+    }
+
+    @Test
+    void configureVariableHistoryEnablesHistorian() throws Exception {
+        String path = "root.platform.devices.virt-cluster.dev-01";
+        Variable sine = new Variable(
+                "sineWave",
+                com.ispf.core.model.DataSchema.builder("v").field("value", com.ispf.core.model.FieldType.DOUBLE).build(),
+                true,
+                true,
+                null,
+                null,
+                false,
+                null
+        );
+        when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
+        when(objectManager.updateVariableHistory(path, "sineWave", true, null)).thenReturn(
+                sine.withHistorySettings(true, null)
+        );
+
+        PlatformAgentTool tool = requireTool("configure_variable_history");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of(
+                "path", path,
+                "name", "sineWave",
+                "historyEnabled", true
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(objectManager).updateVariableHistory(path, "sineWave", true, null);
     }
 
     private PlatformAgentTool requireTool(String name) {

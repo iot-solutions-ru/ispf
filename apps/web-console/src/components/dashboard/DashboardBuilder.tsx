@@ -76,8 +76,8 @@ export default function DashboardBuilder({
   });
 
   const objects = useQuery({
-    queryKey: ["objects"],
-    queryFn: () => fetchObjects(),
+    queryKey: ["objects", "dashboard-bindings"],
+    queryFn: () => fetchObjects(undefined, false),
   });
 
   const layout = useMemo(() => {

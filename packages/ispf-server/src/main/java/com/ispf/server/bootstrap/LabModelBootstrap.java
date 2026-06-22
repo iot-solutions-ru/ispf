@@ -30,10 +30,11 @@ public class LabModelBootstrap {
     public static final String TREE_VARIABLES_REPORT_TYPE = "tree-variables";
 
     public static final String LAB_DRIVER_CONFIG =
-            "{\"profile\":\"lab\",\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\",\"periodSec\":\"60\"}";
+            "{\"profile\":\"lab\",\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\","
+                    + "\"triangleAmplitude\":\"5.0\",\"periodSec\":\"60\"}";
 
     public static final String LAB_POINT_MAPPINGS =
-            "{\"sineWave\":\"sim\",\"sawtoothWave\":\"sim\",\"status\":\"sim\"}";
+            "{\"sineWave\":\"sim\",\"sawtoothWave\":\"sim\",\"triangleWave\":\"sim\",\"status\":\"sim\"}";
 
     private static final DataSchema STATUS_SCHEMA = DataSchema.builder("deviceStatus")
             .field("online", FieldType.BOOLEAN)
@@ -120,8 +121,9 @@ public class LabModelBootstrap {
                 List.of(
                         varDef("status", "Device connectivity status", "status", STATUS_SCHEMA,
                                 DataRecord.single(STATUS_SCHEMA, Map.of("online", true, "lastSeen", "init"))),
-                        doubleDef("sineWave", "Sine wave telemetry", "telemetry", 0.0),
-                        doubleDef("sawtoothWave", "Sawtooth wave telemetry", "telemetry", 0.0),
+                        telemetryHistoryDef("sineWave", "Sine wave telemetry", 0.0),
+                        telemetryHistoryDef("sawtoothWave", "Sawtooth wave telemetry", 0.0),
+                        telemetryHistoryDef("triangleWave", "Triangle wave telemetry", 0.0),
                         intDef("intValue", "Writable integer (model-managed)", "config", 0),
                         doubleDef("floatValue", "Writable float (model-managed)", "config", 0.0),
                         doubleDef("sumWaves", "Sum of sine and sawtooth waves", "telemetry", 0.0),
@@ -271,6 +273,19 @@ public class LabModelBootstrap {
                 name,
                 description,
                 group,
+                DOUBLE_VALUE_SCHEMA,
+                true,
+                true,
+                null,
+                DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", defaultValue))
+        );
+    }
+
+    private static ModelVariableDefinition telemetryHistoryDef(String name, String description, double defaultValue) {
+        return ModelVariableDefinition.withHistory(
+                name,
+                description,
+                "telemetry",
                 DOUBLE_VALUE_SCHEMA,
                 true,
                 true,

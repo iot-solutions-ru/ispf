@@ -1,5 +1,6 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.server.plugin.model.ModelBootstrap;
 
@@ -224,12 +225,21 @@ public final class AgentPlaybooks {
                 + VIRT_CLUSTER_FOLDER
                 + """
                  name=dev-0N type=DEVICE displayName=Virt cluster dev-0N
-                   templateId=device-v1 driverId=virtual autoStartDriver=false
+                   templateId="""
+                + LabModelBootstrap.VIRTUAL_LAB_MODEL
+                + """
+                 driverId=virtual autoStartDriver=false
                    set_variable path=... name=driverConfigJson value="""
                 + VIRT_CLUSTER_LAB_CONFIG
                 + """
                 
+                   set_variable path=... name=driverPointMappingsJson value="""
+                + LabModelBootstrap.LAB_POINT_MAPPINGS
+                + """
+                
                    configure_driver devicePath=... driverId=virtual autoStart=true
+                   Для каждого устройства и переменных sineWave, sawtoothWave, triangleWave:
+                   configure_variable_history path=... name=<var> historyEnabled=true
                 
                 3. create_object parentPath="""
                 + VIRT_CLUSTER_FOLDER
@@ -276,6 +286,7 @@ public final class AgentPlaybooks {
                 + VIRT_CLUSTER_DETAIL
                 + """
                  template=virtual-cluster-detail
+                   (detail widgets use selectionKey=device — открывается после клика по строке в overview)
                 
                 10. configure_operator_ui appId=platform title=Platform HMI
                     defaultDashboard="""
@@ -303,7 +314,7 @@ public final class AgentPlaybooks {
                 - Operator UI: configure_operator_ui — defaultDashboard + dashboards[]
                 
                 Инструменты: get_automation_schema, configure_alert, configure_correlator, create_variable,
-                configure_operator_ui, get_dashboard_layout template=..., set_dashboard_layout template=...
+                configure_variable_history, configure_operator_ui, get_dashboard_layout template=..., set_dashboard_layout template=...
                 
                 Завершай проект полностью инструментами; не пиши «настройте вручную в UI», если есть tool.
                 """;
