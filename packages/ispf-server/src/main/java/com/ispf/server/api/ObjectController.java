@@ -187,14 +187,18 @@ public class ObjectController {
     @GetMapping
     public List<ObjectDto> list(
             @RequestParam(required = false) String parent,
+            @RequestParam(defaultValue = "false") boolean lite,
             Authentication authentication
     ) {
         var tree = objectManager.tree();
+        java.util.function.Function<PlatformObject, ObjectDto> mapper = lite
+                ? node -> ObjectDto.fromLite(node, objectUiIconService.readIconId(node).orElse(null))
+                : this::toDto;
         if (parent == null || parent.isBlank()) {
             return tree.all().stream()
                     .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
                     .filter(node -> objectAccessService.canRead(node.path(), authentication))
-                    .map(this::toDto)
+                    .map(mapper)
                     .toList();
         }
         if (!tenantScopeService.isPathVisible(parent, authentication)) {
@@ -204,7 +208,7 @@ public class ObjectController {
         return tree.childrenOf(parent).stream()
                 .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
                 .filter(node -> objectAccessService.canRead(node.path(), authentication))
-                .map(this::toDto)
+                .map(mapper)
                 .toList();
     }
 

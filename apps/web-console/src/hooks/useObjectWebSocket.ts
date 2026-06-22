@@ -63,7 +63,10 @@ export function useObjectWebSocket() {
         try {
           const message = JSON.parse(event.data) as ObjectWsMessage;
           window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
-          queryClient.invalidateQueries({ queryKey: ["objects"] });
+          if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
+            window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
+            queryClient.invalidateQueries({ queryKey: ["objects"] });
+          }
           queryClient.invalidateQueries({ queryKey: ["object", message.path] });
           queryClient.invalidateQueries({ queryKey: ["object-editor", message.path] });
           queryClient.invalidateQueries({ queryKey: ["variables", message.path] });

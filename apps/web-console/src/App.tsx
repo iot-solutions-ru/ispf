@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { fetchObjects, fetchPlatformInfo, reorderObjectChildren } from "./api";
+import { fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { logout } from "./auth/login";
 import { getPrimaryRole, getStoredSession, isAdminSession, setStoredSession, type AuthSession } from "./auth/session";
 import {
@@ -25,6 +25,7 @@ import {
   syncAdminPathToUrl,
 } from "./utils/adminRouting";
 import { useObjectWebSocket, useFederatedPathSubscription } from "./hooks/useObjectWebSocket";
+import { useLazyObjectTree } from "./hooks/useLazyObjectTree";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
@@ -151,50 +152,46 @@ export default function App() {
   useFederatedPathSubscription(selectedPath);
 
   const info = useQuery({ queryKey: ["info"], queryFn: fetchPlatformInfo });
-  const objects = useQuery({
-    queryKey: ["objects"],
-    queryFn: () => fetchObjects(),
-    refetchInterval: 30_000,
-  });
+  const { tree: lazyTree, objects: objectList, loadChildren, invalidateAll } = useLazyObjectTree();
 
   useEffect(() => {
-    if (!objects.data || !selectedPath) {
+    if (!objectList.length || !selectedPath) {
       return;
     }
-    if (objects.data.some((obj) => obj.path === selectedPath)) {
+    if (objectList.some((obj) => obj.path === selectedPath)) {
       return;
     }
     setSelectedPath("root");
     writeSelectedPath("root");
     clearInvalidAdminPathFromUrl();
-  }, [objects.data, selectedPath]);
+  }, [objectList, selectedPath]);
 
   const reorderMutation = useMutation({
     mutationFn: ({ parentPath, orderedPaths }: { parentPath: string; orderedPaths: string[] }) =>
       reorderObjectChildren(parentPath, orderedPaths),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["objects"] }),
+    onSuccess: () => void invalidateAll(),
   });
 
   const tree = useMemo(() => {
-    if (!objects.data) return [];
-    let list = objects.data;
-    if (treeFilter) {
-      const q = treeFilter.toLowerCase();
-      const included = new Set<string>();
-      for (const c of list) {
-        if (c.path.toLowerCase().includes(q) || c.displayName.toLowerCase().includes(q)) {
-          let p: string | null = c.path;
-          while (p) {
-            included.add(p);
-            const dot = p.lastIndexOf(".");
-            p = dot === -1 ? null : p.slice(0, dot);
-          }
+    if (!treeFilter.trim()) {
+      return lazyTree;
+    }
+    let list = objectList;
+    const q = treeFilter.toLowerCase();
+    const included = new Set<string>();
+    for (const c of list) {
+      if (c.path.toLowerCase().includes(q) || c.displayName.toLowerCase().includes(q)) {
+        let p: string | null = c.path;
+        while (p) {
+          included.add(p);
+          const dot = p.lastIndexOf(".");
+          p = dot === -1 ? null : p.slice(0, dot);
         }
       }
-      list = list.filter((c) => included.has(c.path));
     }
+    list = list.filter((c) => included.has(c.path));
     return buildObjectTree(list);
-  }, [objects.data, treeFilter]);
+  }, [objectList, lazyTree, treeFilter]);
 
   const selectPathInExplorer = (path: string) => {
     setSelectedPath(path);
@@ -207,7 +204,7 @@ export default function App() {
       setWorkspaceTab(existing.id);
       return;
     }
-    const ctx = objects.data?.find((c) => c.path === path);
+    const ctx = objectList.find((c) => c.path === path);
     const tab: EditorTab = {
       id: `editor-${tabCounter++}`,
       path,
@@ -241,8 +238,8 @@ export default function App() {
     (propertiesTabPath === activeEditor.path || !isSpecializedEditor);
   const parentForCreate = selectedPath ?? "root";
   const selectedObject = useMemo(
-    () => objects.data?.find((obj) => obj.path === selectedPath) ?? null,
-    [objects.data, selectedPath]
+    () => objectList.find((obj) => obj.path === selectedPath) ?? null,
+    [objectList, selectedPath]
   );
   const isAdmin = isAdminSession(session);
   const primaryRole = getPrimaryRole(session);
@@ -346,7 +343,7 @@ export default function App() {
           <button
             type="button"
             className="btn"
-            onClick={() => queryClient.invalidateQueries({ queryKey: ["objects"] })}
+            onClick={() => void invalidateAll()}
           >
             Обновить
           </button>
@@ -409,12 +406,7 @@ export default function App() {
               />
             </div>
             <div className="sidebar-body">
-              {objects.isLoading && <p className="sidebar-msg">Загрузка…</p>}
-              {objects.error && (
-                <p className="sidebar-msg error">
-                  Ошибка API. Запустите сервер с профилем <code>local</code>.
-                </p>
-              )}
+              {objectList.length === 0 && <p className="sidebar-msg">Загрузка…</p>}
               {tree.length > 0 && (
                 <ObjectTree
                   nodes={tree}
@@ -425,6 +417,7 @@ export default function App() {
                   onReorder={(parentPath, orderedPaths) =>
                     reorderMutation.mutate({ parentPath, orderedPaths })
                   }
+                  onLoadChildren={(path) => void loadChildren(path)}
                 />
               )}
             </div>
@@ -520,7 +513,7 @@ export default function App() {
           onClose={() => setShowCreate(false)}
           onCreated={(path) => {
             setShowCreate(false);
-            queryClient.invalidateQueries({ queryKey: ["objects"] });
+            void invalidateAll();
             setSelectedPath(path);
             const stayInExplorer =
               isOperatorAppChildPath(path) || path.startsWith(`${APPLICATIONS_ROOT}.`);

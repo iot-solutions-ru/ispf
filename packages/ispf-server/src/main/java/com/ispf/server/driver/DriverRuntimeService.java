@@ -75,7 +75,7 @@ public class DriverRuntimeService {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE)
     public void startConfiguredDrivers() {
-        for (PlatformObject node : objectManager.tree().all()) {
+        for (PlatformObject node : objectManager.tree().childrenOf("root.platform.devices")) {
             if (node.type() != ObjectType.DEVICE) {
                 continue;
             }
@@ -307,10 +307,11 @@ public class DriverRuntimeService {
     }
 
     private void setStatus(String devicePath, String status) {
-        objectManager.setSystemVariableValue(
+        objectManager.setRuntimeVariableValue(
                 devicePath,
                 "driverStatus",
-                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", status))
+                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", status)),
+                false
         );
     }
 
@@ -354,7 +355,7 @@ public class DriverRuntimeService {
         long withError = activeDrivers.values().stream()
                 .filter(entry -> entry.lastError() != null)
                 .count();
-        long devices = objectManager.tree().all().stream()
+        long devices = objectManager.tree().childrenOf("root.platform.devices").stream()
                 .filter(node -> node.type() == ObjectType.DEVICE)
                 .count();
 

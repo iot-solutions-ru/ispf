@@ -10,6 +10,8 @@ public interface ObjectVariableRepository extends JpaRepository<ObjectVariableEn
 
     List<ObjectVariableEntity> findByObjectPath(String objectPath);
 
+    List<ObjectVariableEntity> findByObjectPathIn(java.util.Collection<String> objectPaths);
+
     List<ObjectVariableEntity> findByHistoryEnabledTrue();
 
     long countByHistoryEnabledTrue();

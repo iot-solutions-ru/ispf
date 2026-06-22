@@ -29,9 +29,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -211,6 +214,11 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
+        return setRuntimeVariableValue(path, name, value, true);
+    }
+
+    /** In-memory variable update for high-frequency driver/runtime data (no DB flush per tick). */
+    public Variable setRuntimeVariableValue(String path, String name, DataRecord value, boolean publishEvent) {
         PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null, null);
@@ -218,9 +226,9 @@ public class ObjectManager {
             return created;
         });
         variable.setComputedValue(value);
-        persistVariable(path, variable);
-        publish(ObjectChangeEvent.variableUpdated(path, name));
-        propagateBindings(path);
+        if (publishEvent) {
+            publish(ObjectChangeEvent.variableUpdated(path, name));
+        }
         return variable;
     }
 
@@ -586,12 +594,17 @@ public class ObjectManager {
                 objectTree.register(node);
             }
         }
+        List<String> nodePaths = nodes.stream()
+                .map(ObjectNodeEntity::getPath)
+                .filter(path -> !"root".equals(path))
+                .toList();
+        Map<String, List<ObjectVariableEntity>> variablesByPath = loadVariablesByPath(nodePaths);
         for (ObjectNodeEntity entity : nodes) {
             if ("root".equals(entity.getPath())) {
                 continue;
             }
             PlatformObject node = objectTree.require(entity.getPath());
-            for (ObjectVariableEntity varEntity : variableRepository.findByObjectPath(entity.getPath())) {
+            for (ObjectVariableEntity varEntity : variablesByPath.getOrDefault(entity.getPath(), List.of())) {
                 DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
                 node.addVariable(new Variable(
                         varEntity.getName(),
@@ -605,6 +618,21 @@ public class ObjectManager {
                 ));
             }
         }
+    }
+
+    private Map<String, List<ObjectVariableEntity>> loadVariablesByPath(List<String> nodePaths) {
+        Map<String, List<ObjectVariableEntity>> grouped = new HashMap<>();
+        if (nodePaths.isEmpty()) {
+            return grouped;
+        }
+        final int batchSize = 250;
+        for (int offset = 0; offset < nodePaths.size(); offset += batchSize) {
+            List<String> batch = nodePaths.subList(offset, Math.min(offset + batchSize, nodePaths.size()));
+            for (ObjectVariableEntity varEntity : variableRepository.findByObjectPathIn(batch)) {
+                grouped.computeIfAbsent(varEntity.getObjectPath(), ignored -> new ArrayList<>()).add(varEntity);
+            }
+        }
+        return grouped;
     }
 
     private void persistNode(PlatformObject node) {

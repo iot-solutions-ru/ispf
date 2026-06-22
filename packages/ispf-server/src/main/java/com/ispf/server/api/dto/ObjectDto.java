@@ -34,6 +34,15 @@ public record ObjectDto(
     }
 
     public static ObjectDto from(PlatformObject node, String iconId) {
+        return from(node, iconId, false);
+    }
+
+    /** Lightweight list payload without variable/event name lists. */
+    public static ObjectDto fromLite(PlatformObject node, String iconId) {
+        return from(node, iconId, true);
+    }
+
+    private static ObjectDto from(PlatformObject node, String iconId, boolean lite) {
         boolean federated = FederationProxyMetadata.isProxy(node);
         return new ObjectDto(
                 node.id(),
@@ -48,13 +57,13 @@ public record ObjectDto(
                 node.revision(),
                 node.lastChangedBy(),
                 node.lastChangedAt(),
-                node.variables().keySet().stream()
+                lite ? List.of() : node.variables().keySet().stream()
                         .filter(name -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(name))
                         .filter(name -> !BindingStateVariables.isReserved(name))
                         .filter(name -> !federated || !FederationProxyMetadata.isFederationVariable(name))
                         .sorted()
                         .toList(),
-                node.events().keySet().stream().sorted().toList(),
+                lite ? List.of() : node.events().keySet().stream().sorted().toList(),
                 federated,
                 federated ? FederationProxyMetadata.peerId(node).map(UUID::toString).orElse(null) : null,
                 federated ? FederationProxyMetadata.remotePath(node).orElse(null) : null

@@ -139,12 +139,18 @@ public class AutomationTreeService {
 
     public List<AlertRule> listAlertRules() {
         List<AlertRule> rules = new ArrayList<>();
-        for (PlatformObject node : objectManager.tree().all()) {
-            if (node.type() == ObjectType.ALERT && node.path().startsWith(ALERT_RULES_ROOT + ".")) {
+        collectAlertRules(objectManager.tree().childrenOf(ALERT_RULES_ROOT), rules);
+        return rules;
+    }
+
+    private void collectAlertRules(List<PlatformObject> nodes, List<AlertRule> rules) {
+        for (PlatformObject node : nodes) {
+            if (node.type() == ObjectType.ALERT) {
                 rules.add(toAlertRule(node));
+            } else {
+                collectAlertRules(objectManager.tree().childrenOf(node.path()), rules);
             }
         }
-        return rules;
     }
 
     public List<AlertRule> findEnabledAlertRules(String targetObjectPath, String watchVariable) {

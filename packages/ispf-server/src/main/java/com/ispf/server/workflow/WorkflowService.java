@@ -300,9 +300,11 @@ public class WorkflowService {
         );
     }
 
+    private static final String WORKFLOWS_ROOT = "root.platform.workflows";
+
     @Transactional
     public void handleVariableTrigger(String objectPath, String variableName) {
-        for (PlatformObject node : objectManager.tree().all()) {
+        for (PlatformObject node : objectManager.tree().childrenOf(WORKFLOWS_ROOT)) {
             if (node.type() != ObjectType.WORKFLOW) {
                 continue;
             }

@@ -6,11 +6,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class TenantScopeService {
 
     private final TenantStore tenantStore;
+    private final ConcurrentHashMap<String, Optional<String>> tenantIdByUser = new ConcurrentHashMap<>();
 
     public TenantScopeService(TenantStore tenantStore) {
         this.tenantStore = tenantStore;
@@ -23,7 +25,8 @@ public class TenantScopeService {
         if (isAdmin(authentication)) {
             return Optional.empty();
         }
-        return tenantStore.findTenantIdForUser(authentication.getName());
+        String username = authentication.getName();
+        return tenantIdByUser.computeIfAbsent(username, tenantStore::findTenantIdForUser);
     }
 
     public boolean isPathVisible(String path, Authentication authentication) {

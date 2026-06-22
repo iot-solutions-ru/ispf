@@ -17,6 +17,7 @@ import {
   writeExpandedPaths,
 } from "../utils/treeExpanded";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
+import { isTreeContainerType } from "../utils/objectTreeTypes";
 
 interface ObjectTreeProps {
   nodes: TreeNode[];
@@ -25,6 +26,7 @@ interface ObjectTreeProps {
   onOpenEditor?: (path: string) => void;
   canReorder?: boolean;
   onReorder?: (parentPath: string, orderedPaths: string[]) => void;
+  onLoadChildren?: (path: string) => void;
 }
 
 interface TreeExpandedContextValue {
@@ -107,6 +109,7 @@ interface TreeRowProps {
   dropTargetPath: string | null;
   onSelect: (path: string) => void;
   onOpenEditor?: (path: string) => void;
+  onLoadChildren?: (path: string) => void;
   rootNodes: TreeNode[];
 }
 
@@ -119,13 +122,14 @@ const TreeRow = memo(function TreeRow({
   dropTargetPath,
   onSelect,
   onOpenEditor,
+  onLoadChildren,
   rootNodes,
 }: TreeRowProps) {
   const { toggle } = useTreeExpanded();
   const drag = useTreeDrag();
   const path = node.object.path;
   const parentPath = parentObjectPath(path);
-  const hasChildren = node.children.length > 0;
+  const hasChildren = node.children.length > 0 || isTreeContainerType(node.object.type);
   const isSelected = selectedPath === path;
   const draggable = Boolean(
     drag?.canReorder
@@ -201,6 +205,9 @@ const TreeRow = memo(function TreeRow({
         onClick={(e) => {
           if (hasChildren) {
             e.stopPropagation();
+            if (!expanded) {
+              onLoadChildren?.(path);
+            }
             toggle(path);
           }
         }}
@@ -239,6 +246,7 @@ export default function ObjectTree({
   onOpenEditor,
   canReorder = false,
   onReorder,
+  onLoadChildren,
 }: ObjectTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => readExpandedPaths());
   const [defaultsSeeded, setDefaultsSeeded] = useState(() => readExpandedPaths().size > 0);
@@ -271,6 +279,9 @@ export default function ObjectTree({
       return;
     }
     const ancestors = ancestorPaths(selectedPath);
+    for (const path of ancestors) {
+      onLoadChildren?.(path);
+    }
     if (ancestors.length === 0) {
       return;
     }
@@ -289,7 +300,7 @@ export default function ObjectTree({
       }
       return current;
     });
-  }, [selectedPath]);
+  }, [selectedPath, onLoadChildren]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -377,6 +388,7 @@ export default function ObjectTree({
                     dropTargetPath={dropTargetPath}
                     onSelect={onSelect}
                     onOpenEditor={onOpenEditor}
+                    onLoadChildren={onLoadChildren}
                     rootNodes={nodes}
                   />
                 ))}

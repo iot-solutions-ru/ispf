@@ -80,9 +80,16 @@ export function validateExpression(expression: string): Promise<{ valid: boolean
   });
 }
 
-export function fetchObjects(parent?: string): Promise<ObjectSummary[]> {
-  const query = parent ? `?parent=${encodeURIComponent(parent)}` : "";
-  return request(`/api/v1/objects${query}`);
+export function fetchObjects(parent?: string, lite = true): Promise<ObjectSummary[]> {
+  const params = new URLSearchParams();
+  if (parent) {
+    params.set("parent", parent);
+  }
+  if (lite) {
+    params.set("lite", "true");
+  }
+  const query = params.toString();
+  return request(`/api/v1/objects${query ? `?${query}` : ""}`);
 }
 
 export function reorderObjectChildren(parentPath: string, orderedPaths: string[]): Promise<void> {

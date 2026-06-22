@@ -8,10 +8,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 @Repository
 public class ObjectAclStore {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ConcurrentHashMap<String, List<ObjectAclEntry>> effectiveEntriesCache = new ConcurrentHashMap<>();
 
     public ObjectAclStore(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -54,6 +57,10 @@ public class ObjectAclStore {
     }
 
     public List<ObjectAclEntry> findEffectiveEntries(String objectPath) {
+        return effectiveEntriesCache.computeIfAbsent(objectPath, this::loadEffectiveEntries);
+    }
+
+    private List<ObjectAclEntry> loadEffectiveEntries(String objectPath) {
         String current = objectPath;
         while (current != null && !current.isBlank()) {
             List<ObjectAclEntry> entries = listByPath(current);
@@ -66,8 +73,22 @@ public class ObjectAclStore {
         return List.of();
     }
 
+    public void invalidateEffectiveEntriesCache(String objectPath) {
+        if (objectPath == null || objectPath.isBlank()) {
+            effectiveEntriesCache.clear();
+            return;
+        }
+        String current = objectPath;
+        while (current != null && !current.isBlank()) {
+            effectiveEntriesCache.remove(current);
+            int dot = current.lastIndexOf('.');
+            current = dot == -1 ? null : current.substring(0, dot);
+        }
+    }
+
     public void replaceEntries(String objectPath, List<ObjectAclEntryDraft> drafts) {
         jdbcTemplate.update("DELETE FROM object_acl_entries WHERE object_path = ?", objectPath);
+        invalidateEffectiveEntriesCache(objectPath);
         Instant now = Instant.now();
         for (ObjectAclEntryDraft draft : drafts) {
             jdbcTemplate.update("""
