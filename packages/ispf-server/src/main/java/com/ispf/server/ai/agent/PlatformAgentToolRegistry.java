@@ -26,6 +26,7 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.operator.OperatorAppUiService;
+import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.report.ReportService;

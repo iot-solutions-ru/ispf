@@ -281,12 +281,10 @@ public final class AgentPlaybooks {
                     defaultDashboard="""
                 + VIRT_CLUSTER_OVERVIEW
                 + """
-                
-                    dashboards=[{path:"""
-                + VIRT_CLUSTER_OVERVIEW
-                + ",title:Virtual cluster overview},{path:"
+                    plus dashboards list: overview path and """
                 + VIRT_CLUSTER_DETAIL
-                + ",title:Virtual cluster detail}]"
+                + """
+                    detail path (configure_operator_ui dashboards argument)
                 
                 11. driver_control poll each device; list_variables on hub (clusterError)
                 12. finish: summary + paths (folder, devices, hub, dashboards, alert, operator default)
