@@ -18,6 +18,7 @@ import {
 import type { EditorTab } from "./types";
 import { resolveEditorObjectType } from "./utils/editorObject";
 import { buildObjectTree } from "./utils/tree";
+import { objectTreeKey, type TreeRowSelection } from "./utils/treeRowKey";
 import { readSelectedPath, writeSelectedPath } from "./utils/treeExpanded";
 import {
   clearInvalidAdminPathFromUrl,
@@ -106,6 +107,9 @@ export default function App() {
   const [selectedPath, setSelectedPath] = useState<string | null>(() =>
     resolveInitialAdminPath(window.location.search, readSelectedPath())
   );
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [visibleRowKeys, setVisibleRowKeys] = useState<string[]>([]);
+  const selectionAnchorRef = useRef<string | null>(null);
   const [oidcBootstrapping, setOidcBootstrapping] = useState(() => readOidcCallback() != null);
 
   useEffect(() => {
@@ -191,15 +195,21 @@ export default function App() {
     useLazyObjectTree(Boolean(session));
 
   useEffect(() => {
-    if (!objectList.length || !selectedPath) {
+    if (!selectedPath || !objectList.length) {
       return;
     }
     if (objectList.some((obj) => obj.path === selectedPath)) {
       return;
     }
-    setSelectedPath("root");
-    writeSelectedPath("root");
-    clearInvalidAdminPathFromUrl();
+    // Lazy tree refresh can briefly drop rows; don't jump to root during that window.
+    const timer = window.setTimeout(() => {
+      if (!objectList.some((obj) => obj.path === selectedPath)) {
+        setSelectedPath("root");
+        writeSelectedPath("root");
+        clearInvalidAdminPathFromUrl();
+      }
+    }, 400);
+    return () => window.clearTimeout(timer);
   }, [objectList, selectedPath]);
 
   const reorderMutation = useMutation({
@@ -224,27 +234,81 @@ export default function App() {
     let list = objectList;
     const q = treeFilter.toLowerCase();
     const included = new Set<string>();
+    const addAncestors = (path: string) => {
+      let p: string | null = path;
+      while (p) {
+        included.add(p);
+        const dot = p.lastIndexOf(".");
+        p = dot === -1 ? null : p.slice(0, dot);
+      }
+    };
     for (const c of list) {
       if (c.path.toLowerCase().includes(q) || c.displayName.toLowerCase().includes(q)) {
-        let p: string | null = c.path;
-        while (p) {
-          included.add(p);
-          const dot = p.lastIndexOf(".");
-          p = dot === -1 ? null : p.slice(0, dot);
+        addAncestors(c.path);
+        if (c.groupContextPath) {
+          addAncestors(c.groupContextPath);
         }
+        included.add(objectTreeKey(c));
       }
     }
-    list = list.filter((c) => included.has(c.path));
+    list = list.filter(
+      (c) =>
+        included.has(c.path)
+        || included.has(objectTreeKey(c))
+        || (c.groupContextPath != null && included.has(c.groupContextPath)),
+    );
     return buildObjectTree(list);
   }, [objectList, lazyTree, treeFilter]);
 
   const selectPathInExplorer = (path: string) => {
     setSelectedPath(path);
+    setSelectedKeys(new Set([path]));
+    selectionAnchorRef.current = path;
     setWorkspaceTab("explorer");
     if (isMobileLayout) {
       setMobileExplorerPane("detail");
     }
   };
+
+  const handleTreeRowSelect = useCallback(
+    (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => {
+      setSelectedPath(row.path);
+      writeSelectedPath(row.path);
+      syncAdminPathToUrl(row.path);
+      setWorkspaceTab("explorer");
+      if (isMobileLayout) {
+        setMobileExplorerPane("detail");
+      }
+
+      if (event.shiftKey && selectionAnchorRef.current) {
+        const start = visibleRowKeys.indexOf(selectionAnchorRef.current);
+        const end = visibleRowKeys.indexOf(row.key);
+        if (start !== -1 && end !== -1) {
+          const [from, to] = start < end ? [start, end] : [end, start];
+          setSelectedKeys(new Set(visibleRowKeys.slice(from, to + 1)));
+          return;
+        }
+      }
+
+      if (event.metaKey) {
+        setSelectedKeys((current) => {
+          const next = new Set(current);
+          if (next.has(row.key)) {
+            next.delete(row.key);
+          } else {
+            next.add(row.key);
+          }
+          return next;
+        });
+        selectionAnchorRef.current = row.key;
+        return;
+      }
+
+      setSelectedKeys(new Set([row.key]));
+      selectionAnchorRef.current = row.key;
+    },
+    [isMobileLayout, visibleRowKeys],
+  );
 
   const showObjectTreeSidebar =
     workspaceTab !== "system"
@@ -511,11 +575,25 @@ export default function App() {
                   nodes={tree}
                   objects={objectList}
                   selectedPath={selectedPath}
-                  onSelect={selectPathInExplorer}
+                  selectedKeys={selectedKeys}
+                  onRowSelect={handleTreeRowSelect}
                   onOpenEditor={openEditor}
                   canReorder={isAdmin && !treeFilter.trim()}
                   onReorder={handleTreeReorder}
                   onLoadChildren={(path) => void loadChildren(path)}
+                  onVisibleRowKeysChange={setVisibleRowKeys}
+                  bulkActions={
+                    isAdmin
+                      ? {
+                          visibleRowKeys,
+                          selectedKeys,
+                          objects: objectList,
+                          onSelectionChange: setSelectedKeys,
+                          onDeleted: () => void invalidateAll(),
+                          onMembersChanged: () => void invalidateAll(),
+                        }
+                      : undefined
+                  }
                 />
               )}
             </div>
@@ -536,6 +614,8 @@ export default function App() {
                 }
               }}
               onSelectPath={selectPathInExplorer}
+              onMembersChanged={() => void invalidateAll()}
+              allObjects={objectList}
               isAdmin={isAdmin}
               showBackToTree={isMobileLayout}
               onBackToTree={() => setMobileExplorerPane("tree")}
@@ -612,6 +692,7 @@ export default function App() {
               />
             ) : (
               <ObjectPropertiesEditor
+                key={activeEditor.path}
                 path={activeEditor.path}
                 canManage={isAdmin}
                 onClose={() => closeEditor(activeEditor.id)}
@@ -627,6 +708,7 @@ export default function App() {
         {activeEditor && workspaceTab === activeEditor.id && showPropertiesEditor && (
           <main className="main editor-main">
             <ObjectPropertiesEditor
+              key={activeEditor.path}
               path={activeEditor.path}
               canManage={isAdmin}
               onClose={() => {

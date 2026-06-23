@@ -30,6 +30,7 @@ const CONTAINER_TYPES = new Set([
   "AGENT",
   "FOLDER",
   "CUSTOM",
+  "VISUAL_GROUP",
 ]);
 
 export function isTreeContainerType(type: string): boolean {

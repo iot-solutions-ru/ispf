@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchObjects } from "../api";
 import type { ObjectSummary, TreeNode } from "../types";
 import { buildObjectTree, parentObjectPath } from "../utils/tree";
+import { objectTreeKey } from "../utils/treeRowKey";
 import type { ObjectWsMessage } from "./useObjectWebSocket";
 
 const BOOTSTRAP_PARENTS = ["root", "root.platform"];
@@ -14,15 +15,27 @@ export function useLazyObjectTree(enabled = true) {
 
   const bump = useCallback(() => setVersion((v) => v + 1), []);
 
+  const removeGroupRefsForParent = useCallback((parentPath: string) => {
+    const map = objectsRef.current;
+    for (const [key, obj] of map.entries()) {
+      if (obj.groupRef && obj.groupContextPath === parentPath) {
+        map.delete(key);
+      }
+    }
+  }, []);
+
   const mergeObjects = useCallback(
-    (items: ObjectSummary[]) => {
+    (items: ObjectSummary[], parentPath?: string) => {
       const map = objectsRef.current;
+      if (parentPath) {
+        removeGroupRefsForParent(parentPath);
+      }
       for (const item of items) {
-        map.set(item.path, item);
+        map.set(objectTreeKey(item), item);
       }
       bump();
     },
-    [bump],
+    [bump, removeGroupRefsForParent],
   );
 
   const loadChildren = useCallback(
@@ -36,7 +49,7 @@ export function useLazyObjectTree(enabled = true) {
       loadingParentsRef.current.add(parentPath);
       try {
         const children = await fetchObjects(parentPath, true);
-        mergeObjects(children);
+        mergeObjects(children, parentPath);
         loadedParentsRef.current.add(parentPath);
       } catch (error) {
         loadedParentsRef.current.delete(parentPath);
@@ -81,12 +94,19 @@ export function useLazyObjectTree(enabled = true) {
       if (!message?.path) {
         return;
       }
+      void refreshParent(message.path);
       const parent = parentObjectPath(message.path);
       if (parent) {
         void refreshParent(parent);
       }
       if (message.type === "DELETED") {
-        objectsRef.current.delete(message.path);
+        const map = objectsRef.current;
+        for (const [key, obj] of [...map.entries()]) {
+          if (obj.path === message.path) {
+            map.delete(key);
+          }
+        }
+        map.delete(message.path);
         bump();
       }
     };

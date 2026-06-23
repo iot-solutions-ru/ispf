@@ -101,6 +101,9 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
   if (!path) {
     return false;
   }
+  if (objectType === "VISUAL_GROUP") {
+    return false;
+  }
   if (
     path === OPERATOR_APPS_ROOT
     || path === ALERT_RULES_ROOT

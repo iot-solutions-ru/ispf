@@ -238,7 +238,24 @@ ispf:
     stdio-enabled: false   # true for Cursor stdio subprocess
 ```
 
-Methods: `initialize`, `tools/list`, `tools/call`, `ping`. Tool calls delegate to `PlatformAgentToolRegistry`; optional `sessionId` in arguments attaches to DB agent sessions. Audit entries use `source=mcp` and tool prefix `mcp_<name>`.
+Methods: `initialize`, `tools/list`, `tools/call`, `resources/list`, `resources/read`, `ping`. Tool calls delegate to `PlatformAgentToolRegistry`; optional `sessionId` in arguments attaches to DB agent sessions. Audit entries use `source=mcp` and tool prefix `mcp_<name>`.
+
+### ContextPack resources (Phase 17.3)
+
+MCP clients can read static ContextPack slices without tool round-trips:
+
+| URI | Content |
+|-----|---------|
+| `contextpack://info` | Version, counts |
+| `contextpack://bundle-manifest` | Bundle fields and rules |
+| `contextpack://script-steps` | Script step names |
+| `contextpack://widget-types` | Widget catalog |
+| `contextpack://driver-catalog` | Driver index |
+| `contextpack://feature-index` | Platform features |
+| `contextpack://example-summaries` | Reference bundles |
+| `contextpack://doc-chunks` | Documentation chunks |
+
+Example: `{"method":"resources/read","params":{"uri":"contextpack://script-steps"}}`
 
 Cursor example (HTTP to local server):
 

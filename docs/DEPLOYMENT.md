@@ -167,3 +167,31 @@ bash deploy/start-snmp-driver.sh
 ```
 
 Скрипт логинится (`admin`/`admin`), вызывает `POST /api/v1/drivers/runtime/start?devicePath=...` и печатает status. По умолчанию `API=http://127.0.0.1:8080` (JVM); через nginx: `API=http://127.0.0.1`.
+
+## Обновление до v0.8.0
+
+Breaking change [ADR-0017](decisions/0017-binding-rules-only.md): колонка `binding_expr` удалена (`V41`), checksum `V1` изменён. **Проще пересоздать БД**, чем мигрировать legacy-привязки.
+
+### PostgreSQL (prod / staging)
+
+```bash
+# 1. Backup (если нужен архив)
+pg_dump ispf > ispf-pre-0.8.0.sql
+
+# 2. Пересоздание
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS ispf;"
+sudo -u postgres psql -c "CREATE DATABASE ispf OWNER ispf;"
+
+# 3. Deploy jar + UI (см. deploy/vps-deploy-direct.ps1 или apply-platform-update.sh)
+# 4. Flyway накатит схему с V1 без binding_expr + V41 no-op на fresh DB
+# 5. Проверка
+curl https://ispf.iot-solutions.ru/api/v1/info
+```
+
+После пересоздания: binding rules задайте через Web Console → «Привязки» или `POST /api/v1/objects/by-path/binding-rules`. Mini-TEC поднимется через `MiniTecPlatformBootstrap`.
+
+### H2 (local)
+
+Удалите файл БД или смените `spring.datasource.url` на новый путь. См. [BINDINGS.md](BINDINGS.md#обновление-с-v07x-legacy-bindingexpression).
+
+Phase 18.4 — [ROADMAP.md § Phase 18](ROADMAP.md#phase-18--reference-solutions--v080-rollout).

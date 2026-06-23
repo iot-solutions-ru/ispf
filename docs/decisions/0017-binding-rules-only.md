@@ -15,14 +15,14 @@
 2. **Единственный механизм** — `BindingRule` + `BindingRuleEngine` + `@bindingRules` JSON на объекте.
 3. **Cross-object** — `BindingDependencyIndex` + `BindingPropagationListener` на `VARIABLE_UPDATED` (включая driver telemetry).
 4. **Модели** — `ModelBindingRule` вместо `ModelBindingDefinition` / `defaultBinding`.
-5. **Миграция** — `BindingExpressionMigrationRunner` (JDBC read `binding_expr` → rules).
+5. **Миграция** — колонка `binding_expr` удалена (`V41` / чистый `V1`); dev — пересоздание БД.
 
 ## Последствия
 
 - API и UI: вкладка «Привязки», CRUD `/binding-rules`.
 - Agent: `create_binding_rule` вместо binding на `create_variable`.
 - Документация: [BINDINGS.md](../BINDINGS.md) переписан.
-- Колонка `binding_expr` в БД остаётся nullable до post-migration cleanup (Flyway drop — отдельный релиз).
+- Колонка `binding_expr` удалена из схемы (V1 + V41); dev — пересоздание БД вместо runtime-migration.
 
 ## Связанные материалы
 

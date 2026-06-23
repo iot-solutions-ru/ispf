@@ -7,6 +7,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.EmbeddedServerPort;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectTreePolicy;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.slf4j.Logger;
@@ -166,14 +167,7 @@ public class FederationBindService {
     }
 
     public void assertParentAllowsChildren(String parentPath) {
-        objectManager.tree().findByPath(parentPath).ifPresent(parent -> {
-            if (FederationProxyMetadata.isProxy(parent)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Cannot add children under federation-bound object: " + parentPath
-                );
-            }
-        });
+        ObjectTreePolicy.assertParentAllowsStructuralChildren(parentPath, objectManager);
     }
 
     private String resolveLocalPath(BindRequest request) {

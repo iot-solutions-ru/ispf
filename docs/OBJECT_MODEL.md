@@ -65,6 +65,7 @@ root
 | `FUNCTIONS` / `FUNCTION` | Функции приложения |
 | `REPORTS` / `REPORT` | Каталог `root.platform.reports` и SQL-отчёты (`report-v1`) |
 | `AGENT` | Edge agent |
+| `VISUAL_GROUP` | Визуальная группа — ссылки на объекты в `@groupMembers` без изменения их путей |
 | `CUSTOM` | Произвольный контейнер (fallback для неизвестных узлов) |
 
 Системные папки (`PLATFORM`, `DEVICES`, `ALERT_RULES`, …) получают семантический тип при bootstrap и миграции `V22__system_object_types.sql`. Пользовательские узлы — по шаблону модели или `CUSTOM`.
@@ -188,7 +189,7 @@ Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`
 | Таблица | Содержимое |
 |---------|------------|
 | `object_nodes` | Узлы дерева (в т.ч. alert rules и correlators) |
-| `object_variables` | Значения и binding_expr |
+| `object_variables` | Значения переменных (`@bindingRules` — reserved var на объекте) |
 | `variable_samples` | История телеметрии (time-series сэмплы) |
 | `event_history` | Журнал событий |
 | `workflow_instances` | Экземпляры BPMN |

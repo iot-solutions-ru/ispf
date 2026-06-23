@@ -215,6 +215,29 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 
 Поле `maturity` в `GET /api/v1/drivers`: `PRODUCTION` (по умолчанию), `BETA`, `STUB`. Метки задаются в `DriverMaturityRegistry` на сервере и отображаются в Web Console при выборе драйвера.
 
+### Stub promotion (demand-driven)
+
+58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [ADR-0009](decisions/0009-dogfooding-gate.md):
+
+1. App-команда описывает сценарий (устройство, point mapping, acceptance test).
+2. Platform PR добавляет протокольную логику в существующий `ispf-driver-*` модуль.
+3. `DriverMaturityRegistry` обновляется; документация в этом файле.
+
+Текущие STUB/BETA кандидаты (июнь 2026):
+
+| `driverId` | Maturity | Заметка |
+|------------|----------|---------|
+| `corba` | STUB/BETA | CORBA IIOP TCP shell |
+| `ethernet-ip` | STUB/BETA | EtherNet/IP session stub |
+| `opc-da` | STUB/BETA | OPC DA (DCOM/native) |
+| `opc-bridge` | STUB/BETA | OPC/LON bridge TCP |
+| `vmware` | STUB/BETA | vSphere SOAP stub |
+| `smi-s` | STUB/BETA | SMI-S CIM-XML stub |
+
+Отдельный хвост: **CWMP write** (`SetParameterValues`) — read-only сейчас; см. § cwmp ниже.
+
+См. [ROADMAP.md § Phase 17.4](ROADMAP.md#phase-17--post-baseline-hardening-v080), [GAP_REGISTRY.md](GAP_REGISTRY.md).
+
 Полный список `driverId` в `DriverCatalog`:
 
 | `driverId` | Модуль | Назначение |

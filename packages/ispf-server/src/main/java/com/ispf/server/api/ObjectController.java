@@ -24,7 +24,9 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectRevisionConflictException;
 import com.ispf.server.object.ObjectEditLeaseService;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
+import com.ispf.server.object.ObjectBulkDeleteService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.VisualGroupService;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
@@ -57,6 +59,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -82,6 +85,8 @@ public class ObjectController {
     private final ObjectEditLeaseService editLeaseService;
     private final ModelRegistry modelRegistry;
     private final ModelApplicationService modelApplicationService;
+    private final VisualGroupService visualGroupService;
+    private final ObjectBulkDeleteService objectBulkDeleteService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -101,7 +106,9 @@ public class ObjectController {
             ObjectMapper objectMapper,
             ObjectEditLeaseService editLeaseService,
             ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService
+            ModelApplicationService modelApplicationService,
+            VisualGroupService visualGroupService,
+            ObjectBulkDeleteService objectBulkDeleteService
     ) {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
@@ -121,6 +128,8 @@ public class ObjectController {
         this.editLeaseService = editLeaseService;
         this.modelRegistry = modelRegistry;
         this.modelApplicationService = modelApplicationService;
+        this.visualGroupService = visualGroupService;
+        this.objectBulkDeleteService = objectBulkDeleteService;
     }
 
     private ObjectDto toDto(PlatformObject node) {
@@ -222,6 +231,10 @@ public class ObjectController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + parent);
         }
         objectAccessService.requireRead(parent, authentication);
+        PlatformObject parentNode = objectManager.require(parent);
+        if (parentNode.type() == ObjectType.VISUAL_GROUP) {
+            return resolveVisualGroupMembers(parent, authentication, lite);
+        }
         return tree.childrenOf(parent).stream()
                 .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
                 .filter(node -> objectAccessService.canRead(node.path(), authentication))
@@ -295,7 +308,7 @@ public class ObjectController {
             );
             objectManager.persistNodeTree(node.path());
         }
-        return toDto(objectManager.require(node.path()));
+        return toDto(node);
     }
 
     @PatchMapping("/by-path")
@@ -317,6 +330,48 @@ public class ObjectController {
         } finally {
             endWrite();
         }
+    }
+
+    @PostMapping("/bulk-delete")
+    public ObjectBulkDeleteService.BulkDeleteResult bulkDelete(
+            @Valid @RequestBody BulkDeleteRequest request,
+            Authentication authentication
+    ) {
+        if (request.paths() == null || request.paths().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "paths is required");
+        }
+        for (String path : request.paths()) {
+            if (path != null && !path.isBlank()) {
+                objectAccessService.requireWrite(path.trim(), authentication);
+            }
+        }
+        return objectBulkDeleteService.deleteAll(request.paths());
+    }
+
+    public record BulkDeleteRequest(@NotEmpty List<@NotBlank String> paths) {
+    }
+
+    private List<ObjectDto> resolveVisualGroupMembers(
+            String groupPath,
+            Authentication authentication,
+            boolean lite
+    ) {
+        List<ObjectDto> result = new ArrayList<>();
+        for (var member : visualGroupService.listMembers(groupPath)) {
+            var optionalNode = objectManager.tree().findByPath(member.path());
+            if (optionalNode.isEmpty()) {
+                result.add(ObjectDto.missingGroupMember(member.path(), groupPath, member.sortOrder()));
+                continue;
+            }
+            PlatformObject node = optionalNode.get();
+            if (!tenantScopeService.isPathVisible(node.path(), authentication)
+                    || !objectAccessService.canRead(node.path(), authentication)) {
+                continue;
+            }
+            String iconId = objectUiIconService.readIconId(node).orElse(null);
+            result.add(ObjectDto.asGroupMember(node, groupPath, member.sortOrder(), iconId, false));
+        }
+        return result;
     }
 
     @DeleteMapping("/by-path")
@@ -659,7 +714,10 @@ public class ObjectController {
                 true,
                 target.peerId().toString(),
                 target.remotePath(),
-                remote.appliedModels() != null ? remote.appliedModels() : List.of()
+                remote.appliedModels() != null ? remote.appliedModels() : List.of(),
+                false,
+                null,
+                false
         );
     }
 

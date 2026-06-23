@@ -62,5 +62,7 @@ public enum ObjectType {
     SCREENS,
     SCREEN,
     AGENT,
+    /** Visual-only grouping node; members stored in {@code @groupMembers}. */
+    VISUAL_GROUP,
     CUSTOM
 }

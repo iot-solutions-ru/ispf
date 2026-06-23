@@ -1,4 +1,5 @@
 import type { ObjectSummary, TreeNode } from "../types";
+import { objectTreeKey, treeParentPath } from "./treeRowKey";
 import { APPLICATIONS_ROOT } from "./createObjectMode";
 
 /** Hide legacy mirror subfolders under an app; keep the Applications folder and app nodes visible. */
@@ -34,6 +35,9 @@ export function parentObjectPath(path: string): string | null {
 export function siblingObjectPaths(parentPath: string, objects: ObjectSummary[]): string[] {
   return objects
     .filter((obj) => {
+      if (obj.groupRef) {
+        return false;
+      }
       const parent = parentObjectPath(obj.path);
       return parent === parentPath && !isHiddenLegacyApplicationPath(obj.path);
     })
@@ -42,10 +46,18 @@ export function siblingObjectPaths(parentPath: string, objects: ObjectSummary[])
 }
 
 export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
-  const byPath = new Map(objects.map((c) => [c.path, c]));
+  const byKey = new Map(objects.map((c) => [objectTreeKey(c), c]));
   const childMap = new Map<string, ObjectSummary[]>();
 
   for (const ctx of objects) {
+    if (ctx.groupRef) {
+      const parentPath = treeParentPath(ctx);
+      if (!childMap.has(parentPath)) {
+        childMap.set(parentPath, []);
+      }
+      childMap.get(parentPath)!.push(ctx);
+      continue;
+    }
     const dot = ctx.path.lastIndexOf(".");
     const parentPath = dot === -1 ? "" : ctx.path.slice(0, dot);
     if (!childMap.has(parentPath)) {
@@ -61,10 +73,12 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   function build(parentPath: string): TreeNode[] {
     const children = childMap.get(parentPath) ?? [];
     return children
-      .filter((c) => byPath.has(c.path) && !isHiddenLegacyApplicationPath(c.path))
+      .filter((c) => byKey.has(objectTreeKey(c)) && !isHiddenLegacyApplicationPath(c.path))
       .map((object) => ({
         object,
-        children: build(object.path),
+        children: object.groupRef
+          ? (object.type === "VISUAL_GROUP" ? build(object.path) : [])
+          : build(object.path),
       }));
   }
 
@@ -72,7 +86,6 @@ export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   if (fromEmptyParent.length > 0) {
     return fromEmptyParent;
   }
-  // Lazy-loaded subsets return children of root without the root node itself.
   return build("root");
 }
 
@@ -88,6 +101,8 @@ export function objectIcon(type: string): string {
       return "▦";
     case "APPLICATION":
       return "▤";
+    case "VISUAL_GROUP":
+      return "◎";
     case "DATA_SOURCES":
     case "DATA_SOURCE":
       return "🗄";

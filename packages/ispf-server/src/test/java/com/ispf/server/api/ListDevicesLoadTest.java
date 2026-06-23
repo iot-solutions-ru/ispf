@@ -1,13 +1,22 @@
 package com.ispf.server.api;
 
+import com.ispf.core.object.ObjectType;
+import com.ispf.server.object.ObjectManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.http.MediaType;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,21 +27,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Baseline for GAP_REGISTRY scale item: p99 {@code list_devices} at 150 concurrent readers.
+ * Uses a real HTTP port and {@link HttpClient} — {@code MockMvc} is not thread-safe.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
+@Isolated
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@Execution(ExecutionMode.SAME_THREAD)
 class ListDevicesLoadTest {
 
     private static final String PARENT = "root.platform.devices";
+    private static final String DEMO_DEVICE = "root.platform.devices.demo-sensor-01";
     private static final int DEVICE_COUNT = 120;
     private static final int CONCURRENCY = 150;
     /**
@@ -41,31 +51,39 @@ class ListDevicesLoadTest {
      */
     private static final long P99_CEILING_MS = resolveP99CeilingMs();
 
-    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int port;
 
-    @org.junit.jupiter.api.BeforeEach
+    @Autowired
+    private ObjectManager objectManager;
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
+
+    @BeforeEach
     void seedDevices() throws Exception {
+        awaitPlatformReady();
+        objectManager.require(PARENT);
         for (int i = 0; i < DEVICE_COUNT; i++) {
             String name = "load-perf-" + i;
             String path = PARENT + "." + name;
-            mockMvc.perform(delete("/api/v1/objects/by-path").param("path", path));
-            mockMvc.perform(post("/api/v1/objects")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("""
-                                    {
-                                      "parentPath": "%s",
-                                      "name": "%s",
-                                      "type": "DEVICE",
-                                      "displayName": "Load perf %d"
-                                    }
-                                    """.formatted(PARENT, name, i)))
-                    .andExpect(status().isOk());
+            objectManager.tree().findByPath(path).ifPresent(node -> objectManager.delete(path));
+            objectManager.create(
+                    PARENT,
+                    name,
+                    ObjectType.DEVICE,
+                    "Load perf " + i,
+                    null,
+                    null
+            );
         }
     }
 
     @Test
     void listDevicesP99UnderCeilingAt150Concurrent() throws Exception {
+        URI listUri = URI.create("http://127.0.0.1:" + port + "/api/v1/objects?parent=" + PARENT + "&lite=true");
+
         ExecutorService pool = Executors.newFixedThreadPool(CONCURRENCY);
         CountDownLatch start = new CountDownLatch(1);
         List<Future<Long>> futures = new ArrayList<>();
@@ -74,10 +92,11 @@ class ListDevicesLoadTest {
             futures.add(pool.submit(() -> {
                 start.await(30, TimeUnit.SECONDS);
                 long t0 = System.nanoTime();
-                mockMvc.perform(get("/api/v1/objects")
-                                .param("parent", PARENT)
-                                .param("lite", "true"))
-                        .andExpect(status().isOk());
+                HttpResponse<Void> response = httpClient.send(
+                        HttpRequest.newBuilder(listUri).GET().timeout(Duration.ofSeconds(30)).build(),
+                        HttpResponse.BodyHandlers.discarding()
+                );
+                assertEquals(200, response.statusCode(), "list_devices status");
                 return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - t0);
             }));
         }
@@ -106,6 +125,28 @@ class ListDevicesLoadTest {
                 p99 <= P99_CEILING_MS,
                 "p99 " + p99 + "ms exceeds ceiling " + P99_CEILING_MS + "ms"
         );
+    }
+
+    private void awaitPlatformReady() throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        URI infoUri = URI.create("http://127.0.0.1:" + port + "/api/v1/info");
+        while (System.nanoTime() < deadline) {
+            if (objectManager.tree().findByPath(DEMO_DEVICE).isPresent()) {
+                try {
+                    HttpResponse<Void> response = httpClient.send(
+                            HttpRequest.newBuilder(infoUri).GET().timeout(Duration.ofSeconds(2)).build(),
+                            HttpResponse.BodyHandlers.discarding()
+                    );
+                    if (response.statusCode() == 200) {
+                        return;
+                    }
+                } catch (Exception ignored) {
+                    // Tomcat may still be binding when ApplicationReady listeners are running.
+                }
+            }
+            Thread.sleep(50);
+        }
+        fail("Platform HTTP endpoint not ready on port " + port);
     }
 
     private static long resolveP99CeilingMs() {

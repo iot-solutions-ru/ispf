@@ -1,14 +1,18 @@
-import { Fragment, useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   deleteEvent,
   deleteFunction,
   deleteObject,
-  fetchObject,
-  fetchObjectEditor,
-  fetchVariables,
   updateObject,
 } from "../api";
+import {
+  inspectorQueryLoading,
+  resolveInspectorObject,
+  useInspectorObject,
+  useInspectorObjectEditor,
+  useInspectorVariables,
+} from "../hooks/useInspectorQueries";
 import type { EventDescriptor, FunctionDescriptor, ObjectSummary, VariableDto } from "../types";
 import CreateVariableDialog from "./CreateVariableDialog";
 import EditDescriptorDialog from "./EditDescriptorDialog";
@@ -52,34 +56,30 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   >(null);
   const [fireEventTarget, setFireEventTarget] = useState<EventDescriptor | null>(null);
   const [invokeFunctionTarget, setInvokeFunctionTarget] = useState<FunctionDescriptor | null>(null);
+  const syncedFormPathRef = useRef<string | null>(null);
 
-  const objectQuery = useQuery({
-    queryKey: ["object", path],
-    queryFn: () => fetchObject(path),
-  });
+  const objectQuery = useInspectorObject(path);
 
-  const variablesQuery = useQuery({
-    queryKey: ["variables", path],
-    queryFn: () => fetchVariables(path),
-    enabled: tab === "variables",
-  });
+  const variablesQuery = useInspectorVariables(path, tab === "variables");
 
-  const editorQuery = useQuery({
-    queryKey: ["object-editor", path],
-    queryFn: () => fetchObjectEditor(path),
-    enabled: tab === "functions" || tab === "events",
-  });
+  const editorQuery = useInspectorObjectEditor(path, tab === "functions" || tab === "events");
 
   useEffect(() => {
+    syncedFormPathRef.current = null;
+    setDisplayName("");
+    setDescription("");
     setHistoryVariable(null);
   }, [path]);
 
   useEffect(() => {
-    if (objectQuery.data) {
-      setDisplayName(objectQuery.data.displayName);
-      setDescription(objectQuery.data.description);
+    const data = resolveInspectorObject(path, objectQuery.data);
+    if (!data || syncedFormPathRef.current === path) {
+      return;
     }
-  }, [objectQuery.data]);
+    setDisplayName(data.displayName);
+    setDescription(data.description);
+    syncedFormPathRef.current = path;
+  }, [objectQuery.data, path]);
 
   useEffect(() => {
     if (objectQuery.data?.type !== "DEVICE" && tab === "driver") {
@@ -134,15 +134,19 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
     queryClient.invalidateQueries({ queryKey: ["object", path] });
   };
 
-  if (objectQuery.isLoading) {
-    return <div className="inspector-empty">Загрузка объекта…</div>;
-  }
+  const obj = resolveInspectorObject(path, objectQuery.data);
 
-  if (objectQuery.error || !objectQuery.data) {
+  if (objectQuery.error && !obj) {
     return <div className="inspector-empty error">Не удалось загрузить объект</div>;
   }
 
-  const obj = objectQuery.data;
+  if (!obj && inspectorQueryLoading(objectQuery)) {
+    return <div className="inspector-empty">Загрузка объекта…</div>;
+  }
+
+  if (!obj) {
+    return <div className="inspector-empty error">Не удалось загрузить объект</div>;
+  }
   const isRoot = path === "root";
   const isPlatformRoot = path === "root.platform";
   const canDelete = canDeleteObjectPath(path);
@@ -360,7 +364,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
           {obj.federated && (
             <p className="hint">Переменные проксируются с remote peer. Локальные переменные скрыты пока активен bind.</p>
           )}
-          {variablesQuery.isLoading && <p>Загрузка переменных…</p>}
+          {variablesQuery.isPending && !variablesQuery.data && <p>Загрузка переменных…</p>}
           {variablesQuery.data && variablesQuery.data.length === 0 && (
             <p className="hint">Нет переменных</p>
           )}
@@ -476,7 +480,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
               </button>
             </div>
           )}
-          {editorQuery.isLoading && <p>Загрузка…</p>}
+          {editorQuery.isPending && !editorQuery.data && <p>Загрузка…</p>}
           {editorQuery.data && editorQuery.data.events.length === 0 && (
             <p className="hint">Нет событий</p>
           )}
@@ -539,7 +543,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
               </button>
             </div>
           )}
-          {editorQuery.isLoading && <p>Загрузка…</p>}
+          {editorQuery.isPending && !editorQuery.data && <p>Загрузка…</p>}
           {editorQuery.data && editorQuery.data.functions.length === 0 && (
             <p className="hint">Нет функций</p>
           )}

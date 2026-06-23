@@ -8,6 +8,8 @@ import {
   saveOperatorAppUi,
 } from "../api/operatorApps";
 import type { OperatorUi, OperatorUiDashboard } from "../types/operatorUi";
+import type { OperatorAlarmBarConfig } from "../types/operatorAlarmBar";
+import OperatorAlarmBarEditor from "./operator/OperatorAlarmBarEditor";
 import {
   operatorAppLeafFromPath,
   resolveOperatorAppId,
@@ -44,6 +46,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
   const [title, setTitle] = useState("");
   const [defaultDashboard, setDefaultDashboard] = useState("");
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
+  const [alarmBar, setAlarmBar] = useState<OperatorAlarmBarConfig | undefined>(undefined);
 
   const uiQuery = useQuery({
     queryKey: ["operator-app-ui", selectedAppId],
@@ -57,12 +60,14 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setTitle(ui.title);
       setDefaultDashboard(ui.defaultDashboard);
       setSelectedPaths(ui.dashboards.map((item) => item.path));
+      setAlarmBar(ui.alarmBar);
       return;
     }
     if (pathLeaf) {
       setTitle(pathLeaf);
       setDefaultDashboard("");
       setSelectedPaths([]);
+      setAlarmBar(undefined);
     }
   }, [uiQuery.data, pathLeaf]);
 
@@ -113,6 +118,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       title: title.trim(),
       defaultDashboard: resolvedDefault,
       dashboards,
+      alarmBar,
     };
   };
 
@@ -126,7 +132,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       return true;
     }
     return JSON.stringify(ui) !== JSON.stringify(draft);
-  }, [uiQuery.data, title, defaultDashboard, selectedPaths, selectedAppId, availableDashboards]);
+  }, [uiQuery.data, title, defaultDashboard, selectedPaths, selectedAppId, availableDashboards, alarmBar]);
 
   const handleSave = () => {
     const ui = buildUi();
@@ -218,6 +224,13 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
                 ))}
               </ul>
             </div>
+
+            <OperatorAlarmBarEditor
+              value={alarmBar}
+              onChange={setAlarmBar}
+              disabled={!canManage}
+              dashboardPaths={selectedPaths}
+            />
 
             {canManage && (
               <div className="full operator-apps-actions">

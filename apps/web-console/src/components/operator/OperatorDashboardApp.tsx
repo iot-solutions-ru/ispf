@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AuthSession } from "../../auth/session";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
+import { useOperatorAlarmBar } from "../../hooks/useOperatorAlarmBar";
 import {
   resolveOperatorDashboard,
   resolveOperatorReport,
@@ -11,6 +12,7 @@ import type { DashboardSession } from "../dashboard/DashboardContext";
 import { emptySession, mergeSession } from "../dashboard/DashboardContext";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
+import AlarmBarOverlay from "./AlarmBarOverlay";
 import OperatorSidebar from "./OperatorSidebar";
 
 interface OperatorDashboardAppProps {
@@ -120,6 +122,12 @@ export default function OperatorDashboardApp({
     [appId]
   );
 
+  const alarmBar = useOperatorAlarmBar(ui?.alarmBar, {
+    ui: ui ?? undefined,
+    navigateDashboard,
+    navigateReport,
+  });
+
   useEffect(() => {
     if (!ui) {
       return;
@@ -164,7 +172,7 @@ export default function OperatorDashboardApp({
   }
 
   return (
-    <div className="operator-shell">
+    <div className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}`}>
       <OperatorDashboardChrome
         ui={ui}
         viewKind={viewKind}
@@ -176,6 +184,7 @@ export default function OperatorDashboardApp({
         onSelectDashboard={navigateDashboard}
         onSelectReport={navigateReport}
       />
+      {alarmBar.position === "top" && <AlarmBarOverlay {...alarmBar} />}
       <div className="operator-layout operator-dashboard-layout">
         <main className="operator-dashboard operator-dashboard-shell-host">
           {viewKind === "report" ? (
@@ -195,6 +204,7 @@ export default function OperatorDashboardApp({
           <OperatorSidebar operatorId={operatorId} ui={ui} />
         </aside>
       </div>
+      {alarmBar.position === "bottom" && <AlarmBarOverlay {...alarmBar} />}
     </div>
   );
 }

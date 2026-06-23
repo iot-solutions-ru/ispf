@@ -648,6 +648,16 @@ public class ObjectManager {
         eventPublisher.publishEvent(event);
     }
 
+    /** Publishes an UPDATED event so tree clients refresh lazy children (e.g. visual group members). */
+    public void publishStructureChange(String path) {
+        PlatformObject node = objectTree.findByPath(path).orElse(null);
+        if (node != null) {
+            publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path, node.revision(), node.lastChangedBy()));
+        } else {
+            publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
+        }
+    }
+
     private void assertExpectedRevision(String path) {
         ObjectRevisionContext.RevisionExpectation expectation = ObjectRevisionContext.expectation();
         if (expectation == null || expectation.forceOverwrite()) {

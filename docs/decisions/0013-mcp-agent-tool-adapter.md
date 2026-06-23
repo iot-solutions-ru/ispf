@@ -55,7 +55,7 @@ Estimated effort: **1 sprint** (stdio + HTTP SSE, auth, integration test with mo
 - Cursor and other MCP hosts can operate the platform without custom REST glue.
 - Tool behaviour stays identical to Web Console agent and audit (`ai_tool_audit` entries tagged `source=mcp`).
 - Additional dependency (MCP SDK) isolated behind `mcp` profile — Apache core default unchanged.
-- Future: expose ContextPack slices as MCP `resources` in a follow-up ADR.
+- Future: expose ContextPack slices as MCP `resources` — **Done** (Phase 17.3, `McpResourceAdapter`, URIs `contextpack://<slice>`).
 
 ## Alternatives considered
 

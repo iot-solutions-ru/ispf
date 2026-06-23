@@ -39,9 +39,6 @@ public class ObjectVariableEntity {
     @Column(nullable = false)
     private boolean writable;
 
-    @Column(name = "binding_expr", columnDefinition = "TEXT")
-    private String bindingExpr;
-
     @Column(name = "updated_at")
     private Instant updatedAt;
 
@@ -105,14 +102,6 @@ public class ObjectVariableEntity {
 
     public void setWritable(boolean writable) {
         this.writable = writable;
-    }
-
-    public String getBindingExpr() {
-        return bindingExpr;
-    }
-
-    public void setBindingExpr(String bindingExpr) {
-        this.bindingExpr = bindingExpr;
     }
 
     public Instant getUpdatedAt() {

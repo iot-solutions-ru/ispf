@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteObject,
@@ -8,6 +8,7 @@ import {
   updateObject,
   updateVariableHistory,
 } from "../api";
+import { inspectorQueryLoading, resolveInspectorEditor, useInspectorObjectEditor } from "../hooks/useInspectorQueries";
 import type { ObjectEditorDto, DataRecord, VariableDto } from "../types";
 import { fetchAuthMe } from "../api";
 import { OBJECT_WS_EVENT, sendPresence, type ObjectWsMessage } from "../hooks/useObjectWebSocket";
@@ -202,25 +203,30 @@ export default function ObjectPropertiesEditor({
     enabled: openSections.history,
   });
 
-  const editorQuery = useQuery({
-    queryKey: ["object-editor", path],
-    queryFn: () => fetchObjectEditor(path),
-  });
+  const editorQuery = useInspectorObjectEditor(path);
 
   const [state, setState] = useState<EditorState | null>(null);
   const [baseline, setBaseline] = useState<EditorState | null>(null);
   const [showCreateVariable, setShowCreateVariable] = useState(false);
+  const syncedEditorPathRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (editorQuery.data) {
-      const next = buildState(editorQuery.data);
-      setState(next);
-      setBaseline(next);
-      setRevision(editorQuery.data.object.revision ?? 0);
-      setRemoteRevision(null);
-      setConflictMessage(null);
+    syncedEditorPathRef.current = null;
+  }, [path]);
+
+  useEffect(() => {
+    const data = resolveInspectorEditor(path, editorQuery.data);
+    if (!data || syncedEditorPathRef.current === path) {
+      return;
     }
-  }, [editorQuery.data]);
+    const next = buildState(data);
+    setState(next);
+    setBaseline(next);
+    setRevision(data.object.revision ?? 0);
+    setRemoteRevision(null);
+    setConflictMessage(null);
+    syncedEditorPathRef.current = path;
+  }, [editorQuery.data, path]);
 
   const isDirty = useMemo(() => {
     if (!state || !baseline) return false;
@@ -333,15 +339,20 @@ export default function ObjectPropertiesEditor({
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (editorQuery.isLoading || !state || !editorQuery.data) {
-    return <div className="editor-loading">Загрузка редактора…</div>;
-  }
-
-  if (editorQuery.error) {
+  const editorData = resolveInspectorEditor(path, editorQuery.data);
+  if (editorQuery.error && !editorData) {
     return <div className="editor-loading error">Ошибка загрузки редактора</div>;
   }
 
-  const ctx = editorQuery.data.object;
+  if (!editorData && inspectorQueryLoading(editorQuery)) {
+    return <div className="editor-loading">Загрузка редактора…</div>;
+  }
+
+  if (!editorData || !state) {
+    return <div className="editor-loading">Загрузка редактора…</div>;
+  }
+
+  const ctx = editorData.object;
   const isRoot = path === "root";
   const canDelete = canDeleteObjectPath(path);
   const crumbs = path.split(".");
@@ -526,7 +537,7 @@ export default function ObjectPropertiesEditor({
 
       <section className="editor-section">
         <button type="button" className="section-toggle" onClick={() => toggleSection("variables")}>
-          <span>{openSections.variables ? "▾" : "▸"}</span> Переменные ({editorQuery.data.variables.length})
+          <span>{openSections.variables ? "▾" : "▸"}</span> Переменные ({editorData.variables.length})
         </button>
         {openSections.variables && (
           <div className="section-body property-list">
@@ -546,10 +557,10 @@ export default function ObjectPropertiesEditor({
                 </button>
               </div>
             )}
-            {editorQuery.data.variables.length === 0 && (
+            {editorData.variables.length === 0 && (
               <p className="hint">Нет переменных</p>
             )}
-            {editorQuery.data.variables
+            {editorData.variables
               .filter((variable) => variable.name !== "uiIcon")
               .map((variable) => (
               <VariableEditorRow
@@ -582,11 +593,11 @@ export default function ObjectPropertiesEditor({
 
       <section className="editor-section">
         <button type="button" className="section-toggle" onClick={() => toggleSection("events")}>
-          <span>{openSections.events ? "▾" : "▸"}</span> События ({editorQuery.data.events.length})
+          <span>{openSections.events ? "▾" : "▸"}</span> События ({editorData.events.length})
         </button>
         {openSections.events && (
           <div className="section-body">
-            {editorQuery.data.events.length === 0 ? (
+            {editorData.events.length === 0 ? (
               <p className="hint">Нет событий</p>
             ) : (
               <table className="data-table">
@@ -598,7 +609,7 @@ export default function ObjectPropertiesEditor({
                   </tr>
                 </thead>
                 <tbody>
-                  {editorQuery.data.events.map((ev) => (
+                  {editorData.events.map((ev) => (
                     <tr key={ev.name}>
                       <td><code>{ev.name}</code></td>
                       <td>{ev.level}</td>
@@ -614,11 +625,11 @@ export default function ObjectPropertiesEditor({
 
       <section className="editor-section">
         <button type="button" className="section-toggle" onClick={() => toggleSection("functions")}>
-          <span>{openSections.functions ? "▾" : "▸"}</span> Функции ({editorQuery.data.functions.length})
+          <span>{openSections.functions ? "▾" : "▸"}</span> Функции ({editorData.functions.length})
         </button>
         {openSections.functions && (
           <div className="section-body">
-            {editorQuery.data.functions.length === 0 ? (
+            {editorData.functions.length === 0 ? (
               <p className="hint">Нет функций</p>
             ) : (
               <table className="data-table">
@@ -631,7 +642,7 @@ export default function ObjectPropertiesEditor({
                   </tr>
                 </thead>
                 <tbody>
-                  {editorQuery.data.functions.map((fn) => (
+                  {editorData.functions.map((fn) => (
                     <tr key={fn.name}>
                       <td><code>{fn.name}</code></td>
                       <td>{fn.description || "—"}</td>

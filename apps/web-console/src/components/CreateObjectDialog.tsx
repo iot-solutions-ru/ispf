@@ -28,6 +28,7 @@ const INSTANCE_TYPE_PREFIX = "instance:";
 
 const OBJECT_TYPES: ObjectType[] = [
   "CUSTOM",
+  "VISUAL_GROUP",
   "DEVICE",
   "MODEL",
   "DASHBOARD",

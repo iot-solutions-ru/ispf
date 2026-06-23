@@ -6,6 +6,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.EventLevel;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.model.ModelBindingRule;
@@ -76,10 +77,45 @@ public class MiniTecModelBootstrap {
         ensure(buildHubModel());
     }
 
-    private void ensure(ModelDefinition model) {
-        if (modelRegistry.findByName(model.name()).isEmpty()) {
-            modelEngine.createModel(model);
+    private void ensure(ModelDefinition desired) {
+        var existing = modelRegistry.findByName(desired.name());
+        if (existing.isEmpty()) {
+            modelEngine.createModel(desired);
+            return;
         }
+        ModelDefinition current = existing.get();
+        if (hasAllEvents(current, desired)) {
+            return;
+        }
+        modelEngine.updateModel(new ModelDefinition(
+                current.id(),
+                desired.name(),
+                desired.description(),
+                desired.type(),
+                desired.targetObjectType(),
+                desired.suitabilityExpression(),
+                desired.variables(),
+                desired.events(),
+                desired.functions(),
+                desired.bindingRules(),
+                desired.parameters(),
+                current.createdAt(),
+                Instant.now()
+        ));
+    }
+
+    private static boolean hasAllEvents(ModelDefinition current, ModelDefinition desired) {
+        for (EventDescriptor event : desired.events()) {
+            boolean found = current.events().stream().anyMatch(item -> item.name().equals(event.name()));
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static EventDescriptor boolEvent(String name, String description, EventLevel level) {
+        return new EventDescriptor(name, description, BOOL, level);
     }
 
     private static ModelVariableDefinition meas(String name, String desc, String group, String unit, double def) {
@@ -172,12 +208,19 @@ public class MiniTecModelBootstrap {
                         "self.excitationVoltage[\"value\"] > 180")
         );
 
-        return model(GPU_MODEL, "Mini-TEC gas piston unit", ObjectType.DEVICE, vars, bindings,
+        return model(
+                GPU_MODEL,
+                "Mini-TEC gas piston unit",
+                ObjectType.DEVICE,
+                vars,
+                bindings,
+                List.of(boolEvent("gpuProtOverload", "GPU overload protection", EventLevel.ERROR)),
                 List.of(
                         MiniTecFunctionHandler.gpuStartFn(),
                         MiniTecFunctionHandler.gpuStopFn(),
                         MiniTecFunctionHandler.gpuSyncFn()
-                ));
+                )
+        );
     }
 
     private ModelDefinition buildGrpbModel() {
@@ -198,8 +241,18 @@ public class MiniTecModelBootstrap {
         vars.add(boolVar("cmdPzkReset", "Reset PZK", "control", false, true));
         vars.add(boolVar("cmdGasTrip", "Emergency gas trip", "control", false, true));
         vars.addAll(driverVars(GRPB_DRIVER_CONFIG));
-        return model(GRPB_MODEL, "Gas regulating point block", ObjectType.DEVICE, vars, List.of(),
-                List.of(MiniTecFunctionHandler.grpbValveFn(), MiniTecFunctionHandler.grpbPzkResetFn()));
+        return model(
+                GRPB_MODEL,
+                "Gas regulating point block",
+                ObjectType.DEVICE,
+                vars,
+                List.of(),
+                List.of(
+                        boolEvent("grpbFire", "GRPB fire alarm", EventLevel.ERROR),
+                        boolEvent("grpbGasLeak", "GRPB gas leak", EventLevel.ERROR)
+                ),
+                List.of(MiniTecFunctionHandler.grpbValveFn(), MiniTecFunctionHandler.grpbPzkResetFn())
+        );
     }
 
     private ModelDefinition buildRumbModel() {
@@ -310,8 +363,18 @@ public class MiniTecModelBootstrap {
         vars.add(meas("gpu2Power", "GPU-02 power mirror", "internal", "kW", 0));
         vars.add(meas("gpu3Power", "GPU-03 power mirror", "internal", "kW", 0));
 
-        return model(HUB_MODEL, "Mini-TEC station hub", ObjectType.CUSTOM, vars, bindings,
-                List.of(MiniTecFunctionHandler.acknowledgeAlarmFn()));
+        return model(
+                HUB_MODEL,
+                "Mini-TEC station hub",
+                ObjectType.CUSTOM,
+                vars,
+                bindings,
+                List.of(
+                        boolEvent("busProtUndervoltage", "Bus undervoltage", EventLevel.ERROR),
+                        boolEvent("stationUnderpower", "Station underpower", EventLevel.WARNING)
+                ),
+                List.of(MiniTecFunctionHandler.acknowledgeAlarmFn())
+        );
     }
 
     private static ModelBindingRule refRule(String id, String target, String remotePath, String remoteVar) {
@@ -338,6 +401,7 @@ public class MiniTecModelBootstrap {
             ObjectType type,
             List<ModelVariableDefinition> variables,
             List<ModelBindingRule> bindings,
+            List<EventDescriptor> events,
             List<FunctionDescriptor> functions
     ) {
         return new ModelDefinition(
@@ -348,7 +412,7 @@ public class MiniTecModelBootstrap {
                 type,
                 "",
                 variables,
-                List.of(),
+                events,
                 functions,
                 bindings,
                 Map.of(),
@@ -362,8 +426,19 @@ public class MiniTecModelBootstrap {
             String description,
             ObjectType type,
             List<ModelVariableDefinition> variables,
+            List<ModelBindingRule> bindings,
+            List<FunctionDescriptor> functions
+    ) {
+        return model(name, description, type, variables, bindings, List.of(), functions);
+    }
+
+    private static ModelDefinition model(
+            String name,
+            String description,
+            ObjectType type,
+            List<ModelVariableDefinition> variables,
             List<ModelBindingRule> bindings
     ) {
-        return model(name, description, type, variables, bindings, List.of());
+        return model(name, description, type, variables, bindings, List.of(), List.of());
     }
 }

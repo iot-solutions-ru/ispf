@@ -24,6 +24,7 @@ import { canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../utils/platformSqlPath";
+import VisualGroupInspector from "./VisualGroupInspector";
 import PlatformSqlObjectPanel from "./platform/PlatformSqlObjectPanel";
 import { isFederationRoot } from "../utils/federationPath";
 import { isTenantsRoot } from "../utils/tenantPath";
@@ -35,6 +36,8 @@ interface ExplorerViewProps {
   onCreateChild: () => void;
   onDeleted: () => void;
   onSelectPath: (path: string) => void;
+  onMembersChanged?: () => void;
+  allObjects?: ObjectSummary[];
   isAdmin: boolean;
   showBackToTree?: boolean;
   onBackToTree?: () => void;
@@ -47,6 +50,8 @@ export default function ExplorerView({
   onCreateChild,
   onDeleted,
   onSelectPath,
+  onMembersChanged,
+  allObjects = [],
   isAdmin,
   showBackToTree = false,
   onBackToTree,
@@ -75,6 +80,7 @@ export default function ExplorerView({
     && canCreateChildAt(selectedPath, selectedObject?.type)
     && !isUsersRoot
     && !isRolesRoot;
+  const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
   const hideToolbar =
     isOperatorAppChild
     || isUsersRoot
@@ -86,7 +92,8 @@ export default function ExplorerView({
     || isFederation
     || isTenants
     || isCatalogFolder
-    || isPlatformSqlObject;
+    || isPlatformSqlObject
+    || isVisualGroup;
 
   return (
     <div
@@ -124,23 +131,33 @@ export default function ExplorerView({
       ) : isUsersRoot ? (
         <SecurityUsersPanel canManage={isAdmin} onSelectUser={onSelectPath} />
       ) : isUserObject ? (
-        <SecurityUserInspector path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+        <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
       ) : isRolesRoot ? (
         <SecurityRolesPanel canManage={isAdmin} onSelectRole={onSelectPath} />
       ) : isRoleObject ? (
-        <SecurityRoleInspector path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+        <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
       ) : isAlertRule ? (
-        <AlertRuleInspector path={selectedPath} canManage={isAdmin} />
+        <AlertRuleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} />
       ) : isCorrelator ? (
-        <CorrelatorInspector path={selectedPath} canManage={isAdmin} />
+        <CorrelatorInspector key={selectedPath} path={selectedPath} canManage={isAdmin} />
       ) : isFederation ? (
         <FederationPeersPanel canManage={isAdmin} />
       ) : isTenants ? (
         <TenantsPanel canManage={isAdmin} onSelectPath={onSelectPath} />
       ) : isPlatformSqlObject ? (
-        <PlatformSqlObjectPanel path={selectedPath} onOpenEditor={onOpenEditor} />
+        <PlatformSqlObjectPanel key={selectedPath} path={selectedPath} onOpenEditor={onOpenEditor} />
+      ) : isVisualGroup ? (
+        <VisualGroupInspector
+          key={selectedPath}
+          path={selectedPath}
+          canManage={isAdmin}
+          allObjects={allObjects}
+          onSelectPath={onSelectPath}
+          onMembersChanged={onMembersChanged}
+        />
       ) : isCatalogFolder ? (
         <SystemFolderListPanel
+          key={selectedPath}
           folderPath={selectedPath}
           folderType={selectedObject?.type}
           folderDisplayName={selectedObject?.displayName}

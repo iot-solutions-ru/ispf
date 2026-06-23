@@ -50,6 +50,7 @@ export type ObjectType =
   | "SCREENS"
   | "SCREEN"
   | "AGENT"
+  | "VISUAL_GROUP"
   | "CUSTOM";
 
 export interface ObjectSummary {
@@ -70,6 +71,9 @@ export interface ObjectSummary {
   federated?: boolean;
   federationPeerId?: string | null;
   federationRemotePath?: string | null;
+  groupRef?: boolean;
+  groupContextPath?: string | null;
+  groupMemberMissing?: boolean;
   appliedModels?: AppliedModelSummary[];
 }
 

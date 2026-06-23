@@ -1,5 +1,7 @@
 /** Operator application shell — navigation over DASHBOARD and REPORT objects from the object tree. */
 
+import type { OperatorAlarmBarConfig } from "./operatorAlarmBar";
+
 export interface OperatorUiDashboard {
   path: string;
   title: string;
@@ -19,6 +21,8 @@ export interface OperatorUi {
   defaultReport?: string;
   /** Optional object path filter for operator event journal sidebar. */
   eventJournalObjectPath?: string;
+  /** Global popup alarm bar configuration for operator mode. */
+  alarmBar?: OperatorAlarmBarConfig;
 }
 
 export function resolveOperatorDashboard(

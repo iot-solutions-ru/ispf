@@ -56,7 +56,13 @@ public class OperatorAppController {
     @PutMapping("/{appId}/ui")
     public Map<String, Object> saveUi(@PathVariable String appId, @RequestBody SaveOperatorUiRequest request) {
         try {
-            return service.saveUi(appId, request.title(), request.defaultDashboard(), request.dashboards());
+            return service.saveUi(
+                    appId,
+                    request.title(),
+                    request.defaultDashboard(),
+                    request.dashboards(),
+                    request.alarmBar()
+            );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
         } catch (Exception ex) {
@@ -70,7 +76,8 @@ public class OperatorAppController {
     public record SaveOperatorUiRequest(
             String title,
             String defaultDashboard,
-            List<Map<String, String>> dashboards
+            List<Map<String, String>> dashboards,
+            Map<String, Object> alarmBar
     ) {
     }
 }

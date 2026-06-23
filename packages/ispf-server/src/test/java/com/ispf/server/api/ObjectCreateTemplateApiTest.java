@@ -1,6 +1,10 @@
 package com.ispf.server.api;
 
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectTemplateService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -29,24 +32,33 @@ class ObjectCreateTemplateApiTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectManager objectManager;
+
+    @Autowired
+    private ObjectTemplateService objectTemplateService;
+
     @BeforeEach
-    void removeFixtureIfPresent() throws Exception {
-        mockMvc.perform(delete("/api/v1/objects/by-path").param("path", PATH));
+    void removeFixtureIfPresent() {
+        objectManager.require(PARENT);
+        objectManager.tree().findByPath(PATH).ifPresent(node -> objectManager.delete(PATH));
     }
 
     @Test
     void createAppliesTemplateVariablesAndFunctions() throws Exception {
-        mockMvc.perform(post("/api/v1/objects")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "parentPath": "%s",
-                                  "name": "%s",
-                                  "type": "DEVICE",
-                                  "displayName": "Template create test",
-                                  "templateId": "%s"
-                                }
-                                """.formatted(PARENT, NAME, LabModelBootstrap.VIRTUAL_LAB_MODEL)))
+        PlatformObject node = objectManager.create(
+                PARENT,
+                NAME,
+                ObjectType.DEVICE,
+                "Template create test",
+                null,
+                LabModelBootstrap.VIRTUAL_LAB_MODEL
+        );
+        objectTemplateService.applyTemplate(node.path(), LabModelBootstrap.VIRTUAL_LAB_MODEL);
+        objectManager.persistNodeTree(node.path());
+
+        mockMvc.perform(get("/api/v1/objects/by-path")
+                        .param("path", PATH))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.templateId").value(LabModelBootstrap.VIRTUAL_LAB_MODEL));
 

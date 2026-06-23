@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateCorrelator, fetchVariables } from "../../api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateCorrelator } from "../../api";
 import type { CorrelatorActionType, CorrelatorPatternType, CreateCorrelatorPayload } from "../../types/automation";
 import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
+import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
 import ObjectFederationBindSection from "../ObjectFederationBindSection";
 
 interface CorrelatorInspectorProps {
@@ -11,10 +12,7 @@ interface CorrelatorInspectorProps {
 
 export default function CorrelatorInspector({ path, canManage = false }: CorrelatorInspectorProps) {
   const queryClient = useQueryClient();
-  const variablesQuery = useQuery({
-    queryKey: ["variables", path],
-    queryFn: () => fetchVariables(path),
-  });
+  const variablesQuery = useInspectorVariables(path);
 
   const variables = variablesQuery.data ?? [];
   const patternType = (variableString(variables, "patternType") || "COUNT") as CorrelatorPatternType;
@@ -28,7 +26,7 @@ export default function CorrelatorInspector({ path, canManage = false }: Correla
     },
   });
 
-  if (variablesQuery.isLoading) {
+  if (inspectorQueryLoading(variablesQuery)) {
     return <p className="hint">Загрузка коррелятора…</p>;
   }
 
@@ -44,6 +42,7 @@ export default function CorrelatorInspector({ path, canManage = false }: Correla
         </div>
       </header>
       <form
+        key={path}
         className="form-grid"
         onSubmit={(e) => {
           e.preventDefault();

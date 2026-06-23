@@ -414,11 +414,24 @@ public class ApplicationBundleDeployService {
         if (defaultDashboard.isBlank()) {
             defaultDashboard = dashboards.get(0).get("path");
         }
+        Map<String, Object> alarmBar = null;
+        if (ui.get("alarmBar") instanceof Map<?, ?> alarmBarMap) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typed = (Map<String, Object>) alarmBarMap;
+            alarmBar = typed;
+        }
+        String uiExtrasJson = null;
+        if (alarmBar != null && !alarmBar.isEmpty()) {
+            Map<String, Object> extras = new LinkedHashMap<>();
+            extras.put("alarmBar", alarmBar);
+            uiExtrasJson = objectMapper.writeValueAsString(extras);
+        }
         operatorAppUiStore.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 appId,
                 title,
                 defaultDashboard,
                 objectMapper.writeValueAsString(dashboards),
+                uiExtrasJson,
                 Instant.now()
         ));
         operatorAppObjectTreeService.syncAll();
@@ -533,6 +546,9 @@ public class ApplicationBundleDeployService {
         if (!reports.isEmpty()) {
             ui.put("reports", reports);
             ui.put("defaultReport", defaultReport);
+        }
+        if (manifest.operatorManifest() != null && manifest.operatorManifest().get("alarmBar") != null) {
+            ui.put("alarmBar", manifest.operatorManifest().get("alarmBar"));
         }
         return ui;
     }

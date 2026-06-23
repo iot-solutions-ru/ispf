@@ -22,6 +22,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -277,8 +278,106 @@ public class MiniTecPlatformBootstrap {
                 MiniTecPaths.APP_ID,
                 MiniTecPaths.DISPLAY_NAME,
                 MiniTecPaths.DASHBOARD_OVERVIEW,
-                dashboards
+                dashboards,
+                miniTecAlarmBarConfig()
         );
+    }
+
+    private Map<String, Object> miniTecAlarmBarConfig() {
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("enabled", true);
+        config.put("soundEnabled", true);
+        config.put("soundUrl", "/sounds/alarm.wav");
+        config.put("minLevel", "WARNING");
+        config.put("position", "top");
+        config.put("rules", List.of(
+                alarmRule(
+                        "grpb-fire",
+                        List.of("grpbFire", "fireAlarm"),
+                        MiniTecPaths.GRPB,
+                        "ERROR",
+                        "Пожар: {{eventName}}",
+                        "#450a0a", "#fee2e2", "#ef4444",
+                        MiniTecPaths.DASHBOARD_GRPB,
+                        "acknowledgeAlarm"
+                ),
+                alarmRule(
+                        "grpb-gas",
+                        List.of("grpbGasLeak", "gasLeak"),
+                        MiniTecPaths.GRPB,
+                        "ERROR",
+                        "Утечка газа: {{eventName}}",
+                        "#431407", "#ffedd5", "#f97316",
+                        MiniTecPaths.DASHBOARD_SINGLE_LINE,
+                        "acknowledgeAlarm"
+                ),
+                alarmRule(
+                        "gpu-overload",
+                        List.of("gpuProtOverload", "overloadTrip"),
+                        MiniTecPaths.GPU_01,
+                        "WARNING",
+                        "Перегрузка: {{eventName}}",
+                        "#422006", "#fef3c7", "#f59e0b",
+                        MiniTecPaths.DASHBOARD_GPU_DETAIL,
+                        null
+                ),
+                alarmRule(
+                        "open-report",
+                        List.of("openOperatorReport"),
+                        null,
+                        "INFO",
+                        "Открыть отчёт",
+                        "#1e3a5f", "#e0f2fe", "#38bdf8",
+                        null,
+                        null
+                )
+        ));
+        return config;
+    }
+
+    private static Map<String, Object> alarmRule(
+            String id,
+            List<String> eventNames,
+            String objectPathPrefix,
+            String minLevel,
+            String title,
+            String background,
+            String text,
+            String border,
+            String dashboardPath,
+            String acknowledgeFunction
+    ) {
+        Map<String, Object> rule = new LinkedHashMap<>();
+        rule.put("id", id);
+        rule.put("eventNames", eventNames);
+        if (objectPathPrefix != null) {
+            rule.put("objectPathPrefix", objectPathPrefix);
+        }
+        rule.put("minLevel", minLevel);
+        rule.put("title", title);
+        rule.put("fields", List.of(
+                Map.of("label", "Событие", "source", "eventName"),
+                Map.of("label", "Объект", "source", "objectPath"),
+                Map.of("label", "Время", "source", "timestamp")
+        ));
+        rule.put("colors", Map.of(
+                "background", background,
+                "text", text,
+                "border", border,
+                "accent", border
+        ));
+        Map<String, Object> actions = new LinkedHashMap<>();
+        if (dashboardPath != null) {
+            actions.put("dashboardPath", dashboardPath);
+        }
+        actions.put("selectionKey", "devicePath");
+        actions.put("reportFromPayload", "reportPath");
+        if (acknowledgeFunction != null) {
+            actions.put("acknowledgeFunction", acknowledgeFunction);
+        }
+        rule.put("actions", actions);
+        rule.put("persistUntilDismiss", true);
+        return rule;
     }
 
     private static Map<String, String> entry(String path, String title) {

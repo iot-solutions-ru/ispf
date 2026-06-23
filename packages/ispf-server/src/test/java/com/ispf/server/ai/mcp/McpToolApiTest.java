@@ -62,4 +62,33 @@ class McpToolApiTest {
                 .andExpect(jsonPath("$.result.isError").value(false))
                 .andExpect(jsonPath("$.result.content[0].type").value("text"));
     }
+
+    @Test
+    void resourcesListIncludesContextPackSlices() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/mcp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"jsonrpc":"2.0","id":4,"method":"resources/list","params":{}}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.resources[?(@.uri == 'contextpack://info')]").exists())
+                .andExpect(jsonPath("$.result.resources[?(@.uri == 'contextpack://script-steps')]").exists());
+    }
+
+    @Test
+    void resourcesReadInfoSlice() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/mcp")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jsonrpc": "2.0",
+                                  "id": 5,
+                                  "method": "resources/read",
+                                  "params": {"uri": "contextpack://info"}
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result.contents[0].mimeType").value("application/json"))
+                .andExpect(jsonPath("$.result.contents[0].text").isNotEmpty());
+    }
 }

@@ -15,10 +15,16 @@ public class McpJsonRpcHandler {
 
     private final McpProperties properties;
     private final McpToolAdapter toolAdapter;
+    private final McpResourceAdapter resourceAdapter;
 
-    public McpJsonRpcHandler(McpProperties properties, McpToolAdapter toolAdapter) {
+    public McpJsonRpcHandler(
+            McpProperties properties,
+            McpToolAdapter toolAdapter,
+            McpResourceAdapter resourceAdapter
+    ) {
         this.properties = properties;
         this.toolAdapter = toolAdapter;
+        this.resourceAdapter = resourceAdapter;
     }
 
     @SuppressWarnings("unchecked")
@@ -34,6 +40,8 @@ public class McpJsonRpcHandler {
             case "initialize" -> success(id, initializeResult());
             case "tools/list" -> success(id, Map.of("tools", toolAdapter.listTools()));
             case "tools/call" -> success(id, callTool(params, authentication, actor));
+            case "resources/list" -> success(id, Map.of("resources", resourceAdapter.listResources()));
+            case "resources/read" -> success(id, readResource(params));
             case "ping" -> success(id, Map.of());
             default -> error(id, -32601, "Method not found: " + method);
         };
@@ -42,7 +50,10 @@ public class McpJsonRpcHandler {
     private Map<String, Object> initializeResult() {
         return Map.of(
                 "protocolVersion", properties.getProtocolVersion(),
-                "capabilities", Map.of("tools", Map.of()),
+                "capabilities", Map.of(
+                        "tools", Map.of(),
+                        "resources", Map.of()
+                ),
                 "serverInfo", Map.of(
                         "name", properties.getServerName(),
                         "version", "0.7.6"
@@ -64,6 +75,14 @@ public class McpJsonRpcHandler {
                 ? (Map<String, Object>) map
                 : Map.of();
         return toolAdapter.callTool(name, arguments, authentication, actor);
+    }
+
+    private Map<String, Object> readResource(Map<String, Object> params) {
+        String uri = params.get("uri") != null ? params.get("uri").toString() : "";
+        if (uri.isBlank()) {
+            throw new IllegalArgumentException("resources/read requires uri");
+        }
+        return resourceAdapter.readResource(uri);
     }
 
     private static Map<String, Object> success(Object id, Object result) {

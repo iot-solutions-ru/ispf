@@ -22,13 +22,14 @@ public class OperatorAppUiStore {
 
     public List<OperatorAppUiRecord> listAll() {
         return jdbcTemplate.query(
-                "SELECT app_id, title, default_dashboard, dashboards_json, updated_at FROM %s ORDER BY app_id"
+                "SELECT app_id, title, default_dashboard, dashboards_json, ui_extras_json, updated_at FROM %s ORDER BY app_id"
                         .formatted(table),
                 (rs, rowNum) -> new OperatorAppUiRecord(
                         rs.getString("app_id"),
                         rs.getString("title"),
                         rs.getString("default_dashboard"),
                         rs.getString("dashboards_json"),
+                        rs.getString("ui_extras_json"),
                         rs.getTimestamp("updated_at").toInstant()
                 )
         );
@@ -36,13 +37,14 @@ public class OperatorAppUiStore {
 
     public Optional<OperatorAppUiRecord> findByAppId(String appId) {
         List<OperatorAppUiRecord> rows = jdbcTemplate.query(
-                "SELECT app_id, title, default_dashboard, dashboards_json, updated_at FROM %s WHERE app_id = ?"
+                "SELECT app_id, title, default_dashboard, dashboards_json, ui_extras_json, updated_at FROM %s WHERE app_id = ?"
                         .formatted(table),
                 (rs, rowNum) -> new OperatorAppUiRecord(
                         rs.getString("app_id"),
                         rs.getString("title"),
                         rs.getString("default_dashboard"),
                         rs.getString("dashboards_json"),
+                        rs.getString("ui_extras_json"),
                         rs.getTimestamp("updated_at").toInstant()
                 ),
                 appId
@@ -60,25 +62,27 @@ public class OperatorAppUiStore {
         if (count != null && count > 0) {
             jdbcTemplate.update("""
                     UPDATE %s
-                    SET title = ?, default_dashboard = ?, dashboards_json = ?, updated_at = ?
+                    SET title = ?, default_dashboard = ?, dashboards_json = ?, ui_extras_json = ?, updated_at = ?
                     WHERE app_id = ?
                     """.formatted(table),
                     record.title(),
                     record.defaultDashboard(),
                     record.dashboardsJson(),
+                    record.uiExtrasJson(),
                     Timestamp.from(now),
                     record.appId()
             );
             return;
         }
         jdbcTemplate.update("""
-                INSERT INTO %s (app_id, title, default_dashboard, dashboards_json, updated_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO %s (app_id, title, default_dashboard, dashboards_json, ui_extras_json, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """.formatted(table),
                 record.appId(),
                 record.title(),
                 record.defaultDashboard(),
                 record.dashboardsJson(),
+                record.uiExtrasJson(),
                 Timestamp.from(now)
         );
     }
@@ -88,6 +92,7 @@ public class OperatorAppUiStore {
             String title,
             String defaultDashboard,
             String dashboardsJson,
+            String uiExtrasJson,
             Instant updatedAt
     ) {
     }

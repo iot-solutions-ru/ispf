@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { updateAlertRule, validateExpression, fetchVariables } from "../../api";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { updateAlertRule, validateExpression } from "../../api";
 import type { CreateAlertRulePayload } from "../../types/automation";
 import { variableBoolean, variableString } from "../../utils/variableFieldValue";
+import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
 import ObjectFederationBindSection from "../ObjectFederationBindSection";
 
 interface AlertRuleInspectorProps {
@@ -11,10 +12,7 @@ interface AlertRuleInspectorProps {
 
 export default function AlertRuleInspector({ path, canManage = false }: AlertRuleInspectorProps) {
   const queryClient = useQueryClient();
-  const variablesQuery = useQuery({
-    queryKey: ["variables", path],
-    queryFn: () => fetchVariables(path),
-  });
+  const variablesQuery = useInspectorVariables(path);
 
   const variables = variablesQuery.data ?? [];
   const form = {
@@ -43,7 +41,7 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
     mutationFn: (expression: string) => validateExpression(expression),
   });
 
-  if (variablesQuery.isLoading) {
+  if (inspectorQueryLoading(variablesQuery)) {
     return <p className="hint">Загрузка правила…</p>;
   }
 
@@ -59,6 +57,7 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
         </div>
       </header>
       <form
+        key={path}
         className="form-grid"
         onSubmit={(e) => {
           e.preventDefault();

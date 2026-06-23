@@ -76,21 +76,6 @@ public class BindingRulesService {
         return BindingActivators.onLocalChange();
     }
 
-    public static BindingRule fromLegacyExpression(String variableName, String expression) {
-        String id = "legacy-" + variableName;
-        BindingActivators activators = defaultActivators("", expression);
-        return new BindingRule(
-                id,
-                variableName,
-                true,
-                0,
-                activators,
-                "",
-                expression,
-                new BindingTarget(variableName, "value")
-        );
-    }
-
     private void validateRule(String objectPath, BindingRule rule) {
         PlatformObject object = objectManager.require(objectPath);
         if (object.getVariable(rule.target().variableName()).isEmpty()) {

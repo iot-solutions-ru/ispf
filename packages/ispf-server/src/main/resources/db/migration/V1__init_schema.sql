@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS object_variables (
     value_json   TEXT,
     readable     BOOLEAN      NOT NULL DEFAULT TRUE,
     writable     BOOLEAN      NOT NULL DEFAULT FALSE,
-    binding_expr TEXT,
     updated_at   TIMESTAMP,
     UNIQUE (object_path, name)
 );

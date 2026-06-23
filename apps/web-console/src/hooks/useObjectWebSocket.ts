@@ -63,24 +63,35 @@ export function useObjectWebSocket() {
         try {
           const message = JSON.parse(event.data) as ObjectWsMessage;
           window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
-          if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
-            window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
-            queryClient.invalidateQueries({ queryKey: ["objects"] });
+
+          switch (message.type) {
+            case "CREATED":
+            case "UPDATED":
+            case "DELETED":
+              window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
+              queryClient.invalidateQueries({ queryKey: ["objects"] });
+              queryClient.invalidateQueries({ queryKey: ["object", message.path] });
+              queryClient.invalidateQueries({ queryKey: ["object-editor", message.path] });
+              break;
+            case "VARIABLE_UPDATED":
+              queryClient.invalidateQueries({ queryKey: ["variables", message.path] });
+              queryClient.invalidateQueries({ queryKey: ["events", message.path] });
+              queryClient.invalidateQueries({ queryKey: ["events", "all"] });
+              break;
+            case "EVENT_FIRED":
+              queryClient.invalidateQueries({ queryKey: ["events", message.path] });
+              queryClient.invalidateQueries({ queryKey: ["events", "all"] });
+              break;
+            case "presence":
+              break;
           }
-          queryClient.invalidateQueries({ queryKey: ["object", message.path] });
-          queryClient.invalidateQueries({ queryKey: ["object-editor", message.path] });
-          queryClient.invalidateQueries({ queryKey: ["variables", message.path] });
-          queryClient.invalidateQueries({ queryKey: ["dashboard", message.path] });
-          queryClient.invalidateQueries({ queryKey: ["workflow", message.path] });
-          queryClient.invalidateQueries({ queryKey: ["work-queue"] });
-          queryClient.invalidateQueries({ queryKey: ["events"] });
-          if (message.type === "VARIABLE_UPDATED") {
-            queryClient.invalidateQueries({ queryKey: ["events", message.path] });
-            queryClient.invalidateQueries({ queryKey: ["events", "all"] });
+
+          if (message.type === "UPDATED" || message.type === "DELETED") {
+            queryClient.invalidateQueries({ queryKey: ["dashboard", message.path] });
+            queryClient.invalidateQueries({ queryKey: ["workflow", message.path] });
           }
-          if (message.type === "EVENT_FIRED") {
-            queryClient.invalidateQueries({ queryKey: ["events", message.path] });
-            queryClient.invalidateQueries({ queryKey: ["events", "all"] });
+          if (message.type === "VARIABLE_UPDATED" || message.type === "EVENT_FIRED") {
+            queryClient.invalidateQueries({ queryKey: ["work-queue"] });
           }
         } catch {
           // ignore malformed messages

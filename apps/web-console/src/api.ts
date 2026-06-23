@@ -241,6 +241,38 @@ export function deleteObject(path: string): Promise<void> {
   });
 }
 
+export interface VisualGroupMemberDto {
+  path: string;
+  sortOrder: number;
+}
+
+export interface BulkDeleteResult {
+  deleted: number;
+  results: Array<{ path: string; success: boolean; error: string | null }>;
+}
+
+export function fetchGroupMembers(groupPath: string): Promise<VisualGroupMemberDto[]> {
+  return request(`/api/v1/objects/by-path/group-members?path=${encodeURIComponent(groupPath)}`);
+}
+
+export function updateGroupMembers(
+  groupPath: string,
+  action: "set" | "add" | "remove" | "reorder",
+  payload: { members?: VisualGroupMemberDto[]; paths?: string[] },
+): Promise<VisualGroupMemberDto[]> {
+  return request(`/api/v1/objects/by-path/group-members?path=${encodeURIComponent(groupPath)}`, {
+    method: "PUT",
+    body: JSON.stringify({ action, ...payload }),
+  });
+}
+
+export function bulkDeleteObjects(paths: string[]): Promise<BulkDeleteResult> {
+  return request("/api/v1/objects/bulk-delete", {
+    method: "POST",
+    body: JSON.stringify({ paths }),
+  });
+}
+
 export function setVariable(
   path: string,
   name: string,

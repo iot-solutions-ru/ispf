@@ -80,9 +80,19 @@ Agent tool: `create_binding_rule` (path, id, targetVariable, expression, remoteO
 
 ---
 
-## Миграция с `bindingExpression`
+## Обновление с v0.7.x (legacy `bindingExpression`)
 
-До 1.0 breaking change: поле `bindingExpression` на переменной удалено. При старте `BindingExpressionMigrationRunner` переносит legacy `binding_expr` из БД в `@bindingRules` (одно правило на переменную, id `legacy-{name}`).
+Поле `bindingExpression` на переменной и колонка `binding_expr` **удалены** (ADR-0017, v0.8.0). Привязки — только `@bindingRules`.
+
+**Dev/local:** проще пересоздать БД, чем мигрировать legacy-данные:
+
+```bash
+# H2 (local): удалить data/ или задать spring.datasource.url на новый файл
+# PostgreSQL: DROP DATABASE ispf; CREATE DATABASE ispf;
+# Затем обычный старт — Flyway применит схему без binding_expr
+```
+
+Существующая БД без пересоздания: Flyway `V41__drop_binding_expr.sql` снимает колонку; legacy-значения в `binding_expr` **не** переносятся — задайте правила через вкладку «Привязки» или API `/binding-rules`.
 
 ---
 

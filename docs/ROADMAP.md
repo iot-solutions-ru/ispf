@@ -174,6 +174,33 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 
 Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.md#8-приоритет-реализации-roadmap).
 
+## Phase 17 — Post-baseline hardening (v0.8.0+)
+
+Волна после закрытия REQ-PF/FW baseline (Phase 0–16): **doc sync, schema cleanup, MCP resources, demand-driven drivers**. См. [GAP_REGISTRY.md](GAP_REGISTRY.md) для sprint planning.
+
+| # | Тема | Статус |
+|---|------|--------|
+| 17.1 | Doc sync (APPLICATIONS, gap-registry, sprint planning cross-refs) | Done |
+| 17.2 | Flyway drop `binding_expr` column (V41; V1 без колонки; dev — пересоздание БД) | Done |
+| 17.3 | MCP ContextPack resources (`resources/list`, `resources/read`) | Done |
+| 17.4 | Stub driver promotion process documented (demand-driven) | Done |
+| 17.5 | ADR-0018 typed model catalogs + ADR-0019 visual groups acceptance | Done |
+
+## Phase 18 — Reference solutions & v0.8.0 rollout
+
+Волна после Phase 17: **эталон mini-TEC**, production rollout v0.8.0, frontend e2e, demand-driven drivers. Dogfooding gate — [ADR-0009](decisions/0009-dogfooding-gate.md).
+
+| # | Тема | Статус |
+|---|------|--------|
+| 18.1 | Mini-TEC reference walkthrough | Done (doc) |
+| 18.2 | `MiniTecPlatformApiTest` CI smoke | Planned |
+| 18.3 | Operator SLD widget + HMI acceptance (`mini-tec-sld`) | Planned |
+| 18.4 | v0.8.0 prod rollout (DB recreate, [DEPLOYMENT.md § v0.8.0](DEPLOYMENT.md#обновление-до-v080)) | Planned |
+| 18.5 | Playwright admin e2e smoke (Explorer, operator deep link) | Planned |
+| 18.6 | Driver stub promotion — первый кандидат по запросу app-команды | Planned |
+
+См. [REFERENCE_MINI_TEC_WALKTHROUGH.md](REFERENCE_MINI_TEC_WALKTHROUGH.md), [examples/mini-tec/](../examples/mini-tec/).
+
 ## Platform baseline
 
 | # | Тема | Статус |
@@ -185,6 +212,7 @@ Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.m
 ## Связанные документы
 
 - [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF + REQ-FW (§12)
+- [GAP_REGISTRY.md](GAP_REGISTRY.md) — sprint planning, живой срез пробелов
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [DEPLOYMENT.md](DEPLOYMENT.md) — prod topology
 - [SECURITY.md](SECURITY.md) — auth/RBAC

@@ -398,12 +398,13 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (�
 
 ## Следующие шаги (backlog)
 
-Phase 5 закрыт в v0.2.0. Текущая волна — [ROADMAP.md § Phase 6](ROADMAP.md#phase-6--post-v020-production-v030):
+Phase 17 закрыта. Текущая волна — **[ROADMAP.md § Phase 18](ROADMAP.md#phase-18--reference-solutions--v080-rollout)** (mini-TEC reference, v0.8.0 rollout):
 
-- **6.1** Doc sync + PF-03 deprecation (этот раздел)
-- **6.2** Driver maturity (CWMP, flexible, gps-tracker)
-- **6.3** PF-13 federation production (tenant scope, WS subscribe-by-path)
-- **6.4** PF-09 virtual profiles bundle + PF-11 function rollback UI
-- **6.5** Model diff UI, warehouse CI smoke, correlator polish
+- **18.1** Mini-TEC walkthrough — [REFERENCE_MINI_TEC_WALKTHROUGH.md](REFERENCE_MINI_TEC_WALKTHROUGH.md)
+- **18.2** `MiniTecPlatformApiTest` CI smoke
+- **18.3** Operator SLD widget acceptance
+- **18.4** v0.8.0 prod (DB recreate + deploy)
+- **18.5** Playwright admin e2e
+- **18.6** Driver stub promotion (demand-driven)
 
-Детали: [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md).
+Sprint planning: [GAP_REGISTRY.md](GAP_REGISTRY.md) + [PLATFORM_DEVELOPER_BACKLOG.md §3](PLATFORM_DEVELOPER_BACKLOG.md#3-сводная-матрица-req-pf).

@@ -3,6 +3,7 @@ package com.ispf.server.api.dto;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.federation.FederationProxyMetadata;
 import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.VisualGroupConstants;
 import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.plugin.model.dto.AppliedModelDto;
@@ -29,7 +30,10 @@ public record ObjectDto(
         boolean federated,
         String federationPeerId,
         String federationRemotePath,
-        List<AppliedModelDto> appliedModels
+        List<AppliedModelDto> appliedModels,
+        boolean groupRef,
+        String groupContextPath,
+        boolean groupMemberMissing
 ) {
     public static ObjectDto from(PlatformObject node) {
         return from(node, null, List.of());
@@ -70,6 +74,7 @@ public record ObjectDto(
                 lite ? List.of() : node.variables().keySet().stream()
                         .filter(name -> !ObjectUiIconService.UI_ICON_VARIABLE.equals(name))
                         .filter(name -> !BindingStateVariables.isReserved(name))
+                        .filter(name -> !VisualGroupConstants.isReservedVariable(name))
                         .filter(name -> !federated || !FederationProxyMetadata.isFederationVariable(name))
                         .sorted()
                         .toList(),
@@ -77,7 +82,68 @@ public record ObjectDto(
                 federated,
                 federated ? FederationProxyMetadata.peerId(node).map(UUID::toString).orElse(null) : null,
                 federated ? FederationProxyMetadata.remotePath(node).orElse(null) : null,
-                appliedModels != null ? appliedModels : List.of()
+                appliedModels != null ? appliedModels : List.of(),
+                false,
+                null,
+                false
+        );
+    }
+
+    public static ObjectDto asGroupMember(
+            PlatformObject member,
+            String groupContextPath,
+            int sortOrder,
+            String iconId,
+            boolean missing
+    ) {
+        return new ObjectDto(
+                member.id(),
+                member.path(),
+                member.type(),
+                missing ? "(отсутствует) " + member.path() : member.displayName(),
+                member.description(),
+                member.templateId().orElse(null),
+                iconId,
+                member.createdAt(),
+                sortOrder,
+                member.revision(),
+                member.lastChangedBy(),
+                member.lastChangedAt(),
+                List.of(),
+                List.of(),
+                false,
+                null,
+                null,
+                List.of(),
+                true,
+                groupContextPath,
+                missing
+        );
+    }
+
+    public static ObjectDto missingGroupMember(String memberPath, String groupContextPath, int sortOrder) {
+        return new ObjectDto(
+                memberPath,
+                memberPath,
+                ObjectType.CUSTOM,
+                "(отсутствует) " + memberPath,
+                "",
+                null,
+                null,
+                null,
+                sortOrder,
+                0L,
+                null,
+                null,
+                List.of(),
+                List.of(),
+                false,
+                null,
+                null,
+                List.of(),
+                true,
+                groupContextPath,
+                true
         );
     }
 }
