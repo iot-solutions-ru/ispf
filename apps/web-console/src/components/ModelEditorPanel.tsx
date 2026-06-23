@@ -20,7 +20,7 @@ import {
   BUILTIN_MODEL_NAMES,
   MODELS_ROOT,
   modelNameFromPath,
-  type ModelBindingDefinition,
+  type ModelBindingRule,
   type ModelDto,
   type ModelVariableDefinition,
 } from "../types/models";
@@ -180,14 +180,6 @@ function ModelDetail({
     );
   }
 
-  function patchVariableBinding(name: string, defaultBinding: string | null) {
-    setVariables((prev) =>
-      prev.map((v) =>
-        v.name === name ? { ...v, defaultBinding: defaultBinding?.trim() || null } : v
-      )
-    );
-  }
-
   function addVariable() {
     const baseName = `var${variables.length + 1}`;
     setVariables((prev) => [
@@ -199,7 +191,6 @@ function ModelDetail({
         schema: { name: baseName, fields: [{ name: "value", type: "STRING" }] },
         readable: true,
         writable: false,
-        defaultBinding: null,
         defaultValue: null,
         historyEnabled: false,
         historyRetentionDays: null,
@@ -212,7 +203,7 @@ function ModelDetail({
     setBindings((prev) => prev.filter((b) => b.targetVariable !== name));
   }
 
-  function patchBinding(index: number, patch: Partial<ModelBindingDefinition>) {
+  function patchBinding(index: number, patch: Partial<ModelBindingRule>) {
     setBindings((prev) =>
       prev.map((b, i) => (i === index ? { ...b, ...patch } : b))
     );
@@ -220,7 +211,19 @@ function ModelDetail({
 
   function addBinding() {
     const target = variables[0]?.name ?? "value";
-    setBindings((prev) => [...prev, { targetVariable: target, expression: "" }]);
+    const id = `rule-${target}`;
+    setBindings((prev) => [
+      ...prev,
+      {
+        id,
+        name: target,
+        enabled: true,
+        order: prev.length,
+        expression: "",
+        targetVariable: target,
+        targetField: "value",
+      },
+    ]);
   }
 
   function removeBinding(index: number) {
@@ -366,7 +369,6 @@ function ModelDetail({
                 <th>История</th>
                 <th>Хранение</th>
                 <th>По умолчанию</th>
-                <th>Binding</th>
                 {canManage && !isBuiltin && <th />}
               </tr>
             </thead>
@@ -440,18 +442,6 @@ function ModelDetail({
                   <td className="mono small">
                     {v.defaultValue ? recordDisplayValue(v.defaultValue) : "—"}
                   </td>
-                  <td className="mono small">
-                    {canManage && !isBuiltin ? (
-                      <input
-                        className="model-inline-input mono"
-                        value={v.defaultBinding ?? ""}
-                        placeholder="CEL / counterRate(...)"
-                        onChange={(e) => patchVariableBinding(v.name, e.target.value)}
-                      />
-                    ) : (
-                      v.defaultBinding ?? "—"
-                    )}
-                  </td>
                   {canManage && !isBuiltin && (
                     <td>
                       <button
@@ -484,7 +474,7 @@ function ModelDetail({
 
       <section className="model-section">
         <div className="model-section-header">
-          <h4>Bindings ({bindings.length})</h4>
+          <h4>Правила привязки ({bindings.length})</h4>
           {canManage && !isBuiltin && (
             <button type="button" className="btn small" onClick={addBinding}>
               + Binding
@@ -497,14 +487,26 @@ function ModelDetail({
           <table className="data-table">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Переменная</th>
-                <th>CEL-выражение</th>
+                <th>Выражение</th>
                 {canManage && !isBuiltin && <th />}
               </tr>
             </thead>
             <tbody>
               {bindings.map((b, index) => (
-                <tr key={`${b.targetVariable}-${index}`}>
+                <tr key={`${b.id}-${index}`}>
+                  <td>
+                    {canManage && !isBuiltin ? (
+                      <input
+                        className="model-inline-input mono"
+                        value={b.id}
+                        onChange={(e) => patchBinding(index, { id: e.target.value })}
+                      />
+                    ) : (
+                      <code>{b.id}</code>
+                    )}
+                  </td>
                   <td>
                     {canManage && !isBuiltin ? (
                       <input

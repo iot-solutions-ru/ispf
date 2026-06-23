@@ -33,7 +33,7 @@ Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `s
 | Модуль | Примеры |
 |--------|---------|
 | ispf-core | `ObjectTreeTest`, `DataRecordTest` |
-| ispf-expression | `BindingEvaluatorTest`, `ExpressionEngineTest` |
+| ispf-expression | `BindingEvaluatorTest` (expression eval), `ExpressionEngineTest` |
 | ispf-plugin-model | `ModelEngineTest` |
 | ispf-plugin-workflow | `BpmnParserTest`, `WorkflowEngineV2/V3Test` |
 | ispf-driver-modbus | `ModbusPointTest` |

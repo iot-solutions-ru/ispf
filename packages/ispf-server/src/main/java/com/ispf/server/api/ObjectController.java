@@ -437,14 +437,12 @@ public class ObjectController {
         beginWrite(path, authentication, headers);
         try {
             assertNotFederationBound(path);
-            BindingExpressionValidator.validateOrThrow(request.bindingExpression());
             Variable variable = objectManager.createVariable(
                     path,
                     request.name(),
                     request.schema(),
                     request.readable(),
                     request.writable(),
-                    request.bindingExpression(),
                     request.initialValue(),
                     request.historyEnabled(),
                     request.historyRetentionDays()
@@ -467,13 +465,9 @@ public class ObjectController {
     ) {
         beginWrite(path, authentication, headers);
         try {
-            if (request.bindingExpression() != null) {
-                BindingExpressionValidator.validateOrThrow(request.bindingExpression());
-            }
             Variable variable = objectManager.updateVariableDefinition(
                     path,
                     name,
-                    request.bindingExpression(),
                     request.readable(),
                     request.writable()
             );
@@ -574,7 +568,6 @@ public class ObjectController {
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String bindingExpression,
             DataRecord initialValue,
             boolean historyEnabled,
             Integer historyRetentionDays
@@ -589,7 +582,6 @@ public class ObjectController {
     }
 
     public record UpdateVariableDefinitionRequest(
-            String bindingExpression,
             Boolean readable,
             Boolean writable
     ) {

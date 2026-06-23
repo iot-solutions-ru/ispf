@@ -92,10 +92,37 @@ export interface VariableDto {
   value: DataRecord | null;
   readable: boolean;
   writable: boolean;
-  bindingExpression: string | null;
   updatedAt: string | null;
   historyEnabled: boolean;
   historyRetentionDays: number | null;
+}
+
+export interface BindingVariableRef {
+  objectPath: string;
+  variableName: string;
+}
+
+export interface BindingActivators {
+  onStartup: boolean;
+  onVariableChange: BindingVariableRef[];
+  onEvent: string | null;
+  periodicMs: number;
+}
+
+export interface BindingTarget {
+  variableName: string;
+  field?: string | null;
+}
+
+export interface BindingRule {
+  id: string;
+  name?: string | null;
+  enabled: boolean;
+  order: number;
+  activators: BindingActivators;
+  condition: string;
+  expression: string;
+  target: BindingTarget;
 }
 
 export interface FunctionDescriptor {

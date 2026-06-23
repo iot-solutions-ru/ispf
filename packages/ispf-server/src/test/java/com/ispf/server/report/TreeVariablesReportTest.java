@@ -63,9 +63,7 @@ class TreeVariablesReportTest {
                 "table",
                 TABLE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(TABLE_SCHEMA, Map.of("rows", tableRows)),
+                true, DataRecord.single(TABLE_SCHEMA, Map.of("rows", tableRows)),
                 false,
                 0
         ));

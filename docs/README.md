@@ -68,7 +68,7 @@
 ```
 packages/
   ispf-core/              # Домен: ObjectTree, DataRecord, PlatformObject
-  ispf-expression/        # Google CEL, BindingEvaluator
+  ispf-expression/        # Google CEL, BindingExpressionEvaluator
   ispf-driver-api/        # SPI DeviceDriver
   ispf-ai-api/            # SPI LlmProvider (FW-40)
   ispf-ai-openai-compatible/  # OpenAI-compatible adapter

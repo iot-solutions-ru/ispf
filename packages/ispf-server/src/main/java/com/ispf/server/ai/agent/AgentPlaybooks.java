@@ -212,7 +212,7 @@ public final class AgentPlaybooks {
         return """
                 ## Virtual cluster — полный проект (3 устройства, hub, alert, dashboards, operator UI)
                 
-                Цель: lab-style кластер виртуальных устройств lab-профиля, ERROR когда все 3 sine > 0,
+                Цель: кластер виртуальных устройств lab-профиля, ERROR когда все 3 sine > 0,
                 overview + drill-down detail с графиками, авто-открытие в Operator UI.
                 НЕ откладывай на «настройку в UI» — все шаги через инструменты.
                 
@@ -247,22 +247,40 @@ public final class AgentPlaybooks {
                  name=hub type=CUSTOM displayName=Cluster hub
                 4. create_variable path="""
                 + VIRT_CLUSTER_HUB
-                + " name=member1Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + " name=member1Sine valueType=DOUBLE writable=false\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=member2Sine valueType=DOUBLE writable=false\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=member3Sine valueType=DOUBLE writable=false\n"
+                + "   create_variable path="
+                + VIRT_CLUSTER_HUB
+                + " name=clusterError valueType=BOOLEAN writable=false\n"
+                + "   create_binding_rule path="
+                + VIRT_CLUSTER_HUB
+                + " id=member1-sine targetVariable=member1Sine remoteObjectPath="
+                + VIRT_CLUSTER_DEV_01
+                + " remoteVariableName=sineWave expression=refAt(\""
                 + VIRT_CLUSTER_DEV_01
                 + "\", sineWave)\n"
-                + "   create_variable path="
+                + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
-                + " name=member2Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + " id=member2-sine targetVariable=member2Sine remoteObjectPath="
+                + VIRT_CLUSTER_DEV_02
+                + " remoteVariableName=sineWave expression=refAt(\""
                 + VIRT_CLUSTER_DEV_02
                 + "\", sineWave)\n"
-                + "   create_variable path="
+                + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
-                + " name=member3Sine valueType=DOUBLE bindingExpression=refAt(\""
+                + " id=member3-sine targetVariable=member3Sine remoteObjectPath="
+                + VIRT_CLUSTER_DEV_03
+                + " remoteVariableName=sineWave expression=refAt(\""
                 + VIRT_CLUSTER_DEV_03
                 + "\", sineWave)\n"
-                + "   create_variable path="
+                + "   create_binding_rule path="
                 + VIRT_CLUSTER_HUB
-                + " name=clusterError valueType=BOOLEAN bindingExpression="
+                + " id=cluster-error targetVariable=clusterError expression="
                 + "self.member1Sine[\"value\"] > 0 && self.member2Sine[\"value\"] > 0 && self.member3Sine[\"value\"] > 0\n"
                 + """
                 
@@ -310,11 +328,11 @@ public final class AgentPlaybooks {
                 - DASHBOARD: title, layout (JSON widgets[]), refreshIntervalMs — НЕ переменная widgets
                 - ALERT: parent root.platform.alert-rules — targetObjectPath, watchVariable, conditionExpr (CEL), eventName
                 - CORRELATOR: parent root.platform.correlators — patternType COUNT|SEQUENCE|EVENT_CHAIN
-                - CUSTOM: логика через create_variable + refAt(...) или CEL bindings
+                - CUSTOM: логика через create_variable + create_binding_rule (refAt, CEL)
                 - Operator UI: configure_operator_ui — defaultDashboard + dashboards[]
                 
                 Инструменты: get_automation_schema, configure_alert, configure_correlator, create_variable,
-                configure_variable_history, configure_operator_ui, get_dashboard_layout template=..., set_dashboard_layout template=...
+                create_binding_rule, configure_variable_history, configure_operator_ui,
                 
                 Завершай проект полностью инструментами; не пиши «настройте вручную в UI», если есть tool.
                 """;

@@ -6,14 +6,13 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
-import com.ispf.expression.BindingEvaluator;
+import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.expression.ExpressionEngine;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -27,30 +26,26 @@ public class ModelEngine {
     private final ModelRegistry registry;
     private final ObjectTree objectTree;
     private final ExpressionEngine expressionEngine;
-    private final BindingEvaluator bindingEvaluator;
     private final List<ModelAttachment> attachments = new CopyOnWriteArrayList<>();
     private final String modelsRoot;
 
     public ModelEngine(
             ModelRegistry registry,
             ObjectTree objectTree,
-            ExpressionEngine expressionEngine,
-            BindingEvaluator bindingEvaluator
+            ExpressionEngine expressionEngine
     ) {
-        this(registry, objectTree, expressionEngine, bindingEvaluator, DEFAULT_MODELS_ROOT);
+        this(registry, objectTree, expressionEngine, DEFAULT_MODELS_ROOT);
     }
 
     public ModelEngine(
             ModelRegistry registry,
             ObjectTree objectTree,
             ExpressionEngine expressionEngine,
-            BindingEvaluator bindingEvaluator,
             String modelsRoot
     ) {
         this.registry = registry;
         this.objectTree = objectTree;
         this.expressionEngine = expressionEngine;
-        this.bindingEvaluator = bindingEvaluator;
         this.modelsRoot = modelsRoot;
     }
 
@@ -76,14 +71,14 @@ public class ModelEngine {
     }
 
     /**
-     * Merges model variables, events, functions and bindings into an existing object (RELATIVE / manual apply).
+     * Merges model variables, events, functions into an existing object (RELATIVE / manual apply).
+     * Binding rules are merged separately via {@code ModelBindingRulesMerger} in ispf-server.
      */
     public ModelAttachment applyModel(String modelId, String targetPath) {
         ModelDefinition model = registry.requireById(modelId);
         PlatformObject target = objectTree.require(targetPath);
         assertSuitable(model, target);
         mergeModelChain(model, target, model.parameters());
-        bindingEvaluator.evaluateBindings(target);
         ModelAttachment attachment = new ModelAttachment(
                 UUID.randomUUID().toString(),
                 model.id(),
@@ -129,7 +124,6 @@ public class ModelEngine {
         );
         objectTree.register(instance);
         mergeModelChain(model, instance, parameters);
-        bindingEvaluator.evaluateBindings(instance);
 
         attachments.add(new ModelAttachment(
                 UUID.randomUUID().toString(),
@@ -143,7 +137,7 @@ public class ModelEngine {
     }
 
     /**
-     * Creates a model definition by snapshotting an existing object.
+     * Creates a model definition by snapshotting an existing object (variables/events/functions only).
      */
     public ModelDefinition createFromObject(
             String sourcePath,
@@ -153,6 +147,7 @@ public class ModelEngine {
     ) {
         PlatformObject source = objectTree.require(sourcePath);
         List<ModelVariableDefinition> variables = source.variables().values().stream()
+                .filter(v -> !BindingRulesConstants.isReservedVariable(v.name()))
                 .map(v -> ModelVariableDefinition.of(
                         v.name(),
                         "",
@@ -160,16 +155,10 @@ public class ModelEngine {
                         v.schema(),
                         v.readable(),
                         v.writable(),
-                        v.bindingExpression().orElse(null),
                         v.value().orElse(null),
                         v.historyEnabled(),
                         v.historyRetentionDays().orElse(null)
                 ))
-                .toList();
-
-        List<ModelBindingDefinition> bindings = source.variables().values().stream()
-                .filter(v -> v.bindingExpression().isPresent())
-                .map(v -> new ModelBindingDefinition(v.name(), v.bindingExpression().get()))
                 .toList();
 
         ModelDefinition model = new ModelDefinition(
@@ -182,7 +171,7 @@ public class ModelEngine {
                 variables,
                 new ArrayList<>(source.events().values()),
                 new ArrayList<>(source.functions().values()),
-                bindings,
+                List.of(),
                 Map.of(),
                 Instant.now(),
                 Instant.now()
@@ -261,7 +250,6 @@ public class ModelEngine {
                 com.ispf.core.model.DataSchema.builder("modelType").field("value", com.ispf.core.model.FieldType.STRING).build(),
                 true,
                 false,
-                null,
                 com.ispf.core.model.DataRecord.single(
                         com.ispf.core.model.DataSchema.builder("modelType").field("value", com.ispf.core.model.FieldType.STRING).build(),
                         Map.of("value", model.type().name())
@@ -272,7 +260,6 @@ public class ModelEngine {
                 com.ispf.core.model.DataSchema.builder("expr").field("value", com.ispf.core.model.FieldType.STRING).build(),
                 true,
                 true,
-                null,
                 com.ispf.core.model.DataRecord.single(
                         com.ispf.core.model.DataSchema.builder("expr").field("value", com.ispf.core.model.FieldType.STRING).build(),
                         Map.of("value", model.suitabilityExpression())
@@ -291,19 +278,13 @@ public class ModelEngine {
         mergeModelIntoObject(model, target, parameters);
     }
 
-    private void mergeModelIntoObject(ModelDefinition model, PlatformObject target) {
-        mergeModelIntoObject(model, target, model.parameters());
-    }
-
     private void mergeModelIntoObject(ModelDefinition model, PlatformObject target, Map<String, String> parameters) {
         for (ModelVariableDefinition varDef : model.variables()) {
-            String binding = resolveParameters(varDef.defaultBinding(), parameters);
             Variable variable = new Variable(
                     varDef.name(),
                     varDef.schema(),
                     varDef.readable(),
                     varDef.writable(),
-                    binding,
                     varDef.defaultValue(),
                     varDef.historyEnabled(),
                     varDef.historyRetentionDays()
@@ -315,24 +296,6 @@ public class ModelEngine {
         }
         for (FunctionDescriptor function : model.functions()) {
             target.addFunction(function);
-        }
-        for (ModelBindingDefinition binding : model.bindings()) {
-            target.getVariable(binding.targetVariable()).ifPresentOrElse(variable -> {
-                // Re-create variable with binding expression from model bindings table
-                Variable updated = new Variable(
-                        variable.name(),
-                        variable.schema(),
-                        variable.readable(),
-                        variable.writable(),
-                        resolveParameters(binding.expression(), parameters),
-                        variable.value().orElse(null),
-                        variable.historyEnabled(),
-                        variable.historyRetentionDays().orElse(null)
-                );
-                target.addVariable(updated);
-            }, () -> {
-                throw new ModelException("Binding target not found: " + binding.targetVariable());
-            });
         }
     }
 
@@ -358,16 +321,5 @@ public class ModelEngine {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    private static String resolveParameters(String expression, Map<String, String> parameters) {
-        if (expression == null || parameters == null || parameters.isEmpty()) {
-            return expression;
-        }
-        String resolved = expression;
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            resolved = resolved.replace("${" + entry.getKey() + "}", entry.getValue());
-        }
-        return resolved;
     }
 }

@@ -99,7 +99,6 @@ public final class FederationBindSnapshot {
                         STRING_VALUE,
                         false,
                         false,
-                        null,
                         value,
                         false,
                         null

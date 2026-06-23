@@ -10,7 +10,6 @@ public record VariableDto(
         DataRecord value,
         boolean readable,
         boolean writable,
-        String bindingExpression,
         Instant updatedAt,
         boolean historyEnabled,
         Integer historyRetentionDays
@@ -21,7 +20,6 @@ public record VariableDto(
                 variable.value().orElse(null),
                 variable.readable(),
                 variable.writable(),
-                variable.bindingExpression().orElse(null),
                 variable.updatedAt().orElse(null),
                 variable.historyEnabled(),
                 variable.historyRetentionDays().orElse(null)

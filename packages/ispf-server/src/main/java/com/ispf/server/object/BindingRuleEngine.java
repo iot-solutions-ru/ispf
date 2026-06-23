@@ -1,0 +1,187 @@
+package com.ispf.server.object;
+
+import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingRulesConstants;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.core.object.Variable;
+import com.ispf.expression.BindingEvaluationContext;
+import com.ispf.expression.BindingExpressionEvaluator;
+import com.ispf.expression.ExpressionEngine;
+import com.ispf.expression.ExpressionException;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+@Service
+public class BindingRuleEngine {
+
+    private static final int MAX_PASSES = 8;
+    private static final int MAX_DEPTH = 16;
+    private static final ThreadLocal<Integer> ACTIVATION_DEPTH = ThreadLocal.withInitial(() -> 0);
+
+    private final ObjectManager objectManager;
+    private final BindingRulesService bindingRulesService;
+    private final BindingExpressionEvaluator expressionEvaluator;
+    private final ExpressionEngine expressionEngine;
+    private final BindingEvaluationContext evaluationContext;
+    private final ApplicationEventPublisher eventPublisher;
+
+    public BindingRuleEngine(
+            ObjectManager objectManager,
+            BindingRulesService bindingRulesService,
+            BindingExpressionEvaluator expressionEvaluator,
+            ExpressionEngine expressionEngine,
+            BindingEvaluationContext evaluationContext,
+            ApplicationEventPublisher eventPublisher
+    ) {
+        this.objectManager = objectManager;
+        this.bindingRulesService = bindingRulesService;
+        this.expressionEvaluator = expressionEvaluator;
+        this.expressionEngine = expressionEngine;
+        this.evaluationContext = evaluationContext;
+        this.eventPublisher = eventPublisher;
+    }
+
+    public void onStartup(String objectPath) {
+        runRules(objectPath, Trigger.startup(), false);
+    }
+
+    public void onVariableChanged(String ruleObjectPath, String changedObjectPath, String changedVariable) {
+        if (BindingRulesConstants.isReservedVariable(changedVariable)
+                || BindingStateVariables.BINDING_STATE.equals(changedVariable)) {
+            return;
+        }
+        runRules(ruleObjectPath, Trigger.variableChange(changedObjectPath, changedVariable), true);
+    }
+
+    public void runRulesForObject(String objectPath) {
+        runRules(objectPath, Trigger.manual(), false);
+    }
+
+    private void runRules(String objectPath, Trigger trigger, boolean guardDepth) {
+        if (guardDepth) {
+            int depth = ACTIVATION_DEPTH.get();
+            if (depth >= MAX_DEPTH) {
+                return;
+            }
+            ACTIVATION_DEPTH.set(depth + 1);
+        }
+        try {
+            Set<String> changedVariables = new LinkedHashSet<>();
+            for (int pass = 0; pass < MAX_PASSES; pass++) {
+                boolean changedInPass = evaluatePass(objectPath, trigger, changedVariables);
+                if (!changedInPass) {
+                    break;
+                }
+                trigger = Trigger.manual();
+            }
+            for (String variableName : changedVariables) {
+                if (!BindingRulesConstants.isReservedVariable(variableName)) {
+                    eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(objectPath, variableName));
+                }
+            }
+        } finally {
+            if (guardDepth) {
+                ACTIVATION_DEPTH.set(Math.max(0, ACTIVATION_DEPTH.get() - 1));
+            }
+        }
+    }
+
+    private boolean evaluatePass(String objectPath, Trigger trigger, Set<String> changedVariables) {
+        PlatformObject object = objectManager.require(objectPath);
+        List<BindingRule> rules = bindingRulesService.listRules(objectPath).stream()
+                .filter(BindingRule::enabled)
+                .sorted(Comparator.comparingInt(BindingRule::order))
+                .toList();
+        boolean changed = false;
+        for (BindingRule rule : rules) {
+            if (!matchesTrigger(objectPath, rule, trigger)) {
+                continue;
+            }
+            if (evaluateRule(object, rule, changedVariables)) {
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private boolean matchesTrigger(String objectPath, BindingRule rule, Trigger trigger) {
+        return switch (trigger.kind()) {
+            case STARTUP -> rule.activators().onStartup();
+            case MANUAL -> true;
+            case VARIABLE_CHANGE -> rule.activators().matchesVariableChange(
+                    objectPath,
+                    trigger.changedObjectPath(),
+                    trigger.changedVariable()
+            );
+        };
+    }
+
+    private boolean evaluateRule(PlatformObject object, BindingRule rule, Set<String> changedVariables) {
+        if (!conditionPasses(object, rule.condition())) {
+            return false;
+        }
+        Variable target = object.getVariable(rule.target().variableName()).orElse(null);
+        if (target == null) {
+            return false;
+        }
+        Optional<DataRecord> computed = expressionEvaluator.evaluate(
+                object,
+                rule.target().variableName(),
+                rule.expression(),
+                target.schema(),
+                evaluationContext
+        );
+        if (computed.isEmpty()) {
+            return false;
+        }
+        DataRecord next = computed.get();
+        DataRecord previous = target.value().orElse(null);
+        if (!BindingExpressionEvaluator.recordsEqual(previous, next)) {
+            target.setComputedValue(next);
+            objectManager.persistBindingRuleTarget(object.path(), target);
+            changedVariables.add(rule.target().variableName());
+            return true;
+        }
+        return false;
+    }
+
+    private boolean conditionPasses(PlatformObject object, String condition) {
+        if (condition == null || condition.isBlank()) {
+            return true;
+        }
+        try {
+            Object result = expressionEngine.evaluate(condition, object);
+            if (result instanceof Boolean bool) {
+                return bool;
+            }
+            return Boolean.parseBoolean(String.valueOf(result));
+        } catch (ExpressionException ignored) {
+            return false;
+        }
+    }
+
+    private record Trigger(Kind kind, String changedObjectPath, String changedVariable) {
+        enum Kind { STARTUP, VARIABLE_CHANGE, MANUAL }
+
+        static Trigger startup() {
+            return new Trigger(Kind.STARTUP, null, null);
+        }
+
+        static Trigger manual() {
+            return new Trigger(Kind.MANUAL, null, null);
+        }
+
+        static Trigger variableChange(String changedObjectPath, String changedVariable) {
+            return new Trigger(Kind.VARIABLE_CHANGE, changedObjectPath, changedVariable);
+        }
+    }
+}

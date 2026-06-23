@@ -8,7 +8,7 @@ import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelBindingDefinition;
+import com.ispf.plugin.model.ModelBindingRule;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
@@ -238,14 +238,8 @@ public class LabModelBootstrap {
                         )
                 ),
                 List.of(
-                        new ModelBindingDefinition(
-                                "sumIntFloat",
-                                "self.intValue.value + self.floatValue.value"
-                        ),
-                        new ModelBindingDefinition(
-                                "tableIntSum",
-                                "sumRecordField(table, int)"
-                        )
+                        ModelBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
+                        ModelBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(table, int)")
                 ),
                 Map.of(),
                 Instant.now(),
@@ -340,14 +334,8 @@ public class LabModelBootstrap {
                         )
                 ),
                 List.of(
-                        new ModelBindingDefinition(
-                                "sumIntFloat",
-                                "self.intValue.value + self.floatValue.value"
-                        ),
-                        new ModelBindingDefinition(
-                                "tableIntSum",
-                                "sumRecordField(eventLog, int)"
-                        )
+                        ModelBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
+                        ModelBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(eventLog, int)")
                 ),
                 Map.of(),
                 Instant.now(),
@@ -367,9 +355,7 @@ public class LabModelBootstrap {
                 group,
                 STRING_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -415,10 +401,7 @@ public class LabModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                List.of(new ModelBindingDefinition(
-                        "sumWaves",
-                        "self.sineWave.value + self.sawtoothWave.value"
-                )),
+                List.of(ModelBindingRule.of("sum-waves", "sumWaves", "self.sineWave.value + self.sawtoothWave.value")),
                 Map.of(),
                 Instant.now(),
                 Instant.now()
@@ -432,7 +415,7 @@ public class LabModelBootstrap {
             DataSchema schema,
             DataRecord defaultValue
     ) {
-        return ModelVariableDefinition.of(name, description, group, schema, true, false, null, defaultValue);
+        return ModelVariableDefinition.of(name, description, group, schema, true, false, defaultValue);
     }
 
     private static ModelVariableDefinition doubleDef(String name, String description, String group, double defaultValue) {
@@ -442,9 +425,7 @@ public class LabModelBootstrap {
                 group,
                 DOUBLE_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -455,9 +436,7 @@ public class LabModelBootstrap {
                 "telemetry",
                 DOUBLE_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(DOUBLE_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -468,9 +447,7 @@ public class LabModelBootstrap {
                 "config",
                 INTEGER_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -481,9 +458,7 @@ public class LabModelBootstrap {
                 group,
                 INTEGER_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -494,9 +469,7 @@ public class LabModelBootstrap {
                 "status",
                 BOOLEAN_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -507,9 +480,7 @@ public class LabModelBootstrap {
                 group,
                 BOOLEAN_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -520,9 +491,7 @@ public class LabModelBootstrap {
                 group,
                 STRING_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -533,9 +502,7 @@ public class LabModelBootstrap {
                 group,
                 LONG_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(LONG_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(LONG_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -552,9 +519,7 @@ public class LabModelBootstrap {
                 group,
                 MEASUREMENT_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(MEASUREMENT_SCHEMA, Map.of("value", defaultValue, "unit", unit))
+                true, DataRecord.single(MEASUREMENT_SCHEMA, Map.of("value", defaultValue, "unit", unit))
         );
     }
 
@@ -565,9 +530,7 @@ public class LabModelBootstrap {
                 "telemetry",
                 schema,
                 true,
-                true,
-                null,
-                DataRecord.single(schema, Map.of("rows", List.of()))
+                true, DataRecord.single(schema, Map.of("rows", List.of()))
         );
     }
 

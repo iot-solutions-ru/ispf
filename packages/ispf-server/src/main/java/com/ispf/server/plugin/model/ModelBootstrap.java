@@ -7,7 +7,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelBindingDefinition;
+import com.ispf.plugin.model.ModelBindingRule;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
@@ -147,9 +147,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 TEMPERATURE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 20.0, "unit", "C"))
+                                true, DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 20.0, "unit", "C"))
                         ),
                         ModelVariableDefinition.of(
                                 "threshold",
@@ -157,9 +155,7 @@ public class ModelBootstrap {
                                 "config",
                                 THRESHOLD_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
+                                true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
                         )
                 ),
                 List.of(),
@@ -186,9 +182,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 THRESHOLD_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 45.0))
+                                true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 45.0))
                         ),
                         ModelVariableDefinition.of(
                                 "threshold",
@@ -196,9 +190,7 @@ public class ModelBootstrap {
                                 "config",
                                 THRESHOLD_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 40.0))
+                                true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 40.0))
                         )
                 ),
                 List.of(),
@@ -234,9 +226,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "watchVariable",
@@ -244,9 +234,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "conditionExpr",
@@ -254,9 +242,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "eventName",
@@ -264,9 +250,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "payloadVariable",
@@ -274,9 +258,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "enabled",
@@ -284,9 +266,7 @@ public class ModelBootstrap {
                                 "config",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
                         ModelVariableDefinition.of(
                                 "edgeTrigger",
@@ -294,9 +274,7 @@ public class ModelBootstrap {
                                 "config",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
                         ModelVariableDefinition.of(
                                 "delaySeconds",
@@ -304,9 +282,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
                         ModelVariableDefinition.of(
                                 "sustainWhileTrue",
@@ -314,9 +290,7 @@ public class ModelBootstrap {
                                 "config",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
                         ModelVariableDefinition.of(
                                 "rateLimitSeconds",
@@ -326,9 +300,7 @@ public class ModelBootstrap {
                                         .field("value", com.ispf.core.model.FieldType.INTEGER)
                                         .build(),
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(
+                                true, DataRecord.single(
                                         com.ispf.core.model.DataSchema.builder("rateLimitSeconds")
                                                 .field("value", com.ispf.core.model.FieldType.INTEGER)
                                                 .build(),
@@ -341,9 +313,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                                false, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
                         ModelVariableDefinition.of(
                                 "lastFiredAt",
@@ -351,9 +321,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "conditionTrueSince",
@@ -361,9 +329,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),
@@ -390,9 +356,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "patternType",
@@ -400,9 +364,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "COUNT"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "COUNT"))
                         ),
                         ModelVariableDefinition.of(
                                 "eventName",
@@ -410,9 +372,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "secondEventName",
@@ -420,9 +380,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "windowSeconds",
@@ -430,9 +388,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
                         ModelVariableDefinition.of(
                                 "minOccurrences",
@@ -440,9 +396,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1))
                         ),
                         ModelVariableDefinition.of(
                                 "cooldownSeconds",
@@ -450,9 +404,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 120))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 120))
                         ),
                         ModelVariableDefinition.of(
                                 "sequenceGapSeconds",
@@ -460,9 +412,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
                         ModelVariableDefinition.of(
                                 "actionType",
@@ -470,9 +420,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "RUN_WORKFLOW"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "RUN_WORKFLOW"))
                         ),
                         ModelVariableDefinition.of(
                                 "actionTarget",
@@ -480,9 +428,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "payloadFilterExpr",
@@ -490,9 +436,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "enabled",
@@ -500,9 +444,7 @@ public class ModelBootstrap {
                                 "config",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
                         ModelVariableDefinition.of(
                                 "lastTriggeredAt",
@@ -510,9 +452,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),
@@ -551,9 +491,7 @@ public class ModelBootstrap {
                                 "status",
                                 STATUS_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STATUS_SCHEMA, Map.of("online", true, "lastSeen", "init"))
+                                false, DataRecord.single(STATUS_SCHEMA, Map.of("online", true, "lastSeen", "init"))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "temperature",
@@ -561,9 +499,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 TEMPERATURE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 22.5, "unit", "C"))
+                                true, DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 22.5, "unit", "C"))
                         ),
                         ModelVariableDefinition.of(
                                 "threshold",
@@ -571,9 +507,7 @@ public class ModelBootstrap {
                                 "config",
                                 THRESHOLD_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
+                                true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
                         ),
                         ModelVariableDefinition.of(
                                 "temperaturePercent",
@@ -582,8 +516,7 @@ public class ModelBootstrap {
                                 THRESHOLD_SCHEMA,
                                 true,
                                 false,
-                                "scale(temperature, -20, 50, 0, 100)",
-                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 0.0))
+                                                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 0.0))
                         ),
                         ModelVariableDefinition.of(
                                 "alarmActive",
@@ -591,9 +524,7 @@ public class ModelBootstrap {
                                 "status",
                                 DataSchema.builder("alarmActive").field("value", FieldType.BOOLEAN).build(),
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(
+                                false, DataRecord.single(
                                         DataSchema.builder("alarmActive").field("value", FieldType.BOOLEAN).build(),
                                         Map.of("value", false)
                                 )
@@ -604,9 +535,7 @@ public class ModelBootstrap {
                                 "status",
                                 BOOLEAN_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
                         ModelVariableDefinition.of(
                                 "driverId",
@@ -614,9 +543,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverStatus",
@@ -624,9 +551,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
@@ -634,9 +559,7 @@ public class ModelBootstrap {
                                 "driver",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 2000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 2000))
                         ),
                         ModelVariableDefinition.of(
                                 "driverConfigJson",
@@ -644,9 +567,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", VIRTUAL_DRIVER_CONFIG))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", VIRTUAL_DRIVER_CONFIG))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
@@ -654,9 +575,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{\"temperature\":\"sim\"}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{\"temperature\":\"sim\"}"))
                         )
                 ),
                 List.of(new EventDescriptor(
@@ -671,10 +590,7 @@ public class ModelBootstrap {
                         VOID_INPUT_SCHEMA,
                         FUNCTION_RESULT_SCHEMA
                 )),
-                List.of(new ModelBindingDefinition(
-                        "alarmActive",
-                        "hysteresis(temperature, 35, 33)"
-                )),
+                List.of(ModelBindingRule.of("alarm-active", "alarmActive", "hysteresis(temperature, 35, 33)")),
                 Map.of("unit", "C"),
                 Instant.now(),
                 Instant.now()
@@ -700,9 +616,7 @@ public class ModelBootstrap {
                                 "info",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Dashboard"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Dashboard"))
                         ),
                         ModelVariableDefinition.of(
                                 "refreshIntervalMs",
@@ -710,9 +624,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
                         ModelVariableDefinition.of(
                                 "layout",
@@ -720,9 +632,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DashboardLayouts.EMPTY_DASHBOARD))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DashboardLayouts.EMPTY_DASHBOARD))
                         )
                 ),
                 List.of(),
@@ -749,9 +659,7 @@ public class ModelBootstrap {
                                 "info",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Report"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Report"))
                         ),
                         ModelVariableDefinition.of(
                                 "dataSourcePath",
@@ -759,9 +667,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "query",
@@ -769,9 +675,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "parameters",
@@ -779,9 +683,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
                         ),
                         ModelVariableDefinition.of(
                                 "columns",
@@ -789,9 +691,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
                         ),
                         ModelVariableDefinition.of(
                                 "defaultParameters",
@@ -799,9 +699,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
                         ModelVariableDefinition.of(
                                 "maxRows",
@@ -809,9 +707,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1000))
                         ),
                         ModelVariableDefinition.of(
                                 "refreshIntervalMs",
@@ -819,9 +715,7 @@ public class ModelBootstrap {
                                 "config",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 30000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 30000))
                         ),
                         ModelVariableDefinition.of(
                                 "templateFormat",
@@ -829,9 +723,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "layout",
@@ -839,9 +731,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),
@@ -868,9 +758,7 @@ public class ModelBootstrap {
                                 "info",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Workflow"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Workflow"))
                         ),
                         ModelVariableDefinition.of(
                                 "status",
@@ -878,9 +766,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "DRAFT"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "DRAFT"))
                         ),
                         ModelVariableDefinition.of(
                                 "bpmnXml",
@@ -888,9 +774,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "triggerJson",
@@ -898,9 +782,7 @@ public class ModelBootstrap {
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
                         ModelVariableDefinition.of(
                                 "instanceState",
@@ -908,9 +790,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
                         ModelVariableDefinition.of(
                                 "lastRunAt",
@@ -918,9 +798,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "lastAction",
@@ -928,9 +806,7 @@ public class ModelBootstrap {
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),
@@ -959,9 +835,7 @@ public class ModelBootstrap {
                                 "status",
                                 STATUS_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
+                                false, DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "driverId",
@@ -969,9 +843,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "virtual"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverStatus",
@@ -979,9 +851,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
@@ -989,9 +859,7 @@ public class ModelBootstrap {
                                 "driver",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
                         ModelVariableDefinition.of(
                                 "driverConfigJson",
@@ -999,9 +867,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
@@ -1009,9 +875,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         )
                 ),
                 List.of(),
@@ -1038,9 +902,7 @@ public class ModelBootstrap {
                                 "status",
                                 STATUS_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
+                                false, DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "sysName",
@@ -1048,9 +910,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_STRING_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "sysDescr",
@@ -1058,9 +918,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_STRING_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "sysUpTime",
@@ -1068,9 +926,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "sysLocation",
@@ -1078,9 +934,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_STRING_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "sysContact",
@@ -1088,9 +942,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_STRING_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "hrMemorySize",
@@ -1098,9 +950,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "hrSystemProcesses",
@@ -1108,9 +958,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "hrSystemNumUsers",
@@ -1118,9 +966,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifNumber",
@@ -1128,9 +974,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifInOctets",
@@ -1138,9 +982,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifOutOctets",
@@ -1148,9 +990,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
                                 "ifInOctetsRate",
@@ -1159,7 +999,6 @@ public class ModelBootstrap {
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
                                 false,
-                                "counterRate(ifInOctets)",
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
@@ -1169,7 +1008,6 @@ public class ModelBootstrap {
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
                                 false,
-                                "counterRate(ifOutOctets)",
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.withHistory(
@@ -1178,9 +1016,7 @@ public class ModelBootstrap {
                                 "telemetry",
                                 SNMP_NUMERIC_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
+                                true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
                         ModelVariableDefinition.of(
                                 "driverId",
@@ -1188,9 +1024,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "snmp"))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "snmp"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverStatus",
@@ -1198,9 +1032,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                false,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPollIntervalMs",
@@ -1208,9 +1040,7 @@ public class ModelBootstrap {
                                 "driver",
                                 INTEGER_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
                         ModelVariableDefinition.of(
                                 "driverConfigJson",
@@ -1218,9 +1048,7 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", SNMP_DRIVER_CONFIG))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", SNMP_DRIVER_CONFIG))
                         ),
                         ModelVariableDefinition.of(
                                 "driverPointMappingsJson",
@@ -1228,14 +1056,15 @@ public class ModelBootstrap {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true,
-                                null,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", SNMP_POINT_MAPPINGS))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", SNMP_POINT_MAPPINGS))
                         )
                 ),
                 List.of(),
                 List.of(),
-                List.of(),
+                List.of(
+                        ModelBindingRule.of("if-in-octets-rate", "ifInOctetsRate", "counterRate(ifInOctets)"),
+                        ModelBindingRule.of("if-out-octets-rate", "ifOutOctetsRate", "counterRate(ifOutOctets)")
+                ),
                 Map.of(),
                 Instant.now(),
                 Instant.now()

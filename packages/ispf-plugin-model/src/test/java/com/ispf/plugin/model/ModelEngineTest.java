@@ -8,7 +8,6 @@ import com.ispf.core.object.EventLevel;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.expression.BindingEvaluator;
 import com.ispf.expression.ExpressionEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,8 +56,7 @@ class ModelEngineTest {
         engine = new ModelEngine(
                 new ModelRegistry(),
                 objectTree,
-                new ExpressionEngine(),
-                new BindingEvaluator()
+                new ExpressionEngine()
         );
     }
 
@@ -82,9 +80,7 @@ class ModelEngineTest {
                         "telemetry",
                         temperatureSchema,
                         true,
-                        true,
-                        null,
-                        DataRecord.single(temperatureSchema, Map.of("value", 0.0, "unit", "C"))
+                        true, DataRecord.single(temperatureSchema, Map.of("value", 0.0, "unit", "C"))
                 )),
                 List.of(new EventDescriptor(
                         "thresholdExceeded",
@@ -175,7 +171,7 @@ class ModelEngineTest {
     }
 
     @Test
-    void bindingForResolvesSeparateBindingsTableAndDefaultBinding() {
+    void bindingRulesStoredOnModel() {
         DataSchema alarmSchema = DataSchema.builder("alarmActive")
                 .field("value", FieldType.BOOLEAN)
                 .build();
@@ -198,7 +194,6 @@ class ModelEngineTest {
                                 alarmSchema,
                                 true,
                                 false,
-                                null,
                                 DataRecord.single(alarmSchema, Map.of("value", false))
                         ),
                         ModelVariableDefinition.of(
@@ -208,26 +203,22 @@ class ModelEngineTest {
                                 thresholdSchema,
                                 true,
                                 false,
-                                "scale(temperature, 0, 100, 0, 1)",
                                 DataRecord.single(thresholdSchema, Map.of("value", 0.0))
                         )
                 ),
                 List.of(),
                 List.of(),
-                List.of(new ModelBindingDefinition(
-                        "alarmActive",
-                        "self.temperature.value > self.threshold.value"
-                )),
+                List.of(
+                        ModelBindingRule.of("alarm-active", "alarmActive", "self.temperature.value > self.threshold.value"),
+                        ModelBindingRule.of("temperature-percent", "temperaturePercent", "scale(temperature, 0, 100, 0, 1)")
+                ),
                 Map.of(),
                 Instant.now(),
                 Instant.now()
         );
 
-        assertThat(model.bindingFor("alarmActive"))
-                .isEqualTo("self.temperature.value > self.threshold.value");
-        assertThat(model.bindingFor("temperaturePercent"))
-                .isEqualTo("scale(temperature, 0, 100, 0, 1)");
-        assertThat(model.bindingFor("missing")).isNull();
+        assertThat(model.bindingRules()).hasSize(2);
+        assertThat(model.bindingRules().getFirst().targetVariable()).isEqualTo("alarmActive");
     }
 
     @Test
@@ -248,9 +239,7 @@ class ModelEngineTest {
                         "telemetry",
                         baseSchema,
                         true,
-                        true,
-                        null,
-                        DataRecord.single(baseSchema, Map.of("value", 0.0))
+                        true, DataRecord.single(baseSchema, Map.of("value", 0.0))
                 )),
                 List.of(),
                 List.of(),
@@ -272,9 +261,7 @@ class ModelEngineTest {
                         "meta",
                         DataSchema.builder("vendorId").field("value", FieldType.STRING).build(),
                         true,
-                        true,
-                        null,
-                        DataRecord.single(
+                        true, DataRecord.single(
                                 DataSchema.builder("vendorId").field("value", FieldType.STRING).build(),
                                 Map.of("value", "ACME")
                         )

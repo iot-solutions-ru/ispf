@@ -26,6 +26,9 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.operator.OperatorAppUiService;
+import com.ispf.server.object.BindingDependencyIndex;
+import com.ispf.server.object.BindingRuleEngine;
+import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
@@ -78,6 +81,9 @@ public class PlatformAgentToolRegistry {
             AiToolRegistry aiToolRegistry,
             ApplicationBundleDeployService bundleDeployService,
             OperatorAppUiService operatorAppUiService,
+            BindingRulesService bindingRulesService,
+            BindingDependencyIndex bindingDependencyIndex,
+            BindingRuleEngine bindingRuleEngine,
             ObjectMapper objectMapper
     ) {
         this.objectMapper = objectMapper;
@@ -112,6 +118,9 @@ public class PlatformAgentToolRegistry {
                 objectManager,
                 objectAccessService,
                 tenantScopeService,
+                bindingRulesService,
+                bindingDependencyIndex,
+                bindingRuleEngine,
                 objectMapper
         ));
         tools.addAll(List.of(

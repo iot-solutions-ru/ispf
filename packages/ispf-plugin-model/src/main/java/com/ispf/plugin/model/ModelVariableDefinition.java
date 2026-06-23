@@ -13,7 +13,6 @@ public record ModelVariableDefinition(
         DataSchema schema,
         boolean readable,
         boolean writable,
-        String defaultBinding,
         DataRecord defaultValue,
         Boolean historyEnabled,
         Integer historyRetentionDays
@@ -37,10 +36,9 @@ public record ModelVariableDefinition(
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String defaultBinding,
             DataRecord defaultValue
     ) {
-        return of(name, description, group, schema, readable, writable, defaultBinding, defaultValue, false, null);
+        return of(name, description, group, schema, readable, writable, defaultValue, false, null);
     }
 
     public static ModelVariableDefinition of(
@@ -50,7 +48,6 @@ public record ModelVariableDefinition(
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String defaultBinding,
             DataRecord defaultValue,
             boolean historyEnabled,
             Integer historyRetentionDays
@@ -62,7 +59,6 @@ public record ModelVariableDefinition(
                 schema,
                 readable,
                 writable,
-                defaultBinding,
                 defaultValue,
                 historyEnabled,
                 historyRetentionDays
@@ -77,10 +73,9 @@ public record ModelVariableDefinition(
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String defaultBinding,
             DataRecord defaultValue
     ) {
-        return withHistory(name, description, group, schema, readable, writable, defaultBinding, defaultValue, null);
+        return withHistory(name, description, group, schema, readable, writable, defaultValue, null);
     }
 
     public static ModelVariableDefinition withHistory(
@@ -90,7 +85,6 @@ public record ModelVariableDefinition(
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String defaultBinding,
             DataRecord defaultValue,
             Integer historyRetentionDays
     ) {
@@ -101,7 +95,6 @@ public record ModelVariableDefinition(
                 schema,
                 readable,
                 writable,
-                defaultBinding,
                 defaultValue,
                 true,
                 historyRetentionDays

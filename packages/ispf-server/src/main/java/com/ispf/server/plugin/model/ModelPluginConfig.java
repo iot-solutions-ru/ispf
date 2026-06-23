@@ -1,6 +1,5 @@
 package com.ispf.server.plugin.model;
 
-import com.ispf.expression.BindingEvaluator;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.plugin.model.ModelEngine;
@@ -22,17 +21,11 @@ public class ModelPluginConfig {
     }
 
     @Bean
-    BindingEvaluator bindingEvaluator() {
-        return new BindingEvaluator();
-    }
-
-    @Bean
     ModelEngine modelEngine(
             ModelRegistry modelRegistry,
             ObjectTree objectTree,
-            ExpressionEngine expressionEngine,
-            BindingEvaluator bindingEvaluator
+            ExpressionEngine expressionEngine
     ) {
-        return new ModelEngine(modelRegistry, objectTree, expressionEngine, bindingEvaluator);
+        return new ModelEngine(modelRegistry, objectTree, expressionEngine);
     }
 }

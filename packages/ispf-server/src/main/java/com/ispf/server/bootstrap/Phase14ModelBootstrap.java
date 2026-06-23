@@ -161,9 +161,7 @@ public class Phase14ModelBootstrap {
                 group,
                 STRING_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -174,9 +172,7 @@ public class Phase14ModelBootstrap {
                 "config",
                 INTEGER_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 
@@ -187,9 +183,7 @@ public class Phase14ModelBootstrap {
                 "config",
                 BOOLEAN_VALUE_SCHEMA,
                 true,
-                true,
-                null,
-                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
+                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", defaultValue))
         );
     }
 }

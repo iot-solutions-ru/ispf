@@ -7,10 +7,9 @@ import com.ispf.core.object.FunctionDescriptor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
- * Full model definition — blueprint for object structure and bindings.
+ * Full model definition — blueprint for object structure and binding rules.
  */
 public record ModelDefinition(
         String id,
@@ -22,7 +21,7 @@ public record ModelDefinition(
         List<ModelVariableDefinition> variables,
         List<EventDescriptor> events,
         List<FunctionDescriptor> functions,
-        List<ModelBindingDefinition> bindings,
+        List<ModelBindingRule> bindingRules,
         Map<String, String> parameters,
         Instant createdAt,
         Instant updatedAt
@@ -40,31 +39,17 @@ public record ModelDefinition(
         variables = List.copyOf(variables != null ? variables : List.of());
         events = List.copyOf(events != null ? events : List.of());
         functions = List.copyOf(functions != null ? functions : List.of());
-        bindings = List.copyOf(bindings != null ? bindings : List.of());
+        bindingRules = List.copyOf(bindingRules != null ? bindingRules : List.of());
+    }
+
+    /** @deprecated use {@link #bindingRules()} */
+    @Deprecated
+    public List<ModelBindingRule> bindings() {
+        return bindingRules;
     }
 
     public String objectPath(String modelsRoot) {
         return modelsRoot + "." + name;
-    }
-
-    /**
-     * Returns the binding expression for a variable from {@link #bindings()} or {@link ModelVariableDefinition#defaultBinding()}.
-     */
-    public String bindingFor(String variableName) {
-        if (variableName == null) {
-            return null;
-        }
-        for (ModelBindingDefinition binding : bindings) {
-            if (variableName.equals(binding.targetVariable())) {
-                return binding.expression();
-            }
-        }
-        return variables.stream()
-                .filter(variable -> variableName.equals(variable.name()))
-                .map(ModelVariableDefinition::defaultBinding)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
     }
 
     /** Semantic version string stored in {@link #parameters()} under {@code modelVersion}. */

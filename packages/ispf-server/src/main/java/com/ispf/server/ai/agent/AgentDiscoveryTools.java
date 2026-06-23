@@ -343,7 +343,6 @@ final class AgentDiscoveryTools {
                     row.put("writable", variable.writable());
                     row.put("historyEnabled", variable.historyEnabled());
                     variable.historyRetentionDays().ifPresent(days -> row.put("historyRetentionDays", days));
-                    variable.bindingExpression().ifPresent(expr -> row.put("bindingExpression", expr));
                     row.put("schema", schemaPreview(variable.schema()));
                     variables.add(row);
                 }

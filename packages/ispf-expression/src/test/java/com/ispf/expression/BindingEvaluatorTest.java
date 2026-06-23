@@ -9,7 +9,6 @@ import com.ispf.core.model.FieldType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -23,6 +22,8 @@ class BindingEvaluatorTest {
             .field("raw", FieldType.STRING)
             .field("type", FieldType.STRING)
             .build();
+
+    private final BindingExpressionEvaluator evaluator = new BindingExpressionEvaluator();
 
     @BeforeEach
     void resetBindingState() {
@@ -44,7 +45,6 @@ class BindingEvaluatorTest {
                 SNMP_NUMERIC_SCHEMA,
                 true,
                 true,
-                null,
                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 1000.0, "raw", "1000", "type", "Counter32"))
         );
         counter.setComputedValue(DataRecord.single(
@@ -52,17 +52,22 @@ class BindingEvaluatorTest {
                 Map.of("value", 1000.0, "raw", "1000", "type", "Counter32")
         ));
         node.addVariable(counter);
-        node.addVariable(new Variable(
+        Variable rateVar = new Variable(
                 "ifInOctetsRate",
                 SNMP_NUMERIC_SCHEMA,
                 true,
                 false,
-                "counterRate(ifInOctets)",
                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
-        ));
+        );
+        node.addVariable(rateVar);
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        evaluator.evaluate(
+                node,
+                "ifInOctetsRate",
+                "counterRate(ifInOctets)",
+                SNMP_NUMERIC_SCHEMA,
+                BindingEvaluationContext.NONE
+        );
 
         Thread.sleep(600);
         counter.setComputedValue(DataRecord.single(
@@ -70,11 +75,17 @@ class BindingEvaluatorTest {
                 Map.of("value", 2000.0, "raw", "2000", "type", "Counter32")
         ));
 
-        List<String> changed = evaluator.evaluateBindingsReturningChanges(node);
+        var computed = evaluator.evaluate(
+                node,
+                "ifInOctetsRate",
+                "counterRate(ifInOctets)",
+                SNMP_NUMERIC_SCHEMA,
+                BindingEvaluationContext.NONE
+        );
+        assertTrue(computed.isPresent());
+        rateVar.setComputedValue(computed.get());
 
-        assertTrue(changed.contains("ifInOctetsRate"));
-        Map<String, Object> row = node.getVariable("ifInOctetsRate").orElseThrow()
-                .value().orElseThrow().firstRow();
+        Map<String, Object> row = rateVar.value().orElseThrow().firstRow();
         double rate = (Double) row.get("value");
         assertTrue(rate > 1000.0, "rate should reflect 1000 octet delta over ~600ms, was " + rate);
         assertEquals(String.valueOf(rate), row.get("raw"));
@@ -106,7 +117,6 @@ class BindingEvaluatorTest {
                 temperatureSchema,
                 true,
                 true,
-                null,
                 DataRecord.single(temperatureSchema, Map.of("value", 95.0, "unit", "C"))
         ));
         node.addVariable(new Variable(
@@ -114,25 +124,30 @@ class BindingEvaluatorTest {
                 thresholdSchema,
                 true,
                 true,
-                null,
                 DataRecord.single(thresholdSchema, Map.of("value", 80.0))
         ));
-        node.addVariable(new Variable(
+        Variable alarm = new Variable(
                 "alarmActive",
                 alarmSchema,
                 true,
                 false,
-                "self.temperature.value > self.threshold.value",
                 DataRecord.single(alarmSchema, Map.of("value", false))
-        ));
+        );
+        node.addVariable(alarm);
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        List<String> changed = evaluator.evaluateBindingsReturningChanges(node);
+        var computed = evaluator.evaluate(
+                node,
+                "alarmActive",
+                "self.temperature.value > self.threshold.value",
+                alarmSchema,
+                BindingEvaluationContext.NONE
+        );
+        assertTrue(computed.isPresent());
+        alarm.setComputedValue(computed.get());
 
-        assertTrue(changed.contains("alarmActive"));
         assertEquals(
                 true,
-                node.getVariable("alarmActive").orElseThrow().value().orElseThrow().firstRow().get("value")
+                alarm.value().orElseThrow().firstRow().get("value")
         );
     }
 }

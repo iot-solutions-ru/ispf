@@ -148,9 +148,7 @@ public class ApplicationSqlBindingService {
                         variableName,
                         SINGLE_VALUE_SCHEMA,
                         true,
-                        false,
-                        null,
-                        DataRecord.single(SINGLE_VALUE_SCHEMA, Map.of("value", 0.0))
+                        false, DataRecord.single(SINGLE_VALUE_SCHEMA, Map.of("value", 0.0))
                 ));
                 objectManager.persistNodeTree(objectPath);
             }

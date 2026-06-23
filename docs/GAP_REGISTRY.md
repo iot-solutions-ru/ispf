@@ -37,6 +37,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-23 | v0.8.0: BindingRuleEngine only — удалён bindingExpression; cross-object propagation; ADR-0017 |
 | 2026-06-22 | FW-47: list_functions, get_function, list_event_catalog, get_event_schema, describe_variables |
 | 2026-06-22 | FW-46: invoke_bff, search_objects, list_object_models, fire_event, list_events |
 | 2026-06-22 | FW-45: PlatformBriefingService, ContextPack indices, agent knowledge tools, search_context v2 |

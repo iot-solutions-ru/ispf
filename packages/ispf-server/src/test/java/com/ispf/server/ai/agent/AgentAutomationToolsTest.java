@@ -5,6 +5,9 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.server.object.BindingDependencyIndex;
+import com.ispf.server.object.BindingRuleEngine;
+import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAppUiService;
 import com.ispf.server.security.acl.ObjectAccessService;
@@ -39,6 +42,12 @@ class AgentAutomationToolsTest {
     private ObjectAccessService objectAccessService;
     @Mock
     private TenantScopeService tenantScopeService;
+    @Mock
+    private BindingRulesService bindingRulesService;
+    @Mock
+    private BindingDependencyIndex bindingDependencyIndex;
+    @Mock
+    private BindingRuleEngine bindingRuleEngine;
 
     private List<PlatformAgentTool> tools;
     private AgentContext context;
@@ -51,6 +60,9 @@ class AgentAutomationToolsTest {
                 objectManager,
                 objectAccessService,
                 tenantScopeService,
+                bindingRulesService,
+                bindingDependencyIndex,
+                bindingRuleEngine,
                 new ObjectMapper()
         );
         context = new AgentContext("admin", null, new AgentRunState());
@@ -175,7 +187,6 @@ class AgentAutomationToolsTest {
                 com.ispf.core.model.DataSchema.builder("v").field("value", com.ispf.core.model.FieldType.DOUBLE).build(),
                 true,
                 true,
-                null,
                 null,
                 false,
                 null

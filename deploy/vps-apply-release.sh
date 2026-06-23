@@ -1,4 +1,7 @@
 #!/bin/bash
+# Download release artifacts from GitHub and apply on VPS.
+# NOTE: Default prod deploy is direct SCP — see deploy/vps-deploy-direct.ps1 and .cursor/rules/vps-deploy.mdc.
+# Use this script only for manual recovery or when explicitly requested; do NOT auto-run after gh release.
 set -euo pipefail
 VERSION="${1:-0.7.4}"
 STAGING=/opt/ispf/staging/$VERSION

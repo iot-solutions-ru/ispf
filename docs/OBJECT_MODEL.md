@@ -124,21 +124,11 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 | `name` | Имя в объекте |
 | `schema` | `DataSchema` |
 | `readable` / `writable` | Права доступа |
-| `bindingExpression` | CEL или platform binding (опционально) |
 | `value` | Текущий `DataRecord` |
 
-### Вычисляемые привязки (bindings)
+### Вычисляемые привязки (binding rules)
 
-При изменении любой переменной на объекте `BindingEvaluator` пересчитывает все binding-переменные с непустым `bindingExpression`.
-
-Два вида выражений:
-
-| Вид | Пример |
-|-----|--------|
-| **CEL** | `self.temperature.value > self.threshold.value` |
-| **Platform function** | `counterRate(ifInOctets)` |
-
-**Полный справочник** всех функций, параметров, stateful-поведения и примеров: **[BINDINGS.md](BINDINGS.md)**.
+Правила на объекте в `@bindingRules` (см. [BINDINGS.md](BINDINGS.md)). Runtime — `BindingRuleEngine`; cross-object через activators и `refAt`.
 
 Краткий перечень platform bindings:
 

@@ -36,22 +36,22 @@ class NewPlatformBindingsTest {
     @BeforeEach
     void resetState() {
         PlatformBindingRegistry.clearStateForTests();
+        BindingTestSupport.clearRegistered();
     }
 
     @Test
     void rateComputesDeltaOverTime() throws InterruptedException {
         PlatformObject node = sensorWithSource("gauge", 100.0);
-        node.addVariable(binding("rateOut", DOUBLE_VALUE, "rate(gauge)"));
+        node.addVariable(BindingTestSupport.binding("rateOut", DOUBLE_VALUE, "rate(gauge)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         Thread.sleep(600);
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 250.0))
         );
 
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         double rate = (Double) node.getVariable("rateOut").orElseThrow().value().orElseThrow().firstRow().get("value");
         assertTrue(rate > 200.0 && rate < 300.0, "rate was " + rate);
     }
@@ -59,15 +59,14 @@ class NewPlatformBindingsTest {
     @Test
     void counterDeltaHandlesWrapWithoutTimeDivision() {
         PlatformObject node = sensorWithSource("counter", 1000.0);
-        node.addVariable(binding("deltaOut", DOUBLE_VALUE, "counterDelta(counter)"));
+        node.addVariable(BindingTestSupport.binding("deltaOut", DOUBLE_VALUE, "counterDelta(counter)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         node.getVariable("counter").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 1500.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         assertEquals(500.0, node.getVariable("deltaOut").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
@@ -75,32 +74,30 @@ class NewPlatformBindingsTest {
     @Test
     void movingAvgAveragesWithinWindow() {
         PlatformObject node = sensorWithSource("gauge", 10.0);
-        node.addVariable(binding("avgOut", DOUBLE_VALUE, "movingAvg(gauge, 60)"));
+        node.addVariable(BindingTestSupport.binding("avgOut", DOUBLE_VALUE, "movingAvg(gauge, 60)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(10.0, node.getVariable("avgOut").orElseThrow().value().orElseThrow().firstRow().get("value"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 20.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(15.0, node.getVariable("avgOut").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
 
     @Test
     void movingMinAndMaxTrackWindow() {
         PlatformObject node = sensorWithSource("gauge", 50.0);
-        node.addVariable(binding("minOut", DOUBLE_VALUE, "movingMin(gauge, 60)"));
-        node.addVariable(binding("maxOut", DOUBLE_VALUE, "movingMax(gauge, 60)"));
+        node.addVariable(BindingTestSupport.binding("minOut", DOUBLE_VALUE, "movingMin(gauge, 60)"));
+        node.addVariable(BindingTestSupport.binding("maxOut", DOUBLE_VALUE, "movingMax(gauge, 60)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 10.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         assertEquals(10.0, node.getVariable("minOut").orElseThrow().value().orElseThrow().firstRow().get("value"));
         assertEquals(50.0, node.getVariable("maxOut").orElseThrow().value().orElseThrow().firstRow().get("value"));
@@ -109,22 +106,21 @@ class NewPlatformBindingsTest {
     @Test
     void deadbandSuppressesSmallChanges() {
         PlatformObject node = sensorWithSource("gauge", 100.0);
-        node.addVariable(binding("filtered", DOUBLE_VALUE, "deadband(gauge, 5)"));
+        node.addVariable(BindingTestSupport.binding("filtered", DOUBLE_VALUE, "deadband(gauge, 5)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        List<String> first = evaluator.evaluateBindingsReturningChanges(node);
+        List<String> first = BindingTestSupport.evaluateRegistered(node);
         assertTrue(first.contains("filtered"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 103.0))
         );
-        List<String> second = evaluator.evaluateBindingsReturningChanges(node);
+        List<String> second = BindingTestSupport.evaluateRegistered(node);
         assertFalse(second.contains("filtered"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 110.0))
         );
-        List<String> third = evaluator.evaluateBindingsReturningChanges(node);
+        List<String> third = BindingTestSupport.evaluateRegistered(node);
         assertTrue(third.contains("filtered"));
         assertEquals(110.0, node.getVariable("filtered").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
@@ -132,38 +128,36 @@ class NewPlatformBindingsTest {
     @Test
     void hysteresisTogglesWithSeparateThresholds() {
         PlatformObject node = sensorWithSource("gauge", 50.0);
-        node.addVariable(binding("alarm", BOOL_VALUE, "hysteresis(gauge, 80, 70)"));
+        node.addVariable(BindingTestSupport.binding("alarm", BOOL_VALUE, "hysteresis(gauge, 80, 70)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(false, node.getVariable("alarm").orElseThrow().value().orElseThrow().firstRow().get("value"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 85.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(true, node.getVariable("alarm").orElseThrow().value().orElseThrow().firstRow().get("value"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 75.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(true, node.getVariable("alarm").orElseThrow().value().orElseThrow().firstRow().get("value"));
 
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 65.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(false, node.getVariable("alarm").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
 
     @Test
     void unitConvertCelsiusToFahrenheit() {
         PlatformObject node = sensorWithTemperature(0.0);
-        node.addVariable(binding("fahrenheit", DOUBLE_VALUE, "unitConvert(temperature, C, F)"));
+        node.addVariable(BindingTestSupport.binding("fahrenheit", DOUBLE_VALUE, "unitConvert(temperature, C, F)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
 
         assertEquals(32.0, (Double) node.getVariable("fahrenheit").orElseThrow().value().orElseThrow().firstRow().get("value"), 0.01);
     }
@@ -178,7 +172,7 @@ class NewPlatformBindingsTest {
                 "",
                 null
         );
-        local.addVariable(binding(
+        local.addVariable(BindingTestSupport.binding(
                 "remoteTemp",
                 DOUBLE_VALUE,
                 "refAt(\"root.platform.devices.remote\", temperature)"
@@ -199,14 +193,14 @@ class NewPlatformBindingsTest {
             }
         };
 
-        new BindingEvaluator().evaluateBindingsReturningChanges(local, context);
+        BindingTestSupport.evaluateRegistered(local, context);
         assertEquals(42.0, local.getVariable("remoteTemp").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
 
     @Test
     void callFunctionInvokesViaContext() {
         PlatformObject node = sensorWithSource("inputVar", 10.0);
-        node.addVariable(binding("output", DOUBLE_VALUE, "callFunction(doubleIt, inputVar)"));
+        node.addVariable(BindingTestSupport.binding("output", DOUBLE_VALUE, "callFunction(doubleIt, inputVar)"));
 
         BindingEvaluationContext context = (objectPath, functionName, input) -> {
             if ("doubleIt".equals(functionName) && input.rowCount() > 0) {
@@ -216,14 +210,14 @@ class NewPlatformBindingsTest {
             return Optional.empty();
         };
 
-        new BindingEvaluator().evaluateBindingsReturningChanges(node, context);
+        BindingTestSupport.evaluateRegistered(node, context);
         assertEquals(20.0, node.getVariable("output").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
 
     @Test
     void callFunctionAtInvokesRemoteViaContext() {
         PlatformObject node = sensorWithSource("inputVar", 5.0);
-        node.addVariable(binding(
+        node.addVariable(BindingTestSupport.binding(
                 "output",
                 DOUBLE_VALUE,
                 "callFunctionAt(\"root.remote\", increment, inputVar)"
@@ -237,7 +231,7 @@ class NewPlatformBindingsTest {
             return Optional.empty();
         };
 
-        new BindingEvaluator().evaluateBindingsReturningChanges(node, context);
+        BindingTestSupport.evaluateRegistered(node, context);
         assertEquals(6.0, node.getVariable("output").orElseThrow().value().orElseThrow().firstRow().get("value"));
     }
 
@@ -254,9 +248,7 @@ class NewPlatformBindingsTest {
                 name,
                 DOUBLE_VALUE,
                 true,
-                true,
-                null,
-                DataRecord.single(DOUBLE_VALUE, Map.of("value", value))
+                true, DataRecord.single(DOUBLE_VALUE, Map.of("value", value))
         ));
         return node;
     }
@@ -274,21 +266,8 @@ class NewPlatformBindingsTest {
                 "temperature",
                 TEMPERATURE,
                 true,
-                true,
-                null,
-                DataRecord.single(TEMPERATURE, Map.of("value", value, "unit", "C"))
+                true, DataRecord.single(TEMPERATURE, Map.of("value", value, "unit", "C"))
         ));
         return node;
-    }
-
-    private static Variable binding(String name, DataSchema schema, String expression) {
-        return new Variable(
-                name,
-                schema,
-                true,
-                false,
-                expression,
-                DataRecord.single(schema, Map.of("value", schema.fields().getFirst().type() == FieldType.BOOLEAN ? false : 0.0))
-        );
     }
 }

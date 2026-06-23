@@ -1,8 +1,10 @@
 package com.ispf.server.config;
 
+import com.ispf.expression.BindingExpressionEvaluator;
 import com.ispf.expression.PlatformBindingRegistry;
 import com.ispf.server.object.ObjectBindingStatePort;
 import jakarta.annotation.PostConstruct;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -12,6 +14,11 @@ public class BindingStateConfig {
 
     public BindingStateConfig(ObjectBindingStatePort objectBindingStatePort) {
         this.objectBindingStatePort = objectBindingStatePort;
+    }
+
+    @Bean
+    BindingExpressionEvaluator bindingExpressionEvaluator() {
+        return new BindingExpressionEvaluator();
     }
 
     @PostConstruct

@@ -203,7 +203,7 @@ public class PlatformUserObjectTreeService {
         }
         var node = objectManager.require(path);
         if (node.getVariable(name).isEmpty()) {
-            node.addVariable(new Variable(name, schema, true, writable, null, record));
+            node.addVariable(new Variable(name, schema, true, writable, record));
             objectManager.persistNodeTree(path);
             return;
         }

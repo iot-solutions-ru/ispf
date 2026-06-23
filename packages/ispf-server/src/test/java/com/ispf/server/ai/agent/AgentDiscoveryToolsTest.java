@@ -123,7 +123,7 @@ class AgentDiscoveryToolsTest {
         PlatformObject node = new PlatformObject(
                 "1", path, ObjectType.DEVICE, "Demo", "", null
         );
-        node.addVariable(new Variable("temperature", schema, true, true, null, null));
+        node.addVariable(new Variable("temperature", schema, true, true, null));
         when(objectManager.require(path)).thenReturn(node);
         when(tenantScopeService.isPathVisible(path, null)).thenReturn(true);
 

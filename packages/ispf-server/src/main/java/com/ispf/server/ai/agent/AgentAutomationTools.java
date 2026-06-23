@@ -6,13 +6,19 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.core.object.Variable;
+import com.ispf.core.binding.BindingActivators;
+import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingTarget;
+import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.correlator.EventCorrelator;
+import com.ispf.server.object.BindingDependencyIndex;
+import com.ispf.server.object.BindingRuleEngine;
+import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAppUiService;
 import com.ispf.server.security.acl.ObjectAccessService;
@@ -39,6 +45,9 @@ final class AgentAutomationTools {
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
+            BindingRulesService bindingRulesService,
+            BindingDependencyIndex bindingDependencyIndex,
+            BindingRuleEngine bindingRuleEngine,
             ObjectMapper objectMapper
     ) {
         return List.of(
@@ -47,6 +56,14 @@ final class AgentAutomationTools {
                 listAutomationTool(automationTreeService, objectAccessService, tenantScopeService),
                 getAutomationSchemaTool(),
                 createVariableTool(objectManager, objectAccessService, tenantScopeService, objectMapper),
+                createBindingRuleTool(
+                        objectManager,
+                        objectAccessService,
+                        tenantScopeService,
+                        bindingRulesService,
+                        bindingDependencyIndex,
+                        bindingRuleEngine
+                ),
                 configureVariableHistoryTool(objectManager, objectAccessService, tenantScopeService),
                 configureOperatorUiTool(operatorAppUiService)
         );
@@ -367,11 +384,11 @@ final class AgentAutomationTools {
 
             @Override
             public String description() {
-                return "Create a new variable on an object (for CUSTOM logic, refAt bindings, computed fields). "
+                return "Create a new variable on an object (for CUSTOM logic, computed fields). "
                         + "Args: path, name, valueType (DOUBLE|BOOLEAN|STRING|INTEGER), "
-                        + "bindingExpression? (CEL or refAt(...)), initialValue? (map or scalar), "
+                        + "initialValue? (map or scalar), "
                         + "writable? (default false), historyEnabled? (default false). "
-                        + "Use describe_variables on existing vars; set_variable only updates writable vars.";
+                        + "Use create_binding_rule for computed values; set_variable only updates writable vars.";
             }
 
             @Override
@@ -394,10 +411,6 @@ final class AgentAutomationTools {
                         return Map.of("status", "ERROR", "error", "Variable already exists: " + name);
                     }
                     DataSchema schema = schemaForValueType(valueType);
-                    String bindingExpression = optionalString(arguments, "bindingExpression");
-                    if (bindingExpression != null) {
-                        BindingExpressionValidator.validateOrThrow(bindingExpression);
-                    }
                     boolean writable = boolArg(arguments, "writable", false);
                     boolean historyEnabled = boolArg(arguments, "historyEnabled", false);
                     DataRecord initialValue = null;
@@ -414,7 +427,6 @@ final class AgentAutomationTools {
                             schema,
                             true,
                             writable,
-                            bindingExpression,
                             initialValue,
                             historyEnabled,
                             null
@@ -422,11 +434,83 @@ final class AgentAutomationTools {
                     Map<String, Object> preview = new LinkedHashMap<>();
                     preview.put("name", created.name());
                     preview.put("writable", created.writable());
-                    created.bindingExpression().ifPresent(expr -> preview.put("bindingExpression", expr));
                     return Map.of("status", "OK", "path", path, "variable", preview);
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
                 }
+            }
+        };
+    }
+
+    private static PlatformAgentTool createBindingRuleTool(
+            ObjectManager objectManager,
+            ObjectAccessService objectAccessService,
+            TenantScopeService tenantScopeService,
+            BindingRulesService bindingRulesService,
+            BindingDependencyIndex bindingDependencyIndex,
+            BindingRuleEngine bindingRuleEngine
+    ) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "create_binding_rule";
+            }
+
+            @Override
+            public String description() {
+                return "Create or replace a binding rule on an object. Args: path, id, targetVariable, expression, "
+                        + "condition? (CEL), remoteObjectPath? + remoteVariableName? (cross-object activator), "
+                        + "onStartup? (bool), order? (int).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                String path = stringArg(arguments, "path");
+                String id = stringArg(arguments, "id");
+                String targetVariable = stringArg(arguments, "targetVariable");
+                String expression = stringArg(arguments, "expression");
+                if (path.isBlank() || id.isBlank() || targetVariable.isBlank() || expression.isBlank()) {
+                    return Map.of("status", "ERROR", "error", "path, id, targetVariable, expression are required");
+                }
+                var auth = context.authentication();
+                if (!tenantScopeService.isPathVisible(path, auth)) {
+                    return Map.of("status", "ERROR", "error", "Tenant scope denied for " + path);
+                }
+                objectAccessService.requireWrite(path, auth);
+                try {
+                    objectManager.require(path);
+                    BindingExpressionValidator.validateOrThrow(expression);
+                    String condition = optionalString(arguments, "condition");
+                    if (condition != null && !condition.isBlank()) {
+                        BindingExpressionValidator.validateOrThrow(condition);
+                    }
+                    BindingActivators activators = buildActivators(arguments, path);
+                    BindingRule rule = new BindingRule(
+                            id,
+                            optionalString(arguments, "name"),
+                            boolArg(arguments, "enabled", true),
+                            intArg(arguments, "order", 0),
+                            activators,
+                            condition != null ? condition : "",
+                            expression,
+                            new BindingTarget(targetVariable, optionalString(arguments, "targetField"))
+                    );
+                    BindingRule saved = bindingRulesService.upsertRule(path, rule);
+                    bindingDependencyIndex.rebuild(path);
+                    bindingRuleEngine.runRulesForObject(path);
+                    return Map.of("status", "OK", "path", path, "ruleId", saved.id(), "target", saved.target().variableName());
+                } catch (Exception ex) {
+                    return Map.of("status", "ERROR", "error", ex.getMessage());
+                }
+            }
+
+            private BindingActivators buildActivators(Map<String, Object> arguments, String path) {
+                String remotePath = optionalString(arguments, "remoteObjectPath");
+                String remoteVar = optionalString(arguments, "remoteVariableName");
+                if (remotePath != null && remoteVar != null) {
+                    return BindingActivators.onRemoteChange(remotePath, remoteVar);
+                }
+                return BindingRulesService.defaultActivators(path, stringArg(arguments, "expression"));
             }
         };
     }
@@ -643,7 +727,7 @@ final class AgentAutomationTools {
                 "platformBindings", List.of(
                         "refAt", "hysteresis", "counterRate", "unitConvert", "callFunction", "sqlBinding"
                 ),
-                "tool", "create_variable with bindingExpression"
+                "tool", "create_binding_rule"
         );
     }
 

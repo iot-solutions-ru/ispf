@@ -1,5 +1,7 @@
 package com.ispf.server.object;
 
+import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -10,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -34,12 +37,20 @@ class BindingStatePersistenceIntegrationTest {
     @Autowired
     private ObjectBindingStatePort bindingStatePort;
 
+    @Autowired
+    private BindingRulesService bindingRulesService;
+
+    @Autowired
+    private BindingDependencyIndex dependencyIndex;
+
     private String alarmVariable;
 
     @AfterEach
     void cleanup() {
         if (alarmVariable != null) {
+            bindingRulesService.deleteRule(DEVICE, "rule-" + alarmVariable);
             objectManager.deleteVariable(DEVICE, alarmVariable);
+            dependencyIndex.rebuild(DEVICE);
             alarmVariable = null;
         }
     }
@@ -53,11 +64,23 @@ class BindingStatePersistenceIntegrationTest {
                 BOOL_VALUE,
                 true,
                 false,
-                "hysteresis(temperature, 80, 70)",
                 null,
                 false,
                 null
         );
+        bindingRulesService.saveRules(DEVICE, List.of(
+                new BindingRule(
+                        "rule-" + alarmVariable,
+                        alarmVariable,
+                        true,
+                        0,
+                        BindingRulesService.defaultActivators(DEVICE, "hysteresis(temperature, 80, 70)"),
+                        "",
+                        "hysteresis(temperature, 80, 70)",
+                        new BindingTarget(alarmVariable, "value")
+                )
+        ));
+        dependencyIndex.rebuild(DEVICE);
 
         objectManager.setVariableValue(
                 DEVICE,
@@ -85,6 +108,7 @@ class BindingStatePersistenceIntegrationTest {
         DataSchema counterSchema = DataSchema.builder("counter32")
                 .field("value", FieldType.DOUBLE)
                 .build();
+        String ruleId = "rule-" + rateName;
         try {
             objectManager.createVariable(
                     DEVICE,
@@ -92,7 +116,6 @@ class BindingStatePersistenceIntegrationTest {
                     counterSchema,
                     true,
                     true,
-                    null,
                     DataRecord.single(counterSchema, Map.of("value", 1000.0)),
                     false,
                     null
@@ -105,11 +128,24 @@ class BindingStatePersistenceIntegrationTest {
                             .build(),
                     true,
                     false,
-                    "counterRate(" + counterName + ")",
                     null,
                     false,
                     null
             );
+            String expression = "counterRate(" + counterName + ")";
+            bindingRulesService.saveRules(DEVICE, List.of(
+                    new BindingRule(
+                            ruleId,
+                            rateName,
+                            true,
+                            0,
+                            BindingRulesService.defaultActivators(DEVICE, expression),
+                            "",
+                            expression,
+                            new BindingTarget(rateName, "value")
+                    )
+            ));
+            dependencyIndex.rebuild(DEVICE);
 
             objectManager.setVariableValue(
                     DEVICE,
@@ -134,8 +170,10 @@ class BindingStatePersistenceIntegrationTest {
             Double rate = readDouble(rateName);
             assertTrue(rate != null && rate > 0, "rate should be computed after cache reload");
         } finally {
+            bindingRulesService.deleteRule(DEVICE, ruleId);
             objectManager.deleteVariable(DEVICE, rateName);
             objectManager.deleteVariable(DEVICE, counterName);
+            dependencyIndex.rebuild(DEVICE);
         }
     }
 

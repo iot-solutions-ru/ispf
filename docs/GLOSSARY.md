@@ -22,7 +22,7 @@
 
 ## B
 
-**Binding** — вычисляемая привязка переменной (`bindingExpression`). Значение пересчитывается при изменении переменных на том же объекте. Выражение — Google **CEL** или одна **platform function** (`counterRate`, `scale`, `clamp`, …). См. [BINDINGS.md](BINDINGS.md).
+**Binding** — правило вычисления значения переменной (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` при activators (локальные и cross-object изменения). Expression — Google **CEL** или platform function. См. [BINDINGS.md](BINDINGS.md).
 
 **BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Wire profile `anima-operator-v1` — контракт для legacy manifest.
 

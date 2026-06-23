@@ -72,7 +72,7 @@ public final class FederationProxyMetadata {
 
     private static void setVariable(PlatformObject node, String name, DataSchema schema, DataRecord value) {
         if (node.getVariable(name).isEmpty()) {
-            node.addVariable(new Variable(name, schema, true, false, null, value));
+            node.addVariable(new Variable(name, schema, true, false, value));
             return;
         }
         node.getVariable(name).orElseThrow().setComputedValue(value);

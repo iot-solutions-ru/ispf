@@ -52,7 +52,10 @@ class BundleManifestValidatorTest {
                         "root.platform.applications.invalid.functions.demo",
                         "badFn",
                         "1.0.0",
-                        null,
+                        new com.ispf.server.application.api.ApplicationController.FunctionDescriptorDto(
+                                com.ispf.core.model.DataSchema.builder("in").build(),
+                                com.ispf.core.model.DataSchema.builder("out").build()
+                        ),
                         new com.ispf.server.application.api.ApplicationController.FunctionSourceDto(
                                 "script",
                                 "{\"steps\":[{\"type\":\"unknown_step\"}]}"

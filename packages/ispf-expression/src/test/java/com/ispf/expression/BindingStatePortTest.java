@@ -7,6 +7,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -27,17 +28,22 @@ class BindingStatePortTest {
 
     @AfterEach
     void resetPort() {
+        BindingTestSupport.clearRegistered();
         PlatformBindingRegistry.setBindingStatePort(new InMemoryBindingStatePort());
         PlatformBindingRegistry.clearStateForTests();
+    }
+
+    @BeforeEach
+    void clearBindings() {
+        BindingTestSupport.clearRegistered();
     }
 
     @Test
     void hysteresisLatchSurvivesPortReload() {
         PlatformObject node = sensorWithGauge(85.0);
-        node.addVariable(binding("alarm", BOOL_VALUE, "hysteresis(gauge, 80, 70)"));
+        node.addVariable(BindingTestSupport.binding("alarm", BOOL_VALUE, "hysteresis(gauge, 80, 70)"));
 
-        BindingEvaluator evaluator = new BindingEvaluator();
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(true, readBool(node, "alarm"));
 
         InMemoryBindingStatePort reloaded = new InMemoryBindingStatePort();
@@ -48,7 +54,7 @@ class BindingStatePortTest {
         node.getVariable("gauge").orElseThrow().setComputedValue(
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", 75.0))
         );
-        evaluator.evaluateBindingsReturningChanges(node);
+        BindingTestSupport.evaluateRegistered(node);
         assertEquals(true, readBool(node, "alarm"));
     }
 
@@ -66,14 +72,9 @@ class BindingStatePortTest {
                 DOUBLE_VALUE,
                 true,
                 false,
-                null,
                 DataRecord.single(DOUBLE_VALUE, Map.of("value", value))
         ));
         return node;
-    }
-
-    private static Variable binding(String name, DataSchema schema, String expression) {
-        return new Variable(name, schema, true, false, expression, null);
     }
 
     private static boolean readBool(PlatformObject node, String name) {

@@ -29,6 +29,7 @@ import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
 import { resolveApplicationAppId } from "../utils/applicationPath";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
+import BindingRulesPanel from "./BindingRulesPanel";
 
 interface ObjectInspectorProps {
   path: string;
@@ -36,7 +37,7 @@ interface ObjectInspectorProps {
   canManage?: boolean;
 }
 
-type Tab = "general" | "federation" | "variables" | "events" | "functions" | "driver" | "deploy" | "access";
+type Tab = "general" | "federation" | "variables" | "bindings" | "events" | "functions" | "driver" | "deploy" | "access";
 
 export default function ObjectInspector({ path, onDeleted, canManage = false }: ObjectInspectorProps) {
   const queryClient = useQueryClient();
@@ -150,12 +151,12 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   const showFederationBind = canManage && path !== "root" && !isRoot;
   const applicationAppId = isApplication ? resolveApplicationAppId(path, obj.description) : null;
   const tabs = (isDevice
-    ? (["general", "federation", "driver", "variables", "events", "functions"] as const)
+    ? (["general", "federation", "driver", "variables", "bindings", "events", "functions"] as const)
     : isApplication
-      ? (["general", "federation", "deploy", "variables", "events", "functions"] as const)
+      ? (["general", "federation", "deploy", "variables", "bindings", "events", "functions"] as const)
       : canManage
-        ? (["general", "federation", "access", "variables", "events", "functions"] as const)
-        : (["general", "federation", "variables", "events", "functions"] as const)
+        ? (["general", "federation", "access", "variables", "bindings", "events", "functions"] as const)
+        : (["general", "federation", "variables", "bindings", "events", "functions"] as const)
   ).filter((tabName): tabName is Tab => tabName !== "federation" || showFederationBind);
 
   const tabLabel = (t: Tab) => {
@@ -172,6 +173,8 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
         return "Драйвер";
       case "variables":
         return "Переменные";
+      case "bindings":
+        return "Привязки";
       case "events":
         return "События";
       case "functions":
@@ -345,7 +348,6 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                   <th>Значение</th>
                   <th>Запись</th>
                   <th>История</th>
-                  <th>Привязка</th>
                   <th aria-label="Действия" />
                 </tr>
               </thead>
@@ -376,9 +378,6 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                         <span className="var-flag no">нет</span>
                       )}
                     </td>
-                    <td className="mono small var-binding-cell" title={v.bindingExpression ?? undefined}>
-                      {v.bindingExpression ?? "—"}
-                    </td>
                     <td className="var-actions-cell">
                       {v.historyEnabled && (
                         <button
@@ -402,7 +401,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                           Настройки
                         </button>
                       ) : (
-                        v.writable && !v.bindingExpression && (
+                        v.writable && (
                           <button
                             type="button"
                             className="btn small"
@@ -416,7 +415,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
                   </tr>
                   {historyVariable === v.name && v.historyEnabled && (
                     <tr className="var-history-row">
-                      <td colSpan={6}>
+                      <td colSpan={5}>
                         <VariableHistoryPanel
                           objectPath={path}
                           variableName={v.name}
@@ -433,6 +432,10 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
             </div>
           )}
         </section>
+      )}
+
+      {tab === "bindings" && (
+        <BindingRulesPanel path={path} canManage={canManage} />
       )}
 
       {tab === "events" && (

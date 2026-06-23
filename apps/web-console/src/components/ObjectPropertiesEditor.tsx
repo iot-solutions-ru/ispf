@@ -6,7 +6,6 @@ import {
   fetchObjectEditor,
   setVariable,
   updateObject,
-  updateVariableDefinition,
   updateVariableHistory,
 } from "../api";
 import type { ObjectEditorDto, DataRecord, VariableDto } from "../types";
@@ -26,7 +25,6 @@ import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
-import BindingExpressionField from "./BindingExpressionField";
 import CreateVariableDialog from "./CreateVariableDialog";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
 
@@ -45,7 +43,6 @@ interface EditorState {
   iconId: string | null;
   variables: Record<string, DataRecord>;
   variableHistory: Record<string, VariableHistoryState>;
-  variableBindings: Record<string, string>;
 }
 
 function historyFromVariable(v: VariableDto): VariableHistoryState {
@@ -65,14 +62,12 @@ function historyEqual(a: VariableHistoryState, b: VariableHistoryState): boolean
 function buildState(data: ObjectEditorDto): EditorState {
   const variables: Record<string, DataRecord> = {};
   const variableHistory: Record<string, VariableHistoryState> = {};
-  const variableBindings: Record<string, string> = {};
   for (const v of data.variables) {
     if (v.name === "uiIcon") {
       continue;
     }
     variables[v.name] = ensureRecord(v);
     variableHistory[v.name] = historyFromVariable(v);
-    variableBindings[v.name] = v.bindingExpression ?? "";
   }
   return {
     displayName: data.object.displayName,
@@ -80,7 +75,6 @@ function buildState(data: ObjectEditorDto): EditorState {
     iconId: data.object.iconId ?? null,
     variables,
     variableHistory,
-    variableBindings,
   };
 }
 
@@ -90,41 +84,32 @@ function VariableEditorRow({
   baseline,
   history,
   historyBaseline,
-  bindingExpression,
-  bindingBaseline,
   onChange,
   onHistoryChange,
-  onBindingChange,
 }: {
   variable: VariableDto;
   record: DataRecord;
   baseline: DataRecord;
   history: VariableHistoryState;
   historyBaseline: VariableHistoryState;
-  bindingExpression: string;
-  bindingBaseline: string;
   onChange: (next: DataRecord) => void;
   onHistoryChange: (next: VariableHistoryState) => void;
-  onBindingChange: (next: string) => void;
 }) {
-  const [showBinding, setShowBinding] = useState(false);
-  const [showJson, setShowJson] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showJson, setShowJson] = useState(false);
   const dirty = !recordsEqual(record, baseline);
   const historyDirty = !historyEqual(history, historyBaseline);
-  const bindingDirty = bindingExpression.trim() !== bindingBaseline.trim();
   const row = record.rows[0] ?? {};
-  const disabled = !variable.writable || Boolean(bindingBaseline.trim());
+  const disabled = !variable.writable;
 
   return (
-    <article className={`property-card ${dirty || historyDirty || bindingDirty ? "dirty" : ""}`}>
+    <article className={`property-card ${dirty || historyDirty ? "dirty" : ""}`}>
       <header className="property-card-header">
         <div>
           <code className="property-name">{variable.name}</code>
           <span className="property-badges">
             {variable.readable && <span className="badge">R</span>}
             {variable.writable && <span className="badge w">W</span>}
-            {variable.bindingExpression && <span className="badge b">Σ</span>}
             {history.historyEnabled && (
               <span className="badge hist" title={formatHistoryRetention(history.historyRetentionDays)}>
                 H
@@ -135,9 +120,6 @@ function VariableEditorRow({
         <div className="property-card-tools">
           <button type="button" className="btn tiny" onClick={() => setShowHistory((v) => !v)}>
             История
-          </button>
-          <button type="button" className="btn tiny" onClick={() => setShowBinding((v) => !v)}>
-            Привязка
           </button>
           <button type="button" className="btn tiny" onClick={() => setShowJson((v) => !v)}>
             JSON
@@ -151,16 +133,6 @@ function VariableEditorRow({
             idPrefix={`prop-${variable.name}`}
             value={history}
             onChange={onHistoryChange}
-          />
-        </div>
-      )}
-
-      {showBinding && (
-        <div className="binding-panel">
-          <span className="field-label">Выражение привязки (CEL)</span>
-          <BindingExpressionField
-            value={bindingExpression}
-            onChange={onBindingChange}
           />
         </div>
       )}
@@ -262,9 +234,6 @@ export default function ObjectPropertiesEditor({
       if (!historyEqual(state.variableHistory[name], baseline.variableHistory[name])) {
         return true;
       }
-      if ((state.variableBindings[name] ?? "") !== (baseline.variableBindings[name] ?? "")) {
-        return true;
-      }
     }
     return false;
   }, [state, baseline]);
@@ -305,16 +274,7 @@ export default function ObjectPropertiesEditor({
       for (const variable of editorQuery.data.variables) {
         const current = state.variables[variable.name];
         const base = baseline.variables[variable.name];
-        const currentBinding = state.variableBindings[variable.name] ?? "";
-        const baseBinding = baseline.variableBindings[variable.name] ?? "";
-        if (currentBinding.trim() !== baseBinding.trim()) {
-          await updateVariableDefinition(path, variable.name, {
-            bindingExpression: currentBinding.trim() || "",
-          }, writeOpts);
-        }
-        const writableWithoutBinding =
-          variable.writable && !currentBinding.trim() && !baseBinding.trim();
-        if (writableWithoutBinding && current && base && !recordsEqual(current, base)) {
+        if (variable.writable && current && base && !recordsEqual(current, base)) {
           await setVariable(path, variable.name, current, writeOpts);
         }
         const currentHistory = state.variableHistory[variable.name];
@@ -365,7 +325,6 @@ export default function ObjectPropertiesEditor({
         variableHistory: Object.fromEntries(
           Object.entries(baseline.variableHistory).map(([k, v]) => [k, { ...v }])
         ),
-        variableBindings: { ...baseline.variableBindings },
       });
     }
   }, [baseline]);
@@ -581,8 +540,6 @@ export default function ObjectPropertiesEditor({
                 baseline={baseline!.variables[variable.name]}
                 history={state.variableHistory[variable.name]}
                 historyBaseline={baseline!.variableHistory[variable.name]}
-                bindingExpression={state.variableBindings[variable.name] ?? ""}
-                bindingBaseline={baseline!.variableBindings[variable.name] ?? ""}
                 onChange={(next) =>
                   setState((s) =>
                     s ? { ...s, variables: { ...s.variables, [variable.name]: next } } : s
@@ -594,16 +551,6 @@ export default function ObjectPropertiesEditor({
                       ? {
                           ...s,
                           variableHistory: { ...s.variableHistory, [variable.name]: next },
-                        }
-                      : s
-                  )
-                }
-                onBindingChange={(next) =>
-                  setState((s) =>
-                    s
-                      ? {
-                          ...s,
-                          variableBindings: { ...s.variableBindings, [variable.name]: next },
                         }
                       : s
                   )

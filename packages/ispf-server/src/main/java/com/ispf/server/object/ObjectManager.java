@@ -8,10 +8,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.expression.BindingEvaluator;
-import com.ispf.expression.BindingEvaluationContext;
 import com.ispf.server.bootstrap.PlatformBootstrap;
-import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -56,13 +53,8 @@ public class ObjectManager {
     private final ObjectProvider<ModelApplicationRunner> modelApplicationRunner;
     private final ObjectProvider<ModelPersistenceService> modelPersistence;
     private final ApplicationEventPublisher eventPublisher;
-    private final BindingEvaluator bindingEvaluator;
-    private final BindingEvaluationContext bindingEvaluationContext;
     private final ObjectConfigAuditService configAuditService;
     private volatile boolean initialized;
-
-    private static final int MAX_BINDING_PROPAGATION_DEPTH = 8;
-    private static final ThreadLocal<Integer> BINDING_PROPAGATION_DEPTH = ThreadLocal.withInitial(() -> 0);
 
     public ObjectManager(
             ObjectNodeRepository nodeRepository,
@@ -73,8 +65,6 @@ public class ObjectManager {
             ObjectProvider<ModelApplicationRunner> modelApplicationRunner,
             ObjectProvider<ModelPersistenceService> modelPersistence,
             ApplicationEventPublisher eventPublisher,
-            BindingEvaluator bindingEvaluator,
-            BindingEvaluationContext bindingEvaluationContext,
             ObjectConfigAuditService configAuditService
     ) {
         this.nodeRepository = nodeRepository;
@@ -85,8 +75,6 @@ public class ObjectManager {
         this.modelApplicationRunner = modelApplicationRunner;
         this.modelPersistence = modelPersistence;
         this.eventPublisher = eventPublisher;
-        this.bindingEvaluator = bindingEvaluator;
-        this.bindingEvaluationContext = bindingEvaluationContext;
         this.configAuditService = configAuditService;
     }
 
@@ -221,7 +209,7 @@ public class ObjectManager {
     public Variable setRuntimeVariableValue(String path, String name, DataRecord value, boolean publishEvent) {
         PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
-            Variable created = new Variable(name, value.schema(), true, false, null, null);
+            Variable created = new Variable(name, value.schema(), true, false, null);
             node.addVariable(created);
             return created;
         });
@@ -244,7 +232,6 @@ public class ObjectManager {
         bumpRevision(node);
         recordAudit(path, "SET_VARIABLE_VALUE", name, revisionBefore, node.revision(), null);
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
-        propagateBindings(path);
         return variable;
     }
 
@@ -271,7 +258,6 @@ public class ObjectManager {
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String bindingExpression,
             DataRecord initialValue,
             boolean historyEnabled,
             Integer historyRetentionDays
@@ -288,13 +274,11 @@ public class ObjectManager {
         }
         assertExpectedRevision(path);
         long revisionBefore = node.revision();
-        String binding = normalizeBinding(bindingExpression);
         Variable variable = new Variable(
                 name,
                 schema,
                 readable,
                 writable,
-                binding,
                 initialValue,
                 historyEnabled,
                 historyRetentionDays
@@ -304,9 +288,6 @@ public class ObjectManager {
         bumpRevision(node);
         recordAudit(path, "CREATE_VARIABLE", name, revisionBefore, node.revision(), null);
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
-        if (binding != null) {
-            propagateBindings(path);
-        }
         return node.getVariable(name).orElseThrow();
     }
 
@@ -314,7 +295,6 @@ public class ObjectManager {
     public Variable updateVariableDefinition(
             String path,
             String name,
-            String bindingExpression,
             Boolean readable,
             Boolean writable
     ) {
@@ -328,13 +308,9 @@ public class ObjectManager {
         }
         boolean nextReadable = readable != null ? readable : variable.readable();
         boolean nextWritable = writable != null ? writable : variable.writable();
-        String nextBinding = bindingExpression != null
-                ? normalizeBinding(bindingExpression)
-                : variable.bindingExpression().orElse(null);
         Variable updated = variable.withDefinition(
                 nextReadable,
                 nextWritable,
-                nextBinding,
                 variable.historyEnabled(),
                 variable.historyRetentionDays().orElse(null)
         );
@@ -343,7 +319,6 @@ public class ObjectManager {
         bumpRevision(node);
         recordAudit(path, "UPDATE_VARIABLE", name, revisionBefore, node.revision(), null);
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
-        propagateBindings(path);
         return updated;
     }
 
@@ -401,13 +376,6 @@ public class ObjectManager {
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
     }
 
-    private static String normalizeBinding(String bindingExpression) {
-        if (bindingExpression == null || bindingExpression.isBlank()) {
-            return null;
-        }
-        return bindingExpression.trim();
-    }
-
     @Transactional
     public Variable updateVariableHistory(
             String path,
@@ -453,34 +421,13 @@ public class ObjectManager {
     ) {
         PlatformObject node = objectTree.require(path);
         if (node.getVariable(name).isEmpty()) {
-            Variable created = new Variable(name, schema, false, false, null, value);
+            Variable created = new Variable(name, schema, false, false, value);
             node.addVariable(created);
             persistVariable(path, created);
             publish(ObjectChangeEvent.variableUpdated(path, name));
             return created;
         }
         return setSystemVariableValue(path, name, value);
-    }
-
-    private void propagateBindings(String path) {
-        int depth = BINDING_PROPAGATION_DEPTH.get();
-        if (depth >= MAX_BINDING_PROPAGATION_DEPTH) {
-            return;
-        }
-        BINDING_PROPAGATION_DEPTH.set(depth + 1);
-        try {
-            PlatformObject node = objectTree.require(path);
-            for (String changedName : bindingEvaluator.evaluateBindingsReturningChanges(
-                    node,
-                    bindingEvaluationContext
-            )) {
-                Variable changed = node.getVariable(changedName).orElseThrow();
-                persistVariable(path, changed);
-                publish(ObjectChangeEvent.variableUpdated(path, changedName));
-            }
-        } finally {
-            BINDING_PROPAGATION_DEPTH.set(depth);
-        }
     }
 
     @Transactional
@@ -611,7 +558,6 @@ public class ObjectManager {
                         mapper.readSchema(varEntity.getSchemaJson()),
                         varEntity.isReadable(),
                         varEntity.isWritable(),
-                        varEntity.getBindingExpr(),
                         value,
                         varEntity.isHistoryEnabled(),
                         varEntity.getHistoryRetentionDays()
@@ -657,11 +603,15 @@ public class ObjectManager {
         entity.setValueJson(mapped.getValueJson());
         entity.setReadable(mapped.isReadable());
         entity.setWritable(mapped.isWritable());
-        entity.setBindingExpr(mapped.getBindingExpr());
         entity.setUpdatedAt(mapped.getUpdatedAt());
         entity.setHistoryEnabled(mapped.isHistoryEnabled());
         entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
         variableRepository.save(entity);
+    }
+
+    @Transactional
+    public void persistBindingRuleTarget(String path, Variable variable) {
+        persistVariable(path, variable);
     }
 
     private void publish(ObjectChangeEvent event) {

@@ -1,5 +1,7 @@
 package com.ispf.server.object;
 
+import com.ispf.core.binding.BindingRulesConstants;
+
 /**
  * Reserved system variables managed by the platform (hidden from operator UI).
  */
@@ -11,6 +13,6 @@ public final class BindingStateVariables {
     }
 
     public static boolean isReserved(String name) {
-        return BINDING_STATE.equals(name);
+        return BINDING_STATE.equals(name) || BindingRulesConstants.isReservedVariable(name);
     }
 }

@@ -1,4 +1,5 @@
 import type { EventDescriptor, FunctionDescriptor, ObjectType, DataRecord, DataSchema } from "../types";
+import type { BindingActivators } from "../types";
 
 export type ModelType = "RELATIVE" | "ABSOLUTE" | "INSTANCE";
 
@@ -9,15 +10,21 @@ export interface ModelVariableDefinition {
   schema: DataSchema;
   readable: boolean;
   writable: boolean;
-  defaultBinding: string | null;
   defaultValue: DataRecord | null;
   historyEnabled?: boolean;
   historyRetentionDays?: number | null;
 }
 
-export interface ModelBindingDefinition {
-  targetVariable: string;
+export interface ModelBindingRule {
+  id: string;
+  name?: string | null;
+  enabled?: boolean | null;
+  order?: number | null;
+  activators?: BindingActivators | null;
+  condition?: string | null;
   expression: string;
+  targetVariable: string;
+  targetField?: string | null;
 }
 
 export interface ModelDto {
@@ -31,7 +38,7 @@ export interface ModelDto {
   variables: ModelVariableDefinition[];
   events: EventDescriptor[];
   functions: FunctionDescriptor[];
-  bindings: ModelBindingDefinition[];
+  bindings: ModelBindingRule[];
   parameters: Record<string, string>;
   createdAt: string;
   updatedAt: string;
@@ -55,7 +62,7 @@ export interface CreateModelPayload {
   variables?: ModelVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];
-  bindings?: ModelBindingDefinition[];
+  bindings?: ModelBindingRule[];
   parameters?: Record<string, string>;
 }
 
@@ -68,7 +75,7 @@ export interface UpdateModelPayload {
   variables?: ModelVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];
-  bindings?: ModelBindingDefinition[];
+  bindings?: ModelBindingRule[];
   parameters?: Record<string, string>;
 }
 
@@ -78,7 +85,9 @@ export const BUILTIN_MODEL_NAMES = new Set([
   "mqtt-sensor-v1",
   "dashboard-v1",
   "workflow-v1",
+  "virtual-lab-v1",
   "snmp-agent-v1",
+  "vendor-sensor-ext-v1",
 ]);
 
 export function modelNameFromPath(path: string): string | null {

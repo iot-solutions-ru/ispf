@@ -5,7 +5,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.plugin.model.ModelAttachment;
-import com.ispf.plugin.model.ModelBindingDefinition;
+import com.ispf.plugin.model.ModelBindingRule;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelException;
@@ -373,7 +373,7 @@ public class ModelController {
             List<ModelVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<ModelBindingDefinition> bindings,
+            List<ModelBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }
@@ -387,7 +387,7 @@ public class ModelController {
             List<ModelVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<ModelBindingDefinition> bindings,
+            List<ModelBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }

@@ -16,7 +16,6 @@ public class Variable {
     private final DataSchema schema;
     private final boolean readable;
     private final boolean writable;
-    private final String bindingExpression;
     private final boolean historyEnabled;
     private final Integer historyRetentionDays;
     private final AtomicReference<DataRecord> value = new AtomicReference<>();
@@ -27,10 +26,9 @@ public class Variable {
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String bindingExpression,
             DataRecord initialValue
     ) {
-        this(name, schema, readable, writable, bindingExpression, initialValue, false, null);
+        this(name, schema, readable, writable, initialValue, false, null);
     }
 
     public Variable(
@@ -38,7 +36,6 @@ public class Variable {
             DataSchema schema,
             boolean readable,
             boolean writable,
-            String bindingExpression,
             DataRecord initialValue,
             boolean historyEnabled,
             Integer historyRetentionDays
@@ -47,7 +44,6 @@ public class Variable {
         this.schema = schema;
         this.readable = readable;
         this.writable = writable;
-        this.bindingExpression = bindingExpression;
         this.historyEnabled = historyEnabled;
         this.historyRetentionDays = historyRetentionDays;
         if (initialValue != null) {
@@ -72,10 +68,6 @@ public class Variable {
         return writable;
     }
 
-    public Optional<String> bindingExpression() {
-        return Optional.ofNullable(bindingExpression);
-    }
-
     /** Whether time-series samples are stored for this variable. */
     public boolean historyEnabled() {
         return historyEnabled;
@@ -89,17 +81,12 @@ public class Variable {
     }
 
     public Variable withHistorySettings(boolean enabled, Integer retentionDays) {
-        return withDefinition(readable, writable, bindingExpression, enabled, retentionDays);
-    }
-
-    public Variable withBindingExpression(String binding) {
-        return withDefinition(readable, writable, binding, historyEnabled, historyRetentionDays);
+        return withDefinition(readable, writable, enabled, retentionDays);
     }
 
     public Variable withDefinition(
             boolean readable,
             boolean writable,
-            String binding,
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
@@ -108,7 +95,6 @@ public class Variable {
                 schema,
                 readable,
                 writable,
-                binding,
                 value.get(),
                 historyEnabled,
                 historyRetentionDays

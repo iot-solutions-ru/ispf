@@ -1,0 +1,40 @@
+---
+description: VPS deploy via direct SCP; GitHub releases only on explicit user request
+alwaysApply: true
+---
+
+# VPS deploy (ISPF prod)
+
+**Default:** deploy to https://ispf.iot-solutions.ru by **direct SCP + staging**, not via GitHub Releases.
+
+## When to deploy
+
+- After meaningful server/UI changes when user asks to deploy or says «на VPS» / «prod».
+- **Do not** create GitHub releases unless the user explicitly asks.
+- **Do not** run `vps-apply-release.sh` or download release artifacts for prod deploy — even after a release was published.
+
+## Procedure
+
+From repo root, use [`deploy/vps-deploy-direct.ps1`](deploy/vps-deploy-direct.ps1):
+
+```powershell
+.\deploy\vps-deploy-direct.ps1 -Version 0.8.0
+```
+
+Or equivalent manual steps:
+
+1. `.\gradlew :packages:ispf-server:bootJar -x test "-Pversion=<ver>"`
+2. `cd apps/web-console && npm ci && npm run build`
+3. Package UI: `tar -a -c -f web-console.zip *` from `apps/web-console/dist` (**never** `Compress-Archive` — breaks Linux unzip)
+4. `scp` `ispf-server-<ver>.jar` → `/opt/ispf/staging/<ver>/ispf-server.jar`
+5. `scp` `web-console.zip` → `/opt/ispf/staging/<ver>/web-console.zip`
+6. SSH: `bash /opt/ispf/bin/apply-platform-update.sh /opt/ispf/staging/<ver>`
+7. Verify: `curl https://ispf.iot-solutions.ru/api/v1/info` → `"version":"<ver>"`
+
+**Host:** `root@ispf.iot-solutions.ru` (SSH key auth).
+
+## GitHub releases
+
+- Create `gh release` / tag **only** when user explicitly requests a release.
+- Release workflow (`.github/workflows/release.yml`) is for artifacts and history — **not** for prod rollout.
+- After publishing a release, prod deploy still uses direct SCP above.

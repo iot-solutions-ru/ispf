@@ -52,7 +52,7 @@ public class ObjectUiIconService {
         DataRecord record = DataRecord.single(UI_ICON_SCHEMA, Map.of("value", normalized));
         PlatformObject node = objectManager.require(path);
         if (node.getVariable(UI_ICON_VARIABLE).isEmpty()) {
-            node.addVariable(new Variable(UI_ICON_VARIABLE, UI_ICON_SCHEMA, true, true, null, record));
+            node.addVariable(new Variable(UI_ICON_VARIABLE, UI_ICON_SCHEMA, true, true, record));
             objectManager.persistNodeTree(path);
             return;
         }

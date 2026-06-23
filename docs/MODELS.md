@@ -17,7 +17,7 @@
 - Переменные (`ModelVariableDefinition`) — schema, default, group, readable/writable
 - События (`EventDescriptor`)
 - Функции (`FunctionDescriptor`)
-- Bindings (`ModelBindingDefinition`) — CEL или platform bindings; см. [BINDINGS.md](BINDINGS.md)
+- Binding rules (`ModelBindingRule`) — см. [BINDINGS.md](BINDINGS.md)
 - Метаданные: name, description, `ObjectType`, `ModelType`
 
 ## Engine

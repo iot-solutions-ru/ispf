@@ -9,6 +9,7 @@ import type {
   ObjectEditorDto,
   FunctionDescriptor,
   EventDescriptor,
+  BindingRule,
 } from "./types";
 import type { DashboardView } from "./types/dashboard";
 import type { WorkflowLifecycleStatus, WorkflowView } from "./types/workflow";
@@ -278,7 +279,6 @@ export interface CreateVariablePayload {
   schema?: DataSchema;
   readable?: boolean;
   writable?: boolean;
-  bindingExpression?: string | null;
   initialValue?: DataRecord | null;
   historyEnabled?: boolean;
   historyRetentionDays?: number | null;
@@ -298,7 +298,6 @@ export function createVariable(path: string, payload: CreateVariablePayload): Pr
 }
 
 export interface UpdateVariableDefinitionPayload {
-  bindingExpression?: string | null;
   readable?: boolean;
   writable?: boolean;
 }
@@ -320,6 +319,26 @@ export function updateVariableDefinition(
 export function deleteVariable(path: string, name: string): Promise<void> {
   const params = new URLSearchParams({ path, name });
   return request(`/api/v1/objects/by-path/variables?${params}`, {
+    method: "DELETE",
+  });
+}
+
+export function fetchBindingRules(path: string): Promise<BindingRule[]> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/binding-rules?${params}`);
+}
+
+export function saveBindingRules(path: string, rules: BindingRule[]): Promise<BindingRule[]> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/binding-rules?${params}`, {
+    method: "PUT",
+    body: JSON.stringify(rules),
+  });
+}
+
+export function deleteBindingRule(path: string, ruleId: string): Promise<BindingRule[]> {
+  const params = new URLSearchParams({ path });
+  return request(`/api/v1/objects/by-path/binding-rules/${encodeURIComponent(ruleId)}?${params}`, {
     method: "DELETE",
   });
 }

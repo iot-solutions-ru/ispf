@@ -1,4 +1,6 @@
 #!/bin/bash
+# Configure AI env then apply a GitHub release version on VPS.
+# Prod deploy default: deploy/vps-deploy-direct.ps1 (SCP). Do not use this for routine rollouts.
 set -euo pipefail
 VERSION="${1:-0.7.4}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

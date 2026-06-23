@@ -14,7 +14,6 @@ import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.ModelVariableDefinition;
-import com.ispf.plugin.model.ModelBindingDefinition;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -31,23 +30,30 @@ public class ModelApplicationRunner {
     private final ModelEngine modelEngine;
     private final ModelRegistry modelRegistry;
     private final ObjectManager objectManager;
+    private final ModelBindingRulesMerger bindingRulesMerger;
 
     public ModelApplicationRunner(
             ModelEngine modelEngine,
             ModelRegistry modelRegistry,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            ModelBindingRulesMerger bindingRulesMerger
     ) {
         this.modelEngine = modelEngine;
         this.modelRegistry = modelRegistry;
         this.objectManager = objectManager;
+        this.bindingRulesMerger = bindingRulesMerger;
+    }
+
+    private void applyModelWithRules(ModelDefinition model, String path) {
+        modelEngine.applyModel(model.id(), path);
+        bindingRulesMerger.mergeModelRules(path, model, model.parameters());
+        objectManager.persistNodeTree(path);
     }
 
     public void applyDemoModels() {
         ensurePlatformDemoNodes();
         modelRegistry.findByName("mqtt-sensor-v1").ifPresent(model -> {
-            String path = "root.platform.devices.demo-sensor-01";
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
+            applyModelWithRules(model, "root.platform.devices.demo-sensor-01");
         });
 
         modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
@@ -239,33 +245,22 @@ public class ModelApplicationRunner {
                     ));
                     changed = true;
                 }
-                String expectedBinding = model.bindingFor(varDef.name());
-                if (!Objects.equals(existing.bindingExpression().orElse(null), expectedBinding)) {
-                    target.addVariable(new Variable(
-                            existing.name(),
-                            existing.schema(),
-                            existing.readable(),
-                            existing.writable(),
-                            expectedBinding,
-                            existing.value().orElse(varDef.defaultValue()),
-                            existing.historyEnabled(),
-                            existing.historyRetentionDays().orElse(null)
-                    ));
-                    changed = true;
-                }
             } else {
                 target.addVariable(new Variable(
                         varDef.name(),
                         varDef.schema(),
                         varDef.readable(),
                         varDef.writable(),
-                        model.bindingFor(varDef.name()),
                         varDef.defaultValue(),
                         varDef.historyEnabled(),
                         varDef.historyRetentionDays()
                 ));
                 changed = true;
             }
+        }
+        if (!model.bindingRules().isEmpty()) {
+            bindingRulesMerger.mergeModelRules(objectPath, model, model.parameters());
+            changed = true;
         }
         return changed;
     }

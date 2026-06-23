@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createVariable, type CreateVariablePayload } from "../api";
 import type { DataSchema } from "../types";
-import BindingExpressionField from "./BindingExpressionField";
 import VariableHistoryFields, { type VariableHistoryState } from "./VariableHistoryFields";
 
 interface CreateVariableDialogProps {
@@ -22,7 +21,6 @@ export default function CreateVariableDialog({
   onSaved,
 }: CreateVariableDialogProps) {
   const [name, setName] = useState("");
-  const [bindingExpression, setBindingExpression] = useState("");
   const [writable, setWritable] = useState(false);
   const [history, setHistory] = useState<VariableHistoryState>({
     historyEnabled: false,
@@ -36,7 +34,6 @@ export default function CreateVariableDialog({
         schema: { ...DEFAULT_SCHEMA, name: name.trim() || "value" },
         readable: true,
         writable,
-        bindingExpression: bindingExpression.trim() || null,
         historyEnabled: history.historyEnabled,
         historyRetentionDays: history.historyRetentionDays,
       };
@@ -72,13 +69,9 @@ export default function CreateVariableDialog({
             />
             Доступна для записи
           </label>
-          <label className="full">
-            Выражение привязки (CEL)
-            <BindingExpressionField
-              value={bindingExpression}
-              onChange={setBindingExpression}
-            />
-          </label>
+          <p className="hint full">
+            Для вычисляемых значений создайте переменную (writable=false), затем правило на вкладке «Привязки».
+          </p>
           <div className="full">
             <VariableHistoryFields
               idPrefix="create-var"

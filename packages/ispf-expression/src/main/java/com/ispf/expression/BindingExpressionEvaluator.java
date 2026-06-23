@@ -1,71 +1,47 @@
 package com.ispf.expression;
 
-import com.ispf.core.object.PlatformObject;
-import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.PlatformObject;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Evaluates binding expressions and writes computed values back to object variables.
+ * Evaluates a single binding expression and maps the result to a target variable schema.
  */
-public class BindingEvaluator {
+public class BindingExpressionEvaluator {
 
     private final ExpressionEngine engine = new ExpressionEngine();
 
-    public void evaluateBindings(PlatformObject platformObject) {
-        evaluateBindingsReturningChanges(platformObject);
-    }
-
-    /**
-     * Re-evaluates all binding expressions and returns variable names whose values changed.
-     */
-    public List<String> evaluateBindingsReturningChanges(PlatformObject platformObject) {
-        return evaluateBindingsReturningChanges(platformObject, BindingEvaluationContext.NONE);
-    }
-
-    public List<String> evaluateBindingsReturningChanges(
+    public Optional<DataRecord> evaluate(
             PlatformObject platformObject,
+            String targetVariableName,
+            String expression,
+            DataSchema targetSchema,
             BindingEvaluationContext context
     ) {
-        List<String> changed = new ArrayList<>();
-        for (Variable variable : platformObject.variables().values()) {
-            variable.bindingExpression().ifPresent(expr -> {
-                try {
-                    var platformBinding = PlatformBindingRegistry.find(expr);
-                    if (platformBinding.isPresent()) {
-                        platformBinding.get().evaluate(platformObject, variable.name(), expr, context).ifPresent(result -> {
-                            DataRecord record = toDataRecord(variable.schema(), result);
-                            applyIfChanged(variable, record, changed);
-                        });
-                        return;
-                    }
-                    Object result = engine.evaluate(expr, platformObject);
-                    DataRecord record = toDataRecord(variable.schema(), result);
-                    applyIfChanged(variable, record, changed);
-                } catch (ExpressionException ignored) {
-                    // Binding stays at default value until dependencies are available
-                }
-            });
+        if (expression == null || expression.isBlank()) {
+            return Optional.empty();
         }
-        return changed;
-    }
-
-    private static void applyIfChanged(Variable variable, DataRecord record, List<String> changed) {
-        DataRecord previous = variable.value().orElse(null);
-        if (!recordsEqual(previous, record)) {
-            variable.setComputedValue(record);
-            changed.add(variable.name());
+        try {
+            var platformBinding = PlatformBindingRegistry.find(expression);
+            if (platformBinding.isPresent()) {
+                return platformBinding.get()
+                        .evaluate(platformObject, targetVariableName, expression, context)
+                        .map(result -> toDataRecord(targetSchema, result));
+            }
+            Object result = engine.evaluate(expression, platformObject);
+            return Optional.of(toDataRecord(targetSchema, result));
+        } catch (ExpressionException ignored) {
+            return Optional.empty();
         }
     }
 
-    private static boolean recordsEqual(DataRecord left, DataRecord right) {
+    public static boolean recordsEqual(DataRecord left, DataRecord right) {
         if (left == null || right == null) {
             return left == right;
         }
@@ -94,9 +70,6 @@ public class BindingEvaluator {
         return result instanceof Number || result instanceof Boolean || result instanceof String;
     }
 
-    /**
-     * Maps a scalar binding result (e.g. counterRate B/s) into multi-field schemas such as snmpNumeric.
-     */
     private static DataRecord scalarToRecord(DataSchema schema, Object result) {
         Map<String, Object> row = new java.util.LinkedHashMap<>();
         FieldDefinition primary = schema.fields().stream()

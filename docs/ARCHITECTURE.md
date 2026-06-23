@@ -104,7 +104,7 @@ counterRate(ifInOctets)
 | Package | Role |
 |---------|------|
 | `ispf-core` | ObjectTree, PlatformObject, DataRecord |
-| `ispf-expression` | CEL engine, BindingEvaluator |
+| `ispf-expression` | CEL engine, BindingExpressionEvaluator |
 | `ispf-driver-*` | Device protocol adapters |
 | `ispf-plugin-model` | Model registry & engine |
 | `ispf-plugin-workflow` | BPMN parser & executor |
@@ -121,8 +121,8 @@ Roles: `admin`, `operator`.
 ```
 DeviceDriver.readPoints()
   → DriverRuntimeService
-  → ObjectManager.setVariableValue()
-  → BindingEvaluator (CEL)
+  → ObjectManager.setVariableValue() / setDriverTelemetryValue()
+  → BindingPropagationListener → BindingRuleEngine
   → AlertRuleListener
   → ObjectChangeEvent → WebSocket → Web Console
 ```

@@ -49,7 +49,6 @@ public class ObjectEntityMapper {
         entity.setValueJson(variable.value().map(this::writeJson).orElse(null));
         entity.setReadable(variable.readable());
         entity.setWritable(variable.writable());
-        entity.setBindingExpr(variable.bindingExpression().orElse(null));
         entity.setUpdatedAt(variable.updatedAt().orElse(null));
         entity.setHistoryEnabled(variable.historyEnabled());
         entity.setHistoryRetentionDays(variable.historyRetentionDays().orElse(null));

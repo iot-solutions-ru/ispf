@@ -54,9 +54,7 @@ class FederationBindSnapshotTest {
                 FederationBindSnapshot.VAR_SNAPSHOT,
                 STRING_VALUE,
                 false,
-                false,
-                null,
-                DataRecord.single(STRING_VALUE, Map.of("value", json))
+                false, DataRecord.single(STRING_VALUE, Map.of("value", json))
         ));
 
         when(objectManager.require(path)).thenReturn(node);
