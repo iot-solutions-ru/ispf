@@ -1,7 +1,8 @@
 import type { StyleSpecification } from "maplibre-gl";
 
-/** Neutral default — MapLibre demo tiles, no API key. */
-export const DEFAULT_MAP_STYLE_URL = "https://demotiles.maplibre.org/style.json";
+/** Default raster basemap — OpenStreetMap standard tiles. */
+export const DEFAULT_TILE_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+export const DEFAULT_TILE_ATTRIBUTION = "© OpenStreetMap contributors";
 
 const SUBDOMAIN_HOSTS = ["a", "b", "c"];
 
@@ -12,6 +13,21 @@ function expandTileSubdomains(template: string): string[] {
   return SUBDOMAIN_HOSTS.map((host) => template.replaceAll("{s}", host));
 }
 
+function buildRasterStyle(tileUrl: string, attribution: string): StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      basemap: {
+        type: "raster",
+        tiles: expandTileSubdomains(tileUrl),
+        tileSize: 256,
+        attribution,
+      },
+    },
+    layers: [{ id: "basemap", type: "raster", source: "basemap" }],
+  };
+}
+
 export function resolveMapStyle(options: {
   mapStyleUrl?: string;
   tileUrl?: string;
@@ -19,18 +35,14 @@ export function resolveMapStyle(options: {
 }): string | StyleSpecification {
   const tileUrl = options.tileUrl?.trim();
   if (tileUrl) {
-    return {
-      version: 8,
-      sources: {
-        basemap: {
-          type: "raster",
-          tiles: expandTileSubdomains(tileUrl),
-          tileSize: 256,
-          attribution: options.tileAttribution?.trim() || "",
-        },
-      },
-      layers: [{ id: "basemap", type: "raster", source: "basemap" }],
-    };
+    return buildRasterStyle(
+      tileUrl,
+      options.tileAttribution?.trim() || DEFAULT_TILE_ATTRIBUTION
+    );
   }
-  return options.mapStyleUrl?.trim() || DEFAULT_MAP_STYLE_URL;
+  const mapStyleUrl = options.mapStyleUrl?.trim();
+  if (mapStyleUrl) {
+    return mapStyleUrl;
+  }
+  return buildRasterStyle(DEFAULT_TILE_URL, DEFAULT_TILE_ATTRIBUTION);
 }

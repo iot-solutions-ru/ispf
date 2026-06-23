@@ -99,8 +99,8 @@ public class ObjectManager {
         modelBootstrap.getObject().ensureBuiltInModels();
         modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
         modelEngine.ifAvailable(engine -> {
-            engine.ensureCatalogContainers();
-            cleanupLegacyModelDefinitionNodes();
+            engine.refreshModelCatalogNodes();
+            cleanupLegacyModelCatalog();
         });
         modelApplicationRunner.getObject().applyDemoModels();
         modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
@@ -592,11 +592,11 @@ public class ObjectManager {
         return grouped;
     }
 
-    private void cleanupLegacyModelDefinitionNodes() {
+    private void cleanupLegacyModelCatalog() {
         String legacyPrefix = ModelCatalogRoots.LEGACY + ".";
         List<String> legacyPaths = objectTree.all().stream()
                 .map(PlatformObject::path)
-                .filter(path -> path.startsWith(legacyPrefix))
+                .filter(path -> path.equals(ModelCatalogRoots.LEGACY) || path.startsWith(legacyPrefix))
                 .sorted(Comparator.comparingInt(String::length).reversed())
                 .toList();
         for (String path : legacyPaths) {

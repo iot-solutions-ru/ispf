@@ -481,7 +481,8 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         zoom: 10,
         centerLat: 55.75,
         centerLon: 37.62,
-        mapStyleUrl: "https://demotiles.maplibre.org/style.json",
+        tileUrl: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        tileAttribution: "© OpenStreetMap contributors",
       };
     case "label":
       return {

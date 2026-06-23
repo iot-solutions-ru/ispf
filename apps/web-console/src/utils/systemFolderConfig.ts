@@ -1,4 +1,8 @@
-import { MODELS_ROOT, RELATIVE_MODELS_ROOT, INSTANCE_TYPES_ROOT, ABSOLUTE_MODELS_ROOT } from "../types/models";
+import {
+  ABSOLUTE_MODELS_ROOT,
+  INSTANCE_TYPES_ROOT,
+  RELATIVE_MODELS_ROOT,
+} from "../types/models";
 import type { ObjectType } from "../types";
 import { isOperatorAppChildPath } from "./operatorAppsPath";
 import { isSecurityRolePath, isSecurityRolesRoot } from "./securityRolePath";
@@ -44,7 +48,6 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
 const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   "root.platform",
   "root.platform.devices",
-  MODELS_ROOT,
   RELATIVE_MODELS_ROOT,
   INSTANCE_TYPES_ROOT,
   ABSOLUTE_MODELS_ROOT,
@@ -161,13 +164,6 @@ const META_BY_TYPE: Partial<Record<ObjectType, SystemFolderListMeta>> = {
   },
 };
 
-const MODELS_FOLDER_META: SystemFolderListMeta = {
-  title: "Модели (legacy)",
-  description:
-    "Устаревший каталог. Новые определения — в relative-models, instance-types, absolute-models.",
-  idColumnLabel: "ID",
-};
-
 const RELATIVE_MODELS_FOLDER_META: SystemFolderListMeta = {
   title: "Относительные модели",
   description: "Mixin blueprints (RELATIVE) — обогащают существующие объекты.",
@@ -192,8 +188,7 @@ function isApplicationSubfolder(path: string): boolean {
 
 function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType | null {
   if (
-    path === MODELS_ROOT
-    || path === RELATIVE_MODELS_ROOT
+    path === RELATIVE_MODELS_ROOT
     || path === INSTANCE_TYPES_ROOT
     || path === ABSOLUTE_MODELS_ROOT
   ) {
@@ -203,9 +198,6 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
     return objectType;
   }
   if (EXACT_CATALOG_PATHS.has(path)) {
-    if (path === MODELS_ROOT) {
-      return "MODEL";
-    }
     const byPath: Record<string, ObjectType> = {
       "root.platform": "PLATFORM",
       "root.platform.devices": "DEVICES",
@@ -272,12 +264,6 @@ export function getSystemFolderListMeta(
   }
   if (path === ABSOLUTE_MODELS_ROOT) {
     return { ...ABSOLUTE_MODELS_FOLDER_META, title: displayName?.trim() || ABSOLUTE_MODELS_FOLDER_META.title };
-  }
-  if (catalogType === "MODEL") {
-    return {
-      ...MODELS_FOLDER_META,
-      title: displayName?.trim() || MODELS_FOLDER_META.title,
-    };
   }
   if (catalogType && META_BY_TYPE[catalogType]) {
     const meta = META_BY_TYPE[catalogType]!;

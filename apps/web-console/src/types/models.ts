@@ -87,17 +87,17 @@ export interface UpdateModelPayload {
   parameters?: Record<string, string>;
 }
 
-export const MODELS_ROOT = "root.platform.models";
 export const RELATIVE_MODELS_ROOT = "root.platform.relative-models";
 export const INSTANCE_TYPES_ROOT = "root.platform.instance-types";
 export const ABSOLUTE_MODELS_ROOT = "root.platform.absolute-models";
 
 export const MODEL_CATALOG_ROOTS = [
-  MODELS_ROOT,
   RELATIVE_MODELS_ROOT,
   INSTANCE_TYPES_ROOT,
   ABSOLUTE_MODELS_ROOT,
 ] as const;
+
+export type ModelCatalogRoot = (typeof MODEL_CATALOG_ROOTS)[number];
 
 export const BUILTIN_MODEL_NAMES = new Set([
   "mqtt-sensor-v1",
@@ -107,6 +107,21 @@ export const BUILTIN_MODEL_NAMES = new Set([
   "snmp-agent-v1",
   "vendor-sensor-ext-v1",
 ]);
+
+export function catalogRootForModelType(type: ModelType): ModelCatalogRoot {
+  switch (type) {
+    case "RELATIVE":
+      return RELATIVE_MODELS_ROOT;
+    case "ABSOLUTE":
+      return ABSOLUTE_MODELS_ROOT;
+    default:
+      return INSTANCE_TYPES_ROOT;
+  }
+}
+
+export function isModelCatalogRoot(path: string): path is ModelCatalogRoot {
+  return (MODEL_CATALOG_ROOTS as readonly string[]).includes(path);
+}
 
 export function modelNameFromPath(path: string): string | null {
   for (const root of MODEL_CATALOG_ROOTS) {
@@ -125,7 +140,7 @@ export function isModelsPath(path: string): boolean {
   return false;
 }
 
-export function modelCatalogRootFromPath(path: string): string | null {
+export function modelCatalogRootFromPath(path: string): ModelCatalogRoot | null {
   for (const root of MODEL_CATALOG_ROOTS) {
     if (path === root || path.startsWith(`${root}.`)) {
       return root;

@@ -12,7 +12,10 @@ root
     ├── root.platform.devices
     │   ├── root.platform.devices.demo-sensor-01
     │   └── root.platform.devices.snmp-localhost
-    ├── root.platform.models
+    ├── root.platform.relative-models
+    ├── root.platform.instance-types
+    ├── root.platform.absolute-models
+    ├── root.platform.instances
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
     ├── root.platform.reports

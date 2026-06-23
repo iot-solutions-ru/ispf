@@ -5,6 +5,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.plugin.model.ModelAttachment;
+import com.ispf.plugin.model.ModelCatalogRoots;
 import com.ispf.plugin.model.ModelBindingRule;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
@@ -70,18 +71,18 @@ public class ModelController {
     @GetMapping
     public List<ModelDto> list() {
         return modelRegistry.all().stream()
-                .map(m -> ModelDto.from(m, modelEngine.modelsRoot()))
+                .map(ModelDto::from)
                 .toList();
     }
 
     @GetMapping("/{id}")
     public ModelDto get(@PathVariable String id) {
-        return ModelDto.from(modelRegistry.requireById(id), modelEngine.modelsRoot());
+        return ModelDto.from(modelRegistry.requireById(id));
     }
 
     @GetMapping("/by-name/{name}")
     public ModelDto getByName(@PathVariable String name) {
-        return ModelDto.from(modelRegistry.requireByName(name), modelEngine.modelsRoot());
+        return ModelDto.from(modelRegistry.requireByName(name));
     }
 
     @PostMapping
@@ -105,7 +106,7 @@ public class ModelController {
         try {
             ModelDefinition created = modelEngine.createModel(model);
             modelPersistence.persist(created, false);
-            return ModelDto.from(created, modelEngine.modelsRoot());
+            return ModelDto.from(created);
         } catch (ModelException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
@@ -131,7 +132,7 @@ public class ModelController {
         );
         ModelDefinition saved = modelEngine.updateModel(updated);
         modelPersistence.persist(saved, false);
-        return ModelDto.from(saved, modelEngine.modelsRoot());
+        return ModelDto.from(saved);
     }
 
     @DeleteMapping("/{id}")
@@ -192,7 +193,7 @@ public class ModelController {
             );
             modelPersistence.persist(model, false);
             objectManager.persistNodeTree(model.catalogObjectPath());
-            return ModelDto.from(model, modelEngine.modelsRoot());
+            return ModelDto.from(model);
         } catch (ModelException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
@@ -356,8 +357,7 @@ public class ModelController {
             }
         }
         for (com.ispf.core.object.PlatformObject node : objectManager.tree().all()) {
-            if (node.path().startsWith(modelEngine.modelsRoot() + ".")
-                    || node.path().equals(modelEngine.modelsRoot())) {
+            if (ModelCatalogRoots.isCatalogPath(node.path()) || ModelCatalogRoots.isLegacyPath(node.path())) {
                 continue;
             }
             if (model.type() == com.ispf.plugin.model.ModelType.INSTANCE

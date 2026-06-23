@@ -32,7 +32,6 @@ function isPlatformCatalogContainer(path: string): boolean {
   }
   return (
     path.endsWith(".devices")
-    || path.endsWith(".models")
     || path.endsWith(".relative-models")
     || path.endsWith(".instance-types")
     || path.endsWith(".absolute-models")
@@ -160,7 +159,6 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
 
   const suffixAllowed =
     path.endsWith(".devices")
-    || path.endsWith(".models")
     || path.endsWith(".relative-models")
     || path.endsWith(".instance-types")
     || path.endsWith(".absolute-models")
@@ -187,8 +185,7 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
     return "DEVICE";
   }
   if (
-    parentPath.endsWith(".models")
-    || parentPath.endsWith(".relative-models")
+    parentPath.endsWith(".relative-models")
     || parentPath.endsWith(".instance-types")
     || parentPath.endsWith(".absolute-models")
   ) {

@@ -29,7 +29,7 @@ public record ModelDto(
         Instant createdAt,
         Instant updatedAt
 ) {
-    public static ModelDto from(ModelDefinition model, String modelsRoot) {
+    public static ModelDto from(ModelDefinition model) {
         return new ModelDto(
                 model.id(),
                 model.name(),

@@ -265,7 +265,7 @@ sequenceDiagram
 | `sub-dashboard` | Вложенный дашборд | `targetDashboardPath`, `targetDashboardPathKey`, `inheritContext` |
 | `panel` | Панель-контейнер | `childrenJson`, `collapsible` |
 | `tab-panel` | Вкладки | `tabsJson` |
-| `map` | Карта (MapLibre) | `parentPath`, `latVariable`, `mapStyleUrl`, `tileUrl`, `selectionKey`, `rowTargetDashboard` |
+| `map` | Карта (MapLibre + OSM) | `parentPath`, `latVariable`, `tileUrl`, `mapStyleUrl`, `selectionKey`, `rowTargetDashboard` |
 | `label`, `image`, `html-snippet` | Оформление | `text`, `imageUrl`, `htmlJson` |
 | `object-tree` | Дерево объектов | `parentPath`, `selectionKey` |
 | `input-form` | Форма ввода в переменные | `fieldsJson` |

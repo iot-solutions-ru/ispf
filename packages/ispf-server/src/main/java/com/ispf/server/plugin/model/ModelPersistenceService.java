@@ -34,7 +34,7 @@ public class ModelPersistenceService {
 
     public void persist(ModelDefinition model, boolean builtin) {
         try {
-            String json = objectMapper.writeValueAsString(ModelDto.from(model, modelEngine.modelsRoot()));
+            String json = objectMapper.writeValueAsString(ModelDto.from(model));
             Integer count = jdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM model_definitions WHERE id = ?",
                     Integer.class,

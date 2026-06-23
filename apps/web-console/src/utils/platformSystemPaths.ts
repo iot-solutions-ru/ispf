@@ -9,7 +9,6 @@ const NON_DELETABLE_PATHS = new Set([
   "root",
   "root.platform",
   "root.platform.devices",
-  "root.platform.models",
   "root.platform.relative-models",
   "root.platform.instance-types",
   "root.platform.absolute-models",

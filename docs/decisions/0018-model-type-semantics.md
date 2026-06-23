@@ -17,7 +17,7 @@
   - `root.platform.instance-types` — шаблоны экземпляров (INSTANCE)
   - `root.platform.absolute-models` — singleton (ABSOLUTE)
 - Три API-фасада: `/api/v1/relative-models`, `/instance-types`, `/absolute-models` (общий registry, разная валидация и операции).
-- `root.platform.models` — legacy; узлы мигрируют в типизированные каталоги при старте.
+- `root.platform.models` удалён при старте; узлы мигрируют в типизированные каталоги.
 
 ### 2. Связь объект ↔ модели
 

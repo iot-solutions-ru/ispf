@@ -8,7 +8,7 @@ public final class ModelCatalogRoots {
     public static final String RELATIVE = "root.platform.relative-models";
     public static final String INSTANCE = "root.platform.instance-types";
     public static final String ABSOLUTE = "root.platform.absolute-models";
-    /** @deprecated migrated to typed catalogs; kept for backward-compatible path checks */
+    /** Legacy catalog path — removed at startup migration. */
     public static final String LEGACY = "root.platform.models";
     public static final String INSTANCES = "root.platform.instances";
 
@@ -37,12 +37,16 @@ public final class ModelCatalogRoots {
         }
         return path.equals(RELATIVE) || path.startsWith(RELATIVE + ".")
                 || path.equals(INSTANCE) || path.startsWith(INSTANCE + ".")
-                || path.equals(ABSOLUTE) || path.startsWith(ABSOLUTE + ".")
-                || path.equals(LEGACY) || path.startsWith(LEGACY + ".");
+                || path.equals(ABSOLUTE) || path.startsWith(ABSOLUTE + ".");
+    }
+
+    public static boolean isLegacyPath(String path) {
+        return path != null
+                && (path.equals(LEGACY) || path.startsWith(LEGACY + "."));
     }
 
     public static boolean isDefinitionPath(String path) {
         return isCatalogPath(path) && !path.equals(RELATIVE) && !path.equals(INSTANCE)
-                && !path.equals(ABSOLUTE) && !path.equals(LEGACY);
+                && !path.equals(ABSOLUTE);
     }
 }

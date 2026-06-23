@@ -44,16 +44,6 @@ public class PlatformBootstrap {
         );
         tree.register(devices);
 
-        PlatformObject models = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.models",
-                ObjectType.MODEL,
-                "Models",
-                "Legacy model catalog (see typed catalogs)",
-                null
-        );
-        tree.register(models);
-
         registerCatalogFolder(tree, "root.platform.relative-models", "Relative Models", "Mixin blueprints for existing objects");
         registerCatalogFolder(tree, "root.platform.instance-types", "Instance Types", "Blueprints for new object instances");
         registerCatalogFolder(tree, "root.platform.absolute-models", "Absolute Models", "Singleton object blueprints");

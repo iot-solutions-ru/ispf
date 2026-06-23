@@ -21,8 +21,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ModelEngine {
 
-    public static final String DEFAULT_MODELS_ROOT = ModelCatalogRoots.LEGACY;
-
     private final ModelRegistry registry;
     private final ObjectTree objectTree;
     private final ExpressionEngine expressionEngine;
@@ -32,15 +30,6 @@ public class ModelEngine {
             ModelRegistry registry,
             ObjectTree objectTree,
             ExpressionEngine expressionEngine
-    ) {
-        this(registry, objectTree, expressionEngine, DEFAULT_MODELS_ROOT);
-    }
-
-    public ModelEngine(
-            ModelRegistry registry,
-            ObjectTree objectTree,
-            ExpressionEngine expressionEngine,
-            String modelsRoot
     ) {
         this.registry = registry;
         this.objectTree = objectTree;
@@ -73,9 +62,6 @@ public class ModelEngine {
         ModelDefinition model = registry.requireById(modelId);
         registry.delete(modelId);
         objectTree.findByPath(model.catalogObjectPath()).ifPresent(node ->
-                attachments.removeIf(a -> a.modelId().equals(modelId))
-        );
-        objectTree.findByPath(model.objectPath(ModelCatalogRoots.LEGACY)).ifPresent(node ->
                 attachments.removeIf(a -> a.modelId().equals(modelId))
         );
     }
@@ -282,9 +268,11 @@ public class ModelEngine {
                 .toList();
     }
 
-    /** @deprecated use {@link ModelCatalogRoots#isCatalogPath(String)} */
-    public String modelsRoot() {
-        return ModelCatalogRoots.LEGACY;
+    public void refreshModelCatalogNodes() {
+        ensureCatalogContainers();
+        for (ModelDefinition model : registry.all()) {
+            registerModelObject(model);
+        }
     }
 
     public boolean isModelCatalogPath(String path) {
@@ -309,7 +297,6 @@ public class ModelEngine {
         ensureCatalogContainer(ModelCatalogRoots.RELATIVE, "Relative Models", "Mixin blueprints applied to existing objects");
         ensureCatalogContainer(ModelCatalogRoots.INSTANCE, "Instance Types", "Blueprints for new object instances");
         ensureCatalogContainer(ModelCatalogRoots.ABSOLUTE, "Absolute Models", "Singleton object blueprints");
-        ensureCatalogContainer(ModelCatalogRoots.LEGACY, "Models", "Legacy model catalog (migrated to typed folders)");
         ensureInstancesContainer();
     }
 
@@ -346,12 +333,6 @@ public class ModelEngine {
     private void registerModelObject(ModelDefinition model) {
         ensureCatalogContainers();
         String path = model.catalogObjectPath();
-        String legacyPath = model.objectPath(ModelCatalogRoots.LEGACY);
-        objectTree.findByPath(legacyPath).ifPresent(node -> {
-            if (!legacyPath.equals(path)) {
-                objectTree.delete(legacyPath);
-            }
-        });
 
         PlatformObject modelObject = objectTree.findByPath(path).orElseGet(() -> {
             PlatformObject node = new PlatformObject(

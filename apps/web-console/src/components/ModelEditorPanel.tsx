@@ -10,7 +10,9 @@ import {
   fetchAbsoluteModelInstance,
   fetchModelDiff,
   fetchModelMergePreview,
-  fetchModels,
+  fetchRelativeModels,
+  fetchAbsoluteModels,
+  fetchInstanceTypes,
   instantiateModel,
   updateModel,
   upgradeModel,
@@ -18,11 +20,16 @@ import {
 } from "../api/models";
 import type { EventDescriptor, FunctionDescriptor, ObjectType } from "../types";
 import {
+  ABSOLUTE_MODELS_ROOT,
   BUILTIN_MODEL_NAMES,
-  MODELS_ROOT,
+  RELATIVE_MODELS_ROOT,
+  catalogRootForModelType,
+  isModelCatalogRoot,
   modelNameFromPath,
   type ModelBindingRule,
+  type ModelCatalogRoot,
   type ModelDto,
+  type ModelType,
   type ModelVariableDefinition,
 } from "../types/models";
 import { recordDisplayValue } from "../utils/tree";
@@ -176,7 +183,7 @@ function ModelDetail({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["models"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
-      onSelectPath?.(MODELS_ROOT);
+      onSelectPath?.(catalogRootForModelType(model.type));
     },
   });
 
@@ -850,17 +857,34 @@ function ModelDetail({
 function ModelsCatalog({
   canManage,
   selectedPath,
+  catalogRoot,
   onSelectPath,
 }: {
   canManage: boolean;
   selectedPath: string;
+  catalogRoot: ModelCatalogRoot;
   onSelectPath?: (path: string) => void;
 }) {
   const queryClient = useQueryClient();
   const modelsQuery = useQuery({
-    queryKey: ["models"],
-    queryFn: fetchModels,
+    queryKey: ["models", catalogRoot],
+    queryFn: () => {
+      if (catalogRoot === RELATIVE_MODELS_ROOT) {
+        return fetchRelativeModels();
+      }
+      if (catalogRoot === ABSOLUTE_MODELS_ROOT) {
+        return fetchAbsoluteModels();
+      }
+      return fetchInstanceTypes();
+    },
   });
+
+  const defaultCreateType: ModelType =
+    catalogRoot === RELATIVE_MODELS_ROOT
+      ? "RELATIVE"
+      : catalogRoot === ABSOLUTE_MODELS_ROOT
+        ? "ABSOLUTE"
+        : "INSTANCE";
 
   const createMutation = useMutation({
     mutationFn: createModel,
@@ -955,7 +979,7 @@ function ModelsCatalog({
             <div className="model-form-grid">
               <input name="name" placeholder="имя-модели" required pattern="[a-zA-Z0-9._-]+" />
               <input name="description" placeholder="описание" />
-              <select name="type" defaultValue="RELATIVE">
+              <select name="type" defaultValue={defaultCreateType}>
                 <option value="RELATIVE">RELATIVE</option>
                 <option value="INSTANCE">INSTANCE</option>
                 <option value="ABSOLUTE">ABSOLUTE</option>
@@ -994,7 +1018,7 @@ function ModelsCatalog({
             <h4>Сохранить объект как модель</h4>
             <p className="hint">
               Снимок переменных, событий, функций и bindings с объекта{" "}
-              {selectedPath !== MODELS_ROOT ? (
+              {selectedPath !== catalogRoot ? (
                 <code>{selectedPath}</code>
               ) : (
                 "(укажите путь)"
@@ -1004,12 +1028,15 @@ function ModelsCatalog({
               <input
                 name="sourcePath"
                 placeholder="sourcePath"
-                defaultValue={selectedPath !== MODELS_ROOT ? selectedPath : ""}
+                defaultValue={selectedPath !== catalogRoot ? selectedPath : ""}
                 required
               />
               <input name="modelName" placeholder="имя новой модели" required />
               <input name="description" placeholder="описание" />
-              <select name="type" defaultValue="RELATIVE">
+              <select
+                name="type"
+                defaultValue={defaultCreateType === "ABSOLUTE" ? "INSTANCE" : defaultCreateType}
+              >
                 <option value="RELATIVE">RELATIVE</option>
                 <option value="INSTANCE">INSTANCE</option>
               </select>
@@ -1035,9 +1062,14 @@ export default function ModelEditorPanel({
   title,
 }: ModelEditorPanelProps) {
   const modelName = modelNameFromPath(selectedPath);
-  const isCatalog = selectedPath === MODELS_ROOT;
+  const catalogRoot = isModelCatalogRoot(selectedPath) ? selectedPath : null;
+  const isCatalog = catalogRoot != null;
   const headerTitle = isCatalog
-    ? "Каталог моделей"
+    ? catalogRoot === RELATIVE_MODELS_ROOT
+      ? "Относительные модели"
+      : catalogRoot === ABSOLUTE_MODELS_ROOT
+        ? "Абсолютные модели"
+        : "Типы объектов"
     : modelName
       ? `Модель ${modelName}`
       : (title ?? selectedPath.split(".").pop() ?? "Модель");
@@ -1063,10 +1095,11 @@ export default function ModelEditorPanel({
       </header>
 
       <div className="model-editor-body">
-        {isCatalog ? (
+        {isCatalog && catalogRoot ? (
           <ModelsCatalog
             canManage={canManage}
             selectedPath={selectedPath}
+            catalogRoot={catalogRoot}
             onSelectPath={onSelectPath}
           />
         ) : !modelName ? (

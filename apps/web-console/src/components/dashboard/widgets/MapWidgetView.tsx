@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Map, { Marker, Popup, type MapRef } from "react-map-gl/maplibre";
 import { useQuery } from "@tanstack/react-query";
 import { fetchObjects, fetchVariables } from "../../../api";
@@ -31,7 +31,7 @@ export default function MapWidgetView({
 }: MapWidgetViewProps) {
   const styles = useWidgetStyles(widget.stylesJson);
   const { setSelection, navigateToDashboard, openDashboardModal } = useDashboardContext();
-  const [noGps, setNoGps] = useState<string[]>([]);
+  const [gpsByPath, setGpsByPath] = useState<Record<string, boolean>>({});
   const [popup, setPopup] = useState<MarkerPopup | null>(null);
   const mapRef = useRef<MapRef>(null);
 
@@ -42,9 +42,27 @@ export default function MapWidgetView({
     refetchInterval: refreshIntervalMs,
   });
 
-  const markers = useMemo(() => {
-    return (children.data ?? []).map((obj) => ({ path: obj.path, displayName: obj.displayName }));
-  }, [children.data]);
+  const markerObjects = useMemo(
+    () =>
+      (children.data ?? []).map((obj) => ({
+        path: obj.path,
+        displayName: obj.displayName,
+      })),
+    [children.data]
+  );
+
+  const markerPathsKey = markerObjects.map((obj) => obj.path).join("|");
+
+  useEffect(() => {
+    setGpsByPath({});
+  }, [markerPathsKey]);
+
+  const reportGps = useCallback((path: string, hasGps: boolean) => {
+    setGpsByPath((prev) => (prev[path] === hasGps ? prev : { ...prev, [path]: hasGps }));
+  }, []);
+
+  const reportedCount = markerObjects.filter((obj) => gpsByPath[obj.path] !== undefined).length;
+  const missingCount = markerObjects.filter((obj) => gpsByPath[obj.path] === false).length;
 
   const centerLat = widget.centerLat ?? 55.75;
   const centerLon = widget.centerLon ?? 37.62;
@@ -92,7 +110,9 @@ export default function MapWidgetView({
       editable={editable}
     >
       {!widget.parentPath ? (
-        <p className="hint">Укажите parentPath</p>
+        <p className="hint">Укажите parentPath (каталог объектов на карте)</p>
+      ) : markerObjects.length === 0 ? (
+        <p className="hint">Нет дочерних объектов в {widget.parentPath}</p>
       ) : (
         <div className="dash-map-wrap dash-map-container" style={styles.body}>
           <Map
@@ -113,14 +133,14 @@ export default function MapWidgetView({
             attributionControl={{ compact: true }}
             onClick={() => setPopup(null)}
           >
-            {markers.map((obj) => (
+            {markerObjects.map((obj) => (
               <MapMarker
                 key={obj.path}
                 obj={obj}
                 widget={widget}
                 refreshIntervalMs={refreshIntervalMs}
                 editable={editable}
-                onMissing={() => setNoGps((list) => [...list, obj.path])}
+                onGpsStatus={reportGps}
                 onSelect={(lat, lon, label) => handleMarkerSelect(obj.path, lat, lon, label)}
               />
             ))}
@@ -136,8 +156,10 @@ export default function MapWidgetView({
               </Popup>
             )}
           </Map>
-          {noGps.length > 0 && (
-            <p className="hint dash-map-no-gps">Без GPS: {noGps.length}</p>
+          {reportedCount === markerObjects.length && missingCount > 0 && (
+            <p className="hint dash-map-no-gps">
+              Без координат: {missingCount} из {markerObjects.length}
+            </p>
           )}
         </div>
       )}
@@ -151,14 +173,14 @@ function MapMarker({
   refreshIntervalMs,
   editable,
   onSelect,
-  onMissing,
+  onGpsStatus,
 }: {
   obj: { path: string; displayName: string };
   widget: MapWidget;
   refreshIntervalMs: number;
   editable?: boolean;
   onSelect: (lat: number, lon: number, label: string) => void;
-  onMissing: () => void;
+  onGpsStatus: (path: string, hasGps: boolean) => void;
 }) {
   const vars = useQuery({
     queryKey: ["variables", obj.path],
@@ -172,14 +194,15 @@ function MapMarker({
   const coordVar = vars.data?.find((v) => v.name === latVar);
   const lat = Number(readFieldValue(coordVar?.value?.rows[0], latField));
   const lon = Number(readFieldValue(coordVar?.value?.rows[0], lonField));
+  const hasGps = Number.isFinite(lat) && Number.isFinite(lon);
 
   useEffect(() => {
-    if (!vars.isLoading && (!Number.isFinite(lat) || !Number.isFinite(lon))) {
-      onMissing();
+    if (!vars.isLoading) {
+      onGpsStatus(obj.path, hasGps);
     }
-  }, [vars.isLoading, lat, lon, onMissing]);
+  }, [vars.isLoading, hasGps, obj.path, onGpsStatus]);
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+  if (!hasGps) {
     return null;
   }
 

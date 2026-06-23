@@ -53,7 +53,7 @@ public class TypedModelFacade {
     public List<ModelDto> list() {
         return modelRegistry.all().stream()
                 .filter(model -> model.type() == modelType)
-                .map(m -> ModelDto.from(m, modelEngine.modelsRoot()))
+                .map(ModelDto::from)
                 .toList();
     }
 
@@ -61,18 +61,18 @@ public class TypedModelFacade {
         return modelRegistry.all().stream()
                 .filter(model -> model.type() == modelType)
                 .filter(model -> platformType == null || model.targetObjectType() == platformType)
-                .map(m -> ModelDto.from(m, modelEngine.modelsRoot()))
+                .map(ModelDto::from)
                 .toList();
     }
 
     public ModelDto get(String id) {
-        return ModelDto.from(requireTyped(id), modelEngine.modelsRoot());
+        return ModelDto.from(requireTyped(id));
     }
 
     public ModelDto getByName(String name) {
         ModelDefinition model = modelRegistry.requireByName(name);
         assertType(model);
-        return ModelDto.from(model, modelEngine.modelsRoot());
+        return ModelDto.from(model);
     }
 
     public ModelDto create(CreatePayload request) {
@@ -96,7 +96,7 @@ public class TypedModelFacade {
         try {
             ModelDefinition created = modelEngine.createModel(model);
             modelPersistence.persist(created, false);
-            return ModelDto.from(created, modelEngine.modelsRoot());
+            return ModelDto.from(created);
         } catch (ModelException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
@@ -122,7 +122,7 @@ public class TypedModelFacade {
         ModelDefinition saved = modelEngine.updateModel(updated);
         modelPersistence.persist(saved, false);
         objectManager.persistNodeTree(saved.catalogObjectPath());
-        return ModelDto.from(saved, modelEngine.modelsRoot());
+        return ModelDto.from(saved);
     }
 
     public void delete(String id) {
