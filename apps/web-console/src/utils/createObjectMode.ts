@@ -6,6 +6,7 @@ import {
   isCorrelatorPath,
 } from "./automationPath";
 import type { ObjectType } from "../types";
+import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT } from "./platformSqlPath";
 
 export const APPLICATIONS_ROOT = "root.platform.applications";
 export const REPORTS_ROOT = "root.platform.reports";
@@ -16,7 +17,10 @@ export type CreateDialogMode =
   | "operator-app"
   | "alert-rule"
   | "correlator"
-  | "report";
+  | "report"
+  | "data-source"
+  | "migration"
+  | "sql-binding";
 
 function isPlatformReportsFolder(path: string): boolean {
   return path === REPORTS_ROOT || (path.endsWith(".reports") && !path.startsWith(`${APPLICATIONS_ROOT}.`));
@@ -55,6 +59,15 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === CORRELATORS_ROOT) {
     return "correlator";
   }
+  if (parentPath === DATA_SOURCES_ROOT || parentPath.endsWith(".data-sources")) {
+    return "data-source";
+  }
+  if (parentPath === MIGRATIONS_ROOT || parentPath.endsWith(".migrations")) {
+    return "migration";
+  }
+  if (parentPath === BINDINGS_ROOT || parentPath.endsWith(".bindings")) {
+    return "sql-binding";
+  }
   if (isPlatformReportsFolder(parentPath)) {
     return "report";
   }
@@ -73,6 +86,12 @@ export function createActionLabel(parentPath: string): string {
       return "+ Коррелятор";
     case "report":
       return "+ Отчёт";
+    case "data-source":
+      return "+ Источник данных";
+    case "migration":
+      return "+ Миграция";
+    case "sql-binding":
+      return "+ SQL-привязка";
     default:
       return "+ Объект";
   }

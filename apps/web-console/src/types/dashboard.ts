@@ -315,6 +315,11 @@ export interface MapWidget extends DashboardWidgetBase {
   zoom?: number;
   centerLat?: number;
   centerLon?: number;
+  /** MapLibre style JSON URL (default: demotiles.maplibre.org) */
+  mapStyleUrl?: string;
+  /** Raster tile template, e.g. https://{s}.tile.example.org/{z}/{x}/{y}.png */
+  tileUrl?: string;
+  tileAttribution?: string;
   rowTargetDashboard?: string;
   rowOpenMode?: DashboardOpenMode;
   rowSelectionKey?: string;

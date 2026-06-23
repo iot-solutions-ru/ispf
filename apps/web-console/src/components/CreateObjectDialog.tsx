@@ -5,6 +5,11 @@ import { fetchInstanceTypes, instantiateModel } from "../api/models";
 import { registerApplication } from "../api/applications";
 import { saveReportDefinition } from "../api/reports";
 import { createOperatorApp } from "../api/operatorApps";
+import {
+  createDataSource,
+  createMigration,
+  createSqlBinding,
+} from "../api/platformSql";
 import { fetchDrivers } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
 import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
@@ -63,6 +68,15 @@ export default function CreateObjectDialog({
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [configPreview, setConfigPreview] = useState("{}");
   const [reportDataSourcePath, setReportDataSourcePath] = useState("root.platform.data-sources.demo");
+  const [schemaName, setSchemaName] = useState("");
+  const [scriptId, setScriptId] = useState("");
+  const [migrationVersion, setMigrationVersion] = useState("1.0.0");
+  const [migrationDataSourcePath, setMigrationDataSourcePath] = useState("");
+  const [migrationSql, setMigrationSql] = useState("");
+  const [bindingTargetPath, setBindingTargetPath] = useState("");
+  const [bindingVariable, setBindingVariable] = useState("value");
+  const [bindingDataSourcePath, setBindingDataSourcePath] = useState("");
+  const [bindingQuery, setBindingQuery] = useState("SELECT 1 AS cnt");
 
   const dialogTitle = useMemo(() => {
     switch (mode) {
@@ -76,6 +90,12 @@ export default function CreateObjectDialog({
         return "Новый коррелятор";
       case "report":
         return "Новый отчёт";
+      case "data-source":
+        return "Новый источник данных";
+      case "migration":
+        return "Новая миграция";
+      case "sql-binding":
+        return "Новая SQL-привязка";
       default:
         return "Новый объект";
     }
@@ -174,6 +194,36 @@ export default function CreateObjectDialog({
         }
         return obj.path;
       }
+      if (mode === "data-source") {
+        const created = await createDataSource({
+          name,
+          displayName: displayName || name,
+          schemaName: schemaName.trim(),
+          description,
+        });
+        return created.path;
+      }
+      if (mode === "migration") {
+        const created = await createMigration({
+          scriptId: scriptId.trim() || name,
+          version: migrationVersion.trim() || "1.0.0",
+          dataSourcePath: migrationDataSourcePath.trim(),
+          sql: migrationSql,
+        });
+        return created.path;
+      }
+      if (mode === "sql-binding") {
+        const created = await createSqlBinding({
+          bindingId: name,
+          targetObjectPath: bindingTargetPath.trim(),
+          variable: bindingVariable.trim() || "value",
+          dataSourcePath: bindingDataSourcePath.trim(),
+          query: bindingQuery,
+          refresh: "manual",
+          enabled: true,
+        });
+        return created.path;
+      }
       if (selectedInstanceModel) {
         const obj = await instantiateModel(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
@@ -253,6 +303,21 @@ export default function CreateObjectDialog({
               </label>
             </>
           )}
+          {mode === "data-source" && (
+            <p className="hint">
+              Источник данных в <code>{parentPath}</code>. После создания укажите schema и откройте редактор.
+            </p>
+          )}
+          {mode === "migration" && (
+            <p className="hint">
+              SQL-миграция в <code>{parentPath}</code>. Применение — кнопкой в редакторе после создания.
+            </p>
+          )}
+          {mode === "sql-binding" && (
+            <p className="hint">
+              Привязка SELECT → переменная объекта. Настройка refresh — в редакторе.
+            </p>
+          )}
           <form
             className="form-grid"
             onSubmit={(e) => {
@@ -273,6 +338,90 @@ export default function CreateObjectDialog({
               Отображаемое имя
               <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </label>
+
+            {mode === "data-source" && (
+              <label className="full">
+                PostgreSQL schema *
+                <input
+                  value={schemaName}
+                  onChange={(e) => setSchemaName(e.target.value)}
+                  required
+                  placeholder="app_myapp"
+                />
+              </label>
+            )}
+
+            {mode === "migration" && (
+              <>
+                <label>
+                  Script ID
+                  <input
+                    value={scriptId}
+                    onChange={(e) => setScriptId(e.target.value)}
+                    placeholder="как name, если пусто"
+                  />
+                </label>
+                <label>
+                  Version
+                  <input value={migrationVersion} onChange={(e) => setMigrationVersion(e.target.value)} />
+                </label>
+                <label className="full">
+                  Data source path
+                  <input
+                    value={migrationDataSourcePath}
+                    onChange={(e) => setMigrationDataSourcePath(e.target.value)}
+                    placeholder="root.platform.data-sources.myapp"
+                  />
+                </label>
+                <label className="full">
+                  SQL (опционально)
+                  <textarea
+                    className="mono"
+                    rows={4}
+                    value={migrationSql}
+                    onChange={(e) => setMigrationSql(e.target.value)}
+                    spellCheck={false}
+                  />
+                </label>
+              </>
+            )}
+
+            {mode === "sql-binding" && (
+              <>
+                <label className="full">
+                  Target object path *
+                  <input
+                    value={bindingTargetPath}
+                    onChange={(e) => setBindingTargetPath(e.target.value)}
+                    placeholder="root.platform.devices.demo-sensor-01"
+                    required
+                  />
+                </label>
+                <label>
+                  Variable
+                  <input value={bindingVariable} onChange={(e) => setBindingVariable(e.target.value)} />
+                </label>
+                <label className="full">
+                  Data source path *
+                  <input
+                    value={bindingDataSourcePath}
+                    onChange={(e) => setBindingDataSourcePath(e.target.value)}
+                    placeholder="root.platform.data-sources.myapp"
+                    required
+                  />
+                </label>
+                <label className="full">
+                  SQL query
+                  <textarea
+                    className="mono"
+                    rows={3}
+                    value={bindingQuery}
+                    onChange={(e) => setBindingQuery(e.target.value)}
+                    spellCheck={false}
+                  />
+                </label>
+              </>
+            )}
 
             {mode === "object" && (
               <label>
@@ -366,7 +515,7 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {mode === "object" && (
+            {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding") && (
               <label className="full">
                 Описание
                 <textarea
@@ -386,7 +535,7 @@ export default function CreateObjectDialog({
               <button
                 type="submit"
                 className="btn primary"
-                disabled={mutation.isPending || !name}
+                disabled={mutation.isPending || !name || (mode === "data-source" && !schemaName.trim())}
               >
                 Создать
               </button>

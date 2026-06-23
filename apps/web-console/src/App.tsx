@@ -32,6 +32,9 @@ import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
 import DashboardBuilder from "./components/dashboard/DashboardBuilder";
 import ReportBuilder from "./components/report/ReportBuilder";
+import DataSourceEditor from "./components/platform/DataSourceEditor";
+import MigrationEditor from "./components/platform/MigrationEditor";
+import SqlBindingEditor from "./components/platform/SqlBindingEditor";
 import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
@@ -318,6 +321,9 @@ export default function App() {
     || activeEditor?.objectType === "REPORT"
     || activeEditor?.objectType === "WORKFLOW"
     || activeEditor?.objectType === "MODEL"
+    || activeEditor?.objectType === "DATA_SOURCE"
+    || activeEditor?.objectType === "MIGRATION"
+    || activeEditor?.objectType === "BINDING"
     || (activeEditor != null && isModelsPath(activeEditor.path));
   const showPropertiesEditor =
     activeEditor &&
@@ -580,6 +586,24 @@ export default function App() {
                   setSelectedPath(path);
                   openEditor(path);
                 }}
+              />
+            ) : activeEditor.objectType === "DATA_SOURCE" ? (
+              <DataSourceEditor
+                path={activeEditor.path}
+                onClose={() => closeEditor(activeEditor.id)}
+                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+              />
+            ) : activeEditor.objectType === "MIGRATION" ? (
+              <MigrationEditor
+                path={activeEditor.path}
+                onClose={() => closeEditor(activeEditor.id)}
+                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+              />
+            ) : activeEditor.objectType === "BINDING" ? (
+              <SqlBindingEditor
+                path={activeEditor.path}
+                onClose={() => closeEditor(activeEditor.id)}
+                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
               />
             ) : (
               <ObjectPropertiesEditor

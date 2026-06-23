@@ -111,6 +111,48 @@ public class MigrationObjectService {
         return applied;
     }
 
+    @Transactional(readOnly = true)
+    public MigrationView getByPath(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.MIGRATION) {
+            throw new IllegalArgumentException("Not a migration object: " + path);
+        }
+        MigrationDefinition definition = toDefinition(path, node)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid migration: " + path));
+        return toView(definition, node);
+    }
+
+    @Transactional
+    public void applyByPath(String path) {
+        applyOne(requireDefinition(path));
+    }
+
+    @Transactional
+    public MigrationView create(String scriptId, String version, String dataSourcePath, String sql) {
+        if (scriptId == null || scriptId.isBlank()) {
+            throw new IllegalArgumentException("scriptId is required");
+        }
+        upsert(new MigrationDefinition("", scriptId, version != null ? version : "1.0.0", dataSourcePath, sql != null ? sql : ""));
+        return getByPath(MIGRATIONS_ROOT + "." + sanitizeNodeName(scriptId));
+    }
+
+    @Transactional
+    public MigrationView update(String path, String scriptId, String version, String dataSourcePath, String sql) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.MIGRATION) {
+            throw new IllegalArgumentException("Not a migration object: " + path);
+        }
+        MigrationDefinition current = requireDefinition(path);
+        upsert(new MigrationDefinition(
+                path,
+                scriptId != null && !scriptId.isBlank() ? scriptId : current.scriptId(),
+                version != null ? version : current.version(),
+                dataSourcePath != null ? dataSourcePath : current.dataSourcePath(),
+                sql != null ? sql : current.sql()
+        ));
+        return getByPath(path);
+    }
+
     @Transactional
     public void applyOne(MigrationDefinition migration) {
         String checksum = checksum(migration.sql());
@@ -125,6 +167,27 @@ public class MigrationObjectService {
         });
         setString(migration.path(), "checksum", checksum);
         setString(migration.path(), "appliedAt", Instant.now().toString());
+    }
+
+    private MigrationDefinition requireDefinition(String path) {
+        PlatformObject node = objectManager.require(path);
+        return toDefinition(path, node)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid migration: " + path));
+    }
+
+    private MigrationView toView(MigrationDefinition definition, PlatformObject node) {
+        String checksum = readString(node, "checksum").orElse("");
+        String appliedAt = readString(node, "appliedAt").orElse("");
+        return new MigrationView(
+                definition.path(),
+                definition.scriptId(),
+                definition.version(),
+                definition.dataSourcePath(),
+                definition.sql(),
+                checksum,
+                appliedAt,
+                isApplied(definition)
+        );
     }
 
     private boolean isApplied(MigrationDefinition migration) {
@@ -222,6 +285,18 @@ public class MigrationObjectService {
             String version,
             String dataSourcePath,
             String sql
+    ) {
+    }
+
+    public record MigrationView(
+            String path,
+            String scriptId,
+            String version,
+            String dataSourcePath,
+            String sql,
+            String checksum,
+            String appliedAt,
+            boolean applied
     ) {
     }
 }

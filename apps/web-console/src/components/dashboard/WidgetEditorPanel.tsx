@@ -799,6 +799,29 @@ export default function WidgetEditorPanel({
                 onChange={(e) => update({ latVariable: e.target.value })}
               />
             </label>
+            <label>
+              mapStyleUrl
+              <input
+                value={widget.mapStyleUrl ?? ""}
+                onChange={(e) => update({ mapStyleUrl: e.target.value || undefined })}
+                placeholder="https://demotiles.maplibre.org/style.json"
+              />
+            </label>
+            <label>
+              tileUrl (растр, опционально)
+              <input
+                value={widget.tileUrl ?? ""}
+                onChange={(e) => update({ tileUrl: e.target.value || undefined })}
+                placeholder="https://{s}.tile.example.org/{z}/{x}/{y}.png"
+              />
+            </label>
+            <label>
+              tileAttribution
+              <input
+                value={widget.tileAttribution ?? ""}
+                onChange={(e) => update({ tileAttribution: e.target.value || undefined })}
+              />
+            </label>
           </>
         )}
         <label className="full">

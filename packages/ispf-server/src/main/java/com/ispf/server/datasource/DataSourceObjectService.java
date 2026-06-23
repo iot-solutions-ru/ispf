@@ -110,4 +110,65 @@ public class DataSourceObjectService {
                 .map(Object::toString)
                 .filter(s -> !s.isBlank());
     }
+
+    @Transactional(readOnly = true)
+    public DataSourceView getByPath(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.DATA_SOURCE) {
+            throw new IllegalArgumentException("Not a data source object: " + path);
+        }
+        ensureStructure(path);
+        return new DataSourceView(
+                path,
+                node.displayName(),
+                node.description(),
+                readString(node, "displayName").orElse(node.displayName()),
+                readSchemaName(path).orElse("")
+        );
+    }
+
+    @Transactional
+    public DataSourceView create(String name, String displayName, String schemaName, String description) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name is required");
+        }
+        if (schemaName == null || schemaName.isBlank()) {
+            throw new IllegalArgumentException("schemaName is required");
+        }
+        ensureDataSource(name, displayName, schemaName, description);
+        return getByPath(pathForNodeName(name));
+    }
+
+    @Transactional
+    public DataSourceView update(String path, String displayName, String schemaName, String description) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.DATA_SOURCE) {
+            throw new IllegalArgumentException("Not a data source object: " + path);
+        }
+        String nextDisplayName = displayName != null && !displayName.isBlank() ? displayName : node.displayName();
+        String nextDescription = description != null ? description : node.description();
+        objectManager.updateInfo(path, nextDisplayName, nextDescription);
+        if (schemaName != null) {
+            setString(path, "schemaName", schemaName);
+        }
+        if (displayName != null) {
+            setString(path, "displayName", displayName);
+        }
+        return getByPath(path);
+    }
+
+    private static Optional<String> readString(PlatformObject node, String name) {
+        return node.getVariable(name)
+                .flatMap(Variable::value)
+                .map(record -> String.valueOf(record.firstRow().get("value")));
+    }
+
+    public record DataSourceView(
+            String path,
+            String displayName,
+            String description,
+            String variableDisplayName,
+            String schemaName
+    ) {
+    }
 }

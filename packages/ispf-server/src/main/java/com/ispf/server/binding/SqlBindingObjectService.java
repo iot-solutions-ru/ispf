@@ -128,10 +128,58 @@ public class SqlBindingObjectService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public BindingDefinition getByPath(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.BINDING) {
+            throw new IllegalArgumentException("Not a SQL binding object: " + path);
+        }
+        return toDefinition(path, node)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid binding: " + path));
+    }
+
+    @Transactional
+    public BindingDefinition create(BindingDefinition definition) {
+        if (definition.bindingId() == null || definition.bindingId().isBlank()) {
+            throw new IllegalArgumentException("bindingId is required");
+        }
+        upsert(definition);
+        return getByPath(pathForBindingId(definition.bindingId()));
+    }
+
+    @Transactional
+    public BindingDefinition update(String path, BindingDefinition definition) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.BINDING) {
+            throw new IllegalArgumentException("Not a SQL binding object: " + path);
+        }
+        String bindingId = path.substring(path.lastIndexOf('.') + 1);
+        upsert(new BindingDefinition(
+                path,
+                bindingId,
+                definition.targetObjectPath(),
+                definition.variable(),
+                definition.dataSourcePath(),
+                definition.query(),
+                definition.valueField(),
+                definition.refresh(),
+                definition.refreshIntervalMs(),
+                definition.triggerObjectPath(),
+                definition.triggerFunctionName(),
+                definition.enabled(),
+                definition.lastRefreshedAt()
+        ));
+        return getByPath(path);
+    }
+
     @Transactional
     public void refresh(String path) {
-        BindingDefinition binding = get(path);
+        BindingDefinition binding = getByPath(path);
         executeRefresh(binding);
+    }
+
+    public String pathForBindingId(String bindingId) {
+        return BINDINGS_ROOT + "." + sanitizeNodeName(bindingId);
     }
 
     @Transactional
@@ -152,11 +200,6 @@ public class SqlBindingObjectService {
             }
             executeRefresh(binding);
         }
-    }
-
-    private BindingDefinition get(String path) {
-        PlatformObject node = objectManager.require(path);
-        return toDefinition(path, node).orElseThrow(() -> new IllegalArgumentException("Invalid binding: " + path));
     }
 
     private List<BindingDefinition> listAll() {
@@ -200,7 +243,7 @@ public class SqlBindingObjectService {
         });
         Object value = extracted[0];
         double numeric = value instanceof Number number ? number.doubleValue() : 0.0;
-        objectManager.setVariableValue(
+        objectManager.setSystemVariableValue(
                 binding.targetObjectPath(),
                 binding.variable(),
                 DataRecord.single(DOUBLE_SCHEMA, Map.of("value", numeric))
@@ -221,13 +264,19 @@ public class SqlBindingObjectService {
 
     private void ensureVariable(String objectPath, String variableName) {
         PlatformObject target = objectManager.require(objectPath);
-        if (!target.variables().containsKey(variableName)) {
-            objectManager.setVariableValue(
-                    objectPath,
-                    variableName,
-                    DataRecord.single(DOUBLE_SCHEMA, Map.of("value", 0.0))
-            );
+        if (target.getVariable(variableName).isPresent()) {
+            return;
         }
+        objectManager.createVariable(
+                objectPath,
+                variableName,
+                DOUBLE_SCHEMA,
+                true,
+                false,
+                DataRecord.single(DOUBLE_SCHEMA, Map.of("value", 0.0)),
+                false,
+                null
+        );
     }
 
     private Optional<BindingDefinition> toDefinition(String path, PlatformObject node) {

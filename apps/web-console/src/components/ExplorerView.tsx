@@ -23,6 +23,8 @@ import CorrelatorInspector from "./automation/CorrelatorInspector";
 import { canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
+import { isPlatformSqlObjectPath } from "../utils/platformSqlPath";
+import PlatformSqlObjectPanel from "./platform/PlatformSqlObjectPanel";
 import { isFederationRoot } from "../utils/federationPath";
 import { isTenantsRoot } from "../utils/tenantPath";
 
@@ -63,6 +65,7 @@ export default function ExplorerView({
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
+  const isPlatformSqlObject = isPlatformSqlObjectPath(selectedPath);
   const opensInEditor = Boolean(
     selectedObject
     && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
@@ -82,7 +85,8 @@ export default function ExplorerView({
     || isCorrelator
     || isFederation
     || isTenants
-    || isCatalogFolder;
+    || isCatalogFolder
+    || isPlatformSqlObject;
 
   return (
     <div
@@ -109,7 +113,7 @@ export default function ExplorerView({
             {isModelsPath(selectedPath)
               ? "Полное определение модели — в редакторе (кнопка выше или двойной щелчок)"
               : opensInEditor
-                ? "Дашборд / отчёт / workflow — двойной щелчок в дереве или «Открыть в редакторе»"
+                ? "Редактор — двойной щелчок в дереве или «Открыть в редакторе»"
                 : "Двойной щелчок по узлу также открывает редактор"}
           </span>
         </div>
@@ -133,6 +137,8 @@ export default function ExplorerView({
         <FederationPeersPanel canManage={isAdmin} />
       ) : isTenants ? (
         <TenantsPanel canManage={isAdmin} onSelectPath={onSelectPath} />
+      ) : isPlatformSqlObject ? (
+        <PlatformSqlObjectPanel path={selectedPath} onOpenEditor={onOpenEditor} />
       ) : isCatalogFolder ? (
         <SystemFolderListPanel
           folderPath={selectedPath}
