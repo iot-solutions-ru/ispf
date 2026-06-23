@@ -14,6 +14,8 @@ import java.util.UUID;
 @Service
 public class FunctionInvokeAuditService {
 
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 1024;
+
     private final JdbcTemplate jdbcTemplate;
     private final String auditTable;
 
@@ -45,9 +47,16 @@ public class FunctionInvokeAuditService {
                 functionName,
                 appId,
                 success,
-                errorMessage,
+                truncate(errorMessage),
                 Timestamp.from(Instant.now())
         );
+    }
+
+    private static String truncate(String value) {
+        if (value == null || value.length() <= MAX_ERROR_MESSAGE_LENGTH) {
+            return value;
+        }
+        return value.substring(0, MAX_ERROR_MESSAGE_LENGTH - 3) + "...";
     }
 
     public List<FunctionInvokeAuditEntry> list(

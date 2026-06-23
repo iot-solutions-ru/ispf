@@ -7,6 +7,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.function.Supplier;
 
 @Component
 public class ApplicationSchemaSession {
@@ -39,11 +40,18 @@ public class ApplicationSchemaSession {
     }
 
     public void runWithPlatformCatalog(Runnable action) {
+        callWithPlatformCatalog(() -> {
+            action.run();
+            return null;
+        });
+    }
+
+    public <T> T callWithPlatformCatalog(Supplier<T> action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         String previousSchema = currentSchema(connection);
         try {
             resetSchema(connection);
-            action.run();
+            return action.get();
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to access platform catalog", ex);
         } finally {

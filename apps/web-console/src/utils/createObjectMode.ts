@@ -78,33 +78,36 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   return "object";
 }
 
-/** Context menu label (no leading «+»). */
+/** Context menu label, e.g. «Create dashboard», «Create device». */
 export function createContextMenuLabel(parentPath: string): string {
-  return createActionLabel(parentPath).replace(/^\+\s*/, "");
+  return i18n.t(`explorer:contextMenu.create.${resolveCreateLabelKind(parentPath)}`);
 }
 
 export function createActionLabel(parentPath: string): string {
-  switch (resolveCreateDialogMode(parentPath)) {
-    case "application":
-      return i18n.t("explorer:create.deployApp");
-    case "operator-app":
-      return i18n.t("explorer:create.operatorApp");
-    case "alert-rule":
-      return i18n.t("explorer:create.alertRule");
-    case "correlator":
-      return i18n.t("explorer:create.correlator");
-    case "report":
-      return i18n.t("explorer:create.report");
-    case "data-source":
-      return i18n.t("explorer:create.dataSource");
-    case "migration":
-      return i18n.t("explorer:create.migration");
-    case "sql-binding":
-      return i18n.t("explorer:create.sqlBinding");
-    case "schedule":
-      return i18n.t("explorer:create.schedule");
+  return `+ ${createContextMenuLabel(parentPath)}`;
+}
+
+export function resolveCreateLabelKind(parentPath: string): string {
+  const mode = resolveCreateDialogMode(parentPath);
+  if (mode !== "object") {
+    return mode;
+  }
+  switch (defaultObjectTypeForParent(parentPath)) {
+    case "DEVICE":
+      return "device";
+    case "DASHBOARD":
+      return "dashboard";
+    case "REPORT":
+      return "report";
+    case "WORKFLOW":
+      return "workflow";
+    case "MODEL":
+      return "model";
     default:
-      return i18n.t("explorer:create.object");
+      if (parentPath.endsWith(".instances")) {
+        return "instance";
+      }
+      return "object";
   }
 }
 

@@ -23,6 +23,19 @@ describe("canCreateChildAt", () => {
   });
 });
 
+describe("resolveCreateLabelKind", () => {
+  it("maps parent folders to create label kinds", async () => {
+    const { resolveCreateLabelKind } = await import("./createObjectMode");
+    expect(resolveCreateLabelKind("root.platform.devices")).toBe("device");
+    expect(resolveCreateLabelKind("root.platform.dashboards")).toBe("dashboard");
+    expect(resolveCreateLabelKind("root.platform.workflows")).toBe("workflow");
+    expect(resolveCreateLabelKind("root.platform.alert-rules")).toBe("alert-rule");
+    expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("model");
+    expect(resolveCreateLabelKind("root.platform.instances")).toBe("instance");
+    expect(resolveCreateLabelKind("root.platform.my-folder")).toBe("object");
+  });
+});
+
 describe("defaultObjectTypeForParent", () => {
   it("maps parent folders to sensible default types", () => {
     expect(defaultObjectTypeForParent("root.platform.devices")).toBe("DEVICE");

@@ -6,6 +6,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
+import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.function.FunctionInvokeAuditService;
@@ -21,17 +22,20 @@ public class FunctionService {
     private final List<FunctionHandler> handlers;
     private final ApplicationFunctionStore applicationFunctionStore;
     private final FunctionInvokeAuditService auditService;
+    private final ApplicationSchemaSession schemaSession;
 
     public FunctionService(
             ObjectManager objectManager,
             List<FunctionHandler> handlers,
             ApplicationFunctionStore applicationFunctionStore,
-            FunctionInvokeAuditService auditService
+            FunctionInvokeAuditService auditService,
+            ApplicationSchemaSession schemaSession
     ) {
         this.objectManager = objectManager;
         this.handlers = handlers;
         this.applicationFunctionStore = applicationFunctionStore;
         this.auditService = auditService;
+        this.schemaSession = schemaSession;
     }
 
     public DataRecord invoke(String objectPath, String functionName) {
@@ -39,32 +43,48 @@ public class FunctionService {
     }
 
     public DataRecord invoke(String objectPath, String functionName, DataRecordPayloadRequest input) {
-        FunctionDescriptor descriptor = objectManager.tree().findByPath(objectPath)
-                .map(node -> node.functions().get(functionName))
-                .orElse(null);
-        DataRecord resolvedInput = resolveInput(input, descriptor);
-        String appId = resolveAppId(objectPath, functionName);
-
-        for (FunctionHandler handler : handlers) {
-            if (handler.supports(objectPath, functionName)) {
-                try {
-                    DataRecord result = handler.invoke(objectPath, functionName, resolvedInput);
-                    auditService.record(appId, objectPath, functionName, true, null);
-                    return result;
-                } catch (RuntimeException ex) {
-                    auditService.record(appId, objectPath, functionName, false, ex.getMessage());
-                    throw ex;
+        ResolvedInvocation resolved = schemaSession.callWithPlatformCatalog(() -> {
+            FunctionDescriptor descriptor = objectManager.tree().findByPath(objectPath)
+                    .map(node -> node.functions().get(functionName))
+                    .orElse(null);
+            DataRecord resolvedInput = resolveInput(input, descriptor);
+            FunctionHandler handler = null;
+            for (FunctionHandler candidate : handlers) {
+                if (candidate.supports(objectPath, functionName)) {
+                    handler = candidate;
+                    break;
                 }
+            }
+            String appId = resolveAppId(objectPath, functionName);
+            return new ResolvedInvocation(handler, descriptor, resolvedInput, appId);
+        });
+
+        if (resolved.handler() != null) {
+            try {
+                DataRecord result = resolved.handler().invoke(objectPath, functionName, resolved.resolvedInput());
+                auditService.record(resolved.appId(), objectPath, functionName, true, null);
+                return result;
+            } catch (RuntimeException ex) {
+                auditService.record(resolved.appId(), objectPath, functionName, false, ex.getMessage());
+                throw ex;
             }
         }
 
-        if (descriptor == null) {
+        if (resolved.descriptor() == null) {
             throw new IllegalArgumentException("Unknown function: " + functionName);
         }
 
         IllegalStateException ex = new IllegalStateException("No handler registered for function: " + functionName);
-        auditService.record(appId, objectPath, functionName, false, ex.getMessage());
+        auditService.record(resolved.appId(), objectPath, functionName, false, ex.getMessage());
         throw ex;
+    }
+
+    private record ResolvedInvocation(
+            FunctionHandler handler,
+            FunctionDescriptor descriptor,
+            DataRecord resolvedInput,
+            String appId
+    ) {
     }
 
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {

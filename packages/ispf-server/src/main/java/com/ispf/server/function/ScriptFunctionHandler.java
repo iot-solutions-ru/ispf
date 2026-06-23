@@ -54,11 +54,14 @@ public class ScriptFunctionHandler implements FunctionHandler {
     @Override
     @Transactional
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
-        PlatformObject node = objectManager.require(objectPath);
-        FunctionDescriptor descriptor = node.functions().get(functionName);
-        if (descriptor == null || !descriptor.hasScriptBody()) {
-            throw new IllegalStateException("Script function not found: " + functionName);
-        }
+        FunctionDescriptor descriptor = schemaSession.callWithPlatformCatalog(() -> {
+            PlatformObject node = objectManager.require(objectPath);
+            FunctionDescriptor fn = node.functions().get(functionName);
+            if (fn == null || !fn.hasScriptBody()) {
+                throw new IllegalStateException("Script function not found: " + functionName);
+            }
+            return fn;
+        });
         String schemaName = descriptor.dataSourcePath() != null && !descriptor.dataSourcePath().isBlank()
                 ? dataSourcePathResolver.resolveSchemaName(descriptor.dataSourcePath())
                 : null;
@@ -74,7 +77,9 @@ public class ScriptFunctionHandler implements FunctionHandler {
         } else {
             schemaSession.runWithPlatformCatalog(execute);
         }
-        sqlBindingObjectService.refreshAfterFunction(objectPath, functionName);
+        schemaSession.runWithPlatformCatalog(() ->
+                sqlBindingObjectService.refreshAfterFunction(objectPath, functionName)
+        );
         return outputHolder[0];
     }
 
@@ -84,10 +89,10 @@ public class ScriptFunctionHandler implements FunctionHandler {
                 throw new IllegalStateException("Script function call depth exceeded");
             }
             DataRecord nestedRecord = nestedInput != null
-                    ? DataRecord.single(
-                    objectManager.require(nestedPath).functions().get(nestedName).inputSchema(),
-                    nestedInput
-            )
+                    ? schemaSession.callWithPlatformCatalog(() -> DataRecord.single(
+                            objectManager.require(nestedPath).functions().get(nestedName).inputSchema(),
+                            nestedInput
+                    ))
                     : null;
             return functionService.invoke(nestedPath, nestedName, nestedRecord);
         };
