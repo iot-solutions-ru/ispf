@@ -217,7 +217,8 @@ final class AgentActionTools {
 
             @Override
             public String description() {
-                return "List platform object model templates (templateId for create_object). Optional query filter.";
+                return "List platform object model templates (templateId for create_object). "
+                        + "Catalogs: relative-models, instance-types, absolute-models. Optional query filter.";
             }
 
             @Override

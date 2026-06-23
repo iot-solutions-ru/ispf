@@ -16,7 +16,11 @@ public final class AgentPromptBuilder {
             You may receive prior turns in this chat — use them for follow-up requests (e.g. "add dashboard for that device").
             
             Work step-by-step using platform tools. Platform knowledge is in the briefing below — use it before guessing.
-            For details use list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
+            For dashboards: follow Dashboard guide in Playbooks — list_variables first, prefer set_dashboard_layout
+            template= over many add_dashboard_widget; never set_variable name=widgets.
+            For widgets: get_widget_catalog type=<type> for exact fields before add_dashboard_widget;
+            list_variables for variableName values; list_object_models before create_object.
+            For drivers/docs: list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
             Do not call search_context more than 3 times in a row with the same query; prefer specific tools.
             
             Reply with ONLY one JSON object per turn — no markdown fences, no prose before or after:
@@ -43,8 +47,16 @@ public final class AgentPromptBuilder {
             - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
             - Complete end-to-end projects with tools; never tell user to configure dashboards/alerts/operator in UI when tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
-            - Dashboard layout: variable name is layout (JSON string with widgets[]). NEVER set_variable name=widgets.
-              Use get_dashboard_layout, set_dashboard_layout (or template=snmp-host-monitoring), add_dashboard_widget.
+            - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
+              (snmp-host-monitoring|demo-sensor|virtual-cluster-*|empty) OR add_dashboard_widget for 1–2 widgets max.
+              Layout variable: layout (JSON {columns,rowHeight,widgets[]}). NEVER set_variable name=widgets or layout.
+            - Widget binding: value/chart use objectPath OR selectionKey+variableName; object-table/card-grid/map use parentPath;
+              selectionKey strings must match between table (publisher) and consumers; drill-down: rowTargetDashboard on table
+            - columnsJson/fieldsJson/stylesJson are JSON strings inside widget, not nested objects in tool arguments
+            - chart/sparkline: configure_variable_history historyEnabled=true before adding widget
+            - Widget properties: get_widget_catalog type=<type> for per-type fields; progress uses currentVariable+maxVariable not variableName
+            - valueField: value (default), raw (SNMP uptime), online (status link); object-table uses parentPath not objectPath
+            - gauge needs minValue+maxValue or minVariable+maxVariable; pie-chart/spreadsheet need RECORD_LIST variable
             - configure_driver or driver_control start after driver mappings are set
             - list_variables to show metrics to the user in finish summary
             - bundle import only after validate_bundle/dry_run_deploy OK
@@ -91,6 +103,8 @@ public final class AgentPromptBuilder {
         prompt.append(AgentPlaybooks.virtualClusterMonitoring());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.platformObjectTypesGuide());
+        prompt.append("\n\n");
+        prompt.append(AgentPlaybooks.widgetCatalogGuide());
         prompt.append(RULES);
         prompt.append("- Reuse existing demo paths when present: ")
                 .append(AgentPlaybooks.SNMP_DEVICE_PATH)

@@ -1,6 +1,19 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useAgentChat } from "../context/AgentChatContext";
 import type { AiAgentStep } from "../api/ai";
+
+const CHAT_INPUT_MAX_HEIGHT_PX = 320;
+
+function resizeChatInput(textarea: HTMLTextAreaElement | null) {
+  if (!textarea) {
+    return;
+  }
+  const maxHeight = Math.min(window.innerHeight * 0.4, CHAT_INPUT_MAX_HEIGHT_PX);
+  textarea.style.height = "auto";
+  const next = Math.min(textarea.scrollHeight, maxHeight);
+  textarea.style.height = `${next}px`;
+  textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+}
 
 function formatChatDate(iso: string): string {
   try {
@@ -42,6 +55,15 @@ export default function AiAgentChat() {
     cancelRun,
   } = useAgentChat();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const syncInputHeight = useCallback(() => {
+    resizeChatInput(inputRef.current);
+  }, []);
+
+  useEffect(() => {
+    syncInputHeight();
+  }, [input, syncInputHeight]);
 
   useEffect(() => {
     if (isPending) {
@@ -186,10 +208,14 @@ export default function AiAgentChat() {
           }}
         >
           <textarea
-            rows={2}
+            ref={inputRef}
+            rows={1}
             value={input}
             placeholder="Сообщение агенту…"
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              resizeChatInput(e.target);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();

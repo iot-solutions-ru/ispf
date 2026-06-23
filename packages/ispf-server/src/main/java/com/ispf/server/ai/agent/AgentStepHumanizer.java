@@ -32,6 +32,8 @@ public final class AgentStepHumanizer {
             case "get_dashboard_layout" -> "Читаю layout дашборда «" + orDefault(arg(arguments, "path"), arg(arguments, "template")) + "»";
             case "set_dashboard_layout" -> "Обновляю layout «" + arg(arguments, "path") + "»";
             case "add_dashboard_widget" -> "Добавляю виджет на «" + arg(arguments, "path") + "»";
+            case "get_widget_catalog" -> widgetCatalogLabel(arguments);
+            case "get_automation_schema" -> "Справочник: " + orDefault(arg(arguments, "topic"), "all");
             case "list_variables" -> "Читаю переменные «" + arg(arguments, "path") + "»";
             case "set_variable" -> "Обновляю «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
             case "configure_driver" -> "Настраиваю драйвер на «" + arg(arguments, "devicePath") + "»";
@@ -41,6 +43,18 @@ public final class AgentStepHumanizer {
             case "import_package" -> "Импортирую пакет «" + orDefault(arg(arguments, "packageId"), arg(arguments, "appId")) + "»";
             default -> "Вызов " + tool;
         };
+    }
+
+    private static String widgetCatalogLabel(Map<String, Object> arguments) {
+        String type = arg(arguments, "type");
+        String binding = arg(arguments, "binding");
+        if (!type.isBlank()) {
+            return "Справочник виджетов: тип «" + type + "»";
+        }
+        if (!binding.isBlank()) {
+            return "Справочник виджетов: привязка «" + binding + "»";
+        }
+        return "Справочник всех виджетов дашборда";
     }
 
     private static String driverControlLabel(Map<String, Object> arguments, Map<String, Object> result) {

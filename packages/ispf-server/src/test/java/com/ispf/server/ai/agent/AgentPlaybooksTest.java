@@ -22,4 +22,11 @@ class AgentPlaybooksTest {
         assertTrue(playbook.contains(AgentPlaybooks.SNMP_DASHBOARD_PATH));
         assertFalse(playbook.contains("%s"));
     }
+
+    @Test
+    void dashboardLayoutEditingIncludesGuide() {
+        String playbook = AgentPlaybooks.dashboardLayoutEditing();
+        assertTrue(playbook.contains("Дашборды — как работать"));
+        assertTrue(playbook.contains("set_dashboard_layout"));
+    }
 }

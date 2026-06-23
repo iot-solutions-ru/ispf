@@ -30,7 +30,8 @@ final class AgentKnowledgeTools {
                 getDriverHelpTool(contextPackSearchService),
                 listExamplesTool(contextPackSearchService),
                 getExampleBundleTool(contextPackSearchService),
-                listApplicationsTool(applicationDataStore, bundleSnapshotStore)
+                listApplicationsTool(applicationDataStore, bundleSnapshotStore),
+                getWidgetCatalogTool()
         );
     }
 
@@ -154,6 +155,30 @@ final class AgentKnowledgeTools {
                     sections = list.stream().map(String::valueOf).toList();
                 }
                 return searchService.exampleBundle(stringArg(arguments, "appId"), sections);
+            }
+        };
+    }
+
+    private static PlatformAgentTool getWidgetCatalogTool() {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "get_widget_catalog";
+            }
+
+            @Override
+            public String description() {
+                return "Full dashboard widget reference: types, bindings, required fields, per-type property specs, "
+                        + "workflow and anti-patterns. Call with type=<widgetType> before building that widget. "
+                        + "Optional args: type (widget type id), binding (object-variable|parent-catalog|…).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                return AgentWidgetCatalog.catalogResponse(
+                        optionalString(arguments, "type"),
+                        optionalString(arguments, "binding")
+                );
             }
         };
     }

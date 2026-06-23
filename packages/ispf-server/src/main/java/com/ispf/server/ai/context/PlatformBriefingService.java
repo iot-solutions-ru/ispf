@@ -4,6 +4,8 @@ import com.ispf.driver.DriverMetadata;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.ai.agent.AgentDashboardGuide;
+import com.ispf.server.ai.agent.AgentWidgetCatalog;
 import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.PlatformObject;
@@ -76,6 +78,7 @@ public class PlatformBriefingService {
         if (includeStaticKnowledge) {
             appendDrivers(sb);
             appendVirtualProfiles(sb);
+            appendWidgetCatalog(sb);
             appendExamples(sb);
             appendFeatures(sb);
         }
@@ -108,6 +111,19 @@ public class PlatformBriefingService {
                     .append(profile.get("use"))
                     .append('\n');
         }
+    }
+
+    private void appendWidgetCatalog(StringBuilder sb) {
+        sb.append("\n### Dashboard widgets\n");
+        sb.append("Use get_widget_catalog or get_automation_schema topic=dashboard for all ")
+                .append(AgentWidgetCatalog.all().size())
+                .append(" widget types, bindings, and layout templates.\n");
+        @SuppressWarnings("unchecked")
+        List<String> workflow = (List<String>) AgentDashboardGuide.summary().get("workflow");
+        for (String step : workflow) {
+            sb.append("- ").append(step).append('\n');
+        }
+        sb.append("Layout variable: layout (never widgets). Drill-down: object-table selectionKey + rowTargetDashboard.\n");
     }
 
     @SuppressWarnings("unchecked")

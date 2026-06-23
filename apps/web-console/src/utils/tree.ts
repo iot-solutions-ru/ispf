@@ -30,6 +30,17 @@ export function parentObjectPath(path: string): string | null {
   return dot === -1 ? "root" : path.slice(0, dot);
 }
 
+/** Direct children of parentPath from a flat object list (lazy tree / reorder). */
+export function siblingObjectPaths(parentPath: string, objects: ObjectSummary[]): string[] {
+  return objects
+    .filter((obj) => {
+      const parent = parentObjectPath(obj.path);
+      return parent === parentPath && !isHiddenLegacyApplicationPath(obj.path);
+    })
+    .sort(compareObjects)
+    .map((obj) => obj.path);
+}
+
 export function buildObjectTree(objects: ObjectSummary[]): TreeNode[] {
   const byPath = new Map(objects.map((c) => [c.path, c]));
   const childMap = new Map<string, ObjectSummary[]>();

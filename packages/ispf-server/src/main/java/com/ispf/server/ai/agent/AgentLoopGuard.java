@@ -24,8 +24,9 @@ final class AgentLoopGuard {
         if (isRepeatedTool(lastTool, steps)) {
             return """
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \
-                    For dashboards: get_dashboard_layout / set_dashboard_layout / add_dashboard_widget. \
-                    For platform docs: list_drivers, get_driver_help, get_example_bundle instead of search_context loops. \
+                    For dashboards: list_variables first; use set_dashboard_layout template= instead of many add_dashboard_widget; \
+                    never set_variable name=widgets. get_widget_catalog type=<type> for exact widget fields. \
+                    For platform docs: list_drivers, get_driver_help, get_example_bundle, get_automation_schema instead of search_context loops. \
                     Before invoke_bff: use list_functions and get_function instead of guessing function names.""";
         }
         long recentSearch = recentToolCount(steps, "search_context");

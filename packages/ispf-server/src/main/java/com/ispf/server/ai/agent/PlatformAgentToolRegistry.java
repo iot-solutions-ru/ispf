@@ -427,7 +427,8 @@ public class PlatformAgentToolRegistry {
             public String description() {
                 return "Read dashboard layout JSON. Args: path (dashboard object path) OR template "
                         + "(snmp-host-monitoring | demo-sensor | virtual-cluster-overview | virtual-cluster-detail | empty). "
-                        + "Returns full layoutJson for set_dashboard_layout.";
+                        + "Call before editing. Returns layoutJson for set_dashboard_layout. "
+                        + "Prefer template= over hand-building full layout.";
             }
 
             @Override
@@ -457,7 +458,8 @@ public class PlatformAgentToolRegistry {
                             "source", source,
                             "layoutJson", layoutJson,
                             "templates", DashboardService.layoutTemplateNames(),
-                            "hint", "Widgets are inside layout JSON only. Use set_dashboard_layout or add_dashboard_widget."
+                            "hint", "Widgets are inside layout JSON only. Use get_widget_catalog for all types, "
+                                    + "set_dashboard_layout or add_dashboard_widget to edit."
                     );
                 } catch (Exception ex) {
                     return Map.of("status", "ERROR", "error", ex.getMessage());
@@ -482,7 +484,8 @@ public class PlatformAgentToolRegistry {
             public String description() {
                 return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
                         + "OR template (snmp-host-monitoring | demo-sensor | virtual-cluster-overview | "
-                        + "virtual-cluster-detail | empty).";
+                        + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
+                        + "Requires DASHBOARD object at path. Never use set_variable for layout.";
             }
 
             @Override
@@ -542,8 +545,10 @@ public class PlatformAgentToolRegistry {
 
             @Override
             public String description() {
-                return "Append or replace one widget in dashboard layout.widgets[]. Args: path (required), "
-                        + "widget (object with id, type, title, x, y, w, h, variableName, selectionKey or objectPath).";
+                return "Append or replace one widget in layout.widgets[] (by id). Args: path (required), "
+                        + "widget (id, type, title, x, y, w, h, variableName, valueField, objectPath OR selectionKey). "
+                        + "For 3+ widgets use set_dashboard_layout template= instead of many calls. "
+                        + "list_variables on device first; columnsJson must be a JSON string.";
             }
 
             @Override

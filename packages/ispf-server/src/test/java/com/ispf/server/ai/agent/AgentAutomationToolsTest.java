@@ -78,8 +78,21 @@ class AgentAutomationToolsTest {
         Map<String, Object> dashboard = (Map<String, Object>) result.get("dashboard");
         @SuppressWarnings("unchecked")
         List<String> templates = (List<String>) dashboard.get("templates");
+        assertTrue(templates.contains("snmp-host-monitoring"));
         assertTrue(templates.contains("virtual-cluster-overview"));
         assertTrue(templates.contains("virtual-cluster-detail"));
+        assertEquals(AgentWidgetCatalog.all().size(), dashboard.get("widgetCount"));
+    }
+
+    @Test
+    void getAutomationSchemaWidgetTopicReturnsFullCatalog() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "widget"), context);
+        assertEquals("OK", result.get("status"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> widgets = (Map<String, Object>) result.get("widgets");
+        assertEquals(AgentWidgetCatalog.all().size(), widgets.get("count"));
     }
 
     @Test

@@ -4706,9 +4706,12 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .ai-agent-chat-compose textarea {
   flex: 1;
-  resize: vertical;
+  resize: none;
   min-height: 2.75rem;
-  max-height: 8rem;
+  max-height: min(40vh, 20rem);
+  overflow-y: hidden;
+  line-height: 1.45;
+  field-sizing: content;
 }
 
 .ai-agent-chat-delete:hover {

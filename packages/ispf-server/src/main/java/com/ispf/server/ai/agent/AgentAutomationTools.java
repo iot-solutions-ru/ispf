@@ -337,8 +337,8 @@ final class AgentAutomationTools {
 
             @Override
             public String description() {
-                return "Reference for ALERT/CORRELATOR variables, dashboard templates, bindings, operator UI. "
-                        + "Optional arg: topic (alert|correlator|dashboard|binding|operator|all).";
+                return "Reference for ALERT/CORRELATOR variables, dashboard templates, widgets, object tree, bindings, operator UI. "
+                        + "Optional arg: topic (alert|correlator|dashboard|widget|object|binding|operator|all).";
             }
 
             @Override
@@ -354,12 +354,16 @@ final class AgentAutomationTools {
                     case "alert" -> schema.put("alert", alertSchema());
                     case "correlator" -> schema.put("correlator", correlatorSchema());
                     case "dashboard" -> schema.put("dashboard", dashboardSchema());
+                    case "widget", "widgets" -> schema.put("widgets", AgentWidgetCatalog.catalogResponse("", ""));
+                    case "object", "objects" -> schema.put("objects", AgentObjectTreeGuide.summary());
                     case "binding" -> schema.put("binding", bindingSchema());
                     case "operator" -> schema.put("operator", operatorSchema());
                     default -> {
                         schema.put("alert", alertSchema());
                         schema.put("correlator", correlatorSchema());
                         schema.put("dashboard", dashboardSchema());
+                        schema.put("widgets", AgentWidgetCatalog.catalogSummary());
+                        schema.put("objects", AgentObjectTreeGuide.summary());
                         schema.put("binding", bindingSchema());
                         schema.put("operator", operatorSchema());
                         schema.put("objectTypes", objectTypeGuide());
@@ -696,28 +700,27 @@ final class AgentAutomationTools {
     }
 
     private static Map<String, Object> dashboardSchema() {
-        return Map.of(
-                "objectType", "DASHBOARD",
-                "layoutVariable", "layout",
-                "templates", List.of(
-                        "snmp-host-monitoring",
-                        "demo-sensor",
-                        "virtual-cluster-overview",
-                        "virtual-cluster-detail",
-                        "empty"
-                ),
-                "widgetTypes", List.of(
-                        "value", "indicator", "chart", "sparkline", "object-table", "function", "status-badge"
-                ),
-                "drillDown", "object-table: selectionKey + rowTargetDashboard + rowOpenMode=navigate; detail widgets use same selectionKey",
-                "historian", "chart/sparkline widgets require historyEnabled=true on bound variables; use configure_variable_history",
-                "tools", List.of(
-                        "get_dashboard_layout",
-                        "set_dashboard_layout",
-                        "add_dashboard_widget",
-                        "configure_variable_history"
-                )
-        );
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("objectType", "DASHBOARD");
+        schema.put("layoutVariable", "layout");
+        schema.putAll(AgentDashboardGuide.summary());
+        schema.put("fieldSemantics", AgentWidgetPropertiesGuide.fieldSemantics());
+        schema.put("widgetTypesDocumented", AgentWidgetPropertiesGuide.allTypeSpecs().size());
+        schema.putAll(AgentWidgetCatalog.catalogSummary());
+        schema.put("drillDown",
+                "object-table: selectionKey + rowTargetDashboard + rowOpenMode=navigate; "
+                        + "detail widgets use same selectionKey");
+        schema.put("historian",
+                "chart/sparkline/history-table require historyEnabled=true; use configure_variable_history");
+        schema.put("catalogTool", "get_widget_catalog");
+        schema.put("tools", List.of(
+                "get_widget_catalog",
+                "get_dashboard_layout",
+                "set_dashboard_layout",
+                "add_dashboard_widget",
+                "configure_variable_history"
+        ));
+        return schema;
     }
 
     private static Map<String, Object> bindingSchema() {
@@ -748,7 +751,8 @@ final class AgentAutomationTools {
                 Map.of("type", "ALERT", "use", "CEL rules → events", "parent", AutomationTreeService.ALERT_RULES_ROOT),
                 Map.of("type", "CORRELATOR", "use", "Event patterns", "parent", AutomationTreeService.CORRELATORS_ROOT),
                 Map.of("type", "WORKFLOW", "use", "BPMN automation", "parent", "root.platform.workflows"),
-                Map.of("type", "REPORT", "use", "Report definitions", "parent", "root.platform.reports")
+                Map.of("type", "REPORT", "use", "Report definitions", "parent", "root.platform.reports"),
+                Map.of("type", "MODEL_CATALOG", "use", "Blueprint definitions", "paths", "root.platform.relative-models, instance-types, absolute-models")
         );
     }
 

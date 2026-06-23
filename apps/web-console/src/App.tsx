@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
@@ -31,6 +31,12 @@ import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
 import DashboardBuilder from "./components/dashboard/DashboardBuilder";
+import {
+  emptySession,
+  mergeSession,
+  type DashboardSession,
+  type OpenDashboardOptions,
+} from "./components/dashboard/DashboardContext";
 import ReportBuilder from "./components/report/ReportBuilder";
 import DataSourceEditor from "./components/platform/DataSourceEditor";
 import MigrationEditor from "./components/platform/MigrationEditor";
@@ -94,6 +100,7 @@ export default function App() {
   const queryClient = useQueryClient();
   const [workspaceTab, setWorkspaceTab] = useState<"explorer" | string>("explorer");
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
+  const [dashboardSessions, setDashboardSessions] = useState<Record<string, DashboardSession>>({});
   const [propertiesTabPath, setPropertiesTabPath] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const [selectedPath, setSelectedPath] = useState<string | null>(() =>
@@ -201,6 +208,15 @@ export default function App() {
     onSuccess: () => void invalidateAll(),
   });
 
+  const handleTreeReorder = useCallback(
+    (parentPath: string, orderedPaths: string[]) => {
+      void loadChildren(parentPath, true).then(() => {
+        reorderMutation.mutate({ parentPath, orderedPaths });
+      });
+    },
+    [loadChildren, reorderMutation],
+  );
+
   const tree = useMemo(() => {
     if (!treeFilter.trim()) {
       return lazyTree;
@@ -239,74 +255,51 @@ export default function App() {
     workspaceTab === "explorer"
     && (!isMobileLayout || mobileExplorerPane === "detail");
 
-  // #region agent log
-  useEffect(() => {
-    if (!session?.token) {
+  const applyDashboardOpenOptions = (tabId: string, options?: OpenDashboardOptions) => {
+    if (!options) {
       return;
     }
-    const sidebarEl = sidebarRef.current;
-    const mainEl = explorerMainRef.current;
-    const sidebarBody = sidebarEl?.querySelector(".sidebar-body");
-    const objectTree = sidebarEl?.querySelector(".object-tree");
-    fetch("http://127.0.0.1:7392/ingest/0ec6eb83-ec4e-4401-81d3-b94e141e1b03", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "31e315" },
-      body: JSON.stringify({
-        sessionId: "31e315",
-        runId: "mobile-layout",
-        hypothesisId: "A-D",
-        location: "App.tsx:mobileLayoutProbe",
-        message: "explorer mobile layout probe",
-        data: {
-          innerWidth: window.innerWidth,
-          innerHeight: window.innerHeight,
-          isMobileLayout,
-          workspaceTab,
-          mobileExplorerPane,
-          showObjectTreeSidebar,
-          showExplorerMain,
-          selectedPath,
-          treeNodeCount: tree.length,
-          sidebarHeight: sidebarEl?.getBoundingClientRect().height ?? 0,
-          sidebarBodyHeight: sidebarBody?.getBoundingClientRect().height ?? 0,
-          objectTreeHeight: objectTree?.getBoundingClientRect().height ?? 0,
-          explorerMainHeight: mainEl?.getBoundingClientRect().height ?? 0,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-  }, [
-    session?.token,
-    isMobileLayout,
-    workspaceTab,
-    mobileExplorerPane,
-    showObjectTreeSidebar,
-    showExplorerMain,
-    selectedPath,
-    tree.length,
-  ]);
-  // #endregion
+    setDashboardSessions((current) => ({
+      ...current,
+      [tabId]: mergeSession(current[tabId] ?? emptySession(), options),
+    }));
+  };
 
-  const openEditor = (path: string) => {
+  const openEditor = (path: string, options?: OpenDashboardOptions) => {
     const existing = editorTabs.find((t) => t.path === path);
     if (existing) {
+      if (existing.objectType === "DASHBOARD") {
+        applyDashboardOpenOptions(existing.id, options);
+      }
       setWorkspaceTab(existing.id);
       return;
     }
     const ctx = objectList.find((c) => c.path === path);
+    const objectType = resolveEditorObjectType(path, ctx?.type, ctx?.templateId);
     const tab: EditorTab = {
       id: `editor-${tabCounter++}`,
       path,
       title: ctx?.displayName ?? path.split(".").pop() ?? path,
-      objectType: resolveEditorObjectType(path, ctx?.type, ctx?.templateId),
+      objectType,
     };
     setEditorTabs((tabs) => [...tabs, tab]);
+    if (objectType === "DASHBOARD") {
+      applyDashboardOpenOptions(tab.id, options);
+    }
     setWorkspaceTab(tab.id);
   };
 
   const closeEditor = (tabId: string) => {
     const tab = editorTabs.find((t) => t.id === tabId);
     setEditorTabs((tabs) => tabs.filter((t) => t.id !== tabId));
+    setDashboardSessions((current) => {
+      if (!(tabId in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[tabId];
+      return next;
+    });
     if (tab && propertiesTabPath === tab.path) {
       setPropertiesTabPath(null);
     }
@@ -510,13 +503,12 @@ export default function App() {
               {!treeLoadError && tree.length > 0 && (
                 <ObjectTree
                   nodes={tree}
+                  objects={objectList}
                   selectedPath={selectedPath}
                   onSelect={selectPathInExplorer}
                   onOpenEditor={openEditor}
                   canReorder={isAdmin && !treeFilter.trim()}
-                  onReorder={(parentPath, orderedPaths) =>
-                    reorderMutation.mutate({ parentPath, orderedPaths })
-                  }
+                  onReorder={handleTreeReorder}
                   onLoadChildren={(path) => void loadChildren(path)}
                 />
               )}
@@ -562,6 +554,13 @@ export default function App() {
                 path={activeEditor.path}
                 onClose={() => closeEditor(activeEditor.id)}
                 onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                session={dashboardSessions[activeEditor.id]}
+                onSessionChange={(next) => {
+                  setDashboardSessions((current) => ({
+                    ...current,
+                    [activeEditor.id]: next,
+                  }));
+                }}
                 onNavigateDashboard={openEditor}
               />
             ) : activeEditor.objectType === "REPORT" ? (

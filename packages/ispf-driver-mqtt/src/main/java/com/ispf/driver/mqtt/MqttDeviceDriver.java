@@ -40,7 +40,10 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     private DriverObject driverObject;
     private MqttClient client;
-    private String topicPrefix = "ispf/devices/";
+    private String brokerUrl = "tcp://localhost:1883";
+    private String topicPrefix = "";
+    private String username;
+    private String password;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -52,22 +55,41 @@ public class MqttDeviceDriver implements DeviceDriver {
     @Override
     public void initialize(DriverObject driverObject) {
         this.driverObject = driverObject;
+        driverObject.configuration().forEach(this::applyConfig);
         driverObject.getVariable("topicPrefix").ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
-            if (raw != null) {
+            if (raw != null && !raw.toString().isBlank()) {
                 topicPrefix = raw.toString();
             }
         });
     }
 
+    private void applyConfig(String key, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        switch (key) {
+            case "brokerUrl" -> brokerUrl = value.trim();
+            case "topicPrefix" -> topicPrefix = value.trim();
+            case "username" -> username = value.trim();
+            case "password" -> password = value;
+            default -> { }
+        }
+    }
+
     @Override
     public void connect() throws DriverException {
         try {
-            String brokerUrl = "tcp://localhost:1883";
             client = new MqttClient(brokerUrl, "ispf-driver-" + UUID.randomUUID(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
+            if (username != null && !username.isBlank()) {
+                options.setUserName(username);
+                if (password != null) {
+                    options.setPassword(password.toCharArray());
+                }
+            }
             client.setCallback(new MqttCallback() {
                 @Override
                 public void connectionLost(Throwable cause) {

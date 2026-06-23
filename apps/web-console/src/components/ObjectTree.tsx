@@ -8,8 +8,8 @@ import {
   useRef,
   useState,
 } from "react";
-import type { TreeNode } from "../types";
-import { parentObjectPath } from "../utils/tree";
+import type { ObjectSummary, TreeNode } from "../types";
+import { parentObjectPath, siblingObjectPaths } from "../utils/tree";
 import {
   ancestorPaths,
   defaultExpandedPaths,
@@ -21,6 +21,7 @@ import { isTreeContainerType } from "../utils/objectTreeTypes";
 
 interface ObjectTreeProps {
   nodes: TreeNode[];
+  objects: ObjectSummary[];
   selectedPath: string | null;
   onSelect: (path: string) => void;
   onOpenEditor?: (path: string) => void;
@@ -42,7 +43,7 @@ interface TreeDragContextValue {
   endDrag: () => void;
   setDropTarget: (path: string | null) => void;
   reorder: (parentPath: string, orderedPaths: string[]) => void;
-  siblingPaths: (parentPath: string, nodes: TreeNode[]) => string[];
+  siblingPaths: (parentPath: string) => string[];
 }
 
 interface FlatRow {
@@ -68,22 +69,6 @@ function useTreeDrag(): TreeDragContextValue | null {
   return useContext(TreeDragContext);
 }
 
-function collectSiblingPaths(parentPath: string, nodes: TreeNode[]): string[] {
-  if (parentPath === "") {
-    return nodes.map((node) => node.object.path);
-  }
-  for (const node of nodes) {
-    if (node.object.path === parentPath) {
-      return node.children.map((child) => child.object.path);
-    }
-    const nested = collectSiblingPaths(parentPath, node.children);
-    if (nested.length > 0) {
-      return nested;
-    }
-  }
-  return [];
-}
-
 function flattenVisibleNodes(
   nodes: TreeNode[],
   isExpanded: (path: string) => boolean,
@@ -107,10 +92,10 @@ interface TreeRowProps {
   selectedPath: string | null;
   draggingPath: string | null;
   dropTargetPath: string | null;
+  siblingSignature: string;
   onSelect: (path: string) => void;
   onOpenEditor?: (path: string) => void;
   onLoadChildren?: (path: string) => void;
-  rootNodes: TreeNode[];
 }
 
 const TreeRow = memo(function TreeRow({
@@ -123,7 +108,6 @@ const TreeRow = memo(function TreeRow({
   onSelect,
   onOpenEditor,
   onLoadChildren,
-  rootNodes,
 }: TreeRowProps) {
   const { toggle } = useTreeExpanded();
   const drag = useTreeDrag();
@@ -131,11 +115,12 @@ const TreeRow = memo(function TreeRow({
   const parentPath = parentObjectPath(path);
   const hasChildren = node.children.length > 0 || isTreeContainerType(node.object.type);
   const isSelected = selectedPath === path;
+  const siblings = parentPath && drag ? drag.siblingPaths(parentPath) : [];
   const draggable = Boolean(
     drag?.canReorder
     && path !== "root"
     && parentPath
-    && drag.siblingPaths(parentPath, rootNodes).length > 1
+    && siblings.length > 1
   );
   const isDragging = draggingPath === path;
   const isDropTarget = dropTargetPath === path && draggingPath !== path;
@@ -150,7 +135,6 @@ const TreeRow = memo(function TreeRow({
       drag.endDrag();
       return;
     }
-    const siblings = drag.siblingPaths(parentPath, rootNodes);
     const fromIndex = siblings.indexOf(drag.draggingPath);
     const toIndex = siblings.indexOf(path);
     if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
@@ -165,13 +149,21 @@ const TreeRow = memo(function TreeRow({
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="treeitem"
+      tabIndex={0}
+      aria-selected={isSelected}
       className={`tree-row ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDropTarget ? "drop-target" : ""}`}
       style={{ paddingLeft: `${depth * 16 + 8}px` }}
       draggable={draggable}
       onClick={() => onSelect(path)}
       onDoubleClick={() => onOpenEditor?.(path)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect(path);
+        }
+      }}
       onDragStart={(event) => {
         if (!draggable || !drag) {
           event.preventDefault();
@@ -224,7 +216,7 @@ const TreeRow = memo(function TreeRow({
       </span>
       <span className="tree-label">{node.object.displayName}</span>
       <span className="tree-type">{node.object.type}</span>
-    </button>
+    </div>
   );
 }, (prev, next) =>
   prev.node.object.path === next.node.object.path
@@ -237,10 +229,12 @@ const TreeRow = memo(function TreeRow({
   && prev.expanded === next.expanded
   && prev.selectedPath === next.selectedPath
   && prev.draggingPath === next.draggingPath
-  && prev.dropTargetPath === next.dropTargetPath);
+  && prev.dropTargetPath === next.dropTargetPath
+  && prev.siblingSignature === next.siblingSignature);
 
 export default function ObjectTree({
   nodes,
+  objects,
   selectedPath,
   onSelect,
   onOpenEditor,
@@ -321,6 +315,23 @@ export default function ObjectTree({
     [nodes, isExpanded],
   );
 
+  const siblingSignatures = useMemo(() => {
+    const cache = new Map<string, string>();
+    return (path: string) => {
+      const parentPath = parentObjectPath(path);
+      if (!parentPath) {
+        return "";
+      }
+      const cached = cache.get(parentPath);
+      if (cached !== undefined) {
+        return cached;
+      }
+      const signature = siblingObjectPaths(parentPath, objects).join("|");
+      cache.set(parentPath, signature);
+      return signature;
+    };
+  }, [objects]);
+
   const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
   const endIndex = Math.min(
     flatRows.length,
@@ -361,9 +372,9 @@ export default function ObjectTree({
       },
       setDropTarget: setDropTargetPath,
       reorder: (parentPath, orderedPaths) => onReorder?.(parentPath, orderedPaths),
-      siblingPaths: (parentPath, rootNodes) => collectSiblingPaths(parentPath, rootNodes),
+      siblingPaths: (parentPath) => siblingObjectPaths(parentPath, objects),
     }),
-    [canReorder, draggingPath, dropTargetPath, onReorder],
+    [canReorder, draggingPath, dropTargetPath, onReorder, objects],
   );
 
   return (
@@ -371,6 +382,7 @@ export default function ObjectTree({
       <TreeDragContext.Provider value={dragApi}>
         <div
           ref={containerRef}
+          role="tree"
           className={`object-tree ${draggingPath ? "is-dragging" : ""}`}
           onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
         >
@@ -386,10 +398,10 @@ export default function ObjectTree({
                     selectedPath={selectedPath}
                     draggingPath={draggingPath}
                     dropTargetPath={dropTargetPath}
+                    siblingSignature={siblingSignatures(node.object.path)}
                     onSelect={onSelect}
                     onOpenEditor={onOpenEditor}
                     onLoadChildren={onLoadChildren}
-                    rootNodes={nodes}
                   />
                 ))}
               </div>

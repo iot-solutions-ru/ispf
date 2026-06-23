@@ -94,33 +94,24 @@ public final class AgentPlaybooks {
     }
 
     public static String dashboardLayoutEditing() {
-        return """
-                ## Редактирование дашборда (layout)
-                
-                Виджеты хранятся ТОЛЬКО в переменной layout (JSON-строка с полем widgets[]).
-                Нет отдельной переменной widgets.
-                
-                Быстрый путь:
-                1. get_dashboard_layout path="""
+        return AgentDashboardGuide.referenceText()
+                + "\n\n### Быстрое редактирование (SNMP пример)\n\n"
+                + "1. get_dashboard_layout path="
                 + SNMP_DASHBOARD_PATH
-                + """
-                 — прочитать текущий layout
-                2a. set_dashboard_layout path="""
+                + " — прочитать текущий layout\n"
+                + "2a. set_dashboard_layout path="
                 + SNMP_DASHBOARD_PATH
-                + """
-                 template=snmp-host-monitoring — восстановить эталон
-                2b. add_dashboard_widget path="""
+                + " template=snmp-host-monitoring — восстановить эталон\n"
+                + "2b. add_dashboard_widget path="
                 + SNMP_DASHBOARD_PATH
-                + """
-                 widget={...} — добавить один виджет
-                3. finish
-                
-                Пример виджета CPU (selectionKey=device, unit — символ процента):
-                {"id":"cpu-value","type":"value","title":"CPU","x":0,"y":0,"w":3,"h":2,
-                 "selectionKey":"device","variableName":"hrProcessorLoad","valueField":"value","unit":"pct"}
-                
-                Не вызывай search_context больше 1–2 раз подряд — используй get_dashboard_layout.
-                """;
+                + " widget={...} — добавить/заменить один виджет по id\n"
+                + "3. finish\n\n"
+                + snmpDashboardLayoutHint()
+                + "\nНе вызывай search_context больше 1–2 раз подряд — используй get_dashboard_layout.\n";
+    }
+
+    public static String dashboardGuide() {
+        return AgentDashboardGuide.referenceText();
     }
 
     public static String snmpIfMibExtension() {
@@ -321,20 +312,14 @@ public final class AgentPlaybooks {
     }
 
     public static String platformObjectTypesGuide() {
-        return """
-                ## Справочник типов объектов и переменных (кратко)
-                
-                - DEVICE: driverConfigJson, driverPointMappingsJson, status; virtual lab → sineWave, sawtoothWave, triangleWave
-                - DASHBOARD: title, layout (JSON widgets[]), refreshIntervalMs — НЕ переменная widgets
-                - ALERT: parent root.platform.alert-rules — targetObjectPath, watchVariable, conditionExpr (CEL), eventName
-                - CORRELATOR: parent root.platform.correlators — patternType COUNT|SEQUENCE|EVENT_CHAIN
-                - CUSTOM: логика через create_variable + create_binding_rule (refAt, CEL)
-                - Operator UI: configure_operator_ui — defaultDashboard + dashboards[]
-                
-                Инструменты: get_automation_schema, configure_alert, configure_correlator, create_variable,
-                create_binding_rule, configure_variable_history, configure_operator_ui,
-                
-                Завершай проект полностью инструментами; не пиши «настройте вручную в UI», если есть tool.
-                """;
+        return AgentObjectTreeGuide.referenceText();
+    }
+
+    public static String widgetCatalogGuide() {
+        return AgentWidgetCatalog.referenceText();
+    }
+
+    public static String widgetPropertiesGuide() {
+        return AgentWidgetPropertiesGuide.referenceText();
     }
 }
