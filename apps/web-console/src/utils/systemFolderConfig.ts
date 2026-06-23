@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import {
   ABSOLUTE_MODELS_ROOT,
   INSTANCE_TYPES_ROOT,
@@ -15,6 +16,7 @@ import {
 } from "./automationPath";
 import { isFederationRoot } from "./federationPath";
 import { isTenantsRoot } from "./tenantPath";
+import { localizedSystemFolderMeta } from "./systemFolderI18n";
 
 const APPLICATION_SUBFOLDER_SUFFIXES = [
   ".functions",
@@ -72,114 +74,11 @@ export interface SystemFolderListMeta {
   idColumnLabel: string;
 }
 
-const META_BY_TYPE: Partial<Record<ObjectType, SystemFolderListMeta>> = {
-  PLATFORM: {
-    title: "Платформа",
-    description:
-      "Корневые разделы платформы. Выберите объект в дереве или в списке — свойства редактируются в инспекторе.",
-    idColumnLabel: "Раздел",
-  },
-  DEVICES: {
-    title: "Устройства",
-    description:
-      "Подключённые устройства в root.platform.devices. Выберите устройство в дереве или в списке.",
-    idColumnLabel: "ID",
-  },
-  DASHBOARDS: {
-    title: "Дашборды",
-    description:
-      "HMI-дашборды в root.platform.dashboards. Двойной щелчок в дереве, «Открыть» в списке или кнопка «Открыть в редакторе».",
-    idColumnLabel: "ID",
-  },
-  WORKFLOWS: {
-    title: "Workflow",
-    description: "BPMN-процессы в root.platform.workflows.",
-    idColumnLabel: "ID",
-  },
-  ALERT_RULES: {
-    title: "Правила алертов",
-    description:
-      "CEL-правила в root.platform.alert-rules публикуют события при изменении переменных.",
-    idColumnLabel: "ID",
-  },
-  CORRELATORS: {
-    title: "Корреляторы",
-    description:
-      "Корреляторы в root.platform.correlators реагируют на события и запускают workflow.",
-    idColumnLabel: "ID",
-  },
-  DATA_SOURCES: {
-    title: "Источники данных",
-    description:
-      "SQL-схемы для отчётов, bindings и script-функций в root.platform.data-sources.",
-    idColumnLabel: "ID",
-  },
-  SCHEDULES: {
-    title: "Расписания",
-    description: "Планировщик платформы в root.platform.schedules.",
-    idColumnLabel: "ID",
-  },
-  BINDINGS: {
-    title: "SQL-привязки",
-    description: "Привязки переменных к SQL в root.platform.bindings.",
-    idColumnLabel: "ID",
-  },
-  MIGRATIONS: {
-    title: "Миграции",
-    description: "SQL-миграции схем в root.platform.migrations.",
-    idColumnLabel: "ID",
-  },
-  APPLICATIONS: {
-    title: "Приложения",
-    description:
-      "Контейнеры bundle (Application): packageId при импорте = appId. Содержимое разворачивается в каталоги root.platform.*.",
-    idColumnLabel: "App ID",
-  },
-  OPERATOR_APPS: {
-    title: "Operator Apps",
-    description:
-      "Operator UI в root.platform.operator-apps — набор дашбордов для ?mode=operator&app=<id>.",
-    idColumnLabel: "App ID",
-  },
-  SECURITY: {
-    title: "Безопасность",
-    description: "Разделы безопасности платформы в root.platform.security.",
-    idColumnLabel: "Раздел",
-  },
-  FUNCTIONS: {
-    title: "Функции",
-    description: "Функции приложения, вызываемые через API и binding.",
-    idColumnLabel: "ID",
-  },
-  REPORTS: {
-    title: "Отчёты",
-    description:
-      "SQL-отчёты в root.platform.reports. Двойной щелчок в дереве, «Открыть» в списке или кнопка «Открыть в редакторе».",
-    idColumnLabel: "ID",
-  },
-  SCREENS: {
-    title: "Экраны",
-    description: "Экраны operator-приложения.",
-    idColumnLabel: "ID",
-  },
-};
-
-const RELATIVE_MODELS_FOLDER_META: SystemFolderListMeta = {
-  title: "Относительные модели",
-  description: "Mixin blueprints (RELATIVE) — обогащают существующие объекты.",
-  idColumnLabel: "ID",
-};
-
-const INSTANCE_TYPES_FOLDER_META: SystemFolderListMeta = {
-  title: "Типы объектов",
-  description: "INSTANCE blueprints — шаблоны для создания экземпляров.",
-  idColumnLabel: "ID",
-};
-
-const ABSOLUTE_MODELS_FOLDER_META: SystemFolderListMeta = {
-  title: "Абсолютные модели",
-  description: "ABSOLUTE singleton blueprints — один живой объект на модель.",
-  idColumnLabel: "ID",
+const ID_COLUMN_BY_TYPE: Partial<Record<ObjectType, "section" | "appId" | "id">> = {
+  PLATFORM: "section",
+  SECURITY: "section",
+  APPLICATIONS: "appId",
+  OPERATOR_APPS: "appId",
 };
 
 function isApplicationSubfolder(path: string): boolean {
@@ -251,35 +150,14 @@ export function isSystemCatalogFolder(path: string, objectType?: ObjectType): bo
 
 export function getSystemFolderListMeta(
   path: string,
+  t: TFunction,
   objectType?: ObjectType,
   displayName?: string,
   description?: string,
 ): SystemFolderListMeta {
   const catalogType = resolveCatalogType(path, objectType);
-  if (path === RELATIVE_MODELS_ROOT) {
-    return { ...RELATIVE_MODELS_FOLDER_META, title: displayName?.trim() || RELATIVE_MODELS_FOLDER_META.title };
-  }
-  if (path === INSTANCE_TYPES_ROOT) {
-    return { ...INSTANCE_TYPES_FOLDER_META, title: displayName?.trim() || INSTANCE_TYPES_FOLDER_META.title };
-  }
-  if (path === ABSOLUTE_MODELS_ROOT) {
-    return { ...ABSOLUTE_MODELS_FOLDER_META, title: displayName?.trim() || ABSOLUTE_MODELS_FOLDER_META.title };
-  }
-  if (catalogType && META_BY_TYPE[catalogType]) {
-    const meta = META_BY_TYPE[catalogType]!;
-    return {
-      ...meta,
-      title: displayName?.trim() || meta.title,
-      description: description?.trim() || meta.description,
-    };
-  }
-  return {
-    title: displayName?.trim() || path.split(".").pop() || path,
-    description:
-      description?.trim()
-      || `Объекты в ${path}. Выберите элемент в дереве или в списке.`,
-    idColumnLabel: "ID",
-  };
+  const idColumnFallback = (catalogType && ID_COLUMN_BY_TYPE[catalogType]) || "id";
+  return localizedSystemFolderMeta(t, path, displayName, description, idColumnFallback);
 }
 
 export function childIdFromPath(parentPath: string, childPath: string): string {

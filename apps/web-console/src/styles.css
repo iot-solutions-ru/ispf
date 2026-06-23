@@ -3,6 +3,8 @@
   --bg: #0d1117;
   --bg-elevated: #161b22;
   --bg-hover: #1c2128;
+  --surface: #161b22;
+  --surface-2: #21262d;
   --border: #30363d;
   --text: #e6edf3;
   --text-muted: #8b949e;
@@ -11,6 +13,8 @@
   --danger: #f85149;
   --success: #3fb950;
   --sidebar-width: 320px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
   --ui-ease: cubic-bezier(0.2, 0, 0, 1);
   --ui-shadow-surface:
     0 0 0 1px rgba(255, 255, 255, 0.03),
@@ -37,6 +41,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-wrap: pretty;
+}
+
+select {
+  color-scheme: dark;
+  background-color: var(--bg-elevated);
+  color: var(--text);
+}
+
+select option,
+select optgroup {
+  background-color: var(--bg-elevated);
+  color: var(--text);
 }
 
 h1,
@@ -241,8 +257,9 @@ code,
   padding: 0.35rem 0.5rem;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--bg-elevated);
   color: var(--text);
+  color-scheme: dark;
 }
 
 .login-card-head {
@@ -2561,7 +2578,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   padding: 0.75rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel-bg, #fff);
+  background: var(--panel-bg, var(--bg-elevated));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;

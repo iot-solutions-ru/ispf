@@ -1,8 +1,10 @@
+import type { ObjectType } from "../types";
 import { APPLICATIONS_ROOT } from "./createObjectMode";
 import { OPERATOR_APPS_ROOT } from "./operatorAppsPath";
 import { SECURITY_ROLES_ROOT } from "./securityRolePath";
 import { SECURITY_USERS_ROOT } from "./securityUserPath";
 import { ALERT_RULES_ROOT, CORRELATORS_ROOT } from "./automationPath";
+import { isSystemCatalogFolder } from "./systemFolderConfig";
 
 /** Platform nodes seeded at bootstrap — not removable from the object tree. */
 const NON_DELETABLE_PATHS = new Set([
@@ -24,6 +26,12 @@ const NON_DELETABLE_PATHS = new Set([
   SECURITY_ROLES_ROOT,
 ]);
 
-export function canDeleteObjectPath(path: string): boolean {
-  return !NON_DELETABLE_PATHS.has(path);
+export function canDeleteObjectPath(path: string, objectType?: ObjectType): boolean {
+  if (NON_DELETABLE_PATHS.has(path)) {
+    return false;
+  }
+  if (isSystemCatalogFolder(path, objectType)) {
+    return false;
+  }
+  return true;
 }

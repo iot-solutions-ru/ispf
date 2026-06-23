@@ -7,6 +7,8 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.Variable;
+import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
+import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,8 +55,6 @@ public class PlatformUserObjectTreeService {
         ensureNode(
                 PlatformUserService.ROLES_FOLDER,
                 ObjectType.ROLES,
-                "Roles",
-                "Platform RBAC roles",
                 "security-folder-v1"
         );
         Set<String> expected = new HashSet<>();
@@ -71,11 +71,9 @@ public class PlatformUserObjectTreeService {
         ensureNode(
                 PlatformUserService.ROLES_FOLDER,
                 ObjectType.ROLES,
-                "Roles",
-                "Platform RBAC roles",
                 "security-folder-v1"
         );
-        ensureNode(
+        ensureEntityNode(
                 role.objectPath(),
                 ObjectType.ROLE,
                 role.displayName(),
@@ -102,16 +100,14 @@ public class PlatformUserObjectTreeService {
         ensureNode(
                 PlatformUserService.USERS_FOLDER,
                 ObjectType.USERS,
-                "Users",
-                "Platform user accounts",
                 "security-folder-v1"
         );
         String path = user.objectPath();
-        ensureNode(
+        ensureEntityNode(
                 path,
                 ObjectType.USER,
                 user.displayName(),
-                "username=" + user.username(),
+                "Platform login «" + user.username() + "». Roles and auto-start operator app are edited via Security → Users or the object variables.",
                 "platform-user-v1"
         );
         setStringVariable(path, "username", user.username(), false);
@@ -123,11 +119,10 @@ public class PlatformUserObjectTreeService {
     }
 
     private void ensureSecurityRoot() {
-        ensureNode(
+        SystemObjectCatalogSupport.ensureFolder(
+                objectManager,
                 PlatformUserService.SECURITY_ROOT,
                 ObjectType.SECURITY,
-                "Security",
-                "Authentication and RBAC",
                 "security-folder-v1"
         );
     }
@@ -144,7 +139,7 @@ public class PlatformUserObjectTreeService {
         });
     }
 
-    private void ensureNode(
+    private void ensureEntityNode(
             String path,
             ObjectType type,
             String displayName,
@@ -160,13 +155,12 @@ public class PlatformUserObjectTreeService {
         if (lastDot > 0) {
             String parentPath = path.substring(0, lastDot);
             if (objectManager.tree().findByPath(parentPath).isEmpty()) {
-                ensureNode(
-                        parentPath,
-                        ObjectType.SECURITY,
-                        parentPath.substring(parentPath.lastIndexOf('.') + 1),
-                        "",
-                        "security-folder-v1"
-                );
+                ensureSecurityRoot();
+                if (parentPath.equals(PlatformUserService.USERS_FOLDER)) {
+                    ensureNode(PlatformUserService.USERS_FOLDER, ObjectType.USERS, "security-folder-v1");
+                } else if (parentPath.equals(PlatformUserService.ROLES_FOLDER)) {
+                    ensureNode(PlatformUserService.ROLES_FOLDER, ObjectType.ROLES, "platform-role-v1");
+                }
             }
         }
         objectManager.create(
@@ -175,6 +169,35 @@ public class PlatformUserObjectTreeService {
                 type,
                 displayName,
                 description,
+                templateId
+        );
+    }
+
+    private void ensureNode(
+            String path,
+            ObjectType type,
+            String templateId
+    ) {
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
+                .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
+        if (objectManager.tree().findByPath(path).isPresent()) {
+            objectManager.updateInfo(path, entry.displayName(), entry.description());
+            objectManager.reconcileType(path, type);
+            return;
+        }
+        int lastDot = path.lastIndexOf('.');
+        if (lastDot > 0) {
+            String parentPath = path.substring(0, lastDot);
+            if (objectManager.tree().findByPath(parentPath).isEmpty()) {
+                ensureSecurityRoot();
+            }
+        }
+        objectManager.create(
+                lastDot > 0 ? path.substring(0, lastDot) : "",
+                path.substring(lastDot + 1),
+                type,
+                entry.displayName(),
+                entry.description(),
                 templateId
         );
     }

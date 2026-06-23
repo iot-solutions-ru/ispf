@@ -1,4 +1,4 @@
-import type { DriverMaturity } from "../types/drivers";
+import { useTranslation } from "react-i18next";
 import {
   driverMaturityClass,
   driverMaturityHint,
@@ -12,6 +12,7 @@ interface DriverMaturityBadgeProps {
 }
 
 export default function DriverMaturityBadge({ maturity, compact = false }: DriverMaturityBadgeProps) {
+  const { t } = useTranslation("inspector");
   const level = normalizeDriverMaturity(maturity);
   if (level === "PRODUCTION" && compact) {
     return null;
@@ -19,7 +20,7 @@ export default function DriverMaturityBadge({ maturity, compact = false }: Drive
   return (
     <span
       className={driverMaturityClass(level)}
-      title={driverMaturityHint(level)}
+      title={driverMaturityHint(level, t)}
     >
       {driverMaturityLabel(level)}
     </span>
@@ -29,11 +30,8 @@ export default function DriverMaturityBadge({ maturity, compact = false }: Drive
 export function formatDriverOptionLabel(
   driverId: string,
   name: string,
-  maturity?: DriverMaturity | string
+  maturity?: string,
 ): string {
   const level = normalizeDriverMaturity(maturity);
-  if (level === "PRODUCTION") {
-    return `${driverId} — ${name}`;
-  }
   return `${driverId} — ${name} [${driverMaturityLabel(level)}]`;
 }

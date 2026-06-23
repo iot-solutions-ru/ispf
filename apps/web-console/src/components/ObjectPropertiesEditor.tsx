@@ -27,6 +27,7 @@ import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import { localizedSystemObjectDescription } from "../utils/systemFolderI18n";
 import CreateVariableDialog from "./CreateVariableDialog";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
 
@@ -180,7 +181,7 @@ export default function ObjectPropertiesEditor({
   onDeleted,
   canManage = false,
 }: ObjectPropertiesEditorProps) {
-  const { t } = useTranslation(["inspector", "common"]);
+  const { t } = useTranslation(["inspector", "common", "objectTree"]);
   const queryClient = useQueryClient();
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     info: true,
@@ -357,8 +358,11 @@ export default function ObjectPropertiesEditor({
 
   const ctx = editorData.object;
   const isRoot = path === "root";
-  const canDelete = canDeleteObjectPath(path);
+  const canDelete = canDeleteObjectPath(path, ctx.type);
   const crumbs = path.split(".");
+  const headerDescription =
+    localizedSystemObjectDescription(t, path, ctx.description)
+    || t("objectEditor.defaultDescription");
 
   return (
     <div className="properties-editor">
@@ -422,7 +426,7 @@ export default function ObjectPropertiesEditor({
               <span className="inline-badge federated-inline-badge">federated</span>
             )}
           </h2>
-          <p className="hint">{ctx.description || t("objectEditor.defaultDescription")}</p>
+          <p className="hint">{headerDescription}</p>
         </div>
         {isDirty && <span className="dirty-pill">{t("common:dirty.changed")}</span>}
       </div>

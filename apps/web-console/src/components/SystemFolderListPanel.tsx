@@ -15,9 +15,6 @@ interface SystemFolderListPanelProps {
   folderType?: ObjectType;
   folderDisplayName?: string;
   folderDescription?: string;
-  canManage: boolean;
-  createLabel?: string;
-  onCreateChild?: () => void;
   onSelectPath: (path: string) => void;
   onOpenEditor?: (path: string) => void;
 }
@@ -36,15 +33,13 @@ export default function SystemFolderListPanel({
   folderType,
   folderDisplayName,
   folderDescription,
-  canManage,
-  createLabel,
-  onCreateChild,
   onSelectPath,
   onOpenEditor,
 }: SystemFolderListPanelProps) {
-  const { t } = useTranslation(["explorer", "common"]);
+  const { t } = useTranslation(["explorer", "common", "objectTree"]);
   const meta: SystemFolderListMeta = getSystemFolderListMeta(
     folderPath,
+    t,
     folderType,
     folderDisplayName,
     folderDescription,
@@ -56,7 +51,6 @@ export default function SystemFolderListPanel({
   });
 
   const children = sortChildren(childrenQuery.data ?? []);
-  const showCreate = canManage && createLabel && onCreateChild;
 
   return (
     <section className="security-users-panel">
@@ -65,11 +59,6 @@ export default function SystemFolderListPanel({
           <h3>{meta.title}</h3>
           <p className="op-muted">{meta.description}</p>
         </div>
-        {showCreate && (
-          <button type="button" className="btn primary" onClick={onCreateChild}>
-            {createLabel}
-          </button>
-        )}
       </header>
 
       {childrenQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
@@ -78,9 +67,7 @@ export default function SystemFolderListPanel({
       )}
 
       {!childrenQuery.isLoading && !childrenQuery.error && children.length === 0 && (
-        <p className="op-muted">
-          {showCreate ? t("folderList.emptyCreate") : t("folderList.empty")}
-        </p>
+        <p className="op-muted">{t("folderList.emptyCreate")}</p>
       )}
 
       {children.length > 0 && (

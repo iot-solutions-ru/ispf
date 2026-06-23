@@ -21,7 +21,6 @@ import {
 } from "../utils/automationPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
-import { canCreateChildAt, createActionLabel } from "../utils/createObjectMode";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../utils/platformSqlPath";
@@ -34,7 +33,6 @@ interface ExplorerViewProps {
   selectedPath: string | null;
   selectedObject: ObjectSummary | null;
   onOpenEditor: (path: string) => void;
-  onCreateChild: () => void;
   onDeleted: () => void;
   onSelectPath: (path: string) => void;
   onMembersChanged?: () => void;
@@ -48,7 +46,6 @@ export default function ExplorerView({
   selectedPath,
   selectedObject,
   onOpenEditor,
-  onCreateChild,
   onDeleted,
   onSelectPath,
   onMembersChanged,
@@ -78,11 +75,6 @@ export default function ExplorerView({
     selectedObject
     && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
   );
-  const showCreateButton =
-    isAdmin
-    && canCreateChildAt(selectedPath, selectedObject?.type)
-    && !isUsersRoot
-    && !isRolesRoot;
   const isVisualGroup = selectedObject?.type === "VISUAL_GROUP";
   const hideToolbar =
     isOperatorAppChild
@@ -111,11 +103,6 @@ export default function ExplorerView({
       )}
       {!hideToolbar && (
         <div className="explorer-toolbar">
-          {showCreateButton && (
-            <button type="button" className="btn primary" onClick={onCreateChild}>
-              {createActionLabel(selectedPath)}
-            </button>
-          )}
           <button type="button" className="btn" onClick={() => onOpenEditor(selectedPath)}>
             {t("common:action.openInEditor")}
           </button>
@@ -165,9 +152,6 @@ export default function ExplorerView({
           folderType={selectedObject?.type}
           folderDisplayName={selectedObject?.displayName}
           folderDescription={selectedObject?.description}
-          canManage={isAdmin}
-          createLabel={showCreateButton ? createActionLabel(selectedPath) : undefined}
-          onCreateChild={showCreateButton ? onCreateChild : undefined}
           onSelectPath={onSelectPath}
           onOpenEditor={onOpenEditor}
         />

@@ -3,6 +3,7 @@ package com.ispf.server.bootstrap;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.federation.FederationPaths;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -14,67 +15,26 @@ import java.util.UUID;
 public class PlatformBootstrap {
 
     public void initialize(ObjectTree tree) {
-        PlatformObject platform = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform",
-                ObjectType.PLATFORM,
-                "Platform",
-                "IoT Solutions Platform Framework",
-                null
-        );
-        tree.register(platform);
+        register(tree, "root.platform", ObjectType.PLATFORM, null);
+        register(tree, "root.tenant", ObjectType.TENANT, null);
+        register(tree, "root.platform.devices", ObjectType.DEVICES, null);
 
-        PlatformObject tenants = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.tenant",
-                ObjectType.TENANT,
-                "Tenants",
-                "Multi-tenant namespaces (root.tenant.{id}.platform.*)",
-                null
-        );
-        tree.register(tenants);
+        registerCatalogFolder(tree, "root.platform.relative-models");
+        registerCatalogFolder(tree, "root.platform.instance-types");
+        registerCatalogFolder(tree, "root.platform.absolute-models");
+        registerCatalogFolder(tree, "root.platform.instances");
 
-        PlatformObject devices = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.devices",
-                ObjectType.DEVICES,
-                "Devices",
-                "Connected devices",
-                null
-        );
-        tree.register(devices);
-
-        registerCatalogFolder(tree, "root.platform.relative-models", "Relative Models", "Mixin blueprints for existing objects");
-        registerCatalogFolder(tree, "root.platform.instance-types", "Instance Types", "Blueprints for new object instances");
-        registerCatalogFolder(tree, "root.platform.absolute-models", "Absolute Models", "Singleton object blueprints");
-        registerCatalogFolder(tree, "root.platform.instances", "Instances", "Singleton absolute model instances");
-
-        PlatformObject dashboards = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.dashboards",
-                ObjectType.DASHBOARDS,
-                "Dashboards",
-                "HMI dashboards and operator screens",
-                null
-        );
-        tree.register(dashboards);
-
-        PlatformObject reports = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.reports",
-                ObjectType.REPORTS,
-                "Reports",
-                "SQL reports (REQ-PF-12)",
-                null
-        );
-        tree.register(reports);
+        register(tree, "root.platform.dashboards", ObjectType.DASHBOARDS, null);
+        register(tree, "root.platform.reports", ObjectType.REPORTS, null);
 
         PlatformObject demoDevice = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.devices.demo-sensor-01",
                 ObjectType.DEVICE,
                 "Demo Sensor 01",
-                "Simulated MQTT temperature sensor — structure from mqtt-sensor-v1 model",
+                """
+                        Sample MQTT temperature device for learning the platform. \
+                        Structure comes from mqtt-sensor-v1 model; pairs with dashboards.demo-sensor and alert rules in the automation catalog.""",
                 "mqtt-sensor-v1"
         );
         tree.register(demoDevice);
@@ -84,7 +44,7 @@ public class PlatformBootstrap {
                 "root.platform.dashboards.demo-sensor",
                 ObjectType.DASHBOARD,
                 "Demo Sensor Dashboard",
-                "Live HMI for demo MQTT temperature sensor",
+                "Live HMI widgets bound to demo-sensor-01 variables. Open in Dashboard editor or operator mode when linked from an Operator App.",
                 "dashboard-v1"
         );
         tree.register(demoDashboard);
@@ -94,92 +54,54 @@ public class PlatformBootstrap {
                 "root.platform.dashboards.snmp-host-monitoring",
                 ObjectType.DASHBOARD,
                 "SNMP Host Monitoring",
-                "System monitoring dashboard for SNMP agents (Windows/Linux)",
+                "System monitoring dashboard for SNMP agents (Windows/Linux). Requires snmp-localhost or compatible SNMP device under Devices.",
                 "dashboard-v1"
         );
         tree.register(snmpDashboard);
 
-        PlatformObject workflows = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.workflows",
-                ObjectType.WORKFLOWS,
-                "Workflows",
-                "BPMN automation workflows",
-                null
-        );
-        tree.register(workflows);
-
-        PlatformObject alertRules = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.alert-rules",
-                ObjectType.ALERT_RULES,
-                "Alert Rules",
-                "CEL rules that publish events on variable changes",
-                null
-        );
-        tree.register(alertRules);
-
-        PlatformObject correlators = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.correlators",
-                ObjectType.CORRELATORS,
-                "Correlators",
-                "Event patterns that trigger workflows",
-                null
-        );
-        tree.register(correlators);
-
-        PlatformObject applications = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.applications",
-                ObjectType.APPLICATIONS,
-                "Applications",
-                "Deployed application bundles (functions, reports, schedules)",
-                "app-folder-v1"
-        );
-        tree.register(applications);
-
-        PlatformObject operatorApps = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.operator-apps",
-                ObjectType.OPERATOR_APPS,
-                "Operator Apps",
-                "Operator HMI — набор дашбордов для ?mode=operator&app=<id>",
-                null
-        );
-        tree.register(operatorApps);
-
-        PlatformObject federation = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.federation",
-                ObjectType.AGENT,
-                "Federation",
-                "Remote ISPF sites — peer registry and cross-site object proxy (PF-13 spike)",
-                null
-        );
-        tree.register(federation);
+        register(tree, "root.platform.workflows", ObjectType.WORKFLOWS, null);
+        register(tree, "root.platform.alert-rules", ObjectType.ALERT_RULES, null);
+        register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
+        register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
+        register(tree, "root.platform.operator-apps", ObjectType.OPERATOR_APPS, "app-folder-v1");
+        register(tree, FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
 
         PlatformObject demoWorkflow = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.workflows.demo-alarm-handler",
                 ObjectType.WORKFLOW,
                 "Demo Alarm Handler",
-                "Triggers when demo sensor alarm becomes active",
+                "Example BPMN workflow triggered when the demo sensor alarm becomes active. Link an Operator App to surface user tasks in the work queue.",
                 "workflow-v1"
         );
         tree.register(demoWorkflow);
     }
 
-    private static void registerCatalogFolder(ObjectTree tree, String path, String displayName, String description) {
+    private static void register(ObjectTree tree, String path, ObjectType type, String templateId) {
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
+                .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
+        tree.register(new PlatformObject(
+                UUID.randomUUID().toString(),
+                path,
+                type,
+                entry.displayName(),
+                entry.description(),
+                templateId
+        ));
+    }
+
+    private static void registerCatalogFolder(ObjectTree tree, String path) {
         if (tree.findByPath(path).isPresent()) {
             return;
         }
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
+                .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
         tree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
                 path,
                 ObjectType.MODEL,
-                displayName,
-                description,
+                entry.displayName(),
+                entry.description(),
                 null
         ));
     }

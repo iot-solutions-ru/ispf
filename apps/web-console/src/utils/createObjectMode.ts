@@ -7,7 +7,7 @@ import {
   isCorrelatorPath,
 } from "./automationPath";
 import type { ObjectType } from "../types";
-import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT } from "./platformSqlPath";
+import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT, SCHEDULES_ROOT } from "./platformSqlPath";
 
 export const APPLICATIONS_ROOT = "root.platform.applications";
 export const REPORTS_ROOT = "root.platform.reports";
@@ -21,7 +21,8 @@ export type CreateDialogMode =
   | "report"
   | "data-source"
   | "migration"
-  | "sql-binding";
+  | "sql-binding"
+  | "schedule";
 
 function isPlatformReportsFolder(path: string): boolean {
   return path === REPORTS_ROOT || (path.endsWith(".reports") && !path.startsWith(`${APPLICATIONS_ROOT}.`));
@@ -68,10 +69,18 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === BINDINGS_ROOT || parentPath.endsWith(".bindings")) {
     return "sql-binding";
   }
+  if (parentPath === SCHEDULES_ROOT || parentPath.endsWith(".schedules")) {
+    return "schedule";
+  }
   if (isPlatformReportsFolder(parentPath)) {
     return "report";
   }
   return "object";
+}
+
+/** Context menu label (no leading «+»). */
+export function createContextMenuLabel(parentPath: string): string {
+  return createActionLabel(parentPath).replace(/^\+\s*/, "");
 }
 
 export function createActionLabel(parentPath: string): string {
@@ -92,6 +101,8 @@ export function createActionLabel(parentPath: string): string {
       return i18n.t("explorer:create.migration");
     case "sql-binding":
       return i18n.t("explorer:create.sqlBinding");
+    case "schedule":
+      return i18n.t("explorer:create.schedule");
     default:
       return i18n.t("explorer:create.object");
   }
@@ -144,6 +155,10 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     "WORKFLOWS",
     "ALERT_RULES",
     "CORRELATORS",
+    "DATA_SOURCES",
+    "SCHEDULES",
+    "BINDINGS",
+    "MIGRATIONS",
     "APPLICATIONS",
     "OPERATOR_APPS",
     "MODEL",

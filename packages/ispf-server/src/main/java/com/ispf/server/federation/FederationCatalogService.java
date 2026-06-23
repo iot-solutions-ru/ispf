@@ -2,6 +2,7 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +79,9 @@ public class FederationCatalogService {
 
     private void ensureCatalogRoot(String localRoot, FederationPeer peer) {
         if (objectManager.tree().findByPath(localRoot).isPresent()) {
+            SystemObjectDescriptions.resolve(localRoot).ifPresent(entry ->
+                    objectManager.updateInfo(localRoot, entry.displayName(), entry.description())
+            );
             return;
         }
         int lastDot = localRoot.lastIndexOf('.');
@@ -86,12 +90,17 @@ public class FederationCatalogService {
         if (objectManager.tree().findByPath(parentPath).isEmpty()) {
             throw new IllegalStateException("Missing federation parent: " + parentPath);
         }
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(localRoot)
+                .orElse(new SystemObjectDescriptions.Entry(
+                        peer.name(),
+                        "Federated catalog from " + peer.baseUrl()
+                ));
         objectManager.create(
                 parentPath,
                 name,
                 ObjectType.AGENT,
-                peer.name(),
-                "Federated catalog from " + peer.baseUrl(),
+                entry.displayName(),
+                entry.description(),
                 null
         );
     }

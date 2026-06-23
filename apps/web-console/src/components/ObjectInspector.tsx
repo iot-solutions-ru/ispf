@@ -151,7 +151,7 @@ export default function ObjectInspector({ path, onDeleted, canManage = false }: 
   }
   const isRoot = path === "root";
   const isPlatformRoot = path === "root.platform";
-  const canDelete = canDeleteObjectPath(path);
+  const canDelete = canDeleteObjectPath(path, obj.type);
   const isDevice = obj.type === "DEVICE";
   const isApplication = obj.type === "APPLICATION";
   const showFederationBind = canManage && path !== "root" && !isRoot;

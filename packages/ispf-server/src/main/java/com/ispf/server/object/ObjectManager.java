@@ -9,6 +9,8 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.bootstrap.PlatformBootstrap;
+import com.ispf.server.bootstrap.SystemObjectDescriptions;
+import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -184,6 +186,71 @@ public class ObjectManager {
             publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, path));
         }
         return node;
+    }
+
+    @Transactional
+    public void ensureSystemCatalogFolder(String path, ObjectType type, String templateId) {
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
+                .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
+        if (objectTree.findByPath(path).isPresent()) {
+            updateInfo(path, entry.displayName(), entry.description());
+            reconcileType(path, type);
+            return;
+        }
+        Optional<ObjectNodeEntity> persisted = nodeRepository.findByPath(path);
+        if (persisted.isPresent()) {
+            attachPersistedNode(persisted.get());
+            updateInfo(path, entry.displayName(), entry.description());
+            reconcileType(path, type);
+            return;
+        }
+        int lastDot = path.lastIndexOf('.');
+        create(
+                path.substring(0, lastDot),
+                path.substring(lastDot + 1),
+                type,
+                entry.displayName(),
+                entry.description(),
+                templateId
+        );
+    }
+
+    private void attachPersistedNode(ObjectNodeEntity entity) {
+        if (objectTree.findByPath(entity.getPath()).isPresent()) {
+            return;
+        }
+        PlatformObject node = new PlatformObject(
+                entity.getId(),
+                entity.getPath(),
+                entity.getType(),
+                entity.getDisplayName(),
+                entity.getDescription(),
+                entity.getTemplateId(),
+                entity.getSortOrder(),
+                entity.getRevision(),
+                entity.getLastChangedBy(),
+                entity.getLastChangedAt()
+        );
+        node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
+        for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
+            node.addEvent(event);
+        }
+        for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
+            node.addFunction(function);
+        }
+        objectTree.register(node);
+        for (ObjectVariableEntity varEntity : variableRepository.findByObjectPathIn(List.of(entity.getPath()))) {
+            DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
+            node.addVariable(new Variable(
+                    varEntity.getName(),
+                    mapper.readSchema(varEntity.getSchemaJson()),
+                    varEntity.isReadable(),
+                    varEntity.isWritable(),
+                    value,
+                    varEntity.isHistoryEnabled(),
+                    varEntity.getHistoryRetentionDays()
+            ));
+        }
     }
 
     @Transactional
@@ -451,57 +518,25 @@ public class ObjectManager {
     }
 
     private void ensureBootstrapNodes() {
-        ensureBootstrapNode(
-                "root.platform.operator-apps",
-                ObjectType.OPERATOR_APPS,
-                "Operator Apps",
-                "Operator HMI — набор дашбордов для ?mode=operator&app=<id>",
-                "app-folder-v1"
-        );
-        ensureBootstrapNode(
-                "root.platform.alert-rules",
-                ObjectType.ALERT_RULES,
-                "Alert Rules",
-                "CEL rules that publish events on variable changes",
-                null
-        );
-        ensureBootstrapNode(
-                "root.platform.correlators",
-                ObjectType.CORRELATORS,
-                "Correlators",
-                "Event patterns that trigger workflows",
-                null
-        );
-        ensureBootstrapNode(
-                "root.platform.federation",
-                ObjectType.AGENT,
-                "Federation",
-                "Remote ISPF sites — peer registry and cross-site object proxy (PF-13 spike)",
-                null
-        );
-        ensureBootstrapNode(
-                "root.tenant",
-                ObjectType.TENANT,
-                "Tenants",
-                "Multi-tenant namespaces (root.tenant.{id}.platform.*)",
-                null
-        );
+        ensureBootstrapNode("root.platform.operator-apps", ObjectType.OPERATOR_APPS, "app-folder-v1");
+        ensureBootstrapNode("root.platform.alert-rules", ObjectType.ALERT_RULES, null);
+        ensureBootstrapNode("root.platform.correlators", ObjectType.CORRELATORS, null);
+        ensureBootstrapNode(FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
+        ensureBootstrapNode("root.tenant", ObjectType.TENANT, null);
     }
 
-    private void ensureBootstrapNode(
-            String path,
-            ObjectType type,
-            String displayName,
-            String description,
-            String templateId
-    ) {
+    private void ensureBootstrapNode(String path, ObjectType type, String templateId) {
+        SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
+                .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
         if (objectTree.findByPath(path).isPresent()) {
+            updateInfo(path, entry.displayName(), entry.description());
+            reconcileType(path, type);
             return;
         }
         int lastDot = path.lastIndexOf('.');
         String parentPath = path.substring(0, lastDot);
         String name = path.substring(lastDot + 1);
-        create(parentPath, name, type, displayName, description, templateId);
+        create(parentPath, name, type, entry.displayName(), entry.description(), templateId);
     }
 
     private void seedPlatformStructure() {

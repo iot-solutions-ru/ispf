@@ -9,6 +9,7 @@
   "create.dataSource": "+ Data source",
   "create.migration": "+ Migration",
   "create.sqlBinding": "+ SQL binding",
+  "create.schedule": "+ Schedule",
   "create.object": "+ Object",
   "dialog.newDeployApp": "New deploy application",
   "dialog.newOperatorApp": "New operator application",
@@ -18,6 +19,7 @@
   "dialog.newDataSource": "New data source",
   "dialog.newMigration": "New migration",
   "dialog.newSqlBinding": "New SQL binding",
+  "dialog.newSchedule": "New schedule",
   "dialog.newObject": "New object",
   "tree.linkTitle": "Link: {{path}}",
   "bulk.selectAll": "Select all",
@@ -36,6 +38,7 @@
   "dialog.dataSourceHint": "Data source in {{path}}. After creation, specify schema and open the editor.",
   "dialog.migrationHint": "SQL migration in {{path}}. Apply via button in editor after creation.",
   "dialog.sqlBindingHint": "SELECT → object variable binding. Configure refresh in the editor.",
+  "dialog.scheduleHint": "Fixed-interval job that invokes a platform function (POST .../functions/{name}/invoke). Configure interval and target in the editor.",
   "dialog.namePathSegment": "Name (path segment) *",
   "dialog.nameOrId": "Name / ID *",
   "dialog.scriptIdPlaceholder": "same as name if empty",
@@ -83,6 +86,6 @@
   "icons.bindings": "Bindings",
   "icons.screens": "Screens",
   "folderList.empty": "List is empty.",
-  "folderList.emptyCreate": "No objects yet. Create the first one with the button above.",
+  "folderList.emptyCreate": "No objects yet. Right-click the folder in the tree to create one.",
   "folderList.template": "Template"
 }

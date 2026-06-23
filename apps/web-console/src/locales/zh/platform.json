@@ -32,6 +32,15 @@
   "packageImport.import": "进口",
   "packageImport.subtitle": "将包加载到对象树中：数据源、迁移、报告、函数、绑定和计划。 API：POST /api/v1/platform/packages/import。",
   "packageImport.title": "包导入",
+  "schedule.enabled": "启用",
+  "schedule.functionName": "函数名称",
+  "schedule.intervalMs": "间隔（毫秒）",
+  "schedule.lastError": "最后一个错误：{{error}}",
+  "schedule.lastTick": "上次运行：{{time}}",
+  "schedule.loading": "加载时间表...",
+  "schedule.objectPath": "目标对象路径",
+  "schedule.subtitle": "按固定时间间隔（intervalMs）调用平台功能",
+  "schedule.title": "时间表",
   "sqlBinding.currentValue": "当前值 {{variable}}：{{value}}",
   "sqlBinding.lastRefreshed": "上次刷新：{{time}}",
   "sqlBinding.loading": "正在加载 SQL 绑定…",
@@ -45,5 +54,6 @@
   "sqlObject.bindingDesc": "将 SELECT 结果同步到对象变量。",
   "sqlObject.dataSourceDesc": "用于报告、迁移和绑定的 PostgreSQL 架构引用。",
   "sqlObject.migrationDesc": "应用于数据源架构的 DDL/DML 脚本。",
+  "sqlObject.scheduleDesc": "在intervalMs上调用平台函数；运行时状态位于lastTickAt/lastError 中。",
   "sqlObject.title": "SQL 对象"
 }

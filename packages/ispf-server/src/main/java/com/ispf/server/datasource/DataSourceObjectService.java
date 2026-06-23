@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,18 +38,12 @@ public class DataSourceObjectService {
 
     @Transactional
     public void ensureCatalog() {
-        if (objectManager.tree().findByPath(DataSourcePathResolver.DATA_SOURCES_ROOT).isEmpty()) {
-            objectManager.create(
-                    "root.platform",
-                    "data-sources",
-                    ObjectType.DATA_SOURCES,
-                    "Data Sources",
-                    "SQL schema references for reports, bindings, and script functions",
-                    null
-            );
-        } else {
-            objectManager.reconcileType(DataSourcePathResolver.DATA_SOURCES_ROOT, ObjectType.DATA_SOURCES);
-        }
+        SystemObjectCatalogSupport.ensureFolder(
+                objectManager,
+                DataSourcePathResolver.DATA_SOURCES_ROOT,
+                ObjectType.DATA_SOURCES,
+                null
+        );
     }
 
     @Transactional

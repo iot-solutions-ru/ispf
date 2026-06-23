@@ -1,16 +1,5 @@
 import type { DriverMaturity } from "../types/drivers";
-
-const LABELS: Record<DriverMaturity, string> = {
-  PRODUCTION: "Production",
-  BETA: "Beta",
-  STUB: "Stub",
-};
-
-const HINTS: Record<DriverMaturity, string> = {
-  PRODUCTION: "Поддерживается для типовых сценариев",
-  BETA: "Работает с ограничениями — см. описание драйвера",
-  STUB: "Заглушка или только проверка связности — не для production",
-};
+import type { TFunction } from "i18next";
 
 export function normalizeDriverMaturity(raw: string | undefined): DriverMaturity {
   if (raw === "BETA" || raw === "STUB") {
@@ -20,11 +9,19 @@ export function normalizeDriverMaturity(raw: string | undefined): DriverMaturity
 }
 
 export function driverMaturityLabel(maturity: DriverMaturity): string {
-  return LABELS[maturity];
+  return maturity === "PRODUCTION" ? "Production" : maturity === "BETA" ? "Beta" : "Stub";
 }
 
-export function driverMaturityHint(maturity: DriverMaturity): string {
-  return HINTS[maturity];
+export function driverMaturityHint(maturity: DriverMaturity, t?: TFunction): string {
+  if (t) {
+    return t(`inspector:driverMaturity.${maturity}.hint`);
+  }
+  const fallbacks: Record<DriverMaturity, string> = {
+    PRODUCTION: "Supported for typical scenarios",
+    BETA: "Works with limitations — see the driver description",
+    STUB: "Stub or connectivity check only — not for production",
+  };
+  return fallbacks[maturity];
 }
 
 export function driverMaturityClass(maturity: DriverMaturity): string {

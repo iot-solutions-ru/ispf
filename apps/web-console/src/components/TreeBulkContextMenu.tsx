@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { ObjectSummary } from "../types";
+import type { ObjectSummary, ObjectType } from "../types";
+import { canCreateChildAt, createContextMenuLabel } from "../utils/createObjectMode";
 import { useTreeBulkActions, type TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 
 export interface TreeContextMenuState {
   x: number;
   y: number;
+  contextPath: string | null;
+  contextObjectType?: ObjectType;
 }
 
 interface TreeBulkContextMenuProps extends TreeBulkActionsConfig {
@@ -59,6 +62,13 @@ export default function TreeBulkContextMenu({
     return null;
   }
 
+  const canCreateChild = Boolean(
+    menu.contextPath
+    && config.onCreateChild
+    && canCreateChildAt(menu.contextPath, menu.contextObjectType),
+  );
+  const createLabel = menu.contextPath ? createContextMenuLabel(menu.contextPath) : "";
+
   const item = (
     label: string,
     onClick: () => void,
@@ -95,11 +105,20 @@ export default function TreeBulkContextMenu({
         style={{ left: menu.x, top: menu.y }}
         onContextMenu={(event) => event.preventDefault()}
       >
+        {canCreateChild && config.onCreateChild && menu.contextPath && item(
+          createLabel,
+          () => config.onCreateChild!(menu.contextPath!),
+        )}
+        {canCreateChild && <div className="tree-context-menu-sep" role="separator" />}
         {item(t("bulk.selectAll"), actions.selectAll)}
         {item(t("bulk.clearSelection"), actions.clearSelection, { disabled: !actions.hasSelection })}
         <div className="tree-context-menu-sep" role="separator" />
         {item(t("bulk.deleteObjects"), actions.deleteSelected, {
-          disabled: !actions.hasSelection || actions.isDeleting,
+          disabled:
+            !actions.hasSelection
+            || actions.isDeleting
+            || actions.deletablePaths.length === 0
+            || actions.hasNonDeletableSelection,
           danger: true,
         })}
         {item(t("bulk.removeFromGroup"), actions.removeFromGroup, {

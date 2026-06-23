@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.datasource.DataSourcePathResolver;
@@ -59,18 +60,7 @@ public class MigrationObjectService {
 
     @Transactional
     public void ensureCatalog() {
-        if (objectManager.tree().findByPath(MIGRATIONS_ROOT).isEmpty()) {
-            objectManager.create(
-                    "root.platform",
-                    "migrations",
-                    ObjectType.MIGRATIONS,
-                    "Migrations",
-                    "SQL migrations applied on package import",
-                    null
-            );
-        } else {
-            objectManager.reconcileType(MIGRATIONS_ROOT, ObjectType.MIGRATIONS);
-        }
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MIGRATIONS_ROOT, ObjectType.MIGRATIONS, null);
     }
 
     @Transactional

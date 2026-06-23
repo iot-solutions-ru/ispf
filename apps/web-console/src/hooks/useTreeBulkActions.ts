@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { bulkDeleteObjects, updateGroupMembers } from "../api";
 import type { ObjectSummary } from "../types";
+import { canDeleteObjectPath } from "../utils/platformSystemPaths";
 import { parseTreeRowKey } from "../utils/treeRowKey";
 
 export interface TreeBulkActionsConfig {
@@ -11,6 +12,9 @@ export interface TreeBulkActionsConfig {
   onSelectionChange: (keys: Set<string>) => void;
   onDeleted?: () => void;
   onMembersChanged?: () => void;
+  contextPath?: string | null;
+  contextObjectType?: ObjectSummary["type"];
+  onCreateChild?: (parentPath: string) => void;
 }
 
 export function useTreeBulkActions({
@@ -42,8 +46,17 @@ export function useTreeBulkActions({
     [objects],
   );
 
+  const deletablePaths = useMemo(() => {
+    return canonicalPaths.filter((path) => {
+      const obj = objects.find((item) => item.path === path);
+      return canDeleteObjectPath(path, obj?.type);
+    });
+  }, [canonicalPaths, objects]);
+
+  const hasNonDeletableSelection = deletablePaths.length !== canonicalPaths.length;
+
   const deleteMutation = useMutation({
-    mutationFn: () => bulkDeleteObjects(canonicalPaths),
+    mutationFn: () => bulkDeleteObjects(deletablePaths),
     onSuccess: () => {
       onSelectionChange(new Set());
       onDeleted?.();
@@ -83,8 +96,11 @@ export function useTreeBulkActions({
   const clearSelection = () => onSelectionChange(new Set());
 
   const deleteSelected = () => {
+    if (deletablePaths.length === 0) {
+      return;
+    }
     const msg =
-      `Удалить ${canonicalPaths.length} объект(ов)?\n\n`
+      `Удалить ${deletablePaths.length} объект(ов)?\n\n`
       + "Для контейнеров будет удалено всё поддерево. Ссылки в группах удалятся автоматически.";
     if (window.confirm(msg)) {
       deleteMutation.mutate();
@@ -95,6 +111,8 @@ export function useTreeBulkActions({
     hasSelection,
     hasGroupRefs,
     canonicalPaths,
+    deletablePaths,
+    hasNonDeletableSelection,
     visualGroups,
     selectAll,
     clearSelection,

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import type { ObjectSummary, TreeNode } from "../types";
+import type { ObjectSummary, ObjectType, TreeNode } from "../types";
 import { parentObjectPath, siblingObjectPaths } from "../utils/tree";
 import {
   ancestorPaths,
@@ -290,12 +290,20 @@ export default function ObjectTree({
   const [contextMenu, setContextMenu] = useState<TreeContextMenuState | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const openContextMenu = useCallback((event: React.MouseEvent) => {
+  const openContextMenu = useCallback((
+    event: React.MouseEvent,
+    context?: { path: string | null; objectType?: ObjectType },
+  ) => {
     if (!bulkActions) {
       return;
     }
     event.preventDefault();
-    setContextMenu({ x: event.clientX, y: event.clientY });
+    setContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      contextPath: context?.path ?? bulkActions.contextPath ?? null,
+      contextObjectType: context?.objectType ?? bulkActions.contextObjectType,
+    });
   }, [bulkActions]);
 
   const handleRowContextMenu = useCallback(
@@ -307,7 +315,8 @@ export default function ObjectTree({
         bulkActions.onSelectionChange(new Set([row.key]));
         onRowSelect(row, { metaKey: false, shiftKey: false });
       }
-      openContextMenu(event);
+      const obj = bulkActions.objects.find((item) => item.path === row.path);
+      openContextMenu(event, { path: row.path, objectType: obj?.type });
     },
     [bulkActions, onRowSelect, openContextMenu],
   );

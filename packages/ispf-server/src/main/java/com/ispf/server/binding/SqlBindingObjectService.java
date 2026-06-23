@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.object.ObjectManager;
@@ -67,18 +68,7 @@ public class SqlBindingObjectService {
 
     @Transactional
     public void ensureCatalog() {
-        if (objectManager.tree().findByPath(BINDINGS_ROOT).isEmpty()) {
-            objectManager.create(
-                    "root.platform",
-                    "bindings",
-                    ObjectType.BINDINGS,
-                    "SQL Bindings",
-                    "SQL-to-variable bindings (tree-first)",
-                    null
-            );
-        } else {
-            objectManager.reconcileType(BINDINGS_ROOT, ObjectType.BINDINGS);
-        }
+        SystemObjectCatalogSupport.ensureFolder(objectManager, BINDINGS_ROOT, ObjectType.BINDINGS, null);
     }
 
     @Transactional

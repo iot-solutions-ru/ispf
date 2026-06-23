@@ -14,6 +14,7 @@ export const LOCALE_LABELS: Record<AppLocale, string> = {
 export const LOCALE_NAMESPACES = [
   "common",
   "shell",
+  "objectTree",
   "explorer",
   "inspector",
   "dashboard",

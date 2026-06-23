@@ -32,6 +32,15 @@
   "packageImport.import": "Импорт",
   "packageImport.subtitle": "Загрузите пакет в дерево объектов: источник данных, миграции, отчеты, функции, привязки и расписания. API: POST/api/v1/platform/packages/import.",
   "packageImport.title": "Импорт пакетов",
+  "schedule.enabled": "Включено",
+  "schedule.functionName": "Имя функции",
+  "schedule.intervalMs": "Интервал (мс)",
+  "schedule.lastError": "Последняя ошибка: {{error}}",
+  "schedule.lastTick": "Последний запуск: {{time}}",
+  "schedule.loading": "График загрузки…",
+  "schedule.objectPath": "Путь к целевому объекту",
+  "schedule.subtitle": "Вызов функции платформы через фиксированный интервал (intervalMs)",
+  "schedule.title": "Расписание",
   "sqlBinding.currentValue": "Текущее значение {{variable}}: {{value}}",
   "sqlBinding.lastRefreshed": "Последнее обновление: {{time}}",
   "sqlBinding.loading": "Загрузка SQL-привязки…",
@@ -45,5 +54,6 @@
   "sqlObject.bindingDesc": "Синхронизация результата SELECT с переменной объекта.",
   "sqlObject.dataSourceDesc": "Ссылка на PostgreSQL-схему для отчётов, миграций и bindings.",
   "sqlObject.migrationDesc": "DDL/DML скрипт, применяемый в схему data source.",
+  "sqlObject.scheduleDesc": "Вызов функции платформы на интервалеMs; статус времени выполнения в LastTickAt/lastError.",
   "sqlObject.title": "SQL-объект"
 }

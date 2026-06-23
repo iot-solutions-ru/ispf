@@ -32,6 +32,15 @@
   "packageImport.import": "Importieren",
   "packageImport.subtitle": "Laden Sie ein Bundle in den Objektbaum: Datenquelle, Migrationen, Berichte, Funktionen, Bindungen und Zeitpläne. API: POST /api/v1/platform/packages/import.",
   "packageImport.title": "Paketimport",
+  "schedule.enabled": "Aktiviert",
+  "schedule.functionName": "Funktionsname",
+  "schedule.intervalMs": "Intervall (ms)",
+  "schedule.lastError": "Letzter Fehler: {{error}}",
+  "schedule.lastTick": "Letzte Ausführung: {{time}}",
+  "schedule.loading": "Zeitplan wird geladen…",
+  "schedule.objectPath": "Zielobjektpfad",
+  "schedule.subtitle": "Rufen Sie eine Plattformfunktion in einem festen Intervall (intervalMs) auf.",
+  "schedule.title": "Zeitplan",
   "sqlBinding.currentValue": "Aktueller Wert {{variable}}: {{value}}",
   "sqlBinding.lastRefreshed": "Zuletzt aktualisiert: {{time}}",
   "sqlBinding.loading": "SQL-Bindung wird geladen…",
@@ -45,5 +54,6 @@
   "sqlObject.bindingDesc": "SELECT-Ergebnis mit Objektvariable synchronisieren.",
   "sqlObject.dataSourceDesc": "Verweis auf PostgreSQL-Schema für Berichte, Migrationen und Bindungen.",
   "sqlObject.migrationDesc": "DDL/DML-Skript, angewendet auf Data-Source-Schema.",
+  "sqlObject.scheduleDesc": "Rufen Sie eine Plattformfunktion für IntervalMs auf. Laufzeitstatus in lastTickAt / lastError.",
   "sqlObject.title": "SQL-Objekt"
 }

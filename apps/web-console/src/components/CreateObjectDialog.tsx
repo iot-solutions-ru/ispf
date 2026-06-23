@@ -12,6 +12,7 @@ import {
   createMigration,
   createSqlBinding,
 } from "../api/platformSql";
+import { createSchedule } from "../api/platformSchedules";
 import { fetchDrivers } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
 import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
@@ -81,6 +82,9 @@ export default function CreateObjectDialog({
   const [bindingVariable, setBindingVariable] = useState("value");
   const [bindingDataSourcePath, setBindingDataSourcePath] = useState("");
   const [bindingQuery, setBindingQuery] = useState("SELECT 1 AS cnt");
+  const [scheduleIntervalMs, setScheduleIntervalMs] = useState(60_000);
+  const [scheduleObjectPath, setScheduleObjectPath] = useState("root.platform.devices.demo-sensor-01");
+  const [scheduleFunctionName, setScheduleFunctionName] = useState("");
 
   const dataSourcesQuery = useDataSourceOptions();
 
@@ -102,6 +106,8 @@ export default function CreateObjectDialog({
         return t("dialog.newMigration");
       case "sql-binding":
         return t("dialog.newSqlBinding");
+      case "schedule":
+        return t("dialog.newSchedule");
       default:
         return t("dialog.newObject");
     }
@@ -230,6 +236,18 @@ export default function CreateObjectDialog({
         });
         return created.path;
       }
+      if (mode === "schedule") {
+        const created = await createSchedule({
+          scheduleId: name,
+          displayName: displayName || name,
+          description,
+          enabled: true,
+          intervalMs: scheduleIntervalMs,
+          objectPath: scheduleObjectPath.trim(),
+          functionName: scheduleFunctionName.trim(),
+        });
+        return created.path;
+      }
       if (selectedInstanceModel) {
         const obj = await instantiateModel(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
@@ -313,6 +331,9 @@ export default function CreateObjectDialog({
           )}
           {mode === "sql-binding" && (
             <p className="hint">{t("dialog.sqlBindingHint")}</p>
+          )}
+          {mode === "schedule" && (
+            <p className="hint">{t("dialog.scheduleHint")}</p>
           )}
           <form
             className="form-grid"
@@ -414,6 +435,39 @@ export default function CreateObjectDialog({
                     value={bindingQuery}
                     onChange={(e) => setBindingQuery(e.target.value)}
                     spellCheck={false}
+                  />
+                </label>
+              </>
+            )}
+
+            {mode === "schedule" && (
+              <>
+                <label>
+                  {t("platform:schedule.intervalMs")}
+                  <input
+                    type="number"
+                    min={1000}
+                    step={1000}
+                    value={scheduleIntervalMs}
+                    onChange={(e) => setScheduleIntervalMs(Number(e.target.value) || 60_000)}
+                    required
+                  />
+                </label>
+                <label className="full">
+                  {t("platform:schedule.objectPath")}
+                  <input
+                    value={scheduleObjectPath}
+                    onChange={(e) => setScheduleObjectPath(e.target.value)}
+                    placeholder="root.platform.devices.demo-sensor-01"
+                    required
+                  />
+                </label>
+                <label className="full">
+                  {t("platform:schedule.functionName")}
+                  <input
+                    value={scheduleFunctionName}
+                    onChange={(e) => setScheduleFunctionName(e.target.value)}
+                    required
                   />
                 </label>
               </>

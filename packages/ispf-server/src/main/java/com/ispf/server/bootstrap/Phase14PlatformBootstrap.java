@@ -22,19 +22,22 @@ public class Phase14PlatformBootstrap {
     private final ScheduleObjectService scheduleObjectService;
     private final SqlBindingObjectService sqlBindingObjectService;
     private final MigrationObjectService migrationObjectService;
+    private final SystemObjectDescriptionReconciler systemObjectDescriptionReconciler;
 
     public Phase14PlatformBootstrap(
             Phase14ModelBootstrap phase14ModelBootstrap,
             DataSourceObjectService dataSourceObjectService,
             ScheduleObjectService scheduleObjectService,
             SqlBindingObjectService sqlBindingObjectService,
-            MigrationObjectService migrationObjectService
+            MigrationObjectService migrationObjectService,
+            SystemObjectDescriptionReconciler systemObjectDescriptionReconciler
     ) {
         this.phase14ModelBootstrap = phase14ModelBootstrap;
         this.dataSourceObjectService = dataSourceObjectService;
         this.scheduleObjectService = scheduleObjectService;
         this.sqlBindingObjectService = sqlBindingObjectService;
         this.migrationObjectService = migrationObjectService;
+        this.systemObjectDescriptionReconciler = systemObjectDescriptionReconciler;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -46,5 +49,6 @@ public class Phase14PlatformBootstrap {
         scheduleObjectService.ensureCatalog();
         sqlBindingObjectService.ensureCatalog();
         migrationObjectService.ensureCatalog();
+        systemObjectDescriptionReconciler.reconcile();
     }
 }

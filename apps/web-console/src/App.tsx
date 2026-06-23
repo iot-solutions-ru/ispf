@@ -43,6 +43,7 @@ import ReportBuilder from "./components/report/ReportBuilder";
 import DataSourceEditor from "./components/platform/DataSourceEditor";
 import MigrationEditor from "./components/platform/MigrationEditor";
 import SqlBindingEditor from "./components/platform/SqlBindingEditor";
+import ScheduleEditor from "./components/platform/ScheduleEditor";
 import ExplorerView from "./components/ExplorerView";
 import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
 import OperatorView from "./components/operator/OperatorView";
@@ -185,6 +186,7 @@ export default function App() {
   }, [selectedPath]);
 
   const [showCreate, setShowCreate] = useState(false);
+  const [createParentPath, setCreateParentPath] = useState<string | null>(null);
   const [treeFilter, setTreeFilter] = useState("");
   const isMobileLayout = useMobileLayout();
   const [mobileExplorerPane, setMobileExplorerPane] = useState<"tree" | "detail">("tree");
@@ -389,7 +391,7 @@ export default function App() {
   const showPropertiesEditor =
     activeEditor &&
     (propertiesTabPath === activeEditor.path || !isSpecializedEditor);
-  const parentForCreate = selectedPath ?? "root";
+  const parentForCreate = createParentPath ?? selectedPath ?? "root";
   const selectedObject = useMemo(
     () => objectList.find((obj) => obj.path === selectedPath) ?? null,
     [objectList, selectedPath]
@@ -599,6 +601,12 @@ export default function App() {
                           onSelectionChange: setSelectedKeys,
                           onDeleted: () => void invalidateAll(),
                           onMembersChanged: () => void invalidateAll(),
+                          contextPath: selectedPath,
+                          contextObjectType: selectedObject?.type,
+                          onCreateChild: (parentPath) => {
+                            setCreateParentPath(parentPath);
+                            setShowCreate(true);
+                          },
                         }
                       : undefined
                   }
@@ -614,7 +622,6 @@ export default function App() {
               selectedPath={selectedPath}
               selectedObject={selectedObject}
               onOpenEditor={openEditor}
-              onCreateChild={() => setShowCreate(true)}
               onDeleted={() => {
                 setSelectedPath("root");
                 if (isMobileLayout) {
@@ -698,6 +705,12 @@ export default function App() {
                 onClose={() => closeEditor(activeEditor.id)}
                 onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
               />
+            ) : activeEditor.objectType === "SCHEDULE" ? (
+              <ScheduleEditor
+                path={activeEditor.path}
+                onClose={() => closeEditor(activeEditor.id)}
+                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+              />
             ) : (
               <ObjectPropertiesEditor
                 key={activeEditor.path}
@@ -738,9 +751,13 @@ export default function App() {
       {showCreate && (
         <CreateObjectDialog
           parentPath={parentForCreate}
-          onClose={() => setShowCreate(false)}
+          onClose={() => {
+            setShowCreate(false);
+            setCreateParentPath(null);
+          }}
           onCreated={(path) => {
             setShowCreate(false);
+            setCreateParentPath(null);
             void invalidateAll();
             setSelectedPath(path);
             const stayInExplorer =

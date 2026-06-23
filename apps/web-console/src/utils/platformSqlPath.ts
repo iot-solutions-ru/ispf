@@ -1,9 +1,14 @@
 export const DATA_SOURCES_ROOT = "root.platform.data-sources";
 export const BINDINGS_ROOT = "root.platform.bindings";
 export const MIGRATIONS_ROOT = "root.platform.migrations";
+export const SCHEDULES_ROOT = "root.platform.schedules";
 
 export function isDataSourcesRoot(path: string): boolean {
   return path === DATA_SOURCES_ROOT;
+}
+
+export function isSchedulesRoot(path: string): boolean {
+  return path === SCHEDULES_ROOT;
 }
 
 export function isBindingsRoot(path: string): boolean {
@@ -26,6 +31,10 @@ export function isSqlBindingPath(path: string): boolean {
   return path.startsWith(`${BINDINGS_ROOT}.`);
 }
 
+export function isSchedulePath(path: string): boolean {
+  return path.startsWith(`${SCHEDULES_ROOT}.`);
+}
+
 export function isPlatformSqlObjectPath(path: string): boolean {
-  return isDataSourcePath(path) || isMigrationPath(path) || isSqlBindingPath(path);
+  return isDataSourcePath(path) || isMigrationPath(path) || isSqlBindingPath(path) || isSchedulePath(path);
 }

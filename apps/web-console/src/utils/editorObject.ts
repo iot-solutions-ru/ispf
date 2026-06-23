@@ -16,6 +16,7 @@ export function isSpecializedEditorObject(
     || type === "DATA_SOURCE"
     || type === "MIGRATION"
     || type === "BINDING"
+    || type === "SCHEDULE"
   ) {
     return true;
   }
@@ -26,6 +27,7 @@ export function isSpecializedEditorObject(
     || templateId === "data-source-v1"
     || templateId === "migration-v1"
     || templateId === "sql-binding-v1"
+    || templateId === "schedule-v1"
   ) {
     return true;
   }
@@ -53,6 +55,7 @@ export function resolveEditorObjectType(
     || type === "DATA_SOURCE"
     || type === "MIGRATION"
     || type === "BINDING"
+    || type === "SCHEDULE"
   ) {
     return type;
   }
@@ -62,6 +65,7 @@ export function resolveEditorObjectType(
   if (templateId === "data-source-v1") return "DATA_SOURCE";
   if (templateId === "migration-v1") return "MIGRATION";
   if (templateId === "sql-binding-v1") return "BINDING";
+  if (templateId === "schedule-v1") return "SCHEDULE";
   if (isModelsPath(path)) return "MODEL";
   if (path.startsWith("root.platform.reports.")) return "REPORT";
   if (path.startsWith("root.platform.dashboards.")) return "DASHBOARD";
@@ -69,5 +73,6 @@ export function resolveEditorObjectType(
   if (path.startsWith("root.platform.data-sources.")) return "DATA_SOURCE";
   if (path.startsWith("root.platform.migrations.")) return "MIGRATION";
   if (path.startsWith("root.platform.bindings.")) return "BINDING";
+  if (path.startsWith("root.platform.schedules.")) return "SCHEDULE";
   return type;
 }
