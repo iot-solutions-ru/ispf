@@ -24,14 +24,14 @@ describe("reportBuilderUtils", () => {
 
   it("validates parameters", () => {
     expect(validateParameters(["status"])).toBeNull();
-    expect(validateParameters(["bad-name"])).toMatch(/Недопустимое/);
-    expect(validateParameters(["a", "a"])).toMatch(/Дублирующийся/);
+    expect(validateParameters(["bad-name"])).toBe("error.paramInvalid:bad-name");
+    expect(validateParameters(["a", "a"])).toBe("error.paramDuplicate:a");
   });
 
   it("validates columns", () => {
-    expect(validateColumns([])).toMatch(/колонку/);
+    expect(validateColumns([])).toBe("error.columnsEmpty");
     expect(validateColumns([{ field: "x", label: "X" }])).toBeNull();
-    expect(validateColumns([{ field: "", label: "X" }])).toMatch(/field/);
+    expect(validateColumns([{ field: "", label: "X" }])).toBe("error.columnFieldRequired");
   });
 
   it("builds default parameters with coercion", () => {

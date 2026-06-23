@@ -49,12 +49,15 @@ void i18n.use(initReactI18next).init({
   returnEmptyString: false,
 });
 
-document.documentElement.lang = i18n.language;
-persistLocale(normalizeLocale(i18n.language) ?? "en");
-
-i18n.on("languageChanged", (lng) => {
-  const locale = normalizeLocale(lng) ?? "en";
-  persistLocale(locale);
-});
+if (typeof document !== "undefined") {
+  document.documentElement.lang = i18n.language;
+}
+if (typeof window !== "undefined") {
+  persistLocale(normalizeLocale(i18n.language) ?? "en");
+  i18n.on("languageChanged", (lng) => {
+    const locale = normalizeLocale(lng) ?? "en";
+    persistLocale(locale);
+  });
+}
 
 export default i18n;

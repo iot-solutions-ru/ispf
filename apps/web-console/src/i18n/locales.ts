@@ -48,6 +48,9 @@ export function normalizeLocale(value: string | null | undefined): AppLocale | n
 }
 
 export function detectInitialLocale(): AppLocale {
+  if (typeof window === "undefined") {
+    return "en";
+  }
   const params = new URLSearchParams(window.location.search);
   const fromUrl = normalizeLocale(params.get("lang"));
   if (fromUrl) {
@@ -61,7 +64,7 @@ export function detectInitialLocale(): AppLocale {
   } catch {
     // ignore private mode
   }
-  const browser = normalizeLocale(navigator.language);
+  const browser = normalizeLocale(typeof navigator !== "undefined" ? navigator.language : undefined);
   if (browser) {
     return browser;
   }
