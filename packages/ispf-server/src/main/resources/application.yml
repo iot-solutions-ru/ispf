@@ -1,6 +1,10 @@
 spring:
   application:
     name: ispf-server
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
   datasource:
     url: ${ISPF_DB_URL:jdbc:postgresql://localhost:5432/ispf}
@@ -46,6 +50,9 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  health:
+    redis:
+      enabled: ${ISPF_REDIS_ENABLED:false}
 
 ispf:
   platform:
@@ -78,6 +85,20 @@ ispf:
     enabled: true
   object-change:
     async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
+    queue-capacity: ${ISPF_OBJECT_CHANGE_QUEUE_CAPACITY:10000}
+    worker-threads: ${ISPF_OBJECT_CHANGE_WORKER_THREADS:4}
+    coalesce-telemetry-updates: ${ISPF_OBJECT_CHANGE_COALESCE_TELEMETRY:true}
+  redis:
+    enabled: ${ISPF_REDIS_ENABLED:false}
+    host: ${ISPF_REDIS_HOST:localhost}
+    port: ${ISPF_REDIS_PORT:6379}
+    password: ${ISPF_REDIS_PASSWORD:}
+    database: ${ISPF_REDIS_DATABASE:0}
+    timeout: ${ISPF_REDIS_TIMEOUT:2s}
+    cache:
+      context-pack-ttl: ${ISPF_REDIS_CONTEXT_PACK_TTL:1h}
+      platform-briefing-ttl: ${ISPF_REDIS_PLATFORM_BRIEFING_TTL:5m}
+      object-acl-ttl: ${ISPF_REDIS_OBJECT_ACL_TTL:10m}
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}

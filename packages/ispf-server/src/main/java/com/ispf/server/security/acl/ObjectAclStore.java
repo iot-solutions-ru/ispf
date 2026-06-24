@@ -1,5 +1,7 @@
 package com.ispf.server.security.acl;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -8,16 +10,17 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 @Repository
 public class ObjectAclStore {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final ConcurrentHashMap<String, List<ObjectAclEntry>> effectiveEntriesCache = new ConcurrentHashMap<>();
+    private static final String CACHE_NAME = "objectAcl";
 
-    public ObjectAclStore(JdbcTemplate jdbcTemplate) {
+    private final JdbcTemplate jdbcTemplate;
+    private final CacheManager cacheManager;
+
+    public ObjectAclStore(JdbcTemplate jdbcTemplate, CacheManager cacheManager) {
         this.jdbcTemplate = jdbcTemplate;
+        this.cacheManager = cacheManager;
     }
 
     public List<ObjectAclEntry> listByPath(String objectPath) {
@@ -56,8 +59,19 @@ public class ObjectAclStore {
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     public List<ObjectAclEntry> findEffectiveEntries(String objectPath) {
-        return effectiveEntriesCache.computeIfAbsent(objectPath, this::loadEffectiveEntries);
+        Cache cache = cacheManager.getCache(CACHE_NAME);
+        if (cache == null) {
+            return loadEffectiveEntries(objectPath);
+        }
+        List<ObjectAclEntry> cached = cache.get(objectPath, List.class);
+        if (cached != null) {
+            return cached;
+        }
+        List<ObjectAclEntry> loaded = loadEffectiveEntries(objectPath);
+        cache.put(objectPath, loaded);
+        return loaded;
     }
 
     private List<ObjectAclEntry> loadEffectiveEntries(String objectPath) {
@@ -74,13 +88,17 @@ public class ObjectAclStore {
     }
 
     public void invalidateEffectiveEntriesCache(String objectPath) {
+        Cache cache = cacheManager.getCache(CACHE_NAME);
+        if (cache == null) {
+            return;
+        }
         if (objectPath == null || objectPath.isBlank()) {
-            effectiveEntriesCache.clear();
+            cache.clear();
             return;
         }
         String current = objectPath;
         while (current != null && !current.isBlank()) {
-            effectiveEntriesCache.remove(current);
+            cache.evict(current);
             int dot = current.lastIndexOf('.');
             current = dot == -1 ? null : current.substring(0, dot);
         }

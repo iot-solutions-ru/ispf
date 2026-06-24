@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,8 @@ class PlatformBriefingServiceTest {
                 driverCatalog,
                 applicationDataStore,
                 bundleSnapshotStore,
-                objectManager
+                objectManager,
+                new ConcurrentMapCacheManager("platformBriefing")
         );
     }
 

@@ -2,12 +2,11 @@ package com.ispf.server.application.binding;
 
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
+import com.ispf.server.object.bus.ObjectChangeAsyncHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class ApplicationSqlBindingEventListener {
+public class ApplicationSqlBindingEventListener implements ObjectChangeAsyncHandler {
 
     private final ApplicationSqlBindingStore store;
     private final ApplicationSqlBindingService bindingService;
@@ -20,9 +19,13 @@ public class ApplicationSqlBindingEventListener {
         this.bindingService = bindingService;
     }
 
-    @Async("objectChangeExecutor")
-    @EventListener
-    public void onObjectChange(ObjectChangeEvent event) {
+    @Override
+    public int order() {
+        return 60;
+    }
+
+    @Override
+    public void handle(ObjectChangeEvent event) {
         if (event.type() != ObjectChangeType.EVENT_FIRED || event.variableName() == null) {
             return;
         }

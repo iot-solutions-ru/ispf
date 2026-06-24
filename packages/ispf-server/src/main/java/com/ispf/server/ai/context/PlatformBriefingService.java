@@ -9,6 +9,8 @@ import com.ispf.server.ai.agent.AgentWidgetCatalog;
 import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.PlatformObject;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ public class PlatformBriefingService {
     private final ApplicationDataStore applicationDataStore;
     private final ApplicationBundleSnapshotStore bundleSnapshotStore;
     private final ObjectManager objectManager;
+    private final CacheManager cacheManager;
 
     public PlatformBriefingService(
             AiProperties aiProperties,
@@ -62,7 +65,8 @@ public class PlatformBriefingService {
             DriverCatalog driverCatalog,
             ApplicationDataStore applicationDataStore,
             ApplicationBundleSnapshotStore bundleSnapshotStore,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            CacheManager cacheManager
     ) {
         this.aiProperties = aiProperties;
         this.contextPackService = contextPackService;
@@ -70,9 +74,30 @@ public class PlatformBriefingService {
         this.applicationDataStore = applicationDataStore;
         this.bundleSnapshotStore = bundleSnapshotStore;
         this.objectManager = objectManager;
+        this.cacheManager = cacheManager;
     }
 
     public String buildBriefing(String rootPath, boolean includeStaticKnowledge) {
+        String cacheKey = briefingCacheKey(rootPath, includeStaticKnowledge);
+        Cache cache = cacheManager.getCache("platformBriefing");
+        if (cache != null) {
+            String cached = cache.get(cacheKey, String.class);
+            if (cached != null) {
+                return cached;
+            }
+            String built = buildBriefingUncached(rootPath, includeStaticKnowledge);
+            cache.put(cacheKey, built);
+            return built;
+        }
+        return buildBriefingUncached(rootPath, includeStaticKnowledge);
+    }
+
+    private static String briefingCacheKey(String rootPath, boolean includeStaticKnowledge) {
+        String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
+        return effectiveRoot + ":" + includeStaticKnowledge;
+    }
+
+    private String buildBriefingUncached(String rootPath, boolean includeStaticKnowledge) {
         StringBuilder sb = new StringBuilder();
         sb.append("Context pack: ").append(contextPackService.contextPackVersion()).append('\n');
         if (includeStaticKnowledge) {

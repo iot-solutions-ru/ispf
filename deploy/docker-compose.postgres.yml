@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: ispf-postgres
+    restart: unless-stopped
+    env_file:
+      - ispf-server.env
+    environment:
+      POSTGRES_DB: ispf
+      POSTGRES_USER: ispf
+      POSTGRES_PASSWORD: ${ISPF_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ispf_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ispf -d ispf"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: ispf-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - ispf_redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+volumes:
+  ispf_pg_data:
+  ispf_redis_data:

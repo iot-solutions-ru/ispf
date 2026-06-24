@@ -1,6 +1,8 @@
 package com.ispf.server.ai.context;
 
 import com.ispf.server.config.AiProperties;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -13,19 +15,24 @@ import java.util.Map;
 @Service
 public class ContextPackService {
 
+    private static final String CACHE_NAME = "contextPack";
+    private static final String CACHE_KEY = "default";
+
     private final AiProperties properties;
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
-    private volatile Map<String, Object> cachedPack;
+    private final CacheManager cacheManager;
 
     public ContextPackService(
             AiProperties properties,
             ResourceLoader resourceLoader,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CacheManager cacheManager
     ) {
         this.properties = properties;
         this.resourceLoader = resourceLoader;
         this.objectMapper = objectMapper;
+        this.cacheManager = cacheManager;
     }
 
     public Map<String, Object> info() {
@@ -41,18 +48,19 @@ public class ContextPackService {
         return info;
     }
 
+    @SuppressWarnings("unchecked")
     public Map<String, Object> loadPack() {
-        Map<String, Object> local = cachedPack;
-        if (local != null) {
-            return local;
+        Cache cache = cacheManager.getCache(CACHE_NAME);
+        if (cache == null) {
+            return readPack();
         }
-        synchronized (this) {
-            if (cachedPack != null) {
-                return cachedPack;
-            }
-            cachedPack = readPack();
-            return cachedPack;
+        Map<String, Object> cached = cache.get(CACHE_KEY, Map.class);
+        if (cached != null) {
+            return cached;
         }
+        Map<String, Object> loaded = readPack();
+        cache.put(CACHE_KEY, loaded);
+        return loaded;
     }
 
     public String contextPackVersion() {

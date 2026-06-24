@@ -2,12 +2,11 @@ package com.ispf.server.history;
 
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
+import com.ispf.server.object.bus.ObjectChangeAsyncHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class VariableHistoryListener {
+public class VariableHistoryListener implements ObjectChangeAsyncHandler {
 
     private final VariableHistoryService variableHistoryService;
 
@@ -15,9 +14,13 @@ public class VariableHistoryListener {
         this.variableHistoryService = variableHistoryService;
     }
 
-    @Async("objectChangeExecutor")
-    @EventListener
-    public void onObjectChange(ObjectChangeEvent event) {
+    @Override
+    public int order() {
+        return 10;
+    }
+
+    @Override
+    public void handle(ObjectChangeEvent event) {
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }

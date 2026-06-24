@@ -30,6 +30,8 @@ ispf:
     enabled: false
   object-change:
     async-enabled: false
+  redis:
+    enabled: false
   platform:
     update:
       check-enabled: false

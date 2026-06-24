@@ -2,13 +2,11 @@ package com.ispf.server.correlator;
 
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
-import org.springframework.scheduling.annotation.Async;
+import com.ispf.server.object.bus.ObjectChangeAsyncHandler;
 import org.springframework.stereotype.Component;
 
 @Component
-public class EventCorrelatorListener {
+public class EventCorrelatorListener implements ObjectChangeAsyncHandler {
 
     private final EventCorrelatorService correlatorService;
 
@@ -16,10 +14,13 @@ public class EventCorrelatorListener {
         this.correlatorService = correlatorService;
     }
 
-    @Async("objectChangeExecutor")
-    @EventListener
-    @Order(50)
-    public void onObjectChange(ObjectChangeEvent event) {
+    @Override
+    public int order() {
+        return 50;
+    }
+
+    @Override
+    public void handle(ObjectChangeEvent event) {
         if (event.type() != ObjectChangeType.EVENT_FIRED || event.variableName() == null) {
             return;
         }
