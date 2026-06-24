@@ -49,6 +49,7 @@ public class AutomationTreeService {
     private final EventCorrelatorRepository legacyCorrelatorRepository;
     private final CorrelatorHitRepository correlatorHitRepository;
     private final AutomationRuleIndex ruleIndex;
+    private final AutomationIndexRefresh indexRefresh;
 
     public AutomationTreeService(
             ObjectManager objectManager,
@@ -56,7 +57,8 @@ public class AutomationTreeService {
             AlertRuleRepository legacyAlertRuleRepository,
             EventCorrelatorRepository legacyCorrelatorRepository,
             CorrelatorHitRepository correlatorHitRepository,
-            AutomationRuleIndex ruleIndex
+            AutomationRuleIndex ruleIndex,
+            AutomationIndexRefresh indexRefresh
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -64,6 +66,7 @@ public class AutomationTreeService {
         this.legacyCorrelatorRepository = legacyCorrelatorRepository;
         this.correlatorHitRepository = correlatorHitRepository;
         this.ruleIndex = ruleIndex;
+        this.indexRefresh = indexRefresh;
     }
 
     @Transactional
@@ -122,6 +125,7 @@ public class AutomationTreeService {
             correlatorHitRepository.remapCorrelatorId(entry.getKey(), entry.getValue());
         }
         legacyCorrelatorRepository.deleteAll();
+        indexRefresh.scheduleFullRebuild();
     }
 
     public List<AlertRule> listAlertRules() {
@@ -166,7 +170,7 @@ public class AutomationTreeService {
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
                 payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null);
         AlertRule rule = getAlertRule(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterAlertRuleCreated(rule);
         return rule;
     }
 
@@ -174,6 +178,7 @@ public class AutomationTreeService {
     public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
             String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
             Integer delaySeconds, Boolean sustainWhileTrue) {
+        AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
             objectManager.updateInfo(path, name, node.description());
@@ -207,7 +212,7 @@ public class AutomationTreeService {
         }
         objectManager.persistNodeTree(path);
         AlertRule rule = getAlertRule(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterAlertRuleUpdated(previous, rule);
         return rule;
     }
 
@@ -299,7 +304,7 @@ public class AutomationTreeService {
                 windowSeconds, minOccurrences, cooldownSeconds, sequenceGapSeconds, actionType, actionTarget,
                 payloadFilterExpr, enabled, null);
         EventCorrelator correlator = getCorrelator(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterCorrelatorCreated(correlator);
         return correlator;
     }
 
@@ -320,6 +325,7 @@ public class AutomationTreeService {
             String payloadFilterExpr,
             Boolean enabled
     ) {
+        EventCorrelator previous = getCorrelator(path);
         PlatformObject node = requireCorrelator(path);
         if (name != null && !name.isBlank()) {
             objectManager.updateInfo(path, name, node.description());
@@ -362,7 +368,7 @@ public class AutomationTreeService {
         }
         objectManager.persistNodeTree(path);
         EventCorrelator correlator = getCorrelator(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterCorrelatorUpdated(previous, correlator);
         return correlator;
     }
 
@@ -374,17 +380,17 @@ public class AutomationTreeService {
 
     @Transactional
     public void deleteAlertRule(String path) {
-        requireAlertRule(path);
+        AlertRule rule = getAlertRule(path);
         objectManager.delete(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterAlertRuleDeleted(rule);
     }
 
     @Transactional
     public void deleteCorrelator(String path) {
-        requireCorrelator(path);
+        EventCorrelator correlator = getCorrelator(path);
         correlatorHitRepository.deleteByCorrelatorId(path);
         objectManager.delete(path);
-        ruleIndex.rebuild();
+        indexRefresh.afterCorrelatorDeleted(correlator);
     }
 
     @Transactional

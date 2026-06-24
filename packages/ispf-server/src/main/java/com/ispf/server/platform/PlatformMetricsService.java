@@ -43,6 +43,7 @@ public class PlatformMetricsService {
     private final PlatformUserStore userStore;
     private final ApplicationFunctionStore applicationFunctionStore;
     private final PlatformSchedulerService platformSchedulerService;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
 
     public PlatformMetricsService(
             ObjectNodeRepository objectNodeRepository,
@@ -57,7 +58,8 @@ public class PlatformMetricsService {
             PlatformAuthSessionStore authSessionStore,
             PlatformUserStore userStore,
             ApplicationFunctionStore applicationFunctionStore,
-            PlatformSchedulerService platformSchedulerService
+            PlatformSchedulerService platformSchedulerService,
+            AutomationMetricsRecorder automationMetricsRecorder
     ) {
         this.objectNodeRepository = objectNodeRepository;
         this.objectVariableRepository = objectVariableRepository;
@@ -72,6 +74,7 @@ public class PlatformMetricsService {
         this.userStore = userStore;
         this.applicationFunctionStore = applicationFunctionStore;
         this.platformSchedulerService = platformSchedulerService;
+        this.automationMetricsRecorder = automationMetricsRecorder;
     }
 
     @Transactional(readOnly = true)
@@ -189,6 +192,7 @@ public class PlatformMetricsService {
         section.put("applicationFunctionVersions", applicationFunctionStore.countDeployedVersions());
         section.put("platformSchedules", platformSchedulerService.countSchedules());
         section.put("platformSchedulesEnabled", platformSchedulerService.countEnabledSchedules());
+        section.putAll(automationMetricsRecorder.automationSnapshot());
         return section;
     }
 

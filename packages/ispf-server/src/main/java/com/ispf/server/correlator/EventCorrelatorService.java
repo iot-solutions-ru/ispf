@@ -6,13 +6,16 @@ import com.ispf.core.model.FieldType;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
+import com.ispf.core.object.ObjectEvent;
 import com.ispf.server.event.EventService;
+import com.ispf.server.event.RecentEventCache;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.CorrelatorHitRepository;
 import com.ispf.server.persistence.EventHistoryRepository;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.CorrelatorHitEntity;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.workflow.WorkflowService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class EventCorrelatorService {
@@ -56,6 +60,8 @@ public class EventCorrelatorService {
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
     private final ObjectEntityMapper entityMapper;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final RecentEventCache recentEventCache;
 
     public EventCorrelatorService(
             AutomationTreeService automationTreeService,
@@ -65,7 +71,9 @@ public class EventCorrelatorService {
             EventService eventService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
-            ObjectEntityMapper entityMapper
+            ObjectEntityMapper entityMapper,
+            AutomationMetricsRecorder automationMetricsRecorder,
+            RecentEventCache recentEventCache
     ) {
         this.automationTreeService = automationTreeService;
         this.hitRepository = hitRepository;
@@ -75,6 +83,8 @@ public class EventCorrelatorService {
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
         this.entityMapper = entityMapper;
+        this.automationMetricsRecorder = automationMetricsRecorder;
+        this.recentEventCache = recentEventCache;
     }
 
     @Transactional(readOnly = true)
@@ -180,6 +190,7 @@ public class EventCorrelatorService {
                 case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, now);
             };
             if (triggered) {
+                automationMetricsRecorder.recordCorrelatorTrigger();
                 executeAction(correlator, objectPath);
                 automationTreeService.setCorrelatorLastTriggeredAt(correlator.id(), now);
                 hitRepository.deleteByCorrelatorId(correlator.id());
@@ -375,14 +386,26 @@ public class EventCorrelatorService {
         if (filterExpr == null || filterExpr.isBlank()) {
             return true;
         }
-        return eventHistoryRepository.findFirstByObjectPathAndEventNameOrderByOccurredAtDesc(objectPath, eventName)
-                .map(entity -> evaluatePayloadFilter(filterExpr, entity))
+        Optional<EventHistoryEntity> fromDb = eventHistoryRepository
+                .findFirstByObjectPathAndEventNameOrderByOccurredAtDesc(objectPath, eventName);
+        if (fromDb.isPresent()) {
+            return evaluatePayloadFilter(filterExpr, fromDb.get());
+        }
+        return recentEventCache.findLatest(objectPath, eventName)
+                .map(event -> evaluatePayloadFilter(filterExpr, event))
                 .orElse(false);
     }
 
     private boolean evaluatePayloadFilter(String filterExpr, EventHistoryEntity entity) {
+        return evaluatePayloadFilter(filterExpr, payloadMap(entity));
+    }
+
+    private boolean evaluatePayloadFilter(String filterExpr, ObjectEvent event) {
+        return evaluatePayloadFilter(filterExpr, payloadMap(event));
+    }
+
+    private boolean evaluatePayloadFilter(String filterExpr, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = payloadMap(entity);
             Object result = expressionEngine.evaluateWithPayload(filterExpr, payload);
             if (result instanceof Boolean bool) {
                 return bool;
@@ -400,13 +423,24 @@ public class EventCorrelatorService {
         }
         try {
             DataRecord record = entityMapper.readDataRecord(entity.getPayloadJson());
-            if (record == null || record.rowCount() == 0) {
-                return Map.of();
-            }
-            return new LinkedHashMap<>(record.firstRow());
+            return payloadMap(record);
         } catch (Exception e) {
             return Map.of();
         }
+    }
+
+    private Map<String, Object> payloadMap(ObjectEvent event) {
+        if (event.payload() == null || event.payload().rowCount() == 0) {
+            return Map.of();
+        }
+        return payloadMap(event.payload());
+    }
+
+    private static Map<String, Object> payloadMap(DataRecord record) {
+        if (record == null || record.rowCount() == 0) {
+            return Map.of();
+        }
+        return new LinkedHashMap<>(record.firstRow());
     }
 
     private boolean thresholdMet(EventCorrelator correlator, String objectPath, Instant now) {

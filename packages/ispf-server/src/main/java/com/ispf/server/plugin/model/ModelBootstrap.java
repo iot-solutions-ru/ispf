@@ -779,7 +779,7 @@ public class ModelBootstrap {
                         ),
                         ModelVariableDefinition.of(
                                 "triggerJson",
-                                "Variable trigger configuration JSON",
+                                "Trigger configuration JSON (variable or event)",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,

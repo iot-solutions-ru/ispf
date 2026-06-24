@@ -36,7 +36,13 @@ class PlatformMetricsApiTest {
                 .andExpect(jsonPath("$.sections[?(@.id == 'runtime')].values.uptimeMs").exists())
                 .andExpect(jsonPath("$.sections[?(@.id == 'database')].values").exists())
                 .andExpect(jsonPath("$.sections[?(@.id == 'drivers')].values.activeDrivers").exists())
-                .andExpect(jsonPath("$.sections[?(@.id == 'security')].values.platformUsers").exists());
+                .andExpect(jsonPath("$.sections[?(@.id == 'security')].values.platformUsers").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.eventsFiredTotal").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.alertFiresTotal").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.correlatorTriggersTotal").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.workflowStartsTotal").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.objectChangeQueueSize").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.objectChangeProcessedTotal").exists());
     }
 
     @Test

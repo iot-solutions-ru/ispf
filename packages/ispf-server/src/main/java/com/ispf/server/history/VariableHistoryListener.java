@@ -3,6 +3,7 @@ package com.ispf.server.history;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.bus.ObjectChangeAsyncHandler;
+import com.ispf.server.object.bus.ObjectChangeLane;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -12,6 +13,11 @@ public class VariableHistoryListener implements ObjectChangeAsyncHandler {
 
     public VariableHistoryListener(VariableHistoryService variableHistoryService) {
         this.variableHistoryService = variableHistoryService;
+    }
+
+    @Override
+    public ObjectChangeLane lane() {
+        return ObjectChangeLane.TELEMETRY;
     }
 
     @Override

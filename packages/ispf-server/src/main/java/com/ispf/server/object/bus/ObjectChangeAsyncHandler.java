@@ -4,6 +4,11 @@ import com.ispf.server.object.ObjectChangeEvent;
 
 /**
  * Consumer of {@link ObjectChangeEvent} dispatched by {@link ObjectChangeEventBus}.
+ *
+ * <p>When {@link com.ispf.server.config.ObjectChangeProperties#isSplitLanesEnabled()} is true,
+ * handlers are routed to the lane returned by {@link #lane()}. Telemetry events
+ * ({@code event.telemetry()==true}) are enqueued on the telemetry lane; all events are also
+ * enqueued on the automation lane.
  */
 public interface ObjectChangeAsyncHandler {
 
@@ -11,5 +16,9 @@ public interface ObjectChangeAsyncHandler {
 
     default int order() {
         return 0;
+    }
+
+    default ObjectChangeLane lane() {
+        return ObjectChangeLane.AUTOMATION;
     }
 }

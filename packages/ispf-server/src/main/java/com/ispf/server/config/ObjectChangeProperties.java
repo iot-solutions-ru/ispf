@@ -14,6 +14,16 @@ public class ObjectChangeProperties {
     private int workerThreads = 4;
     private boolean coalesceTelemetryUpdates = true;
 
+    /**
+     * When true, telemetry handlers and automation handlers use separate queues and worker pools.
+     * When false, all handlers share {@link #queueCapacity} and {@link #workerThreads}.
+     */
+    private boolean splitLanesEnabled = true;
+    private int telemetryQueueCapacity = 10_000;
+    private int automationQueueCapacity = 10_000;
+    private int telemetryWorkerThreads = 2;
+    private int automationWorkerThreads = 4;
+
     public boolean isAsyncEnabled() {
         return asyncEnabled;
     }
@@ -44,5 +54,45 @@ public class ObjectChangeProperties {
 
     public void setCoalesceTelemetryUpdates(boolean coalesceTelemetryUpdates) {
         this.coalesceTelemetryUpdates = coalesceTelemetryUpdates;
+    }
+
+    public boolean isSplitLanesEnabled() {
+        return splitLanesEnabled;
+    }
+
+    public void setSplitLanesEnabled(boolean splitLanesEnabled) {
+        this.splitLanesEnabled = splitLanesEnabled;
+    }
+
+    public int getTelemetryQueueCapacity() {
+        return telemetryQueueCapacity;
+    }
+
+    public void setTelemetryQueueCapacity(int telemetryQueueCapacity) {
+        this.telemetryQueueCapacity = telemetryQueueCapacity;
+    }
+
+    public int getAutomationQueueCapacity() {
+        return automationQueueCapacity;
+    }
+
+    public void setAutomationQueueCapacity(int automationQueueCapacity) {
+        this.automationQueueCapacity = automationQueueCapacity;
+    }
+
+    public int getTelemetryWorkerThreads() {
+        return telemetryWorkerThreads;
+    }
+
+    public void setTelemetryWorkerThreads(int telemetryWorkerThreads) {
+        this.telemetryWorkerThreads = telemetryWorkerThreads;
+    }
+
+    public int getAutomationWorkerThreads() {
+        return automationWorkerThreads;
+    }
+
+    public void setAutomationWorkerThreads(int automationWorkerThreads) {
+        this.automationWorkerThreads = automationWorkerThreads;
     }
 }

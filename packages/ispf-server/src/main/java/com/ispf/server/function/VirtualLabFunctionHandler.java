@@ -9,6 +9,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -85,7 +86,7 @@ public class VirtualLabFunctionHandler implements FunctionHandler {
                         "string", stringValue(row.get("string"))
                 )
         );
-        eventService.fire(objectPath, eventName, payload);
+        eventService.fire(objectPath, eventName, payload, AutomationMetricsRecorder.EventFireSource.FUNCTION);
         return DataRecord.single(RESULT_SCHEMA, Map.of("success", true, "message", eventName + " fired"));
     }
 

@@ -122,6 +122,33 @@ class AutomationRuleIndexTest {
         assertEquals(1, index.findAlertRules("root.device", "temperature").size());
     }
 
+    @Test
+    void addAndRemoveAlertRuleUpdatesIndexWithoutFullRebuild() {
+        AlertRule rule = alertRule("rule-1", "root.device", "temperature", true);
+        when(treeService.getAlertRule("rule-1")).thenReturn(rule);
+
+        index.addAlertRule(rule);
+        assertEquals(1, index.alertRulesIndexed());
+        assertEquals(1, index.findAlertRules("root.device", "temperature").size());
+
+        index.removeAlertRule("rule-1");
+        assertEquals(0, index.alertRulesIndexed());
+        assertTrue(index.findAlertRules("root.device", "temperature").isEmpty());
+    }
+
+    @Test
+    void updateAlertRuleMovesIndexEntryWhenWatchTargetChanges() {
+        AlertRule original = alertRule("rule-1", "root.device", "temperature", true);
+        AlertRule moved = alertRule("rule-1", "root.device", "alarmActive", true);
+        when(treeService.getAlertRule("rule-1")).thenReturn(moved);
+
+        index.addAlertRule(original);
+        index.updateAlertRule(original, moved);
+
+        assertTrue(index.findAlertRules("root.device", "temperature").isEmpty());
+        assertEquals(1, index.findAlertRules("root.device", "alarmActive").size());
+    }
+
     private static AlertRule alertRule(String id, String objectPath, String watchVariable, boolean enabled) {
         return new AlertRule(
                 id,

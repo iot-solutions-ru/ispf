@@ -17,6 +17,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.ReportYargProperties.class,
         com.ispf.server.config.RuntimeTelemetryProperties.class,
         com.ispf.server.config.ObjectChangeProperties.class,
+        com.ispf.server.config.EventJournalProperties.class,
+        com.ispf.server.config.PlatformMetricsProbeProperties.class,
         com.ispf.server.config.IspfRedisProperties.class
 })
 public class IspfServerApplication {

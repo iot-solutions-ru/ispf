@@ -23,6 +23,7 @@ import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.event.EventService;
@@ -60,6 +61,9 @@ public class WorkflowService {
     private final WorkQueueService workQueueService;
     private final WorkflowInstanceRepository instanceRepository;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
+    private final WorkflowEventTriggerIndex eventTriggerIndex;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -73,7 +77,10 @@ public class WorkflowService {
             EventService eventService,
             @Lazy WorkQueueService workQueueService,
             WorkflowInstanceRepository instanceRepository,
-            BindingRefreshAfterCommit bindingRefreshAfterCommit
+            BindingRefreshAfterCommit bindingRefreshAfterCommit,
+            WorkflowEventTriggerIndex eventTriggerIndex,
+            AutomationMetricsRecorder automationMetricsRecorder,
+            WorkflowTriggerIndexRefresh triggerIndexRefresh
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -87,6 +94,9 @@ public class WorkflowService {
         this.workQueueService = workQueueService;
         this.instanceRepository = instanceRepository;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
+        this.eventTriggerIndex = eventTriggerIndex;
+        this.automationMetricsRecorder = automationMetricsRecorder;
+        this.triggerIndexRefresh = triggerIndexRefresh;
     }
 
     @Transactional
@@ -145,6 +155,7 @@ public class WorkflowService {
                 "status",
                 DataRecord.single(STRING_VALUE, Map.of("value", status.name()))
         );
+        triggerIndexRefresh.scheduleFullRebuild();
         return getWorkflow(path);
     }
 
@@ -161,11 +172,21 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowView runWorkflow(String path) throws WorkflowException {
-        return runWorkflow(path, null);
+        return runWorkflow(path, null, AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL);
     }
 
     @Transactional
     public WorkflowView runWorkflow(String path, String triggerObjectPath) throws WorkflowException {
+        return runWorkflow(path, triggerObjectPath, AutomationMetricsRecorder.WorkflowStartTrigger.MANUAL);
+    }
+
+    @Transactional
+    public WorkflowView runWorkflow(
+            String path,
+            String triggerObjectPath,
+            AutomationMetricsRecorder.WorkflowStartTrigger trigger
+    ) throws WorkflowException {
+        automationMetricsRecorder.recordWorkflowStart(trigger);
         PlatformObject node = objectManager.require(path);
         String bpmnXml = readString(node, "bpmnXml").orElseThrow(() ->
                 new WorkflowException("Workflow BPMN is empty: " + path));
@@ -318,27 +339,43 @@ public class WorkflowService {
         );
     }
 
-    private static final String WORKFLOWS_ROOT = "root.platform.workflows";
-
     @Transactional
     public void handleVariableTrigger(String objectPath, String variableName) {
-        for (PlatformObject node : objectManager.tree().childrenOf(WORKFLOWS_ROOT)) {
-            if (node.type() != ObjectType.WORKFLOW) {
-                continue;
-            }
+        for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
+            PlatformObject node = objectManager.require(workflowPath);
             if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
-                continue;
-            }
-            if (!matchesTrigger(node, objectPath, variableName)) {
                 continue;
             }
             if (!isTriggerConditionMet(node, objectPath, variableName)) {
                 continue;
             }
             try {
-                runWorkflow(node.path(), objectPath);
+                runWorkflow(
+                        workflowPath,
+                        objectPath,
+                        AutomationMetricsRecorder.WorkflowStartTrigger.VARIABLE
+                );
             } catch (WorkflowException e) {
-                log.warn("Workflow trigger failed for {}: {}", node.path(), e.getMessage());
+                log.warn("Workflow trigger failed for {}: {}", workflowPath, e.getMessage());
+            }
+        }
+    }
+
+    @Transactional
+    public void handleEventTrigger(String objectPath, String eventName) {
+        for (String workflowPath : eventTriggerIndex.findEventWorkflows(objectPath, eventName)) {
+            PlatformObject node = objectManager.require(workflowPath);
+            if (readLifecycleStatus(node) != WorkflowLifecycleStatus.ACTIVE) {
+                continue;
+            }
+            try {
+                runWorkflow(
+                        workflowPath,
+                        objectPath,
+                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
+                );
+            } catch (WorkflowException e) {
+                log.warn("Workflow event trigger failed for {}: {}", workflowPath, e.getMessage());
             }
         }
     }
@@ -403,7 +440,11 @@ public class WorkflowService {
             }
             case START_WORKFLOW -> {
                 String childPath = required(params, "workflowPath");
-                runWorkflow(childPath, params.get("objectPath"));
+                runWorkflow(
+                        childPath,
+                        params.get("objectPath"),
+                        AutomationMetricsRecorder.WorkflowStartTrigger.EVENT
+                );
             }
         }
     }
@@ -525,20 +566,14 @@ public class WorkflowService {
         }
     }
 
-    private boolean matchesTrigger(PlatformObject workflow, String objectPath, String variableName) {
-        try {
-            String triggerJson = readString(workflow, "triggerJson").orElse("{}");
-            JsonNode trigger = objectMapper.readTree(triggerJson);
-            return objectPath.equals(trigger.path("objectPath").asText())
-                    && variableName.equals(trigger.path("variableName").asText());
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     private boolean isTriggerConditionMet(PlatformObject workflow, String objectPath, String variableName) {
         try {
             String triggerJson = readString(workflow, "triggerJson").orElse("{}");
+            Optional<WorkflowEventTriggerIndex.TriggerBinding> binding =
+                    WorkflowEventTriggerIndex.parseTrigger(workflow.path(), triggerJson, objectMapper);
+            if (binding.isEmpty() || binding.get().triggerType() != WorkflowEventTriggerIndex.TriggerType.VARIABLE) {
+                return false;
+            }
             JsonNode trigger = objectMapper.readTree(triggerJson);
             String valueField = trigger.path("valueField").asText("value");
             JsonNode expected = trigger.get("expectedValue");

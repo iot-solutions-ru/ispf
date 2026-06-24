@@ -7,6 +7,7 @@ import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +21,20 @@ public class AlertRuleService {
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
     private final EventService eventService;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
 
     public AlertRuleService(
             AutomationTreeService automationTreeService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
-            EventService eventService
+            EventService eventService,
+            AutomationMetricsRecorder automationMetricsRecorder
     ) {
         this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
         this.eventService = eventService;
+        this.automationMetricsRecorder = automationMetricsRecorder;
     }
 
     @Transactional(readOnly = true)
@@ -99,6 +103,7 @@ public class AlertRuleService {
 
         PlatformObject node = objectManager.require(objectPath);
         for (AlertRule rule : rules) {
+            automationMetricsRecorder.recordAlertEvaluation();
             if (!node.events().containsKey(rule.eventName())) {
                 continue;
             }
@@ -145,7 +150,8 @@ public class AlertRuleService {
                     automationTreeService.setAlertRuleLastFiredAt(rule.id(), Instant.now());
                 }
                 DataRecord payload = resolvePayload(node, rule.payloadVariable());
-                eventService.fire(objectPath, rule.eventName(), payload);
+                eventService.fire(objectPath, rule.eventName(), payload, AutomationMetricsRecorder.EventFireSource.ALERT);
+                automationMetricsRecorder.recordAlertFire();
                 if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
                     automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
                 }
