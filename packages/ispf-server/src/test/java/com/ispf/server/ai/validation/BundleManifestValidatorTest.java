@@ -37,6 +37,13 @@ class BundleManifestValidatorTest {
     }
 
     @Test
+    void acceptsMesDefectDemoBundle() throws Exception {
+        ApplicationBundleDeployService.BundleManifest manifest = readBundle("mes-defect-demo-bundle.json");
+        BundleValidationResult result = validator.validate("mes-defect-demo", manifest);
+        assertEquals(BundleValidationResult.OK, result.status());
+    }
+
+    @Test
     void rejectsInvalidFunctionScript() {
         ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
                 "1.0.0",

@@ -25,6 +25,7 @@ import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +61,7 @@ public class WorkflowService {
     private final EventService eventService;
     private final WorkQueueService workQueueService;
     private final WorkflowInstanceRepository instanceRepository;
+    private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -73,7 +75,8 @@ public class WorkflowService {
             FunctionService functionService,
             EventService eventService,
             @Lazy WorkQueueService workQueueService,
-            WorkflowInstanceRepository instanceRepository
+            WorkflowInstanceRepository instanceRepository,
+            BindingRefreshAfterCommit bindingRefreshAfterCommit
     ) {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
@@ -87,6 +90,7 @@ public class WorkflowService {
         this.eventService = eventService;
         this.workQueueService = workQueueService;
         this.instanceRepository = instanceRepository;
+        this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
     }
 
     @Transactional
@@ -442,6 +446,7 @@ public class WorkflowService {
         DataRecord input = buildWorkflowFunctionInput(inputMap, instance);
         DataRecord output = functionService.invoke(objectPath, functionName, input);
         applyWorkflowFunctionOutput(params.get("outputMap"), output, instance);
+        bindingRefreshAfterCommit.refreshNow(objectPath, functionName);
         if (output != null && output.rowCount() > 0) {
             Object errorCode = output.firstRow().get("error_code");
             if (errorCode != null && !"OK".equals(String.valueOf(errorCode))) {

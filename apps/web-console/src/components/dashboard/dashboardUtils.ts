@@ -81,6 +81,28 @@ export function parseSelectionJson(raw?: string): Record<string, string> | undef
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+function schemaFieldType(schema: DataSchema, fieldName: string): string | undefined {
+  return schema.fields.find((field) => field.name === fieldName)?.type;
+}
+
+function coerceToSchemaType(raw: string | number, schemaType: string): unknown {
+  switch (schemaType) {
+    case "STRING":
+      return String(raw);
+    case "BOOLEAN":
+      return raw === true || raw === "true" || raw === "1" || raw === 1;
+    case "INTEGER":
+    case "LONG":
+      return Number.parseInt(String(raw), 10);
+    case "DOUBLE":
+    case "FLOAT":
+    case "NUMBER":
+      return Number(raw);
+    default:
+      return String(raw);
+  }
+}
+
 export function buildFunctionInput(
   fields: FunctionFormField[],
   values: Record<string, string | number>,
@@ -95,9 +117,15 @@ export function buildFunctionInput(
   };
   const row: Record<string, unknown> = {};
   for (const field of fields) {
-    const raw = values[field.name];
+    const raw = field.hidden
+      ? field.defaultValue
+      : values[field.name] === undefined || values[field.name] === ""
+        ? field.defaultValue
+        : values[field.name];
     if (raw === undefined || raw === "") continue;
-    row[field.name] = field.type === "number" ? Number(raw) : raw;
+    const type =
+      schemaFieldType(schema, field.name) ?? (field.type === "number" ? "DOUBLE" : "STRING");
+    row[field.name] = coerceToSchemaType(raw, type);
   }
   return { schema, rows: [row] };
 }

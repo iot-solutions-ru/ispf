@@ -3650,6 +3650,12 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   width: 100%;
 }
 
+.function-form-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted, #8b949e);
+  line-height: 1.3;
+}
+
 .dash-widget-title .badge {
   margin-left: 0.5rem;
   font-size: 0.72rem;

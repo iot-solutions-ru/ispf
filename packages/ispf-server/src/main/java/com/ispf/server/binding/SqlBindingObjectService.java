@@ -114,8 +114,20 @@ public class SqlBindingObjectService {
                 .filter(BindingDefinition::enabled)
                 .filter(b -> "on_function_success".equals(b.refresh()))
                 .filter(b -> objectPath.equals(b.triggerObjectPath()))
-                .filter(b -> functionName.equals(b.triggerFunctionName()))
+                .filter(b -> matchesTriggerFunction(b.triggerFunctionName(), functionName))
                 .toList();
+    }
+
+    private static boolean matchesTriggerFunction(String configured, String functionName) {
+        if (configured == null || configured.isBlank() || functionName == null || functionName.isBlank()) {
+            return false;
+        }
+        for (String part : configured.split(",")) {
+            if (functionName.equals(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Transactional(readOnly = true)

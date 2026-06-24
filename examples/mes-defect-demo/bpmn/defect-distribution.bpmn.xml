@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:ispf="http://ispf.io/bpmn"
+             targetNamespace="http://ispf.io/bpmn">
+  <process id="mes-defect-distribution" name="MES Defect Distribution" isExecutable="true">
+    <startEvent id="start" name="Start"/>
+    <serviceTask id="receiveDefect" name="Receive defect event"
+                 ispf:action="invoke_function"
+                 ispf:objectPath="root.platform.devices.mes-hub-01"
+                 ispf:functionName="mes_receiveDefect"
+                 ispf:outputMap="eventId=eventId,lineCode=lineCode"/>
+    <serviceTask id="resolveOrder" name="Resolve order binding"
+                 ispf:action="invoke_function"
+                 ispf:objectPath="root.platform.devices.mes-hub-01"
+                 ispf:functionName="mes_resolveOrder"
+                 ispf:inputMap="eventId=${eventId}"
+                 ispf:outputMap="orderNo=orderNo"/>
+    <exclusiveGateway id="gwTransitional" name="Transitional remainder?"/>
+    <serviceTask id="markTransitional" name="Account transitional remainder"
+                 ispf:action="log"
+                 ispf:message="mes-defect: transitional remainder accounted"/>
+    <serviceTask id="markCurrentOrder" name="Bind to current order"
+                 ispf:action="log"
+                 ispf:message="mes-defect: bound to current order"/>
+    <exclusiveGateway id="gwJoinOrder" name="Join order branch"/>
+    <serviceTask id="calcRoute" name="Forecast route"
+                 ispf:action="invoke_function"
+                 ispf:objectPath="root.platform.devices.mes-hub-01"
+                 ispf:functionName="mes_calculateRoute"
+                 ispf:inputMap="eventId=${eventId}"/>
+    <exclusiveGateway id="gwUserTask" name="Operator task by line type"/>
+    <userTask id="confirmTypeA" name="Confirm type A route"
+              ispf:title="Подтвердите маршрут переработки (тип A)"
+              ispf:instructions="Проверьте рекомендацию и подтвердите переработку на линии или перенос на соседнюю линию"
+              ispf:assigneeRole="operator"
+              ispf:targetObject="root.platform.devices.mes-hub-01"
+              ispf:function="mes_confirmRoute"/>
+    <userTask id="confirmTypeB" name="Confirm type B route"
+              ispf:title="Подтвердите маршрут подачи (тип B)"
+              ispf:instructions="Проверьте рекомендацию и подтвердите подачу или постановку в очередь"
+              ispf:assigneeRole="operator"
+              ispf:targetObject="root.platform.devices.mes-hub-01"
+              ispf:function="mes_confirmRoute"/>
+    <userTask id="confirmTypeD" name="Confirm type D route"
+              ispf:title="Подтвердите транспортный маршрут (тип D)"
+              ispf:instructions="Проверьте маршрут доставки и подтвердите транспортную задачу"
+              ispf:assigneeRole="operator"
+              ispf:targetObject="root.platform.devices.mes-hub-01"
+              ispf:function="mes_confirmRoute"/>
+    <exclusiveGateway id="gwJoinConfirm" name="Join confirm branch"/>
+    <serviceTask id="finalizeDefect" name="Finalize distribution"
+                 ispf:action="invoke_function"
+                 ispf:objectPath="root.platform.devices.mes-hub-01"
+                 ispf:functionName="mes_finalizeDefect"
+                 ispf:inputMap="eventId=${eventId}"/>
+    <serviceTask id="notifyRouted" name="Notify MES routed"
+                 ispf:action="fire_event"
+                 ispf:objectPath="root.platform.devices.mes-hub-01"
+                 ispf:eventName="mesDefectRouted"/>
+    <endEvent id="end" name="End"/>
+    <sequenceFlow id="f1" sourceRef="start" targetRef="receiveDefect"/>
+    <sequenceFlow id="f2" sourceRef="receiveDefect" targetRef="resolveOrder"/>
+    <sequenceFlow id="f3" sourceRef="resolveOrder" targetRef="gwTransitional"/>
+    <sequenceFlow id="f4" sourceRef="gwTransitional" targetRef="markTransitional"
+                  ispf:condition="self.isTransitionalFlag[&quot;value&quot;] &gt; 0.0"/>
+    <sequenceFlow id="f5" sourceRef="gwTransitional" targetRef="markCurrentOrder" ispf:default="true"/>
+    <sequenceFlow id="f6" sourceRef="markTransitional" targetRef="gwJoinOrder"/>
+    <sequenceFlow id="f7" sourceRef="markCurrentOrder" targetRef="gwJoinOrder"/>
+    <sequenceFlow id="f8" sourceRef="gwJoinOrder" targetRef="calcRoute"/>
+    <sequenceFlow id="f9" sourceRef="calcRoute" targetRef="gwUserTask"/>
+    <sequenceFlow id="f10" sourceRef="gwUserTask" targetRef="confirmTypeA"
+                  ispf:condition="self.lineTypeCode[&quot;value&quot;] &gt;= 1.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 2.0"/>
+    <sequenceFlow id="f11" sourceRef="gwUserTask" targetRef="confirmTypeB"
+                  ispf:condition="self.lineTypeCode[&quot;value&quot;] &gt;= 2.0 &amp;&amp; self.lineTypeCode[&quot;value&quot;] &lt; 3.0"/>
+    <sequenceFlow id="f12" sourceRef="gwUserTask" targetRef="confirmTypeD" ispf:default="true"/>
+    <sequenceFlow id="f13" sourceRef="confirmTypeA" targetRef="gwJoinConfirm"/>
+    <sequenceFlow id="f14" sourceRef="confirmTypeB" targetRef="gwJoinConfirm"/>
+    <sequenceFlow id="f15" sourceRef="confirmTypeD" targetRef="gwJoinConfirm"/>
+    <sequenceFlow id="f16" sourceRef="gwJoinConfirm" targetRef="finalizeDefect"/>
+    <sequenceFlow id="f17" sourceRef="finalizeDefect" targetRef="notifyRouted"/>
+    <sequenceFlow id="f18" sourceRef="notifyRouted" targetRef="end"/>
+  </process>
+</definitions>

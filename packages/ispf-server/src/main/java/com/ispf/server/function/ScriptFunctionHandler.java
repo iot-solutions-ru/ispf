@@ -6,7 +6,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.ScriptExecutionContext;
-import com.ispf.server.binding.SqlBindingObjectService;
+import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Lazy;
@@ -23,7 +23,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     private final ApplicationSchemaSession schemaSession;
     private final DataSourcePathResolver dataSourcePathResolver;
     private final FunctionService functionService;
-    private final SqlBindingObjectService sqlBindingObjectService;
+    private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
 
     public ScriptFunctionHandler(
             ObjectManager objectManager,
@@ -31,14 +31,14 @@ public class ScriptFunctionHandler implements FunctionHandler {
             ApplicationSchemaSession schemaSession,
             DataSourcePathResolver dataSourcePathResolver,
             @Lazy FunctionService functionService,
-            SqlBindingObjectService sqlBindingObjectService
+            BindingRefreshAfterCommit bindingRefreshAfterCommit
     ) {
         this.objectManager = objectManager;
         this.scriptEngine = scriptEngine;
         this.schemaSession = schemaSession;
         this.dataSourcePathResolver = dataSourcePathResolver;
         this.functionService = functionService;
-        this.sqlBindingObjectService = sqlBindingObjectService;
+        this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
     }
 
     @Override
@@ -77,9 +77,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
         } else {
             schemaSession.runWithPlatformCatalog(execute);
         }
-        schemaSession.runWithPlatformCatalog(() ->
-                sqlBindingObjectService.refreshAfterFunction(objectPath, functionName)
-        );
+        bindingRefreshAfterCommit.scheduleRefreshAfterFunction(objectPath, functionName);
         return outputHolder[0];
     }
 

@@ -130,14 +130,18 @@ public class ApplicationSqlBindingStore {
                   AND app_id = ?
                   AND (
                     (trigger_object_path IS NULL AND trigger_function_name IS NULL)
-                    OR (trigger_object_path = ? AND trigger_function_name = ?)
                     OR (trigger_object_path IS NULL AND trigger_function_name = ?)
+                    OR (trigger_object_path = ? AND trigger_function_name = ?)
+                    OR (trigger_object_path = ? AND trigger_function_name IS NOT NULL
+                        AND (',' || trigger_function_name || ',') LIKE ('%%,' || ? || ',%%'))
                   )
                 """.formatted(bindingsTable),
                 this::mapRow,
                 appId,
+                functionName,
                 objectPath,
                 functionName,
+                objectPath,
                 functionName
         );
     }

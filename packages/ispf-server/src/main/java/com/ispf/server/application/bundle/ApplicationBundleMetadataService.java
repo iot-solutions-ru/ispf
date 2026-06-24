@@ -101,6 +101,9 @@ public class ApplicationBundleMetadataService {
         if (workflow.status() != null && !workflow.status().isBlank()) {
             workflowService.updateStatus(workflow.path(), WorkflowLifecycleStatus.valueOf(workflow.status()));
         }
+        if (workflow.operatorAppId() != null && !workflow.operatorAppId().isBlank()) {
+            workflowService.updateOperatorAppId(workflow.path(), workflow.operatorAppId());
+        }
         return DeployOutcome.APPLIED;
     }
 

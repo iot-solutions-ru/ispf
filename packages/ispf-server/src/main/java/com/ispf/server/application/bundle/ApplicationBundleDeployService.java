@@ -759,7 +759,8 @@ public class ApplicationBundleDeployService {
     public record BundleWorkflow(
             String path,
             String bpmnXml,
-            String status
+            String status,
+            String operatorAppId
     ) {
     }
 

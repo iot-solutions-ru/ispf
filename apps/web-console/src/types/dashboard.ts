@@ -141,11 +141,18 @@ export interface SparklineWidget extends DashboardWidgetBase {
 
 export interface FunctionWidget extends DashboardWidgetBase {
   type: "function";
-  functionName: string;
+  functionName?: string;
   buttonLabel?: string;
   confirmMessage?: string;
   /** Static JSON input rows for invoke (optional). */
   inputJson?: string;
+  /** When set, button runs workflow instead of invoking a function. */
+  workflowPath?: string;
+}
+
+export interface FunctionFormSelectOption {
+  value: string;
+  label: string;
 }
 
 export interface FunctionFormField {
@@ -155,7 +162,12 @@ export interface FunctionFormField {
   /** Parent path — options = child object display names / paths */
   optionsFrom?: string;
   staticOptions?: string[];
+  selectOptions?: FunctionFormSelectOption[];
   defaultValue?: string;
+  /** Legacy bundle key — normalized to defaultValue in the widget */
+  default?: string;
+  hint?: string;
+  hidden?: boolean;
 }
 
 export interface FunctionFormWidget extends DashboardWidgetBase {
@@ -216,6 +228,8 @@ export interface EventFeedWidget extends DashboardWidgetBase {
 export interface WorkQueueWidget extends DashboardWidgetBase {
   type: "work-queue";
   operatorId?: string;
+  /** Filter tasks to this operator app (e.g. mes-defect-demo). */
+  operatorAppId?: string;
   maxItems?: number;
 }
 

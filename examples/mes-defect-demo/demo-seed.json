@@ -1,0 +1,14 @@
+{
+  "description": "Fictional seed data for MES defect demo (see bundle migration mes_defect_schema).",
+  "lines": [
+    { "lineCode": "LINE-A01", "lineType": "A", "displayName": "Demo line A (rework + feed)", "unitABusy": false, "feedCapacityPct": 60 },
+    { "lineCode": "LINE-B01", "lineType": "B", "displayName": "Demo line B (feed only)", "feedCapacityPct": 60 },
+    { "lineCode": "LINE-D01", "lineType": "D", "displayName": "Demo line D (source)", "transportLoadPct": 60 }
+  ],
+  "orders": [
+    { "orderNo": "DEMO-A-01", "lineCode": "LINE-A01", "status": "closing", "defectKg": 10 },
+    { "orderNo": "DEMO-A-02", "lineCode": "LINE-A01", "status": "open", "defectKg": 2 },
+    { "orderNo": "DEMO-B-01", "lineCode": "LINE-B01", "status": "open", "defectKg": 1 },
+    { "orderNo": "DEMO-D-01", "lineCode": "LINE-D01", "status": "open", "defectKg": 0 }
+  ]
+}

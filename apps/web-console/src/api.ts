@@ -471,8 +471,12 @@ export function updateWorkflowOperatorApp(path: string, operatorAppId: string): 
   });
 }
 
-export function runWorkflow(path: string): Promise<WorkflowView> {
-  return request(`/api/v1/workflows/by-path/run?path=${encodeURIComponent(path)}`, {
+export function runWorkflow(path: string, triggerObjectPath?: string): Promise<WorkflowView> {
+  const params = new URLSearchParams({ path });
+  if (triggerObjectPath?.trim()) {
+    params.set("triggerObjectPath", triggerObjectPath.trim());
+  }
+  return request(`/api/v1/workflows/by-path/run?${params}`, {
     method: "POST",
   });
 }

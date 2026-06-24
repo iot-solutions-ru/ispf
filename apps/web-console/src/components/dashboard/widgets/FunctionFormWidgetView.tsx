@@ -22,7 +22,11 @@ export default function FunctionFormWidgetView({ widget, editable }: FunctionFor
 
   const parsedFields = useMemo(() => {
     try {
-      return widget.fieldsJson ? (JSON.parse(widget.fieldsJson) as FunctionFormField[]) : [];
+      if (!widget.fieldsJson) return [] as FunctionFormField[];
+      return (JSON.parse(widget.fieldsJson) as FunctionFormField[]).map((field) => ({
+        ...field,
+        defaultValue: field.defaultValue ?? field.default,
+      }));
     } catch {
       return [] as FunctionFormField[];
     }
@@ -49,12 +53,26 @@ export default function FunctionFormWidgetView({ widget, editable }: FunctionFor
     },
     onSuccess: (result) => {
       const row = result.rows?.[0];
+      const errorCode = row?.error_code ?? row?.errorCode;
+      if (errorCode && String(errorCode) !== "OK") {
+        setError(String(row?.error_message ?? row?.message ?? t("view.errorGeneric")));
+        setMessage(null);
+        return;
+      }
       if (row?.success === false) {
         setError(String(row.message ?? t("view.errorGeneric")));
         setMessage(null);
         return;
       }
-      setMessage(String(row?.message ?? t("view.done")));
+      const parts: string[] = [];
+      const okMessage = row?.error_message ?? row?.message;
+      if (okMessage && String(okMessage).trim()) {
+        parts.push(String(okMessage));
+      }
+      if (row?.eventId) {
+        parts.push(`Событие ${row.eventId}`);
+      }
+      setMessage(parts.length > 0 ? parts.join(" · ") : t("view.done"));
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["variables"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
@@ -82,15 +100,17 @@ export default function FunctionFormWidgetView({ widget, editable }: FunctionFor
     >
       {!objectPath && <p className="hint">{t("view.selectObjectInTable")}</p>}
       <form className="function-form-fields" style={styles.body} onSubmit={handleSubmit}>
-        {parsedFields.map((field) => (
-          <FunctionFormFieldInput
-            key={field.name}
-            field={field}
-            value={values[field.name] ?? field.defaultValue ?? ""}
-            disabled={editable || !objectPath}
-            onChange={(v) => setValues((prev) => ({ ...prev, [field.name]: v }))}
-          />
-        ))}
+        {parsedFields
+          .filter((field) => !field.hidden)
+          .map((field) => (
+            <FunctionFormFieldInput
+              key={field.name}
+              field={field}
+              value={values[field.name] ?? field.defaultValue ?? ""}
+              disabled={editable || !objectPath}
+              onChange={(v) => setValues((prev) => ({ ...prev, [field.name]: v }))}
+            />
+          ))}
         <button
           type="submit"
           className="btn primary function-widget-btn"
@@ -123,20 +143,27 @@ function FunctionFormFieldInput({
   });
 
   if (field.type === "select") {
-    const options = field.staticOptions?.length
-      ? field.staticOptions
-      : (children.data ?? []).map((obj) => obj.path.split(".").pop() ?? obj.displayName);
+    const staticPairs = field.selectOptions?.length
+      ? field.selectOptions
+      : field.staticOptions?.map((opt) => ({ value: opt, label: opt }));
+    const options = staticPairs?.length
+      ? staticPairs
+      : (children.data ?? []).map((obj) => {
+          const leaf = obj.path.split(".").pop() ?? obj.displayName;
+          return { value: leaf, label: leaf };
+        });
     return (
       <label className="function-form-label">
         {field.label}
         <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
-          <option value="">—</option>
+          {!field.defaultValue && <option value="">—</option>}
           {options.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>
+        {field.hint && <span className="function-form-hint">{field.hint}</span>}
       </label>
     );
   }
@@ -150,6 +177,7 @@ function FunctionFormFieldInput({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       />
+      {field.hint && <span className="function-form-hint">{field.hint}</span>}
     </label>
   );
 }

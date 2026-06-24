@@ -30,6 +30,7 @@ export default function WorkQueueWidgetView({ widget, editable }: WorkQueueWidge
   const { t } = useTranslation(["widgets", "common", "operator"]);
   const styles = useWidgetStyles(widget.stylesJson);
   const operatorId = widget.operatorId ?? "operator";
+  const operatorAppId = widget.operatorAppId;
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -56,8 +57,8 @@ export default function WorkQueueWidgetView({ widget, editable }: WorkQueueWidge
   });
 
   const queue = useQuery({
-    queryKey: workQueueQueryKey(),
-    queryFn: () => fetchWorkQueue(50),
+    queryKey: workQueueQueryKey(operatorAppId),
+    queryFn: () => fetchWorkQueue(50, operatorAppId),
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
     refetchOnMount: "always",

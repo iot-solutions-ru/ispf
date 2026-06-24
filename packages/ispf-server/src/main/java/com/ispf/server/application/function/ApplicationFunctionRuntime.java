@@ -4,12 +4,12 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.FunctionDescriptor;
-import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.ScriptExecutionContext;
+import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +26,7 @@ public class ApplicationFunctionRuntime {
     private final ApplicationSchemaSession schemaSession;
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
-    private final ApplicationSqlBindingService sqlBindingService;
+    private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
 
     public ApplicationFunctionRuntime(
             ApplicationFunctionStore store,
@@ -35,7 +35,7 @@ public class ApplicationFunctionRuntime {
             ApplicationSchemaSession schemaSession,
             ObjectManager objectManager,
             ObjectMapper objectMapper,
-            ApplicationSqlBindingService sqlBindingService
+            BindingRefreshAfterCommit bindingRefreshAfterCommit
     ) {
         this.store = store;
         this.scriptEngine = scriptEngine;
@@ -43,7 +43,7 @@ public class ApplicationFunctionRuntime {
         this.schemaSession = schemaSession;
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
-        this.sqlBindingService = sqlBindingService;
+        this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
     }
 
     @Transactional
@@ -87,7 +87,7 @@ public class ApplicationFunctionRuntime {
                 );
                 default -> throw new IllegalStateException("Unsupported source type: " + deployed.sourceType());
             });
-            sqlBindingService.refreshAfterFunction(deployed.appId(), objectPath, functionName);
+            bindingRefreshAfterCommit.scheduleRefreshAfterFunction(objectPath, functionName);
             return outputHolder[0];
         } catch (RuntimeException ex) {
             throw ex;

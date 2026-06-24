@@ -178,6 +178,8 @@ public class BpmnParser {
         readIspfAttribute(task, parameters, "title");
         readIspfAttribute(task, parameters, "instructions");
         readIspfAttribute(task, parameters, "action");
+        readIspfAttribute(task, parameters, "targetObject");
+        readIspfAttribute(task, parameters, "function");
 
         String title = parameters.getOrDefault("title", task.getAttribute("name"));
         String instructions = parameters.getOrDefault("instructions", "");
