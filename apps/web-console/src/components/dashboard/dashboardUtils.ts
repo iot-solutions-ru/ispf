@@ -85,12 +85,13 @@ function schemaFieldType(schema: DataSchema, fieldName: string): string | undefi
   return schema.fields.find((field) => field.name === fieldName)?.type;
 }
 
-function coerceToSchemaType(raw: string | number, schemaType: string): unknown {
+function coerceToSchemaType(raw: string | number | boolean, schemaType: string): unknown {
   switch (schemaType) {
     case "STRING":
       return String(raw);
     case "BOOLEAN":
-      return raw === true || raw === "true" || raw === "1" || raw === 1;
+      if (typeof raw === "boolean") return raw;
+      return raw === "true" || raw === "1" || raw === 1;
     case "INTEGER":
     case "LONG":
       return Number.parseInt(String(raw), 10);

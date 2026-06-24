@@ -5,7 +5,7 @@ import { invokeFunction, runWorkflow } from "../../../api";
 import { refreshWorkQueue } from "../../../hooks/workQueueCache";
 import type { DataRecord } from "../../../types";
 import type { FunctionWidget } from "../../../types/dashboard";
-import { parseInstanceState } from "../../../types/workflow";
+import { parseInstanceState, type WorkflowView } from "../../../types/workflow";
 import { parseFunctionInputJson, resolveWidgetPath } from "../dashboardUtils";
 import { useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
@@ -27,7 +27,11 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
   const workflowPath = widget.workflowPath?.trim();
   const canRun = workflowPath ? true : Boolean(objectPath && widget.functionName);
 
-  const mutation = useMutation({
+  const mutation = useMutation<
+    WorkflowView | { schema: unknown; rows: Array<Record<string, unknown>> },
+    Error,
+    void
+  >({
     mutationFn: () => {
       if (workflowPath) {
         return runWorkflow(workflowPath, objectPath ?? undefined);
@@ -43,7 +47,7 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
     },
     onSuccess: (result) => {
       if (workflowPath) {
-        const state = parseInstanceState(result.instanceState);
+        const state = parseInstanceState((result as WorkflowView).instanceState);
         if (state.status === "FAILED") {
           setError(state.errorMessage ?? t("view.errorGeneric"));
           setMessage(null);
@@ -61,7 +65,7 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
         queryClient.invalidateQueries({ queryKey: ["events"] });
         return;
       }
-      const row = result.rows?.[0];
+      const row = (result as { rows?: Array<Record<string, unknown>> }).rows?.[0];
       if (row?.success === false) {
         setError(String(row.message ?? t("view.errorGeneric")));
         setMessage(null);

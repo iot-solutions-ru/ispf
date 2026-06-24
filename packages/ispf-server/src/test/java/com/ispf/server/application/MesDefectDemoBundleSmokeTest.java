@@ -9,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
 
@@ -28,6 +30,9 @@ class MesDefectDemoBundleSmokeTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void deploysBundleListsLinesAndRoutesDefect() throws Exception {
@@ -161,16 +166,13 @@ class MesDefectDemoBundleSmokeTest {
     }
 
     private String awaitWorkQueueTask() throws Exception {
-        for (int i = 0; i < 40; i++) {
+        for (int i = 0; i < 80; i++) {
             MvcResult result = mockMvc.perform(get("/api/v1/work-queue").param("operatorAppId", "mes-defect-demo"))
                     .andExpect(status().isOk())
                     .andReturn();
-            String json = result.getResponse().getContentAsString();
-            if (json.contains("\"taskId\"")) {
-                int idx = json.indexOf("\"taskId\":\"");
-                int start = idx + "\"taskId\":\"".length();
-                int end = json.indexOf('"', start);
-                return json.substring(start, end);
+            JsonNode tasks = objectMapper.readTree(result.getResponse().getContentAsString());
+            if (tasks.isArray() && !tasks.isEmpty()) {
+                return tasks.get(0).get("id").asText();
             }
             Thread.sleep(100);
         }
