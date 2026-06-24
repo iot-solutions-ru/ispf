@@ -88,17 +88,17 @@ ispf:
     queue-capacity: ${ISPF_OBJECT_CHANGE_QUEUE_CAPACITY:10000}
     worker-threads: ${ISPF_OBJECT_CHANGE_WORKER_THREADS:4}
     coalesce-telemetry-updates: ${ISPF_OBJECT_CHANGE_COALESCE_TELEMETRY:true}
+    split-lanes-enabled: ${ISPF_OBJECT_CHANGE_SPLIT_LANES:true}
+    telemetry-queue-capacity: ${ISPF_OBJECT_CHANGE_TELEMETRY_QUEUE_CAPACITY:10000}
+    automation-queue-capacity: ${ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY:10000}
+    telemetry-worker-threads: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS:2}
+    automation-worker-threads: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS:4}
   event-journal:
     async-enabled: ${ISPF_EVENT_JOURNAL_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_EVENT_JOURNAL_QUEUE_CAPACITY:10000}
     batch-size: ${ISPF_EVENT_JOURNAL_BATCH_SIZE:100}
     flush-interval-ms: ${ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS:250}
     recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:500}
-    split-lanes-enabled: ${ISPF_OBJECT_CHANGE_SPLIT_LANES:true}
-    telemetry-queue-capacity: ${ISPF_OBJECT_CHANGE_TELEMETRY_QUEUE_CAPACITY:10000}
-    automation-queue-capacity: ${ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY:10000}
-    telemetry-worker-threads: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS:2}
-    automation-worker-threads: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS:4}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}
