@@ -12,6 +12,7 @@ import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VariableHistoryService {
 
     private static final String RETENTION_LOCK = "variable_history_retention";
+    private static final int MAX_AGGREGATE_SAMPLE_ROWS = 100_000;
 
     private final VariableHistoryProperties properties;
     private final VariableSampleRepository sampleRepository;
@@ -198,13 +200,65 @@ public class VariableHistoryService {
         }
 
         int cappedBuckets = Math.min(Math.max(maxBuckets, 1), 2_000);
+        List<VariableHistoryBucket> result = timescaleHypertableInitializer.isPostgreSql()
+                ? aggregateWithSql(objectPath, variableName, field, resolvedFrom, resolvedTo, bucket, cappedBuckets)
+                : aggregateWithJvm(objectPath, variableName, field, resolvedFrom, resolvedTo, bucket, cappedBuckets);
+
+        return new VariableHistoryAggregateResponse(
+                objectPath,
+                variableName,
+                field,
+                formatBucket(bucket),
+                result
+        );
+    }
+
+    private List<VariableHistoryBucket> aggregateWithSql(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            Duration bucket,
+            int maxBuckets
+    ) {
+        long bucketSeconds = bucket.getSeconds();
+        return sampleRepository.aggregateBuckets(
+                        objectPath,
+                        variableName,
+                        fieldName,
+                        from,
+                        to,
+                        bucketSeconds,
+                        maxBuckets
+                ).stream()
+                .map(row -> new VariableHistoryBucket(
+                        row.getBucketStart(),
+                        row.getAvgVal(),
+                        row.getMinVal(),
+                        row.getMaxVal(),
+                        row.getSampleCount() != null ? row.getSampleCount().intValue() : 0
+                ))
+                .toList();
+    }
+
+    private List<VariableHistoryBucket> aggregateWithJvm(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            Duration bucket,
+            int maxBuckets
+    ) {
         List<VariableSampleEntity> rows = sampleRepository
                 .findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
                         objectPath,
                         variableName,
-                        field,
-                        resolvedFrom,
-                        resolvedTo
+                        fieldName,
+                        from,
+                        to,
+                        PageRequest.of(0, MAX_AGGREGATE_SAMPLE_ROWS, Sort.by("sampledAt").ascending())
                 );
 
         Map<Instant, BucketAccumulator> buckets = new LinkedHashMap<>();
@@ -222,17 +276,10 @@ public class VariableHistoryService {
                 .map(entry -> entry.getValue().toBucket(entry.getKey()))
                 .toList();
 
-        if (result.size() > cappedBuckets) {
-            result = result.subList(result.size() - cappedBuckets, result.size());
+        if (result.size() > maxBuckets) {
+            result = result.subList(result.size() - maxBuckets, result.size());
         }
-
-        return new VariableHistoryAggregateResponse(
-                objectPath,
-                variableName,
-                field,
-                formatBucket(bucket),
-                result
-        );
+        return result;
     }
 
     static Duration parseBucket(String bucketSpec) {

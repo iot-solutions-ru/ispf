@@ -1,12 +1,15 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { fetchEvents } from "../../../api";
 import type { EventFeedWidget } from "../../../types/dashboard";
 import { matchesPayloadFilter } from "../../../utils/payloadFilter";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { parseDemoPreview } from "../widgetDemoPreview";
+
+const EVENT_ITEM_ESTIMATE_PX = 88;
 
 interface DemoFeedEvent {
   id: string;
@@ -30,6 +33,7 @@ export default function EventFeedWidgetView({
 }: EventFeedWidgetViewProps) {
   const { t } = useTranslation(["widgets", "common"]);
   const styles = useWidgetStyles(widget.stylesJson);
+  const listRef = useRef<HTMLUListElement>(null);
   const eventNames = useMemo(() => {
     try {
       return widget.eventNamesJson ? (JSON.parse(widget.eventNamesJson) as string[]) : [];
@@ -65,6 +69,16 @@ export default function EventFeedWidgetView({
   const isDemo = demoEvents.length > 0;
   const displayEvents = isDemo ? demoEvents : filtered;
 
+  const virtualizer = useVirtualizer({
+    count: displayEvents.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => EVENT_ITEM_ESTIMATE_PX,
+    overscan: 5,
+    enabled: displayEvents.length > 0,
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
+
   return (
     <DashWidgetShell
       title={widget.title}
@@ -77,8 +91,20 @@ export default function EventFeedWidgetView({
       {displayEvents.length === 0 && !events.isLoading && (
         <p className="hint">{t("view.noEvents")}</p>
       )}
-      <ul className="dash-event-feed-list" style={styles.body}>
-        {displayEvents.map((event) => {
+      <ul
+        ref={listRef}
+        className="dash-event-feed-list dash-virtual-list"
+        style={styles.body}
+      >
+        {displayEvents.length > 0 && (
+          <li
+            aria-hidden="true"
+            className="dash-virtual-list-spacer"
+            style={{ height: virtualizer.getTotalSize() }}
+          />
+        )}
+        {virtualItems.map((virtualItem) => {
+          const event = displayEvents[virtualItem.index];
           const payload = event.payload?.rows?.[0];
           const detail = payload
             ? Object.entries(payload)
@@ -86,7 +112,11 @@ export default function EventFeedWidgetView({
                 .join(", ")
             : "";
           return (
-            <li key={event.id} className={`dash-event-item level-${event.level.toLowerCase()}`}>
+            <li
+              key={event.id}
+              className={`dash-event-item level-${event.level.toLowerCase()} dash-virtual-list-item`}
+              style={{ transform: `translateY(${virtualItem.start}px)` }}
+            >
               <div className="dash-event-row-top">
                 <strong>{event.eventName}</strong>
                 <time className="hint">

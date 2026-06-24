@@ -3,6 +3,7 @@ package com.ispf.server.application.binding;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,6 +20,7 @@ public class ApplicationSqlBindingEventListener {
         this.bindingService = bindingService;
     }
 
+    @Async("objectChangeExecutor")
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) {
         if (event.type() != ObjectChangeType.EVENT_FIRED || event.variableName() == null) {

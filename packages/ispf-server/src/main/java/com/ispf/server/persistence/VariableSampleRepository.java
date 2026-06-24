@@ -27,6 +27,15 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
             Instant to
     );
 
+    List<VariableSampleEntity> findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            Pageable pageable
+    );
+
     @Query("SELECT MIN(s.sampledAt) FROM VariableSampleEntity s")
     Instant findOldestSampledAt();
 
@@ -42,5 +51,38 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
             String objectPath,
             String variableName,
             Instant cutoff
+    );
+
+    @Query(value = """
+            SELECT *
+            FROM (
+                SELECT
+                    to_timestamp(floor(extract(epoch from sampled_at) / :bucketSeconds) * :bucketSeconds)
+                        AS bucket_start,
+                    AVG(value_double) AS avg_val,
+                    MIN(value_double) AS min_val,
+                    MAX(value_double) AS max_val,
+                    COUNT(*) AS sample_count
+                FROM variable_samples
+                WHERE object_path = :objectPath
+                  AND variable_name = :variableName
+                  AND field_name = :fieldName
+                  AND sampled_at >= :fromTs
+                  AND sampled_at <= :toTs
+                  AND value_double IS NOT NULL
+                GROUP BY 1
+                ORDER BY 1 DESC
+                LIMIT :maxBuckets
+            ) recent_buckets
+            ORDER BY bucket_start ASC
+            """, nativeQuery = true)
+    List<VariableSampleBucketAggregate> aggregateBuckets(
+            @Param("objectPath") String objectPath,
+            @Param("variableName") String variableName,
+            @Param("fieldName") String fieldName,
+            @Param("fromTs") Instant fromTs,
+            @Param("toTs") Instant toTs,
+            @Param("bucketSeconds") long bucketSeconds,
+            @Param("maxBuckets") int maxBuckets
     );
 }

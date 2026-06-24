@@ -4,6 +4,7 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,6 +16,7 @@ public class EventCorrelatorListener {
         this.correlatorService = correlatorService;
     }
 
+    @Async("objectChangeExecutor")
     @EventListener
     @Order(50)
     public void onObjectChange(ObjectChangeEvent event) {

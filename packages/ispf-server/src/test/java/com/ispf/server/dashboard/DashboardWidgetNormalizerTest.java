@@ -14,7 +14,7 @@ class DashboardWidgetNormalizerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void stringifiesColumnsJsonWhenAgentPassesArray() {
+    void stringifiesColumnsJsonWhenAgentPassesArray() throws Exception {
         Map<String, Object> widget = Map.of(
                 "id", "rates-table",
                 "type", "object-table",
@@ -25,13 +25,13 @@ class DashboardWidgetNormalizerTest {
         Map<String, Object> normalized = DashboardWidgetNormalizer.normalizeWidget(widget, objectMapper);
         assertTrue(normalized.get("columnsJson") instanceof String);
         assertEquals(
-                "[{\"variable\":\"currentRate\",\"label\":\"Rate\"}]",
-                normalized.get("columnsJson")
+                List.of(Map.of("variable", "currentRate", "label", "Rate")),
+                objectMapper.readValue((String) normalized.get("columnsJson"), List.class)
         );
     }
 
     @Test
-    void resolvesLayoutObjectToJsonString() {
+    void resolvesLayoutObjectToJsonString() throws Exception {
         String json = DashboardWidgetNormalizer.resolveLayoutJson(
                 Map.of(
                         "columns", 12,
@@ -44,6 +44,10 @@ class DashboardWidgetNormalizerTest {
                 ),
                 objectMapper
         );
-        assertTrue(json.contains("\"columnsJson\":\"[{\\\"variable\\\":\\\"sysName\\\""));
+        var layout = objectMapper.readTree(json);
+        var columnsJson = layout.get("widgets").get(0).get("columnsJson");
+        assertTrue(columnsJson.isString());
+        var columns = objectMapper.readValue(columnsJson.asString(), List.class);
+        assertEquals(1, columns.size());
     }
 }

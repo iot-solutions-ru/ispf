@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -32,32 +32,37 @@ import { useMobileLayout } from "./hooks/useMobileLayout";
 import ObjectPropertiesEditor from "./components/ObjectPropertiesEditor";
 import ObjectTree from "./components/ObjectTree";
 import CreateObjectDialog from "./components/CreateObjectDialog";
-import DashboardBuilder from "./components/dashboard/DashboardBuilder";
 import {
   emptySession,
   mergeSession,
   type DashboardSession,
   type OpenDashboardOptions,
 } from "./components/dashboard/DashboardContext";
-import ReportBuilder from "./components/report/ReportBuilder";
-import DataSourceEditor from "./components/platform/DataSourceEditor";
-import MigrationEditor from "./components/platform/MigrationEditor";
-import SqlBindingEditor from "./components/platform/SqlBindingEditor";
-import ScheduleEditor from "./components/platform/ScheduleEditor";
-import ExplorerView from "./components/ExplorerView";
-import WorkflowBuilder from "./components/workflow/WorkflowBuilder";
-import OperatorView from "./components/operator/OperatorView";
-import SystemView from "./components/SystemView";
-import AiStudioPanel from "./components/AiStudioPanel";
 import AgentChatStatusBar from "./components/AgentChatStatusBar";
 import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import LocaleSwitcher from "./components/LocaleSwitcher";
-import ModelEditorPanel from "./components/ModelEditorPanel";
 import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
 import { isModelsPath } from "./types/models";
 import { isOperatorAppChildPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
+
+const OperatorView = lazy(() => import("./components/operator/OperatorView"));
+const SystemView = lazy(() => import("./components/SystemView"));
+const AiStudioPanel = lazy(() => import("./components/AiStudioPanel"));
+const ReportBuilder = lazy(() => import("./components/report/ReportBuilder"));
+const WorkflowBuilder = lazy(() => import("./components/workflow/WorkflowBuilder"));
+const DashboardBuilder = lazy(() => import("./components/dashboard/DashboardBuilder"));
+const ExplorerView = lazy(() => import("./components/ExplorerView"));
+const DataSourceEditor = lazy(() => import("./components/platform/DataSourceEditor"));
+const MigrationEditor = lazy(() => import("./components/platform/MigrationEditor"));
+const SqlBindingEditor = lazy(() => import("./components/platform/SqlBindingEditor"));
+const ScheduleEditor = lazy(() => import("./components/platform/ScheduleEditor"));
+const ModelEditorPanel = lazy(() => import("./components/ModelEditorPanel"));
+
+function LazyFallback() {
+  return <div className="loading" />;
+}
 
 let tabCounter = 1;
 
@@ -470,14 +475,16 @@ export default function App() {
   if (shouldOpenOperatorShell(session, appMode)) {
     const operatorAppId = resolveOperatorAppId(session, searchParams);
     return (
-      <OperatorView
-        appId={operatorAppId}
-        operatorId={session.username}
-        onSelectApp={selectOperatorApp}
-        onSwitchAdmin={isAdmin ? () => setAppMode("admin") : undefined}
-        session={session}
-        onLogout={() => void handleLogout()}
-      />
+      <Suspense fallback={<LazyFallback />}>
+        <OperatorView
+          appId={operatorAppId}
+          operatorId={session.username}
+          onSelectApp={selectOperatorApp}
+          onSwitchAdmin={isAdmin ? () => setAppMode("admin") : undefined}
+          session={session}
+          onLogout={() => void handleLogout()}
+        />
+      </Suspense>
     );
   }
 
@@ -618,111 +625,121 @@ export default function App() {
 
         {showExplorerMain && (
           <main className="main explorer-main" ref={explorerMainRef}>
-            <ExplorerView
-              selectedPath={selectedPath}
-              selectedObject={selectedObject}
-              onOpenEditor={openEditor}
-              onDeleted={() => {
-                setSelectedPath("root");
-                if (isMobileLayout) {
-                  setMobileExplorerPane("tree");
-                }
-              }}
-              onSelectPath={selectPathInExplorer}
-              onMembersChanged={() => void invalidateAll()}
-              allObjects={objectList}
-              isAdmin={isAdmin}
-              showBackToTree={isMobileLayout}
-              onBackToTree={() => setMobileExplorerPane("tree")}
-            />
+            <Suspense fallback={<LazyFallback />}>
+              <ExplorerView
+                selectedPath={selectedPath}
+                selectedObject={selectedObject}
+                onOpenEditor={openEditor}
+                onDeleted={() => {
+                  setSelectedPath("root");
+                  if (isMobileLayout) {
+                    setMobileExplorerPane("tree");
+                  }
+                }}
+                onSelectPath={selectPathInExplorer}
+                onMembersChanged={() => void invalidateAll()}
+                allObjects={objectList}
+                isAdmin={isAdmin}
+                showBackToTree={isMobileLayout}
+                onBackToTree={() => setMobileExplorerPane("tree")}
+              />
+            </Suspense>
           </main>
         )}
 
-        {workspaceTab === "system" && isAdmin && <SystemView />}
+        {workspaceTab === "system" && isAdmin && (
+          <Suspense fallback={<LazyFallback />}>
+            <SystemView />
+          </Suspense>
+        )}
 
         {isAdmin && (
           <main
             className={`main ai-studio-main${workspaceTab === "ai-studio" ? "" : " ai-studio-main-dormant"}`}
           >
-            <AiStudioPanel />
+            <Suspense fallback={<LazyFallback />}>
+              <AiStudioPanel />
+            </Suspense>
           </main>
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
           <main className="main editor-main dashboard-main">
-            {activeEditor.objectType === "DASHBOARD" ? (
-              <DashboardBuilder
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                session={dashboardSessions[activeEditor.id]}
-                onSessionChange={(next) => {
-                  setDashboardSessions((current) => ({
-                    ...current,
-                    [activeEditor.id]: next,
-                  }));
-                }}
-                onNavigateDashboard={openEditor}
-              />
-            ) : activeEditor.objectType === "REPORT" ? (
-              <ReportBuilder
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : activeEditor.objectType === "WORKFLOW" ? (
-              <WorkflowBuilder
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : activeEditor.objectType === "MODEL" || isModelsPath(activeEditor.path) ? (
-              <ModelEditorPanel
-                selectedPath={activeEditor.path}
-                canManage={isAdmin}
-                title={activeEditor.title}
-                onClose={() => closeEditor(activeEditor.id)}
-                onSelectPath={(path) => {
-                  setSelectedPath(path);
-                  openEditor(path);
-                }}
-              />
-            ) : activeEditor.objectType === "DATA_SOURCE" ? (
-              <DataSourceEditor
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : activeEditor.objectType === "MIGRATION" ? (
-              <MigrationEditor
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : activeEditor.objectType === "BINDING" ? (
-              <SqlBindingEditor
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : activeEditor.objectType === "SCHEDULE" ? (
-              <ScheduleEditor
-                path={activeEditor.path}
-                onClose={() => closeEditor(activeEditor.id)}
-                onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-              />
-            ) : (
-              <ObjectPropertiesEditor
-                key={activeEditor.path}
-                path={activeEditor.path}
-                canManage={isAdmin}
-                onClose={() => closeEditor(activeEditor.id)}
-                onDeleted={() => {
-                  setSelectedPath("root");
-                  closeEditor(activeEditor.id);
-                }}
-              />
-            )}
+            <Suspense fallback={<LazyFallback />}>
+              {activeEditor.objectType === "DASHBOARD" ? (
+                <DashboardBuilder
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                  session={dashboardSessions[activeEditor.id]}
+                  onSessionChange={(next) => {
+                    setDashboardSessions((current) => ({
+                      ...current,
+                      [activeEditor.id]: next,
+                    }));
+                  }}
+                  onNavigateDashboard={openEditor}
+                />
+              ) : activeEditor.objectType === "REPORT" ? (
+                <ReportBuilder
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : activeEditor.objectType === "WORKFLOW" ? (
+                <WorkflowBuilder
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : activeEditor.objectType === "MODEL" || isModelsPath(activeEditor.path) ? (
+                <ModelEditorPanel
+                  selectedPath={activeEditor.path}
+                  canManage={isAdmin}
+                  title={activeEditor.title}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onSelectPath={(path) => {
+                    setSelectedPath(path);
+                    openEditor(path);
+                  }}
+                />
+              ) : activeEditor.objectType === "DATA_SOURCE" ? (
+                <DataSourceEditor
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : activeEditor.objectType === "MIGRATION" ? (
+                <MigrationEditor
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : activeEditor.objectType === "BINDING" ? (
+                <SqlBindingEditor
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : activeEditor.objectType === "SCHEDULE" ? (
+                <ScheduleEditor
+                  path={activeEditor.path}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                />
+              ) : (
+                <ObjectPropertiesEditor
+                  key={activeEditor.path}
+                  path={activeEditor.path}
+                  canManage={isAdmin}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onDeleted={() => {
+                    setSelectedPath("root");
+                    closeEditor(activeEditor.id);
+                  }}
+                />
+              )}
+            </Suspense>
           </main>
         )}
 

@@ -10,21 +10,35 @@ import {
 
 const localeModules = import.meta.glob<{ default: Record<string, string> }>(
   "../locales/*/*.json",
-  { eager: true },
 );
 
-function buildResources(): Record<string, Record<string, Record<string, string>>> {
-  const resources: Record<string, Record<string, Record<string, string>>> = {};
-  for (const [path, module] of Object.entries(localeModules)) {
-    const match = path.match(/locales\/([^/]+)\/([^/]+)\.json$/);
-    if (!match) {
+const loadedLocales = new Set<AppLocale>();
+
+async function fetchLocaleBundles(
+  locale: AppLocale,
+): Promise<Record<string, Record<string, string>>> {
+  const bundles: Record<string, Record<string, string>> = {};
+  for (const namespace of LOCALE_NAMESPACES) {
+    const path = `../locales/${locale}/${namespace}.json`;
+    const loader = localeModules[path];
+    if (!loader) {
       continue;
     }
-    const [, locale, namespace] = match;
-    resources[locale] ??= {};
-    resources[locale][namespace.replace(".json", "")] = module.default;
+    const module = await loader();
+    bundles[namespace] = module.default;
   }
-  return resources;
+  return bundles;
+}
+
+export async function loadLocale(locale: AppLocale): Promise<void> {
+  if (loadedLocales.has(locale)) {
+    return;
+  }
+  const bundles = await fetchLocaleBundles(locale);
+  for (const [namespace, strings] of Object.entries(bundles)) {
+    i18n.addResourceBundle(locale, namespace, strings, true, true);
+  }
+  loadedLocales.add(locale);
 }
 
 export function persistLocale(locale: AppLocale): void {
@@ -39,25 +53,47 @@ export function persistLocale(locale: AppLocale): void {
   window.history.replaceState({}, "", url.toString());
 }
 
-void i18n.use(initReactI18next).init({
-  resources: buildResources(),
-  lng: detectInitialLocale(),
-  fallbackLng: "en",
-  defaultNS: "common",
-  ns: [...LOCALE_NAMESPACES],
-  interpolation: { escapeValue: false },
-  returnEmptyString: false,
-});
+async function initI18n(): Promise<void> {
+  const initialLocale = detectInitialLocale();
 
-if (typeof document !== "undefined") {
-  document.documentElement.lang = i18n.language;
-}
-if (typeof window !== "undefined") {
-  persistLocale(normalizeLocale(i18n.language) ?? "en");
-  i18n.on("languageChanged", (lng) => {
-    const locale = normalizeLocale(lng) ?? "en";
-    persistLocale(locale);
+  const resources: Record<string, Record<string, Record<string, string>>> = {};
+
+  resources.en = await fetchLocaleBundles("en");
+  loadedLocales.add("en");
+
+  let activeLocale: AppLocale = "en";
+  if (initialLocale !== "en") {
+    try {
+      resources[initialLocale] = await fetchLocaleBundles(initialLocale);
+      loadedLocales.add(initialLocale);
+      activeLocale = initialLocale;
+    } catch (error) {
+      console.warn(`Failed to load locale ${initialLocale}, falling back to en`, error);
+    }
+  }
+
+  await i18n.use(initReactI18next).init({
+    lng: activeLocale,
+    fallbackLng: "en",
+    defaultNS: "common",
+    ns: [...LOCALE_NAMESPACES],
+    resources,
+    interpolation: { escapeValue: false },
+    returnEmptyString: false,
   });
+
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = i18n.language;
+  }
+  if (typeof window !== "undefined") {
+    persistLocale(normalizeLocale(i18n.language) ?? "en");
+    i18n.on("languageChanged", (lng) => {
+      const locale = normalizeLocale(lng) ?? "en";
+      persistLocale(locale);
+    });
+  }
 }
+
+export const i18nReady = initI18n();
 
 export default i18n;

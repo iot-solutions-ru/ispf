@@ -2974,7 +2974,8 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.75rem 1rem 1rem;
-  min-height: min-content;
+  min-height: 0;
+  flex: 1;
 }
 
 .event-journal-head {
@@ -3332,6 +3333,48 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .dash-object-table tbody tr.selected {
   background: rgba(47, 129, 247, 0.12);
+}
+
+.dash-object-table tr.dash-table-spacer {
+  cursor: default;
+  pointer-events: none;
+}
+
+.dash-object-table tr.dash-table-spacer:hover {
+  background: transparent;
+}
+
+.dash-virtual-list {
+  position: relative;
+  display: block;
+}
+
+.dash-virtual-list-spacer {
+  visibility: hidden;
+  pointer-events: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  list-style: none;
+}
+
+.dash-virtual-list-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dash-event-feed-list.dash-virtual-list {
+  gap: 0;
+}
+
+.event-journal-list.dash-virtual-list {
+  flex: 1;
+  min-height: 12rem;
+  overflow: auto;
 }
 
 .dash-widget-progress {
@@ -5797,21 +5840,6 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .event-journal-list > .event-journal-item:nth-child(n + 4) {
   animation-delay: 140ms;
-}
-
-.dash-event-feed-list > .dash-event-item,
-.dash-work-queue-list > .dash-work-queue-item {
-  animation: ui-item-enter 0.25s var(--ui-ease) both;
-}
-
-.dash-event-feed-list > .dash-event-item:nth-child(2),
-.dash-work-queue-list > .dash-work-queue-item:nth-child(2) {
-  animation-delay: 45ms;
-}
-
-.dash-event-feed-list > .dash-event-item:nth-child(n + 3),
-.dash-work-queue-list > .dash-work-queue-item:nth-child(n + 3) {
-  animation-delay: 90ms;
 }
 
 .ai-agent-chat-pill-btn {

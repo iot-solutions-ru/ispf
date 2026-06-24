@@ -113,6 +113,14 @@ export function fetchVariables(path: string): Promise<VariableDto[]> {
   return request(`/api/v1/objects/by-path/variables?path=${encodeURIComponent(path)}`);
 }
 
+export function fetchVariablesBatch(paths: string[]): Promise<Record<string, VariableDto[]>> {
+  if (paths.length === 0) {
+    return Promise.resolve({});
+  }
+  const pathsParam = paths.map((path) => encodeURIComponent(path)).join(",");
+  return request(`/api/v1/objects/variables/batch?paths=${pathsParam}`);
+}
+
 export interface VariableHistorySample {
   ts: string;
   value: number | null;

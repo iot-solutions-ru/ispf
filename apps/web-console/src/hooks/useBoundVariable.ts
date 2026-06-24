@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { fetchVariables } from "../api";
 import { readFieldValue } from "../types/dashboard";
+import { useVariablesQuery } from "./useVariablesQuery";
 
 export function useBoundVariable(
   objectPath: string,
@@ -8,12 +7,11 @@ export function useBoundVariable(
   valueField?: string,
   refreshIntervalMs = 5000
 ) {
-  const query = useQuery({
-    queryKey: ["variables", objectPath],
-    queryFn: () => fetchVariables(objectPath),
-    enabled: Boolean(objectPath && variableName),
-    refetchInterval: refreshIntervalMs,
-  });
+  const query = useVariablesQuery(
+    objectPath,
+    refreshIntervalMs,
+    Boolean(objectPath && variableName),
+  );
 
   const variable = query.data?.find((item) => item.name === variableName);
   const row = variable?.value?.rows[0];

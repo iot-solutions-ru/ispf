@@ -37,6 +37,9 @@ public class NatsEventBridge {
 
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) {
+        if (event.telemetry()) {
+            return;
+        }
         if (!properties.enabled() || connection == null) {
             return;
         }

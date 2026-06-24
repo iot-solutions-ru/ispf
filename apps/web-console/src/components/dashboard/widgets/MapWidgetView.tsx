@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Map, { Marker, Popup, type MapRef } from "react-map-gl/maplibre";
 import { useQuery } from "@tanstack/react-query";
-import { fetchObjects, fetchVariables } from "../../../api";
+import { fetchObjects } from "../../../api";
 import type { MapWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { VariableDto } from "../../../types";
+import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { parseJsonObject } from "../dashboardUtils";
 import { resolveMapStyle } from "../mapStyleUtils";
 import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
@@ -53,7 +55,14 @@ export default function MapWidgetView({
     [children.data]
   );
 
-  const markerPathsKey = markerObjects.map((obj) => obj.path).join("|");
+  const markerPaths = useMemo(() => markerObjects.map((obj) => obj.path), [markerObjects]);
+  const variablesBatch = useVariablesBatchQuery(
+    markerPaths,
+    refreshIntervalMs,
+    Boolean(widget.parentPath)
+  );
+
+  const markerPathsKey = markerPaths.join("|");
 
   useEffect(() => {
     setGpsByPath({});
@@ -140,7 +149,8 @@ export default function MapWidgetView({
                 key={obj.path}
                 obj={obj}
                 widget={widget}
-                refreshIntervalMs={refreshIntervalMs}
+                variables={variablesBatch.data?.[obj.path]}
+                variablesLoading={variablesBatch.isLoading}
                 editable={editable}
                 onGpsStatus={reportGps}
                 onSelect={(lat, lon, label) => handleMarkerSelect(obj.path, lat, lon, label)}
@@ -172,44 +182,40 @@ export default function MapWidgetView({
 function MapMarker({
   obj,
   widget,
-  refreshIntervalMs,
+  variables,
+  variablesLoading,
   editable,
   onSelect,
   onGpsStatus,
 }: {
   obj: { path: string; displayName: string };
   widget: MapWidget;
-  refreshIntervalMs: number;
+  variables?: VariableDto[];
+  variablesLoading: boolean;
   editable?: boolean;
   onSelect: (lat: number, lon: number, label: string) => void;
   onGpsStatus: (path: string, hasGps: boolean) => void;
 }) {
-  const vars = useQuery({
-    queryKey: ["variables", obj.path],
-    queryFn: () => fetchVariables(obj.path),
-    refetchInterval: refreshIntervalMs,
-  });
-
   const latVar = widget.latVariable ?? "coordinates";
   const latField = widget.latField ?? "latitude";
   const lonField = widget.lonField ?? "longitude";
-  const coordVar = vars.data?.find((v) => v.name === latVar);
+  const coordVar = variables?.find((v) => v.name === latVar);
   const lat = Number(readFieldValue(coordVar?.value?.rows[0], latField));
   const lon = Number(readFieldValue(coordVar?.value?.rows[0], lonField));
   const hasGps = Number.isFinite(lat) && Number.isFinite(lon);
 
   useEffect(() => {
-    if (!vars.isLoading) {
+    if (!variablesLoading) {
       onGpsStatus(obj.path, hasGps);
     }
-  }, [vars.isLoading, hasGps, obj.path, onGpsStatus]);
+  }, [variablesLoading, hasGps, obj.path, onGpsStatus]);
 
   if (!hasGps) {
     return null;
   }
 
   const labelVar = widget.labelVariable
-    ? vars.data?.find((v) => v.name === widget.labelVariable)
+    ? variables?.find((v) => v.name === widget.labelVariable)
     : undefined;
   const label =
     String(readFieldValue(labelVar?.value?.rows[0], "value") ?? "") || obj.displayName;

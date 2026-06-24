@@ -73,6 +73,11 @@ ispf:
     enabled: true
     min-interval-ms: 5000
     retention-days: 90
+  runtime-telemetry:
+    coalesce-ms: 1000
+    enabled: true
+  object-change:
+    async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}

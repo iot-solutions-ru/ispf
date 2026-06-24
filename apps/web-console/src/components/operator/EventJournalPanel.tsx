@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { fetchEvents } from "../../api";
 import {
   OPERATOR_SIDEBAR_EVENTS_QUERY_KEY,
@@ -9,6 +10,8 @@ import {
 import type { ObjectEvent } from "../../types/event";
 import type { OperatorUi } from "../../types/operatorUi";
 import { filterOperatorSidebarEvents } from "../../utils/operatorSidebarScope";
+
+const EVENT_ITEM_ESTIMATE_PX = 120;
 
 interface EventJournalPanelProps {
   appId?: string;
@@ -33,6 +36,7 @@ export default function EventJournalPanel({
   const operatorScoped = Boolean(appId && ui);
   const [filterPath, setFilterPath] = useState(initialFilter);
   const objectPath = fixedObjectPath ?? (filterPath.trim() || undefined);
+  const listRef = useRef<HTMLUListElement>(null);
   useOperatorSidebarRefresh(appId, operatorScoped ? ui : undefined);
 
   const events = useQuery({
@@ -53,6 +57,16 @@ export default function EventJournalPanel({
       operatorApps,
     });
   }, [appId, events.data, operatorApps, operatorScoped, ui]);
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => EVENT_ITEM_ESTIMATE_PX,
+    overscan: 5,
+    enabled: items.length > 0,
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <section className="event-journal-panel">
@@ -91,16 +105,33 @@ export default function EventJournalPanel({
           {operatorScoped ? t("eventJournal.emptyScoped") : t("eventJournal.empty")}
         </p>
       )}
-      <ul className="event-journal-list">
-        {items.map((event) => (
-          <EventRow key={event.id} event={event} />
+      <ul ref={listRef} className="event-journal-list dash-virtual-list">
+        {items.length > 0 && (
+          <li
+            aria-hidden="true"
+            className="dash-virtual-list-spacer"
+            style={{ height: virtualizer.getTotalSize() }}
+          />
+        )}
+        {virtualItems.map((virtualItem) => (
+          <EventRow
+            key={items[virtualItem.index].id}
+            event={items[virtualItem.index]}
+            style={{ transform: `translateY(${virtualItem.start}px)` }}
+          />
         ))}
       </ul>
     </section>
   );
 }
 
-function EventRow({ event }: { event: ObjectEvent }) {
+function EventRow({
+  event,
+  style,
+}: {
+  event: ObjectEvent;
+  style?: CSSProperties;
+}) {
   const payload = event.payload?.rows?.[0];
   const detail =
     payload && typeof payload.value !== "undefined"
@@ -108,7 +139,10 @@ function EventRow({ event }: { event: ObjectEvent }) {
       : null;
 
   return (
-    <li className={`event-journal-item level-${event.level.toLowerCase()}`}>
+    <li
+      className={`event-journal-item level-${event.level.toLowerCase()} dash-virtual-list-item`}
+      style={style}
+    >
       <div className="event-journal-row-top">
         <strong>{event.eventName}</strong>
         <span className="event-level-pill">{event.level}</span>

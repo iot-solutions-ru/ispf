@@ -19,6 +19,7 @@ import {
   fetchAiAgentTools,
   fetchAiProviderStatus,
   sendAgentMessage,
+  subscribeAgentRunProgress,
   type AiAgentChatResponse,
   type AiAgentSession,
   type AiAgentSessionSummary,
@@ -287,23 +288,62 @@ export function AgentChatProvider({
       return;
     }
     let cancelled = false;
+    let pollTimer: number | undefined;
+    let usingPoll = false;
+    let runFinished = false;
+    let unsubscribe: (() => void) | undefined;
+
+    const applyProgress = (progress: { running: boolean; steps?: AiAgentStep[] }) => {
+      if (cancelled) {
+        return;
+      }
+      if (progress.running && progress.steps) {
+        setLiveSteps(progress.steps);
+      }
+      if (!progress.running) {
+        runFinished = true;
+        unsubscribe?.();
+        unsubscribe = undefined;
+      }
+    };
 
     const poll = async () => {
       try {
         const progress = await fetchAgentRunProgress(activeSessionId);
-        if (!cancelled && progress.running && progress.steps) {
-          setLiveSteps(progress.steps);
-        }
+        applyProgress(progress);
       } catch {
         // ignore transient poll errors while run is in flight
       }
     };
 
-    void poll();
-    const timer = window.setInterval(() => void poll(), 1000);
+    const startPolling = () => {
+      if (usingPoll || cancelled) {
+        return;
+      }
+      usingPoll = true;
+      void poll();
+      pollTimer = window.setInterval(() => void poll(), 1000);
+    };
+
+    unsubscribe = subscribeAgentRunProgress(
+      activeSessionId,
+      applyProgress,
+      () => {
+        if (cancelled || runFinished || usingPoll) {
+          return;
+        }
+        unsubscribe?.();
+        unsubscribe = undefined;
+        startPolling();
+      }
+    );
+
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      unsubscribe?.();
+      if (pollTimer !== undefined) {
+        window.clearInterval(pollTimer);
+      }
     };
   }, [activeSessionId, isPending]);
 

@@ -16,6 +16,27 @@ export interface ObjectWsMessage {
 export const OBJECT_WS_EVENT = "ispf-object-ws-message";
 
 let activeSocket: WebSocket | null = null;
+let wsConnected = false;
+const wsConnectionListeners = new Set<() => void>();
+
+function setWsConnected(connected: boolean) {
+  if (wsConnected === connected) {
+    return;
+  }
+  wsConnected = connected;
+  for (const listener of wsConnectionListeners) {
+    listener();
+  }
+}
+
+export function isObjectWebSocketConnected(): boolean {
+  return wsConnected;
+}
+
+export function subscribeObjectWebSocketConnection(listener: () => void): () => void {
+  wsConnectionListeners.add(listener);
+  return () => wsConnectionListeners.delete(listener);
+}
 
 function wsUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -57,6 +78,7 @@ export function useObjectWebSocket() {
       activeSocket = socket;
 
       socket.onopen = () => {
+        setWsConnected(true);
         // reconnect subscriptions happen via useFederatedPathSubscription
       };
 
@@ -105,6 +127,7 @@ export function useObjectWebSocket() {
       };
 
       socket.onclose = () => {
+        setWsConnected(false);
         if (activeSocket === socket) {
           activeSocket = null;
         }
@@ -118,6 +141,7 @@ export function useObjectWebSocket() {
 
     return () => {
       active = false;
+      setWsConnected(false);
       if (retryTimer) {
         window.clearTimeout(retryTimer);
       }

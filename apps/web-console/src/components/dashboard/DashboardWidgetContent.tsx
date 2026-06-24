@@ -1,45 +1,58 @@
+import { lazy, Suspense, type ReactNode } from "react";
 import type { DashboardWidget } from "../../types/dashboard";
 import { useTranslation } from "react-i18next";
-import ValueWidgetView from "./widgets/ValueWidgetView";
-import IndicatorWidgetView, { ToggleWidgetView } from "./widgets/IndicatorWidgetView";
-import ChartWidgetView from "./widgets/ChartWidgetView";
-import SparklineWidgetView from "./widgets/SparklineWidgetView";
-import FunctionFormWidgetView from "./widgets/FunctionFormWidgetView";
-import ProgressWidgetView from "./widgets/ProgressWidgetView";
-import ObjectTableWidgetView from "./widgets/ObjectTableWidgetView";
-import EventFeedWidgetView from "./widgets/EventFeedWidgetView";
-import WorkQueueWidgetView from "./widgets/WorkQueueWidgetView";
-import StatusBadgeWidgetView from "./widgets/StatusBadgeWidgetView";
-import GaugeWidgetView from "./widgets/GaugeWidgetView";
-import CardGridWidgetView from "./widgets/CardGridWidgetView";
-import FunctionWidgetView from "./widgets/FunctionWidgetView";
-import DashboardLinkWidgetView from "./widgets/DashboardLinkWidgetView";
-import ReportWidgetView from "./widgets/ReportWidgetView";
-import PieChartWidgetView from "./widgets/PieChartWidgetView";
-import HistoryTableWidgetView from "./widgets/HistoryTableWidgetView";
-import VariableEditorWidgetView from "./widgets/VariableEditorWidgetView";
-import SvgWidgetView from "./widgets/SvgWidgetView";
-import LabelWidgetView from "./widgets/LabelWidgetView";
-import ImageWidgetView from "./widgets/ImageWidgetView";
-import MiniTecSldWidgetView from "./widgets/MiniTecSldWidgetView";
-import HtmlSnippetWidgetView from "./widgets/HtmlSnippetWidgetView";
-import ObjectTreeWidgetView from "./widgets/ObjectTreeWidgetView";
-import BreadcrumbsWidgetView from "./widgets/BreadcrumbsWidgetView";
-import TimerWidgetView from "./widgets/TimerWidgetView";
-import ContextListWidgetView from "./widgets/ContextListWidgetView";
-import LinearGaugeWidgetView from "./widgets/LinearGaugeWidgetView";
-import InputFormWidgetView from "./widgets/InputFormWidgetView";
-import GanttChartWidgetView from "./widgets/GanttChartWidgetView";
-import NetworkGraphWidgetView from "./widgets/NetworkGraphWidgetView";
-import SpreadsheetWidgetView from "./widgets/SpreadsheetWidgetView";
-import LiquidGaugeWidgetView from "./widgets/LiquidGaugeWidgetView";
-import NavMenuWidgetView from "./widgets/NavMenuWidgetView";
-import MapWidgetView from "./widgets/MapWidgetView";
+
+const ValueWidgetView = lazy(() => import("./widgets/ValueWidgetView"));
+const IndicatorWidgetView = lazy(() => import("./widgets/IndicatorWidgetView"));
+const ToggleWidgetView = lazy(() =>
+  import("./widgets/IndicatorWidgetView").then((module) => ({ default: module.ToggleWidgetView }))
+);
+const ChartWidgetView = lazy(() => import("./widgets/ChartWidgetView"));
+const SparklineWidgetView = lazy(() => import("./widgets/SparklineWidgetView"));
+const FunctionFormWidgetView = lazy(() => import("./widgets/FunctionFormWidgetView"));
+const ProgressWidgetView = lazy(() => import("./widgets/ProgressWidgetView"));
+const ObjectTableWidgetView = lazy(() => import("./widgets/ObjectTableWidgetView"));
+const EventFeedWidgetView = lazy(() => import("./widgets/EventFeedWidgetView"));
+const WorkQueueWidgetView = lazy(() => import("./widgets/WorkQueueWidgetView"));
+const StatusBadgeWidgetView = lazy(() => import("./widgets/StatusBadgeWidgetView"));
+const GaugeWidgetView = lazy(() => import("./widgets/GaugeWidgetView"));
+const CardGridWidgetView = lazy(() => import("./widgets/CardGridWidgetView"));
+const FunctionWidgetView = lazy(() => import("./widgets/FunctionWidgetView"));
+const DashboardLinkWidgetView = lazy(() => import("./widgets/DashboardLinkWidgetView"));
+const ReportWidgetView = lazy(() => import("./widgets/ReportWidgetView"));
+const PieChartWidgetView = lazy(() => import("./widgets/PieChartWidgetView"));
+const HistoryTableWidgetView = lazy(() => import("./widgets/HistoryTableWidgetView"));
+const VariableEditorWidgetView = lazy(() => import("./widgets/VariableEditorWidgetView"));
+const SvgWidgetView = lazy(() => import("./widgets/SvgWidgetView"));
+const LabelWidgetView = lazy(() => import("./widgets/LabelWidgetView"));
+const ImageWidgetView = lazy(() => import("./widgets/ImageWidgetView"));
+const MiniTecSldWidgetView = lazy(() => import("./widgets/MiniTecSldWidgetView"));
+const HtmlSnippetWidgetView = lazy(() => import("./widgets/HtmlSnippetWidgetView"));
+const ObjectTreeWidgetView = lazy(() => import("./widgets/ObjectTreeWidgetView"));
+const BreadcrumbsWidgetView = lazy(() => import("./widgets/BreadcrumbsWidgetView"));
+const TimerWidgetView = lazy(() => import("./widgets/TimerWidgetView"));
+const ContextListWidgetView = lazy(() => import("./widgets/ContextListWidgetView"));
+const LinearGaugeWidgetView = lazy(() => import("./widgets/LinearGaugeWidgetView"));
+const InputFormWidgetView = lazy(() => import("./widgets/InputFormWidgetView"));
+const GanttChartWidgetView = lazy(() => import("./widgets/GanttChartWidgetView"));
+const NetworkGraphWidgetView = lazy(() => import("./widgets/NetworkGraphWidgetView"));
+const SpreadsheetWidgetView = lazy(() => import("./widgets/SpreadsheetWidgetView"));
+const LiquidGaugeWidgetView = lazy(() => import("./widgets/LiquidGaugeWidgetView"));
+const NavMenuWidgetView = lazy(() => import("./widgets/NavMenuWidgetView"));
+const MapWidgetView = lazy(() => import("./widgets/MapWidgetView"));
 
 interface DashboardWidgetContentProps {
   widget: DashboardWidget;
   refreshIntervalMs: number;
   editable: boolean;
+}
+
+function WidgetFallback() {
+  return <div className="loading" />;
+}
+
+function LazyWidget({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<WidgetFallback />}>{children}</Suspense>;
 }
 
 /** Renders a dashboard widget body (excluding composite containers). */
@@ -52,231 +65,323 @@ export default function DashboardWidgetContent({
   switch (widget.type) {
     case "value":
       return (
-        <ValueWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ValueWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "indicator":
       return (
-        <IndicatorWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <IndicatorWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "toggle":
       return (
-        <ToggleWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ToggleWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "chart":
       return (
-        <ChartWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ChartWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "sparkline":
       return (
-        <SparklineWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <SparklineWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "function":
-      return <FunctionWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <FunctionWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "function-form":
-      return <FunctionFormWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <FunctionFormWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "progress":
       return (
-        <ProgressWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ProgressWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "object-table":
       return (
-        <ObjectTableWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ObjectTableWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "event-feed":
       return (
-        <EventFeedWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <EventFeedWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "work-queue":
-      return <WorkQueueWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <WorkQueueWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "status-badge":
       return (
-        <StatusBadgeWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <StatusBadgeWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "gauge":
       return (
-        <GaugeWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <GaugeWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "card-grid":
       return (
-        <CardGridWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <CardGridWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "dashboard-link":
-      return <DashboardLinkWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <DashboardLinkWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "report":
       return (
-        <ReportWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ReportWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "pie-chart":
       return (
-        <PieChartWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <PieChartWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "history-table":
       return (
-        <HistoryTableWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <HistoryTableWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "variable-editor":
       return (
-        <VariableEditorWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <VariableEditorWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "svg-widget":
       return (
-        <SvgWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <SvgWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "label":
-      return <LabelWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <LabelWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "image":
-      return <ImageWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <ImageWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "mini-tec-sld":
       return (
-        <MiniTecSldWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <MiniTecSldWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "html-snippet":
-      return <HtmlSnippetWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <HtmlSnippetWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "object-tree":
       return (
-        <ObjectTreeWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <ObjectTreeWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "breadcrumbs":
-      return <BreadcrumbsWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <BreadcrumbsWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "timer":
       return (
-        <TimerWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <TimerWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "context-list":
-      return <ContextListWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <ContextListWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "linear-gauge":
       return (
-        <LinearGaugeWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <LinearGaugeWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "input-form":
       return (
-        <InputFormWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <InputFormWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "gantt-chart":
       return (
-        <GanttChartWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <GanttChartWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "network-graph":
       return (
-        <NetworkGraphWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <NetworkGraphWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "spreadsheet":
       return (
-        <SpreadsheetWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <SpreadsheetWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "liquid-gauge":
       return (
-        <LiquidGaugeWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <LiquidGaugeWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "nav-menu":
-      return <NavMenuWidgetView widget={widget} editable={editable} />;
+      return (
+        <LazyWidget>
+          <NavMenuWidgetView widget={widget} editable={editable} />
+        </LazyWidget>
+      );
     case "map":
       return (
-        <MapWidgetView
-          widget={widget}
-          refreshIntervalMs={refreshIntervalMs}
-          editable={editable}
-        />
+        <LazyWidget>
+          <MapWidgetView
+            widget={widget}
+            refreshIntervalMs={refreshIntervalMs}
+            editable={editable}
+          />
+        </LazyWidget>
       );
     case "composite-widget":
     case "panel":

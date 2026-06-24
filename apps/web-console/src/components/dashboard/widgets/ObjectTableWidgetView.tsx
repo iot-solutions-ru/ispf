@@ -1,13 +1,19 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { fetchObjects, fetchVariables } from "../../../api";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { fetchObjects } from "../../../api";
 import type { ObjectTableColumn, ObjectTableWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { VariableDto } from "../../../types";
+import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
 import { parseJsonObject, parseWidgetJsonArray, matchesNamePattern, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+
+const VIRTUALIZE_ROW_THRESHOLD = 50;
+const TABLE_ROW_ESTIMATE_PX = 36;
 
 interface ObjectTableWidgetViewProps {
   widget: ObjectTableWidget;
@@ -59,6 +65,58 @@ export default function ObjectTableWidgetView({
     }
   }, [rows, editable, selectedPath, setSelection, widget.selectionKey]);
 
+  const rowPaths = useMemo(() => rows.map((row) => row.path), [rows]);
+  const variablesBatch = useVariablesBatchQuery(rowPaths, refreshIntervalMs, Boolean(widget.parentPath));
+  const tableWrapRef = useRef<HTMLDivElement>(null);
+  const shouldVirtualize = rows.length >= VIRTUALIZE_ROW_THRESHOLD;
+  const columnCount = parsedColumns.length + 1;
+
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableWrapRef.current,
+    estimateSize: () => TABLE_ROW_ESTIMATE_PX,
+    overscan: 10,
+    enabled: shouldVirtualize,
+  });
+
+  const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
+
+  const renderRow = (obj: (typeof rows)[number]) => (
+    <ObjectTableRow
+      key={obj.path}
+      path={obj.path}
+      displayName={obj.displayName}
+      columns={parsedColumns}
+      variables={variablesBatch.data?.[obj.path]}
+      selected={selectedPath === obj.path}
+      onSelect={() => {
+        if (editable) {
+          return;
+        }
+        const targetKey = widget.rowSelectionKey ?? widget.selectionKey;
+        const openOptions = {
+          selection: targetKey ? { [targetKey]: obj.path } : undefined,
+          params: parseJsonObject(widget.rowParamsJson),
+        };
+        if (widget.selectionKey) {
+          setSelection(widget.selectionKey, obj.path);
+        }
+        triggerDashboardOpen(
+          widget.rowOpenMode,
+          widget.rowTargetDashboard,
+          widget.title,
+          { navigateToDashboard, openDashboardModal },
+          openOptions
+        );
+      }}
+    />
+  );
+
   return (
     <DashWidgetShell
       title={widget.title}
@@ -71,7 +129,7 @@ export default function ObjectTableWidgetView({
       ) : children.isLoading ? (
         <p className="hint">{t("common:action.loading")}</p>
       ) : (
-        <div className="dash-table-wrap" style={styles.body}>
+        <div className="dash-table-wrap" ref={tableWrapRef} style={styles.body}>
           <table className="dash-object-table" style={styles.table}>
             <thead>
               <tr>
@@ -82,39 +140,19 @@ export default function ObjectTableWidgetView({
               </tr>
             </thead>
             <tbody>
-              {rows.map((obj) => (
-                <ObjectTableRow
-                  key={obj.path}
-                  path={obj.path}
-                  displayName={obj.displayName}
-                  columns={parsedColumns}
-                  selected={selectedPath === obj.path}
-                  refreshIntervalMs={refreshIntervalMs}
-                  onSelect={() => {
-                    if (editable) {
-                      return;
-                    }
-                    const targetKey =
-                      widget.rowSelectionKey ?? widget.selectionKey;
-                    const openOptions = {
-                      selection: targetKey
-                        ? { [targetKey]: obj.path }
-                        : undefined,
-                      params: parseJsonObject(widget.rowParamsJson),
-                    };
-                    if (widget.selectionKey) {
-                      setSelection(widget.selectionKey, obj.path);
-                    }
-                    triggerDashboardOpen(
-                      widget.rowOpenMode,
-                      widget.rowTargetDashboard,
-                      widget.title,
-                      { navigateToDashboard, openDashboardModal },
-                      openOptions
-                    );
-                  }}
-                />
-              ))}
+              {shouldVirtualize && paddingTop > 0 && (
+                <tr aria-hidden="true" className="dash-table-spacer">
+                  <td colSpan={columnCount} style={{ height: paddingTop, padding: 0, border: 0 }} />
+                </tr>
+              )}
+              {shouldVirtualize
+                ? virtualRows.map((virtualRow) => renderRow(rows[virtualRow.index]))
+                : rows.map((obj) => renderRow(obj))}
+              {shouldVirtualize && paddingBottom > 0 && (
+                <tr aria-hidden="true" className="dash-table-spacer">
+                  <td colSpan={columnCount} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -127,23 +165,17 @@ function ObjectTableRow({
   path,
   displayName,
   columns,
+  variables,
   selected,
-  refreshIntervalMs,
   onSelect,
 }: {
   path: string;
   displayName: string;
   columns: ObjectTableColumn[];
+  variables?: VariableDto[];
   selected: boolean;
-  refreshIntervalMs: number;
   onSelect: () => void;
 }) {
-  const vars = useQuery({
-    queryKey: ["variables", path],
-    queryFn: () => fetchVariables(path),
-    refetchInterval: refreshIntervalMs,
-  });
-
   return (
     <tr
       className={selected ? "selected" : ""}
@@ -162,7 +194,7 @@ function ObjectTableRow({
             raw = displayName;
           }
         } else {
-          const variable = vars.data?.find((v) => v.name === col.variable);
+          const variable = variables?.find((v) => v.name === col.variable);
           raw = readFieldValue(
             variable?.value?.rows[0],
             objectTableValueField(col)

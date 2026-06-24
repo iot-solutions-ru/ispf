@@ -75,7 +75,7 @@ public class TimescaleHypertableInitializer {
         }
     }
 
-    private boolean isPostgreSql() {
+    public boolean isPostgreSql() {
         try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
             String product = connection.getMetaData().getDatabaseProductName();
             return product != null && product.toLowerCase().contains("postgresql");

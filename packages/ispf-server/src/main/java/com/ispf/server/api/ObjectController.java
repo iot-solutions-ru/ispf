@@ -60,6 +60,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -426,6 +427,43 @@ public class ObjectController {
         }
         PlatformObject node = objectManager.require(path);
         return node.variables().values().stream().map(VariableDto::from).toList();
+    }
+
+    @GetMapping("/variables/batch")
+    public Map<String, List<VariableDto>> listVariablesBatch(
+            @RequestParam String paths,
+            Authentication authentication
+    ) {
+        String[] pathArray = paths.split(",");
+        if (pathArray.length > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Max 50 paths per batch request");
+        }
+        Map<String, List<VariableDto>> result = new LinkedHashMap<>();
+        for (String rawPath : pathArray) {
+            String path = rawPath.trim();
+            if (path.isBlank()) {
+                continue;
+            }
+            if (!tenantScopeService.isPathVisible(path, authentication)) {
+                continue;
+            }
+            if (!objectAccessService.canRead(path, authentication)) {
+                continue;
+            }
+            try {
+                var proxy = federationProxyService.resolve(path);
+                if (proxy.isPresent()) {
+                    JsonNode json = federationProxyService.proxyVariables(proxy.get());
+                    result.put(path, objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { }));
+                } else {
+                    PlatformObject node = objectManager.require(path);
+                    result.put(path, node.variables().values().stream().map(VariableDto::from).toList());
+                }
+            } catch (ObjectNotFoundException e) {
+                // omit paths that do not exist
+            }
+        }
+        return result;
     }
 
     @GetMapping("/by-path/variables/detail")

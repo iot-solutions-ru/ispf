@@ -1,9 +1,10 @@
 package com.ispf.server.bootstrap;
 
-import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.federation.FederationPaths;
+import com.ispf.server.security.PlatformUserService;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -15,17 +16,21 @@ import java.util.UUID;
 public class PlatformBootstrap {
 
     public void initialize(ObjectTree tree) {
-        register(tree, "root.platform", ObjectType.PLATFORM, null);
+        register(tree, PlatformCatalogSortOrder.PLATFORM_ROOT, ObjectType.PLATFORM, null);
         register(tree, "root.tenant", ObjectType.TENANT, null);
+
+        register(tree, PlatformUserService.SECURITY_ROOT, ObjectType.SECURITY, "security-folder-v1");
         register(tree, "root.platform.devices", ObjectType.DEVICES, null);
+        register(tree, "root.platform.alert-rules", ObjectType.ALERT_RULES, null);
+        register(tree, "root.platform.operator-apps", ObjectType.OPERATOR_APPS, "app-folder-v1");
+        register(tree, "root.platform.dashboards", ObjectType.DASHBOARDS, null);
 
         registerCatalogFolder(tree, "root.platform.relative-models");
-        registerCatalogFolder(tree, "root.platform.instance-types");
         registerCatalogFolder(tree, "root.platform.absolute-models");
-        registerCatalogFolder(tree, "root.platform.instances");
-
-        register(tree, "root.platform.dashboards", ObjectType.DASHBOARDS, null);
+        registerCatalogFolder(tree, "root.platform.instance-types");
         register(tree, "root.platform.reports", ObjectType.REPORTS, null);
+        register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
+        register(tree, "root.platform.workflows", ObjectType.WORKFLOWS, null);
 
         PlatformObject demoDevice = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -59,11 +64,8 @@ public class PlatformBootstrap {
         );
         tree.register(snmpDashboard);
 
-        register(tree, "root.platform.workflows", ObjectType.WORKFLOWS, null);
-        register(tree, "root.platform.alert-rules", ObjectType.ALERT_RULES, null);
-        register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
         register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
-        register(tree, "root.platform.operator-apps", ObjectType.OPERATOR_APPS, "app-folder-v1");
+        registerCatalogFolder(tree, "root.platform.instances");
         register(tree, FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
 
         PlatformObject demoWorkflow = new PlatformObject(
@@ -80,13 +82,16 @@ public class PlatformBootstrap {
     private static void register(ObjectTree tree, String path, ObjectType type, String templateId) {
         SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
                 .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
+        int sortOrder = PlatformCatalogSortOrder.forPath(path)
+                .orElseThrow(() -> new IllegalStateException("Missing default sort order: " + path));
         tree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
                 path,
                 type,
                 entry.displayName(),
                 entry.description(),
-                templateId
+                templateId,
+                sortOrder
         ));
     }
 
@@ -96,13 +101,16 @@ public class PlatformBootstrap {
         }
         SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
                 .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
+        int sortOrder = PlatformCatalogSortOrder.forPath(path)
+                .orElseThrow(() -> new IllegalStateException("Missing default sort order: " + path));
         tree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
                 path,
                 ObjectType.MODEL,
                 entry.displayName(),
                 entry.description(),
-                null
+                null,
+                sortOrder
         ));
     }
 }

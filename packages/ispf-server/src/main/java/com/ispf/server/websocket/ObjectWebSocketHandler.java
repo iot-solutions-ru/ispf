@@ -8,6 +8,8 @@ import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -22,13 +24,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Component
 public class ObjectWebSocketHandler extends TextWebSocketHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(ObjectWebSocketHandler.class);
     private static final String SUBSCRIBE_ATTR = "subscribedPaths";
 
     private final Set<WebSocketSession> sessions = ConcurrentHashMap.newKeySet();
+    /** Sessions with empty subscription — receive all object-change events. */
+    private final Set<WebSocketSession> broadcastSessions = ConcurrentHashMap.newKeySet();
+    /** Reverse index: subscribed path → sessions interested in that path. */
+    private final ConcurrentHashMap<String, Set<WebSocketSession>> pathSubscriptions = new ConcurrentHashMap<>();
+    private final ExecutorService sendExecutor = Executors.newFixedThreadPool(2, runnable -> {
+        Thread thread = new Thread(runnable, "ws-object-send");
+        thread.setDaemon(true);
+        return thread;
+    });
     private final ObjectMapper objectMapper;
     private final FederationSubscribePollService federationSubscribePollService;
     private final ObjectPresenceService presenceService;
@@ -52,11 +66,13 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
+        broadcastSessions.add(session);
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session);
+        removeSessionFromIndex(session);
         Object username = session.getAttributes().get("username");
         Object path = session.getAttributes().get("presencePath");
         if (username instanceof String user && path instanceof String presencePath) {
@@ -147,6 +163,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             });
         }
         session.getAttributes().put(SUBSCRIBE_ATTR, paths);
+        updateSubscriptionIndex(session, paths);
         refreshFederationPollSubscriptions();
     }
 
@@ -179,7 +196,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     @EventListener
-    public void onObjectChange(ObjectChangeEvent event) throws IOException {
+    public void onObjectChange(ObjectChangeEvent event) {
         Long revision = event.revision();
         if (revision == null) {
             try {
@@ -199,36 +216,78 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         if (event.changedBy() != null) {
             message.put("changedBy", event.changedBy());
         }
-        TextMessage payload = new TextMessage(objectMapper.writeValueAsString(message));
-        for (WebSocketSession session : sessions) {
+        TextMessage payload;
+        try {
+            payload = new TextMessage(objectMapper.writeValueAsString(message));
+        } catch (tools.jackson.core.JacksonException e) {
+            log.warn("Failed to serialize object-change message for {}: {}", event.path(), e.getMessage());
+            return;
+        }
+        for (WebSocketSession session : sessionsForEvent(event.path())) {
             if (!session.isOpen()) {
                 continue;
             }
-            if (!matchesSubscription(session, event.path())) {
-                continue;
-            }
-            session.sendMessage(payload);
+            sendAsync(session, payload);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean matchesSubscription(WebSocketSession session, String eventPath) {
-        Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
-        if (!(raw instanceof Set<?> subscribed) || subscribed.isEmpty()) {
-            return true;
-        }
-        for (Object entry : subscribed) {
-            if (entry instanceof String path && matchesPath(eventPath, path)) {
-                return true;
+    private void sendAsync(WebSocketSession session, TextMessage payload) {
+        sendExecutor.execute(() -> {
+            try {
+                if (!session.isOpen()) {
+                    return;
+                }
+                synchronized (session) {
+                    if (session.isOpen()) {
+                        session.sendMessage(payload);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("WebSocket send failed for session {}: {}", session.getId(), e.getMessage());
             }
-        }
-        return false;
+        });
     }
 
-    private static boolean matchesPath(String eventPath, String subscribedPath) {
-        return eventPath.equals(subscribedPath)
-                || eventPath.startsWith(subscribedPath + ".")
-                || subscribedPath.startsWith(eventPath + ".");
+    private Set<WebSocketSession> sessionsForEvent(String eventPath) {
+        Set<WebSocketSession> targets = new HashSet<>(broadcastSessions);
+        if (pathSubscriptions.isEmpty()) {
+            return targets;
+        }
+        String prefix = "";
+        for (String part : eventPath.split("\\.")) {
+            prefix = prefix.isEmpty() ? part : prefix + "." + part;
+            Set<WebSocketSession> subs = pathSubscriptions.get(prefix);
+            if (subs != null) {
+                targets.addAll(subs);
+            }
+        }
+        String childPrefix = eventPath + ".";
+        for (Map.Entry<String, Set<WebSocketSession>> entry : pathSubscriptions.entrySet()) {
+            if (entry.getKey().startsWith(childPrefix)) {
+                targets.addAll(entry.getValue());
+            }
+        }
+        return targets;
+    }
+
+    private void updateSubscriptionIndex(WebSocketSession session, Set<String> paths) {
+        removeSessionFromIndex(session);
+        if (paths.isEmpty()) {
+            broadcastSessions.add(session);
+            return;
+        }
+        broadcastSessions.remove(session);
+        for (String path : paths) {
+            pathSubscriptions.computeIfAbsent(path, ignored -> ConcurrentHashMap.newKeySet()).add(session);
+        }
+    }
+
+    private void removeSessionFromIndex(WebSocketSession session) {
+        broadcastSessions.remove(session);
+        for (Set<WebSocketSession> subs : pathSubscriptions.values()) {
+            subs.remove(session);
+        }
+        pathSubscriptions.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,7 @@
+import { useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { SpreadsheetWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
@@ -9,6 +11,9 @@ import { cloneRecord } from "../../../utils/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { useEditorDemoRows } from "../widgetDemoPreview";
+
+const VIRTUALIZE_ROW_THRESHOLD = 50;
+const TABLE_ROW_ESTIMATE_PX = 36;
 
 interface SpreadsheetWidgetViewProps {
   widget: SpreadsheetWidget;
@@ -24,6 +29,7 @@ export default function SpreadsheetWidgetView({
   const { t } = useTranslation(["widgets", "common"]);
   const styles = useWidgetStyles(widget.stylesJson);
   const queryClient = useQueryClient();
+  const tableWrapRef = useRef<HTMLDivElement>(null);
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const { variable, isLoading } = useBoundVariable(
     objectPath,
@@ -43,6 +49,22 @@ export default function SpreadsheetWidgetView({
       ? Object.keys(displayRows[0]).filter((k) => k !== "schema")
       : [];
 
+  const shouldVirtualize = displayRows.length >= VIRTUALIZE_ROW_THRESHOLD;
+  const rowVirtualizer = useVirtualizer({
+    count: displayRows.length,
+    getScrollElement: () => tableWrapRef.current,
+    estimateSize: () => TABLE_ROW_ESTIMATE_PX,
+    overscan: 10,
+    enabled: shouldVirtualize,
+  });
+
+  const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
+  const paddingBottom =
+    virtualRows.length > 0
+      ? rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end
+      : 0;
+
   const mutation = useMutation({
     mutationFn: async (nextRows: Array<Record<string, unknown>>) => {
       if (!variable?.value) throw new Error("no variable");
@@ -53,6 +75,28 @@ export default function SpreadsheetWidgetView({
       queryClient.invalidateQueries({ queryKey: ["variables", objectPath] });
     },
   });
+
+  const renderRow = (row: Record<string, unknown>, ri: number) => (
+    <tr key={ri}>
+      {columns.map((col) => (
+        <td key={col}>
+          {widget.editable && !editMode && !isDemo ? (
+            <input
+              defaultValue={String(readFieldValue(row, col) ?? "")}
+              onBlur={(e) => {
+                const next = rows.map((r, i) =>
+                  i === ri ? { ...r, [col]: e.target.value } : r
+                );
+                mutation.mutate(next);
+              }}
+            />
+          ) : (
+            String(readFieldValue(row, col) ?? "—")
+          )}
+        </td>
+      ))}
+    </tr>
+  );
 
   return (
     <DashWidgetShell
@@ -65,7 +109,7 @@ export default function SpreadsheetWidgetView({
       {isLoading && !isDemo ? (
         <p className="hint">{t("common:action.loading")}</p>
       ) : (
-        <div className="dash-table-wrap" style={styles.body}>
+        <div className="dash-table-wrap" ref={tableWrapRef} style={styles.body}>
           <table className="dash-object-table">
             <thead>
               <tr>
@@ -75,27 +119,21 @@ export default function SpreadsheetWidgetView({
               </tr>
             </thead>
             <tbody>
-              {displayRows.map((row, ri) => (
-                <tr key={ri}>
-                  {columns.map((col) => (
-                    <td key={col}>
-                      {widget.editable && !editMode && !isDemo ? (
-                        <input
-                          defaultValue={String(readFieldValue(row, col) ?? "")}
-                          onBlur={(e) => {
-                            const next = rows.map((r, i) =>
-                              i === ri ? { ...r, [col]: e.target.value } : r
-                            );
-                            mutation.mutate(next);
-                          }}
-                        />
-                      ) : (
-                        String(readFieldValue(row, col) ?? "—")
-                      )}
-                    </td>
-                  ))}
+              {shouldVirtualize && paddingTop > 0 && (
+                <tr aria-hidden="true" className="dash-table-spacer">
+                  <td colSpan={columns.length || 1} style={{ height: paddingTop, padding: 0, border: 0 }} />
                 </tr>
-              ))}
+              )}
+              {shouldVirtualize
+                ? virtualRows.map((virtualRow) =>
+                    renderRow(displayRows[virtualRow.index], virtualRow.index)
+                  )
+                : displayRows.map((row, ri) => renderRow(row, ri))}
+              {shouldVirtualize && paddingBottom > 0 && (
+                <tr aria-hidden="true" className="dash-table-spacer">
+                  <td colSpan={columns.length || 1} style={{ height: paddingBottom, padding: 0, border: 0 }} />
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

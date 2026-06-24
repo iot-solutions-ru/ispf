@@ -9,12 +9,28 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 
 @Configuration
 @EnableWebSecurity
 @Profile("!local & !test")
 @EnableConfigurationProperties(IspfSecurityProperties.class)
 public class SecurityConfig {
+
+    @Bean
+    BearerTokenResolver bearerTokenResolver() {
+        return request -> {
+            String authorization = request.getHeader("Authorization");
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                return authorization.substring("Bearer ".length()).trim();
+            }
+            String token = request.getParameter("token");
+            if (token != null && !token.isBlank()) {
+                return token.trim();
+            }
+            return null;
+        };
+    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
@@ -33,6 +49,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(IspfAuthorizationRules::apply)
                 .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenResolver(bearerTokenResolver())
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
 
         return http.build();

@@ -1,4 +1,4 @@
-import { getAuthHeaders } from "../auth/session";
+import { getAuthHeaders, getStoredSession } from "../auth/session";
 import { parseApiError } from "../utils/parseApiError";
 
 export interface AiValidationResult {
@@ -293,6 +293,34 @@ export function fetchAgentRunProgress(sessionId: string): Promise<AiAgentRunProg
     }
     return response.json();
   });
+}
+
+export function subscribeAgentRunProgress(
+  sessionId: string,
+  onProgress: (progress: AiAgentRunProgress) => void,
+  onError?: (error: Event) => void
+): () => void {
+  const base = `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/progress/stream`;
+  const token = getStoredSession()?.token;
+  const url = token ? `${base}?${new URLSearchParams({ token }).toString()}` : base;
+  const source = new EventSource(url);
+
+  source.addEventListener("progress", (event) => {
+    try {
+      const progress = JSON.parse((event as MessageEvent).data) as AiAgentRunProgress;
+      onProgress(progress);
+    } catch {
+      // ignore malformed SSE payloads
+    }
+  });
+
+  source.onerror = (error) => {
+    onError?.(error);
+  };
+
+  return () => {
+    source.close();
+  };
 }
 
 export function cancelAgentRun(

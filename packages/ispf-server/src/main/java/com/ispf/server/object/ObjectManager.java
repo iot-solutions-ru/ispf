@@ -9,6 +9,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.bootstrap.PlatformBootstrap;
+import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -59,6 +60,7 @@ public class ObjectManager {
     private final ObjectProvider<ModelEngine> modelEngine;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectConfigAuditService configAuditService;
+    private final RuntimeTelemetryCoalescer telemetryCoalescer;
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -71,7 +73,8 @@ public class ObjectManager {
             ObjectProvider<ModelPersistenceService> modelPersistence,
             ObjectProvider<ModelEngine> modelEngine,
             ApplicationEventPublisher eventPublisher,
-            ObjectConfigAuditService configAuditService
+            ObjectConfigAuditService configAuditService,
+            RuntimeTelemetryCoalescer telemetryCoalescer
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -83,6 +86,7 @@ public class ObjectManager {
         this.modelEngine = modelEngine;
         this.eventPublisher = eventPublisher;
         this.configAuditService = configAuditService;
+        this.telemetryCoalescer = telemetryCoalescer;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -139,7 +143,7 @@ public class ObjectManager {
                 displayName,
                 description,
                 templateId,
-                nextSortOrder(parentPath)
+                PlatformCatalogSortOrder.forPath(fullPath).orElseGet(() -> nextSortOrder(parentPath))
         );
         objectTree.register(node);
         node.setRevision(1L);
@@ -279,7 +283,15 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
-        return setRuntimeVariableValue(path, name, value, true);
+        PlatformObject node = objectTree.require(path);
+        Variable variable = node.getVariable(name).orElseGet(() -> {
+            Variable created = new Variable(name, value.schema(), true, false, null);
+            node.addVariable(created);
+            return created;
+        });
+        variable.setComputedValue(value);
+        telemetryCoalescer.recordUpdate(path, name, value);
+        return variable;
     }
 
     /** In-memory variable update for high-frequency driver/runtime data (no DB flush per tick). */
@@ -758,7 +770,8 @@ public class ObjectManager {
                 template.variableName(),
                 Instant.now(),
                 node.revision(),
-                node.lastChangedBy()
+                node.lastChangedBy(),
+                false
         ));
     }
 

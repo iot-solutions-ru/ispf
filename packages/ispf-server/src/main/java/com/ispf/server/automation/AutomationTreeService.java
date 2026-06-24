@@ -50,6 +50,7 @@ public class AutomationTreeService {
     private final AlertRuleRepository legacyAlertRuleRepository;
     private final EventCorrelatorRepository legacyCorrelatorRepository;
     private final CorrelatorHitRepository correlatorHitRepository;
+    private final AutomationRuleIndex ruleIndex;
 
     public AutomationTreeService(
             ObjectManager objectManager,
@@ -57,7 +58,8 @@ public class AutomationTreeService {
             ModelEngine modelEngine,
             AlertRuleRepository legacyAlertRuleRepository,
             EventCorrelatorRepository legacyCorrelatorRepository,
-            CorrelatorHitRepository correlatorHitRepository
+            CorrelatorHitRepository correlatorHitRepository,
+            AutomationRuleIndex ruleIndex
     ) {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
@@ -65,6 +67,7 @@ public class AutomationTreeService {
         this.legacyAlertRuleRepository = legacyAlertRuleRepository;
         this.legacyCorrelatorRepository = legacyCorrelatorRepository;
         this.correlatorHitRepository = correlatorHitRepository;
+        this.ruleIndex = ruleIndex;
     }
 
     @Transactional
@@ -154,11 +157,7 @@ public class AutomationTreeService {
     }
 
     public List<AlertRule> findEnabledAlertRules(String targetObjectPath, String watchVariable) {
-        return listAlertRules().stream()
-                .filter(rule -> rule.enabled())
-                .filter(rule -> targetObjectPath.equals(rule.objectPath()))
-                .filter(rule -> watchVariable.equals(rule.watchVariable()))
-                .toList();
+        return ruleIndex.findAlertRules(targetObjectPath, watchVariable);
     }
 
     @Transactional(readOnly = true)
@@ -182,7 +181,9 @@ public class AutomationTreeService {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
                 payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null);
-        return getAlertRule(path);
+        AlertRule rule = getAlertRule(path);
+        ruleIndex.rebuild();
+        return rule;
     }
 
     @Transactional
@@ -221,7 +222,9 @@ public class AutomationTreeService {
             setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
         }
         objectManager.persistNodeTree(path);
-        return getAlertRule(path);
+        AlertRule rule = getAlertRule(path);
+        ruleIndex.rebuild();
+        return rule;
     }
 
     @Transactional
@@ -266,27 +269,7 @@ public class AutomationTreeService {
     }
 
     public List<EventCorrelator> findEnabledCorrelatorsForEvent(String eventName) {
-        return listCorrelators().stream()
-                .filter(c -> c.enabled())
-                .filter(c -> correlatorWatchesEvent(c, eventName))
-                .toList();
-    }
-
-    private static boolean correlatorWatchesEvent(EventCorrelator correlator, String eventName) {
-        if (eventName.equals(correlator.eventName())) {
-            return true;
-        }
-        if (correlator.secondEventName() == null || correlator.secondEventName().isBlank()) {
-            return false;
-        }
-        if (correlator.patternType() == CorrelatorPatternType.EVENT_CHAIN) {
-            for (String part : correlator.secondEventName().split(",")) {
-                if (eventName.equals(part.trim())) {
-                    return true;
-                }
-            }
-        }
-        return eventName.equals(correlator.secondEventName());
+        return ruleIndex.findCorrelatorsForEvent(eventName);
     }
 
     @Transactional
@@ -309,7 +292,9 @@ public class AutomationTreeService {
         createCorrelatorNode(path, name, targetObjectPath, patternType, eventName, secondEventName,
                 windowSeconds, minOccurrences, cooldownSeconds, sequenceGapSeconds, actionType, actionTarget,
                 payloadFilterExpr, enabled, null);
-        return getCorrelator(path);
+        EventCorrelator correlator = getCorrelator(path);
+        ruleIndex.rebuild();
+        return correlator;
     }
 
     @Transactional
@@ -370,7 +355,9 @@ public class AutomationTreeService {
             setBoolean(path, "enabled", enabled);
         }
         objectManager.persistNodeTree(path);
-        return getCorrelator(path);
+        EventCorrelator correlator = getCorrelator(path);
+        ruleIndex.rebuild();
+        return correlator;
     }
 
     @Transactional
@@ -383,6 +370,7 @@ public class AutomationTreeService {
     public void deleteAlertRule(String path) {
         requireAlertRule(path);
         objectManager.delete(path);
+        ruleIndex.rebuild();
     }
 
     @Transactional
@@ -390,6 +378,7 @@ public class AutomationTreeService {
         requireCorrelator(path);
         correlatorHitRepository.deleteByCorrelatorId(path);
         objectManager.delete(path);
+        ruleIndex.rebuild();
     }
 
     @Transactional

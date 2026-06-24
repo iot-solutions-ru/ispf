@@ -17,9 +17,11 @@ public final class IspfAuthorizationRules {
                 "/api/v1/auth/config",
                 "/api/v1/auth/me",
                 "/actuator/health",
-                "/actuator/prometheus",
                 "/ws/**"
         ).permitAll();
+
+        auth.requestMatchers("/actuator/prometheus")
+                .hasRole(IspfRoles.ADMIN);
 
         auth.requestMatchers("/api/v1/platform/metrics", "/api/v1/platform/function-invocations",
                         "/api/v1/platform/installation-id")

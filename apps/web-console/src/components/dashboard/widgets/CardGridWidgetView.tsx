@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { fetchObjects, fetchVariables } from "../../../api";
+import { fetchObjects } from "../../../api";
 import type { CardGridWidget } from "../../../types/dashboard";
 import { readFieldValue } from "../../../types/dashboard";
+import type { VariableDto } from "../../../types";
+import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { parseJsonObject } from "../dashboardUtils";
 import { triggerDashboardOpen, useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
@@ -57,6 +59,14 @@ export default function CardGridWidgetView({
     }, openOptions);
   };
 
+  const cardObjects = children.data ?? [];
+  const cardPaths = useMemo(() => cardObjects.map((obj) => obj.path), [cardObjects]);
+  const variablesBatch = useVariablesBatchQuery(
+    cardPaths,
+    refreshIntervalMs,
+    Boolean(widget.parentPath)
+  );
+
   const navigable = Boolean(widget.cardTargetDashboard?.trim()) && !editable;
 
   return (
@@ -70,13 +80,12 @@ export default function CardGridWidgetView({
         <p className="hint">{t("view.specifyParentPath")}</p>
       ) : (
         <div className="dash-card-grid" style={styles.body}>
-          {(children.data ?? []).map((obj) => (
+          {cardObjects.map((obj) => (
             <ObjectCard
               key={obj.path}
-              path={obj.path}
               title={obj.displayName}
               variables={variables}
-              refreshIntervalMs={refreshIntervalMs}
+              objectVariables={variablesBatch.data?.[obj.path]}
               navigable={navigable}
               onOpen={() => handleCardClick(obj.path)}
             />
@@ -88,26 +97,18 @@ export default function CardGridWidgetView({
 }
 
 function ObjectCard({
-  path,
   title,
   variables,
-  refreshIntervalMs,
+  objectVariables,
   navigable,
   onOpen,
 }: {
-  path: string;
   title: string;
   variables: string[];
-  refreshIntervalMs: number;
+  objectVariables?: VariableDto[];
   navigable: boolean;
   onOpen: () => void;
 }) {
-  const vars = useQuery({
-    queryKey: ["variables", path],
-    queryFn: () => fetchVariables(path),
-    refetchInterval: refreshIntervalMs,
-  });
-
   return (
     <article
       className={`dash-object-card ${navigable ? "clickable" : ""}`}
@@ -127,7 +128,7 @@ function ObjectCard({
       <h4>{title}</h4>
       <dl>
         {variables.map((name) => {
-          const variable = vars.data?.find((v) => v.name === name);
+          const variable = objectVariables?.find((v) => v.name === name);
           const raw = readFieldValue(variable?.value?.rows[0], "value");
           return (
             <div key={name} className="dash-card-row">

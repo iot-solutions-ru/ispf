@@ -26,6 +26,10 @@ ispf:
     enabled: false
   variable-history:
     min-interval-ms: 0
+  runtime-telemetry:
+    enabled: false
+  object-change:
+    async-enabled: false
   platform:
     update:
       check-enabled: false
