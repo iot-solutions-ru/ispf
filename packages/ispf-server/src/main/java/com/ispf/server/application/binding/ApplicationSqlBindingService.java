@@ -5,10 +5,12 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.alert.AlertRuleService;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.object.ObjectManager;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,17 +31,20 @@ public class ApplicationSqlBindingService {
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationDataStore dataStore;
     private final ObjectManager objectManager;
+    private final AlertRuleService alertRuleService;
 
     public ApplicationSqlBindingService(
             ApplicationSqlBindingStore store,
             ApplicationSchemaSession schemaSession,
             ApplicationDataStore dataStore,
-            ObjectManager objectManager
+            ObjectManager objectManager,
+            @Lazy AlertRuleService alertRuleService
     ) {
         this.store = store;
         this.schemaSession = schemaSession;
         this.dataStore = dataStore;
         this.objectManager = objectManager;
+        this.alertRuleService = alertRuleService;
     }
 
     public void deploy(String appId, DeploySqlBindingRequest request) {
@@ -138,6 +143,9 @@ public class ApplicationSqlBindingService {
                 objectManager.setSystemVariableValue(binding.objectPath(), binding.variableName(), record)
         );
         store.markRefreshed(binding.id());
+        schemaSession.runWithPlatformCatalog(() ->
+                alertRuleService.processVariableChange(binding.objectPath(), binding.variableName())
+        );
     }
 
     private void ensureVariable(String objectPath, String variableName) {

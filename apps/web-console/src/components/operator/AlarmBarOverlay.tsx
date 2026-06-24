@@ -11,6 +11,7 @@ export interface AlarmBarOverlayProps {
   onOpenDashboard: (alarm: ActiveOperatorAlarm) => void;
   onOpenReport: (alarm: ActiveOperatorAlarm) => void;
   onOpenObject: (alarm: ActiveOperatorAlarm) => void;
+  onPrimaryAction: (alarm: ActiveOperatorAlarm) => void;
 }
 
 function AlarmBarItem({
@@ -22,6 +23,7 @@ function AlarmBarItem({
   onOpenDashboard,
   onOpenReport,
   onOpenObject,
+  onPrimaryAction,
 }: {
   alarm: ActiveOperatorAlarm;
   showMute: boolean;
@@ -31,10 +33,13 @@ function AlarmBarItem({
   onOpenDashboard: () => void;
   onOpenReport: () => void;
   onOpenObject: () => void;
+  onPrimaryAction: () => void;
 }) {
   const { t } = useTranslation("operator");
   const isCritical = alarm.event.level === "CRITICAL";
   const { colors } = alarm;
+  const showPrimaryAction = Boolean(alarm.primaryActionLabel && alarm.dashboardPath);
+  const showSecondary = !alarm.hideSecondaryActions;
 
   return (
     <div
@@ -63,19 +68,26 @@ function AlarmBarItem({
         </dl>
       </div>
       <div className="operator-alarm-bar-actions">
-        {alarm.dashboardPath && (
+        {showPrimaryAction && (
+          <button type="button" className="btn primary operator-alarm-bar-btn" onClick={onPrimaryAction}>
+            {alarm.primaryActionLabel}
+          </button>
+        )}
+        {showSecondary && alarm.dashboardPath && (
           <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenDashboard}>
             {t("alarmBar.dashboard")}
           </button>
         )}
-        {alarm.reportPath && (
+        {showSecondary && alarm.reportPath && (
           <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenReport}>
             {t("alarmBar.report")}
           </button>
         )}
-        <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenObject}>
-          {t("alarmBar.toObject")}
-        </button>
+        {showSecondary && (
+          <button type="button" className="btn operator-alarm-bar-btn" onClick={onOpenObject}>
+            {t("alarmBar.toObject")}
+          </button>
+        )}
         {showMute && (
           <button
             type="button"
@@ -86,9 +98,11 @@ function AlarmBarItem({
             {muted ? "🔇" : "🔊"}
           </button>
         )}
-        <button type="button" className="btn primary operator-alarm-bar-btn" onClick={onDismiss}>
-          {t("alarmBar.acknowledge")}
-        </button>
+        {!alarm.hideAcknowledge && (
+          <button type="button" className="btn primary operator-alarm-bar-btn" onClick={onDismiss}>
+            {t("alarmBar.acknowledge")}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -104,6 +118,7 @@ export default function AlarmBarOverlay({
   onOpenDashboard,
   onOpenReport,
   onOpenObject,
+  onPrimaryAction,
 }: AlarmBarOverlayProps) {
   if (!enabled || alarms.length === 0) {
     return null;
@@ -122,6 +137,7 @@ export default function AlarmBarOverlay({
           onOpenDashboard={() => onOpenDashboard(alarm)}
           onOpenReport={() => onOpenReport(alarm)}
           onOpenObject={() => onOpenObject(alarm)}
+          onPrimaryAction={() => onPrimaryAction(alarm)}
         />
       ))}
     </div>

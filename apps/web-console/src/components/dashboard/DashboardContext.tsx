@@ -31,10 +31,13 @@ export function mergeSession(
 
 export interface DashboardContextValue extends DashboardSession {
   operatorMode?: boolean;
+  /** Dashboard is rendered inside a modal overlay */
+  embeddedModal?: boolean;
   setSelection: (key: string, path: string) => void;
   setParams: (patch: Record<string, unknown>) => void;
   navigateToDashboard: (path: string, options?: OpenDashboardOptions) => void;
   openDashboardModal: (path: string, title?: string, options?: OpenDashboardOptions) => void;
+  closeDashboardModal: () => void;
 }
 
 const noop = () => {};
@@ -46,6 +49,7 @@ const defaultValue: DashboardContextValue = {
   setParams: noop,
   navigateToDashboard: noop,
   openDashboardModal: noop,
+  closeDashboardModal: noop,
 };
 
 const DashboardContext = createContext<DashboardContextValue>(defaultValue);
@@ -54,6 +58,8 @@ interface DashboardProviderProps {
   children: ReactNode;
   value?: DashboardContextValue;
   operatorMode?: boolean;
+  embeddedModal?: boolean;
+  closeDashboardModal?: () => void;
   session?: DashboardSession;
   selection?: Record<string, string>;
   params?: Record<string, unknown>;
@@ -68,6 +74,8 @@ export function DashboardProvider({
   children,
   value,
   operatorMode = false,
+  embeddedModal = false,
+  closeDashboardModal,
   session: controlledSession,
   selection: controlledSelection,
   params: controlledParams,
@@ -117,12 +125,14 @@ export function DashboardProvider({
 
     return {
       operatorMode,
+      embeddedModal,
       selection: session.selection,
       params: session.params,
       setSelection,
       setParams,
       navigateToDashboard: onNavigateDashboard ?? noop,
       openDashboardModal: onOpenDashboardModal ?? noop,
+      closeDashboardModal: closeDashboardModal ?? noop,
     };
   }, [
     value,
@@ -136,6 +146,8 @@ export function DashboardProvider({
     onNavigateDashboard,
     onOpenDashboardModal,
     operatorMode,
+    embeddedModal,
+    closeDashboardModal,
   ]);
 
   return <DashboardContext.Provider value={derivedValue}>{children}</DashboardContext.Provider>;

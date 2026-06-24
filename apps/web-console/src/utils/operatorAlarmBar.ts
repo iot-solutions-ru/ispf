@@ -81,12 +81,30 @@ export function matchAlarmRule(
   return null;
 }
 
-function payloadValue(event: ObjectEvent, key: string): unknown {
+export function payloadValue(event: ObjectEvent, key: string): unknown {
   const row = event.payload?.rows?.[0];
   if (!row) {
     return undefined;
   }
   return row[key];
+}
+
+export function resolveAlarmNavigateParams(
+  event: ObjectEvent,
+  rule: OperatorAlarmRule
+): Record<string, unknown> {
+  const params: Record<string, unknown> = { ...(rule.actions?.sessionParams ?? {}) };
+  const fromPayload = rule.actions?.sessionParamsFromPayload;
+  if (!fromPayload) {
+    return params;
+  }
+  for (const [paramKey, payloadKey] of Object.entries(fromPayload)) {
+    const raw = payloadValue(event, payloadKey);
+    if (raw !== undefined && raw !== null && String(raw).trim() !== "") {
+      params[paramKey] = String(raw);
+    }
+  }
+  return params;
 }
 
 export function resolveFieldValue(event: ObjectEvent, source: string): string {
@@ -210,6 +228,10 @@ export function buildActiveAlarm(
     reportPath: resolveReportPath(event, rule),
     selectionKey: rule.actions?.selectionKey ?? "objectPath",
     acknowledgeFunction: rule.actions?.acknowledgeFunction ?? null,
+    primaryActionLabel: rule.actions?.primaryActionLabel?.trim() || null,
+    hideSecondaryActions: rule.actions?.hideSecondaryActions === true,
+    hideAcknowledge: rule.actions?.hideAcknowledge === true,
+    navigateParams: resolveAlarmNavigateParams(event, rule),
   };
 }
 

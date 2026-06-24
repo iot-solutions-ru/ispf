@@ -227,4 +227,53 @@ class ReportApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.hasTemplate").value(false));
     }
+
+    @Test
+    void runAndExportUseDefaultParametersWhenRequestOmitsThem() throws Exception {
+        String path = "root.platform.reports.platform-test-filtered";
+        mockMvc.perform(post("/api/v1/objects")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "parentPath": "root.platform.reports",
+                                  "name": "platform-test-filtered",
+                                  "type": "REPORT",
+                                  "displayName": "Platform Test Filtered",
+                                  "templateId": "report-v1"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/reports/by-path/definition")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "title": "Platform Test Filtered",
+                                  "dataSourcePath": "%s",
+                                  "query": "SELECT item_code FROM platform_item WHERE (? = '' OR item_code = ?)",
+                                  "parameters": ["itemCode"],
+                                  "columns": [{ "field": "item_code", "label": "Code" }],
+                                  "defaultParameters": { "itemCode": "" },
+                                  "maxRows": 100
+                                }
+                                """.formatted(DATA_SOURCE_PATH)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/reports/by-path/run")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rowCount").exists());
+
+        mockMvc.perform(get("/api/v1/reports/by-path/export")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", path)
+                        .param("format", "csv"))
+                .andExpect(status().isOk());
+    }
 }

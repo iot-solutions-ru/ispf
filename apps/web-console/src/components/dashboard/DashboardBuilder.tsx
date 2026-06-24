@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -8,8 +8,8 @@ import {
   saveDashboardTitle,
   saveDashboardRefreshInterval,
 } from "../../api";
-import type { DashboardLayout, DashboardWidget, WidgetType } from "../../types/dashboard";
-import { layoutToJson, newWidget, parseLayoutJson } from "../../types/dashboard";
+import type { DashboardLayout, DashboardView, DashboardWidget, WidgetType } from "../../types/dashboard";
+import { layoutToJson, newWidget, resolveDashboardLayout } from "../../types/dashboard";
 import WidgetPalette from "./WidgetPalette";
 import { WIDGET_SAMPLE_PATHS } from "./widgetSamples";
 import {
@@ -72,6 +72,7 @@ export default function DashboardBuilder({
   const [showJson, setShowJson] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [modalDashboard, setModalDashboard] = useState<ModalState | null>(null);
+  const layoutRef = useRef<DashboardLayout>(resolveDashboardLayout(undefined));
 
   const currentSession = useMemo<DashboardSession>(
     () =>
@@ -122,6 +123,14 @@ export default function DashboardBuilder({
     });
   };
 
+  const handleCloseDashboardModal = useCallback(() => {
+    if (embeddedModal) {
+      onClose?.();
+      return;
+    }
+    setModalDashboard(null);
+  }, [embeddedModal, onClose]);
+
   const dashboard = useQuery({
     queryKey: ["dashboard", path],
     queryFn: () => fetchDashboard(path),
@@ -134,20 +143,17 @@ export default function DashboardBuilder({
 
   const layout = useMemo(() => {
     if (draftLayout) return draftLayout;
-    if (dashboard.data?.layoutJson) {
-      return parseLayoutJson(dashboard.data.layoutJson);
-    }
-    if (dashboard.data?.layout && typeof dashboard.data.layout === "object") {
-      const parsed = dashboard.data.layout as DashboardLayout;
-      return {
-        columns: parsed.columns ?? 12,
-        rowHeight: parsed.rowHeight ?? 72,
-        theme: parsed.theme,
-        widgets: Array.isArray(parsed.widgets) ? parsed.widgets : [],
-      };
-    }
-    return parseLayoutJson(null);
+    return resolveDashboardLayout(dashboard.data);
   }, [dashboard.data, draftLayout]);
+
+  layoutRef.current = layout;
+
+  useEffect(() => {
+    setDraftLayout(null);
+    setDraftTitle(null);
+    setDraftRefreshMs(null);
+    setSelectedWidgetId(null);
+  }, [path]);
 
   const title = draftTitle ?? dashboard.data?.title ?? path;
   const refreshIntervalMs =
@@ -189,20 +195,34 @@ export default function DashboardBuilder({
     layout.widgets.find((widget) => widget.id === selectedWidgetId) ?? null;
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
-      if (draftTitle !== null) {
-        await saveDashboardTitle(path, draftTitle);
+    mutationFn: async (snapshot: {
+      layout: DashboardLayout;
+      title: string | null;
+      refreshMs: number | null;
+    }) => {
+      await queryClient.cancelQueries({ queryKey: ["dashboard", path] });
+      if (snapshot.title !== null) {
+        await saveDashboardTitle(path, snapshot.title);
       }
-      if (draftRefreshMs !== null) {
-        await saveDashboardRefreshInterval(path, draftRefreshMs);
+      if (snapshot.refreshMs !== null) {
+        await saveDashboardRefreshInterval(path, snapshot.refreshMs);
       }
-      await saveDashboardLayout(path, layoutToJson(layout));
+      return saveDashboardLayout(path, layoutToJson(snapshot.layout));
     },
-    onSuccess: (data) => {
+    onSuccess: (data, snapshot) => {
+      const layoutJson = layoutToJson(snapshot.layout);
+      const merged: DashboardView = {
+        path,
+        title: snapshot.title ?? data?.title ?? dashboard.data?.title ?? path,
+        refreshIntervalMs:
+          snapshot.refreshMs ?? data?.refreshIntervalMs ?? dashboard.data?.refreshIntervalMs ?? 5000,
+        layout: snapshot.layout,
+        layoutJson,
+      };
+      queryClient.setQueryData(["dashboard", path], merged);
       setDraftLayout(null);
       setDraftTitle(null);
       setDraftRefreshMs(null);
-      queryClient.setQueryData(["dashboard", path], data);
       queryClient.invalidateQueries({ queryKey: ["object-editor", path] });
     },
   });
@@ -238,7 +258,7 @@ export default function DashboardBuilder({
   };
 
   const handleLayoutChange = (widgets: DashboardWidget[]) => {
-    setDraftLayout({ ...layout, widgets });
+    setDraftLayout((current) => ({ ...(current ?? layout), widgets }));
   };
 
   const isEditorWorkspace = !operatorMode && mode === "edit";
@@ -286,8 +306,8 @@ export default function DashboardBuilder({
   return (
     <div
       className={`dashboard-shell ${operatorMode ? "operator-dashboard-shell" : ""}${
-        isEditorWorkspace ? " dashboard-shell--editor-fullscreen" : ""
-      }`}
+        embeddedModal ? " dashboard-shell--embedded-modal" : ""
+      }${isEditorWorkspace ? " dashboard-shell--editor-fullscreen" : ""}`}
     >
       {!operatorMode && (
         <header className="dashboard-toolbar">
@@ -341,7 +361,13 @@ export default function DashboardBuilder({
                 type="button"
                 className="btn primary"
                 disabled={saveMutation.isPending}
-                onClick={() => saveMutation.mutate()}
+                onClick={() =>
+                  saveMutation.mutate({
+                    layout: layoutRef.current,
+                    title: draftTitle,
+                    refreshMs: draftRefreshMs,
+                  })
+                }
               >
                 {t("common:action.save")}
               </button>
@@ -368,6 +394,8 @@ export default function DashboardBuilder({
             onParamsChange={onParamsChange}
             onNavigateDashboard={handleNavigateDashboard}
             onOpenDashboardModal={handleOpenDashboardModal}
+            embeddedModal={embeddedModal}
+            closeDashboardModal={handleCloseDashboardModal}
           >
             <main className="dashboard-canvas dashboard-canvas--editor">
               <DashboardGrid
@@ -416,12 +444,15 @@ export default function DashboardBuilder({
             onParamsChange={onParamsChange}
             onNavigateDashboard={handleNavigateDashboard}
             onOpenDashboardModal={handleOpenDashboardModal}
+            embeddedModal={embeddedModal}
+            closeDashboardModal={handleCloseDashboardModal}
           >
             <main className="dashboard-canvas">
               <DashboardGrid
                 layout={layout}
                 refreshIntervalMs={refreshIntervalMs}
                 editable={false}
+                embeddedModal={embeddedModal}
                 selectedWidgetId={null}
                 subDashboardDepth={subDashboardDepth}
               />

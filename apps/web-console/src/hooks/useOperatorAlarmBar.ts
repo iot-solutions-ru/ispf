@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchEvents, invokeFunction } from "../api";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./useObjectWebSocket";
-import type { OperatorAlarmBarConfig } from "../types/operatorAlarmBar";
+import type { ObjectEvent } from "../types/event";
+import type { OperatorAlarmBarConfig, OperatorAlarmRule } from "../types/operatorAlarmBar";
 import type { OperatorUi } from "../types/operatorUi";
 import type { OpenDashboardOptions } from "../components/dashboard/DashboardContext";
 import {
@@ -11,6 +12,7 @@ import {
   isAlarmBarEnabled,
   matchAlarmRule,
   resolveAlarmBarConfig,
+  resolveAlarmNavigateParams,
 } from "../utils/operatorAlarmBar";
 import { playAlarmSound, playBeepFallback } from "../utils/alarmSound";
 
@@ -18,6 +20,39 @@ interface UseOperatorAlarmBarOptions {
   ui?: OperatorUi;
   navigateDashboard: (path: string, options?: OpenDashboardOptions) => void;
   navigateReport: (path: string) => void;
+}
+
+async function enrichEventFromFunction(
+  event: ObjectEvent,
+  rule: OperatorAlarmRule
+): Promise<ObjectEvent> {
+  const cfg = rule.actions?.enrichFromFunction;
+  if (!cfg) {
+    return event;
+  }
+  try {
+    const result = await invokeFunction(cfg.objectPath, cfg.functionName);
+    const row = result.rows?.[0];
+    if (!row) {
+      return event;
+    }
+    const mergedRow: Record<string, unknown> = { ...(event.payload?.rows?.[0] ?? {}) };
+    for (const [paramKey, column] of Object.entries(cfg.rowFields)) {
+      const value = row[column];
+      if (value !== undefined && value !== null) {
+        mergedRow[paramKey] = value;
+      }
+    }
+    return {
+      ...event,
+      payload: {
+        schema: event.payload?.schema ?? {},
+        rows: [mergedRow],
+      },
+    };
+  } catch {
+    return event;
+  }
 }
 
 export function useOperatorAlarmBar(
@@ -98,7 +133,11 @@ export function useOperatorAlarmBar(
           return;
         }
         seenIds.current.add(event.id);
-        const active = buildActiveAlarm(event, rule, resolved, options.ui);
+        const enrichedEvent = await enrichEventFromFunction(event, rule);
+        const active = buildActiveAlarm(enrichedEvent, rule, resolved, options.ui);
+        if (rule.actions?.enrichFromFunction) {
+          active.navigateParams = resolveAlarmNavigateParams(enrichedEvent, rule);
+        }
         setAlarms((current) => {
           const without = current.filter((item) => item.id !== active.id);
           return [...without, active];
@@ -143,9 +182,23 @@ export function useOperatorAlarmBar(
       if (alarm.selectionKey) {
         selection[alarm.selectionKey] = alarm.event.objectPath;
       }
-      options.navigateDashboard(alarm.dashboardPath, { selection });
+      options.navigateDashboard(alarm.dashboardPath, {
+        selection,
+        params: alarm.navigateParams,
+      });
     },
     [options]
+  );
+
+  const primaryActionFor = useCallback(
+    (alarm: ReturnType<typeof buildActiveAlarm>) => {
+      if (!alarm.dashboardPath) {
+        return;
+      }
+      openDashboardFor(alarm);
+      setAlarms((current) => current.filter((item) => item.id !== alarm.id));
+    },
+    [openDashboardFor]
   );
 
   const openReportFor = useCallback(
@@ -184,6 +237,7 @@ export function useOperatorAlarmBar(
     onOpenDashboard: openDashboardFor,
     onOpenReport: openReportFor,
     onOpenObject: openObjectFor,
+    onPrimaryAction: primaryActionFor,
     hasActiveAlarm: sortedAlarms.length > 0,
   };
 }

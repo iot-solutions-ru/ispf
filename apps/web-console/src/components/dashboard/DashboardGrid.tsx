@@ -12,6 +12,7 @@ interface DashboardGridProps {
   layout: DashboardLayout;
   refreshIntervalMs: number;
   editable?: boolean;
+  embeddedModal?: boolean;
   selectedWidgetId?: string | null;
   onSelectWidget?: (id: string) => void;
   onLayoutChange?: (widgets: DashboardWidget[]) => void;
@@ -80,6 +81,7 @@ export default function DashboardGrid({
   layout,
   refreshIntervalMs,
   editable = false,
+  embeddedModal = false,
   selectedWidgetId,
   onSelectWidget,
   onLayoutChange,
@@ -198,7 +200,7 @@ export default function DashboardGrid({
   return (
     <div
       ref={containerRef}
-      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}`}
+      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}${embeddedModal ? " dashboard-grid-host--modal" : ""}`}
     >
       <div
         ref={canvasRef}

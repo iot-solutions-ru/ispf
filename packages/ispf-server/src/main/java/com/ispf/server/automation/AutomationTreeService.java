@@ -253,6 +253,28 @@ public class AutomationTreeService {
         objectManager.persistNodeTree(path);
     }
 
+    @Transactional
+    public void resetAlertRuleRuntimeState(String path) {
+        setAlertRuleLastConditionMet(path, false);
+        setAlertRuleLastFiredAt(path, null);
+        clearAlertRuleConditionTrueSince(path);
+        setAlertRuleLastWatchValue(path, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Double getAlertRuleLastWatchValue(String path) {
+        return readString(objectManager.require(path), "lastWatchValue")
+                .filter(value -> !value.isBlank())
+                .map(Double::parseDouble)
+                .orElse(null);
+    }
+
+    @Transactional
+    public void setAlertRuleLastWatchValue(String path, Double value) {
+        setRuntimeString(path, "lastWatchValue", value != null ? Double.toString(value) : "");
+        objectManager.persistNodeTree(path);
+    }
+
     public List<EventCorrelator> listCorrelators() {
         List<EventCorrelator> correlators = new ArrayList<>();
         for (PlatformObject node : objectManager.tree().all()) {
@@ -705,7 +727,12 @@ public class AutomationTreeService {
     }
 
     private void setRuntimeString(String path, String variable, String value) {
-        objectManager.setSystemVariableValue(path, variable, DataRecord.single(STRING_VALUE, Map.of("value", value != null ? value : "")));
+        objectManager.upsertSystemVariable(
+                path,
+                variable,
+                STRING_VALUE,
+                DataRecord.single(STRING_VALUE, Map.of("value", value != null ? value : ""))
+        );
     }
 
     private static Optional<String> readString(PlatformObject node, String variable) {

@@ -44,6 +44,13 @@ class BundleManifestValidatorTest {
     }
 
     @Test
+    void acceptsMesOgpEventsBundle() throws Exception {
+        ApplicationBundleDeployService.BundleManifest manifest = readBundle("mes-ogp-events-bundle.json");
+        BundleValidationResult result = validator.validate("mes-ogp-events", manifest);
+        assertEquals(BundleValidationResult.OK, result.status(), String.join("; ", result.errors()));
+    }
+
+    @Test
     void rejectsInvalidFunctionScript() {
         ApplicationBundleDeployService.BundleManifest manifest = new ApplicationBundleDeployService.BundleManifest(
                 "1.0.0",

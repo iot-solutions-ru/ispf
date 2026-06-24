@@ -127,7 +127,7 @@ public class VisualGroupService {
             if (node.type() != ObjectType.VISUAL_GROUP) {
                 continue;
             }
-            List<VisualGroupMember> members = readMembers(node);
+            List<VisualGroupMember> members = new ArrayList<>(readMembers(node));
             boolean changed = members.removeIf(member -> member.path().equals(deletedPath));
             if (changed) {
                 writeMembers(node.path(), members);

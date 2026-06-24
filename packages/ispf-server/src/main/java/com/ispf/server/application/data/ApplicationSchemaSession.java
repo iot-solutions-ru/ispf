@@ -18,28 +18,46 @@ public class ApplicationSchemaSession {
         this.dataSource = dataSource;
     }
 
-    public void runInSchema(String schemaName, Runnable action) {
+    /** Creates application schema if missing — call from writable transactions (migrations/deploy). */
+    public void ensureSchemaExists(String schemaName) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
         try {
-            String previousSchema = currentSchema(connection);
+            createSchemaIfMissing(connection, schemaName);
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to ensure application schema: " + schemaName, ex);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
+    }
+
+    public void runInSchema(String schemaName, Runnable action) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        String previousSchema = null;
+        RuntimeException actionError = null;
+        try {
+            previousSchema = currentSchema(connection);
+            activateSchema(connection, schemaName);
             try {
-                activateSchema(connection, schemaName);
                 action.run();
-            } finally {
-                try {
-                    if (previousSchema != null && !previousSchema.isBlank()) {
-                        activateSchema(connection, previousSchema);
-                    } else {
-                        resetSchema(connection);
-                    }
-                } catch (SQLException ex) {
-                    throw new IllegalStateException("Failed to restore database schema", ex);
-                }
+            } catch (RuntimeException ex) {
+                actionError = ex;
+                throw ex;
             }
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to activate application schema: " + schemaName, ex);
         } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
+            try {
+                rollbackIfNeeded(connection, actionError);
+                restoreSchema(connection, previousSchema);
+            } catch (SQLException ex) {
+                if (actionError != null) {
+                    actionError.addSuppressed(ex);
+                    throw actionError;
+                }
+                throw new IllegalStateException("Failed to restore database schema", ex);
+            } finally {
+                DataSourceUtils.releaseConnection(connection, dataSource);
+            }
         }
     }
 
@@ -52,18 +70,29 @@ public class ApplicationSchemaSession {
 
     public <T> T callWithPlatformCatalog(Supplier<T> action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
+        RuntimeException actionError = null;
         try {
             String previousSchema = currentSchema(connection);
             try {
                 resetSchema(connection);
-                return action.get();
+                try {
+                    return action.get();
+                } catch (RuntimeException ex) {
+                    actionError = ex;
+                    throw ex;
+                }
             } finally {
                 try {
+                    rollbackIfNeeded(connection, actionError);
                     if (previousSchema != null && !previousSchema.isBlank()
                             && !"PUBLIC".equalsIgnoreCase(previousSchema)) {
                         activateSchema(connection, previousSchema);
                     }
                 } catch (SQLException ex) {
+                    if (actionError != null) {
+                        actionError.addSuppressed(ex);
+                        throw actionError;
+                    }
                     throw new IllegalStateException("Failed to restore application schema", ex);
                 }
             }
@@ -85,12 +114,30 @@ public class ApplicationSchemaSession {
     private static void activateSchema(Connection connection, String schemaName) throws SQLException {
         String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE SCHEMA IF NOT EXISTS " + quoted);
+            // PostgreSQL report/function paths use read-only transactions — never run DDL there.
+            if (!isPostgreSql(connection)) {
+                createSchemaIfMissing(connection, schemaName);
+            }
             if (isPostgreSql(connection)) {
                 statement.execute("SET search_path TO " + quoted);
             } else {
                 statement.execute("SET SCHEMA " + quoted);
             }
+        }
+    }
+
+    private static void restoreSchema(Connection connection, String previousSchema) throws SQLException {
+        if (previousSchema != null && !previousSchema.isBlank()) {
+            activateSchema(connection, previousSchema);
+        } else {
+            resetSchema(connection);
+        }
+    }
+
+    private static void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
+        String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("CREATE SCHEMA IF NOT EXISTS " + quoted);
         }
     }
 
@@ -101,6 +148,19 @@ public class ApplicationSchemaSession {
             } else {
                 statement.execute("SET SCHEMA PUBLIC");
             }
+        }
+    }
+
+    private static void rollbackIfNeeded(Connection connection, RuntimeException actionError) {
+        if (actionError == null) {
+            return;
+        }
+        try {
+            if (!connection.getAutoCommit()) {
+                connection.rollback();
+            }
+        } catch (SQLException ignored) {
+            // Best effort — restore may still fail on a broken connection.
         }
     }
 

@@ -422,7 +422,12 @@ public class ReportService {
             return runTreeVariablesDefinition(report);
         }
 
-        List<Object> paramValues = resolveParameterValues(report.parameters(), parameters);
+        Map<String, Object> effective = effectiveParameters(
+                report.parameters(),
+                report.defaultParameters(),
+                parameters
+        );
+        List<Object> paramValues = bindQueryParameters(report.query(), report.parameters(), effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(
                 report.dataSourcePath(),
                 report.legacyAppId()
@@ -454,7 +459,8 @@ public class ReportService {
         ApplicationReportStore.DeployedReport report = reportStore.find(appId, reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
-        List<Object> paramValues = resolveParameterValues(paramNames, parameters);
+        Map<String, Object> effective = effectiveParameters(paramNames, Map.of(), parameters);
+        List<Object> paramValues = bindQueryParameters(report.querySql(), paramNames, effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(null, appId);
 
         List<Map<String, Object>>[] result = new List[1];
@@ -866,6 +872,26 @@ public class ReportService {
         }
     }
 
+    private static Map<String, Object> effectiveParameters(
+            List<String> paramNames,
+            Map<String, Object> defaultParameters,
+            Map<String, Object> parameters
+    ) {
+        Map<String, Object> merged = new LinkedHashMap<>();
+        if (defaultParameters != null) {
+            merged.putAll(defaultParameters);
+        }
+        if (parameters != null) {
+            merged.putAll(parameters);
+        }
+        if (paramNames != null) {
+            for (String name : paramNames) {
+                merged.putIfAbsent(name, "");
+            }
+        }
+        return merged;
+    }
+
     private static List<Object> resolveParameterValues(
             List<String> paramNames,
             Map<String, Object> parameters
@@ -882,6 +908,53 @@ public class ReportService {
             resolved.add(values.get(name));
         }
         return resolved;
+    }
+
+    static List<Object> bindQueryParameters(
+            String query,
+            List<String> paramNames,
+            Map<String, Object> parameters
+    ) {
+        List<Object> resolved = resolveParameterValues(paramNames, parameters);
+        int placeholderCount = countSqlPlaceholders(query);
+        if (placeholderCount == resolved.size()) {
+            return resolved;
+        }
+        if (placeholderCount > resolved.size() && paramNames != null && paramNames.size() == 1) {
+            Object value = resolved.getFirst();
+            List<Object> expanded = new ArrayList<>(placeholderCount);
+            for (int i = 0; i < placeholderCount; i++) {
+                expanded.add(value);
+            }
+            return expanded;
+        }
+        throw new IllegalArgumentException(
+                "Report query has " + placeholderCount + " SQL placeholder(s) but "
+                        + resolved.size() + " bound parameter value(s)"
+        );
+    }
+
+    static int countSqlPlaceholders(String query) {
+        if (query == null || query.isBlank()) {
+            return 0;
+        }
+        int count = 0;
+        boolean inSingleQuote = false;
+        for (int i = 0; i < query.length(); i++) {
+            char ch = query.charAt(i);
+            if (ch == '\'') {
+                if (inSingleQuote && i + 1 < query.length() && query.charAt(i + 1) == '\'') {
+                    i++;
+                    continue;
+                }
+                inSingleQuote = !inSingleQuote;
+                continue;
+            }
+            if (!inSingleQuote && ch == '?') {
+                count++;
+            }
+        }
+        return count;
     }
 
     private String serialize(Object value) {

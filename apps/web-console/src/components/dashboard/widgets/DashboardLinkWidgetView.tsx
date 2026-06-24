@@ -1,6 +1,7 @@
+import { useMemo } from "react";
 import type { DashboardLinkWidget } from "../../../types/dashboard";
 import { useTranslation } from "react-i18next";
-import { parseJsonObject, parseSelectionJson } from "../dashboardUtils";
+import { parseJsonArray, parseJsonObject, parseSelectionJson } from "../dashboardUtils";
 import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
@@ -15,7 +16,14 @@ export default function DashboardLinkWidgetView({ widget, editable }: DashboardL
   const styles = useWidgetStyles(widget.stylesJson);
   const actions = useDashboardContext();
   const targetPath = widget.targetDashboardPath?.trim();
-  const canAct = Boolean(targetPath) && !editable;
+  const requiredParams = useMemo(
+    () => parseJsonArray<string>(widget.requireSessionParamsJson, []),
+    [widget.requireSessionParamsJson]
+  );
+  const hasRequiredParams = requiredParams.every(
+    (key) => String(actions.params[key] ?? "").trim() !== ""
+  );
+  const canAct = Boolean(targetPath) && !editable && (requiredParams.length === 0 || hasRequiredParams);
 
   const handleClick = () => {
     if (!canAct) {

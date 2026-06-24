@@ -158,9 +158,15 @@ export interface FunctionFormSelectOption {
 export interface FunctionFormField {
   name: string;
   label: string;
-  type: "text" | "number" | "select";
+  type: "text" | "number" | "select" | "multiselect" | "time" | "checkbox" | "textarea";
   /** Parent path — options = child object display names / paths */
   optionsFrom?: string;
+  /** Report path — options loaded from report rows (same source as report widget) */
+  optionsFromReport?: string;
+  /** Report column for option value (default: code) */
+  optionsValueField?: string;
+  /** Report column appended to value in label, e.g. code + name → "120 — …" */
+  optionsLabelField?: string;
   staticOptions?: string[];
   selectOptions?: FunctionFormSelectOption[];
   defaultValue?: string;
@@ -168,6 +174,18 @@ export interface FunctionFormField {
   default?: string;
   hint?: string;
   hidden?: boolean;
+  /** Wizard step id — field shown only on this step */
+  step?: string;
+  required?: boolean;
+  /** Bind field value from session.params[key] (read-only in view mode) */
+  paramKey?: string;
+  /** Grid width in wizard layout: 1 = half row, 2 = full row (default 2) */
+  colSpan?: 1 | 2;
+  /** JSON object: field name → value or array of values; field shown only when all match */
+  showWhenJson?: string;
+  /** When loading optionsFromReport, keep rows where optionsFilterColumn equals form field optionsFilterField */
+  optionsFilterField?: string;
+  optionsFilterColumn?: string;
 }
 
 export interface FunctionFormWidget extends DashboardWidgetBase {
@@ -176,6 +194,25 @@ export interface FunctionFormWidget extends DashboardWidgetBase {
   buttonLabel?: string;
   confirmMessage?: string;
   fieldsJson?: string;
+  /** Multi-step wizard: [{ id, label }, …] */
+  wizardStepsJson?: string;
+  /** Optional BFF function invoked on «Далее» (receives all field values + step) */
+  validateFunctionName?: string;
+  /** JSON map: form field name → session.params key */
+  paramBindingsJson?: string;
+  /** JSON array — session param keys that must be set before submit / «Далее» */
+  requireSessionParamsJson?: string;
+  /** JSON map: form field name → session param key (sync on change) */
+  syncFieldsToSessionJson?: string;
+  /** JSON array — session param keys cleared after successful submit */
+  clearSessionParamsJson?: string;
+  /** Close parent modal after successful submit (default: true in modal) */
+  closeModalOnSuccess?: boolean;
+}
+
+export interface FunctionFormWizardStep {
+  id: string;
+  label: string;
 }
 
 export interface ProgressWidget extends DashboardWidgetBase {
@@ -268,6 +305,8 @@ export interface DashboardLinkWidget extends DashboardWidgetBase {
   confirmMessage?: string;
   contextSelectionJson?: string;
   contextParamsJson?: string;
+  /** JSON array of session param keys that must be non-empty before the link is enabled */
+  requireSessionParamsJson?: string;
 }
 
 export interface ReportWidget extends DashboardWidgetBase {
@@ -283,6 +322,16 @@ export interface ReportWidget extends DashboardWidgetBase {
   showXlsx?: boolean;
   showHtml?: boolean;
   showTruncatedWarning?: boolean;
+  /** Clickable rows — writes row columns into session.params */
+  selectable?: boolean;
+  /** Report column used as row id for highlight (default id) */
+  rowSelectionKey?: string;
+  /** JSON map: session.params key → report row column name */
+  rowParamsFromRowJson?: string;
+  /** Select first row when data loads and nothing is selected yet */
+  autoSelectFirstRow?: boolean;
+  /** JSON array — table columns rendered as ok/warn status dots */
+  statusDotColumnsJson?: string;
 }
 
 export interface PieChartWidget extends DashboardWidgetBase {
@@ -611,22 +660,51 @@ function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
   return widget;
 }
 
-export function parseLayoutJson(raw: string | undefined | null): DashboardLayout {
+export function normalizeDashboardLayout(
+  layout: Partial<DashboardLayout> | DashboardLayout
+): DashboardLayout {
+  return {
+    columns: layout.columns ?? 12,
+    rowHeight: layout.rowHeight ?? 72,
+    theme: typeof layout.theme === "string" ? layout.theme : undefined,
+    widgets: Array.isArray(layout.widgets) ? layout.widgets.map(normalizeLayoutWidget) : [],
+  };
+}
+
+export function parseLayoutJson(
+  raw: string | DashboardLayout | undefined | null
+): DashboardLayout {
   if (!raw) {
     return emptyLayout();
   }
+  if (typeof raw === "object") {
+    return normalizeDashboardLayout(raw);
+  }
   try {
     const parsed = JSON.parse(raw) as DashboardLayout;
-    const widgets = Array.isArray(parsed.widgets) ? parsed.widgets.map(normalizeLayoutWidget) : [];
-    return {
-      columns: parsed.columns ?? 12,
-      rowHeight: parsed.rowHeight ?? 72,
-      theme: typeof parsed.theme === "string" ? parsed.theme : undefined,
-      widgets,
-    };
+    return normalizeDashboardLayout(parsed);
   } catch {
     return emptyLayout();
   }
+}
+
+export function resolveDashboardLayout(view: DashboardView | undefined | null): DashboardLayout {
+  if (!view) {
+    return emptyLayout();
+  }
+  if (typeof view.layoutJson === "string" && view.layoutJson.trim()) {
+    const parsed = parseLayoutJson(view.layoutJson);
+    if (parsed.widgets.length > 0) {
+      return parsed;
+    }
+  }
+  if (view.layout && typeof view.layout === "object") {
+    return normalizeDashboardLayout(view.layout as DashboardLayout);
+  }
+  if (typeof view.layoutJson === "string") {
+    return parseLayoutJson(view.layoutJson);
+  }
+  return emptyLayout();
 }
 
 export function layoutToJson(layout: DashboardLayout): string {

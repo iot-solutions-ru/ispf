@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFunctionInput,
   formatObjectTableCell,
   matchesNamePattern,
   objectTableValueField,
   parseWidgetJsonArray,
 } from "./dashboardUtils";
+
+describe("buildFunctionInput", () => {
+  it("includes bound values for hidden fields", () => {
+    const input = buildFunctionInput(
+      [
+        { name: "eventCode", label: "Code", type: "text" },
+        { name: "unprocessedId", label: "ID", type: "text", hidden: true },
+      ],
+      { eventCode: "120", unprocessedId: "560ed061-0000-4000-8000-000000000001" }
+    );
+    expect(input.rows[0]?.eventCode).toBe("120");
+    expect(input.rows[0]?.unprocessedId).toBe("560ed061-0000-4000-8000-000000000001");
+  });
+});
 
 describe("parseWidgetJsonArray", () => {
   it("parses JSON string columnsJson", () => {

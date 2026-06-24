@@ -580,6 +580,7 @@ public class ApplicationBundleDeployService {
                     rule.delaySeconds(),
                     rule.sustainWhileTrue()
             );
+            automationTreeService.resetAlertRuleRuntimeState(path);
             return;
         }
         automationTreeService.createAlertRule(
@@ -594,6 +595,7 @@ public class ApplicationBundleDeployService {
                 rule.delaySeconds() != null ? rule.delaySeconds() : 0,
                 rule.sustainWhileTrue() != null && rule.sustainWhileTrue()
         );
+        automationTreeService.resetAlertRuleRuntimeState(path);
     }
 
     private void deployCorrelator(BundleCorrelator correlator) {

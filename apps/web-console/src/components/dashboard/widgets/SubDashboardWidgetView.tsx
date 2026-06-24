@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchDashboard } from "../../../api";
 import type { SubDashboardWidget } from "../../../types/dashboard";
-import { parseLayoutJson } from "../../../types/dashboard";
+import { resolveDashboardLayout } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { resolveContextPath } from "../dashboardUtils";
 import { useWidgetSession } from "../../../hooks/useWidgetObjectPath";
@@ -50,15 +50,10 @@ export default function SubDashboardWidgetView({
     enabled: Boolean(resolvedPath),
   });
 
-  const layout = useMemo(() => {
-    if (embedded.data?.layoutJson) {
-      return parseLayoutJson(embedded.data.layoutJson);
-    }
-    if (embedded.data?.layout) {
-      return embedded.data.layout;
-    }
-    return parseLayoutJson(null);
-  }, [embedded.data]);
+  const layout = useMemo(
+    () => resolveDashboardLayout(embedded.data),
+    [embedded.data]
+  );
 
   const nestedRefresh = embedded.data?.refreshIntervalMs ?? refreshIntervalMs;
 

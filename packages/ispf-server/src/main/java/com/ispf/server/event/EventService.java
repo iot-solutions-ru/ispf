@@ -9,7 +9,6 @@ import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
 import com.ispf.server.object.ObjectChangeEvent;
-import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.EventHistoryRepository;
@@ -17,6 +16,7 @@ import com.ispf.server.persistence.entity.EventHistoryEntity;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -45,13 +45,36 @@ public class EventService {
         this.catalogPayloadValidator = catalogPayloadValidator;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
-        return fire(objectPath, eventName, payload, null);
+        return fireInternal(objectPath, eventName, payload, null);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload, String appId) {
+        return fireInternal(objectPath, eventName, payload, appId);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public ObjectEvent fire(String objectPath, String eventName, DataRecord payload) {
+        return fireInternal(objectPath, eventName, DataRecordPayloadResolver.fromRecord(payload), null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ObjectEvent> list(String objectPath, int limit) {
+        PageRequest page = PageRequest.of(0, Math.max(1, Math.min(limit, 200)));
+        List<EventHistoryEntity> entities = objectPath == null || objectPath.isBlank()
+                ? eventHistoryRepository.findAllByOrderByOccurredAtDesc(page)
+                : eventHistoryRepository.findByObjectPathOrderByOccurredAtDesc(objectPath, page);
+        return entities.stream().map(this::toObjectEvent).toList();
+    }
+
+    private ObjectEvent fireInternal(
+            String objectPath,
+            String eventName,
+            DataRecordPayloadRequest payload,
+            String appId
+    ) {
         if (appId != null && !appId.isBlank()) {
             catalogPayloadValidator.validateAtFire(appId, eventName, payload);
         }
@@ -64,20 +87,6 @@ public class EventService {
         persist(event);
         eventPublisher.publishEvent(ObjectChangeEvent.eventFired(objectPath, eventName));
         return event;
-    }
-
-    @Transactional
-    public ObjectEvent fire(String objectPath, String eventName, DataRecord payload) {
-        return fire(objectPath, eventName, DataRecordPayloadResolver.fromRecord(payload));
-    }
-
-    @Transactional(readOnly = true)
-    public List<ObjectEvent> list(String objectPath, int limit) {
-        PageRequest page = PageRequest.of(0, Math.max(1, Math.min(limit, 200)));
-        List<EventHistoryEntity> entities = objectPath == null || objectPath.isBlank()
-                ? eventHistoryRepository.findAllByOrderByOccurredAtDesc(page)
-                : eventHistoryRepository.findByObjectPathOrderByOccurredAtDesc(objectPath, page);
-        return entities.stream().map(this::toObjectEvent).toList();
     }
 
     private void persist(ObjectEvent event) {

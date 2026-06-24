@@ -1,0 +1,2300 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES OGP Event Registration",
+  "tablePrefix": "",
+  "schemaName": "app_mes_ogp",
+  "migrations": [
+    {
+      "id": "ogp_schema_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS app_setting (   setting_key VARCHAR(64) PRIMARY KEY,   setting_value VARCHAR(512) NOT NULL ); CREATE TABLE IF NOT EXISTS event_code (   code VARCHAR(16) PRIMARY KEY,   name VARCHAR(128) NOT NULL,   requires_time BOOLEAN NOT NULL DEFAULT true,   requires_meter BOOLEAN NOT NULL DEFAULT true,   requires_comment BOOLEAN NOT NULL DEFAULT false,   parent_code VARCHAR(16),   exclude_from_1c BOOLEAN NOT NULL DEFAULT false,   has_subcodes BOOLEAN NOT NULL DEFAULT false ); CREATE TABLE IF NOT EXISTS event_subcode (   id UUID PRIMARY KEY,   parent_code VARCHAR(16) NOT NULL,   code VARCHAR(32) NOT NULL,   label VARCHAR(128) NOT NULL ); CREATE TABLE IF NOT EXISTS stage_context (   id INTEGER PRIMARY KEY,   order_no VARCHAR(32) NOT NULL,   machine_path VARCHAR(256) NOT NULL,   line_count_pm INTEGER NOT NULL DEFAULT 6,   line_count_passer INTEGER NOT NULL DEFAULT 6,   stage_start_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   is_active BOOLEAN NOT NULL DEFAULT true ); CREATE TABLE IF NOT EXISTS roll (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL UNIQUE,   label VARCHAR(128) NOT NULL,   is_scrap BOOLEAN NOT NULL DEFAULT false,   is_active_winding BOOLEAN NOT NULL DEFAULT false,   stage_id INTEGER NOT NULL DEFAULT 1 ); CREATE TABLE IF NOT EXISTS machine_state (   id INTEGER PRIMARY KEY,   winding_roll VARCHAR(32) NOT NULL DEFAULT 'P1',   speed_mpm NUMERIC(10,2) NOT NULL DEFAULT 100,   meter_m NUMERIC(12,2) NOT NULL DEFAULT 0,   last_event_label VARCHAR(256) NOT NULL DEFAULT '',   last_event_status VARCHAR(16) NOT NULL DEFAULT 'ok',   machine_stop BOOLEAN NOT NULL DEFAULT false ); CREATE TABLE IF NOT EXISTS raw_signal (   id UUID PRIMARY KEY,   signal_type VARCHAR(32) NOT NULL,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP,   start_meter NUMERIC(12,2),   end_meter NUMERIC(12,2),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS unprocessed_event (   id UUID PRIMARY KEY,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP NOT NULL,   start_meter NUMERIC(12,2),   end_meter NUMERIC(12,2),   member_count INTEGER NOT NULL DEFAULT 1,   status VARCHAR(32) NOT NULL DEFAULT 'pending',   delete_comment VARCHAR(512),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS unprocessed_member (   id UUID PRIMARY KEY,   unprocessed_id UUID NOT NULL,   raw_signal_id UUID,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP NOT NULL ); CREATE TABLE IF NOT EXISTS wizard_draft (   id UUID PRIMARY KEY,   payload_json TEXT NOT NULL,   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS process_event (   id UUID PRIMARY KEY,   stage_id INTEGER NOT NULL,   event_code VARCHAR(16) NOT NULL,   event_name VARCHAR(128) NOT NULL,   delete_now BOOLEAN NOT NULL DEFAULT true,   roll_id VARCHAR(32),   start_m NUMERIC(12,2),   end_m NUMERIC(12,2),   start_at TIMESTAMP,   end_at TIMESTAMP,   whole_stage BOOLEAN NOT NULL DEFAULT false,   side VARCHAR(16),   rows_json VARCHAR(512),   card1 VARCHAR(64),   card2 VARCHAR(64),   comment_text VARCHAR(1024),   status VARCHAR(32) NOT NULL DEFAULT 'registered',   footage NUMERIC(12,2) NOT NULL DEFAULT 0,   unprocessed_id UUID,   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS process_event_subcode (   id UUID PRIMARY KEY,   event_id UUID NOT NULL,   subcode VARCHAR(32) NOT NULL ); CREATE TABLE IF NOT EXISTS roll_map_interval (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL,   map_type VARCHAR(16) NOT NULL,   start_m NUMERIC(12,2) NOT NULL,   end_m NUMERIC(12,2) NOT NULL,   event_id UUID,   event_code VARCHAR(16),   side VARCHAR(16),   rows_json VARCHAR(512) ); CREATE TABLE IF NOT EXISTS roll_label_data (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL,   order_no VARCHAR(32) NOT NULL,   payload_json TEXT NOT NULL,   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS integration_outbox (   id UUID PRIMARY KEY,   event_id UUID NOT NULL,   payload_json TEXT NOT NULL,   status VARCHAR(32) NOT NULL DEFAULT 'pending',   exported_at TIMESTAMP,   error_message VARCHAR(512),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); INSERT INTO app_setting (setting_key, setting_value) SELECT 'downtime_group_timeout_sec', '300' WHERE NOT EXISTS (SELECT 1 FROM app_setting WHERE setting_key = 'downtime_group_timeout_sec'); INSERT INTO app_setting (setting_key, setting_value) SELECT '1c_export_url', 'http://localhost:9090/mock-1c/events' WHERE NOT EXISTS (SELECT 1 FROM app_setting WHERE setting_key = '1c_export_url'); INSERT INTO stage_context (id, order_no, machine_path, line_count_pm, line_count_passer, is_active) SELECT 1, 'DEMO-OGP-01', 'root.platform.devices.ogp-line-01', 6, 6, true WHERE NOT EXISTS (SELECT 1 FROM stage_context WHERE id = 1); INSERT INTO machine_state (id, winding_roll, speed_mpm, meter_m, last_event_label, last_event_status) SELECT 1, 'P1', 100, 0, '', 'ok' WHERE NOT EXISTS (SELECT 1 FROM machine_state WHERE id = 1); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '120', 'Настройка', true, true, false, true, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '120'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes) SELECT '141', 'Брызги краски', true, true, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '141'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes) SELECT '131', 'Чистка: Устранение розлива', true, true, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '131'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '110', 'Производство: Потеря скорости', true, true, false, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '110'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '113', 'Плановое ТО', true, false, false, false, true WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '113'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000001-0000-0000-0000-000000000001', '120', '0', '0 - Zerropull' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = '0'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000002-0000-0000-0000-000000000002', '120', 'A', 'A' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'A'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000003-0000-0000-0000-000000000003', '120', 'B', 'B' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'B'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000004-0000-0000-0000-000000000004', '120', 'C', 'C' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'C'); INSERT INTO roll (id, roll_id, label, is_scrap, is_active_winding, stage_id) SELECT 'd0000001-0000-0000-0000-000000000001', 'P1', 'P1', false, true, 1 WHERE NOT EXISTS (SELECT 1 FROM roll WHERE roll_id = 'P1'); INSERT INTO roll (id, roll_id, label, is_scrap, is_active_winding, stage_id) SELECT 'd0000002-0000-0000-0000-000000000002', '0', '0 - Рулон для брака', true, false, 1 WHERE NOT EXISTS (SELECT 1 FROM roll WHERE roll_id = '0');"
+    },
+    {
+      "id": "ogp_sanitize_v1",
+      "sql": "DROP TABLE IF EXISTS integration_outbox; DROP TABLE IF EXISTS roll_label_data; DROP TABLE IF EXISTS roll_map_interval; DROP TABLE IF EXISTS process_event_subcode; DROP TABLE IF EXISTS process_event; DROP TABLE IF EXISTS wizard_draft; DROP TABLE IF EXISTS unprocessed_member; DROP TABLE IF EXISTS unprocessed_event; DROP TABLE IF EXISTS raw_signal; DROP TABLE IF EXISTS machine_state; DROP TABLE IF EXISTS roll; DROP TABLE IF EXISTS stage_context; DROP TABLE IF EXISTS event_subcode; DROP TABLE IF EXISTS event_code; DROP TABLE IF EXISTS app_setting; CREATE TABLE IF NOT EXISTS app_setting (   setting_key VARCHAR(64) PRIMARY KEY,   setting_value VARCHAR(512) NOT NULL ); CREATE TABLE IF NOT EXISTS event_code (   code VARCHAR(16) PRIMARY KEY,   name VARCHAR(128) NOT NULL,   requires_time BOOLEAN NOT NULL DEFAULT true,   requires_meter BOOLEAN NOT NULL DEFAULT true,   requires_comment BOOLEAN NOT NULL DEFAULT false,   parent_code VARCHAR(16),   exclude_from_1c BOOLEAN NOT NULL DEFAULT false,   has_subcodes BOOLEAN NOT NULL DEFAULT false ); CREATE TABLE IF NOT EXISTS event_subcode (   id UUID PRIMARY KEY,   parent_code VARCHAR(16) NOT NULL,   code VARCHAR(32) NOT NULL,   label VARCHAR(128) NOT NULL ); CREATE TABLE IF NOT EXISTS stage_context (   id INTEGER PRIMARY KEY,   order_no VARCHAR(32) NOT NULL,   machine_path VARCHAR(256) NOT NULL,   line_count_pm INTEGER NOT NULL DEFAULT 6,   line_count_passer INTEGER NOT NULL DEFAULT 6,   stage_start_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,   is_active BOOLEAN NOT NULL DEFAULT true ); CREATE TABLE IF NOT EXISTS roll (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL UNIQUE,   label VARCHAR(128) NOT NULL,   is_scrap BOOLEAN NOT NULL DEFAULT false,   is_active_winding BOOLEAN NOT NULL DEFAULT false,   stage_id INTEGER NOT NULL DEFAULT 1 ); CREATE TABLE IF NOT EXISTS machine_state (   id INTEGER PRIMARY KEY,   winding_roll VARCHAR(32) NOT NULL DEFAULT 'P1',   speed_mpm NUMERIC(10,2) NOT NULL DEFAULT 100,   meter_m NUMERIC(12,2) NOT NULL DEFAULT 0,   last_event_label VARCHAR(256) NOT NULL DEFAULT '',   last_event_status VARCHAR(16) NOT NULL DEFAULT 'ok',   machine_stop BOOLEAN NOT NULL DEFAULT false ); CREATE TABLE IF NOT EXISTS raw_signal (   id UUID PRIMARY KEY,   signal_type VARCHAR(32) NOT NULL,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP,   start_meter NUMERIC(12,2),   end_meter NUMERIC(12,2),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS unprocessed_event (   id UUID PRIMARY KEY,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP NOT NULL,   start_meter NUMERIC(12,2),   end_meter NUMERIC(12,2),   member_count INTEGER NOT NULL DEFAULT 1,   status VARCHAR(32) NOT NULL DEFAULT 'pending',   delete_comment VARCHAR(512),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS unprocessed_member (   id UUID PRIMARY KEY,   unprocessed_id UUID NOT NULL,   raw_signal_id UUID,   signal_label VARCHAR(128) NOT NULL,   start_at TIMESTAMP NOT NULL,   end_at TIMESTAMP NOT NULL ); CREATE TABLE IF NOT EXISTS wizard_draft (   id UUID PRIMARY KEY,   payload_json TEXT NOT NULL,   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS process_event (   id UUID PRIMARY KEY,   stage_id INTEGER NOT NULL,   event_code VARCHAR(16) NOT NULL,   event_name VARCHAR(128) NOT NULL,   delete_now BOOLEAN NOT NULL DEFAULT true,   roll_id VARCHAR(32),   start_m NUMERIC(12,2),   end_m NUMERIC(12,2),   start_at TIMESTAMP,   end_at TIMESTAMP,   whole_stage BOOLEAN NOT NULL DEFAULT false,   side VARCHAR(16),   rows_json VARCHAR(512),   card1 VARCHAR(64),   card2 VARCHAR(64),   comment_text VARCHAR(1024),   status VARCHAR(32) NOT NULL DEFAULT 'registered',   footage NUMERIC(12,2) NOT NULL DEFAULT 0,   unprocessed_id UUID,   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS process_event_subcode (   id UUID PRIMARY KEY,   event_id UUID NOT NULL,   subcode VARCHAR(32) NOT NULL ); CREATE TABLE IF NOT EXISTS roll_map_interval (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL,   map_type VARCHAR(16) NOT NULL,   start_m NUMERIC(12,2) NOT NULL,   end_m NUMERIC(12,2) NOT NULL,   event_id UUID,   event_code VARCHAR(16),   side VARCHAR(16),   rows_json VARCHAR(512) ); CREATE TABLE IF NOT EXISTS roll_label_data (   id UUID PRIMARY KEY,   roll_id VARCHAR(32) NOT NULL,   order_no VARCHAR(32) NOT NULL,   payload_json TEXT NOT NULL,   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); CREATE TABLE IF NOT EXISTS integration_outbox (   id UUID PRIMARY KEY,   event_id UUID NOT NULL,   payload_json TEXT NOT NULL,   status VARCHAR(32) NOT NULL DEFAULT 'pending',   exported_at TIMESTAMP,   error_message VARCHAR(512),   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ); INSERT INTO app_setting (setting_key, setting_value) SELECT 'downtime_group_timeout_sec', '300' WHERE NOT EXISTS (SELECT 1 FROM app_setting WHERE setting_key = 'downtime_group_timeout_sec'); INSERT INTO app_setting (setting_key, setting_value) SELECT '1c_export_url', 'http://localhost:9090/mock-1c/events' WHERE NOT EXISTS (SELECT 1 FROM app_setting WHERE setting_key = '1c_export_url'); INSERT INTO stage_context (id, order_no, machine_path, line_count_pm, line_count_passer, is_active) SELECT 1, 'DEMO-OGP-01', 'root.platform.devices.ogp-line-01', 6, 6, true WHERE NOT EXISTS (SELECT 1 FROM stage_context WHERE id = 1); INSERT INTO machine_state (id, winding_roll, speed_mpm, meter_m, last_event_label, last_event_status) SELECT 1, 'P1', 100, 0, '', 'ok' WHERE NOT EXISTS (SELECT 1 FROM machine_state WHERE id = 1); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '120', 'Настройка', true, true, false, true, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '120'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes) SELECT '141', 'Брызги краски', true, true, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '141'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes) SELECT '131', 'Чистка: Устранение розлива', true, true, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '131'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '110', 'Производство: Потеря скорости', true, true, false, false, false WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '110'); INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) SELECT '113', 'Плановое ТО', true, false, false, false, true WHERE NOT EXISTS (SELECT 1 FROM event_code WHERE code = '113'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000001-0000-0000-0000-000000000001', '120', '0', '0 - Zerropull' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = '0'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000002-0000-0000-0000-000000000002', '120', 'A', 'A' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'A'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000003-0000-0000-0000-000000000003', '120', 'B', 'B' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'B'); INSERT INTO event_subcode (id, parent_code, code, label) SELECT 'c0000004-0000-0000-0000-000000000004', '120', 'C', 'C' WHERE NOT EXISTS (SELECT 1 FROM event_subcode WHERE parent_code = '120' AND code = 'C'); INSERT INTO roll (id, roll_id, label, is_scrap, is_active_winding, stage_id) SELECT 'd0000001-0000-0000-0000-000000000001', 'P1', 'P1', false, true, 1 WHERE NOT EXISTS (SELECT 1 FROM roll WHERE roll_id = 'P1'); INSERT INTO roll (id, roll_id, label, is_scrap, is_active_winding, stage_id) SELECT 'd0000002-0000-0000-0000-000000000002', '0', '0 - Рулон для брака', true, false, 1 WHERE NOT EXISTS (SELECT 1 FROM roll WHERE roll_id = '0');"
+    }
+  ],
+  "models": [
+    {
+      "name": "ogp-mes-hub-v1",
+      "description": "OGP MES hub for event registration",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "unprocessedPending",
+          "description": "Pending unprocessed events count",
+          "group": "runtime",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "windingRoll",
+          "description": "Current winding roll",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "P1"
+              }
+            ]
+          }
+        },
+        {
+          "name": "speedMpm",
+          "description": "Machine speed m/min",
+          "group": "telemetry",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 100
+              }
+            ]
+          }
+        },
+        {
+          "name": "meterM",
+          "description": "Current meter",
+          "group": "telemetry",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "machineStop",
+          "description": "Machine stopped",
+          "group": "telemetry",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "lastMachineEventLabel",
+          "description": "Last machine event",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "ogpUnprocessedEvent",
+          "description": "Unprocessed machine event pending registration",
+          "payloadSchema": {
+            "name": "void",
+            "fields": []
+          },
+          "level": "WARNING"
+        },
+        {
+          "name": "ogpEventRegistered",
+          "description": "Production event registered",
+          "payloadSchema": {
+            "name": "void",
+            "fields": []
+          },
+          "level": "INFO"
+        },
+        {
+          "name": "ogpRollLabelReady",
+          "description": "Roll label data ready",
+          "payloadSchema": {
+            "name": "void",
+            "fields": []
+          },
+          "level": "INFO"
+        }
+      ],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "ogp-line-v1",
+      "description": "OGP print line virtual telemetry",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "windingRoll",
+          "description": "Winding roll id",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "P1"
+              }
+            ]
+          }
+        },
+        {
+          "name": "speedMpm",
+          "description": "Speed",
+          "group": "telemetry",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 100
+              }
+            ]
+          }
+        },
+        {
+          "name": "meterM",
+          "description": "Meter",
+          "group": "telemetry",
+          "schema": {
+            "name": "doubleValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "DOUBLE"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "doubleValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "DOUBLE"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 0
+              }
+            ]
+          }
+        },
+        {
+          "name": "machineStop",
+          "description": "Stopped",
+          "group": "telemetry",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "knifeStrike",
+          "description": "Knife strike pulse",
+          "group": "telemetry",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "defectButton",
+          "description": "Defect button",
+          "group": "telemetry",
+          "schema": {
+            "name": "boolValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "BOOLEAN"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "boolValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "BOOLEAN"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": false
+              }
+            ]
+          }
+        },
+        {
+          "name": "lastMachineEventLabel",
+          "description": "Last event label",
+          "group": "telemetry",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": ""
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {
+        "driverProfile": "ogp-print-line"
+      }
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "ogp-mes-hub",
+      "type": "DEVICE",
+      "displayName": "OGP MES Hub",
+      "description": "Event registration BFF hub",
+      "templateId": "ogp-mes-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "ogp-line-01",
+      "type": "DEVICE",
+      "displayName": "OGP Print Line 01",
+      "description": "Simulated OGP print line",
+      "templateId": "ogp-line-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_seedDemoStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET winding_roll = 'P1', speed_mpm = 100, meter_m = 0, last_event_label = '', machine_stop = false WHERE id = 1\"},{\"type\":\"exec\",\"sql\":\"UPDATE stage_context SET is_active = true, order_no = 'DEMO-OGP-01' WHERE id = 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Demo stage ready\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_getMachineContext",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "ctx_row",
+                "fields": [
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "characteristic",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "value",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT CASE WHEN ms.machine_stop THEN 'warn' WHEN ms.last_event_status = 'warn' THEN 'warn' ELSE 'ok' END AS status, 'Рулон на намотке' AS characteristic, ms.winding_roll AS value FROM machine_state ms WHERE ms.id = 1 UNION ALL SELECT 'ok', 'Скорость машины', CONCAT(ms.speed_mpm::text, ' м/мин') FROM machine_state ms WHERE ms.id = 1 UNION ALL SELECT CASE WHEN ms.last_event_label <> '' THEN 'warn' ELSE 'ok' END, 'Событие машины', COALESCE(NULLIF(ms.last_event_label, ''), '—') FROM machine_state ms WHERE ms.id = 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_getRegistrationContext",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "windingRoll",
+              "type": "STRING"
+            },
+            {
+              "name": "meterM",
+              "type": "STRING"
+            },
+            {
+              "name": "speedMpm",
+              "type": "STRING"
+            },
+            {
+              "name": "lastEventLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "machineStop",
+              "type": "STRING"
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCountPm",
+              "type": "STRING"
+            },
+            {
+              "name": "lineCountPasser",
+              "type": "STRING"
+            },
+            {
+              "name": "defaultDeleteNow",
+              "type": "STRING"
+            },
+            {
+              "name": "eventCodes",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "ec",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_time",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_meter",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_comment",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "has_subcodes",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "rolls",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "roll",
+                "fields": [
+                  {
+                    "name": "roll_id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "label",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "is_scrap",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "is_active_winding",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "subcodes",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "sc",
+                "fields": [
+                  {
+                    "name": "parent_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "label",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "unprocessed",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "up",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "signal_label",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "start_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "end_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "member_count",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"ms\",\"sql\":\"SELECT winding_roll, speed_mpm::text AS speed_mpm, meter_m::text AS meter_m, last_event_label, CASE WHEN machine_stop THEN 'yes' ELSE 'no' END AS machine_stop FROM machine_state WHERE id = 1\"},{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"SELECT order_no, line_count_pm::text AS line_count_pm, line_count_passer::text AS line_count_passer FROM stage_context WHERE id = 1 AND is_active = true\"},{\"type\":\"selectMany\",\"var\":\"eventCodes\",\"sql\":\"SELECT code, name, requires_time::text AS requires_time, requires_meter::text AS requires_meter, requires_comment::text AS requires_comment, has_subcodes::text AS has_subcodes FROM event_code ORDER BY code\"},{\"type\":\"selectMany\",\"var\":\"rolls\",\"sql\":\"SELECT roll_id, label, is_scrap::text AS is_scrap, is_active_winding::text AS is_active_winding FROM roll WHERE stage_id = 1 ORDER BY roll_id\"},{\"type\":\"selectMany\",\"var\":\"subcodes\",\"sql\":\"SELECT parent_code, code, label FROM event_subcode ORDER BY parent_code, code\"},{\"type\":\"selectMany\",\"var\":\"unprocessed\",\"sql\":\"SELECT id::text AS id, signal_label, to_char(start_at, 'DD-MM-YYYY HH24:MI:SS') AS start_at, to_char(end_at, 'DD-MM-YYYY HH24:MI:SS') AS end_at, member_count::text AS member_count FROM unprocessed_event WHERE status = 'pending' ORDER BY start_at DESC\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"windingRoll\":\"${ms.winding_roll}\",\"meterM\":\"${ms.meter_m}\",\"speedMpm\":\"${ms.speed_mpm}\",\"lastEventLabel\":\"${ms.last_event_label}\",\"machineStop\":\"${ms.machine_stop}\",\"orderNo\":\"${st.order_no}\",\"lineCountPm\":\"${st.line_count_pm}\",\"lineCountPasser\":\"${st.line_count_passer}\",\"defaultDeleteNow\":\"${ms.machine_stop}\",\"eventCodes\":\"${eventCodes}\",\"rolls\":\"${rolls}\",\"subcodes\":\"${subcodes}\",\"unprocessed\":\"${unprocessed}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_simulateSignal",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "signalType",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "unprocessedId",
+              "type": "STRING"
+            },
+            {
+              "name": "signalLabel",
+              "type": "STRING"
+            },
+            {
+              "name": "merged",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"when\",\"var\":\"input.signalType\",\"equals\":\"resume\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET machine_stop = false, speed_mpm = 100, last_event_label = '', last_event_status = 'ok' WHERE id = 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Machine resumed\"}}]},{\"type\":\"when\",\"var\":\"input.signalType\",\"equals\":\"stop\",\"then\":[{\"type\":\"setVar\",\"var\":\"label\",\"value\":\"Останов\"},{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET machine_stop = true, last_event_label = 'Останов', last_event_status = 'warn', speed_mpm = 0 WHERE id = 1\"}],\"else\":[{\"type\":\"when\",\"var\":\"input.signalType\",\"equals\":\"knife\",\"then\":[{\"type\":\"setVar\",\"var\":\"label\",\"value\":\"Удар ножа\"},{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET last_event_label = 'Удар ножа', last_event_status = 'warn' WHERE id = 1\"}],\"else\":[{\"type\":\"setVar\",\"var\":\"label\",\"value\":\"Нажата кнопка \\\"Брак\\\" у машины\"},{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET last_event_label = 'Нажата кнопка \\\"Брак\\\" у машины', last_event_status = 'warn' WHERE id = 1\"}]}]},{\"type\":\"selectOne\",\"var\":\"nowMeter\",\"sql\":\"SELECT meter_m::text AS meter_m FROM machine_state WHERE id = 1\"},{\"type\":\"selectOne\",\"var\":\"merged\",\"sql\":\"SELECT u.id::text AS id FROM unprocessed_event u CROSS JOIN (SELECT COALESCE((SELECT CAST(setting_value AS integer) FROM app_setting WHERE setting_key = 'downtime_group_timeout_sec'), 300) AS sec) cfg WHERE u.status = 'pending' AND u.signal_label = ? AND EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - u.end_at)) < cfg.sec ORDER BY u.end_at DESC LIMIT 1\",\"params\":[\"${label}\"]},{\"type\":\"when\",\"var\":\"merged\",\"notNull\":true,\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE unprocessed_event SET end_at = CURRENT_TIMESTAMP, end_meter = CAST(? AS numeric), member_count = member_count + 1 WHERE id = ?::uuid\",\"params\":[\"${nowMeter.meter_m}\",\"${merged.id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO unprocessed_member (id, unprocessed_id, signal_label, start_at, end_at) VALUES (gen_random_uuid(), ?::uuid, ?, NOW(), NOW())\",\"params\":[\"${merged.id}\",\"${label}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"merged\":\"yes\",\"unprocessedId\":\"${merged.id}\",\"signalLabel\":\"${label}\"}}]},{\"type\":\"exec\",\"sql\":\"INSERT INTO raw_signal (id, signal_type, signal_label, start_at, end_at, start_meter, end_meter) VALUES (gen_random_uuid(), ?, ?, CURRENT_TIMESTAMP - INTERVAL '30' MINUTE, CURRENT_TIMESTAMP, GREATEST(CAST(? AS numeric) - 500, 0), CAST(? AS numeric))\",\"params\":[\"${input.signalType}\",\"${label}\",\"${nowMeter.meter_m}\",\"${nowMeter.meter_m}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO unprocessed_event (id, signal_label, start_at, end_at, start_meter, end_meter, member_count, status) VALUES (gen_random_uuid(), ?, CURRENT_TIMESTAMP - INTERVAL '30' MINUTE, CURRENT_TIMESTAMP, GREATEST(CAST(? AS numeric) - 500, 0), CAST(? AS numeric), 1, 'pending')\",\"params\":[\"${label}\",\"${nowMeter.meter_m}\",\"${nowMeter.meter_m}\"]},{\"type\":\"selectOne\",\"var\":\"created\",\"sql\":\"SELECT id::text AS id FROM unprocessed_event WHERE status = 'pending' ORDER BY created_at DESC LIMIT 1\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"unprocessedId\":\"${created.id}\",\"signalLabel\":\"${label}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_listUnprocessedEvents",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "up",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "signal_label",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "start_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "end_at",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "member_count",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT id::text AS id, signal_label, to_char(start_at, 'DD-MM-YYYY HH24:MI:SS') AS start_at, to_char(end_at, 'DD-MM-YYYY HH24:MI:SS') AS end_at, member_count::text AS member_count FROM unprocessed_event WHERE status = 'pending' ORDER BY start_at DESC\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_deleteUnprocessedEvents",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "ids",
+              "type": "STRING"
+            },
+            {
+              "name": "comment",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE unprocessed_event SET status = 'deleted', delete_comment = ? WHERE id = ANY(CAST(string_to_array(?, ',') AS uuid[]))\",\"params\":[\"${input.comment}\",\"${input.ids}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Deleted\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_validateRegistration",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "step",
+              "type": "STRING"
+            },
+            {
+              "name": "eventCode",
+              "type": "STRING"
+            },
+            {
+              "name": "deleteNow",
+              "type": "STRING"
+            },
+            {
+              "name": "startM",
+              "type": "STRING"
+            },
+            {
+              "name": "endM",
+              "type": "STRING"
+            },
+            {
+              "name": "startAt",
+              "type": "STRING"
+            },
+            {
+              "name": "endAt",
+              "type": "STRING"
+            },
+            {
+              "name": "wholeStage",
+              "type": "STRING"
+            },
+            {
+              "name": "rollId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"when\",\"var\":\"input.step\",\"equals\":\"1\",\"then\":[{\"type\":\"when\",\"var\":\"input.eventCode\",\"equals\":\"\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION\",\"error_message\":\"Укажите код события\"}}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]},{\"type\":\"selectOne\",\"var\":\"code\",\"sql\":\"SELECT code, requires_time::text AS requires_time, requires_meter::text AS requires_meter FROM event_code WHERE code = ?\",\"params\":[\"${input.eventCode}\"]},{\"type\":\"failIfNull\",\"var\":\"code\",\"message\":\"Unknown event code\"},{\"type\":\"when\",\"var\":\"code.requires_meter\",\"equals\":\"true\",\"then\":[{\"type\":\"when\",\"var\":\"input.startM\",\"equals\":\"\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION\",\"error_message\":\"Укажите метраж начала и конца\"}}]},{\"type\":\"when\",\"var\":\"input.endM\",\"equals\":\"\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION\",\"error_message\":\"Укажите метраж начала и конца\"}}]}]},{\"type\":\"when\",\"var\":\"input.deleteNow\",\"equals\":\"false\",\"then\":[{\"type\":\"when\",\"var\":\"input.rollId\",\"equals\":\"\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"VALIDATION\",\"error_message\":\"Укажите рулон\"}}]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_registerEvent",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "eventCode",
+              "type": "STRING"
+            },
+            {
+              "name": "deleteNow",
+              "type": "STRING"
+            },
+            {
+              "name": "rollId",
+              "type": "STRING"
+            },
+            {
+              "name": "startM",
+              "type": "STRING"
+            },
+            {
+              "name": "endM",
+              "type": "STRING"
+            },
+            {
+              "name": "startAt",
+              "type": "STRING"
+            },
+            {
+              "name": "endAt",
+              "type": "STRING"
+            },
+            {
+              "name": "wholeStage",
+              "type": "STRING"
+            },
+            {
+              "name": "side",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "STRING"
+            },
+            {
+              "name": "card1",
+              "type": "STRING"
+            },
+            {
+              "name": "card2",
+              "type": "STRING"
+            },
+            {
+              "name": "comment",
+              "type": "STRING"
+            },
+            {
+              "name": "subcodes",
+              "type": "STRING"
+            },
+            {
+              "name": "unprocessedId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "eventId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"code\",\"sql\":\"SELECT code, name FROM event_code WHERE code = ?\",\"params\":[\"${input.eventCode}\"]},{\"type\":\"failIfNull\",\"var\":\"code\",\"message\":\"Unknown event code\"},{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"SELECT id FROM stage_context WHERE is_active = true ORDER BY id LIMIT 1\"},{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Удален\"},{\"type\":\"when\",\"var\":\"input.deleteNow\",\"equals\":\"false\",\"then\":[{\"type\":\"setVar\",\"var\":\"statusVal\",\"value\":\"Зарегистрирован\"}]},{\"type\":\"selectOne\",\"var\":\"footage\",\"sql\":\"SELECT GREATEST(COALESCE(?::numeric, 0) - COALESCE(?::numeric, 0), 0)::text AS v\",\"params\":[\"${input.endM}\",\"${input.startM}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event (id, stage_id, event_code, event_name, delete_now, roll_id, start_m, end_m, start_at, end_at, whole_stage, side, rows_json, card1, card2, comment_text, status, footage, unprocessed_id) VALUES (gen_random_uuid(), ?, ?, ?, CASE WHEN ? IN ('true','1','yes') THEN true ELSE false END, ?, CAST(? AS numeric), CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE (CURRENT_DATE + CAST(? AS TIME)) END, CASE WHEN ? IN ('true','1') THEN true ELSE false END, ?, ?, ?, ?, ?, ?, CAST(? AS numeric), CASE WHEN COALESCE(?, '') = '' THEN NULL ELSE CAST(? AS uuid) END)\",\"params\":[\"${st.id}\",\"${code.code}\",\"${code.name}\",\"${input.deleteNow}\",\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${input.startAt}\",\"${input.startAt}\",\"${input.endAt}\",\"${input.endAt}\",\"${input.wholeStage}\",\"${input.side}\",\"${input.rows}\",\"${input.card1}\",\"${input.card2}\",\"${input.comment}\",\"${statusVal}\",\"${footage.v}\",\"${input.unprocessedId}\",\"${input.unprocessedId}\"]},{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT id::text AS event_id, event_code, delete_now::text AS delete_now, roll_id, start_m::text AS start_m, end_m::text AS end_m, status FROM process_event ORDER BY created_at DESC LIMIT 1\"},{\"type\":\"when\",\"var\":\"input.subcodes\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO process_event_subcode (id, event_id, subcode) SELECT gen_random_uuid(), CAST(? AS uuid), trim(x) FROM unnest(string_to_array(?, ',')) AS t(x) WHERE trim(x) <> ''\",\"params\":[\"${ev.event_id}\",\"${input.subcodes}\"]}]},{\"type\":\"when\",\"var\":\"ev.delete_now\",\"equals\":\"true\",\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code) VALUES (gen_random_uuid(), COALESCE(NULLIF(?, ''), '0'), 'grey', ?::numeric, ?::numeric, ?::uuid, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\"]}],\"else\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_map_interval (id, roll_id, map_type, start_m, end_m, event_id, event_code, side, rows_json) VALUES (gen_random_uuid(), ?, 'white', ?::numeric, ?::numeric, ?::uuid, ?, ?, ?)\",\"params\":[\"${input.rollId}\",\"${input.startM}\",\"${input.endM}\",\"${ev.event_id}\",\"${ev.event_code}\",\"${input.side}\",\"${input.rows}\"]}]},{\"type\":\"when\",\"var\":\"input.unprocessedId\",\"notEquals\":\"\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE unprocessed_event SET status = 'processed' WHERE id = CAST(? AS uuid)\",\"params\":[\"${input.unprocessedId}\"]}]},{\"type\":\"invoke_function\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_enqueue1cExport\",\"input\":{\"eventId\":\"${ev.event_id}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"eventId\":\"${ev.event_id}\",\"status\":\"${ev.status}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_listProcessJournal",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "totalFootage",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "jr",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_label",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "start_time",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "end_time",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "footage",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT p.id::text AS id, CONCAT(p.event_code, ' - ', p.event_name) AS event_label, to_char(p.start_at, 'HH24:MI:SS') AS start_time, to_char(p.end_at, 'HH24:MI:SS') AS end_time, p.footage::text AS footage FROM process_event p JOIN stage_context s ON s.id = p.stage_id WHERE s.is_active = true AND (? = '' OR s.order_no = ?) ORDER BY p.created_at DESC\",\"params\":[\"${input.orderNo}\",\"${input.orderNo}\"]},{\"type\":\"selectOne\",\"var\":\"total\",\"sql\":\"SELECT COALESCE(SUM(p.footage), 0)::text AS total FROM process_event p JOIN stage_context s ON s.id = p.stage_id WHERE s.is_active = true AND (? = '' OR s.order_no = ?)\",\"params\":[\"${input.orderNo}\",\"${input.orderNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\",\"totalFootage\":\"${total.total}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_getProcessEventDetails",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "eventId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "pr",
+                "fields": [
+                  {
+                    "name": "param",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "value",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "subcodes",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "sc",
+                "fields": [
+                  {
+                    "name": "subcode",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT event_code, event_name, roll_id, start_m::text AS start_m, end_m::text AS end_m, status, comment_text, side, rows_json, card1, card2 FROM process_event WHERE id = ?::uuid\",\"params\":[\"${input.eventId}\"]},{\"type\":\"failIfNull\",\"var\":\"ev\",\"message\":\"Event not found\"},{\"type\":\"selectMany\",\"var\":\"subcodes\",\"sql\":\"SELECT subcode FROM process_event_subcode WHERE event_id = ?::uuid ORDER BY subcode\",\"params\":[\"${input.eventId}\"]},{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT 'Код' AS param, CONCAT(event_code, ' - ', event_name) AS value FROM process_event WHERE id = ?::uuid UNION ALL SELECT 'Рулон', COALESCE(roll_id, '') FROM process_event WHERE id = ?::uuid UNION ALL SELECT 'Начало, м', COALESCE(start_m::text, '') FROM process_event WHERE id = ?::uuid UNION ALL SELECT 'Конец, м', COALESCE(end_m::text, '') FROM process_event WHERE id = ?::uuid UNION ALL SELECT 'Статус', status FROM process_event WHERE id = ?::uuid UNION ALL SELECT 'Комментарий', COALESCE(comment_text, '') FROM process_event WHERE id = ?::uuid\",\"params\":[\"${input.eventId}\",\"${input.eventId}\",\"${input.eventId}\",\"${input.eventId}\",\"${input.eventId}\",\"${input.eventId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\",\"subcodes\":\"${subcodes}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_updateProcessEvent",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "eventId",
+              "type": "STRING"
+            },
+            {
+              "name": "comment",
+              "type": "STRING"
+            },
+            {
+              "name": "startM",
+              "type": "STRING"
+            },
+            {
+              "name": "endM",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE process_event SET comment_text = COALESCE(?, comment_text), start_m = COALESCE(NULLIF(?, '')::numeric, start_m), end_m = COALESCE(NULLIF(?, '')::numeric, end_m), footage = GREATEST(COALESCE(NULLIF(?, '')::numeric, end_m) - COALESCE(NULLIF(?, '')::numeric, start_m), 0) WHERE id = ?::uuid\",\"params\":[\"${input.comment}\",\"${input.startM}\",\"${input.endM}\",\"${input.endM}\",\"${input.startM}\",\"${input.eventId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Updated\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_listEventCodes",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "ec",
+                "fields": [
+                  {
+                    "name": "code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_time",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_meter",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "requires_comment",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "has_subcodes",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "exclude_from_1c",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT code, name, requires_time::text AS requires_time, requires_meter::text AS requires_meter, requires_comment::text AS requires_comment, has_subcodes::text AS has_subcodes, exclude_from_1c::text AS exclude_from_1c FROM event_code ORDER BY code\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_createEventCode",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "code",
+              "type": "STRING"
+            },
+            {
+              "name": "name",
+              "type": "STRING"
+            },
+            {
+              "name": "requiresTime",
+              "type": "STRING"
+            },
+            {
+              "name": "requiresMeter",
+              "type": "STRING"
+            },
+            {
+              "name": "requiresComment",
+              "type": "STRING"
+            },
+            {
+              "name": "hasSubcodes",
+              "type": "STRING"
+            },
+            {
+              "name": "excludeFrom1c",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO event_code (code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c) VALUES (?, ?, CASE WHEN ? IN ('1','true') THEN true ELSE false END, CASE WHEN ? IN ('1','true') THEN true ELSE false END, CASE WHEN ? IN ('1','true') THEN true ELSE false END, CASE WHEN ? IN ('1','true') THEN true ELSE false END, CASE WHEN ? IN ('1','true') THEN true ELSE false END) ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name\",\"params\":[\"${input.code}\",\"${input.name}\",\"${input.requiresTime}\",\"${input.requiresMeter}\",\"${input.requiresComment}\",\"${input.hasSubcodes}\",\"${input.excludeFrom1c}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Saved\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_createSubcode",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "parentCode",
+              "type": "STRING"
+            },
+            {
+              "name": "code",
+              "type": "STRING"
+            },
+            {
+              "name": "label",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO event_subcode (id, parent_code, code, label) VALUES (gen_random_uuid(), ?, ?, ?)\",\"params\":[\"${input.parentCode}\",\"${input.code}\",\"${input.label}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"message\":\"Subcode added\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_getRollMap",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "rollId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "rm",
+                "fields": [
+                  {
+                    "name": "map_type",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "start_m",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "end_m",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "side",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "rows_json",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT map_type, start_m::text AS start_m, end_m::text AS end_m, event_code, side, COALESCE(rows_json, '') AS rows_json FROM roll_map_interval WHERE roll_id = ? ORDER BY start_m\",\"params\":[\"${input.rollId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_buildRollLabel",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "rollId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rollId",
+              "type": "STRING"
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            },
+            {
+              "name": "defects",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "df",
+                "fields": [
+                  {
+                    "name": "event_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "start_m",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "end_m",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "side",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "rows_json",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"st\",\"sql\":\"SELECT order_no FROM stage_context WHERE is_active = true LIMIT 1\"},{\"type\":\"selectMany\",\"var\":\"defects\",\"sql\":\"SELECT event_code, start_m::text AS start_m, end_m::text AS end_m, side, COALESCE(rows_json, '') AS rows_json FROM roll_map_interval WHERE roll_id = ? AND map_type = 'white' ORDER BY start_m\",\"params\":[\"${input.rollId}\"]},{\"type\":\"setVar\",\"var\":\"payload\",\"value\":\"{\\\"rollId\\\":\\\"${input.rollId}\\\",\\\"orderNo\\\":\\\"${st.order_no}\\\"}\"},{\"type\":\"exec\",\"sql\":\"INSERT INTO roll_label_data (id, roll_id, order_no, payload_json) VALUES (gen_random_uuid(), ?, ?, ?)\",\"params\":[\"${input.rollId}\",\"${st.order_no}\",\"${payload}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rollId\":\"${input.rollId}\",\"orderNo\":\"${st.order_no}\",\"defects\":\"${defects}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_stageDowntimeSummary",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "ds",
+                "fields": [
+                  {
+                    "name": "order_no",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_name",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_count",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "downtime_min",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "total_footage",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"rows\",\"sql\":\"SELECT s.order_no, p.event_code, p.event_name, COUNT(*)::text AS event_count, COALESCE(SUM(EXTRACT(EPOCH FROM (p.end_at - p.start_at)) / 60), 0)::text AS downtime_min, COALESCE(SUM(p.footage), 0)::text AS total_footage FROM process_event p JOIN stage_context s ON s.id = p.stage_id WHERE p.delete_now = true AND (? = '' OR s.order_no = ?) GROUP BY s.order_no, p.event_code, p.event_name ORDER BY s.order_no, p.event_code\",\"params\":[\"${input.orderNo}\",\"${input.orderNo}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_enqueue1cExport",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "eventId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "enqueued",
+              "type": "STRING"
+            },
+            {
+              "name": "skipped",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"ev\",\"sql\":\"SELECT p.id::text AS event_id, p.event_code, s.order_no, p.delete_now::text AS delete_now, p.roll_id, p.start_m::text AS start_m, p.end_m::text AS end_m, to_char(p.start_at, 'YYYY-MM-DD\\\"T\\\"HH24:MI:SS') AS start_at, to_char(p.end_at, 'YYYY-MM-DD\\\"T\\\"HH24:MI:SS') AS end_at, p.footage::text AS footage, COALESCE(p.side, '') AS side, COALESCE(p.rows_json, '') AS rows_json, COALESCE(p.comment_text, '') AS comment, p.status, ec.exclude_from_1c::text AS exclude_from_1c FROM process_event p JOIN stage_context s ON s.id = p.stage_id JOIN event_code ec ON ec.code = p.event_code WHERE p.id = ?::uuid\",\"params\":[\"${input.eventId}\"]},{\"type\":\"failIfNull\",\"var\":\"ev\",\"message\":\"Event not found\"},{\"type\":\"when\",\"var\":\"ev.exclude_from_1c\",\"equals\":\"true\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"skipped\":\"yes\"}}]},{\"type\":\"setVar\",\"var\":\"payload\",\"value\":\"{\\\"eventId\\\":\\\"${ev.event_id}\\\",\\\"eventCode\\\":\\\"${ev.event_code}\\\",\\\"orderNo\\\":\\\"${ev.order_no}\\\"}\"},{\"type\":\"exec\",\"sql\":\"INSERT INTO integration_outbox (id, event_id, payload_json, status) VALUES (gen_random_uuid(), ?::uuid, ?, 'pending')\",\"params\":[\"${ev.event_id}\",\"${payload}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":\"yes\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_export1cBatch",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "exported",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "ex",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "event_id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "payload_json",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS id, event_id::text AS event_id, payload_json FROM integration_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50\"},{\"type\":\"exec\",\"sql\":\"UPDATE integration_outbox SET status = 'sent', exported_at = NOW() WHERE status = 'pending'\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"exported\":\"${pending}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "functionName": "ogp_advanceMeter",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE machine_state SET meter_m = meter_m + speed_mpm / 60.0 * 5 WHERE id = 1 AND machine_stop = false\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\"}}]}"
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "variable": "unprocessedPending",
+      "query": "SELECT COALESCE(CAST(COUNT(*) AS DOUBLE PRECISION), 0) AS v FROM unprocessed_event WHERE status = 'pending'",
+      "refresh": "on_function_success",
+      "refreshIntervalMs": 500,
+      "valueField": "v",
+      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerFunctionName": "ogp_simulateSignal,ogp_registerEvent,ogp_deleteUnprocessedEvents",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "variable": "windingRoll",
+      "query": "SELECT winding_roll AS v FROM machine_state WHERE id = 1",
+      "refresh": "on_function_success",
+      "refreshIntervalMs": 1000,
+      "valueField": "v",
+      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerFunctionName": "ogp_simulateSignal,ogp_seedDemoStage",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "variable": "speedMpm",
+      "query": "SELECT speed_mpm AS v FROM machine_state WHERE id = 1",
+      "refresh": "on_function_success",
+      "refreshIntervalMs": 1000,
+      "valueField": "v",
+      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerFunctionName": "ogp_simulateSignal,ogp_seedDemoStage",
+      "enabled": true
+    },
+    {
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "variable": "meterM",
+      "query": "SELECT meter_m AS v FROM machine_state WHERE id = 1",
+      "refresh": "on_function_success",
+      "refreshIntervalMs": 1000,
+      "valueField": "v",
+      "triggerObjectPath": "root.platform.devices.ogp-mes-hub",
+      "triggerFunctionName": "ogp_simulateSignal,ogp_advanceMeter,ogp_seedDemoStage",
+      "enabled": true
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "ogp-unprocessed-events",
+      "title": "Необработанные события",
+      "query": "SELECT CAST(id AS varchar) AS id, signal_label, to_char(start_at, 'DD-MM-YYYY HH24:MI:SS') AS start_at, to_char(end_at, 'DD-MM-YYYY HH24:MI:SS') AS end_at, member_count FROM unprocessed_event WHERE status = 'pending' ORDER BY start_at DESC",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "signal_label",
+          "label": "Сигнал"
+        },
+        {
+          "field": "start_at",
+          "label": "Начало"
+        },
+        {
+          "field": "end_at",
+          "label": "Конец"
+        },
+        {
+          "field": "member_count",
+          "label": "В группе"
+        }
+      ],
+      "maxRows": 50
+    },
+    {
+      "reportId": "ogp-process-journal",
+      "title": "Журнал процесса",
+      "query": "SELECT CAST(p.id AS varchar) AS id, p.event_code AS code, CONCAT(p.event_code, ' - ', p.event_name) AS event_label, to_char(p.start_at, 'HH24:MI:SS') AS start_time, to_char(p.end_at, 'HH24:MI:SS') AS end_time, p.start_m AS meter_from, p.end_m AS meter_to, p.footage, p.status, COALESCE(p.roll_id, '') AS roll_id, COALESCE(p.comment_text, '') AS comment FROM process_event p JOIN stage_context s ON s.id = p.stage_id WHERE s.is_active = true AND (? = '' OR s.order_no = ?) ORDER BY p.created_at DESC",
+      "parameters": [
+        "orderNo"
+      ],
+      "columns": [
+        {
+          "field": "event_label",
+          "label": "Событие"
+        },
+        {
+          "field": "start_time",
+          "label": "Время начала"
+        },
+        {
+          "field": "end_time",
+          "label": "Время конца"
+        },
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "meter_from",
+          "label": "Метраж от"
+        },
+        {
+          "field": "meter_to",
+          "label": "Метраж до"
+        },
+        {
+          "field": "comment",
+          "label": "Комментарий"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        }
+      ],
+      "maxRows": 200,
+      "defaultParameters": {
+        "orderNo": ""
+      }
+    },
+    {
+      "reportId": "ogp-event-codes",
+      "title": "Справочник кодов событий",
+      "query": "SELECT code, name, requires_time, requires_meter, requires_comment, has_subcodes, exclude_from_1c FROM event_code ORDER BY code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Код"
+        },
+        {
+          "field": "name",
+          "label": "Название"
+        },
+        {
+          "field": "requires_time",
+          "label": "Время"
+        },
+        {
+          "field": "requires_meter",
+          "label": "Метраж"
+        },
+        {
+          "field": "requires_comment",
+          "label": "Комментарий"
+        },
+        {
+          "field": "has_subcodes",
+          "label": "Подкоды"
+        },
+        {
+          "field": "exclude_from_1c",
+          "label": "Искл. 1С"
+        }
+      ],
+      "maxRows": 200
+    },
+    {
+      "reportId": "ogp-machine-context",
+      "title": "Данные с машины",
+      "query": "SELECT CASE WHEN ms.machine_stop THEN 'warn' WHEN ms.last_event_status = 'warn' THEN 'warn' ELSE 'ok' END AS status, 'Рулон на намотке' AS characteristic, ms.winding_roll AS value FROM machine_state ms WHERE ms.id = 1 UNION ALL SELECT 'ok', 'Скорость машины', CONCAT(ms.speed_mpm::text, ' м/мин') FROM machine_state ms WHERE ms.id = 1 UNION ALL SELECT CASE WHEN ms.last_event_label <> '' THEN 'warn' ELSE 'ok' END, 'Событие машины', COALESCE(NULLIF(ms.last_event_label, ''), '—') FROM machine_state ms WHERE ms.id = 1",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "characteristic",
+          "label": "Характеристика"
+        },
+        {
+          "field": "value",
+          "label": "Значение"
+        }
+      ],
+      "maxRows": 10
+    },
+    {
+      "reportId": "ogp-event-subcodes",
+      "title": "Подкоды событий",
+      "query": "SELECT parent_code, code, label FROM event_subcode ORDER BY parent_code, code",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "parent_code",
+          "label": "Код"
+        },
+        {
+          "field": "code",
+          "label": "Подкод"
+        },
+        {
+          "field": "label",
+          "label": "Название"
+        }
+      ],
+      "maxRows": 200
+    },
+    {
+      "reportId": "ogp-rolls",
+      "title": "Рулоны",
+      "query": "SELECT r.roll_id AS code, r.label FROM roll r JOIN stage_context s ON s.id = r.stage_id WHERE s.is_active = true ORDER BY r.roll_id",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "code",
+          "label": "Рулон"
+        },
+        {
+          "field": "label",
+          "label": "Название"
+        }
+      ],
+      "maxRows": 50
+    },
+    {
+      "reportId": "ogp-downtime-summary",
+      "title": "Простои по заказу",
+      "query": "SELECT s.order_no, p.event_code, p.event_name, COUNT(*) AS event_count, ROUND(COALESCE(SUM(EXTRACT(EPOCH FROM (p.end_at - p.start_at)) / 60), 0)::numeric, 1) AS downtime_min, COALESCE(SUM(p.footage), 0) AS total_footage FROM process_event p JOIN stage_context s ON s.id = p.stage_id WHERE p.delete_now = true AND (? = '' OR s.order_no = ?) GROUP BY s.order_no, p.event_code, p.event_name ORDER BY s.order_no, p.event_code",
+      "parameters": [
+        "orderNo"
+      ],
+      "columns": [
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "event_code",
+          "label": "Код"
+        },
+        {
+          "field": "event_name",
+          "label": "Событие"
+        },
+        {
+          "field": "event_count",
+          "label": "Кол-во"
+        },
+        {
+          "field": "downtime_min",
+          "label": "Простой мин"
+        },
+        {
+          "field": "total_footage",
+          "label": "Метраж"
+        }
+      ],
+      "maxRows": 100,
+      "defaultParameters": {
+        "orderNo": ""
+      }
+    },
+    {
+      "reportId": "ogp-roll-map",
+      "title": "Карта рулона",
+      "query": "SELECT map_type, start_m, end_m, event_code, side, COALESCE(rows_json, '') AS rows_json FROM roll_map_interval WHERE roll_id = ? ORDER BY start_m",
+      "parameters": [
+        "rollId"
+      ],
+      "columns": [
+        {
+          "field": "map_type",
+          "label": "Карта"
+        },
+        {
+          "field": "start_m",
+          "label": "Начало м"
+        },
+        {
+          "field": "end_m",
+          "label": "Конец м"
+        },
+        {
+          "field": "event_code",
+          "label": "Код"
+        },
+        {
+          "field": "side",
+          "label": "Сторона"
+        },
+        {
+          "field": "rows_json",
+          "label": "Ряды"
+        }
+      ],
+      "maxRows": 200,
+      "defaultParameters": {
+        "rollId": "P1"
+      }
+    },
+    {
+      "reportId": "ogp-roll-label-data",
+      "title": "Этикетки рулонов",
+      "query": "SELECT roll_id, order_no, payload_json, created_at FROM roll_label_data ORDER BY created_at DESC LIMIT 20",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "roll_id",
+          "label": "Рулон"
+        },
+        {
+          "field": "order_no",
+          "label": "Заказ"
+        },
+        {
+          "field": "payload_json",
+          "label": "Данные"
+        },
+        {
+          "field": "created_at",
+          "label": "Создано"
+        }
+      ],
+      "maxRows": 20
+    },
+    {
+      "reportId": "ogp-integration-outbox",
+      "title": "Очередь 1С",
+      "query": "SELECT id, event_id, status, exported_at, LEFT(payload_json, 120) AS payload_preview FROM integration_outbox ORDER BY created_at DESC LIMIT 50",
+      "parameters": [],
+      "columns": [
+        {
+          "field": "id",
+          "label": "ID"
+        },
+        {
+          "field": "event_id",
+          "label": "Событие"
+        },
+        {
+          "field": "status",
+          "label": "Статус"
+        },
+        {
+          "field": "exported_at",
+          "label": "Экспорт"
+        },
+        {
+          "field": "payload_preview",
+          "label": "JSON"
+        }
+      ],
+      "maxRows": 50
+    }
+  ],
+  "alertRules": [
+    {
+      "name": "OGP unprocessed event alert",
+      "objectPath": "root.platform.devices.ogp-mes-hub",
+      "watchVariable": "unprocessedPending",
+      "conditionExpr": "self.unprocessedPending[\"value\"] > 0.0",
+      "eventName": "ogpUnprocessedEvent",
+      "payloadVariable": "unprocessedPending",
+      "enabled": true,
+      "edgeTrigger": true,
+      "delaySeconds": 0,
+      "sustainWhileTrue": false
+    }
+  ],
+  "events": [
+    {
+      "id": "ogpUnprocessedEvent",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "ogpEventRegistered",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "ogpRollLabelReady",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.ogp-export-1c",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\"\n             xmlns:ispf=\"http://ispf.io/bpmn\"\n             targetNamespace=\"http://ispf.io/bpmn\">\n  <process id=\"ogp-export-1c\" name=\"OGP 1C Export\" isExecutable=\"true\">\n    <startEvent id=\"start\"/>\n    <serviceTask id=\"exportBatch\" name=\"Export to 1C outbox\"\n                 ispf:action=\"invoke_function\"\n                 ispf:objectPath=\"root.platform.devices.ogp-mes-hub\"\n                 ispf:functionName=\"ogp_export1cBatch\"/>\n    <endEvent id=\"end\"/>\n    <sequenceFlow sourceRef=\"start\" targetRef=\"exportBatch\"/>\n    <sequenceFlow sourceRef=\"exportBatch\" targetRef=\"end\"/>\n  </process>\n</definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "mes-ogp-events"
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "ogp-meter-tick",
+      "enabled": true,
+      "intervalMs": 5000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.ogp-mes-hub",
+        "functionName": "ogp_advanceMeter"
+      }
+    },
+    {
+      "scheduleId": "ogp-1c-export",
+      "enabled": true,
+      "intervalMs": 60000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.ogp-mes-hub",
+        "functionName": "ogp_export1cBatch"
+      }
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.ogp-operator-hmi",
+      "title": "Регистрация события",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"v-roll\",\"type\":\"value\",\"title\":\"Рулон на намотке\",\"x\":0,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"windingRoll\",\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-speed\",\"type\":\"value\",\"title\":\"Скорость, м/мин\",\"x\":2,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"speedMpm\",\"decimals\":0,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-meter\",\"type\":\"value\",\"title\":\"Метраж, м\",\"x\":4,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"meterM\",\"decimals\":1,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-event\",\"type\":\"value\",\"title\":\"Событие машины\",\"x\":6,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"lastMachineEventLabel\",\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"v-pending\",\"type\":\"value\",\"title\":\"Необработанных\",\"x\":9,\"y\":0,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"variableName\":\"unprocessedPending\",\"decimals\":0,\"modelHintPath\":\"root.platform.devices.ogp-mes-hub\"},{\"id\":\"main-tabs\",\"type\":\"tab-panel\",\"title\":\"Регистрация событий OGP\",\"x\":0,\"y\":2,\"w\":12,\"h\":18,\"tabsJson\":\"[{\\\"id\\\":\\\"registration\\\",\\\"label\\\":\\\"Регистрация события\\\",\\\"children\\\":[{\\\"id\\\":\\\"unprocessed\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Необработанные события\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-unprocessed-events\\\",\\\"emptyMessage\\\":\\\"Нет необработанных\\\",\\\"selectable\\\":true,\\\"rowSelectionKey\\\":\\\"id\\\",\\\"rowParamsFromRowJson\\\":\\\"{\\\\\\\"unprocessedId\\\\\\\":\\\\\\\"id\\\\\\\",\\\\\\\"signalLabel\\\\\\\":\\\\\\\"signal_label\\\\\\\"}\\\",\\\"autoSelectFirstRow\\\":true},{\\\"id\\\":\\\"btn-register\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Зарегистрировать\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-register-event-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Зарегистрировать\\\",\\\"modalTitle\\\":\\\"Регистрация события\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"},{\\\"id\\\":\\\"btn-delete\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Удалить\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-delete-unprocessed-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Удалить\\\",\\\"modalTitle\\\":\\\"Удалить необработанные\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"unprocessedId\\\\\\\"]\\\"}]},{\\\"id\\\":\\\"journal\\\",\\\"label\\\":\\\"Журнал процесса\\\",\\\"children\\\":[{\\\"id\\\":\\\"process-log\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Журнал процесса\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-process-journal\\\",\\\"emptyMessage\\\":\\\"Журнал пуст\\\"}]}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-register-event-modal",
+      "title": "Регистрация события",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":64,\"widgets\":[{\"id\":\"machine-ctx\",\"type\":\"report\",\"title\":\"Данные с машины\",\"reportPath\":\"root.platform.reports.ogp-machine-context\",\"statusDotColumnsJson\":\"[\\\"status\\\"]\",\"stylesJson\":\"{\\\"card\\\":{\\\"borderLeft\\\":\\\"4px solid #f97316\\\",\\\"boxShadow\\\":\\\"0 1px 3px rgba(0,0,0,0.08)\\\"},\\\"title\\\":{\\\"fontWeight\\\":\\\"700\\\",\\\"fontSize\\\":\\\"0.85rem\\\"}}\",\"x\":0,\"y\":0,\"w\":12,\"h\":2},{\"id\":\"register-wizard\",\"type\":\"function-form\",\"title\":\"Регистрация события\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_registerEvent\",\"validateFunctionName\":\"ogp_validateRegistration\",\"wizardStepsJson\":\"[{\\\"id\\\":\\\"1\\\",\\\"label\\\":\\\"Регистрация события\\\"},{\\\"id\\\":\\\"2\\\",\\\"label\\\":\\\"Описание события\\\"},{\\\"id\\\":\\\"3\\\",\\\"label\\\":\\\"Подтверждение регистрации\\\"}]\",\"buttonLabel\":\"Зарегистрировать\",\"confirmMessage\":\"Запись о событии будет добавлена в систему. Убедитесь, что данные введены верно.\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Код события\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"deleteNow\\\",\\\"label\\\":\\\"Удаляем сразу\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"colSpan\\\":1,\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"subcodes\\\",\\\"label\\\":\\\"Заезды на настройку\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"1\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"120\\\\\\\"}\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-subcodes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\",\\\"optionsFilterField\\\":\\\"eventCode\\\",\\\"optionsFilterColumn\\\":\\\"parent_code\\\"},{\\\"name\\\":\\\"unprocessedId\\\",\\\"label\\\":\\\"ID необработанного\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"1\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"unprocessedId\\\"},{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"P1\\\",\\\"colSpan\\\":1,\\\"required\\\":true,\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-rolls\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"label\\\"},{\\\"name\\\":\\\"side\\\",\\\"label\\\":\\\"Сторона\\\",\\\"type\\\":\\\"select\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"PM\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"PM\\\",\\\"label\\\":\\\"PM\\\"},{\\\"value\\\":\\\"Passer\\\",\\\"label\\\":\\\"Passer\\\"}]},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"0\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"rows\\\",\\\"label\\\":\\\"Ряд\\\",\\\"type\\\":\\\"multiselect\\\",\\\"step\\\":\\\"2\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"1\\\",\\\"label\\\":\\\"1\\\"},{\\\"value\\\":\\\"2\\\",\\\"label\\\":\\\"2\\\"},{\\\"value\\\":\\\"3\\\",\\\"label\\\":\\\"3\\\"},{\\\"value\\\":\\\"all\\\",\\\"label\\\":\\\"Все ряды\\\"}]},{\\\"name\\\":\\\"card1\\\",\\\"label\\\":\\\"Карточка 1\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Жёлтая\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"500\\\",\\\"colSpan\\\":1,\\\"required\\\":true},{\\\"name\\\":\\\"card2\\\",\\\"label\\\":\\\"Карточка 2\\\",\\\"type\\\":\\\"text\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"Синяя\\\",\\\"colSpan\\\":1,\\\"showWhenJson\\\":\\\"{\\\\\\\"eventCode\\\\\\\":\\\\\\\"141\\\\\\\"}\\\"},{\\\"name\\\":\\\"startAt\\\",\\\"label\\\":\\\"Начало, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"10:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"endAt\\\",\\\"label\\\":\\\"Конец, мин\\\",\\\"type\\\":\\\"time\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"17:00\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"wholeStage\\\",\\\"label\\\":\\\"Весь этап\\\",\\\"type\\\":\\\"checkbox\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"colSpan\\\":1},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"step\\\":\\\"2\\\",\\\"defaultValue\\\":\\\"\\\",\\\"colSpan\\\":2}]\",\"paramBindingsJson\":\"{\\\"unprocessedId\\\":\\\"unprocessedId\\\"}\",\"requireSessionParamsJson\":\"[\\\"unprocessedId\\\"]\",\"syncFieldsToSessionJson\":\"{\\\"eventCode\\\":\\\"eventCode\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":2,\"w\":12,\"h\":16}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-delete-unprocessed-modal",
+      "title": "Удалить необработанные",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"delete-unprocessed\",\"type\":\"function-form\",\"title\":\"Удалить необработанные\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_deleteUnprocessedEvents\",\"buttonLabel\":\"Удалить\",\"confirmMessage\":\"Удалить необработанные события?\",\"fieldsJson\":\"[{\\\"name\\\":\\\"ids\\\",\\\"label\\\":\\\"ID\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\",\\\"required\\\":true}]\",\"paramBindingsJson\":\"{\\\"ids\\\":\\\"unprocessedId\\\"}\",\"clearSessionParamsJson\":\"[\\\"unprocessedId\\\",\\\"signalLabel\\\"]\",\"x\":0,\"y\":0,\"w\":12,\"h\":6}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-shift-supervisor",
+      "title": "Начальник смены",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"supervisor-tabs\",\"type\":\"tab-panel\",\"title\":\"Начальник смены\",\"x\":0,\"y\":0,\"w\":12,\"h\":18,\"tabsJson\":\"[{\\\"id\\\":\\\"downtime\\\",\\\"label\\\":\\\"Простои\\\",\\\"children\\\":[{\\\"id\\\":\\\"downtime\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Простои по этапам\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-downtime-summary\\\",\\\"parametersJson\\\":\\\"{\\\\\\\"orderNo\\\\\\\":\\\\\\\"\\\\\\\"}\\\",\\\"contextParamsJson\\\":\\\"{\\\\\\\"orderNo\\\\\\\":\\\\\\\"orderNo\\\\\\\"}\\\"}]},{\\\"id\\\":\\\"journal\\\",\\\"label\\\":\\\"Журнал\\\",\\\"children\\\":[{\\\"id\\\":\\\"journal-edit\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Журнал процесса\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-process-journal\\\",\\\"parametersJson\\\":\\\"{\\\\\\\"orderNo\\\\\\\":\\\\\\\"\\\\\\\"}\\\",\\\"contextParamsJson\\\":\\\"{\\\\\\\"orderNo\\\\\\\":\\\\\\\"orderNo\\\\\\\"}\\\",\\\"emptyMessage\\\":\\\"Журнал пуст\\\",\\\"selectable\\\":true,\\\"rowSelectionKey\\\":\\\"id\\\",\\\"rowParamsFromRowJson\\\":\\\"{\\\\\\\"eventId\\\\\\\":\\\\\\\"id\\\\\\\",\\\\\\\"eventLabel\\\\\\\":\\\\\\\"event_label\\\\\\\",\\\\\\\"comment\\\\\\\":\\\\\\\"comment\\\\\\\",\\\\\\\"startM\\\\\\\":\\\\\\\"meter_from\\\\\\\",\\\\\\\"endM\\\\\\\":\\\\\\\"meter_to\\\\\\\"}\\\"},{\\\"id\\\":\\\"btn-edit-event\\\",\\\"type\\\":\\\"dashboard-link\\\",\\\"title\\\":\\\"Корректировка записи\\\",\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.ogp-edit-process-event-modal\\\",\\\"openMode\\\":\\\"modal\\\",\\\"buttonLabel\\\":\\\"Корректировка записи\\\",\\\"modalTitle\\\":\\\"Корректировка записи\\\",\\\"requireSessionParamsJson\\\":\\\"[\\\\\\\"eventId\\\\\\\"]\\\"}]},{\\\"id\\\":\\\"integration\\\",\\\"label\\\":\\\"1С\\\",\\\"children\\\":[{\\\"id\\\":\\\"outbox\\\",\\\"type\\\":\\\"report\\\",\\\"title\\\":\\\"Очередь 1С\\\",\\\"reportPath\\\":\\\"root.platform.reports.ogp-integration-outbox\\\"}]}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-edit-process-event-modal",
+      "title": "Корректировка записи",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"edit-event\",\"type\":\"function-form\",\"title\":\"Корректировка записи\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_updateProcessEvent\",\"buttonLabel\":\"Сохранить\",\"fieldsJson\":\"[{\\\"name\\\":\\\"eventId\\\",\\\"label\\\":\\\"ID события\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"eventId\\\"},{\\\"name\\\":\\\"comment\\\",\\\"label\\\":\\\"Комментарий\\\",\\\"type\\\":\\\"textarea\\\"},{\\\"name\\\":\\\"startM\\\",\\\"label\\\":\\\"Начало, м\\\",\\\"type\\\":\\\"text\\\"},{\\\"name\\\":\\\"endM\\\",\\\"label\\\":\\\"Конец, м\\\",\\\"type\\\":\\\"text\\\"}]\",\"requireSessionParamsJson\":\"[\\\"eventId\\\"]\",\"clearSessionParamsJson\":\"[\\\"eventId\\\",\\\"eventLabel\\\",\\\"comment\\\",\\\"startM\\\",\\\"endM\\\"]\",\"x\":0,\"y\":0,\"w\":12,\"h\":8}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-simulator",
+      "title": "Симулятор OGP",
+      "refreshIntervalMs": 3000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"sim-help\",\"type\":\"html-snippet\",\"title\":\"Симулятор OGP\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p>Симуляция сигналов машины: останов, удар ножа, кнопка брака. После сигнала откройте «Регистрация события».</p>\"},{\"id\":\"sim-form\",\"type\":\"function-form\",\"title\":\"Сигнал с машины\",\"x\":0,\"y\":2,\"w\":4,\"h\":4,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_simulateSignal\",\"buttonLabel\":\"Отправить сигнал\",\"fieldsJson\":\"[{\\\"name\\\":\\\"signalType\\\",\\\"label\\\":\\\"Тип сигнала\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"stop\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"stop\\\",\\\"label\\\":\\\"Останов\\\"},{\\\"value\\\":\\\"knife\\\",\\\"label\\\":\\\"Удар ножа\\\"},{\\\"value\\\":\\\"defect\\\",\\\"label\\\":\\\"Кнопка Брак\\\"},{\\\"value\\\":\\\"resume\\\",\\\"label\\\":\\\"Возобновление\\\"}]}]\"},{\"id\":\"seed\",\"type\":\"function\",\"title\":\"Демо\",\"x\":4,\"y\":2,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_seedDemoStage\",\"buttonLabel\":\"Сброс демо-этапа\"},{\"id\":\"events\",\"type\":\"event-feed\",\"title\":\"Журнал платформы\",\"x\":4,\"y\":4,\"w\":8,\"h\":4,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"eventNamesJson\":\"[\\\"ogpUnprocessedEvent\\\",\\\"ogpEventRegistered\\\"]\",\"maxItems\":20}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-admin-codes",
+      "title": "Администрирование кодов",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"codes-report\",\"type\":\"report\",\"title\":\"Коды событий\",\"x\":0,\"y\":0,\"w\":8,\"h\":7,\"reportPath\":\"root.platform.reports.ogp-event-codes\"},{\"id\":\"btn-add-code\",\"type\":\"dashboard-link\",\"title\":\"Добавить код\",\"x\":8,\"y\":0,\"w\":4,\"h\":2,\"targetDashboardPath\":\"root.platform.dashboards.ogp-add-event-code-modal\",\"openMode\":\"modal\",\"buttonLabel\":\"Добавить код\",\"modalTitle\":\"Добавить код\"},{\"id\":\"btn-add-subcode\",\"type\":\"dashboard-link\",\"title\":\"Добавить подкод\",\"x\":8,\"y\":2,\"w\":4,\"h\":2,\"targetDashboardPath\":\"root.platform.dashboards.ogp-add-subcode-modal\",\"openMode\":\"modal\",\"buttonLabel\":\"Добавить подкод\",\"modalTitle\":\"Добавить подкод\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-add-event-code-modal",
+      "title": "Добавить код",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"add-code\",\"type\":\"function-form\",\"title\":\"Добавить код\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_createEventCode\",\"buttonLabel\":\"Сохранить код\",\"fieldsJson\":\"[{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Код\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"name\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"requiresTime\\\",\\\"label\\\":\\\"Время обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresMeter\\\",\\\"label\\\":\\\"Метраж обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"true\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"requiresComment\\\",\\\"label\\\":\\\"Комментарий обяз.\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"hasSubcodes\\\",\\\"label\\\":\\\"Подкоды\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]},{\\\"name\\\":\\\"excludeFrom1c\\\",\\\"label\\\":\\\"Исключить из 1С\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Да\\\"},{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Нет\\\"}]}]\",\"x\":0,\"y\":0,\"w\":12,\"h\":10}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-add-subcode-modal",
+      "title": "Добавить подкод",
+      "refreshIntervalMs": 10000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"add-subcode\",\"type\":\"function-form\",\"title\":\"Добавить подкод\",\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_createSubcode\",\"buttonLabel\":\"Добавить подкод\",\"fieldsJson\":\"[{\\\"name\\\":\\\"parentCode\\\",\\\"label\\\":\\\"Родительский код\\\",\\\"type\\\":\\\"select\\\",\\\"required\\\":true,\\\"defaultValue\\\":\\\"\\\",\\\"optionsFromReport\\\":\\\"root.platform.reports.ogp-event-codes\\\",\\\"optionsValueField\\\":\\\"code\\\",\\\"optionsLabelField\\\":\\\"name\\\"},{\\\"name\\\":\\\"code\\\",\\\"label\\\":\\\"Подкод\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true},{\\\"name\\\":\\\"label\\\",\\\"label\\\":\\\"Название\\\",\\\"type\\\":\\\"text\\\",\\\"required\\\":true}]\",\"x\":0,\"y\":0,\"w\":12,\"h\":6}]}"
+    },
+    {
+      "path": "root.platform.dashboards.ogp-roll-release",
+      "title": "Выпуск рулона",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"roll-map\",\"type\":\"report\",\"title\":\"Карта рулона (интервалы)\",\"x\":0,\"y\":0,\"w\":8,\"h\":5,\"reportPath\":\"root.platform.reports.ogp-roll-map\",\"parametersJson\":\"{\\\"rollId\\\":\\\"P1\\\"}\",\"contextParamsJson\":\"{\\\"rollId\\\":\\\"rollId\\\"}\"},{\"id\":\"build-label\",\"type\":\"function-form\",\"title\":\"Этикетка рулона\",\"x\":8,\"y\":0,\"w\":4,\"h\":4,\"objectPath\":\"root.platform.devices.ogp-mes-hub\",\"functionName\":\"ogp_buildRollLabel\",\"buttonLabel\":\"Сформировать этикетку\",\"fieldsJson\":\"[{\\\"name\\\":\\\"rollId\\\",\\\"label\\\":\\\"Рулон\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"P1\\\"}]\"},{\"id\":\"label-report\",\"type\":\"report\",\"title\":\"Данные этикетки\",\"x\":0,\"y\":5,\"w\":12,\"h\":4,\"reportPath\":\"root.platform.reports.ogp-roll-label-data\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-ogp-events",
+    "title": "MES OGP Events",
+    "eventJournalObjectPath": "root.platform.devices.ogp-mes-hub",
+    "defaultDashboard": "root.platform.dashboards.ogp-operator-hmi",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.ogp-operator-hmi",
+        "title": "Регистрация события"
+      },
+      {
+        "path": "root.platform.dashboards.ogp-shift-supervisor",
+        "title": "Начальник смены"
+      },
+      {
+        "path": "root.platform.dashboards.ogp-simulator",
+        "title": "Симулятор"
+      },
+      {
+        "path": "root.platform.dashboards.ogp-admin-codes",
+        "title": "Коды событий"
+      },
+      {
+        "path": "root.platform.dashboards.ogp-roll-release",
+        "title": "Выпуск рулона"
+      }
+    ],
+    "alarmBar": {
+      "enabled": true,
+      "soundEnabled": true,
+      "minLevel": "WARNING",
+      "position": "top",
+      "rules": [
+        {
+          "id": "ogp-unprocessed",
+          "eventNames": [
+            "ogpUnprocessedEvent"
+          ],
+          "objectPathPrefix": "root.platform.devices.ogp-mes-hub",
+          "minLevel": "WARNING",
+          "title": "Требуется регистрация события",
+          "fields": [
+            {
+              "label": "Сигнал",
+              "source": "payload.signalLabel"
+            },
+            {
+              "label": "Время",
+              "source": "timestamp"
+            }
+          ],
+          "colors": {
+            "background": "#422006",
+            "text": "#fef3c7",
+            "border": "#f59e0b",
+            "accent": "#fbbf24"
+          },
+          "persistUntilDismiss": true,
+          "actions": {
+            "dashboardPath": "root.platform.dashboards.ogp-operator-hmi",
+            "primaryActionLabel": "Зарегистрировать",
+            "hideSecondaryActions": true,
+            "hideAcknowledge": true,
+            "sessionParams": {
+              "activeTab": "registration"
+            },
+            "sessionParamsFromPayload": {
+              "unprocessedId": "unprocessedId",
+              "signalLabel": "signalLabel"
+            },
+            "enrichFromFunction": {
+              "objectPath": "root.platform.devices.ogp-mes-hub",
+              "functionName": "ogp_listUnprocessedEvents",
+              "rowFields": {
+                "unprocessedId": "id",
+                "signalLabel": "signal_label"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

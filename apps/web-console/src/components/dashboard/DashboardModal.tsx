@@ -50,6 +50,7 @@ export default function DashboardModal({
             path={path}
             operatorMode
             embeddedModal
+            onClose={onClose}
             session={session}
             selection={selection}
             params={params}

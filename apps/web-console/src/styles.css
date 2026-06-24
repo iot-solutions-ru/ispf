@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: dark;
   --bg: #0d1117;
   --bg-elevated: #161b22;
@@ -2066,6 +2066,21 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   box-shadow: var(--ui-shadow-surface);
 }
 
+.dash-widget-html .dash-html-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dash-widget-html .dash-html-iframe {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 200px;
+  border: 0;
+  background: transparent;
+}
+
 .dash-widget-image .dash-widget-image-el {
   display: block;
   width: 100%;
@@ -2705,6 +2720,9 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: var(--bg);
 }
 
@@ -2909,6 +2927,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   grid-template-columns: minmax(0, 1fr) 320px;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .operator-dashboard {
@@ -3102,17 +3121,38 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dashboard-shell--embedded-modal {
+  min-height: min-content;
+  flex: 0 0 auto;
+}
+
+.dashboard-shell--embedded-modal .dashboard-body {
+  flex: 0 0 auto;
+  min-height: min-content;
+}
+
+.dashboard-shell--embedded-modal .dashboard-canvas {
+  min-height: 0;
+}
+
+.dashboard-grid-host--modal .dashboard-grid-item {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .dashboard-modal-body .dashboard-shell {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: min-content;
   border: none;
   border-radius: 0;
 }
 
 .dashboard-modal-body .dashboard-canvas {
-  min-height: 420px;
+  min-height: 0;
 }
 
 .dashboard-link-btn {
@@ -3171,27 +3211,57 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .operator-dashboard-shell-host {
   min-height: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   position: relative;
   z-index: 1;
 }
 
 .operator-dashboard-shell-host .dashboard-shell {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  height: auto;
+  min-height: min-content;
   border: none;
   border-radius: 0;
 }
 
 .operator-dashboard-shell-host .dashboard-body {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  min-height: auto;
 }
 
 .operator-dashboard-shell-host .dashboard-canvas {
-  height: 100%;
+  height: auto;
+  min-height: 0;
+  flex: none;
+  overflow: visible;
+}
+
+.operator-dashboard-shell-host .dash-widget-tab-panel .dash-tab-panel-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.operator-dashboard-shell-host .dash-widget-tab-panel .dash-tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.operator-dashboard-shell-host .dash-composite-body,
+.operator-dashboard-shell-host .dash-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .work-queue-panel {
@@ -3654,6 +3724,227 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   font-size: 0.75rem;
   color: var(--text-muted, #8b949e);
   line-height: 1.3;
+}
+
+.function-form-required {
+  color: var(--danger, #dc2626);
+}
+
+.function-form-wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.function-form-wizard-step {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.function-form-wizard-step.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.function-form-wizard-step.done {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  color: var(--accent-hover);
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.function-form-wizard-banner {
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: var(--text);
+}
+
+.function-form-wizard-banner.remove {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.function-form-wizard-banner.register {
+  background: color-mix(in srgb, #eab308 14%, var(--surface-2));
+  border: 1px solid color-mix(in srgb, #eab308 28%, var(--border));
+}
+
+.function-form-wizard-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: start;
+}
+
+.function-form-field-cell.full {
+  grid-column: 1 / -1;
+}
+
+.function-form-field-cell.half {
+  grid-column: span 1;
+  min-width: 0;
+}
+
+.function-form-wizard-step-title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.dashboard-modal-body .function-form-widget {
+  overflow: visible;
+}
+
+.dashboard-modal-body .function-form-fields {
+  overflow-y: visible;
+  max-height: none;
+  padding-right: 0.15rem;
+}
+
+.dashboard-modal-body .dash-widget.function-form-widget {
+  min-height: min-content;
+  height: auto !important;
+}
+
+.function-form-wizard-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.function-form-summary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.function-form-summary-section + .function-form-summary-section {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+
+.function-form-summary-section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-hover);
+}
+
+.function-form-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.function-form-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.function-form-summary-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.function-form-summary-value {
+  font-weight: 600;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.function-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.function-form-wizard-back {
+  margin-right: auto;
+}
+
+.function-form-wizard-submit {
+  background: var(--success, #16a34a);
+}
+
+.function-form-wizard-submit:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.bff-status-dot {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.bff-status-dot.ok {
+  background: #22c55e;
+}
+
+.bff-status-dot.warn {
+  background: #f97316;
+}
+
+.function-form-multiselect {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.function-form-multiselect legend {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.function-form-multiselect-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1, #fff);
+  min-height: 2.25rem;
+}
+
+.function-form-multiselect-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .dash-widget-title .badge {
@@ -5754,7 +6045,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   font-size: 0.85rem;
 }
 
-/* ── UI polish: animations, images, stagger, a11y ── */
+/* в”Ђв”Ђ UI polish: animations, images, stagger, a11y в”Ђв”Ђ */
 
 @keyframes ui-fade-in {
   from {
@@ -5872,6 +6163,10 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 @media (prefers-reduced-motion: reduce) {

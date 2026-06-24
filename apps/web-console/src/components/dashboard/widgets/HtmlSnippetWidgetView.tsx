@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import type { HtmlSnippetWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { buildHtmlSnippetSrcDoc, htmlSnippetRequiresIframe } from "./htmlSnippetDocument";
 
 interface HtmlSnippetWidgetViewProps {
   widget: HtmlSnippetWidget;
@@ -10,6 +12,8 @@ interface HtmlSnippetWidgetViewProps {
 export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetWidgetViewProps) {
   const styles = useWidgetStyles(widget.stylesJson);
   const html = widget.htmlJson ?? "";
+  const useIframe = useMemo(() => htmlSnippetRequiresIframe(html), [html]);
+  const srcDoc = useMemo(() => (useIframe ? buildHtmlSnippetSrcDoc(html) : ""), [html, useIframe]);
 
   return (
     <DashWidgetShell
@@ -18,11 +22,22 @@ export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetW
       className="dash-widget dash-widget-html"
       editable={editable}
     >
-      <div
-        className="dash-html-body"
-        style={styles.body}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+      {useIframe ? (
+        <iframe
+          key={srcDoc}
+          className="dash-html-iframe"
+          style={styles.body}
+          title={widget.title || "HTML snippet"}
+          srcDoc={srcDoc}
+          sandbox="allow-scripts"
+        />
+      ) : (
+        <div
+          className="dash-html-body"
+          style={styles.body}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      )}
     </DashWidgetShell>
   );
 }

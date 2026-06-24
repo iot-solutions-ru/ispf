@@ -25,6 +25,16 @@ export interface OperatorAlarmRule {
     selectionKey?: string;
     reportFromPayload?: string;
     acknowledgeFunction?: string;
+    primaryActionLabel?: string;
+    hideSecondaryActions?: boolean;
+    hideAcknowledge?: boolean;
+    sessionParams?: Record<string, unknown>;
+    sessionParamsFromPayload?: Record<string, string>;
+    enrichFromFunction?: {
+      objectPath: string;
+      functionName: string;
+      rowFields: Record<string, string>;
+    };
   };
   persistUntilDismiss?: boolean;
 }
@@ -52,4 +62,8 @@ export interface ActiveOperatorAlarm {
   reportPath: string | null;
   selectionKey: string | null;
   acknowledgeFunction: string | null;
+  primaryActionLabel: string | null;
+  hideSecondaryActions: boolean;
+  hideAcknowledge: boolean;
+  navigateParams: Record<string, unknown>;
 }

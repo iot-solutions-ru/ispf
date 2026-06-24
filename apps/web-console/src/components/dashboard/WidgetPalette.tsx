@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { WidgetType } from "../../types/dashboard";
-import { widgetTypeI18nKey } from "./widgetI18n";
+import { translateWidgetType } from "./widgetI18n";
 
 interface WidgetPaletteProps {
   onAdd: (type: WidgetType) => void;
@@ -395,11 +395,11 @@ export default function WidgetPalette({ onAdd, layout }: WidgetPaletteProps) {
                   key={type}
                   type="button"
                   className="dashboard-widget-palette-item"
-                  title={t(widgetTypeI18nKey(type))}
+                  title={translateWidgetType(t, type)}
                   onClick={() => onAdd(type)}
                 >
                   <WidgetTypeIcon type={type} />
-                  <span className="dashboard-widget-palette-item-label">{t(widgetTypeI18nKey(type))}</span>
+                  <span className="dashboard-widget-palette-item-label">{translateWidgetType(t, type)}</span>
                 </button>
               ))}
             </div>

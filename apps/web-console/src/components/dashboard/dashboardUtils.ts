@@ -104,6 +104,22 @@ function coerceToSchemaType(raw: string | number | boolean, schemaType: string):
   }
 }
 
+function defaultForSchemaType(schemaType: string): unknown {
+  switch (schemaType) {
+    case "BOOLEAN":
+      return false;
+    case "INTEGER":
+    case "LONG":
+      return 0;
+    case "DOUBLE":
+    case "FLOAT":
+    case "NUMBER":
+      return 0;
+    default:
+      return "";
+  }
+}
+
 export function buildFunctionInput(
   fields: FunctionFormField[],
   values: Record<string, string | number>,
@@ -118,15 +134,21 @@ export function buildFunctionInput(
   };
   const row: Record<string, unknown> = {};
   for (const field of fields) {
-    const raw = field.hidden
-      ? field.defaultValue
-      : values[field.name] === undefined || values[field.name] === ""
-        ? field.defaultValue
-        : values[field.name];
+    const fromValues = values[field.name];
+    const raw =
+      fromValues !== undefined && fromValues !== ""
+        ? fromValues
+        : field.defaultValue;
     if (raw === undefined || raw === "") continue;
     const type =
       schemaFieldType(schema, field.name) ?? (field.type === "number" ? "DOUBLE" : "STRING");
     row[field.name] = coerceToSchemaType(raw, type);
+  }
+  if (inputSchema) {
+    for (const field of schema.fields) {
+      if (row[field.name] !== undefined) continue;
+      row[field.name] = defaultForSchemaType(field.type);
+    }
   }
   return { schema, rows: [row] };
 }

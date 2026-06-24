@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
 import { newWidget, WIDGET_TYPES } from "../../types/dashboard";
 import { WIDGET_STYLE_KEYS_HINT } from "./widgetStyles";
-import { widgetTypeI18nKey } from "./widgetI18n";
+import { translateWidgetType } from "./widgetI18n";
 import {
   FieldPairs,
   WidgetDataSourceFields,
@@ -92,7 +92,7 @@ export default function WidgetEditorPanel({
             >
               {WIDGET_TYPES.map((item) => (
                 <option key={item.type} value={item.type}>
-                  {t(widgetTypeI18nKey(item.type))}
+                  {translateWidgetType(t, item.type)}
                 </option>
               ))}
             </select>

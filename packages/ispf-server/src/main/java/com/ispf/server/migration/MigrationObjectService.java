@@ -148,6 +148,7 @@ public class MigrationObjectService {
         String checksum = checksum(migration.sql());
         ApplicationSchemaSupport.validateMigrationSql(migration.sql(), "");
         String schemaName = dataSourcePathResolver.resolveSchemaName(migration.dataSourcePath());
+        schemaSession.ensureSchemaExists(schemaName);
         schemaSession.runInSchema(schemaName, () -> {
             for (String statement : splitStatements(migration.sql())) {
                 if (!statement.isBlank()) {

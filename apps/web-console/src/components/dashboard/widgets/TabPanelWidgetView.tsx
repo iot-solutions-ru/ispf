@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DashboardWidget, TabPanelWidget, TabPanelTab } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { renderWidgetList } from "../renderDashboardWidget";
+import { useDashboardContext } from "../DashboardContext";
 
 interface TabPanelWidgetViewProps {
   widget: TabPanelWidget;
@@ -20,6 +21,7 @@ export default function TabPanelWidgetView({
 }: TabPanelWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
+  const { params: sessionParams } = useDashboardContext();
   const tabs = useMemo(() => {
     try {
       const parsed = widget.tabsJson ? (JSON.parse(widget.tabsJson) as TabPanelTab[]) : [];
@@ -30,6 +32,20 @@ export default function TabPanelWidgetView({
   }, [widget.tabsJson]);
 
   const [activeId, setActiveId] = useState(tabs[0]?.id ?? "");
+  const requestedTab =
+    sessionParams.activeTab != null && String(sessionParams.activeTab).trim() !== ""
+      ? String(sessionParams.activeTab)
+      : null;
+
+  useEffect(() => {
+    if (!requestedTab) {
+      return;
+    }
+    if (tabs.some((tab) => tab.id === requestedTab)) {
+      setActiveId(requestedTab);
+    }
+  }, [requestedTab, tabs]);
+
   const activeTab = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
 
   return (

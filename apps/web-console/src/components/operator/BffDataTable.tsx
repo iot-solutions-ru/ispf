@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -9,9 +10,23 @@ interface BffDataTableProps {
   selectionKey?: string;
   selectedKey?: string | null;
   onSelect?: (row: Record<string, unknown> | null) => void;
+  /** Render ok/warn dots instead of text for these columns */
+  statusColumns?: string[];
 }
 
-function formatCell(value: unknown, t: TFunction<["operator", "common"]>): string {
+function formatCell(
+  value: unknown,
+  t: TFunction<["operator", "common"]>,
+  column: string,
+  statusColumns: string[]
+): ReactNode {
+  if (statusColumns.includes(column)) {
+    const status = String(value ?? "").toLowerCase();
+    if (status === "ok" || status === "warn" || status === "warning") {
+      const tone = status === "ok" ? "ok" : "warn";
+      return <span className={`bff-status-dot ${tone}`} aria-label={status} />;
+    }
+  }
   if (value === null || value === undefined) {
     return t("common:empty.dash");
   }
@@ -32,6 +47,7 @@ export default function BffDataTable({
   selectionKey = "order_id",
   selectedKey = null,
   onSelect,
+  statusColumns = [],
 }: BffDataTableProps) {
   const { t } = useTranslation(["operator", "common"]);
   if (rows.length === 0) {
@@ -78,7 +94,7 @@ export default function BffDataTable({
                   </td>
                 )}
                 {columns.map((column) => (
-                  <td key={column}>{formatCell(row[column], t)}</td>
+                  <td key={column}>{formatCell(row[column], t, column, statusColumns)}</td>
                 ))}
               </tr>
             );

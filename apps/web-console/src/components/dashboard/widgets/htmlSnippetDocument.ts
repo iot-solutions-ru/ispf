@@ -1,0 +1,56 @@
+/** Decode common HTML entities when snippet was stored escaped. */
+export function decodeHtmlSnippetEntities(html: string): string {
+  if (!/&lt;|&gt;|&amp;|&#\d+;|&#x/i.test(html)) {
+    return html;
+  }
+  return html
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, "&");
+}
+
+export function normalizeHtmlSnippet(html: string): string {
+  return decodeHtmlSnippetEntities(html).trim();
+}
+
+export function isFullHtmlDocument(html: string): boolean {
+  const trimmed = normalizeHtmlSnippet(html);
+  return /^\s*<!DOCTYPE/i.test(trimmed) || /^\s*<html[\s>]/i.test(trimmed);
+}
+
+/** True when snippet embeds executable JavaScript. */
+export function htmlSnippetContainsScript(html: string): boolean {
+  return /<script[\s>]/i.test(normalizeHtmlSnippet(html));
+}
+
+/** Full pages and JS snippets must run in an isolated iframe — innerHTML cannot host documents. */
+export function htmlSnippetRequiresIframe(html: string): boolean {
+  const normalized = normalizeHtmlSnippet(html);
+  if (!normalized) return false;
+  return isFullHtmlDocument(normalized) || htmlSnippetContainsScript(normalized);
+}
+
+/** Wrap HTML fragment in a minimal document for iframe srcdoc. */
+export function buildHtmlSnippetSrcDoc(html: string): string {
+  const trimmed = normalizeHtmlSnippet(html);
+  if (isFullHtmlDocument(trimmed)) {
+    return trimmed;
+  }
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;padding:0;width:100%;height:100%;box-sizing:border-box}*,*::before,*::after{box-sizing:inherit}</style></head><body>${trimmed}</body></html>`;
+}
+
+/** For HTML fragments with script (not a full document). */
+export function mountHtmlWithScripts(container: HTMLElement, html: string): void {
+  const normalized = normalizeHtmlSnippet(html);
+  container.innerHTML = normalized;
+  container.querySelectorAll("script").forEach((oldScript) => {
+    const script = document.createElement("script");
+    for (const attr of oldScript.attributes) {
+      script.setAttribute(attr.name, attr.value);
+    }
+    script.text = oldScript.text;
+    oldScript.replaceWith(script);
+  });
+}

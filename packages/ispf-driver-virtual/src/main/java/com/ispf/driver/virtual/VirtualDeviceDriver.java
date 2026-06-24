@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Simulated device driver for demos and integration tests.
- * Profiles: demo, meter, weighbridge, rack-signals, lab, unified, tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load.
+ * Profiles: demo, meter, weighbridge, rack-signals, lab, unified, tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load, ogp-print-line.
  */
 public class VirtualDeviceDriver implements DeviceDriver {
 
@@ -108,6 +108,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private final VirtualTecPoll.RumbState tecRumbState = new VirtualTecPoll.RumbState();
     private final VirtualTecPoll.DguState tecDguState = new VirtualTecPoll.DguState();
     private final VirtualTecPoll.LoadState tecLoadState = new VirtualTecPoll.LoadState();
+    private final VirtualOgpPoll.OgpState ogpState = new VirtualOgpPoll.OgpState();
     private double ratedPowerKw = 1480.0;
     private int unitIndex = 1;
     private volatile boolean connected;
@@ -195,6 +196,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
             case "tec-rumb" -> VirtualTecPoll.pollRumb(driverObject, tecRumbState);
             case "tec-dgu" -> VirtualTecPoll.pollDgu(driverObject, tecDguState);
             case "tec-load" -> VirtualTecPoll.pollLoad(driverObject, tecLoadState);
+            case "ogp-print-line" -> VirtualOgpPoll.poll(driverObject, ogpState);
             default -> readDemoProfile();
         }
     }

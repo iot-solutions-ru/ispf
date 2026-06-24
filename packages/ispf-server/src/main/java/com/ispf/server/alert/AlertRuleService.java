@@ -103,6 +103,8 @@ public class AlertRuleService {
                 continue;
             }
             boolean conditionMet = evaluateCondition(rule.conditionExpr(), node);
+            Double watchValue = readWatchValue(node, rule.watchVariable());
+            Double previousWatchValue = automationTreeService.getAlertRuleLastWatchValue(rule.id());
             boolean shouldFire;
 
             if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
@@ -125,11 +127,15 @@ public class AlertRuleService {
             } else {
                 shouldFire = conditionMet;
                 if (rule.edgeTrigger()) {
-                    shouldFire = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
+                    boolean risingEdge = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
+                    boolean watchIncreased = conditionMet
+                            && watchValue != null
+                            && previousWatchValue != null
+                            && watchValue > previousWatchValue;
+                    shouldFire = risingEdge || watchIncreased;
                 }
             }
 
-            automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
             if (shouldFire) {
                 if (rule.rateLimitSeconds() > 0) {
                     if (rule.lastFiredAt() != null
@@ -143,6 +149,11 @@ public class AlertRuleService {
                 if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
                     automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
                 }
+            }
+
+            automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
+            if (watchValue != null) {
+                automationTreeService.setAlertRuleLastWatchValue(rule.id(), watchValue);
             }
         }
     }
@@ -171,6 +182,25 @@ public class AlertRuleService {
         } catch (ExpressionException e) {
             return false;
         }
+    }
+
+    private static Double readWatchValue(PlatformObject node, String watchVariable) {
+        if (watchVariable == null || watchVariable.isBlank()) {
+            return null;
+        }
+        return node.getVariable(watchVariable)
+                .flatMap(v -> v.value())
+                .map(record -> record.firstRow().get("value"))
+                .map(value -> {
+                    if (value instanceof Number number) {
+                        return number.doubleValue();
+                    }
+                    if (value instanceof Boolean bool) {
+                        return bool ? 1.0 : 0.0;
+                    }
+                    return null;
+                })
+                .orElse(null);
     }
 
     private void validateRule(String objectPath, String eventName, String conditionExpr) {
