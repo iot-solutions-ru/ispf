@@ -106,6 +106,72 @@ class ModelEngineTest {
     }
 
     @Test
+    void intrinsicModelsSkipCatalogAndAppliedModelIds() {
+        objectTree.register(new PlatformObject(
+                UUID.randomUUID().toString(),
+                ModelCatalogRoots.RELATIVE,
+                ObjectType.MODEL,
+                "Relative Models",
+                null,
+                null
+        ));
+        objectTree.register(new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.data-sources",
+                ObjectType.DATA_SOURCES,
+                "Data Sources",
+                null,
+                null
+        ));
+
+        ModelDefinition intrinsic = new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "data-source-v1",
+                "Data source schema",
+                ModelType.RELATIVE,
+                ObjectType.DATA_SOURCE,
+                "",
+                List.of(ModelVariableDefinition.of(
+                        "schemaName",
+                        "Schema",
+                        "config",
+                        DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
+                        true,
+                        true,
+                        DataRecord.single(
+                                DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
+                                Map.of("value", "public")
+                        )
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                SystemIntrinsicModels.parameters(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createModel(intrinsic);
+
+        assertThat(objectTree.findByPath("root.platform.relative-models.data-source-v1")).isEmpty();
+
+        PlatformObject dataSource = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.data-sources.app1",
+                ObjectType.DATA_SOURCE,
+                "app1",
+                null,
+                null
+        );
+        objectTree.register(dataSource);
+
+        ModelApplyResult result = engine.applyIntrinsicStructure(intrinsic, dataSource.path());
+
+        assertThat(result.attachment()).isNull();
+        assertThat(dataSource.getVariable("schemaName")).isPresent();
+        assertThat(dataSource.appliedModelIds()).isEmpty();
+    }
+
+    @Test
     void instantiatesInstanceModel() {
         ModelDefinition model = new ModelDefinition(
                 UUID.randomUUID().toString(),

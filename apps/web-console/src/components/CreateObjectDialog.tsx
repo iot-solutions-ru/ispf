@@ -47,12 +47,14 @@ const DEFAULT_POLL_INTERVAL_MS = 5000;
 
 interface CreateObjectDialogProps {
   parentPath: string;
+  presetType?: ObjectType;
   onClose: () => void;
   onCreated: (path: string) => void;
 }
 
 export default function CreateObjectDialog({
   parentPath,
+  presetType,
   onClose,
   onCreated,
 }: CreateObjectDialogProps) {
@@ -65,10 +67,10 @@ export default function CreateObjectDialog({
   const [typeSelection, setTypeSelection] = useState<string>(() => defaultObjectTypeForParent(parentPath));
 
   useEffect(() => {
-    const defaultType = defaultObjectTypeForParent(parentPath);
+    const defaultType = presetType ?? defaultObjectTypeForParent(parentPath);
     setType(defaultType);
     setTypeSelection(defaultType);
-  }, [parentPath]);
+  }, [parentPath, presetType]);
   const [driverId, setDriverId] = useState("virtual");
   const [pollIntervalMs, setPollIntervalMs] = useState(DEFAULT_POLL_INTERVAL_MS);
   const [configPreview, setConfigPreview] = useState("{}");
@@ -109,9 +111,11 @@ export default function CreateObjectDialog({
       case "schedule":
         return t("dialog.newSchedule");
       default:
-        return t("dialog.newObject");
+        return presetType === "VISUAL_GROUP"
+          ? t("dialog.newVisualGroup")
+          : t("dialog.newObject");
     }
-  }, [mode, t]);
+  }, [mode, presetType, t]);
 
   const driversQuery = useQuery({
     queryKey: ["drivers"],
@@ -494,9 +498,11 @@ export default function CreateObjectDialog({
                   }}
                 >
                   <optgroup label="Platform types">
-                    {OBJECT_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
+                    {OBJECT_TYPES.map((objectType) => (
+                      <option key={objectType} value={objectType}>
+                        {objectType === "VISUAL_GROUP"
+                          ? t("dialog.typeVisualGroup")
+                          : objectType}
                       </option>
                     ))}
                   </optgroup>

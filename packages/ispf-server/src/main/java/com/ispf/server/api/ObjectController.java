@@ -239,6 +239,7 @@ public class ObjectController {
         return tree.childrenOf(parent).stream()
                 .filter(node -> tenantScopeService.isPathVisible(node.path(), authentication))
                 .filter(node -> objectAccessService.canRead(node.path(), authentication))
+                .filter(node -> !visualGroupService.isHiddenFromStructuralTree(node.path()))
                 .map(mapper)
                 .toList();
     }

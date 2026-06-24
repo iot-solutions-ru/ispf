@@ -8,8 +8,8 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import com.ispf.plugin.workflow.BpmnProcess;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.MessageTaskDefinition;
@@ -23,7 +23,6 @@ import com.ispf.plugin.workflow.WorkflowInstance;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
-import com.ispf.server.object.ObjectManager;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.event.EventService;
@@ -50,8 +49,7 @@ public class WorkflowService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
     private final WorkflowEngine workflowEngine;
     private final NatsEventBridge natsEventBridge;
     private final ObjectMapper objectMapper;
@@ -65,8 +63,7 @@ public class WorkflowService {
 
     public WorkflowService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+            SystemObjectStructureService structureService,
             WorkflowEngine workflowEngine,
             NatsEventBridge natsEventBridge,
             ObjectMapper objectMapper,
@@ -79,8 +76,7 @@ public class WorkflowService {
             BindingRefreshAfterCommit bindingRefreshAfterCommit
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.structureService = structureService;
         this.workflowEngine = workflowEngine;
         this.natsEventBridge = natsEventBridge;
         this.objectMapper = objectMapper;
@@ -99,13 +95,7 @@ public class WorkflowService {
         if (node.type() != ObjectType.WORKFLOW) {
             throw new IllegalArgumentException("Not a workflow object: " + path);
         }
-        if (node.getVariable("bpmnXml").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("workflow-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureWorkflowStructure(path);
     }
 
     public WorkflowView getWorkflow(String path) {

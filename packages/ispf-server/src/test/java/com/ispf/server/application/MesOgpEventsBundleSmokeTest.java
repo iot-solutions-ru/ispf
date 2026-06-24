@@ -1,5 +1,6 @@
 package com.ispf.server.application;
 
+import com.ispf.server.application.bundle.BundleVisualGroupService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -32,6 +33,19 @@ class MesOgpEventsBundleSmokeTest {
     @Test
     void deploysSimulatesAndRegistersEvent() throws Exception {
         deployBundle();
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/objects")
+                        .param("parent", BundleVisualGroupService.groupPathForCatalogAndApp(
+                                "root.platform.devices", "mes-ogp-events"))
+                        .param("lite", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.path == '" + HUB + "')].groupRef").value(true));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/objects")
+                        .param("parent", "root.platform.devices")
+                        .param("lite", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.path == '" + HUB + "')]").isEmpty());
 
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -4,6 +4,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.ModelType;
+import com.ispf.plugin.model.SystemIntrinsicModels;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -28,7 +29,7 @@ public record AppliedModelDto(
         for (String modelId : node.appliedModelIds()) {
             addResolved(registry, modelId, primary, seen, result);
         }
-        if (primary != null && !primary.isBlank()) {
+        if (primary != null && !primary.isBlank() && !SystemIntrinsicModels.isIntrinsicName(primary)) {
             addResolved(registry, primary, primary, seen, result);
         }
         return result;
@@ -48,8 +49,11 @@ public record AppliedModelDto(
         if (model.isEmpty()) {
             model = registry.findByName(modelRef);
         }
-        model.ifPresent(definition ->
-                result.add(AppliedModelDto.of(definition, modelRef.equals(primary) || definition.id().equals(primary)))
-        );
+        model.ifPresent(definition -> {
+            if (SystemIntrinsicModels.isIntrinsic(definition)) {
+                return;
+            }
+            result.add(AppliedModelDto.of(definition, modelRef.equals(primary) || definition.id().equals(primary)));
+        });
     }
 }

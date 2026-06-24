@@ -3,6 +3,10 @@ import { useMutation } from "@tanstack/react-query";
 import { bulkDeleteObjects, updateGroupMembers } from "../api";
 import type { ObjectSummary } from "../types";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import {
+  filterVisualGroupsInCatalog,
+  resolveVisualGroupCatalogParent,
+} from "../utils/createObjectMode";
 import { parseTreeRowKey } from "../utils/treeRowKey";
 
 export interface TreeBulkActionsConfig {
@@ -15,6 +19,7 @@ export interface TreeBulkActionsConfig {
   contextPath?: string | null;
   contextObjectType?: ObjectSummary["type"];
   onCreateChild?: (parentPath: string) => void;
+  onCreateVisualGroup?: (parentPath: string) => void;
 }
 
 export function useTreeBulkActions({
@@ -24,6 +29,8 @@ export function useTreeBulkActions({
   onSelectionChange,
   onDeleted,
   onMembersChanged,
+  contextPath,
+  contextObjectType,
 }: TreeBulkActionsConfig) {
   const selectedRows = useMemo(
     () => [...selectedKeys].map((key) => parseTreeRowKey(key)),
@@ -41,10 +48,44 @@ export function useTreeBulkActions({
     return [...paths];
   }, [selectedRows]);
 
-  const visualGroups = useMemo(
-    () => objects.filter((obj) => !obj.groupRef && obj.type === "VISUAL_GROUP"),
-    [objects],
-  );
+  const selectionCatalogParents = useMemo(() => {
+    const parents = new Set<string>();
+    for (const path of canonicalPaths) {
+      const obj = objects.find((item) => item.path === path);
+      const catalog = resolveVisualGroupCatalogParent(path, obj?.type);
+      if (catalog) {
+        parents.add(catalog);
+      }
+    }
+    return parents;
+  }, [canonicalPaths, objects]);
+
+  const hasMixedCatalogSelection = selectionCatalogParents.size > 1;
+
+  const targetCatalogParent = useMemo(() => {
+    if (hasMixedCatalogSelection) {
+      return null;
+    }
+    if (selectionCatalogParents.size === 1) {
+      return [...selectionCatalogParents][0];
+    }
+    if (contextPath) {
+      return resolveVisualGroupCatalogParent(contextPath, contextObjectType);
+    }
+    return null;
+  }, [selectionCatalogParents, hasMixedCatalogSelection, contextPath, contextObjectType]);
+
+  const visualGroups = useMemo(() => {
+    if (!targetCatalogParent) {
+      return [];
+    }
+    return filterVisualGroupsInCatalog(objects, targetCatalogParent).sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+      return a.displayName.localeCompare(b.displayName);
+    });
+  }, [objects, targetCatalogParent]);
 
   const deletablePaths = useMemo(() => {
     return canonicalPaths.filter((path) => {
@@ -114,6 +155,9 @@ export function useTreeBulkActions({
     deletablePaths,
     hasNonDeletableSelection,
     visualGroups,
+    targetCatalogParent,
+    hasMixedCatalogSelection,
+    canAddToGroup: canonicalPaths.length > 0 && !hasMixedCatalogSelection,
     selectAll,
     clearSelection,
     deleteSelected,

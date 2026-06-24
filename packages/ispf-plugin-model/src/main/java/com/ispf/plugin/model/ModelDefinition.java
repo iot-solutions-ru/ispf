@@ -5,6 +5,7 @@ import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,5 +64,32 @@ public record ModelDefinition(
     /** Semantic version string stored in {@link #parameters()} under {@code modelVersion}. */
     public String modelVersion() {
         return parameters.getOrDefault("modelVersion", "1");
+    }
+
+    public boolean systemIntrinsic() {
+        return "true".equalsIgnoreCase(parameters.getOrDefault(SystemIntrinsicModels.PARAM_SYSTEM_INTRINSIC, "false"));
+    }
+
+    public ModelDefinition withSystemIntrinsicFlag() {
+        if (systemIntrinsic()) {
+            return this;
+        }
+        Map<String, String> params = new LinkedHashMap<>(parameters);
+        params.put(SystemIntrinsicModels.PARAM_SYSTEM_INTRINSIC, "true");
+        return new ModelDefinition(
+                id,
+                name,
+                description,
+                type,
+                targetObjectType,
+                suitabilityExpression,
+                variables,
+                events,
+                functions,
+                bindingRules,
+                params,
+                createdAt,
+                Instant.now()
+        );
     }
 }

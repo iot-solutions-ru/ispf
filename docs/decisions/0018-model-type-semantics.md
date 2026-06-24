@@ -31,8 +31,8 @@
 ### 3. RELATIVE applicability
 
 - `targetObjectType` + опциональный CEL `suitabilityExpression`.
-- Авто-применение при create объекта (`applyRelativeModels`), флаг `autoApplyRelativeModels` (default true).
-- Явное apply, companion-models, driver provisioning — как раньше.
+- Авто-применение при create объекта (`applyRelativeModels`), флаг `autoApplyRelativeModels` (default true). **System-intrinsic** RELATIVE (`parameters.systemIntrinsic=true`, напр. `data-source-v1`) **исключены** из auto-apply и каталога — схема вшивается в экземпляр через `SystemObjectStructureService`.
+- Явное apply, companion-models, driver provisioning — для **optional** mixins (`device-driver-v1`, `mqtt-sensor-v1`, …).
 
 ### 4. INSTANCE как виртуальный тип
 

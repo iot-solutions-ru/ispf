@@ -47,9 +47,10 @@ public final class SystemObjectDescriptions {
                 Start/stop drivers from the Driver tab; bind variables on the Bindings tab. \
                 Use Federation bind (inspector) to proxy a remote device at a local path while keeping the operator path stable."""));
         map.put("root.platform.relative-models", new Entry("Relative Models", """
-                RELATIVE model blueprints (mixins). They enrich existing objects with extra variables, events, \
-                functions, and binding rules without changing the object path. \
-                Create or edit MODEL children here, then attach models to devices or folders via Applied models in the inspector."""));
+                Optional RELATIVE model blueprints (mixins). They enrich existing objects with extra variables, \
+                events, functions, and binding rules without changing the object path. \
+                Platform system types (data source, schedule, dashboard, …) embed their schema in each instance — \
+                they are not listed here. Attach mixins to devices or folders via Applied models in the inspector."""));
         map.put("root.platform.instance-types", new Entry("Instance Types", """
                 INSTANCE model blueprints — templates for new object instances (devices, folders, custom nodes). \
                 When you create an object with a templateId, the platform materializes structure from the matching INSTANCE model. \

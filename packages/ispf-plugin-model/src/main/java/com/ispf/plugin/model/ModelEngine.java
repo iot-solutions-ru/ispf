@@ -72,6 +72,9 @@ public class ModelEngine {
      */
     public ModelApplyResult applyModel(String modelId, String targetPath) {
         ModelDefinition model = registry.requireById(modelId);
+        if (SystemIntrinsicModels.isIntrinsic(model)) {
+            return applyIntrinsicStructure(model, targetPath);
+        }
         PlatformObject target = objectTree.require(targetPath);
         assertSuitable(model, target);
         List<ModelMergeWarning> warnings = new ArrayList<>();
@@ -79,6 +82,32 @@ public class ModelEngine {
         target.addAppliedModelId(model.id());
         ModelAttachment attachment = recordAttachment(model, targetPath);
         return new ModelApplyResult(attachment, warnings);
+    }
+
+    /**
+     * Merges a system-intrinsic schema into an object without catalog attachment or {@code appliedModelIds}.
+     */
+    public ModelApplyResult applyIntrinsicStructure(ModelDefinition model, String targetPath) {
+        PlatformObject target = objectTree.require(targetPath);
+        List<ModelMergeWarning> warnings = new ArrayList<>();
+        mergeModelChain(model, target, model.parameters(), warnings);
+        return new ModelApplyResult(null, warnings);
+    }
+
+    public void applyIntrinsicStructureByName(String modelName, String targetPath) {
+        registry.findByName(modelName).ifPresent(model -> applyIntrinsicStructure(model, targetPath));
+    }
+
+    public void removeIntrinsicCatalogNodes() {
+        for (String name : SystemIntrinsicModels.NAMES) {
+            removeCatalogNodeIfPresent(ModelCatalogRoots.RELATIVE + "." + name);
+        }
+    }
+
+    private void removeCatalogNodeIfPresent(String path) {
+        if (objectTree.findByPath(path).isPresent()) {
+            objectTree.delete(path);
+        }
     }
 
     /**
@@ -233,6 +262,9 @@ public class ModelEngine {
             if (model.type() != ModelType.RELATIVE) {
                 continue;
             }
+            if (SystemIntrinsicModels.isIntrinsic(model)) {
+                continue;
+            }
             if (target.appliedModelIds().contains(model.id())) {
                 continue;
             }
@@ -270,8 +302,11 @@ public class ModelEngine {
 
     public void refreshModelCatalogNodes() {
         ensureCatalogContainers();
+        removeIntrinsicCatalogNodes();
         for (ModelDefinition model : registry.all()) {
-            registerModelObject(model);
+            if (!SystemIntrinsicModels.isIntrinsic(model)) {
+                registerModelObject(model);
+            }
         }
     }
 
@@ -331,6 +366,10 @@ public class ModelEngine {
     }
 
     private void registerModelObject(ModelDefinition model) {
+        if (SystemIntrinsicModels.isIntrinsic(model)) {
+            removeCatalogNodeIfPresent(model.catalogObjectPath());
+            return;
+        }
         ensureCatalogContainers();
         String path = model.catalogObjectPath();
 

@@ -13,6 +13,7 @@ import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.ModelType;
 import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.model.SystemIntrinsicModels;
 import com.ispf.server.dashboard.DashboardLayouts;
 import org.springframework.stereotype.Component;
 
@@ -204,10 +205,10 @@ public class ModelBootstrap {
 
     private void ensureAutomationModels() {
         if (modelRegistry.findByName("alert-rule-v1").isEmpty()) {
-            modelEngine.createModel(buildAlertRuleModel());
+            modelEngine.createModel(buildAlertRuleModel().withSystemIntrinsicFlag());
         }
         if (modelRegistry.findByName("correlator-v1").isEmpty()) {
-            modelEngine.createModel(buildCorrelatorModel());
+            modelEngine.createModel(buildCorrelatorModel().withSystemIntrinsicFlag());
         }
     }
 
@@ -335,7 +336,7 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
@@ -458,7 +459,7 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
@@ -638,12 +639,12 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(dashboard);
+        modelEngine.createModel(dashboard.withSystemIntrinsicFlag());
 
         ModelDefinition report = new ModelDefinition(
                 UUID.randomUUID().toString(),
@@ -737,12 +738,12 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(report);
+        modelEngine.createModel(report.withSystemIntrinsicFlag());
 
         ModelDefinition workflow = new ModelDefinition(
                 UUID.randomUUID().toString(),
@@ -820,12 +821,12 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(workflow);
+        modelEngine.createModel(workflow.withSystemIntrinsicFlag());
     }
 
     static ModelDefinition buildDeviceDriverModel() {

@@ -6,10 +6,9 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
@@ -39,19 +38,16 @@ public class ScheduleObjectService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
     private final ObjectMapper objectMapper;
 
     public ScheduleObjectService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+            SystemObjectStructureService structureService,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.structureService = structureService;
         this.objectMapper = objectMapper;
     }
 
@@ -88,7 +84,7 @@ public class ScheduleObjectService {
                     ObjectType.SCHEDULE,
                     definition.scheduleId(),
                     "Schedule " + definition.scheduleId(),
-                    "schedule-v1"
+                    null
             );
         } else {
             objectManager.reconcileType(path, ObjectType.SCHEDULE);
@@ -150,7 +146,7 @@ public class ScheduleObjectService {
                 ObjectType.SCHEDULE,
                 displayName != null && !displayName.isBlank() ? displayName : scheduleId,
                 description != null ? description : "",
-                "schedule-v1"
+                null
         );
         applyScheduleFields(path, scheduleId, enabled, intervalMs, objectPath, functionName);
         if (displayName != null && !displayName.isBlank()) {
@@ -257,14 +253,7 @@ public class ScheduleObjectService {
     }
 
     private void ensureStructure(String path) {
-        PlatformObject node = objectManager.require(path);
-        if (node.getVariable("scheduleId").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("schedule-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureScheduleStructure(path);
     }
 
     private Optional<ScheduleDefinition> toDefinition(String path, PlatformObject node) {

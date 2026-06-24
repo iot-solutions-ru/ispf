@@ -53,6 +53,7 @@ public class TypedModelFacade {
     public List<ModelDto> list() {
         return modelRegistry.all().stream()
                 .filter(model -> model.type() == modelType)
+                .filter(model -> !com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model))
                 .map(ModelDto::from)
                 .toList();
     }
@@ -60,6 +61,7 @@ public class TypedModelFacade {
     public List<ModelDto> listForCreate(ObjectType platformType, String parentPath) {
         return modelRegistry.all().stream()
                 .filter(model -> model.type() == modelType)
+                .filter(model -> !com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model))
                 .filter(model -> platformType == null || model.targetObjectType() == platformType)
                 .map(ModelDto::from)
                 .toList();

@@ -22,6 +22,7 @@ import com.ispf.plugin.model.ModelEngine;
 import com.ispf.server.plugin.model.ModelApplicationRunner;
 import com.ispf.server.plugin.model.ModelBootstrap;
 import com.ispf.server.plugin.model.ModelPersistenceService;
+import com.ispf.server.plugin.model.SystemIntrinsicModelMigration;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -58,6 +59,8 @@ public class ObjectManager {
     private final ObjectProvider<ModelApplicationRunner> modelApplicationRunner;
     private final ObjectProvider<ModelPersistenceService> modelPersistence;
     private final ObjectProvider<ModelEngine> modelEngine;
+    private final ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration;
+    private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectConfigAuditService configAuditService;
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
@@ -72,6 +75,8 @@ public class ObjectManager {
             ObjectProvider<ModelApplicationRunner> modelApplicationRunner,
             ObjectProvider<ModelPersistenceService> modelPersistence,
             ObjectProvider<ModelEngine> modelEngine,
+            ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration,
+            ObjectProvider<VisualGroupService> visualGroupService,
             ApplicationEventPublisher eventPublisher,
             ObjectConfigAuditService configAuditService,
             RuntimeTelemetryCoalescer telemetryCoalescer
@@ -84,6 +89,8 @@ public class ObjectManager {
         this.modelApplicationRunner = modelApplicationRunner;
         this.modelPersistence = modelPersistence;
         this.modelEngine = modelEngine;
+        this.intrinsicModelMigration = intrinsicModelMigration;
+        this.visualGroupService = visualGroupService;
         this.eventPublisher = eventPublisher;
         this.configAuditService = configAuditService;
         this.telemetryCoalescer = telemetryCoalescer;
@@ -104,6 +111,7 @@ public class ObjectManager {
         }
         modelBootstrap.getObject().ensureBuiltInModels();
         modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
+        intrinsicModelMigration.ifAvailable(SystemIntrinsicModelMigration::migrate);
         modelEngine.ifAvailable(engine -> {
             engine.refreshModelCatalogNodes();
             cleanupLegacyModelCatalog();
@@ -160,7 +168,7 @@ public class ObjectManager {
             throw new IllegalArgumentException("parentPath is required");
         }
         objectTree.require(parentPath);
-        List<PlatformObject> children = objectTree.childrenOf(parentPath);
+        List<PlatformObject> children = structuralChildrenOf(parentPath);
         if (children.isEmpty()) {
             throw new IllegalArgumentException("No children under: " + parentPath);
         }
@@ -179,6 +187,14 @@ public class ObjectManager {
             persistNode(node);
         }
         publish(ObjectChangeEvent.of(ObjectChangeType.UPDATED, parentPath));
+    }
+
+    /** Direct children visible in the structural tree (excludes visual-group members). */
+    List<PlatformObject> structuralChildrenOf(String parentPath) {
+        VisualGroupService groups = visualGroupService.getIfAvailable();
+        return objectTree.childrenOf(parentPath).stream()
+                .filter(node -> groups == null || !groups.isHiddenFromStructuralTree(node.path()))
+                .toList();
     }
 
     @Transactional

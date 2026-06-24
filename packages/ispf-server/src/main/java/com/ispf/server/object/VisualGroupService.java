@@ -30,10 +30,19 @@ public class VisualGroupService {
 
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
+    private volatile Set<String> groupedMemberPathsCache;
 
     public VisualGroupService(ObjectManager objectManager, ObjectMapper objectMapper) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
+    }
+
+    /** Paths that appear in at least one visual group — hidden from structural tree parents. */
+    public boolean isHiddenFromStructuralTree(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        return groupedMemberPaths().contains(path.trim());
     }
 
     public boolean isVisualGroup(String path) {
@@ -208,6 +217,8 @@ public class VisualGroupService {
 
     private void writeMembers(String groupPath, List<VisualGroupMember> members) {
         try {
+            PlatformObject group = objectManager.require(groupPath);
+            List<VisualGroupMember> previous = readMembers(group);
             List<MemberDto> dtos = members.stream().map(MemberDto::from).toList();
             String json = objectMapper.writeValueAsString(dtos);
             DataRecord record = DataRecord.single(MEMBERS_SCHEMA, Map.of("value", json));
@@ -218,12 +229,53 @@ public class VisualGroupService {
                     record
             );
             objectManager.tree().require(groupPath);
+            invalidateGroupedMemberPathsCache();
             objectManager.publishStructureChange(groupPath);
+            Set<String> refreshPaths = new HashSet<>();
+            for (VisualGroupMember member : previous) {
+                refreshPaths.add(member.path());
+            }
+            for (VisualGroupMember member : members) {
+                refreshPaths.add(member.path());
+            }
+            for (String memberPath : refreshPaths) {
+                objectManager.publishStructureChange(memberPath);
+            }
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
             throw new IllegalStateException("Failed to persist group members", e);
         }
+    }
+
+    private Set<String> groupedMemberPaths() {
+        Set<String> cached = groupedMemberPathsCache;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (this) {
+            if (groupedMemberPathsCache == null) {
+                groupedMemberPathsCache = buildGroupedMemberPaths();
+            }
+            return groupedMemberPathsCache;
+        }
+    }
+
+    private void invalidateGroupedMemberPathsCache() {
+        groupedMemberPathsCache = null;
+    }
+
+    private Set<String> buildGroupedMemberPaths() {
+        Set<String> paths = new HashSet<>();
+        for (PlatformObject node : objectManager.tree().all()) {
+            if (node.type() != ObjectType.VISUAL_GROUP) {
+                continue;
+            }
+            for (VisualGroupMember member : readMembers(node)) {
+                paths.add(member.path());
+            }
+        }
+        return Set.copyOf(paths);
     }
 
     private record MemberDto(String path, int sortOrder) {

@@ -8,10 +8,8 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +33,16 @@ public class DashboardService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
     private final ObjectMapper objectMapper;
 
     public DashboardService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+            SystemObjectStructureService structureService,
             ObjectMapper objectMapper
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.structureService = structureService;
         this.objectMapper = objectMapper;
     }
 
@@ -57,22 +52,7 @@ public class DashboardService {
         if (node.type() != ObjectType.DASHBOARD) {
             throw new IllegalArgumentException("Not a dashboard object: " + path);
         }
-        if (node.getVariable("layout").isPresent()) {
-            return;
-        }
-        String templateId = node.templateId().orElse("dashboard-v1");
-        resolveModel(templateId).ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
-    }
-
-    private Optional<ModelDefinition> resolveModel(String templateId) {
-        if (templateId == null || templateId.isBlank()) {
-            return modelRegistry.findByName("dashboard-v1");
-        }
-        return modelRegistry.findById(templateId)
-                .or(() -> modelRegistry.findByName(templateId));
+        structureService.ensureDashboardStructure(path);
     }
 
     public DashboardView getDashboard(String path) {

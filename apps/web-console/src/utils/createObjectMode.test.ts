@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   canCreateChildAt,
+  canCreateVisualGroupAt,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
+  resolveVisualGroupParentPath,
 } from "./createObjectMode";
 
 describe("canCreateChildAt", () => {
@@ -33,6 +35,34 @@ describe("resolveCreateLabelKind", () => {
     expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("model");
     expect(resolveCreateLabelKind("root.platform.instances")).toBe("instance");
     expect(resolveCreateLabelKind("root.platform.my-folder")).toBe("object");
+  });
+});
+
+describe("canCreateVisualGroupAt", () => {
+  it("allows group create from catalog folders and their children", () => {
+    expect(canCreateVisualGroupAt("root.platform.reports", "REPORTS")).toBe(true);
+    expect(canCreateVisualGroupAt("root.platform.reports.lab-table", "REPORT")).toBe(true);
+    expect(resolveVisualGroupParentPath("root.platform.reports.lab-table", "REPORT")).toBe(
+      "root.platform.reports",
+    );
+  });
+
+  it("blocks group create on visual group nodes", () => {
+    expect(canCreateVisualGroupAt("root.platform.reports.bundle-lab", "VISUAL_GROUP")).toBe(false);
+  });
+});
+
+describe("filterVisualGroupsInCatalog", () => {
+  it("keeps only visual groups in the given catalog folder", async () => {
+    const { filterVisualGroupsInCatalog } = await import("./createObjectMode");
+    const objects = [
+      { path: "root.platform.reports.g1", type: "VISUAL_GROUP" as const },
+      { path: "root.platform.devices.g2", type: "VISUAL_GROUP" as const },
+      { path: "root.platform.reports.r1", type: "REPORT" as const },
+    ];
+    expect(filterVisualGroupsInCatalog(objects, "root.platform.reports")).toEqual([
+      { path: "root.platform.reports.g1", type: "VISUAL_GROUP" },
+    ]);
   });
 });
 

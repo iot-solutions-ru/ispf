@@ -2,10 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  createBundleObjects,
+  deleteBundleObjects,
   fetchDeployHistory,
   listFunctionVersions,
   rollbackDeploy,
   rollbackFunction,
+  updateBundleObjects,
 } from "../api/applications";
 
 interface ApplicationDeployPanelProps {
@@ -20,6 +23,9 @@ export default function ApplicationDeployPanel({ appId, canManage }: Application
   const [fnObjectPath, setFnObjectPath] = useState("root.platform.devices.demo-sensor-01");
   const [fnName, setFnName] = useState("");
   const [fnRollbackVersion, setFnRollbackVersion] = useState<string | null>(null);
+  const [lifecycleAction, setLifecycleAction] = useState<"create" | "update" | "delete" | null>(
+    null
+  );
 
   const historyQuery = useQuery({
     queryKey: ["deploy-history", appId],
@@ -51,6 +57,55 @@ export default function ApplicationDeployPanel({ appId, canManage }: Application
       queryClient.invalidateQueries({ queryKey: ["object-editor", fnObjectPath] });
     },
   });
+
+  const invalidateAfterLifecycle = () => {
+    queryClient.invalidateQueries({ queryKey: ["deploy-history", appId] });
+    queryClient.invalidateQueries({ queryKey: ["objects"] });
+  };
+
+  const createObjectsMutation = useMutation({
+    mutationFn: () => createBundleObjects(appId),
+    onSuccess: invalidateAfterLifecycle,
+  });
+
+  const updateObjectsMutation = useMutation({
+    mutationFn: () => updateBundleObjects(appId),
+    onSuccess: invalidateAfterLifecycle,
+  });
+
+  const deleteObjectsMutation = useMutation({
+    mutationFn: () => deleteBundleObjects(appId),
+    onSuccess: invalidateAfterLifecycle,
+  });
+
+  const lifecycleMutation =
+    lifecycleAction === "create"
+      ? createObjectsMutation
+      : lifecycleAction === "update"
+        ? updateObjectsMutation
+        : lifecycleAction === "delete"
+          ? deleteObjectsMutation
+          : null;
+
+  const runLifecycle = (action: "create" | "update" | "delete") => {
+    const confirmKey =
+      action === "delete"
+        ? "deploy.bundleObjectsDeleteConfirm"
+        : action === "update"
+          ? "deploy.bundleObjectsUpdateConfirm"
+          : "deploy.bundleObjectsCreateConfirm";
+    if (!window.confirm(t(confirmKey))) {
+      return;
+    }
+    setLifecycleAction(action);
+    if (action === "create") {
+      createObjectsMutation.mutate();
+    } else if (action === "update") {
+      updateObjectsMutation.mutate();
+    } else {
+      deleteObjectsMutation.mutate();
+    }
+  };
 
   return (
     <div className="application-deploy-panel">
@@ -106,6 +161,81 @@ export default function ApplicationDeployPanel({ appId, canManage }: Application
           {rollbackMutation.data?.rolledBackTo
             ? ` → ${t("deploy.versionLabel", { version: rollbackMutation.data.rolledBackTo })}`
             : ""}
+        </div>
+      )}
+
+      <hr />
+
+      <h3>{t("deploy.bundleObjectsTitle")}</h3>
+      <p className="op-muted">{t("deploy.bundleObjectsHint")}</p>
+      {canManage && (
+        <div className="bundle-object-actions">
+          <button
+            type="button"
+            className="btn"
+            disabled={Boolean(lifecycleMutation?.isPending)}
+            onClick={() => runLifecycle("create")}
+          >
+            {lifecycleAction === "create" && createObjectsMutation.isPending
+              ? t("deploy.bundleObjectsCreating")
+              : t("deploy.bundleObjectsCreate")}
+          </button>
+          <button
+            type="button"
+            className="btn"
+            disabled={Boolean(lifecycleMutation?.isPending)}
+            onClick={() => runLifecycle("update")}
+          >
+            {lifecycleAction === "update" && updateObjectsMutation.isPending
+              ? t("deploy.bundleObjectsUpdating")
+              : t("deploy.bundleObjectsUpdate")}
+          </button>
+          <button
+            type="button"
+            className="btn danger"
+            disabled={Boolean(lifecycleMutation?.isPending)}
+            onClick={() => runLifecycle("delete")}
+          >
+            {lifecycleAction === "delete" && deleteObjectsMutation.isPending
+              ? t("deploy.bundleObjectsDeleting")
+              : t("deploy.bundleObjectsDelete")}
+          </button>
+        </div>
+      )}
+
+      {lifecycleMutation?.error && (
+        <div className="op-alert op-alert-error">{String(lifecycleMutation.error)}</div>
+      )}
+      {lifecycleMutation?.isSuccess && lifecycleMutation.data && (
+        <div className="op-alert op-alert-success">
+          {t("deploy.bundleObjectsSuccess", {
+            action: lifecycleMutation.data.action ?? lifecycleAction ?? "",
+            status: lifecycleMutation.data.status ?? "OK",
+          })}
+          {(lifecycleMutation.data.applied?.length ?? 0) > 0 && (
+            <span>
+              {" "}
+              {t("deploy.bundleObjectsAppliedCount", {
+                count: lifecycleMutation.data.applied?.length ?? 0,
+              })}
+            </span>
+          )}
+          {(lifecycleMutation.data.removed?.length ?? 0) > 0 && (
+            <span>
+              {" "}
+              {t("deploy.bundleObjectsRemovedCount", {
+                count: lifecycleMutation.data.removed?.length ?? 0,
+              })}
+            </span>
+          )}
+          {(lifecycleMutation.data.skipped?.length ?? 0) > 0 && (
+            <span>
+              {" "}
+              {t("deploy.bundleObjectsSkippedCount", {
+                count: lifecycleMutation.data.skipped?.length ?? 0,
+              })}
+            </span>
+          )}
         </div>
       )}
 

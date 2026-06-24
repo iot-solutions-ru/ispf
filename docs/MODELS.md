@@ -6,9 +6,11 @@
 
 | Тип | Каталог | Поведение |
 |-----|---------|-----------|
-| `RELATIVE` | `root.platform.relative-models` | Variables/events/functions **вливаются** в существующий объект (mixin) |
+| `RELATIVE` | `root.platform.relative-models` | Optional mixins — variables/events/functions **вливаются** в существующий объект |
 | `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через instantiate |
 | `ABSOLUTE` | `root.platform.absolute-models` | Singleton blueprint — один живой объект в `root.platform.instances.*` |
+
+**System-intrinsic schemas** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в registry для bootstrap, но **не показываются** в каталоге relative-models и **не попадают** в `appliedModelIds`. Структура вшивается в экземпляр через `*ObjectService.ensureStructure()`.
 
 См. [ADR-0018](decisions/0018-model-type-semantics.md).
 
@@ -20,7 +22,7 @@
 
 ### Auto-apply RELATIVE
 
-При `POST /objects` с `autoApplyRelativeModels=true` (default) применяются все RELATIVE-модели, прошедшие `targetObjectType` + `suitabilityExpression`.
+При `POST /objects` с `autoApplyRelativeModels=true` (default) применяются все **не-intrinsic** RELATIVE-модели, прошедшие `targetObjectType` + `suitabilityExpression`.
 
 ## API
 

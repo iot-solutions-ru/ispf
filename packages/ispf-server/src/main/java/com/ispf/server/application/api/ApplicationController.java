@@ -100,6 +100,33 @@ public class ApplicationController {
         }
     }
 
+    @PostMapping("/{appId}/bundle-objects/create")
+    public Map<String, Object> createBundleObjects(@PathVariable String appId) {
+        try {
+            return bundleDeployService.createBundleObjects(appId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/{appId}/bundle-objects/update")
+    public Map<String, Object> updateBundleObjects(@PathVariable String appId) {
+        try {
+            return bundleDeployService.updateBundleObjects(appId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/{appId}/bundle-objects/delete")
+    public Map<String, Object> deleteBundleObjects(@PathVariable String appId) throws Exception {
+        try {
+            return bundleDeployService.removeBundleObjects(appId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     @GetMapping("/{appId}/operator-manifest")
     public Map<String, Object> operatorManifest(@PathVariable String appId) throws Exception {
         try {

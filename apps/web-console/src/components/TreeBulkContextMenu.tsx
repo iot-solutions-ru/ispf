@@ -1,14 +1,18 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ObjectSummary, ObjectType } from "../types";
-import { canCreateChildAt, createContextMenuLabel } from "../utils/createObjectMode";
+import {
+  canCreateChildAt,
+  canCreateVisualGroupAt,
+  createContextMenuLabel,
+  resolveVisualGroupParentPath,
+} from "../utils/createObjectMode";
 import { useTreeBulkActions, type TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 
 export interface TreeContextMenuState {
   x: number;
   y: number;
   contextPath: string | null;
-  contextObjectType?: ObjectType;
+  contextObjectType?: TreeBulkActionsConfig["contextObjectType"];
 }
 
 interface TreeBulkContextMenuProps extends TreeBulkActionsConfig {
@@ -23,7 +27,12 @@ export default function TreeBulkContextMenu({
 }: TreeBulkContextMenuProps) {
   const { t } = useTranslation("explorer");
   const menuRef = useRef<HTMLDivElement>(null);
-  const actions = useTreeBulkActions(config);
+  const [selectedGroupPath, setSelectedGroupPath] = useState("");
+  const actions = useTreeBulkActions({ ...config, contextPath: menu?.contextPath, contextObjectType: menu?.contextObjectType });
+
+  useEffect(() => {
+    setSelectedGroupPath("");
+  }, [menu?.x, menu?.y, menu?.contextPath]);
 
   useEffect(() => {
     if (!menu) {
@@ -56,7 +65,7 @@ export default function TreeBulkContextMenu({
       menuRef.current.style.left = `${x}px`;
       menuRef.current.style.top = `${y}px`;
     }
-  }, [menu]);
+  }, [menu, actions.visualGroups.length]);
 
   if (!menu) {
     return null;
@@ -67,7 +76,23 @@ export default function TreeBulkContextMenu({
     && config.onCreateChild
     && canCreateChildAt(menu.contextPath, menu.contextObjectType),
   );
+  const visualGroupParentPath = menu.contextPath
+    ? resolveVisualGroupParentPath(menu.contextPath, menu.contextObjectType)
+    : null;
+  const canCreateVisualGroup = Boolean(
+    visualGroupParentPath
+    && config.onCreateVisualGroup
+    && canCreateVisualGroupAt(menu.contextPath!, menu.contextObjectType),
+  );
   const createLabel = menu.contextPath ? createContextMenuLabel(menu.contextPath) : "";
+
+  const addToGroupDisabledReason = !actions.canAddToGroup
+    ? actions.hasMixedCatalogSelection
+      ? t("bulk.mixedCatalogSelection")
+      : t("bulk.noSelection")
+    : actions.visualGroups.length === 0
+      ? t("bulk.noVisualGroupsInCatalog")
+      : "";
 
   const item = (
     label: string,
@@ -87,6 +112,14 @@ export default function TreeBulkContextMenu({
       {label}
     </button>
   );
+
+  const handleAddToGroup = () => {
+    if (!selectedGroupPath || actions.isAddingToGroup) {
+      return;
+    }
+    actions.addToGroup(selectedGroupPath);
+    onClose();
+  };
 
   return (
     <>
@@ -109,7 +142,13 @@ export default function TreeBulkContextMenu({
           createLabel,
           () => config.onCreateChild!(menu.contextPath!),
         )}
-        {canCreateChild && <div className="tree-context-menu-sep" role="separator" />}
+        {canCreateVisualGroup && config.onCreateVisualGroup && visualGroupParentPath && item(
+          t("contextMenu.create.visual-group"),
+          () => config.onCreateVisualGroup!(visualGroupParentPath),
+        )}
+        {(canCreateChild || canCreateVisualGroup) && (
+          <div className="tree-context-menu-sep" role="separator" />
+        )}
         {item(t("bulk.selectAll"), actions.selectAll)}
         {item(t("bulk.clearSelection"), actions.clearSelection, { disabled: !actions.hasSelection })}
         <div className="tree-context-menu-sep" role="separator" />
@@ -124,33 +163,40 @@ export default function TreeBulkContextMenu({
         {item(t("bulk.removeFromGroup"), actions.removeFromGroup, {
           disabled: !actions.hasGroupRefs || actions.isRemovingFromGroup,
         })}
-        <div className="tree-context-menu-group">
+        <div className="tree-context-menu-sep" role="separator" />
+        <div className="tree-context-menu-field" role="none">
           <span className="tree-context-menu-label">{t("bulk.addToGroup")}</span>
-          {actions.canonicalPaths.length === 0 ? (
-            <button type="button" className="tree-context-menu-item" disabled>
-              {t("bulk.noSelection")}
-            </button>
-          ) : actions.visualGroups.length === 0 ? (
-            <button type="button" className="tree-context-menu-item" disabled>
-              {t("bulk.noVisualGroups")}
-            </button>
-          ) : (
-            actions.visualGroups.map((group: ObjectSummary) => (
-              <button
-                key={group.path}
-                type="button"
-                role="menuitem"
-                className="tree-context-menu-item nested"
-                disabled={actions.isAddingToGroup}
-                onClick={() => {
-                  actions.addToGroup(group.path);
-                  onClose();
-                }}
-              >
+          <select
+            className="tree-context-menu-select"
+            value={selectedGroupPath}
+            disabled={
+              !actions.canAddToGroup
+              || actions.visualGroups.length === 0
+              || actions.isAddingToGroup
+            }
+            onChange={(event) => setSelectedGroupPath(event.target.value)}
+          >
+            <option value="">
+              {addToGroupDisabledReason || t("bulk.chooseGroup")}
+            </option>
+            {actions.visualGroups.map((group) => (
+              <option key={group.path} value={group.path}>
                 {group.displayName}
-              </button>
-            ))
-          )}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="tree-context-menu-item tree-context-menu-apply"
+            disabled={
+              !selectedGroupPath
+              || actions.isAddingToGroup
+              || !actions.canAddToGroup
+            }
+            onClick={handleAddToGroup}
+          >
+            {actions.isAddingToGroup ? t("bulk.addingToGroup") : t("bulk.addToGroupApply")}
+          </button>
         </div>
       </div>
     </>

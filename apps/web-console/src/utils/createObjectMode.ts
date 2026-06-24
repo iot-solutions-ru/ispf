@@ -111,6 +111,54 @@ export function resolveCreateLabelKind(parentPath: string): string {
   }
 }
 
+/** Parent catalog folder for a new visual group from tree context. */
+export function resolveVisualGroupParentPath(
+  contextPath: string,
+  _objectType?: ObjectType,
+): string | null {
+  if (!contextPath) {
+    return null;
+  }
+  if (isPlatformCatalogContainer(contextPath)) {
+    return contextPath;
+  }
+  const parts = contextPath.split(".");
+  for (let index = parts.length - 1; index >= 2; index -= 1) {
+    const candidate = parts.slice(0, index).join(".");
+    if (isPlatformCatalogContainer(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+export function canCreateVisualGroupAt(path: string, objectType?: ObjectType): boolean {
+  if (objectType === "VISUAL_GROUP") {
+    return false;
+  }
+  return resolveVisualGroupParentPath(path, objectType) !== null;
+}
+
+/** Catalog folder that owns visual groups for objects under `objectPath`. */
+export function resolveVisualGroupCatalogParent(
+  objectPath: string,
+  objectType?: ObjectType,
+): string | null {
+  return resolveVisualGroupParentPath(objectPath, objectType);
+}
+
+export function filterVisualGroupsInCatalog<T extends { path: string; type: ObjectType; groupRef?: boolean }>(
+  objects: T[],
+  catalogParentPath: string,
+): T[] {
+  return objects.filter(
+    (obj) =>
+      !obj.groupRef
+      && obj.type === "VISUAL_GROUP"
+      && resolveVisualGroupCatalogParent(obj.path, "VISUAL_GROUP") === catalogParentPath,
+  );
+}
+
 /** Whether the selected tree node can have a child created under it. */
 export function canCreateChildAt(path: string, objectType: ObjectType | undefined): boolean {
   if (!path) {

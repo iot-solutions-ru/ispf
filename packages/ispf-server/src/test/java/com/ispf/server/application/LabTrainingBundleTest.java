@@ -79,6 +79,11 @@ class LabTrainingBundleTest {
         mockMvc.perform(get("/api/v1/objects")
                         .param("parent", "root.platform.reports"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].path", hasItem("root.platform.reports.bundle-lab-training")));
+
+        mockMvc.perform(get("/api/v1/objects")
+                        .param("parent", "root.platform.reports.bundle-lab-training"))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].path", hasItem("root.platform.reports.lab-all-devices-table")));
 
         mockMvc.perform(post("/api/v1/reports/by-path/run")

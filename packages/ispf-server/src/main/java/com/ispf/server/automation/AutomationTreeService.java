@@ -5,13 +5,12 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import com.ispf.server.alert.AlertRule;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.correlator.EventCorrelator;
-import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.AlertRuleRepository;
 import com.ispf.server.persistence.CorrelatorHitRepository;
 import com.ispf.server.persistence.EventCorrelatorRepository;
@@ -45,8 +44,7 @@ public class AutomationTreeService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
     private final AlertRuleRepository legacyAlertRuleRepository;
     private final EventCorrelatorRepository legacyCorrelatorRepository;
     private final CorrelatorHitRepository correlatorHitRepository;
@@ -54,16 +52,14 @@ public class AutomationTreeService {
 
     public AutomationTreeService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+            SystemObjectStructureService structureService,
             AlertRuleRepository legacyAlertRuleRepository,
             EventCorrelatorRepository legacyCorrelatorRepository,
             CorrelatorHitRepository correlatorHitRepository,
             AutomationRuleIndex ruleIndex
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.structureService = structureService;
         this.legacyAlertRuleRepository = legacyAlertRuleRepository;
         this.legacyCorrelatorRepository = legacyCorrelatorRepository;
         this.correlatorHitRepository = correlatorHitRepository;
@@ -82,13 +78,7 @@ public class AutomationTreeService {
         if (node.type() != ObjectType.ALERT) {
             throw new IllegalArgumentException("Not an alert rule object: " + path);
         }
-        if (node.getVariable("targetObjectPath").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("alert-rule-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureAlertRuleStructure(path);
     }
 
     @Transactional
@@ -97,13 +87,7 @@ public class AutomationTreeService {
         if (node.type() != ObjectType.CORRELATOR) {
             throw new IllegalArgumentException("Not a correlator object: " + path);
         }
-        if (node.getVariable("patternType").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("correlator-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureCorrelatorStructure(path);
     }
 
     @Transactional

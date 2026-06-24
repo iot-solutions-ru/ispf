@@ -6,10 +6,9 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,17 +22,14 @@ public class DataSourceObjectService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
 
     public DataSourceObjectService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine
+            SystemObjectStructureService structureService
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.structureService = structureService;
     }
 
     @Transactional
@@ -57,7 +53,7 @@ public class DataSourceObjectService {
                     ObjectType.DATA_SOURCE,
                     displayName != null ? displayName : nodeName,
                     description != null ? description : "",
-                    "data-source-v1"
+                    null
             );
         } else {
             objectManager.updateInfo(path, displayName != null ? displayName : nodeName, description != null ? description : "");
@@ -76,13 +72,7 @@ public class DataSourceObjectService {
         if (node.type() != ObjectType.DATA_SOURCE) {
             throw new IllegalArgumentException("Not a data source object: " + path);
         }
-        if (node.getVariable("schemaName").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("data-source-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureDataSourceStructure(path);
     }
 
     public String pathForNodeName(String nodeName) {

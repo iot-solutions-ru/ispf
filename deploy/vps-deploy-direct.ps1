@@ -27,12 +27,11 @@ if (-not $SkipBuild) {
     Write-Host "==> Building server jar $Version"
     Push-Location $RepoRoot
     try {
-        $gradleTasks = if ($SkipTests) {
-            @(":packages:ispf-server:bootJar")
+        if ($SkipTests) {
+            & .\gradlew ":packages:ispf-server:bootJar" "-Pversion=$Version"
         } else {
-            @(":packages:ispf-server:test", ":packages:ispf-server:bootJar")
+            & .\gradlew ":packages:ispf-server:test" ":packages:ispf-server:bootJar" "-Pversion=$Version"
         }
-        & .\gradlew @gradleTasks "-Pversion=$Version"
         if ($LASTEXITCODE -ne 0) { throw "Gradle bootJar failed" }
     } finally {
         Pop-Location

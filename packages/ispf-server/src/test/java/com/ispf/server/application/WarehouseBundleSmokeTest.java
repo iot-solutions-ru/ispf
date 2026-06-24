@@ -40,6 +40,16 @@ class WarehouseBundleSmokeTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"));
 
+        mockMvc.perform(post("/api/v1/applications/warehouse/bundle-objects/delete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.action").value("remove"))
+                .andExpect(jsonPath("$.removed").isArray());
+
+        mockMvc.perform(post("/api/v1/applications/warehouse/bundle-objects/create"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.action").value("create"))
+                .andExpect(jsonPath("$.status").value("OK"));
+
         mockMvc.perform(post("/api/v1/bff/invoke")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

@@ -17,6 +17,7 @@ import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +64,7 @@ public class ReportService {
     private final ObjectManager objectManager;
     private final ModelRegistry modelRegistry;
     private final ModelEngine modelEngine;
+    private final SystemObjectStructureService structureService;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
     private final ReportTemplateStore templateStore;
@@ -75,6 +77,7 @@ public class ReportService {
             ObjectManager objectManager,
             ModelRegistry modelRegistry,
             ModelEngine modelEngine,
+            SystemObjectStructureService structureService,
             ApplicationSchemaSession schemaSession,
             ApplicationReportStore reportStore,
             ReportTemplateStore templateStore,
@@ -86,6 +89,7 @@ public class ReportService {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
         this.modelEngine = modelEngine;
+        this.structureService = structureService;
         this.schemaSession = schemaSession;
         this.reportStore = reportStore;
         this.templateStore = templateStore;
@@ -139,13 +143,7 @@ public class ReportService {
         if (node.type() != ObjectType.REPORT) {
             throw new IllegalArgumentException("Not a report object: " + path);
         }
-        if (node.getVariable("query").isPresent() || node.getVariable("reportType").isPresent()) {
-            return;
-        }
-        modelRegistry.findByName("report-v1").ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
-            objectManager.persistNodeTree(path);
-        });
+        structureService.ensureReportStructure(path);
     }
 
     @Transactional

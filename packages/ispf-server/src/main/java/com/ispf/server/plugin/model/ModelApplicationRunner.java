@@ -32,19 +32,22 @@ public class ModelApplicationRunner {
     private final ObjectManager objectManager;
     private final ModelBindingRulesMerger bindingRulesMerger;
     private final ModelApplicationService modelApplicationService;
+    private final SystemObjectStructureService structureService;
 
     public ModelApplicationRunner(
             ModelEngine modelEngine,
             ModelRegistry modelRegistry,
             ObjectManager objectManager,
             ModelBindingRulesMerger bindingRulesMerger,
-            ModelApplicationService modelApplicationService
+            ModelApplicationService modelApplicationService,
+            SystemObjectStructureService structureService
     ) {
         this.modelEngine = modelEngine;
         this.modelRegistry = modelRegistry;
         this.objectManager = objectManager;
         this.bindingRulesMerger = bindingRulesMerger;
         this.modelApplicationService = modelApplicationService;
+        this.structureService = structureService;
     }
 
     public void restoreAttachments() {
@@ -63,7 +66,7 @@ public class ModelApplicationRunner {
 
         modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
             String path = "root.platform.dashboards.demo-sensor";
-            applyModelWithRules(model, path);
+            structureService.ensureDashboardStructure(path);
             PlatformObject dashboard = objectManager.require(path);
             dashboard.setVariableValue(
                     "title",
@@ -84,7 +87,7 @@ public class ModelApplicationRunner {
 
         modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
             String path = "root.platform.dashboards.snmp-host-monitoring";
-            applyModelWithRules(model, path);
+            structureService.ensureDashboardStructure(path);
             PlatformObject dashboard = objectManager.require(path);
             dashboard.setVariableValue(
                     "title",
@@ -112,7 +115,7 @@ public class ModelApplicationRunner {
 
         modelRegistry.findByName("workflow-v1").ifPresent(model -> {
             String path = "root.platform.workflows.demo-alarm-handler";
-            applyModelWithRules(model, path);
+            structureService.ensureWorkflowStructure(path);
             PlatformObject workflow = objectManager.require(path);
             workflow.setVariableValue(
                     "title",

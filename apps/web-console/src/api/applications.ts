@@ -131,6 +131,47 @@ export async function rollbackFunction(
   return response.json() as Promise<FunctionRollbackResult>;
 }
 
+export interface BundleObjectLifecycleResult {
+  appId?: string;
+  version?: string;
+  action?: string;
+  status?: string;
+  applied?: string[];
+  skipped?: string[];
+  removed?: string[];
+  errors?: string[];
+}
+
+async function postBundleObjectLifecycle(
+  appId: string,
+  action: "create" | "update" | "delete"
+): Promise<BundleObjectLifecycleResult> {
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/bundle-objects/${action}`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle object ${action} failed: ${response.status}`);
+  }
+  return response.json() as Promise<BundleObjectLifecycleResult>;
+}
+
+export function createBundleObjects(appId: string): Promise<BundleObjectLifecycleResult> {
+  return postBundleObjectLifecycle(appId, "create");
+}
+
+export function updateBundleObjects(appId: string): Promise<BundleObjectLifecycleResult> {
+  return postBundleObjectLifecycle(appId, "update");
+}
+
+export function deleteBundleObjects(appId: string): Promise<BundleObjectLifecycleResult> {
+  return postBundleObjectLifecycle(appId, "delete");
+}
+
 export async function rollbackDeploy(
   appId: string,
   version: string

@@ -150,7 +150,7 @@ class MesDefectDemoBundleSmokeTest {
 
         mockMvc.perform(post("/api/v1/applications/mes-defect-demo/reports/mes-defect-pending-recommendations/run")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"parameters\":[]}"))
+                        .content("{\"parameters\":{}}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rows[0].target").value("SPECIAL_ROUTE"));
     }

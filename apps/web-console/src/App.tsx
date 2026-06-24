@@ -16,7 +16,7 @@ import {
   resolveOperatorAppId,
   shouldOpenOperatorShell,
 } from "./auth/routing";
-import type { EditorTab } from "./types";
+import type { EditorTab, ObjectType } from "./types";
 import { resolveEditorObjectType } from "./utils/editorObject";
 import { buildObjectTree } from "./utils/tree";
 import { objectTreeKey, type TreeRowSelection } from "./utils/treeRowKey";
@@ -192,6 +192,7 @@ export default function App() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [createParentPath, setCreateParentPath] = useState<string | null>(null);
+  const [createPresetType, setCreatePresetType] = useState<ObjectType | null>(null);
   const [treeFilter, setTreeFilter] = useState("");
   const isMobileLayout = useMobileLayout();
   const [mobileExplorerPane, setMobileExplorerPane] = useState<"tree" | "detail">("tree");
@@ -611,6 +612,12 @@ export default function App() {
                           contextPath: selectedPath,
                           contextObjectType: selectedObject?.type,
                           onCreateChild: (parentPath) => {
+                            setCreatePresetType(null);
+                            setCreateParentPath(parentPath);
+                            setShowCreate(true);
+                          },
+                          onCreateVisualGroup: (parentPath) => {
+                            setCreatePresetType("VISUAL_GROUP");
                             setCreateParentPath(parentPath);
                             setShowCreate(true);
                           },
@@ -768,13 +775,16 @@ export default function App() {
       {showCreate && (
         <CreateObjectDialog
           parentPath={parentForCreate}
+          presetType={createPresetType ?? undefined}
           onClose={() => {
             setShowCreate(false);
             setCreateParentPath(null);
+            setCreatePresetType(null);
           }}
           onCreated={(path) => {
             setShowCreate(false);
             setCreateParentPath(null);
+            setCreatePresetType(null);
             void invalidateAll();
             setSelectedPath(path);
             const stayInExplorer =

@@ -71,6 +71,7 @@ public class ApplicationBundleDeployService {
     private final CommercialBundleLicenseVerifier licenseVerifier;
     private final BundleDependencyVerifier dependencyVerifier;
     private final ApplicationEventCatalogService eventCatalogService;
+    private final BundleVisualGroupService bundleVisualGroupService;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -95,7 +96,8 @@ public class ApplicationBundleDeployService {
             OperatorAppObjectTreeService operatorAppObjectTreeService,
             CommercialBundleLicenseVerifier licenseVerifier,
             BundleDependencyVerifier dependencyVerifier,
-            ApplicationEventCatalogService eventCatalogService
+            ApplicationEventCatalogService eventCatalogService,
+            BundleVisualGroupService bundleVisualGroupService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -120,6 +122,7 @@ public class ApplicationBundleDeployService {
         this.licenseVerifier = licenseVerifier;
         this.dependencyVerifier = dependencyVerifier;
         this.eventCatalogService = eventCatalogService;
+        this.bundleVisualGroupService = bundleVisualGroupService;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -128,11 +131,11 @@ public class ApplicationBundleDeployService {
         List<String> applied = new ArrayList<>();
         List<String> skipped = new ArrayList<>();
         List<String> errors = new ArrayList<>();
+        String displayName = manifest.displayName() != null && !manifest.displayName().isBlank()
+                ? manifest.displayName()
+                : appId;
 
         try {
-            String displayName = manifest.displayName() != null && !manifest.displayName().isBlank()
-                    ? manifest.displayName()
-                    : appId;
             dataService.register(
                     appId,
                     displayName,
@@ -145,67 +148,7 @@ public class ApplicationBundleDeployService {
         }
 
         String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
-        try {
-            String schema = resolvePackageSchemaName(appId, manifest);
-            dataSourceObjectService.ensureDataSource(
-                    appId,
-                    manifest.displayName() != null ? manifest.displayName() : appId,
-                    schema,
-                    "Package import data source"
-            );
-            applied.add("dataSource:" + dataSourcePath);
-        } catch (Exception ex) {
-            errors.add("dataSource: " + ex.getMessage());
-        }
-
-        if (manifest.models() != null) {
-            for (BundleModel model : manifest.models()) {
-                try {
-                    deployModel(model);
-                    applied.add("model:" + model.name());
-                } catch (Exception ex) {
-                    errors.add("model:" + model.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.objects() != null) {
-            for (BundleObject object : manifest.objects()) {
-                try {
-                    ApplicationBundleMetadataService.DeployOutcome outcome = metadataService.deployObject(object);
-                    if (outcome == ApplicationBundleMetadataService.DeployOutcome.APPLIED
-                            || outcome == ApplicationBundleMetadataService.DeployOutcome.UPDATED) {
-                        applied.add("object:" + object.name());
-                    } else {
-                        skipped.add("object:" + object.name());
-                    }
-                } catch (Exception ex) {
-                    errors.add("object:" + object.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.dashboards() != null) {
-            for (BundleDashboard dashboard : manifest.dashboards()) {
-                try {
-                    metadataService.deployDashboard(dashboard);
-                    applied.add("dashboard:" + dashboard.path());
-                } catch (Exception ex) {
-                    errors.add("dashboard:" + dashboard.path() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.workflows() != null) {
-            for (BundleWorkflow workflow : manifest.workflows()) {
-                try {
-                    metadataService.deployWorkflow(workflow);
-                    applied.add("workflow:" + workflow.path());
-                } catch (Exception ex) {
-                    errors.add("workflow:" + workflow.path() + ": " + ex.getMessage());
-                }
-            }
-        }
+        applyTreeArtifacts(appId, manifest, false, dataSourcePath, applied, skipped, errors);
 
         if (manifest.migrations() != null && !manifest.migrations().isEmpty()) {
             try {
@@ -222,127 +165,6 @@ public class ApplicationBundleDeployService {
                 applied.addAll(appliedMigrations.stream().map(id -> "migration:" + id).toList());
             } catch (Exception ex) {
                 errors.add("migrations: " + ex.getMessage());
-            }
-        }
-
-        if (manifest.functions() != null) {
-            for (BundleFunction function : manifest.functions()) {
-                try {
-                    deployFunction(appId, dataSourcePath, function);
-                    applied.add("function:" + function.functionName());
-                } catch (Exception ex) {
-                    errors.add("function:" + function.functionName() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.bindings() != null) {
-            for (BundleSqlBinding binding : manifest.bindings()) {
-                try {
-                    String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
-                    sqlBindingObjectService.upsert(new SqlBindingObjectService.BindingDefinition(
-                            "",
-                            bindingId,
-                            binding.objectPath(),
-                            binding.variable(),
-                            dataSourcePath,
-                            binding.query(),
-                            binding.valueField(),
-                            binding.refresh() != null ? binding.refresh() : "manual",
-                            binding.refreshIntervalMs() != null ? binding.refreshIntervalMs() : 30_000L,
-                            binding.triggerObjectPath() != null ? binding.triggerObjectPath() : "",
-                            binding.triggerFunctionName() != null ? binding.triggerFunctionName() : "",
-                            binding.enabled() == null || binding.enabled(),
-                            null
-                    ));
-                    applied.add("binding:" + binding.variable());
-                } catch (Exception ex) {
-                    errors.add("binding:" + binding.variable() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.reports() != null) {
-            for (BundleReport report : manifest.reports()) {
-                try {
-                    reportService.deploy(appId, new ApplicationReportService.DeployReportRequest(
-                            report.reportId(),
-                            report.title(),
-                            report.description(),
-                            report.reportType(),
-                            report.devicePathPattern(),
-                            report.variableName(),
-                            report.query(),
-                            report.parameters(),
-                            report.columns() == null
-                                    ? List.of()
-                                    : report.columns().stream()
-                                            .map(col -> new ApplicationReportService.ReportColumn(col.field(), col.label()))
-                                            .toList(),
-                            report.maxRows()
-                    ));
-                    applied.add("report:" + report.reportId());
-                } catch (Exception ex) {
-                    errors.add("report:" + report.reportId() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.alertRules() != null) {
-            for (BundleAlertRule rule : manifest.alertRules()) {
-                try {
-                    deployAlertRule(rule);
-                    applied.add("alertRule:" + rule.name());
-                } catch (Exception ex) {
-                    errors.add("alertRule:" + rule.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.correlators() != null) {
-            for (BundleCorrelator correlator : manifest.correlators()) {
-                try {
-                    deployCorrelator(correlator);
-                    applied.add("correlator:" + correlator.name());
-                } catch (Exception ex) {
-                    errors.add("correlator:" + correlator.name() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.schedules() != null) {
-            for (BundleSchedule schedule : manifest.schedules()) {
-                try {
-                    String actionJson = objectMapper.writeValueAsString(schedule.action());
-                    scheduleObjectService.upsert(new ScheduleObjectService.ScheduleDefinition(
-                            "",
-                            schedule.scheduleId(),
-                            schedule.enabled(),
-                            schedule.intervalMs(),
-                            schedule.actionType(),
-                            actionJson,
-                            null,
-                            null
-                    ));
-                    applied.add("schedule:" + schedule.scheduleId());
-                } catch (Exception ex) {
-                    errors.add("schedule:" + schedule.scheduleId() + ": " + ex.getMessage());
-                }
-            }
-        }
-
-        if (manifest.events() != null) {
-            try {
-                eventCatalogService.replaceFromBundle(appId, manifest.events().stream()
-                        .map(event -> new ApplicationEventCatalogService.BundleEventDefinition(
-                                event.id(),
-                                event.roles(),
-                                event.payloadSchema()
-                        ))
-                        .toList());
-                applied.add("events:" + manifest.events().size());
-            } catch (Exception ex) {
-                errors.add("events: " + ex.getMessage());
             }
         }
 
@@ -372,11 +194,125 @@ public class ApplicationBundleDeployService {
         String applicationPath = applicationTreePath(appId);
         response.put("applicationPath", applicationPath);
 
+        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+
+        return response;
+    }
+
+    public Map<String, Object> createBundleObjects(String appId) {
+        return syncTreeArtifactsFromActiveManifest(appId, true);
+    }
+
+    public Map<String, Object> updateBundleObjects(String appId) {
+        return syncTreeArtifactsFromActiveManifest(appId, false);
+    }
+
+    public Map<String, Object> removeBundleObjects(String appId) throws Exception {
+        BundleManifest manifest = requireActiveManifest(appId);
+        List<String> removed = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        for (String path : BundleVisualGroupService.managedRemovalPaths(appId, manifest)) {
+            try {
+                if (objectManager.tree().findByPath(path).isPresent()) {
+                    objectManager.delete(path);
+                    removed.add(path);
+                } else {
+                    skipped.add(path);
+                }
+            } catch (Exception ex) {
+                errors.add(path + ": " + ex.getMessage());
+            }
+        }
+        bundleVisualGroupService.removeAllBundleGroups(appId);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("appId", appId);
+        response.put("version", manifest.version());
+        response.put("action", "remove");
+        response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
+        response.put("removed", removed);
+        response.put("skipped", skipped);
+        response.put("errors", errors);
+        return response;
+    }
+
+    private BundleManifest requireActiveManifest(String appId) throws Exception {
+        ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
+                .orElseThrow(() -> new IllegalArgumentException("No active bundle deployment for app: " + appId));
+        return objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
+    }
+
+    private Map<String, Object> syncTreeArtifactsFromActiveManifest(String appId, boolean createMissingOnly) {
+        try {
+            BundleManifest manifest = requireActiveManifest(appId);
+            return syncTreeArtifacts(appId, manifest, createMissingOnly);
+        } catch (IllegalArgumentException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to load active manifest: " + ex.getMessage(), ex);
+        }
+    }
+
+    private Map<String, Object> syncTreeArtifacts(String appId, BundleManifest manifest, boolean createMissingOnly) {
+        List<String> applied = new ArrayList<>();
+        List<String> skipped = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        String displayName = manifest.displayName() != null && !manifest.displayName().isBlank()
+                ? manifest.displayName()
+                : appId;
+        String dataSourcePath = dataSourceObjectService.pathForNodeName(appId);
+
+        try {
+            dataService.register(
+                    appId,
+                    displayName,
+                    manifest.tablePrefix(),
+                    manifest.schemaName()
+            );
+            applied.add("register");
+        } catch (Exception ex) {
+            errors.add("register: " + ex.getMessage());
+        }
+
+        applyTreeArtifacts(appId, manifest, createMissingOnly, dataSourcePath, applied, skipped, errors);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("appId", appId);
+        response.put("version", manifest.version());
+        response.put("action", createMissingOnly ? "create" : "update");
+        response.put("status", errors.isEmpty() ? "OK" : "PARTIAL");
+        response.put("applied", applied);
+        response.put("skipped", skipped);
+        response.put("errors", errors);
+        response.put("dataSourcePath", dataSourcePath);
+        response.put("applicationPath", applicationTreePath(appId));
+        syncApplicationTree(appId, displayName, manifest, applied, errors, response);
+        return response;
+    }
+
+    private void syncApplicationTree(
+            String appId,
+            String displayName,
+            BundleManifest manifest,
+            List<String> applied,
+            List<String> errors,
+            Map<String, Object> response
+    ) {
         try {
             objectTreeService.syncApplication(appId);
-            applied.add("applicationTree:" + applicationPath);
+            applied.add("applicationTree:" + applicationTreePath(appId));
             syncOperatorAppUi(appId, manifest);
             applied.add("operatorApp:" + operatorAppTreePath(appId));
+            List<String> visualGroupPaths = bundleVisualGroupService.syncBundle(
+                    appId,
+                    displayName,
+                    manifest
+            );
+            for (String groupPath : visualGroupPaths) {
+                applied.add("visualGroup:" + groupPath);
+            }
             response.put("applied", applied);
         } catch (Exception ex) {
             errors.add("applicationSync: " + ex.getMessage());
@@ -384,8 +320,266 @@ public class ApplicationBundleDeployService {
             response.put("errors", errors);
             response.put("applied", applied);
         }
+    }
 
-        return response;
+    private void applyTreeArtifacts(
+            String appId,
+            BundleManifest manifest,
+            boolean createMissingOnly,
+            String dataSourcePath,
+            List<String> applied,
+            List<String> skipped,
+            List<String> errors
+    ) {
+        try {
+            String schema = resolvePackageSchemaName(appId, manifest);
+            dataSourceObjectService.ensureDataSource(
+                    appId,
+                    manifest.displayName() != null ? manifest.displayName() : appId,
+                    schema,
+                    "Package import data source"
+            );
+            applied.add("dataSource:" + dataSourcePath);
+        } catch (Exception ex) {
+            errors.add("dataSource: " + ex.getMessage());
+        }
+
+        if (manifest.models() != null) {
+            for (BundleModel model : manifest.models()) {
+                try {
+                    if (createMissingOnly && modelRegistry.findByName(model.name()).isPresent()) {
+                        skipped.add("model:" + model.name());
+                        continue;
+                    }
+                    deployModel(model);
+                    applied.add("model:" + model.name());
+                } catch (Exception ex) {
+                    errors.add("model:" + model.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.objects() != null) {
+            for (BundleObject object : manifest.objects()) {
+                try {
+                    String objectPath = objectManager.tree().resolveChildPath(object.parentPath(), object.name());
+                    if (createMissingOnly && objectManager.tree().findByPath(objectPath).isPresent()) {
+                        skipped.add("object:" + object.name());
+                        continue;
+                    }
+                    ApplicationBundleMetadataService.DeployOutcome outcome = metadataService.deployObject(object);
+                    if (outcome == ApplicationBundleMetadataService.DeployOutcome.APPLIED
+                            || outcome == ApplicationBundleMetadataService.DeployOutcome.UPDATED) {
+                        applied.add("object:" + object.name());
+                    } else {
+                        skipped.add("object:" + object.name());
+                    }
+                } catch (Exception ex) {
+                    errors.add("object:" + object.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.dashboards() != null) {
+            for (BundleDashboard dashboard : manifest.dashboards()) {
+                try {
+                    if (createMissingOnly && treePathExists(dashboard.path())) {
+                        skipped.add("dashboard:" + dashboard.path());
+                        continue;
+                    }
+                    metadataService.deployDashboard(dashboard);
+                    applied.add("dashboard:" + dashboard.path());
+                } catch (Exception ex) {
+                    errors.add("dashboard:" + dashboard.path() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.workflows() != null) {
+            for (BundleWorkflow workflow : manifest.workflows()) {
+                try {
+                    if (createMissingOnly && treePathExists(workflow.path())) {
+                        skipped.add("workflow:" + workflow.path());
+                        continue;
+                    }
+                    metadataService.deployWorkflow(workflow);
+                    applied.add("workflow:" + workflow.path());
+                } catch (Exception ex) {
+                    errors.add("workflow:" + workflow.path() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.functions() != null) {
+            for (BundleFunction function : manifest.functions()) {
+                try {
+                    if (createMissingOnly
+                            && !functionStore.listVersions(appId, function.objectPath(), function.functionName())
+                                    .isEmpty()) {
+                        skipped.add("function:" + function.functionName());
+                        continue;
+                    }
+                    deployFunction(appId, dataSourcePath, function);
+                    applied.add("function:" + function.functionName());
+                } catch (Exception ex) {
+                    errors.add("function:" + function.functionName() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.bindings() != null) {
+            for (BundleSqlBinding binding : manifest.bindings()) {
+                try {
+                    String bindingPath = bindingTreePath(binding);
+                    if (createMissingOnly && treePathExists(bindingPath)) {
+                        skipped.add("binding:" + binding.variable());
+                        continue;
+                    }
+                    String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
+                    sqlBindingObjectService.upsert(new SqlBindingObjectService.BindingDefinition(
+                            "",
+                            bindingId,
+                            binding.objectPath(),
+                            binding.variable(),
+                            dataSourcePath,
+                            binding.query(),
+                            binding.valueField(),
+                            binding.refresh() != null ? binding.refresh() : "manual",
+                            binding.refreshIntervalMs() != null ? binding.refreshIntervalMs() : 30_000L,
+                            binding.triggerObjectPath() != null ? binding.triggerObjectPath() : "",
+                            binding.triggerFunctionName() != null ? binding.triggerFunctionName() : "",
+                            binding.enabled() == null || binding.enabled(),
+                            null
+                    ));
+                    applied.add("binding:" + binding.variable());
+                } catch (Exception ex) {
+                    errors.add("binding:" + binding.variable() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.reports() != null) {
+            for (BundleReport report : manifest.reports()) {
+                try {
+                    String reportPath = ReportService.reportPath(report.reportId());
+                    if (createMissingOnly && treePathExists(reportPath)) {
+                        skipped.add("report:" + report.reportId());
+                        continue;
+                    }
+                    reportService.deploy(appId, new ApplicationReportService.DeployReportRequest(
+                            report.reportId(),
+                            report.title(),
+                            report.description(),
+                            report.reportType(),
+                            report.devicePathPattern(),
+                            report.variableName(),
+                            report.query(),
+                            report.parameters(),
+                            report.columns() == null
+                                    ? List.of()
+                                    : report.columns().stream()
+                                            .map(col -> new ApplicationReportService.ReportColumn(col.field(), col.label()))
+                                            .toList(),
+                            report.maxRows()
+                    ));
+                    applied.add("report:" + report.reportId());
+                } catch (Exception ex) {
+                    errors.add("report:" + report.reportId() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.alertRules() != null) {
+            for (BundleAlertRule rule : manifest.alertRules()) {
+                try {
+                    String rulePath = AutomationTreeService.rulePathForName(rule.name());
+                    if (createMissingOnly && treePathExists(rulePath)) {
+                        skipped.add("alertRule:" + rule.name());
+                        continue;
+                    }
+                    deployAlertRule(rule);
+                    applied.add("alertRule:" + rule.name());
+                } catch (Exception ex) {
+                    errors.add("alertRule:" + rule.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.correlators() != null) {
+            for (BundleCorrelator correlator : manifest.correlators()) {
+                try {
+                    String correlatorPath = AutomationTreeService.correlatorPathForName(correlator.name());
+                    if (createMissingOnly && treePathExists(correlatorPath)) {
+                        skipped.add("correlator:" + correlator.name());
+                        continue;
+                    }
+                    deployCorrelator(correlator);
+                    applied.add("correlator:" + correlator.name());
+                } catch (Exception ex) {
+                    errors.add("correlator:" + correlator.name() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.schedules() != null) {
+            for (BundleSchedule schedule : manifest.schedules()) {
+                try {
+                    String schedulePath = scheduleTreePath(schedule);
+                    if (createMissingOnly && treePathExists(schedulePath)) {
+                        skipped.add("schedule:" + schedule.scheduleId());
+                        continue;
+                    }
+                    String actionJson = objectMapper.writeValueAsString(schedule.action());
+                    scheduleObjectService.upsert(new ScheduleObjectService.ScheduleDefinition(
+                            "",
+                            schedule.scheduleId(),
+                            schedule.enabled(),
+                            schedule.intervalMs(),
+                            schedule.actionType(),
+                            actionJson,
+                            null,
+                            null
+                    ));
+                    applied.add("schedule:" + schedule.scheduleId());
+                } catch (Exception ex) {
+                    errors.add("schedule:" + schedule.scheduleId() + ": " + ex.getMessage());
+                }
+            }
+        }
+
+        if (manifest.events() != null) {
+            try {
+                if (createMissingOnly && !eventCatalogService.listEvents(appId).isEmpty()) {
+                    skipped.add("events:" + manifest.events().size());
+                } else {
+                    eventCatalogService.replaceFromBundle(appId, manifest.events().stream()
+                            .map(event -> new ApplicationEventCatalogService.BundleEventDefinition(
+                                    event.id(),
+                                    event.roles(),
+                                    event.payloadSchema()
+                            ))
+                            .toList());
+                    applied.add("events:" + manifest.events().size());
+                }
+            } catch (Exception ex) {
+                errors.add("events: " + ex.getMessage());
+            }
+        }
+    }
+
+    private boolean treePathExists(String path) {
+        return path != null && !path.isBlank() && objectManager.tree().findByPath(path).isPresent();
+    }
+
+    private static String bindingTreePath(BundleSqlBinding binding) {
+        String bindingId = binding.objectPath().replace('.', '-') + "-" + binding.variable();
+        return SqlBindingObjectService.BINDINGS_ROOT + "."
+                + SqlBindingObjectService.sanitizeNodeName(bindingId);
+    }
+
+    private static String scheduleTreePath(BundleSchedule schedule) {
+        return ScheduleObjectService.SCHEDULES_ROOT + "."
+                + ApplicationObjectTreeService.sanitizeNodeName(schedule.scheduleId());
     }
 
     private void syncOperatorAppUi(String appId, BundleManifest manifest) throws Exception {
@@ -484,7 +678,7 @@ public class ApplicationBundleDeployService {
                 .orElse(false);
     }
 
-    private static boolean hasOperatorUiManifest(BundleManifest manifest) {
+    public static boolean hasOperatorUiManifest(BundleManifest manifest) {
         return (manifest.operatorUi() != null && !manifest.operatorUi().isEmpty())
                 || (manifest.dashboards() != null && !manifest.dashboards().isEmpty())
                 || (manifest.reports() != null && !manifest.reports().isEmpty());

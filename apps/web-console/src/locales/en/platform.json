@@ -55,5 +55,20 @@
   "deploy.loadingVersions": "Loading versions…",
   "deploy.deploying": "Deploying…",
   "deploy.deployPrevious": "Deploy previous",
-  "deploy.functionActiveVersion": "Active version {{version}}"
+  "deploy.functionActiveVersion": "Active version {{version}}",
+  "deploy.bundleObjectsTitle": "Bundle objects",
+  "deploy.bundleObjectsHint": "Create missing objects from the active bundle, update all artifacts to match the manifest, or remove bundle tree objects (application node and deploy history are kept). Migrations are not re-run.",
+  "deploy.bundleObjectsCreate": "Create missing",
+  "deploy.bundleObjectsCreating": "Creating…",
+  "deploy.bundleObjectsUpdate": "Update all",
+  "deploy.bundleObjectsUpdating": "Updating…",
+  "deploy.bundleObjectsDelete": "Remove all",
+  "deploy.bundleObjectsDeleting": "Removing…",
+  "deploy.bundleObjectsCreateConfirm": "Create missing bundle objects from the active manifest?",
+  "deploy.bundleObjectsUpdateConfirm": "Update all bundle objects to match the active manifest?",
+  "deploy.bundleObjectsDeleteConfirm": "Remove all bundle objects from the tree? The application node and deploy history will be kept.",
+  "deploy.bundleObjectsSuccess": "Bundle objects {{action}} completed ({{status}}).",
+  "deploy.bundleObjectsAppliedCount": "Applied: {{count}}.",
+  "deploy.bundleObjectsRemovedCount": "Removed: {{count}}.",
+  "deploy.bundleObjectsSkippedCount": "Skipped: {{count}}."
 }

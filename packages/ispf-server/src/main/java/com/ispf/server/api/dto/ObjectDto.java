@@ -7,6 +7,7 @@ import com.ispf.core.object.VisualGroupConstants;
 import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.plugin.model.dto.AppliedModelDto;
+import com.ispf.plugin.model.SystemIntrinsicModels;
 
 import java.time.Instant;
 import java.util.List;
@@ -64,7 +65,7 @@ public record ObjectDto(
                 node.type(),
                 node.displayName(),
                 node.description(),
-                node.templateId().orElse(null),
+                sanitizeTemplateId(node.templateId().orElse(null)),
                 iconId,
                 node.createdAt(),
                 node.sortOrder(),
@@ -89,6 +90,16 @@ public record ObjectDto(
         );
     }
 
+    private static String sanitizeTemplateId(String templateId) {
+        if (templateId == null || templateId.isBlank()) {
+            return null;
+        }
+        if (SystemIntrinsicModels.isIntrinsicName(templateId)) {
+            return null;
+        }
+        return templateId;
+    }
+
     public static ObjectDto asGroupMember(
             PlatformObject member,
             String groupContextPath,
@@ -102,7 +113,7 @@ public record ObjectDto(
                 member.type(),
                 missing ? "(отсутствует) " + member.path() : member.displayName(),
                 member.description(),
-                member.templateId().orElse(null),
+                sanitizeTemplateId(member.templateId().orElse(null)),
                 iconId,
                 member.createdAt(),
                 sortOrder,

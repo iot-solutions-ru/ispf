@@ -46,6 +46,12 @@ public class ModelApplicationService {
     @Transactional
     public ModelApplyResult applyModelWithRules(ModelDefinition model, String objectPath, Map<String, String> parameters) {
         try {
+            if (com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model)) {
+                ModelApplyResult result = modelEngine.applyIntrinsicStructure(model, objectPath);
+                bindingRulesMerger.mergeModelRules(objectPath, model, parameters);
+                objectManager.persistNodeTree(objectPath);
+                return result;
+            }
             ModelApplyResult result = modelEngine.applyModel(model.id(), objectPath);
             bindingRulesMerger.mergeModelRules(objectPath, model, parameters);
             objectManager.persistNodeTree(objectPath);

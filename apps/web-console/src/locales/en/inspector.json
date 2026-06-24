@@ -151,7 +151,7 @@
   "descriptor.functionTitle": "Function: {{name}}",
   "descriptor.eventTitle": "Event: {{name}}",
   "descriptor.invalidSchemaJson": "Invalid schema JSON",
-  "visualGroup.hint": "Visual group — links to objects without changing their paths. One object can belong to several groups.",
+  "visualGroup.hint": "Visual group — links to objects without changing their paths. Members are hidden from their original tree location but can belong to several groups.",
   "visualGroup.addObjects": "Add objects…",
   "visualGroup.removeSelected": "Remove selected",
   "visualGroup.loadingMembers": "Loading members…",

@@ -9,6 +9,7 @@ import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.ModelType;
 import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.model.SystemIntrinsicModels;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -47,9 +48,15 @@ public class Phase14ModelBootstrap {
     }
 
     private void ensureModel(String name, ModelDefinition definition) {
-        if (modelRegistry.findByName(name).isEmpty()) {
-            modelEngine.createModel(definition);
-        }
+        ModelDefinition intrinsic = definition.withSystemIntrinsicFlag();
+        modelRegistry.findByName(name).ifPresentOrElse(
+                existing -> {
+                    if (!existing.systemIntrinsic()) {
+                        modelEngine.updateModel(existing.withSystemIntrinsicFlag());
+                    }
+                },
+                () -> modelEngine.createModel(intrinsic)
+        );
     }
 
     private static ModelDefinition buildDataSourceModel() {
@@ -67,7 +74,7 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
@@ -93,7 +100,7 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
@@ -123,7 +130,7 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
@@ -148,7 +155,7 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of(),
+                SystemIntrinsicModels.parameters(),
                 Instant.now(),
                 Instant.now()
         );
