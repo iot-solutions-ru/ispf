@@ -20,22 +20,26 @@ public class ApplicationSchemaSession {
 
     public void runInSchema(String schemaName, Runnable action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        String previousSchema = currentSchema(connection);
         try {
-            activateSchema(connection, schemaName);
-            action.run();
+            String previousSchema = currentSchema(connection);
+            try {
+                activateSchema(connection, schemaName);
+                action.run();
+            } finally {
+                try {
+                    if (previousSchema != null && !previousSchema.isBlank()) {
+                        activateSchema(connection, previousSchema);
+                    } else {
+                        resetSchema(connection);
+                    }
+                } catch (SQLException ex) {
+                    throw new IllegalStateException("Failed to restore database schema", ex);
+                }
+            }
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to activate application schema: " + schemaName, ex);
         } finally {
-            try {
-                if (previousSchema != null && !previousSchema.isBlank()) {
-                    activateSchema(connection, previousSchema);
-                } else {
-                    resetSchema(connection);
-                }
-            } catch (SQLException ex) {
-                throw new IllegalStateException("Failed to restore database schema", ex);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
@@ -48,21 +52,25 @@ public class ApplicationSchemaSession {
 
     public <T> T callWithPlatformCatalog(Supplier<T> action) {
         Connection connection = DataSourceUtils.getConnection(dataSource);
-        String previousSchema = currentSchema(connection);
         try {
-            resetSchema(connection);
-            return action.get();
+            String previousSchema = currentSchema(connection);
+            try {
+                resetSchema(connection);
+                return action.get();
+            } finally {
+                try {
+                    if (previousSchema != null && !previousSchema.isBlank()
+                            && !"PUBLIC".equalsIgnoreCase(previousSchema)) {
+                        activateSchema(connection, previousSchema);
+                    }
+                } catch (SQLException ex) {
+                    throw new IllegalStateException("Failed to restore application schema", ex);
+                }
+            }
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to access platform catalog", ex);
         } finally {
-            try {
-                if (previousSchema != null && !previousSchema.isBlank()
-                        && !"PUBLIC".equalsIgnoreCase(previousSchema)) {
-                    activateSchema(connection, previousSchema);
-                }
-            } catch (SQLException ex) {
-                throw new IllegalStateException("Failed to restore application schema", ex);
-            }
+            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 
