@@ -159,6 +159,33 @@ class ObjectChangeEventBusUnitTest {
         releaseTelemetry.countDown();
     }
 
+    @Test
+    void skipsAutomationLaneForTelemetryOnlyDriverUpdates() throws InterruptedException {
+        CopyOnWriteArrayList<String> automationTrace = new CopyOnWriteArrayList<>();
+        ObjectChangeProperties properties = new ObjectChangeProperties();
+        properties.setAsyncEnabled(true);
+        properties.setSplitLanesEnabled(true);
+        properties.setTelemetryWorkerThreads(1);
+        properties.setAutomationWorkerThreads(1);
+        properties.setCoalesceTelemetryUpdates(false);
+
+        ObjectChangeEventBus bus = new ObjectChangeEventBus(
+                properties,
+                List.of(
+                        telemetryHandler(new CopyOnWriteArrayList<>(), "history"),
+                        event -> automationTrace.add(event.path() + ":" + event.variableName())
+                ),
+                METRICS,
+                OBSERVATION
+        );
+        bus.start();
+
+        bus.submit(ObjectChangeEvent.variableUpdated("root.device", "temperature", true, false));
+        TimeUnit.MILLISECONDS.sleep(200);
+
+        assertThat(automationTrace).isEmpty();
+    }
+
     private static ObjectChangeAsyncHandler handler(CopyOnWriteArrayList<String> trace, int order, String name) {
         return new ObjectChangeAsyncHandler() {
             @Override

@@ -5,6 +5,7 @@ import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.driver.DriverRuntimeService;
+import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.persistence.EventHistoryRepository;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -34,6 +35,7 @@ public class PlatformMetricsService {
     private final ObjectVariableRepository objectVariableRepository;
     private final VariableSampleRepository variableSampleRepository;
     private final EventHistoryRepository eventHistoryRepository;
+    private final EventHistoryRecordCounter eventHistoryRecordCounter;
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final VariableHistoryProperties variableHistoryProperties;
     private final DataSource dataSource;
@@ -50,6 +52,7 @@ public class PlatformMetricsService {
             ObjectVariableRepository objectVariableRepository,
             VariableSampleRepository variableSampleRepository,
             EventHistoryRepository eventHistoryRepository,
+            EventHistoryRecordCounter eventHistoryRecordCounter,
             WorkflowInstanceRepository workflowInstanceRepository,
             VariableHistoryProperties variableHistoryProperties,
             DataSource dataSource,
@@ -65,6 +68,7 @@ public class PlatformMetricsService {
         this.objectVariableRepository = objectVariableRepository;
         this.variableSampleRepository = variableSampleRepository;
         this.eventHistoryRepository = eventHistoryRepository;
+        this.eventHistoryRecordCounter = eventHistoryRecordCounter;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.variableHistoryProperties = variableHistoryProperties;
         this.dataSource = dataSource;
@@ -180,7 +184,9 @@ public class PlatformMetricsService {
 
     private Map<String, Object> automationMetrics() {
         Map<String, Object> section = new LinkedHashMap<>();
-        section.put("eventHistoryRecords", eventHistoryRepository.count());
+        section.put("eventHistoryRecords", eventHistoryRecordCounter.isInitialized()
+                ? eventHistoryRecordCounter.totalRecords()
+                : eventHistoryRepository.count());
         section.put("workflowInstancesTotal", workflowInstanceRepository.count());
         section.put("workflowInstancesRunning", workflowInstanceRepository.countByStatus("RUNNING"));
         section.put("workflowInstancesCompleted", workflowInstanceRepository.countByStatus("COMPLETED"));

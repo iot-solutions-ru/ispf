@@ -7,8 +7,8 @@ import com.ispf.server.object.ObjectChangeEvent;
  *
  * <p>When {@link com.ispf.server.config.ObjectChangeProperties#isSplitLanesEnabled()} is true,
  * handlers are routed to the lane returned by {@link #lane()}. Telemetry events
- * ({@code event.telemetry()==true}) are enqueued on the telemetry lane; all events are also
- * enqueued on the automation lane.
+ * ({@code event.telemetry()==true}) are enqueued on the telemetry lane; events with
+ * {@code event.automationEligible()==true} are also enqueued on the automation lane.
  */
 public interface ObjectChangeAsyncHandler {
 

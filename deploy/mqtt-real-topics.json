@@ -1,0 +1,10 @@
+{
+  "brokerUrl": "tcp://m5.wqtt.ru:11296",
+  "description": "Live lab MQTT topics (ESP sensors). ISPF mqtt driver subscribes; no synthetic publisher.",
+  "topics": [
+    "esp2/1wire_test1/temperature",
+    "esp2/1wire_test2/temperature",
+    "esp1/aqua_coldcorner_water/temperature",
+    "esp1/aqua_island_air/temperature"
+  ]
+}

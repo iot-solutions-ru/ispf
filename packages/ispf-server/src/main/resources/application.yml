@@ -110,7 +110,7 @@ ispf:
     min-interval-ms: 5000
     retention-days: 90
   runtime-telemetry:
-    coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:1000}
+    coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true
   object-change:
     async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
@@ -122,7 +122,7 @@ ispf:
     automation-queue-capacity: ${ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY:10000}
     telemetry-worker-threads: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS:2}
     automation-worker-threads: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS:4}
-    elastic-workers-enabled: ${ISPF_OBJECT_CHANGE_ELASTIC_WORKERS:false}
+    elastic-workers-enabled: ${ISPF_OBJECT_CHANGE_ELASTIC_WORKERS:true}
     elastic-scale-up-queue-threshold: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD:50}
     elastic-scale-down-steps: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_DOWN_STEPS:6}
     elastic-scale-check-interval-ms: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS:500}
@@ -132,12 +132,17 @@ ispf:
     telemetry-worker-threads-max: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS_MAX:8}
     automation-worker-threads-min: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN:2}
     automation-worker-threads-max: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX:16}
+  alert-rule:
+    runtime:
+      flush-enabled: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_ENABLED:true}
+      flush-interval-ms: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_INTERVAL_MS:30000}
   event-journal:
     async-enabled: ${ISPF_EVENT_JOURNAL_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_EVENT_JOURNAL_QUEUE_CAPACITY:10000}
-    batch-size: ${ISPF_EVENT_JOURNAL_BATCH_SIZE:100}
-    flush-interval-ms: ${ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS:250}
-    recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:500}
+    batch-size: ${ISPF_EVENT_JOURNAL_BATCH_SIZE:200}
+    flush-interval-ms: ${ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS:100}
+    writer-threads: ${ISPF_EVENT_JOURNAL_WRITER_THREADS:2}
+    recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:2000}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}

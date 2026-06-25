@@ -29,7 +29,7 @@ final class PlatformRuntimeSettingsCatalog {
             def("database", "database.user", "ISPF_DB_USER", "spring.datasource.username", PlatformRuntimeSettingType.STRING, "ispf", false, false),
             def("database", "database.password", "ISPF_DB_PASSWORD", "spring.datasource.password", PlatformRuntimeSettingType.STRING, "", true, false),
 
-            def("automation", "runtime-telemetry.coalesce-ms", "ISPF_RUNTIME_TELEMETRY_COALESCE_MS", "ispf.runtime-telemetry.coalesce-ms", PlatformRuntimeSettingType.INTEGER, "1000", false, true),
+            def("automation", "runtime-telemetry.coalesce-ms", "ISPF_RUNTIME_TELEMETRY_COALESCE_MS", "ispf.runtime-telemetry.coalesce-ms", PlatformRuntimeSettingType.INTEGER, "250", false, true),
 
             def("automation", "object-change.async-enabled", "ISPF_OBJECT_CHANGE_ASYNC_ENABLED", "ispf.object-change.async-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("automation", "object-change.split-lanes", "ISPF_OBJECT_CHANGE_SPLIT_LANES", "ispf.object-change.split-lanes-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
@@ -40,7 +40,7 @@ final class PlatformRuntimeSettingsCatalog {
             def("automation", "object-change.automation-queue-capacity", "ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY", "ispf.object-change.automation-queue-capacity", PlatformRuntimeSettingType.INTEGER, "10000", false, false),
             def("automation", "object-change.telemetry-workers", "ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS", "ispf.object-change.telemetry-worker-threads", PlatformRuntimeSettingType.INTEGER, "2", false, true),
             def("automation", "object-change.automation-workers", "ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS", "ispf.object-change.automation-worker-threads", PlatformRuntimeSettingType.INTEGER, "4", false, true),
-            def("automation", "object-change.elastic-workers", "ISPF_OBJECT_CHANGE_ELASTIC_WORKERS", "ispf.object-change.elastic-workers-enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
+            def("automation", "object-change.elastic-workers", "ISPF_OBJECT_CHANGE_ELASTIC_WORKERS", "ispf.object-change.elastic-workers-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("automation", "object-change.elastic-scale-up-threshold", "ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD", "ispf.object-change.elastic-scale-up-queue-threshold", PlatformRuntimeSettingType.INTEGER, "50", false, true),
             def("automation", "object-change.elastic-scale-down-steps", "ISPF_OBJECT_CHANGE_ELASTIC_SCALE_DOWN_STEPS", "ispf.object-change.elastic-scale-down-steps", PlatformRuntimeSettingType.INTEGER, "6", false, true),
             def("automation", "object-change.elastic-scale-check-ms", "ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS", "ispf.object-change.elastic-scale-check-interval-ms", PlatformRuntimeSettingType.INTEGER, "500", false, true),
@@ -53,9 +53,10 @@ final class PlatformRuntimeSettingsCatalog {
 
             def("automation", "event-journal.async-enabled", "ISPF_EVENT_JOURNAL_ASYNC_ENABLED", "ispf.event-journal.async-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("automation", "event-journal.queue-capacity", "ISPF_EVENT_JOURNAL_QUEUE_CAPACITY", "ispf.event-journal.queue-capacity", PlatformRuntimeSettingType.INTEGER, "10000", false, false),
-            def("automation", "event-journal.batch-size", "ISPF_EVENT_JOURNAL_BATCH_SIZE", "ispf.event-journal.batch-size", PlatformRuntimeSettingType.INTEGER, "100", false, false),
-            def("automation", "event-journal.flush-interval-ms", "ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS", "ispf.event-journal.flush-interval-ms", PlatformRuntimeSettingType.INTEGER, "250", false, false),
-            def("automation", "event-journal.recent-cache-size", "ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE", "ispf.event-journal.recent-cache-size", PlatformRuntimeSettingType.INTEGER, "500", false, false),
+            def("automation", "event-journal.batch-size", "ISPF_EVENT_JOURNAL_BATCH_SIZE", "ispf.event-journal.batch-size", PlatformRuntimeSettingType.INTEGER, "200", false, false),
+            def("automation", "event-journal.flush-interval-ms", "ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS", "ispf.event-journal.flush-interval-ms", PlatformRuntimeSettingType.INTEGER, "100", false, false),
+            def("automation", "event-journal.writer-threads", "ISPF_EVENT_JOURNAL_WRITER_THREADS", "ispf.event-journal.writer-threads", PlatformRuntimeSettingType.INTEGER, "2", false, false),
+            def("automation", "event-journal.recent-cache-size", "ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE", "ispf.event-journal.recent-cache-size", PlatformRuntimeSettingType.INTEGER, "2000", false, false),
 
             def("observability", "metrics-probe.enabled", "ISPF_PLATFORM_METRICS_PROBE_ENABLED", "ispf.platform-metrics-probe.enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("observability", "metrics-probe.interval-ms", "ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS", "ispf.platform-metrics-probe.interval-ms", PlatformRuntimeSettingType.INTEGER, "5000", false, false),

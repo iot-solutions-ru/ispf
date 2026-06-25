@@ -19,12 +19,19 @@
 | `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Глубина async-очередей |
 | `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Активные worker-потоки (elastic mode) |
 | `ispf.object_change.processed.total` | gauge | Обработанные object-change events |
+| `ispf.object_change.queue.dropped.total` | counter | Dropped events (queue full) |
+| `ispf.event_journal.queue.size` | gauge | Очередь async writer журнала |
+| `ispf.event_journal.flushed.total` | gauge | Записано в journal (cumulative) |
+| `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback при переполнении очереди |
+| `ispf.workflow.starts.total{trigger=...}` | counter | Старты workflow по триггеру |
 | `ispf.event_history.records` | gauge | Записей в журнале событий |
 | `ispf.workflow_instances.running` | gauge | Активные workflow instances |
 | `ispf.drivers.active` / `connected` | gauge | Драйверы |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
 Probe dashboard (`ISPF_PLATFORM_METRICS_PROBE_ENABLED=true`) синхронизирует subset в object tree для HMI.
+
+**Grafana dashboard** (все метрики pipeline): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
 
 ## OTLP metrics export (optional, 0.9.9+)
 
@@ -108,19 +115,18 @@ docker run --rm -p 4318:4318 -p 8889:8889 \
   otel/opentelemetry-collector-contrib:latest
 ```
 
-## Elastic object-change workers (optional, 0.9.11+)
+## Elastic object-change workers (0.9.11+)
 
-По умолчанию шина object-change использует **фиксированное** число worker-потоков на lane (telemetry / automation). При включении elastic mode пул масштабируется между min и max по глубине очереди:
+По умолчанию шина object-change использует **elastic** worker-пулы на lane (telemetry / automation): число потоков масштабируется между min и max по глубине очереди:
 
 - **scale up** — когда `queue.size >= elastic-scale-up-queue-threshold`, target workers растёт (до max);
 - **scale down** — после `elastic-scale-down-steps` подряд проверок с пустой очередью target уменьшается на 1 (до min);
 - периодическая проверка — `elastic-scale-check-interval-ms`; дополнительный scale-up при enqueue, если очередь уже выше порога.
 
-**Выключено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false`). Настройки также доступны в web console: **System → Runtime settings** (`GET/PATCH /api/v1/platform/runtime-settings`).
+**Включено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true`). Отключить: `ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false` или **System → Runtime settings** (`GET/PATCH /api/v1/platform/runtime-settings`).
 
 ```yaml
-# /opt/ispf/ispf-server.env — пример для prod load
-ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true
+# /opt/ispf/ispf-server.env — тонкая настройка prod load (elastic уже true по умолчанию)
 ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN=2
 ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX=16
 ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD=50

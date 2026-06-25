@@ -193,7 +193,7 @@ export default function SystemSettingsView() {
       )}
       {settingsQuery.isLoading && <p className="hint">{t("settings.loading")}</p>}
 
-      <div className="system-metrics-grid">
+      <div className="system-settings-sections">
         {settingsQuery.data?.sections.map((section) => (
           <SettingsSectionCard
             key={section.id}

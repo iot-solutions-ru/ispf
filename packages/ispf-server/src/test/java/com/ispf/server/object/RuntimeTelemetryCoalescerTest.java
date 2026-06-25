@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,6 +55,23 @@ class RuntimeTelemetryCoalescerTest {
         assertThat(event.path()).isEqualTo("root.dev.sensor");
         assertThat(event.variableName()).isEqualTo("temperature");
         assertThat(event.telemetry()).isTrue();
+        assertThat(event.automationEligible()).isTrue();
+    }
+
+    @Test
+    void marksTelemetryOnlyDevicesAsNotAutomationEligible() {
+        RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
+        properties.setEnabled(false);
+        DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
+        org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
+        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher);
+        DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
+
+        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().automationEligible()).isFalse();
     }
 
     @Test
@@ -104,7 +122,10 @@ class RuntimeTelemetryCoalescerTest {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setEnabled(enabled);
         properties.setCoalesceMs(coalesceMs);
-        return new RuntimeTelemetryCoalescer(properties, eventPublisher);
+        DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
+        org.mockito.Mockito.when(policyService.coalesceMs(org.mockito.ArgumentMatchers.anyString())).thenReturn(coalesceMs);
+        org.mockito.Mockito.when(policyService.automationEligible(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        return new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher);
     }
 
     private static DataRecord record(DataSchema schema, double value) {

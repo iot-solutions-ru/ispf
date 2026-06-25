@@ -22,6 +22,7 @@ import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import TreeBulkContextMenu, { type TreeContextMenuState } from "./TreeBulkContextMenu";
 import type { TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 import { isTreeContainerType } from "../utils/objectTreeTypes";
+import { deviceDriverTreeClass } from "../utils/deviceDriverTreeTone";
 
 interface ObjectTreeProps {
   nodes: TreeNode[];
@@ -143,6 +144,11 @@ const TreeRow = memo(function TreeRow({
   );
   const isDragging = draggingPath === path;
   const isDropTarget = dropTargetPath === path && draggingPath !== path;
+  const driverTreeClass = deviceDriverTreeClass(
+    node.object.type,
+    node.object.driverStatus,
+    node.object.driverConnected,
+  );
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
@@ -173,7 +179,7 @@ const TreeRow = memo(function TreeRow({
       tabIndex={0}
       aria-selected={isSelected}
       title={node.object.groupRef ? t("tree.linkTitle", { path }) : path}
-      className={`tree-row ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDropTarget ? "drop-target" : ""} ${node.object.groupRef ? "group-ref" : ""} ${node.object.groupMemberMissing ? "missing-ref" : ""}`}
+      className={`tree-row ${isSelected ? "selected" : ""} ${isDragging ? "dragging" : ""} ${isDropTarget ? "drop-target" : ""} ${node.object.groupRef ? "group-ref" : ""} ${node.object.groupMemberMissing ? "missing-ref" : ""}${driverTreeClass ? ` ${driverTreeClass}` : ""}`}
       style={{ paddingLeft: `${depth * 16 + 8}px` }}
       draggable={draggable}
       onClick={(event) =>
@@ -259,6 +265,8 @@ const TreeRow = memo(function TreeRow({
   && prev.node.object.federated === next.node.object.federated
   && prev.node.object.groupRef === next.node.object.groupRef
   && prev.node.object.groupMemberMissing === next.node.object.groupMemberMissing
+  && prev.node.object.driverStatus === next.node.object.driverStatus
+  && prev.node.object.driverConnected === next.node.object.driverConnected
   && prev.node.children.length === next.node.children.length
   && prev.depth === next.depth
   && prev.expanded === next.expanded

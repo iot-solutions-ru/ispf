@@ -1,7 +1,7 @@
 package com.ispf.server.platform;
 
 import com.ispf.server.driver.DriverRuntimeService;
-import com.ispf.server.persistence.EventHistoryRepository;
+import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.zaxxer.hikari.HikariDataSource;
@@ -23,7 +23,7 @@ import java.util.Optional;
 public class PlatformPrometheusMetricsBinder {
 
     private final Optional<MeterRegistry> meterRegistry;
-    private final EventHistoryRepository eventHistoryRepository;
+    private final EventHistoryRecordCounter eventHistoryRecordCounter;
     private final WorkflowInstanceRepository workflowInstanceRepository;
     private final VariableSampleRepository variableSampleRepository;
     private final DriverRuntimeService driverRuntimeService;
@@ -32,7 +32,7 @@ public class PlatformPrometheusMetricsBinder {
 
     public PlatformPrometheusMetricsBinder(
             Optional<MeterRegistry> meterRegistry,
-            EventHistoryRepository eventHistoryRepository,
+            EventHistoryRecordCounter eventHistoryRecordCounter,
             WorkflowInstanceRepository workflowInstanceRepository,
             VariableSampleRepository variableSampleRepository,
             DriverRuntimeService driverRuntimeService,
@@ -40,7 +40,7 @@ public class PlatformPrometheusMetricsBinder {
             DataSource dataSource
     ) {
         this.meterRegistry = meterRegistry;
-        this.eventHistoryRepository = eventHistoryRepository;
+        this.eventHistoryRecordCounter = eventHistoryRecordCounter;
         this.workflowInstanceRepository = workflowInstanceRepository;
         this.variableSampleRepository = variableSampleRepository;
         this.driverRuntimeService = driverRuntimeService;
@@ -51,7 +51,7 @@ public class PlatformPrometheusMetricsBinder {
     @PostConstruct
     void bindGauges() {
         meterRegistry.ifPresent(registry -> {
-            Gauge.builder("ispf.event_history.records", eventHistoryRepository, EventHistoryRepository::count)
+            Gauge.builder("ispf.event_history.records", eventHistoryRecordCounter, EventHistoryRecordCounter::totalRecords)
                     .description("Rows in event_history table")
                     .register(registry);
 

@@ -1,0 +1,37 @@
+# Prometheus scrape configs for ISPF automation pipeline metrics.
+#
+# Path A — direct pull from ISPF (Micrometer /actuator/prometheus):
+#   mount this file as prometheus.yml or merge scrape_configs into your config.
+#
+# Path B — pull from OTel Collector prometheus exporter (OTLP push from ISPF):
+#   enable ISPF_OTLP_METRICS_ENABLED=true → collector :8889/metrics
+#
+# Auth: /actuator/prometheus requires admin role — use bearer token or basic auth.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Direct scrape — ISPF server (prod example; adjust target + auth)
+  - job_name: ispf-server
+    metrics_path: /actuator/prometheus
+    scheme: https
+    scrape_interval: 15s
+    # bearer_token_file: /etc/prometheus/ispf-admin.token
+    static_configs:
+      - targets:
+          - ispf.iot-solutions.ru
+        labels:
+          environment: prod
+          source: prometheus-pull
+
+  # OTLP path — OTel Collector re-export (local stack / docker-compose.observability.yml)
+  - job_name: ispf-otel-collector
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - otel-collector:8889
+        labels:
+          source: otlp-push

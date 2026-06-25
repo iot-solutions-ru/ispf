@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
+import com.ispf.server.driver.TelemetryPublishMode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -48,11 +49,16 @@ public class DriverRuntimeController {
             @RequestParam String devicePath,
             @RequestBody ConfigureDriverRequest request
     ) {
-        DriverBinding binding = new DriverBinding(
+        Map<String, String> configuration = mergeConfiguration(request);
+        TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
+        int coalesceMs = parsePositiveInt(configuration.get("telemetryCoalesceMs"));
+        DriverBinding binding = DriverBinding.of(
                 request.driverId() != null ? request.driverId() : DriverBinding.DEFAULT_DRIVER_ID,
                 request.pollIntervalMs() != null ? request.pollIntervalMs() : 2000,
-                request.configuration() != null ? request.configuration() : Map.of(),
-                request.pointMappings() != null ? request.pointMappings() : Map.of()
+                configuration,
+                request.pointMappings() != null ? request.pointMappings() : Map.of(),
+                publishMode,
+                coalesceMs
         );
         driverRuntimeService.configure(devicePath, binding);
         if (Boolean.TRUE.equals(request.autoStart())) {
@@ -66,7 +72,34 @@ public class DriverRuntimeController {
             Integer pollIntervalMs,
             Map<String, String> configuration,
             Map<String, String> pointMappings,
+            String telemetryPublishMode,
+            Integer telemetryCoalesceMs,
             Boolean autoStart
     ) {
+    }
+
+    private static Map<String, String> mergeConfiguration(ConfigureDriverRequest request) {
+        Map<String, String> configuration = new java.util.LinkedHashMap<>(
+                request.configuration() != null ? request.configuration() : Map.of()
+        );
+        if (request.telemetryPublishMode() != null && !request.telemetryPublishMode().isBlank()) {
+            configuration.put("telemetryPublishMode", request.telemetryPublishMode().trim());
+        }
+        if (request.telemetryCoalesceMs() != null && request.telemetryCoalesceMs() > 0) {
+            configuration.put("telemetryCoalesceMs", request.telemetryCoalesceMs().toString());
+        }
+        return Map.copyOf(configuration);
+    }
+
+    private static int parsePositiveInt(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return 0;
+        }
+        try {
+            int value = Integer.parseInt(raw.trim());
+            return value > 0 ? value : 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }

@@ -34,7 +34,11 @@ public record ObjectDto(
         List<AppliedModelDto> appliedModels,
         boolean groupRef,
         String groupContextPath,
-        boolean groupMemberMissing
+        boolean groupMemberMissing,
+        /** DEVICE only: driverStatus variable (STOPPED, RUNNING, ERROR). */
+        String driverStatus,
+        /** DEVICE only: live connected flag when status is RUNNING. */
+        Boolean driverConnected
 ) {
     public static ObjectDto from(PlatformObject node) {
         return from(node, null, List.of());
@@ -86,7 +90,37 @@ public record ObjectDto(
                 appliedModels != null ? appliedModels : List.of(),
                 false,
                 null,
-                false
+                false,
+                null,
+                null
+        );
+    }
+
+    public ObjectDto withDriverRuntime(String driverStatus, Boolean driverConnected) {
+        return new ObjectDto(
+                id,
+                path,
+                type,
+                displayName,
+                description,
+                templateId,
+                iconId,
+                createdAt,
+                sortOrder,
+                revision,
+                lastChangedBy,
+                lastChangedAt,
+                variableNames,
+                eventNames,
+                federated,
+                federationPeerId,
+                federationRemotePath,
+                appliedModels,
+                groupRef,
+                groupContextPath,
+                groupMemberMissing,
+                driverStatus,
+                driverConnected
         );
     }
 
@@ -128,7 +162,9 @@ public record ObjectDto(
                 List.of(),
                 true,
                 groupContextPath,
-                missing
+                missing,
+                null,
+                null
         );
     }
 
@@ -154,7 +190,9 @@ public record ObjectDto(
                 List.of(),
                 true,
                 groupContextPath,
-                true
+                true,
+                null,
+                null
         );
     }
 }

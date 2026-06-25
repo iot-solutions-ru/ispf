@@ -134,21 +134,19 @@ public class DriverRuntimeService {
     public Optional<DriverRuntimeStatus> status(String devicePath) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
-            return readBinding(devicePath).map(binding -> new DriverRuntimeStatus(
+            return readBinding(devicePath).map(binding -> statusOf(
                     devicePath,
-                    binding.driverId(),
+                    binding,
                     "STOPPED",
                     false,
-                    binding.pollIntervalMs(),
                     null
             ));
         }
-        return Optional.of(new DriverRuntimeStatus(
+        return Optional.of(statusOf(
                 devicePath,
-                active.binding().driverId(),
+                active.binding(),
                 readStatusVariable(devicePath).orElse("RUNNING"),
                 active.driver().isConnected(),
-                active.binding().pollIntervalMs(),
                 active.lastError()
         ));
     }
@@ -204,12 +202,11 @@ public class DriverRuntimeService {
             active.driver().disconnect();
         }
         setStatus(devicePath, "STOPPED");
-        return new DriverRuntimeStatus(
+        return statusOf(
                 devicePath,
-                binding.driverId(),
+                binding,
                 "STOPPED",
                 false,
-                binding.pollIntervalMs(),
                 null
         );
     }
@@ -250,7 +247,7 @@ public class DriverRuntimeService {
                     "driverConfigJson",
                     DataRecord.single(
                             STRING_VALUE_SCHEMA,
-                            Map.of("value", objectMapper.writeValueAsString(binding.configuration()))
+                            Map.of("value", objectMapper.writeValueAsString(binding.configurationWithPolicy()))
                     )
             );
             objectManager.setSystemVariableValue(
@@ -354,8 +351,29 @@ public class DriverRuntimeService {
             String status,
             boolean connected,
             int pollIntervalMs,
+            String lastError,
+            String telemetryPublishMode,
+            int telemetryCoalesceMs
+    ) {
+    }
+
+    private static DriverRuntimeStatus statusOf(
+            String devicePath,
+            DriverBinding binding,
+            String status,
+            boolean connected,
             String lastError
     ) {
+        return new DriverRuntimeStatus(
+                devicePath,
+                binding.driverId(),
+                status,
+                connected,
+                binding.pollIntervalMs(),
+                lastError,
+                binding.telemetryPublishMode().name(),
+                binding.telemetryCoalesceMs()
+        );
     }
 
     public Map<String, Object> runtimeMetrics() {

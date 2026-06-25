@@ -74,6 +74,10 @@ export interface ObjectSummary {
   groupRef?: boolean;
   groupContextPath?: string | null;
   groupMemberMissing?: boolean;
+  /** DEVICE lite list: driverStatus variable when driverId is configured. */
+  driverStatus?: string | null;
+  /** DEVICE lite list: live connected flag when status is RUNNING. */
+  driverConnected?: boolean | null;
   appliedModels?: AppliedModelSummary[];
 }
 

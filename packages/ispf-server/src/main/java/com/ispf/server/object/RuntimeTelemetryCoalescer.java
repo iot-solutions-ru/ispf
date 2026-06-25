@@ -2,6 +2,7 @@ package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import jakarta.annotation.PreDestroy;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -19,14 +20,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class RuntimeTelemetryCoalescer {
 
     private final RuntimeTelemetryProperties properties;
+    private final DeviceTelemetryPolicyService policyService;
     private final ApplicationEventPublisher eventPublisher;
     private final ScheduledExecutorService scheduler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, DataRecord> lastPublished = new ConcurrentHashMap<>();
-    private final AtomicBoolean flushScheduled = new AtomicBoolean(false);
+    private final ConcurrentHashMap<String, AtomicBoolean> deviceFlushScheduled = new ConcurrentHashMap<>();
 
-    public RuntimeTelemetryCoalescer(RuntimeTelemetryProperties properties, ApplicationEventPublisher eventPublisher) {
+    public RuntimeTelemetryCoalescer(
+            RuntimeTelemetryProperties properties,
+            DeviceTelemetryPolicyService policyService,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.properties = properties;
+        this.policyService = policyService;
         this.eventPublisher = eventPublisher;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "runtime-telemetry-coalescer");
@@ -45,16 +52,16 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         pending.put(key, new PendingUpdate(path, variableName, value));
-        scheduleFlush();
+        scheduleFlushForDevice(path);
     }
 
     public void flushNow() {
-        flush();
+        flushAll();
     }
 
     @PreDestroy
     public void shutdown() {
-        flush();
+        flushAll();
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
@@ -66,21 +73,38 @@ public class RuntimeTelemetryCoalescer {
         }
     }
 
-    private void scheduleFlush() {
-        if (flushScheduled.compareAndSet(false, true)) {
-            scheduler.schedule(this::flush, properties.getCoalesceMs(), TimeUnit.MILLISECONDS);
+    private void scheduleFlushForDevice(String devicePath) {
+        long coalesceMs = policyService.coalesceMs(devicePath);
+        AtomicBoolean scheduled = deviceFlushScheduled.computeIfAbsent(devicePath, ignored -> new AtomicBoolean(false));
+        if (scheduled.compareAndSet(false, true)) {
+            scheduler.schedule(() -> {
+                scheduled.set(false);
+                flushDevice(devicePath);
+            }, coalesceMs, TimeUnit.MILLISECONDS);
         }
     }
 
-    private void flush() {
-        flushScheduled.set(false);
+    private void flushAll() {
         Map<String, PendingUpdate> snapshot = new HashMap<>(pending);
         pending.clear();
         for (PendingUpdate update : snapshot.values()) {
             publishIfChanged(update.path(), update.variableName(), update.value(), key(update.path(), update.variableName()));
         }
-        if (!pending.isEmpty()) {
-            scheduleFlush();
+    }
+
+    private void flushDevice(String devicePath) {
+        Map<String, PendingUpdate> snapshot = new HashMap<>();
+        pending.forEach((key, update) -> {
+            if (devicePath.equals(update.path())) {
+                snapshot.put(key, update);
+            }
+        });
+        snapshot.keySet().forEach(pending::remove);
+        for (PendingUpdate update : snapshot.values()) {
+            publishIfChanged(update.path(), update.variableName(), update.value(), key(update.path(), update.variableName()));
+        }
+        if (pending.keySet().stream().anyMatch(key -> devicePath.equals(pending.get(key).path()))) {
+            scheduleFlushForDevice(devicePath);
         }
     }
 
@@ -90,7 +114,8 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         lastPublished.put(key, value);
-        eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(path, variableName, true));
+        boolean automationEligible = policyService.automationEligible(path);
+        eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(path, variableName, true, automationEligible));
     }
 
     private static String key(String path, String variableName) {

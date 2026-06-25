@@ -18,6 +18,8 @@ from urllib.parse import quote
 
 import requests
 
+from loadtest_cleanup_lib import cleanup_for_internal_poll_test, delete_loadtest_alert_rules, format_cleanup_stats
+
 PREFIX = "loadtest"
 SETUP_SCRIPT = Path(__file__).with_name("setup-platform-metrics-monitor.py")
 
@@ -122,7 +124,13 @@ def ensure_alert_rules(client: Client, device_paths: list[str], condition_expr: 
     return updated
 
 
-def configure_driver(client: Client, device_path: str, poll_ms: int, verbose: bool = False) -> bool:
+def configure_driver(
+    client: Client,
+    device_path: str,
+    poll_ms: int,
+    telemetry_publish_mode: str | None = None,
+    verbose: bool = False,
+) -> bool:
     body = {
         "driverId": "virtual",
         "pollIntervalMs": poll_ms,
@@ -130,6 +138,8 @@ def configure_driver(client: Client, device_path: str, poll_ms: int, verbose: bo
         "pointMappings": {},
         "autoStart": True,
     }
+    if telemetry_publish_mode:
+        body["telemetryPublishMode"] = telemetry_publish_mode
     url = f"/api/v1/drivers/runtime/configure?devicePath={quote(device_path, safe='')}"
     for attempt in range(3):
         r = client.request("PUT", url, json=body)
@@ -144,12 +154,24 @@ def configure_driver(client: Client, device_path: str, poll_ms: int, verbose: bo
     return False
 
 
-def ensure_drivers(client: Client, device_paths: list[str], poll_ms: int, verbose: bool = False) -> int:
+def ensure_drivers(
+    client: Client,
+    device_paths: list[str],
+    poll_ms: int,
+    telemetry_mix_ratio: float = 0.0,
+    verbose: bool = False,
+) -> dict:
+    """Configure drivers. telemetry_mix_ratio: fraction of devices set to TELEMETRY_ONLY (0=all FULL)."""
     ok = 0
-    for path in device_paths:
-        if configure_driver(client, path, poll_ms, verbose=verbose):
+    telemetry_only = 0
+    for index, path in enumerate(device_paths):
+        mode = None
+        if telemetry_mix_ratio > 0 and index < int(len(device_paths) * telemetry_mix_ratio):
+            mode = "TELEMETRY_ONLY"
+            telemetry_only += 1
+        if configure_driver(client, path, poll_ms, telemetry_publish_mode=mode, verbose=verbose):
             ok += 1
-    return ok
+    return {"configured": ok, "telemetryOnly": telemetry_only, "full": ok - telemetry_only}
 
 
 def measure_phase(client: Client, duration_sec: float) -> dict:
@@ -194,8 +216,15 @@ def main() -> int:
         help="Read conditionExpr from file (avoids shell quoting issues with bracket syntax)",
     )
     parser.add_argument("--poll-ms", default="3000,1000,500")
+    parser.add_argument(
+        "--telemetry-mix-ratio",
+        type=float,
+        default=0.0,
+        help="Fraction of devices with TELEMETRY_ONLY (0=all FULL, 0.5=half skip automation)",
+    )
     parser.add_argument("--max-devices", type=int, default=0, help="Limit loadtest devices (0=all)")
     parser.add_argument("--skip-monitor-setup", action="store_true")
+    parser.add_argument("--skip-cleanup", action="store_true", help="Do not stop mqtt loadtest fleet before run")
     parser.add_argument("--skip-alert-seed", action="store_true")
     parser.add_argument("--metrics-interval", type=float, default=5.0)
     parser.add_argument("--timeout", type=float, default=60.0)
@@ -208,6 +237,11 @@ def main() -> int:
 
     client = Client(args.base_url, args.host_header or None, args.timeout)
     client.login(args.username, args.password)
+
+    if not args.skip_cleanup:
+        print("Cleaning environment (stop demo/lab drivers, disable automation, stop loadtest fleet)...")
+        stats = cleanup_for_internal_poll_test(client)
+        print(f"  {format_cleanup_stats(stats)}")
 
     setup_mod = load_setup_module()
     syncer = setup_mod.MetricsSyncer(client, args.metrics_interval)
@@ -226,6 +260,9 @@ def main() -> int:
     print(f"Loadtest devices: {len(device_paths)}")
 
     if not args.skip_alert_seed:
+        removed = delete_loadtest_alert_rules(client)
+        if removed:
+            print(f"Removed {removed} stale loadtest alert rules")
         n = ensure_alert_rules(client, device_paths, condition_expr)
         print(f"Alert rules ensured/updated: {n} (condition={condition_expr!r})")
 
@@ -241,8 +278,20 @@ def main() -> int:
     print("-" * 64)
 
     for poll_ms in poll_levels:
-        drivers_ok = ensure_drivers(client, device_paths, poll_ms, verbose=args.verbose)
-        print(f"  configured {drivers_ok}/{len(device_paths)} drivers @ {poll_ms}ms poll")
+        driver_stats = ensure_drivers(
+            client,
+            device_paths,
+            poll_ms,
+            telemetry_mix_ratio=args.telemetry_mix_ratio,
+            verbose=args.verbose,
+        )
+        drivers_ok = driver_stats["configured"]
+        mix_note = ""
+        if args.telemetry_mix_ratio > 0:
+            mix_note = (
+                f" (FULL={driver_stats['full']}, TELEMETRY_ONLY={driver_stats['telemetryOnly']})"
+            )
+        print(f"  configured {drivers_ok}/{len(device_paths)} drivers @ {poll_ms}ms poll{mix_note}")
         warmup = max(0, args.warmup_seconds)
         if warmup:
             print(f"  warming up {warmup}s (telemetry coalesce + async journal)...")
@@ -251,6 +300,8 @@ def main() -> int:
         phase["pollIntervalMs"] = poll_ms
         phase["devices"] = len(device_paths)
         phase["driversConfigured"] = drivers_ok
+        phase["telemetryMixRatio"] = args.telemetry_mix_ratio
+        phase["telemetryOnlyDevices"] = driver_stats.get("telemetryOnly", 0)
         results.append(phase)
         print(
             f"{poll_ms:8d} {drivers_ok:8d} {phase['eventsGenerated']:10d} "
@@ -261,11 +312,12 @@ def main() -> int:
 
     syncer.stop()
 
-    report_path = f"deploy/events-internal-load-test-report-{int(time.time())}.json"
+    report_path = Path(__file__).with_name(f"events-internal-load-test-report-{int(time.time())}.json")
     with open(report_path, "w", encoding="utf-8") as fh:
         json.dump(
             {
                 "devices": len(device_paths),
+                "telemetryMixRatio": args.telemetry_mix_ratio,
                 "dashboard": setup_mod.DASHBOARD_PATH,
                 "probeDevice": setup_mod.DEVICE_PATH,
                 "phases": results,

@@ -2,36 +2,50 @@
 
 Нагрузочные сценарии для измерения пропускной способности **HTTP events API** и **внутреннего конвейера автоматизации** (driver → alert rule → event journal).
 
-Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.9**, июнь 2026.
+Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.17**, июнь 2026.
 
 См. также [OBSERVABILITY.md](OBSERVABILITY.md) — Prometheus scrape и OTLP export.
 
-## Два контура
+## Три контура
 
 | Контур | Скрипт | Что измеряет |
 |--------|--------|--------------|
 | **HTTP** | `deploy/events-load-test.py` | `POST /api/v1/events/fire` + `GET /api/v1/events` с клиента |
-| **Internal** | `deploy/events-internal-load-test.py` | Virtual driver → `sineWave` → alert rule → `EventService.fire` → PostgreSQL journal |
+| **Internal (poll)** | `deploy/events-internal-load-test.py` | Virtual driver → `sineWave` → alert → journal |
+| **MQTT ingress (subscribe)** | `deploy/mqtt-ingress-load-test.py` | Реальный брокер → mqtt driver **подписка** → alert → journal |
+| **MQTT ingress (push, lab)** | `--mode push` | Синтетический publisher → local Mosquitto |
 
-Internal load test ближе к реальному SCADA/IoT: события рождаются на сервере, без HTTP на каждый fire.
+**Перед каждым прогоном** скрипты останавливают фоновую нагрузку и loadtest-фикстуры:
 
-```mermaid
-flowchart LR
-    subgraph http [HTTP load test]
-        C[Client threads]
-        API[POST /events/fire]
-        J[(event_history)]
-        C --> API --> J
-    end
+- **Драйверы:** все DEVICE (рекурсивно: mini-TEC, demo-sensor, mqtt-lab, …), кроме `platform-metrics-probe`
+- **Alert rules:** отключаются все не-loadtest; loadtest rules удаляются (mqtt-тест)
+- **Correlators / schedules:** отключаются все не-loadtest
 
-    subgraph internal [Internal load test]
-        D[Virtual driver lab profile]
-        T[sineWave telemetry]
-        AR[AlertRuleListener]
-        ES[EventService]
-        D --> T --> AR --> ES --> J
-    end
+```powershell
+python deploy/loadtest-cleanup.py
+python deploy/loadtest-cleanup.py --purge-mqtt --purge-virtual
+python deploy/loadtest-cleanup.py --keep-background   # только loadtest, без отключения demo
 ```
+
+После теста demo-объекты остаются в дереве; alert rules и schedules нужно включить вручную или перезапустить сервер (bootstrap mini-TEC не пересоздаёт уже существующие правила, но драйверы mini-TEC снова стартуют при рестарте).
+
+## MQTT ingress (subscribe — default)
+
+ISPF **не публикует** в брокер — mqtt driver **подписывается** на живые топики. Топики: `deploy/mqtt-real-topics.json` (брокер `m5.wqtt.ru`). ISPF-сервер должен достучаться до брокера. Lab на VPS: `mqtt-local-topics.json` + `--mode push`.
+
+```powershell
+python deploy/mqtt-ingress-load-test.py --mode subscribe --devices 4 --phase-seconds 60 --skip-monitor-setup
+```
+
+| Флаг | Default | Описание |
+|------|---------|----------|
+| `--mode` | `subscribe` | `subscribe` = реальный брокер; `push` = lab publisher |
+| `--topics-file` | `mqtt-real-topics.json` | brokerUrl + topics |
+| `--skip-cleanup` | false | Не останавливать `loadtest-dev-*` |
+
+Lab push (локальный Mosquitto, `--mode push`) — только для синтетики, см. `mqtt-loadtest-publisher.py`.
+
+## Internal load test (virtual driver)
 
 ## Подготовка окружения
 
@@ -84,16 +98,8 @@ JUnit-аналог: `EventFireLoadTest` (150 concurrent HTTP).
 ## Internal load test
 
 ```powershell
-# Максимальная пропускная способность (condition always true)
+# Авто-cleanup: останавливает mqtt loadtest, пересоздаёт virtual alert rules
 python deploy/events-internal-load-test.py --skip-monitor-setup --poll-ms 1000 --phase-seconds 60
-
-# Реалистичное CEL-условие (без проблем с кавычками в PowerShell)
-python deploy/events-internal-load-test.py `
-  --skip-monitor-setup `
-  --condition-expr-file deploy/loadtest-sinewave-condition.txt `
-  --poll-ms 1000 `
-  --phase-seconds 45 `
-  --warmup-seconds 20
 ```
 
 Файл `deploy/loadtest-sinewave-condition.txt`:
@@ -107,10 +113,58 @@ self.sineWave["value"] > -1000.0
 | Флаг | Default | Описание |
 |------|---------|----------|
 | `--warmup-seconds` | 15 | Ожидание после configure driver (coalesce + async journal) |
+| `--skip-cleanup` | false | Не останавливать mqtt loadtest перед прогоном |
 | `--condition-expr` | `true` | CEL для alert rules |
 | `--condition-expr-file` | — | Условие из файла |
 | `--poll-ms` | `3000,1000,500` | Интервалы опроса virtual driver |
+| `--telemetry-mix-ratio` | `0` | Доля устройств в `TELEMETRY_ONLY` (0.5 = половина без automation lane) |
 | `--max-devices` | 0 (all) | Лимит loadtest-устройств |
+
+### Baseline (0.9.17, 60 devices, poll=1000ms, warmup=45s, coalesce=250ms)
+
+Per-device **`telemetryPublishMode`**: `FULL` (default) или `TELEMETRY_ONLY` (RAM + historian, без alert/workflow на coalesced tick).
+
+| Режим | conditionExpr | Events/s | Alert fires/s |
+|-------|---------------|----------|---------------|
+| all FULL | `self.sineWave["value"] > -1000.0` | ~36.8 | ~24.5 |
+| 50% TELEMETRY_ONLY | same | ~30.1 | ~24.7 |
+
+*(0.9.17: выбор режима на driver binding; `PUT /api/v1/drivers/runtime/configure` поля `telemetryPublishMode`, `telemetryCoalesceMs`. Alert fires/s — глобальный счётчик (фон mini-TEC); journal падает при TELEMETRY_ONLY, automation lane разгружается.)*
+
+Configure example:
+
+```json
+{
+  "driverId": "virtual",
+  "pollIntervalMs": 1000,
+  "telemetryPublishMode": "TELEMETRY_ONLY",
+  "autoStart": true
+}
+```
+
+### Baseline (0.9.16, 60 devices, poll=1000ms, warmup=45s, coalesce=250ms)
+
+| conditionExpr | Events/s | Alert fires/s |
+|---------------|----------|---------------|
+| `self.sineWave["value"] > -1000.0` | ~41.8 | ~29.0 |
+
+*(0.9.16: JDBC batch journal, O(1) event counter, fireAutomation без TX, elastic workers, 6 journal writers.)*
+
+### Baseline (0.9.15, 60 devices, poll=1000ms, warmup=30s, coalesce=250ms)
+
+| conditionExpr | Events/s | Alert fires/s |
+|---------------|----------|---------------|
+| `self.sineWave["value"] > -1000.0` | ~39.9 | ~27.6 |
+
+*(0.9.14 reference: ~27.4 events/s — in-memory alert runtime. 0.9.15 adds CEL cache, multi-writer journal, coalesce 250ms.)*
+
+### Baseline (0.9.14, 60 devices, poll=1000ms, warmup=30s)
+
+| conditionExpr | Events/s | Alert fires/s |
+|---------------|----------|---------------|
+| `self.sineWave["value"] > -1000.0` | ~27.4 | ~15.7 |
+
+*(0.9.13 reference: ~26.0 events/s — in-memory alert runtime state.)*
 
 ### Baseline (0.9.9, 60 devices, poll=1000ms, warmup=15s)
 
@@ -124,9 +178,10 @@ self.sineWave["value"] > -1000.0
 ### Важно для интерпретации
 
 1. **Drivers** должны быть в RUNNING с `autoStart: true` (`PUT /api/v1/drivers/runtime/configure`).
-2. **`alertFiresTotal`** — глобальный счётчик платформы; при параллельных тестах учитывайте фоновые алерты (mini-TEC и т.д.).
+2. **`alertFiresTotal`** — глобальный счётчик; перед прогоном cleanup отключает mini-TEC/demo alerts и останавливает их драйверы.
 3. **`eventHistoryRecords`** — async write; используйте warmup перед измерением.
-4. Dot-notation `self.sineWave.value` в CEL для alert rules ненадёжна; предпочитайте `self.sineWave["value"]` или binding → derived var → alert (как `demo-sensor-01` / `alarmActive`).
+4. **Не смешивайте** virtual poll (`loadtest-dev-*`) и mqtt subscribe (`loadtest-mqtt-dev-*`) без cleanup — скрипты делают это по умолчанию.
+5. Dot-notation `self.sineWave.value` в CEL для alert rules ненадёжна; предпочитайте `self.sineWave["value"]` или binding → derived var → alert (как `demo-sensor-01` / `alarmActive`).
 
 ## Архитектура конвейера (кратко)
 
@@ -134,8 +189,10 @@ self.sineWave["value"] > -1000.0
 
 - **Sync:** bindings, WebSocket
 - **Async bus (dual lane):** telemetry (historian) vs automation (alerts, workflows, correlators)
-- **Coalesce:** `RuntimeTelemetryCoalescer` (1 s default) перед publish `ObjectChangeEvent`
+- **Coalesce:** `RuntimeTelemetryCoalescer` (global default + per-device override) перед publish `ObjectChangeEvent`
+- **Telemetry publish mode:** `FULL` | `TELEMETRY_ONLY` на driver binding — управляет `automationEligible` на coalesced driver telemetry
 - **Alert path:** `AlertRuleListener` → CEL → `EventService.fire` → `EventJournalAsyncWriter`
+- **Alert runtime state:** in-memory (`AlertRuleRuntimeStore`); periodic flush to object tree (default 30 s), not on every evaluation
 
 ## Связанные документы
 

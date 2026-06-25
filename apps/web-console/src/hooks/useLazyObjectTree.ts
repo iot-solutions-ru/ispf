@@ -5,6 +5,7 @@ import type { ObjectSummary, TreeNode } from "../types";
 import { buildObjectTree, parentObjectPath } from "../utils/tree";
 import { objectTreeKey } from "../utils/treeRowKey";
 import type { ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT } from "./useObjectWebSocket";
 
 const BOOTSTRAP_PARENTS = ["root", "root.platform"];
 
@@ -114,6 +115,21 @@ export function useLazyObjectTree(enabled = true) {
     window.addEventListener("ispf-tree-structure-change", onStructureChange);
     return () => window.removeEventListener("ispf-tree-structure-change", onStructureChange);
   }, [refreshParent, bump]);
+
+  useEffect(() => {
+    const onDriverVariable = (event: Event) => {
+      const message = (event as CustomEvent<ObjectWsMessage>).detail;
+      if (message.type !== "VARIABLE_UPDATED" || message.variableName !== "driverStatus") {
+        return;
+      }
+      const parent = parentObjectPath(message.path);
+      if (parent) {
+        void refreshParent(parent);
+      }
+    };
+    window.addEventListener(OBJECT_WS_EVENT, onDriverVariable);
+    return () => window.removeEventListener(OBJECT_WS_EVENT, onDriverVariable);
+  }, [refreshParent]);
 
   const objects = useMemo(() => [...objectsRef.current.values()], [version]);
 

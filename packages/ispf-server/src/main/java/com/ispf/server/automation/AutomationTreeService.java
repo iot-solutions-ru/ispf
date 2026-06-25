@@ -8,6 +8,9 @@ import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.model.SystemObjectStructureService;
 import com.ispf.server.alert.AlertRule;
+import com.ispf.server.alert.AlertRuleRuntimeFlusher;
+import com.ispf.server.alert.AlertRuleRuntimeState;
+import com.ispf.server.alert.AlertRuleRuntimeStore;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.correlator.EventCorrelator;
@@ -50,6 +53,8 @@ public class AutomationTreeService {
     private final CorrelatorWindowStore correlatorWindowStore;
     private final AutomationRuleIndex ruleIndex;
     private final AutomationIndexRefresh indexRefresh;
+    private final AlertRuleRuntimeStore alertRuleRuntimeStore;
+    private final AlertRuleRuntimeFlusher alertRuleRuntimeFlusher;
 
     public AutomationTreeService(
             ObjectManager objectManager,
@@ -58,7 +63,9 @@ public class AutomationTreeService {
             EventCorrelatorRepository legacyCorrelatorRepository,
             CorrelatorWindowStore correlatorWindowStore,
             AutomationRuleIndex ruleIndex,
-            AutomationIndexRefresh indexRefresh
+            AutomationIndexRefresh indexRefresh,
+            AlertRuleRuntimeStore alertRuleRuntimeStore,
+            AlertRuleRuntimeFlusher alertRuleRuntimeFlusher
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -67,6 +74,8 @@ public class AutomationTreeService {
         this.correlatorWindowStore = correlatorWindowStore;
         this.ruleIndex = ruleIndex;
         this.indexRefresh = indexRefresh;
+        this.alertRuleRuntimeStore = alertRuleRuntimeStore;
+        this.alertRuleRuntimeFlusher = alertRuleRuntimeFlusher;
     }
 
     @Transactional
@@ -216,52 +225,34 @@ public class AutomationTreeService {
         return rule;
     }
 
-    @Transactional
     public void setAlertRuleConditionTrueSince(String path, Instant conditionTrueSince) {
-        setRuntimeString(path, "conditionTrueSince", conditionTrueSince != null ? conditionTrueSince.toString() : "");
-        objectManager.persistNodeTree(path);
+        alertRuleRuntimeStore.setConditionTrueSince(path, conditionTrueSince);
     }
 
-    @Transactional
     public void clearAlertRuleConditionTrueSince(String path) {
-        setAlertRuleConditionTrueSince(path, null);
+        alertRuleRuntimeStore.clearConditionTrueSince(path);
     }
 
-    @Transactional
     public void setAlertRuleLastFiredAt(String path, Instant lastFiredAt) {
-        if (objectManager.require(path).getVariable("lastFiredAt").isEmpty()) {
-            setString(path, "lastFiredAt", "");
-        }
-        setRuntimeString(path, "lastFiredAt", lastFiredAt != null ? lastFiredAt.toString() : "");
-        objectManager.persistNodeTree(path);
+        alertRuleRuntimeStore.setLastFiredAt(path, lastFiredAt);
     }
 
-    @Transactional
     public void setAlertRuleLastConditionMet(String path, boolean lastConditionMet) {
-        setRuntimeBoolean(path, "lastConditionMet", lastConditionMet);
-        objectManager.persistNodeTree(path);
+        alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
     }
 
-    @Transactional
     public void resetAlertRuleRuntimeState(String path) {
-        setAlertRuleLastConditionMet(path, false);
-        setAlertRuleLastFiredAt(path, null);
-        clearAlertRuleConditionTrueSince(path);
-        setAlertRuleLastWatchValue(path, null);
+        alertRuleRuntimeStore.reset(path);
+        alertRuleRuntimeFlusher.flushNow(path);
     }
 
-    @Transactional(readOnly = true)
     public Double getAlertRuleLastWatchValue(String path) {
-        return readString(objectManager.require(path), "lastWatchValue")
-                .filter(value -> !value.isBlank())
-                .map(Double::parseDouble)
-                .orElse(null);
+        PlatformObject node = objectManager.require(path);
+        return alertRuleRuntimeStore.getLastWatchValue(path, node);
     }
 
-    @Transactional
     public void setAlertRuleLastWatchValue(String path, Double value) {
-        setRuntimeString(path, "lastWatchValue", value != null ? Double.toString(value) : "");
-        objectManager.persistNodeTree(path);
+        alertRuleRuntimeStore.setLastWatchValue(path, value);
     }
 
     public List<EventCorrelator> listCorrelators() {
@@ -381,6 +372,7 @@ public class AutomationTreeService {
     @Transactional
     public void deleteAlertRule(String path) {
         AlertRule rule = getAlertRule(path);
+        alertRuleRuntimeStore.remove(path);
         objectManager.delete(path);
         indexRefresh.afterAlertRuleDeleted(rule);
     }
@@ -502,10 +494,11 @@ public class AutomationTreeService {
         setBoolean(path, "edgeTrigger", edgeTrigger);
         setInteger(path, "delaySeconds", delaySeconds);
         setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
-        if (lastConditionMet != null) {
-            setRuntimeBoolean(path, "lastConditionMet", lastConditionMet);
-        }
         objectManager.persistNodeTree(path);
+        if (lastConditionMet != null) {
+            alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
+            alertRuleRuntimeFlusher.flushNow(path);
+        }
     }
 
     private void createCorrelatorNode(
@@ -550,6 +543,7 @@ public class AutomationTreeService {
 
     private AlertRule toAlertRule(PlatformObject node) {
         Instant createdAt = node.createdAt() != null ? node.createdAt() : Instant.now();
+        AlertRuleRuntimeState runtime = alertRuleRuntimeStore.snapshot(node.path(), node);
         return new AlertRule(
                 node.path(),
                 node.displayName(),
@@ -563,23 +557,12 @@ public class AutomationTreeService {
                 readInteger(node, "delaySeconds").orElse(0),
                 readBoolean(node, "sustainWhileTrue").orElse(false),
                 readInteger(node, "rateLimitSeconds").orElse(0),
-                readBoolean(node, "lastConditionMet").orElse(null),
-                parseInstant(readString(node, "conditionTrueSince").orElse("")),
-                parseInstant(readString(node, "lastFiredAt").orElse("")),
+                runtime.lastConditionMet(),
+                runtime.conditionTrueSince(),
+                runtime.lastFiredAt(),
                 createdAt,
                 createdAt
         );
-    }
-
-    private static Instant parseInstant(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        try {
-            return Instant.parse(raw);
-        } catch (Exception ex) {
-            return null;
-        }
     }
 
     private EventCorrelator toCorrelator(PlatformObject node) {

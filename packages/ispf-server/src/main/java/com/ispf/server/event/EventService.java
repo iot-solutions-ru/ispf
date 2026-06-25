@@ -58,6 +58,19 @@ public class EventService {
         this.automationMetricsRecorder = automationMetricsRecorder;
     }
 
+    /**
+     * Hot-path fire for automation (alerts). No surrounding transaction — journal is async.
+     */
+    public ObjectEvent fireAutomation(String objectPath, String eventName, DataRecord payload) {
+        return fireInternal(
+                objectPath,
+                eventName,
+                DataRecordPayloadResolver.fromRecord(payload),
+                null,
+                AutomationMetricsRecorder.EventFireSource.ALERT
+        );
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
         return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API);

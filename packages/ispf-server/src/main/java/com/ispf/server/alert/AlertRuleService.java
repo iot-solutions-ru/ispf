@@ -151,7 +151,7 @@ public class AlertRuleService {
                     automationTreeService.setAlertRuleLastFiredAt(rule.id(), Instant.now());
                 }
                 DataRecord payload = resolvePayload(node, rule.payloadVariable());
-                eventService.fire(objectPath, rule.eventName(), payload, AutomationMetricsRecorder.EventFireSource.ALERT);
+                eventService.fireAutomation(objectPath, rule.eventName(), payload);
                 automationMetricsRecorder.recordAlertFire();
                 if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
                     automationTreeService.clearAlertRuleConditionTrueSince(rule.id());

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchObjects } from "../../../api";
 import type { ObjectTreeWidget } from "../../../types/dashboard";
+import { deviceDriverTreeClass } from "../../../utils/deviceDriverTreeTone";
 import { useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
@@ -44,7 +45,11 @@ export default function ObjectTreeWidgetView({
             <li key={obj.path}>
               <button
                 type="button"
-                className={`dash-tree-item ${selectedPath === obj.path ? "selected" : ""}`}
+                className={[
+                  "dash-tree-item",
+                  selectedPath === obj.path ? "selected" : "",
+                  deviceDriverTreeClass(obj.type, obj.driverStatus, obj.driverConnected) ?? "",
+                ].filter(Boolean).join(" ")}
                 disabled={editable}
                 onClick={() => {
                   if (widget.selectionKey) {

@@ -26,12 +26,14 @@ import com.ispf.server.object.ObjectEditLeaseService;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
 import com.ispf.server.object.ObjectBulkDeleteService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.ObjectTreeDriverEnricher;
 import com.ispf.server.object.VisualGroupService;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.ObjectUiIconService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.driver.DeviceProvisioningService;
+import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
@@ -88,6 +90,7 @@ public class ObjectController {
     private final ModelApplicationService modelApplicationService;
     private final VisualGroupService visualGroupService;
     private final ObjectBulkDeleteService objectBulkDeleteService;
+    private final DriverRuntimeService driverRuntimeService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -109,7 +112,8 @@ public class ObjectController {
             ModelRegistry modelRegistry,
             ModelApplicationService modelApplicationService,
             VisualGroupService visualGroupService,
-            ObjectBulkDeleteService objectBulkDeleteService
+            ObjectBulkDeleteService objectBulkDeleteService,
+            DriverRuntimeService driverRuntimeService
     ) {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
@@ -131,6 +135,7 @@ public class ObjectController {
         this.modelApplicationService = modelApplicationService;
         this.visualGroupService = visualGroupService;
         this.objectBulkDeleteService = objectBulkDeleteService;
+        this.driverRuntimeService = driverRuntimeService;
     }
 
     private ObjectDto toDto(PlatformObject node) {
@@ -139,6 +144,15 @@ public class ObjectController {
                 objectUiIconService.readIconId(node).orElse(null),
                 AppliedModelDto.resolve(node, modelRegistry)
         );
+    }
+
+    private ObjectDto toLiteDto(PlatformObject node) {
+        ObjectDto dto = ObjectDto.fromLite(
+                node,
+                objectUiIconService.readIconId(node).orElse(null),
+                AppliedModelDto.resolve(node, modelRegistry)
+        );
+        return ObjectTreeDriverEnricher.enrichLite(dto, node, driverRuntimeService);
     }
 
     private void beginWrite(String path, Authentication authentication, HttpHeaders headers) {
@@ -219,7 +233,7 @@ public class ObjectController {
     ) {
         var tree = objectManager.tree();
         java.util.function.Function<PlatformObject, ObjectDto> mapper = lite
-                ? node -> ObjectDto.fromLite(node, objectUiIconService.readIconId(node).orElse(null))
+                ? this::toLiteDto
                 : this::toDto;
         if (parent == null || parent.isBlank()) {
             return tree.all().stream()
@@ -756,7 +770,9 @@ public class ObjectController {
                 remote.appliedModels() != null ? remote.appliedModels() : List.of(),
                 false,
                 null,
-                false
+                false,
+                remote.driverStatus(),
+                remote.driverConnected()
         );
     }
 

@@ -25,7 +25,7 @@ public class ObjectChangeProperties {
     private int automationWorkerThreads = 4;
 
     /** Elastic worker pool: scale between min/max based on queue depth. */
-    private boolean elasticWorkersEnabled = false;
+    private boolean elasticWorkersEnabled = true;
     private int elasticScaleUpQueueThreshold = 50;
     private int elasticScaleDownSteps = 6;
     private int elasticScaleCheckIntervalMs = 500;

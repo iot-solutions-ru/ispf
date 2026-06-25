@@ -1,0 +1,10 @@
+{
+  "brokerUrl": "tcp://127.0.0.1:1883",
+  "description": "Local Mosquitto on VPS. Use with --mode push and mqtt-loadtest-publisher for synthetic load.",
+  "topics": [
+    "ispf/loadtest/00001/temperature",
+    "ispf/loadtest/00002/temperature",
+    "ispf/loadtest/00003/temperature",
+    "ispf/loadtest/00004/temperature"
+  ]
+}

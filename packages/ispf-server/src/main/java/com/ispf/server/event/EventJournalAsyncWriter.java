@@ -63,18 +63,22 @@ public class EventJournalAsyncWriter {
         }
         queue = new LinkedBlockingQueue<>(properties.getQueueCapacity());
         running = true;
-        worker = Executors.newSingleThreadExecutor(runnable -> {
+        int writerThreads = Math.max(1, properties.getWriterThreads());
+        worker = Executors.newFixedThreadPool(writerThreads, runnable -> {
             Thread thread = new Thread(runnable, "event-journal-writer");
             thread.setDaemon(true);
             return thread;
         });
-        worker.submit(this::writerLoop);
+        for (int i = 0; i < writerThreads; i++) {
+            worker.submit(this::writerLoop);
+        }
         automationMetricsRecorder.bindEventJournalQueue(queue);
         log.info(
-                "Event journal async writer started (queueCapacity={}, batchSize={}, flushIntervalMs={})",
+                "Event journal async writer started (queueCapacity={}, batchSize={}, flushIntervalMs={}, writerThreads={})",
                 properties.getQueueCapacity(),
                 properties.getBatchSize(),
-                properties.getFlushIntervalMs()
+                properties.getFlushIntervalMs(),
+                writerThreads
         );
     }
 

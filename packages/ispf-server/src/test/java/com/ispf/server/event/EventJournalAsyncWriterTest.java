@@ -55,7 +55,8 @@ class EventJournalAsyncWriterTest {
         properties.setAsyncEnabled(true);
         properties.setQueueCapacity(4);
         properties.setBatchSize(2);
-        properties.setFlushIntervalMs(50);
+        properties.setFlushIntervalMs(60_000);
+        properties.setWriterThreads(1);
         properties.setRecentCacheSize(10);
         recentEventCache = new RecentEventCache(properties);
         writer = new EventJournalAsyncWriter(properties, batchPersister, recentEventCache, automationMetricsRecorder);
@@ -81,6 +82,11 @@ class EventJournalAsyncWriterTest {
 
     @Test
     void batchFlushesToDatabase() throws Exception {
+        properties.setFlushIntervalMs(50);
+        writer.shutdown();
+        writer = new EventJournalAsyncWriter(properties, batchPersister, recentEventCache, automationMetricsRecorder);
+        writer.start();
+
         writer.enqueue(sampleEvent("evt-1"), "{}");
         writer.enqueue(sampleEvent("evt-2"), "{}");
 
@@ -100,6 +106,7 @@ class EventJournalAsyncWriterTest {
         properties.setQueueCapacity(1);
         properties.setFlushIntervalMs(60_000);
         properties.setBatchSize(100);
+        properties.setWriterThreads(1);
         CountDownLatch releaseBatch = new CountDownLatch(1);
         doAnswer(invocation -> {
             releaseBatch.await(2, TimeUnit.SECONDS);

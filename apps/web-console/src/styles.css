@@ -105,6 +105,12 @@ code,
   gap: 0.75rem;
 }
 
+.system-settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .system-settings-intro,
 .system-settings-file {
   margin: 0;
@@ -764,6 +770,31 @@ code,
 .tree-icon--bookmark { color: #f472b6; }
 .tree-icon--layers { color: #a78bfa; }
 .tree-icon--box { color: #cbd5e1; }
+
+/* Device driver runtime tone in explorer tree */
+.tree-row.driver-stopped .tree-icon,
+.tree-row.driver-stopped .tree-label {
+  color: #94a3b8;
+}
+
+.tree-row.driver-warning .tree-icon,
+.tree-row.driver-warning .tree-label {
+  color: #facc15;
+}
+
+.tree-row.driver-error .tree-icon,
+.tree-row.driver-error .tree-label {
+  color: #ef4444;
+}
+
+.tree-row.driver-stopped.selected .tree-icon,
+.tree-row.driver-stopped.selected .tree-label,
+.tree-row.driver-warning.selected .tree-icon,
+.tree-row.driver-warning.selected .tree-label,
+.tree-row.driver-error.selected .tree-icon,
+.tree-row.driver-error.selected .tree-label {
+  opacity: 1;
+}
 
 .inspector-title-row {
   display: flex;
@@ -6018,6 +6049,18 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .dash-tree-item.selected {
   color: var(--accent, #2f81f7);
+}
+
+.dash-tree-item.driver-stopped {
+  color: #94a3b8;
+}
+
+.dash-tree-item.driver-warning {
+  color: #facc15;
+}
+
+.dash-tree-item.driver-error {
+  color: #ef4444;
 }
 
 /* Report Builder */

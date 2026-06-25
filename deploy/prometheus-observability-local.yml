@@ -1,0 +1,18 @@
+# Prometheus config for deploy/docker-compose.observability.yml (local stack).
+# Scrapes OTel Collector prometheus exporter (OTLP push path) and self.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]
+
+  - job_name: ispf-otel-collector
+    metrics_path: /metrics
+    static_configs:
+      - targets: [otel-collector:8889]
+        labels:
+          source: otlp-push

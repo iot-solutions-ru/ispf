@@ -787,7 +787,8 @@ public class ObjectManager {
                 Instant.now(),
                 node.revision(),
                 node.lastChangedBy(),
-                false
+                false,
+                true
         ));
     }
 

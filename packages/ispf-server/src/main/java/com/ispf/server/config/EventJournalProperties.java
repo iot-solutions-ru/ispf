@@ -11,9 +11,10 @@ public class EventJournalProperties {
      */
     private boolean asyncEnabled = true;
     private int queueCapacity = 10_000;
-    private int batchSize = 100;
-    private long flushIntervalMs = 250;
-    private int recentCacheSize = 500;
+    private int batchSize = 200;
+    private long flushIntervalMs = 100;
+    private int recentCacheSize = 2000;
+    private int writerThreads = 2;
 
     public boolean isAsyncEnabled() {
         return asyncEnabled;
@@ -53,5 +54,13 @@ public class EventJournalProperties {
 
     public void setRecentCacheSize(int recentCacheSize) {
         this.recentCacheSize = recentCacheSize;
+    }
+
+    public int getWriterThreads() {
+        return writerThreads;
+    }
+
+    public void setWriterThreads(int writerThreads) {
+        this.writerThreads = writerThreads;
     }
 }

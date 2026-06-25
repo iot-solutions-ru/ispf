@@ -60,7 +60,7 @@ public class DeviceProvisioningService {
                 ? Map.copyOf(metadata.configurationSchema())
                 : Map.of();
 
-        DriverBinding binding = new DriverBinding(resolvedDriverId, interval, configuration, Map.of());
+        DriverBinding binding = DriverBinding.of(resolvedDriverId, interval, configuration, Map.of());
         driverRuntimeService.configure(devicePath, binding);
         if (autoStart) {
             driverRuntimeService.start(devicePath);

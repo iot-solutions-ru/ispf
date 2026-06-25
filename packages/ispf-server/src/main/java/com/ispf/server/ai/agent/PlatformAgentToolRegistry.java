@@ -763,7 +763,7 @@ public class PlatformAgentToolRegistry {
                     objectManager.require(devicePath);
                     Map<String, String> configuration = readStringMap(objectMapper, arguments.get("configuration"));
                     Map<String, String> pointMappings = readStringMap(objectMapper, arguments.get("pointMappings"));
-                    DriverBinding binding = new DriverBinding(
+                    DriverBinding binding = DriverBinding.of(
                             optionalString(arguments, "driverId") != null
                                     ? stringArg(arguments, "driverId")
                                     : DriverBinding.DEFAULT_DRIVER_ID,
@@ -839,6 +839,8 @@ public class PlatformAgentToolRegistry {
         result.put("connected", runtimeStatus.connected());
         result.put("pollIntervalMs", runtimeStatus.pollIntervalMs());
         result.put("lastError", runtimeStatus.lastError());
+        result.put("telemetryPublishMode", runtimeStatus.telemetryPublishMode());
+        result.put("telemetryCoalesceMs", runtimeStatus.telemetryCoalesceMs());
         return result;
     }
 

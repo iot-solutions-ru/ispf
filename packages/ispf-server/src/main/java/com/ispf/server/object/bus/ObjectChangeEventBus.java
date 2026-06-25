@@ -173,7 +173,7 @@ public class ObjectChangeEventBus {
                 telemetryLane.enqueue(event);
             }
         }
-        if (automationLane != null) {
+        if (automationLane != null && event.automationEligible()) {
             automationLane.enqueue(event);
         }
     }

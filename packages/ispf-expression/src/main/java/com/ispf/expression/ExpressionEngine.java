@@ -14,6 +14,7 @@ import dev.cel.runtime.CelRuntimeFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Expression engine based on Google CEL.
@@ -31,7 +32,14 @@ public class ExpressionEngine {
 
     private final CelRuntime runtime = CelRuntimeFactory.standardCelRuntimeBuilder().build();
 
+    private final ConcurrentHashMap<String, CompiledExpression> compiledCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, PayloadCompiledExpression> payloadCompiledCache = new ConcurrentHashMap<>();
+
     public CompiledExpression compile(String expression) {
+        return compiledCache.computeIfAbsent(expression, this::compileUncached);
+    }
+
+    private CompiledExpression compileUncached(String expression) {
         try {
             CelAbstractSyntaxTree ast = compiler.compile(expression).getAst();
             return new CompiledExpression(expression, ast, runtime);
@@ -53,16 +61,16 @@ public class ExpressionEngine {
     }
 
     public Object evaluateWithPayload(String expression, Map<String, Object> payload) {
+        return payloadCompiledCache.computeIfAbsent(expression, this::compilePayloadUncached)
+                .evaluate(payload);
+    }
+
+    private PayloadCompiledExpression compilePayloadUncached(String expression) {
         try {
             CelAbstractSyntaxTree ast = payloadCompiler.compile(expression).getAst();
-            CelRuntime.Program program = runtime.createProgram(ast);
-            Map<String, Object> bindings = new HashMap<>();
-            bindings.put("payload", payload != null ? payload : Map.of());
-            return program.eval(bindings);
+            return new PayloadCompiledExpression(expression, ast, runtime);
         } catch (CelValidationException e) {
             throw new ExpressionException("Invalid expression: " + expression, e);
-        } catch (Exception e) {
-            throw new ExpressionException("Evaluation failed: " + expression, e);
         }
     }
 
@@ -70,6 +78,7 @@ public class ExpressionEngine {
         private final String source;
         private final CelAbstractSyntaxTree ast;
         private final CelRuntime runtime;
+        private volatile CelRuntime.Program program;
 
         CompiledExpression(String source, CelAbstractSyntaxTree ast, CelRuntime runtime) {
             this.source = source;
@@ -87,10 +96,59 @@ public class ExpressionEngine {
 
         Object evaluate(PlatformObject platformObject, String watchVariable) {
             try {
-                CelRuntime.Program program = runtime.createProgram(ast);
-                return program.eval(buildBindings(platformObject, watchVariable));
+                return program().eval(buildBindings(platformObject, watchVariable));
             } catch (Exception e) {
                 throw new ExpressionException("Evaluation failed: " + source, e);
+            }
+        }
+
+        private CelRuntime.Program program() throws Exception {
+            CelRuntime.Program cached = program;
+            if (cached != null) {
+                return cached;
+            }
+            synchronized (this) {
+                if (program == null) {
+                    program = runtime.createProgram(ast);
+                }
+                return program;
+            }
+        }
+    }
+
+    private static final class PayloadCompiledExpression {
+        private final String source;
+        private final CelAbstractSyntaxTree ast;
+        private final CelRuntime runtime;
+        private volatile CelRuntime.Program program;
+
+        PayloadCompiledExpression(String source, CelAbstractSyntaxTree ast, CelRuntime runtime) {
+            this.source = source;
+            this.ast = ast;
+            this.runtime = runtime;
+        }
+
+        Object evaluate(Map<String, Object> payload) {
+            try {
+                CelRuntime.Program program = program();
+                Map<String, Object> bindings = new HashMap<>();
+                bindings.put("payload", payload != null ? payload : Map.of());
+                return program.eval(bindings);
+            } catch (Exception e) {
+                throw new ExpressionException("Evaluation failed: " + source, e);
+            }
+        }
+
+        private CelRuntime.Program program() throws Exception {
+            CelRuntime.Program cached = program;
+            if (cached != null) {
+                return cached;
+            }
+            synchronized (this) {
+                if (program == null) {
+                    program = runtime.createProgram(ast);
+                }
+                return program;
             }
         }
     }

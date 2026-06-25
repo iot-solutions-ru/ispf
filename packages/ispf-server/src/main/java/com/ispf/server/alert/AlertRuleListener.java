@@ -21,6 +21,9 @@ public class AlertRuleListener implements ObjectChangeAsyncHandler {
 
     @Override
     public void handle(ObjectChangeEvent event) {
+        if (!event.automationEligible()) {
+            return;
+        }
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }
