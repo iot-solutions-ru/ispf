@@ -1,0 +1,36 @@
+{
+  "devices": 60,
+  "telemetryMixRatio": 0.0,
+  "dashboard": "root.platform.dashboards.platform-metrics",
+  "probeDevice": "root.platform.devices.platform-metrics-probe",
+  "phases": [
+    {
+      "durationSec": 63.7,
+      "startEvents": 739111,
+      "endEvents": 741135,
+      "eventsGenerated": 2024,
+      "eventsPerSecond": 31.76,
+      "alertFiresGenerated": 1255,
+      "alertFiresPerSecond": 19.69,
+      "pollIntervalMs": 3000,
+      "devices": 60,
+      "driversConfigured": 60,
+      "telemetryMixRatio": 0.0,
+      "telemetryOnlyDevices": 0
+    },
+    {
+      "durationSec": 62.9,
+      "startEvents": 744028,
+      "endEvents": 747766,
+      "eventsGenerated": 3738,
+      "eventsPerSecond": 59.42,
+      "alertFiresGenerated": 2970,
+      "alertFiresPerSecond": 47.21,
+      "pollIntervalMs": 500,
+      "devices": 60,
+      "driversConfigured": 60,
+      "telemetryMixRatio": 0.0,
+      "telemetryOnlyDevices": 0
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "phase": {
+    "durationSec": 61.1,
+    "eventsGenerated": 0,
+    "eventsPerSecond": 0.0,
+    "alertFiresGenerated": 0,
+    "alertFiresPerSecond": 0.0,
+    "endEvents": 753795,
+    "mode": "subscribe",
+    "devices": 4,
+    "brokerUrl": "tcp://m5.wqtt.ru:11296",
+    "topics": [
+      "esp2/1wire_test1/temperature",
+      "esp2/1wire_test2/temperature",
+      "esp1/aqua_coldcorner_water/temperature",
+      "esp1/aqua_island_air/temperature"
+    ],
+    "telemetryMixRatio": 0.0,
+    "conditionExpr": "self.temperature[\"value\"] > -1000.0"
+  },
+  "sampleDevice": "root.platform.devices.loadtest-mqtt-dev-00001",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.loadtest-mqtt-dev-00001",
+    "driverId": "mqtt",
+    "status": "STOPPED",
+    "connected": false,
+    "pollIntervalMs": 5000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  }
+}

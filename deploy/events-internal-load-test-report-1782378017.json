@@ -1,0 +1,22 @@
+{
+  "devices": 60,
+  "telemetryMixRatio": 0.0,
+  "dashboard": "root.platform.dashboards.platform-metrics",
+  "probeDevice": "root.platform.devices.platform-metrics-probe",
+  "phases": [
+    {
+      "durationSec": 63.6,
+      "startEvents": 755370,
+      "endEvents": 757783,
+      "eventsGenerated": 2413,
+      "eventsPerSecond": 37.93,
+      "alertFiresGenerated": 1630,
+      "alertFiresPerSecond": 25.62,
+      "pollIntervalMs": 1000,
+      "devices": 60,
+      "driversConfigured": 60,
+      "telemetryMixRatio": 0.0,
+      "telemetryOnlyDevices": 0
+    }
+  ]
+}

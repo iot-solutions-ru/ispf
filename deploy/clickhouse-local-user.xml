@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Passwordless default user for localhost-only HTTP (VPS event journal). -->
+<clickhouse>
+  <users>
+    <default>
+      <password></password>
+      <networks>
+        <ip>127.0.0.1</ip>
+        <ip>::1</ip>
+      </networks>
+      <profile>default</profile>
+      <quota>default</quota>
+    </default>
+  </users>
+</clickhouse>

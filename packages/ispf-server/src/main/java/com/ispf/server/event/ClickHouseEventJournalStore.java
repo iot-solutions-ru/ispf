@@ -284,8 +284,11 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
                 .uri(URI.create(url.toString()))
                 .timeout(Duration.ofSeconds(30))
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
-        if (config.getUsername() != null && !config.getUsername().isBlank()) {
-            String credentials = config.getUsername() + ":" + (config.getPassword() != null ? config.getPassword() : "");
+        if (config.getPassword() != null && !config.getPassword().isBlank()) {
+            String username = config.getUsername() != null && !config.getUsername().isBlank()
+                    ? config.getUsername()
+                    : "default";
+            String credentials = username + ":" + config.getPassword();
             builder.header("Authorization", "Basic " + java.util.Base64.getEncoder()
                     .encodeToString(credentials.getBytes(StandardCharsets.UTF_8)));
         }

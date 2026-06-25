@@ -1,0 +1,19 @@
+{
+  "devices": 60,
+  "dashboard": "root.platform.dashboards.platform-metrics",
+  "probeDevice": "root.platform.devices.platform-metrics-probe",
+  "phases": [
+    {
+      "durationSec": 63.2,
+      "startEvents": 511755,
+      "endEvents": 512907,
+      "eventsGenerated": 1152,
+      "eventsPerSecond": 18.22,
+      "alertFiresGenerated": 523,
+      "alertFiresPerSecond": 8.27,
+      "pollIntervalMs": 1000,
+      "devices": 60,
+      "driversConfigured": 20
+    }
+  ]
+}

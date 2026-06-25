@@ -1,0 +1,119 @@
+{
+  "phases": [
+    {
+      "concurrency": 10,
+      "total": 9644,
+      "ok": 3417,
+      "fail": 6227,
+      "rps": 113.8,
+      "fail_rate_pct": 64.57,
+      "latency_ms": {
+        "p50": 35.5,
+        "p95": 61.4,
+        "p99": 77.9,
+        "avg": 38.0,
+        "max": 693.4,
+        "n": 3417
+      },
+      "by_op": {
+        "list_events_device": {
+          "p50": 33.2,
+          "p95": 56.2,
+          "p99": 72.9,
+          "avg": 35.7,
+          "max": 693.4,
+          "n": 1485
+        },
+        "list_events_global": {
+          "p50": 37.1,
+          "p95": 64.4,
+          "p99": 81.2,
+          "avg": 39.8,
+          "max": 122.7,
+          "n": 1932
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 6227
+      }
+    },
+    {
+      "concurrency": 20,
+      "total": 13363,
+      "ok": 4719,
+      "fail": 8644,
+      "rps": 157.0,
+      "fail_rate_pct": 64.69,
+      "latency_ms": {
+        "p50": 50.4,
+        "p95": 80.9,
+        "p99": 98.3,
+        "avg": 56.1,
+        "max": 1289.6,
+        "n": 4719
+      },
+      "by_op": {
+        "list_events_device": {
+          "p50": 48.0,
+          "p95": 75.6,
+          "p99": 91.0,
+          "avg": 52.0,
+          "max": 1257.1,
+          "n": 2056
+        },
+        "list_events_global": {
+          "p50": 52.5,
+          "p95": 83.0,
+          "p99": 101.4,
+          "avg": 59.2,
+          "max": 1289.6,
+          "n": 2663
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 8644
+      }
+    },
+    {
+      "concurrency": 40,
+      "total": 12540,
+      "ok": 4514,
+      "fail": 8026,
+      "rps": 146.1,
+      "fail_rate_pct": 64.0,
+      "latency_ms": {
+        "p50": 94.5,
+        "p95": 168.5,
+        "p99": 418.8,
+        "avg": 111.8,
+        "max": 2655.1,
+        "n": 4514
+      },
+      "by_op": {
+        "list_events_device": {
+          "p50": 89.8,
+          "p95": 164.2,
+          "p99": 343.0,
+          "avg": 103.8,
+          "max": 2606.7,
+          "n": 1925
+        },
+        "list_events_global": {
+          "p50": 97.9,
+          "p95": 176.2,
+          "p99": 474.7,
+          "avg": 117.7,
+          "max": 2655.1,
+          "n": 2589
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 8026
+      }
+    }
+  ],
+  "devices": [
+    "root.platform.devices.demo-sensor-01"
+  ],
+  "eventName": "event1"
+}

@@ -10,6 +10,7 @@ Write-Host "==> Upload ClickHouse compose + setup script to $RemoteHost"
 ssh -o BatchMode=yes $RemoteHost "mkdir -p /opt/ispf"
 scp -o BatchMode=yes `
     "$RepoRoot\deploy\docker-compose.clickhouse.yml" `
+    "$RepoRoot\deploy\clickhouse-local-user.xml" `
     "$RepoRoot\deploy\vps-clickhouse-setup.sh" `
     "$RepoRoot\deploy\vps-event-journal-jdbc.sh" `
     "${RemoteHost}:/opt/ispf/"

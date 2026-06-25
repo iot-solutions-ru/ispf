@@ -1,0 +1,196 @@
+{
+  "phases": [
+    {
+      "concurrency": 10,
+      "total": 5290,
+      "ok": 5290,
+      "fail": 0,
+      "rps": 117.1,
+      "fail_rate_pct": 0.0,
+      "latency_ms": {
+        "p50": 38.1,
+        "p95": 317.9,
+        "p99": 423.8,
+        "avg": 85.3,
+        "max": 1296.6,
+        "n": 5290
+      },
+      "by_op": {
+        "fire_event": {
+          "p50": 34.2,
+          "p95": 60.1,
+          "p99": 80.4,
+          "avg": 38.3,
+          "max": 759.0,
+          "n": 3416
+        },
+        "list_events_device": {
+          "p50": 35.9,
+          "p95": 64.0,
+          "p99": 95.0,
+          "avg": 41.0,
+          "max": 741.1,
+          "n": 798
+        },
+        "list_events_global": {
+          "p50": 255.1,
+          "p95": 413.6,
+          "p99": 508.6,
+          "avg": 267.2,
+          "max": 1296.6,
+          "n": 1076
+        }
+      },
+      "fail_by_op": {}
+    },
+    {
+      "concurrency": 20,
+      "total": 6147,
+      "ok": 6147,
+      "fail": 0,
+      "rps": 135.7,
+      "fail_rate_pct": 0.0,
+      "latency_ms": {
+        "p50": 46.1,
+        "p95": 651.0,
+        "p99": 827.5,
+        "avg": 147.0,
+        "max": 2244.8,
+        "n": 6147
+      },
+      "by_op": {
+        "fire_event": {
+          "p50": 41.1,
+          "p95": 76.1,
+          "p99": 130.8,
+          "avg": 49.1,
+          "max": 1570.7,
+          "n": 4021
+        },
+        "list_events_device": {
+          "p50": 42.6,
+          "p95": 84.4,
+          "p99": 317.8,
+          "avg": 55.9,
+          "max": 1562.5,
+          "n": 911
+        },
+        "list_events_global": {
+          "p50": 521.3,
+          "p95": 809.6,
+          "p99": 940.0,
+          "avg": 539.1,
+          "max": 2244.8,
+          "n": 1215
+        }
+      },
+      "fail_by_op": {}
+    },
+    {
+      "concurrency": 40,
+      "total": 6699,
+      "ok": 6699,
+      "fail": 0,
+      "rps": 147.3,
+      "fail_rate_pct": 0.0,
+      "latency_ms": {
+        "p50": 107.1,
+        "p95": 1072.2,
+        "p99": 1287.8,
+        "avg": 269.9,
+        "max": 3725.0,
+        "n": 6699
+      },
+      "by_op": {
+        "fire_event": {
+          "p50": 93.9,
+          "p95": 188.7,
+          "p99": 279.9,
+          "avg": 121.4,
+          "max": 3265.8,
+          "n": 4387
+        },
+        "list_events_device": {
+          "p50": 94.0,
+          "p95": 190.6,
+          "p99": 253.3,
+          "avg": 115.3,
+          "max": 3227.7,
+          "n": 982
+        },
+        "list_events_global": {
+          "p50": 884.5,
+          "p95": 1225.5,
+          "p99": 1344.2,
+          "avg": 874.2,
+          "max": 3725.0,
+          "n": 1330
+        }
+      },
+      "fail_by_op": {}
+    }
+  ],
+  "devices": [
+    "root.platform.devices.loadtest-dev-00001",
+    "root.platform.devices.loadtest-dev-00002",
+    "root.platform.devices.loadtest-dev-00003",
+    "root.platform.devices.loadtest-dev-00004",
+    "root.platform.devices.loadtest-dev-00005",
+    "root.platform.devices.loadtest-dev-00006",
+    "root.platform.devices.loadtest-dev-00007",
+    "root.platform.devices.loadtest-dev-00008",
+    "root.platform.devices.loadtest-dev-00009",
+    "root.platform.devices.loadtest-dev-00010",
+    "root.platform.devices.loadtest-dev-00011",
+    "root.platform.devices.loadtest-dev-00012",
+    "root.platform.devices.loadtest-dev-00013",
+    "root.platform.devices.loadtest-dev-00014",
+    "root.platform.devices.loadtest-dev-00015",
+    "root.platform.devices.loadtest-dev-00016",
+    "root.platform.devices.loadtest-dev-00017",
+    "root.platform.devices.loadtest-dev-00018",
+    "root.platform.devices.loadtest-dev-00019",
+    "root.platform.devices.loadtest-dev-00020",
+    "root.platform.devices.loadtest-dev-00021",
+    "root.platform.devices.loadtest-dev-00022",
+    "root.platform.devices.loadtest-dev-00023",
+    "root.platform.devices.loadtest-dev-00024",
+    "root.platform.devices.loadtest-dev-00025",
+    "root.platform.devices.loadtest-dev-00026",
+    "root.platform.devices.loadtest-dev-00027",
+    "root.platform.devices.loadtest-dev-00028",
+    "root.platform.devices.loadtest-dev-00029",
+    "root.platform.devices.loadtest-dev-00030",
+    "root.platform.devices.loadtest-dev-00031",
+    "root.platform.devices.loadtest-dev-00032",
+    "root.platform.devices.loadtest-dev-00033",
+    "root.platform.devices.loadtest-dev-00034",
+    "root.platform.devices.loadtest-dev-00035",
+    "root.platform.devices.loadtest-dev-00036",
+    "root.platform.devices.loadtest-dev-00037",
+    "root.platform.devices.loadtest-dev-00038",
+    "root.platform.devices.loadtest-dev-00039",
+    "root.platform.devices.loadtest-dev-00040",
+    "root.platform.devices.loadtest-dev-00041",
+    "root.platform.devices.loadtest-dev-00042",
+    "root.platform.devices.loadtest-dev-00043",
+    "root.platform.devices.loadtest-dev-00044",
+    "root.platform.devices.loadtest-dev-00045",
+    "root.platform.devices.loadtest-dev-00046",
+    "root.platform.devices.loadtest-dev-00047",
+    "root.platform.devices.loadtest-dev-00048",
+    "root.platform.devices.loadtest-dev-00049",
+    "root.platform.devices.loadtest-dev-00050",
+    "root.platform.devices.loadtest-dev-00051",
+    "root.platform.devices.loadtest-dev-00052",
+    "root.platform.devices.loadtest-dev-00053",
+    "root.platform.devices.loadtest-dev-00054",
+    "root.platform.devices.loadtest-dev-00055",
+    "root.platform.devices.loadtest-dev-00056",
+    "root.platform.devices.loadtest-dev-00057",
+    "root.platform.devices.loadtest-dev-00058",
+    "root.platform.devices.loadtest-dev-00059",
+    "root.platform.devices.loadtest-dev-00060"
+  ],
+  "eventName": "event1"
+}

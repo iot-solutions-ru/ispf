@@ -19,6 +19,7 @@ services:
         hard: 262144
     volumes:
       - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse-local-user.xml:/etc/clickhouse-server/users.d/ispf-local.xml:ro
 
 volumes:
   clickhouse-data:

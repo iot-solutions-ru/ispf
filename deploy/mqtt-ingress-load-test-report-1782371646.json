@@ -1,0 +1,26 @@
+{
+  "phase": {
+    "durationSec": 47.4,
+    "eventsGenerated": 2240,
+    "eventsPerSecond": 47.25,
+    "alertFiresGenerated": 1987,
+    "alertFiresPerSecond": 41.91,
+    "endEvents": 694215,
+    "devices": 10,
+    "messagesPerSecondTarget": 500.0,
+    "brokerUrl": "tcp://127.0.0.1:1883",
+    "telemetryMixRatio": 0.0,
+    "conditionExpr": "self.temperature[\"value\"] > -1000.0"
+  },
+  "sampleDevice": "root.platform.devices.loadtest-mqtt-dev-00001",
+  "driverStatus": {
+    "devicePath": "root.platform.devices.loadtest-mqtt-dev-00001",
+    "driverId": "mqtt",
+    "status": "RUNNING",
+    "connected": true,
+    "pollIntervalMs": 5000,
+    "lastError": null,
+    "telemetryPublishMode": "FULL",
+    "telemetryCoalesceMs": 0
+  }
+}

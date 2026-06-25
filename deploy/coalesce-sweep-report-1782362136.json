@@ -1,0 +1,23 @@
+{
+  "baseUrl": "https://ispf.iot-solutions.ru",
+  "pollMs": 1000,
+  "phaseSeconds": 35,
+  "warmupSeconds": 15,
+  "conditionExpr": "true",
+  "results": [
+    {
+      "coalesceMs": 1000,
+      "pollMs": 1000,
+      "durationSec": 36.3,
+      "startEvents": 479234,
+      "endEvents": 479234,
+      "eventsGenerated": 0,
+      "eventsPerSecond": 0.0,
+      "alertFiresGenerated": 0,
+      "alertFiresPerSecond": 0.0,
+      "pollIntervalMs": 1000,
+      "devices": 60,
+      "driversConfigured": 0
+    }
+  ]
+}

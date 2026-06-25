@@ -22,12 +22,15 @@ elif [ ! -f "$COMPOSE_FILE" ]; then
 fi
 
 echo "=== Starting ClickHouse (ispf-clickhouse) ==="
+cd "$INSTALL_ROOT"
 if docker compose version >/dev/null 2>&1; then
   COMPOSE_CMD=(docker compose -f "$COMPOSE_FILE")
 else
   COMPOSE_CMD=(docker-compose -f "$COMPOSE_FILE")
 fi
-"${COMPOSE_CMD[@]}" up -d
+"${COMPOSE_CMD[@]}" up -d --force-recreate clickhouse
+docker exec ispf-clickhouse rm -f /etc/clickhouse-server/users.d/default-password.xml 2>/dev/null || true
+docker restart ispf-clickhouse >/dev/null 2>&1 || true
 
 echo "=== Waiting for ClickHouse HTTP ==="
 for i in $(seq 1 60); do
@@ -52,18 +55,19 @@ fi
 upsert() {
   local key="$1"
   local value="$2"
-  if grep -q "^${key}=" "$ENV_FILE" 2>/dev/null; then
-    sed -i "s|^${key}=.*|${key}=${value}|" "$ENV_FILE"
-  else
-    echo "${key}=${value}" >> "$ENV_FILE"
-  fi
+  local tmp
+  tmp="$(mktemp)"
+  grep -v "^${key}=" "$ENV_FILE" > "$tmp" || true
+  echo "${key}=${value}" >> "$tmp"
+  mv "$tmp" "$ENV_FILE"
+  chmod 600 "$ENV_FILE"
 }
 
 upsert ISPF_EVENT_JOURNAL_STORE clickhouse
 upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_URL "$CLICKHOUSE_URL"
 upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_DATABASE ispf
 upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_TABLE event_history
-upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_USERNAME default
+upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_USERNAME ""
 upsert ISPF_EVENT_JOURNAL_CLICKHOUSE_PASSWORD ""
 
 echo "=== Event journal env ==="

@@ -1,0 +1,112 @@
+{
+  "phases": [
+    {
+      "concurrency": 40,
+      "total": 8336,
+      "ok": 8333,
+      "fail": 3,
+      "rps": 134.3,
+      "fail_rate_pct": 0.04,
+      "latency_ms": {
+        "p50": 203.3,
+        "p95": 685.3,
+        "p99": 2494.7,
+        "avg": 289.5,
+        "max": 8133.3,
+        "n": 8333
+      },
+      "by_op": {
+        "fire_event": {
+          "p50": 197.5,
+          "p95": 815.2,
+          "p99": 2924.9,
+          "avg": 303.0,
+          "max": 8133.3,
+          "n": 5407
+        },
+        "list_events_device": {
+          "p50": 222.8,
+          "p95": 594.2,
+          "p99": 1448.0,
+          "avg": 281.3,
+          "max": 3279.4,
+          "n": 1219
+        },
+        "list_events_global": {
+          "p50": 207.0,
+          "p95": 529.6,
+          "p99": 1042.7,
+          "avg": 252.6,
+          "max": 3574.4,
+          "n": 1707
+        }
+      },
+      "fail_by_op": {
+        "fire_event": 3
+      }
+    }
+  ],
+  "devices": [
+    "root.platform.devices.loadtest-dev-00001",
+    "root.platform.devices.loadtest-dev-00002",
+    "root.platform.devices.loadtest-dev-00003",
+    "root.platform.devices.loadtest-dev-00004",
+    "root.platform.devices.loadtest-dev-00005",
+    "root.platform.devices.loadtest-dev-00006",
+    "root.platform.devices.loadtest-dev-00007",
+    "root.platform.devices.loadtest-dev-00008",
+    "root.platform.devices.loadtest-dev-00009",
+    "root.platform.devices.loadtest-dev-00010",
+    "root.platform.devices.loadtest-dev-00011",
+    "root.platform.devices.loadtest-dev-00012",
+    "root.platform.devices.loadtest-dev-00013",
+    "root.platform.devices.loadtest-dev-00014",
+    "root.platform.devices.loadtest-dev-00015",
+    "root.platform.devices.loadtest-dev-00016",
+    "root.platform.devices.loadtest-dev-00017",
+    "root.platform.devices.loadtest-dev-00018",
+    "root.platform.devices.loadtest-dev-00019",
+    "root.platform.devices.loadtest-dev-00020",
+    "root.platform.devices.loadtest-dev-00021",
+    "root.platform.devices.loadtest-dev-00022",
+    "root.platform.devices.loadtest-dev-00023",
+    "root.platform.devices.loadtest-dev-00024",
+    "root.platform.devices.loadtest-dev-00025",
+    "root.platform.devices.loadtest-dev-00026",
+    "root.platform.devices.loadtest-dev-00027",
+    "root.platform.devices.loadtest-dev-00028",
+    "root.platform.devices.loadtest-dev-00029",
+    "root.platform.devices.loadtest-dev-00030",
+    "root.platform.devices.loadtest-dev-00031",
+    "root.platform.devices.loadtest-dev-00032",
+    "root.platform.devices.loadtest-dev-00033",
+    "root.platform.devices.loadtest-dev-00034",
+    "root.platform.devices.loadtest-dev-00035",
+    "root.platform.devices.loadtest-dev-00036",
+    "root.platform.devices.loadtest-dev-00037",
+    "root.platform.devices.loadtest-dev-00038",
+    "root.platform.devices.loadtest-dev-00039",
+    "root.platform.devices.loadtest-dev-00040",
+    "root.platform.devices.loadtest-dev-00041",
+    "root.platform.devices.loadtest-dev-00042",
+    "root.platform.devices.loadtest-dev-00043",
+    "root.platform.devices.loadtest-dev-00044",
+    "root.platform.devices.loadtest-dev-00045",
+    "root.platform.devices.loadtest-dev-00046",
+    "root.platform.devices.loadtest-dev-00047",
+    "root.platform.devices.loadtest-dev-00048",
+    "root.platform.devices.loadtest-dev-00049",
+    "root.platform.devices.loadtest-dev-00050",
+    "root.platform.devices.loadtest-dev-00051",
+    "root.platform.devices.loadtest-dev-00052",
+    "root.platform.devices.loadtest-dev-00053",
+    "root.platform.devices.loadtest-dev-00054",
+    "root.platform.devices.loadtest-dev-00055",
+    "root.platform.devices.loadtest-dev-00056",
+    "root.platform.devices.loadtest-dev-00057",
+    "root.platform.devices.loadtest-dev-00058",
+    "root.platform.devices.loadtest-dev-00059",
+    "root.platform.devices.loadtest-dev-00060"
+  ],
+  "eventName": "event1"
+}

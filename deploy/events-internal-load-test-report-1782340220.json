@@ -1,0 +1,37 @@
+{
+  "devices": 60,
+  "dashboard": "root.platform.dashboards.platform-metrics",
+  "probeDevice": "root.platform.devices.platform-metrics-probe",
+  "phases": [
+    {
+      "durationSec": 60.4,
+      "startEvents": 77807,
+      "endEvents": 77808,
+      "eventsGenerated": 1,
+      "eventsPerSecond": 0.02,
+      "pollIntervalMs": 3000,
+      "devices": 60,
+      "driversConfigured": 60
+    },
+    {
+      "durationSec": 60.4,
+      "startEvents": 77808,
+      "endEvents": 77809,
+      "eventsGenerated": 1,
+      "eventsPerSecond": 0.02,
+      "pollIntervalMs": 1000,
+      "devices": 60,
+      "driversConfigured": 60
+    },
+    {
+      "durationSec": 60.4,
+      "startEvents": 77810,
+      "endEvents": 77811,
+      "eventsGenerated": 1,
+      "eventsPerSecond": 0.02,
+      "pollIntervalMs": 500,
+      "devices": 60,
+      "driversConfigured": 60
+    }
+  ]
+}

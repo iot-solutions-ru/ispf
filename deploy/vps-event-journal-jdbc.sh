@@ -10,9 +10,11 @@ if [ ! -f "$ENV_FILE" ]; then
   exit 1
 fi
 
-sed -i '/^ISPF_EVENT_JOURNAL_STORE=/d' "$ENV_FILE"
-sed -i '/^ISPF_EVENT_JOURNAL_CLICKHOUSE_/d' "$ENV_FILE"
-echo "ISPF_EVENT_JOURNAL_STORE=jdbc" >> "$ENV_FILE"
+tmp="$(mktemp)"
+grep -v '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" | grep -v '^ISPF_EVENT_JOURNAL_CLICKHOUSE_' > "$tmp" || true
+echo "ISPF_EVENT_JOURNAL_STORE=jdbc" >> "$tmp"
+mv "$tmp" "$ENV_FILE"
+chmod 600 "$ENV_FILE"
 
 echo "=== Restarting $SERVICE_NAME (jdbc event journal) ==="
 systemctl restart "$SERVICE_NAME"
