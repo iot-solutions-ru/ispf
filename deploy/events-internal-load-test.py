@@ -66,16 +66,24 @@ def list_loadtest_devices(client: Client) -> list[str]:
     return sorted(paths)
 
 
-def event_history_count(client: Client) -> int:
+def automation_metrics(client: Client) -> dict:
     r = client.request("GET", "/api/v1/platform/metrics")
     r.raise_for_status()
     for section in r.json().get("sections", []):
         if section.get("id") == "automation":
-            return int((section.get("values") or {}).get("eventHistoryRecords") or 0)
-    return 0
+            return section.get("values") or {}
+    return {}
 
 
-def ensure_alert_rules(client: Client, device_paths: list[str]) -> int:
+def event_history_count(client: Client) -> int:
+    return int(automation_metrics(client).get("eventHistoryRecords") or 0)
+
+
+def alert_fires_count(client: Client) -> int:
+    return int(automation_metrics(client).get("alertFiresTotal") or 0)
+
+
+def ensure_alert_rules(client: Client, device_paths: list[str], condition_expr: str) -> int:
     existing_items = client.request("GET", "/api/v1/alert-rules").json()
     if not isinstance(existing_items, list):
         existing_items = []
@@ -86,18 +94,25 @@ def ensure_alert_rules(client: Client, device_paths: list[str]) -> int:
         body = {
             "objectPath": device,
             "watchVariable": "sineWave",
-            "conditionExpr": 'self.sineWave["value"] > -1000',
+            "conditionExpr": condition_expr,
             "eventName": "event1",
             "payloadVariable": "sineWave",
             "enabled": True,
             "edgeTrigger": False,
         }
         if name in by_name and by_name[name]:
-            r = client.request(
-                "PUT",
-                f"/api/v1/alert-rules/by-path?path={quote(by_name[name], safe='')}",
-                json=body,
-            )
+            for attempt in range(3):
+                r = client.request(
+                    "PUT",
+                    f"/api/v1/alert-rules/by-path?path={quote(by_name[name], safe='')}",
+                    json=body,
+                )
+                if r.status_code in (200, 201, 409):
+                    break
+                if r.status_code in (403, 502, 503) and attempt < 2:
+                    time.sleep(1.0)
+                    continue
+                break
         else:
             r = client.request("POST", "/api/v1/alert-rules", json={"name": name, **body})
         if r.status_code in (200, 201, 409):
@@ -135,17 +150,23 @@ def ensure_drivers(client: Client, device_paths: list[str], poll_ms: int) -> int
 def measure_phase(client: Client, duration_sec: float) -> dict:
     t0 = time.perf_counter()
     start_count = event_history_count(client)
+    start_alert_fires = alert_fires_count(client)
     time.sleep(duration_sec)
     elapsed = time.perf_counter() - t0
     end_count = event_history_count(client)
+    end_alert_fires = alert_fires_count(client)
     delta = max(0, end_count - start_count)
+    alert_delta = max(0, end_alert_fires - start_alert_fires)
     eps = delta / max(elapsed, 0.001)
+    alert_eps = alert_delta / max(elapsed, 0.001)
     return {
         "durationSec": round(elapsed, 1),
         "startEvents": start_count,
         "endEvents": end_count,
         "eventsGenerated": delta,
         "eventsPerSecond": round(eps, 2),
+        "alertFiresGenerated": alert_delta,
+        "alertFiresPerSecond": round(alert_eps, 2),
     }
 
 
@@ -156,6 +177,17 @@ def main() -> int:
     parser.add_argument("--username", default="admin")
     parser.add_argument("--password", default="admin")
     parser.add_argument("--phase-seconds", type=int, default=60)
+    parser.add_argument("--warmup-seconds", type=int, default=15, help="Wait after driver configure before measuring")
+    parser.add_argument(
+        "--condition-expr",
+        default="true",
+        help='Alert conditionExpr (default "true" for max driver throughput; use self.sineWave["value"] > -1000 for realistic)',
+    )
+    parser.add_argument(
+        "--condition-expr-file",
+        default="",
+        help="Read conditionExpr from file (avoids shell quoting issues with bracket syntax)",
+    )
     parser.add_argument("--poll-ms", default="3000,1000,500")
     parser.add_argument("--max-devices", type=int, default=0, help="Limit loadtest devices (0=all)")
     parser.add_argument("--skip-monitor-setup", action="store_true")
@@ -163,6 +195,10 @@ def main() -> int:
     parser.add_argument("--metrics-interval", type=float, default=5.0)
     parser.add_argument("--timeout", type=float, default=60.0)
     args = parser.parse_args()
+
+    condition_expr = args.condition_expr
+    if args.condition_expr_file:
+        condition_expr = Path(args.condition_expr_file).read_text(encoding="utf-8").strip()
 
     client = Client(args.base_url, args.host_header or None, args.timeout)
     client.login(args.username, args.password)
@@ -184,8 +220,8 @@ def main() -> int:
     print(f"Loadtest devices: {len(device_paths)}")
 
     if not args.skip_alert_seed:
-        n = ensure_alert_rules(client, device_paths)
-        print(f"Alert rules ensured/created: {n}")
+        n = ensure_alert_rules(client, device_paths, condition_expr)
+        print(f"Alert rules ensured/updated: {n} (condition={condition_expr!r})")
 
     syncer.sync_once()
     syncer.start()
@@ -195,13 +231,16 @@ def main() -> int:
     results: list[dict] = []
 
     print(f"\nInternal event generation phases ({args.phase_seconds}s each)...")
-    print(f"{'Poll ms':>8} {'Drivers':>8} {'Events':>10} {'Events/s':>10} {'Journal':>12}")
-    print("-" * 54)
+    print(f"{'Poll ms':>8} {'Drivers':>8} {'Events':>10} {'Events/s':>10} {'Alert/s':>8} {'Journal':>12}")
+    print("-" * 64)
 
     for poll_ms in poll_levels:
         drivers_ok = ensure_drivers(client, device_paths, poll_ms)
         print(f"  configured {drivers_ok}/{len(device_paths)} drivers @ {poll_ms}ms poll")
-        time.sleep(min(10, args.phase_seconds / 3))
+        warmup = max(0, args.warmup_seconds)
+        if warmup:
+            print(f"  warming up {warmup}s (telemetry coalesce + async journal)...")
+            time.sleep(warmup)
         phase = measure_phase(client, args.phase_seconds)
         phase["pollIntervalMs"] = poll_ms
         phase["devices"] = len(device_paths)
@@ -209,7 +248,8 @@ def main() -> int:
         results.append(phase)
         print(
             f"{poll_ms:8d} {drivers_ok:8d} {phase['eventsGenerated']:10d} "
-            f"{phase['eventsPerSecond']:10.1f} {phase['endEvents']:12d}"
+            f"{phase['eventsPerSecond']:10.1f} {phase.get('alertFiresPerSecond', 0):8.1f} "
+            f"{phase['endEvents']:12d}"
         )
         syncer.sync_once()
 

@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OgpAlertConditionTest {
 
@@ -61,5 +60,29 @@ class OgpAlertConditionTest {
 
         ExpressionEngine engine = new ExpressionEngine();
         assertEquals(true, engine.evaluate("self.unprocessedPending[\"value\"] > 0.0", node));
+    }
+
+    @Test
+    void comparesSineWaveTelemetryWithBracketAndDotSyntax() {
+        DataSchema schema = DataSchema.builder("sineWave").field("value", FieldType.DOUBLE).build();
+        PlatformObject node = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.lab-01",
+                ObjectType.DEVICE,
+                "lab",
+                "",
+                null
+        );
+        node.addVariable(new Variable(
+                "sineWave",
+                schema,
+                true,
+                false,
+                DataRecord.single(schema, Map.of("value", -0.5))
+        ));
+
+        ExpressionEngine engine = new ExpressionEngine();
+        assertEquals(true, engine.evaluateAlertCondition("self.sineWave[\"value\"] > -1000.0", node, "sineWave"));
+        assertEquals(true, engine.evaluateAlertCondition("self.sineWave.value > -1000.0", node, "sineWave"));
     }
 }

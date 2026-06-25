@@ -1,0 +1,1 @@
+self.sineWave["value"] > -1000.0

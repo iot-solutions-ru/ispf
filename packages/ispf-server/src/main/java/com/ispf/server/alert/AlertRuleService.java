@@ -9,6 +9,7 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -94,7 +95,7 @@ public class AlertRuleService {
         automationTreeService.deleteAlertRule(id);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void processVariableChange(String objectPath, String variableName) {
         List<AlertRule> rules = automationTreeService.findEnabledAlertRules(objectPath, variableName);
         if (rules.isEmpty()) {
@@ -107,7 +108,7 @@ public class AlertRuleService {
             if (!node.events().containsKey(rule.eventName())) {
                 continue;
             }
-            boolean conditionMet = evaluateCondition(rule.conditionExpr(), node);
+            boolean conditionMet = evaluateCondition(rule.conditionExpr(), node, rule.watchVariable());
             Double watchValue = readWatchValue(node, rule.watchVariable());
             Double previousWatchValue = automationTreeService.getAlertRuleLastWatchValue(rule.id());
             boolean shouldFire;
@@ -178,9 +179,9 @@ public class AlertRuleService {
                 .orElse(null);
     }
 
-    private boolean evaluateCondition(String expression, PlatformObject node) {
+    private boolean evaluateCondition(String expression, PlatformObject node, String watchVariable) {
         try {
-            Object result = expressionEngine.evaluate(expression, node);
+            Object result = expressionEngine.evaluateAlertCondition(expression, node, watchVariable);
             if (result instanceof Boolean bool) {
                 return bool;
             }
