@@ -48,17 +48,15 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
 
     private final EventJournalProperties properties;
     private final EventHistoryRecordCounter recordCounter;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final HttpClient httpClient;
 
     public ClickHouseEventJournalStore(
             EventJournalProperties properties,
-            EventHistoryRecordCounter recordCounter,
-            ObjectMapper objectMapper
+            EventHistoryRecordCounter recordCounter
     ) {
         this.properties = properties;
         this.recordCounter = recordCounter;
-        this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();

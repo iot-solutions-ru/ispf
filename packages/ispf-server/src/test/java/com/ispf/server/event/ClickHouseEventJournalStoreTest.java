@@ -46,7 +46,7 @@ class ClickHouseEventJournalStoreTest {
         EventJournalProperties properties = new EventJournalProperties();
         properties.setStore("clickhouse");
         properties.getClickhouse().setUrl("http://localhost:" + port);
-        store = new ClickHouseEventJournalStore(properties, recordCounter, new ObjectMapper());
+        store = new ClickHouseEventJournalStore(properties, recordCounter);
     }
 
     @AfterEach
