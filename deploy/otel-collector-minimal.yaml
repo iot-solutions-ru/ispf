@@ -1,0 +1,30 @@
+# Minimal OpenTelemetry Collector for ISPF (metrics + traces)
+# Usage: docker run --rm -p 4317:4317 -p 4318:4318 -v ${PWD}/deploy/otel-collector-minimal.yaml:/etc/otelcol/config.yaml otel/opentelemetry-collector-contrib:latest
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: basic
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+processors:
+  batch:
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

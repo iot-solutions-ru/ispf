@@ -3,6 +3,7 @@ package com.ispf.server.object.bus;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.platform.AutomationObservationSupport;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ObjectChangeEventBusUnitTest {
 
     private static final AutomationMetricsRecorder METRICS = new AutomationMetricsRecorder(Optional.empty());
+    private static final AutomationObservationSupport OBSERVATION =
+            new AutomationObservationSupport(Optional.empty());
 
     @Test
     void dispatchesHandlersInOrderWhenSync() {
@@ -29,7 +32,8 @@ class ObjectChangeEventBusUnitTest {
                         handler(trace, 20, "alerts"),
                         handler(trace, 10, "history")
                 ),
-                METRICS
+                METRICS,
+                OBSERVATION
         );
         bus.start();
         bus.submit(ObjectChangeEvent.variableUpdated("root.device", "temperature"));
@@ -50,7 +54,8 @@ class ObjectChangeEventBusUnitTest {
         ObjectChangeEventBus bus = new ObjectChangeEventBus(
                 properties,
                 List.of(event -> trace.add(event.path() + ":" + event.variableName())),
-                METRICS
+                METRICS,
+                OBSERVATION
         );
         bus.start();
 
@@ -80,7 +85,8 @@ class ObjectChangeEventBusUnitTest {
                         telemetryHandler(telemetryTrace, "history"),
                         handler(new CopyOnWriteArrayList<>(), 20, "alerts")
                 ),
-                METRICS
+                METRICS,
+                OBSERVATION
         );
         bus.start();
 
@@ -128,7 +134,8 @@ class ObjectChangeEventBusUnitTest {
                         },
                         event -> automationTrace.add(event.path() + ":" + event.variableName())
                 ),
-                METRICS
+                METRICS,
+                OBSERVATION
         );
         bus.start();
 

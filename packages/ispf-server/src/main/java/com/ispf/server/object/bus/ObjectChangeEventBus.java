@@ -4,6 +4,7 @@ import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.platform.AutomationObservationSupport;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,7 @@ public class ObjectChangeEventBus {
     private final ObjectChangeProperties properties;
     private final List<ObjectChangeAsyncHandler> handlers;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final AutomationObservationSupport automationObservationSupport;
 
     private Lane unifiedLane;
     private Lane telemetryLane;
@@ -63,13 +65,15 @@ public class ObjectChangeEventBus {
     public ObjectChangeEventBus(
             ObjectChangeProperties properties,
             List<ObjectChangeAsyncHandler> handlers,
-            AutomationMetricsRecorder automationMetricsRecorder
+            AutomationMetricsRecorder automationMetricsRecorder,
+            AutomationObservationSupport automationObservationSupport
     ) {
         this.properties = properties;
         this.handlers = handlers.stream()
                 .sorted(Comparator.comparingInt(ObjectChangeAsyncHandler::order))
                 .toList();
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.automationObservationSupport = automationObservationSupport;
     }
 
     @jakarta.annotation.PostConstruct
@@ -199,7 +203,7 @@ public class ObjectChangeEventBus {
 
     private void dispatchSync(ObjectChangeEvent event) {
         for (ObjectChangeAsyncHandler handler : handlers) {
-            invokeHandler(handler, event);
+            invokeHandler(handler, event, ObjectChangeLane.AUTOMATION);
         }
         automationMetricsRecorder.recordObjectChangeProcessed();
     }
@@ -227,17 +231,24 @@ public class ObjectChangeEventBus {
         }
     }
 
-    private void invokeHandler(ObjectChangeAsyncHandler handler, ObjectChangeEvent event) {
-        try {
-            handler.handle(event);
-        } catch (Exception ex) {
-            log.error(
-                    "Object change handler {} failed for {}",
-                    handler.getClass().getSimpleName(),
-                    event.path(),
-                    ex
-            );
-        }
+    private void invokeHandler(ObjectChangeAsyncHandler handler, ObjectChangeEvent event, ObjectChangeLane lane) {
+        automationObservationSupport.observeObjectChangeHandler(
+                handler.getClass().getSimpleName(),
+                lane,
+                event,
+                () -> {
+                    try {
+                        handler.handle(event);
+                    } catch (Exception ex) {
+                        log.error(
+                                "Object change handler {} failed for {}",
+                                handler.getClass().getSimpleName(),
+                                event.path(),
+                                ex
+                        );
+                    }
+                }
+        );
     }
 
     private final class Lane {
@@ -303,7 +314,7 @@ public class ObjectChangeEventBus {
 
         private void dispatch(ObjectChangeEvent event) {
             for (ObjectChangeAsyncHandler handler : laneHandlers) {
-                invokeHandler(handler, event);
+                invokeHandler(handler, event, id);
             }
             automationMetricsRecorder.recordObjectChangeProcessed();
         }

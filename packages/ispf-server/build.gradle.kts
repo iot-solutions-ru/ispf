@@ -90,6 +90,7 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus")
     implementation("io.micrometer:micrometer-registry-otlp")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
 
     implementation("com.haulmont.yarg:yarg:2.2.22") {
         exclude(group = "javax.xml.bind", module = "jaxb-api")

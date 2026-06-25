@@ -64,6 +64,15 @@ management:
         resource-attributes:
           service.name: ${spring.application.name}
           deployment.environment: ${ISPF_ENVIRONMENT:local}
+  tracing:
+    enabled: ${ISPF_OTLP_TRACING_ENABLED:false}
+    sampling:
+      probability: ${ISPF_OTLP_TRACING_SAMPLING:0.1}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${ISPF_OTLP_TRACING_URL:http://localhost:4318/v1/traces}
   health:
     redis:
       enabled: ${ISPF_REDIS_ENABLED:false}
