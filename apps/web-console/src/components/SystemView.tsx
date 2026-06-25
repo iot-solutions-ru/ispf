@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import SystemMetricsView from "./SystemMetricsView";
+import SystemSettingsView from "./SystemSettingsView";
 import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 
-type SystemTab = "metrics" | "events" | "functions";
+type SystemTab = "metrics" | "settings" | "events" | "functions";
 
 export default function SystemView() {
   const { t } = useTranslation("system");
@@ -12,6 +13,7 @@ export default function SystemView() {
 
   const tabs: { id: SystemTab; labelKey: string }[] = [
     { id: "metrics", labelKey: "tab.metrics" },
+    { id: "settings", labelKey: "tab.settings" },
     { id: "events", labelKey: "tab.events" },
     { id: "functions", labelKey: "tab.functions" },
   ];
@@ -39,6 +41,7 @@ export default function SystemView() {
       </nav>
 
       {tab === "metrics" && <SystemMetricsView embedded />}
+      {tab === "settings" && <SystemSettingsView />}
       {tab === "events" && (
         <EventJournalPanel limit={100} showFilters objectPathFilter="" />
       )}

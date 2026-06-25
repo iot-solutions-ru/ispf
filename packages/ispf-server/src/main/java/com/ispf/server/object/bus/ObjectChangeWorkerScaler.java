@@ -5,10 +5,10 @@ package com.ispf.server.object.bus;
  */
 final class ObjectChangeWorkerScaler {
 
-    private final int minWorkers;
-    private final int maxWorkers;
-    private final int scaleUpQueueThreshold;
-    private final int scaleDownSteps;
+    private int minWorkers;
+    private int maxWorkers;
+    private int scaleUpQueueThreshold;
+    private int scaleDownSteps;
     private int targetWorkers;
     private int consecutiveEmptyChecks;
 
@@ -58,8 +58,11 @@ final class ObjectChangeWorkerScaler {
         return targetWorkers != previous;
     }
 
-    void resetToMinimum() {
-        targetWorkers = minWorkers;
-        consecutiveEmptyChecks = 0;
+    void reconfigure(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
+        this.minWorkers = minWorkers;
+        this.maxWorkers = maxWorkers;
+        this.scaleUpQueueThreshold = scaleUpQueueThreshold;
+        this.scaleDownSteps = scaleDownSteps;
+        targetWorkers = Math.min(maxWorkers, Math.max(minWorkers, targetWorkers));
     }
 }

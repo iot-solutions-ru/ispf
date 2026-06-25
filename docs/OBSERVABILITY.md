@@ -116,7 +116,7 @@ docker run --rm -p 4318:4318 -p 8889:8889 \
 - **scale down** — после `elastic-scale-down-steps` подряд проверок с пустой очередью target уменьшается на 1 (до min);
 - периодическая проверка — `elastic-scale-check-interval-ms`; дополнительный scale-up при enqueue, если очередь уже выше порога.
 
-**Выключено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false`).
+**Выключено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false`). Настройки также доступны в web console: **System → Runtime settings** (`GET/PATCH /api/v1/platform/runtime-settings`).
 
 ```yaml
 # /opt/ispf/ispf-server.env — пример для prod load

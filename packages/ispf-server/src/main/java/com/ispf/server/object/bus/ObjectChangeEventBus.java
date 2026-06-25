@@ -251,6 +251,18 @@ public class ObjectChangeEventBus {
         }
     }
 
+    public void applyRuntimeTuning() {
+        if (unifiedLane != null) {
+            unifiedLane.syncElasticConfig();
+        }
+        if (telemetryLane != null) {
+            telemetryLane.syncElasticConfig();
+        }
+        if (automationLane != null) {
+            automationLane.syncElasticConfig();
+        }
+    }
+
     private void invokeHandler(ObjectChangeAsyncHandler handler, ObjectChangeEvent event, ObjectChangeLane lane) {
         automationObservationSupport.observeObjectChangeHandler(
                 handler.getClass().getSimpleName(),
@@ -274,16 +286,17 @@ public class ObjectChangeEventBus {
     private final class Lane {
         private final ObjectChangeLane id;
         private final int queueCapacity;
-        private final int minWorkers;
-        private final int maxWorkers;
+        private volatile int minWorkers;
+        private volatile int maxWorkers;
         private final boolean elasticWorkers;
         private final ObjectChangeWorkerScaler scaler;
         private final BlockingQueue<ObjectChangeEvent> queue;
         private final ExecutorService workers;
         private final List<ObjectChangeAsyncHandler> laneHandlers;
         private final AtomicInteger activeWorkers = new AtomicInteger(0);
-        private final int scaleUpQueueThreshold;
+        private volatile int scaleUpQueueThreshold;
         private final int scaleCheckIntervalMs;
+        private final int scaleDownSteps;
         private ScheduledExecutorService scaleScheduler;
 
         private Lane(
@@ -309,6 +322,7 @@ public class ObjectChangeEventBus {
             this.laneHandlers = laneHandlers;
             this.scaleUpQueueThreshold = scaleUpQueueThreshold;
             this.scaleCheckIntervalMs = scaleCheckIntervalMs;
+            this.scaleDownSteps = scaleDownSteps;
             this.workers = Executors.newCachedThreadPool(runnable -> {
                 Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase());
                 thread.setDaemon(true);
@@ -408,6 +422,44 @@ public class ObjectChangeEventBus {
                 invokeHandler(handler, event, id);
             }
             automationMetricsRecorder.recordObjectChangeProcessed();
+        }
+
+        private void syncElasticConfig() {
+            if (!elasticWorkers || scaler == null) {
+                return;
+            }
+            int resolvedMin = resolveMinWorkers();
+            int resolvedMax = resolveMaxWorkers();
+            minWorkers = resolvedMin;
+            maxWorkers = resolvedMax;
+            scaleUpQueueThreshold = properties.getElasticScaleUpQueueThreshold();
+            scaler.reconfigure(
+                    resolvedMin,
+                    resolvedMax,
+                    scaleUpQueueThreshold,
+                    properties.getElasticScaleDownSteps()
+            );
+            adjustWorkers();
+        }
+
+        private int resolveMinWorkers() {
+            if (id == ObjectChangeLane.TELEMETRY) {
+                return properties.resolvedTelemetryWorkerThreadsMin();
+            }
+            if (properties.isSplitLanesEnabled()) {
+                return properties.resolvedAutomationWorkerThreadsMin();
+            }
+            return properties.resolvedWorkerThreadsMin();
+        }
+
+        private int resolveMaxWorkers() {
+            if (id == ObjectChangeLane.TELEMETRY) {
+                return properties.resolvedTelemetryWorkerThreadsMax();
+            }
+            if (properties.isSplitLanesEnabled()) {
+                return properties.resolvedAutomationWorkerThreadsMax();
+            }
+            return properties.resolvedWorkerThreadsMax();
         }
 
         private void shutdown() {

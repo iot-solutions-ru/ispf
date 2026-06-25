@@ -1,6 +1,8 @@
 spring:
   application:
     name: ispf-server
+  config:
+    import: optional:file:${ISPF_DATA_DIR:./data}/runtime-settings.properties
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration

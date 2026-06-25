@@ -99,6 +99,63 @@ code,
   flex-wrap: wrap;
 }
 
+.system-settings-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.system-settings-intro,
+.system-settings-file {
+  margin: 0;
+}
+
+.system-settings-card {
+  overflow: auto;
+}
+
+.system-settings-table th,
+.system-settings-table td {
+  vertical-align: top;
+}
+
+.system-settings-label {
+  font-weight: 600;
+}
+
+.system-settings-env {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+.system-settings-input {
+  width: min(100%, 14rem);
+}
+
+.system-settings-source {
+  display: inline-block;
+  margin-right: 0.35rem;
+}
+
+.system-settings-source-environment {
+  color: var(--warn, #b45309);
+}
+
+.system-settings-source-file {
+  color: var(--accent);
+}
+
+.system-settings-badge {
+  display: inline-block;
+  margin-left: 0.35rem;
+}
+
+.system-settings-row-locked {
+  opacity: 0.88;
+}
+
 .system-subnav button {
   border: 1px solid var(--border);
   background: var(--surface);
