@@ -108,7 +108,7 @@ ispf:
     min-interval-ms: 5000
     retention-days: 90
   runtime-telemetry:
-    coalesce-ms: 1000
+    coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:1000}
     enabled: true
   object-change:
     async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
@@ -120,6 +120,16 @@ ispf:
     automation-queue-capacity: ${ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY:10000}
     telemetry-worker-threads: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS:2}
     automation-worker-threads: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS:4}
+    elastic-workers-enabled: ${ISPF_OBJECT_CHANGE_ELASTIC_WORKERS:false}
+    elastic-scale-up-queue-threshold: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD:50}
+    elastic-scale-down-steps: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_DOWN_STEPS:6}
+    elastic-scale-check-interval-ms: ${ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS:500}
+    worker-threads-min: ${ISPF_OBJECT_CHANGE_WORKER_THREADS_MIN:2}
+    worker-threads-max: ${ISPF_OBJECT_CHANGE_WORKER_THREADS_MAX:16}
+    telemetry-worker-threads-min: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS_MIN:1}
+    telemetry-worker-threads-max: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS_MAX:8}
+    automation-worker-threads-min: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN:2}
+    automation-worker-threads-max: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX:16}
   event-journal:
     async-enabled: ${ISPF_EVENT_JOURNAL_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_EVENT_JOURNAL_QUEUE_CAPACITY:10000}

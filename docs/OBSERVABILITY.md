@@ -17,6 +17,7 @@
 | `ispf.alert.evaluations.total` | counter | Оценки CEL |
 | `ispf.correlator.triggers.total` | counter | Срабатывания correlators |
 | `ispf.object_change.queue.size{lane=telemetry\|automation\|total}` | gauge | Глубина async-очередей |
+| `ispf.object_change.workers.active{lane=telemetry\|automation}` | gauge | Активные worker-потоки (elastic mode) |
 | `ispf.object_change.processed.total` | gauge | Обработанные object-change events |
 | `ispf.event_history.records` | gauge | Записей в журнале событий |
 | `ispf.workflow_instances.running` | gauge | Активные workflow instances |
@@ -106,6 +107,29 @@ docker run --rm -p 4318:4318 -p 8889:8889 \
   -v $(pwd)/deploy/otel-collector-minimal.yaml:/etc/otelcol/config.yaml \
   otel/opentelemetry-collector-contrib:latest
 ```
+
+## Elastic object-change workers (optional, 0.9.11+)
+
+По умолчанию шина object-change использует **фиксированное** число worker-потоков на lane (telemetry / automation). При включении elastic mode пул масштабируется между min и max по глубине очереди:
+
+- **scale up** — когда `queue.size >= elastic-scale-up-queue-threshold`, target workers растёт (до max);
+- **scale down** — после `elastic-scale-down-steps` подряд проверок с пустой очередью target уменьшается на 1 (до min);
+- периодическая проверка — `elastic-scale-check-interval-ms`; дополнительный scale-up при enqueue, если очередь уже выше порога.
+
+**Выключено по умолчанию** (`ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=false`).
+
+```yaml
+# /opt/ispf/ispf-server.env — пример для prod load
+ISPF_OBJECT_CHANGE_ELASTIC_WORKERS=true
+ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN=2
+ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX=16
+ISPF_OBJECT_CHANGE_ELASTIC_SCALE_UP_THRESHOLD=50
+ISPF_OBJECT_CHANGE_ELASTIC_SCALE_DOWN_STEPS=6
+ISPF_OBJECT_CHANGE_ELASTIC_SCALE_CHECK_MS=500
+ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY=10000
+```
+
+Кратковременный рост `ispf.object_change.queue.size` при spike — нормален; sustained рост при низком `workers.active` или на max workers сигнализирует о bottleneck downstream (CEL, journal, DB).
 
 ## Связанные документы
 

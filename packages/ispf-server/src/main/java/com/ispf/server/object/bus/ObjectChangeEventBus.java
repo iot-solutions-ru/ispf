@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Async dispatcher for {@link ObjectChangeEvent} handlers.
@@ -86,13 +86,23 @@ public class ObjectChangeEventBus {
             telemetryLane = new Lane(
                     ObjectChangeLane.TELEMETRY,
                     properties.getTelemetryQueueCapacity(),
-                    properties.getTelemetryWorkerThreads(),
+                    properties.resolvedTelemetryWorkerThreadsMin(),
+                    properties.resolvedTelemetryWorkerThreadsMax(),
+                    properties.isElasticWorkersEnabled(),
+                    properties.getElasticScaleUpQueueThreshold(),
+                    properties.getElasticScaleDownSteps(),
+                    properties.getElasticScaleCheckIntervalMs(),
                     handlersForLane(ObjectChangeLane.TELEMETRY)
             );
             automationLane = new Lane(
                     ObjectChangeLane.AUTOMATION,
                     properties.getAutomationQueueCapacity(),
-                    properties.getAutomationWorkerThreads(),
+                    properties.resolvedAutomationWorkerThreadsMin(),
+                    properties.resolvedAutomationWorkerThreadsMax(),
+                    properties.isElasticWorkersEnabled(),
+                    properties.getElasticScaleUpQueueThreshold(),
+                    properties.getElasticScaleDownSteps(),
+                    properties.getElasticScaleCheckIntervalMs(),
                     handlersForLane(ObjectChangeLane.AUTOMATION)
             );
             telemetryLane.start();
@@ -100,27 +110,37 @@ public class ObjectChangeEventBus {
             automationMetricsRecorder.bindObjectChangeQueue("telemetry", telemetryLane.queue);
             automationMetricsRecorder.bindObjectChangeQueue("automation", automationLane.queue);
             log.info(
-                    "Object change event bus started (split lanes: telemetry workers={}, queue={}; "
-                            + "automation workers={}, queue={}; handlers={})",
-                    properties.getTelemetryWorkerThreads(),
+                    "Object change event bus started (split lanes: telemetry workers={}-{}, queue={}; "
+                            + "automation workers={}-{}, queue={}; elastic={}; handlers={})",
+                    properties.resolvedTelemetryWorkerThreadsMin(),
+                    properties.resolvedTelemetryWorkerThreadsMax(),
                     properties.getTelemetryQueueCapacity(),
-                    properties.getAutomationWorkerThreads(),
+                    properties.resolvedAutomationWorkerThreadsMin(),
+                    properties.resolvedAutomationWorkerThreadsMax(),
                     properties.getAutomationQueueCapacity(),
+                    properties.isElasticWorkersEnabled(),
                     handlers.size()
             );
         } else {
             unifiedLane = new Lane(
                     ObjectChangeLane.AUTOMATION,
                     properties.getQueueCapacity(),
-                    properties.getWorkerThreads(),
+                    properties.resolvedWorkerThreadsMin(),
+                    properties.resolvedWorkerThreadsMax(),
+                    properties.isElasticWorkersEnabled(),
+                    properties.getElasticScaleUpQueueThreshold(),
+                    properties.getElasticScaleDownSteps(),
+                    properties.getElasticScaleCheckIntervalMs(),
                     handlers
             );
             unifiedLane.start();
             automationMetricsRecorder.bindObjectChangeQueue("unified", unifiedLane.queue);
             log.info(
-                    "Object change event bus started (workers={}, queueCapacity={}, handlers={})",
-                    properties.getWorkerThreads(),
+                    "Object change event bus started (workers={}-{}, queueCapacity={}, elastic={}, handlers={})",
+                    properties.resolvedWorkerThreadsMin(),
+                    properties.resolvedWorkerThreadsMax(),
                     properties.getQueueCapacity(),
+                    properties.isElasticWorkersEnabled(),
                     handlers.size()
             );
         }
@@ -254,31 +274,84 @@ public class ObjectChangeEventBus {
     private final class Lane {
         private final ObjectChangeLane id;
         private final int queueCapacity;
-        private final int workerThreads;
+        private final int minWorkers;
+        private final int maxWorkers;
+        private final boolean elasticWorkers;
+        private final ObjectChangeWorkerScaler scaler;
         private final BlockingQueue<ObjectChangeEvent> queue;
         private final ExecutorService workers;
         private final List<ObjectChangeAsyncHandler> laneHandlers;
+        private final AtomicInteger activeWorkers = new AtomicInteger(0);
+        private final int scaleUpQueueThreshold;
+        private final int scaleCheckIntervalMs;
+        private ScheduledExecutorService scaleScheduler;
 
-        private Lane(ObjectChangeLane id, int queueCapacity, int workerThreads, List<ObjectChangeAsyncHandler> laneHandlers) {
+        private Lane(
+                ObjectChangeLane id,
+                int queueCapacity,
+                int minWorkers,
+                int maxWorkers,
+                boolean elasticWorkers,
+                int scaleUpQueueThreshold,
+                int scaleDownSteps,
+                int scaleCheckIntervalMs,
+                List<ObjectChangeAsyncHandler> laneHandlers
+        ) {
             this.id = id;
             this.queueCapacity = queueCapacity;
-            this.workerThreads = workerThreads;
+            this.minWorkers = minWorkers;
+            this.maxWorkers = maxWorkers;
+            this.elasticWorkers = elasticWorkers;
+            this.scaler = elasticWorkers
+                    ? new ObjectChangeWorkerScaler(minWorkers, maxWorkers, scaleUpQueueThreshold, scaleDownSteps)
+                    : null;
             this.queue = new LinkedBlockingQueue<>(queueCapacity);
             this.laneHandlers = laneHandlers;
-            this.workers = Executors.newFixedThreadPool(
-                    workerThreads,
-                    runnable -> {
-                        Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase());
-                        thread.setDaemon(true);
-                        return thread;
-                    }
-            );
+            this.scaleUpQueueThreshold = scaleUpQueueThreshold;
+            this.scaleCheckIntervalMs = scaleCheckIntervalMs;
+            this.workers = Executors.newCachedThreadPool(runnable -> {
+                Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase());
+                thread.setDaemon(true);
+                return thread;
+            });
         }
 
         private void start() {
-            for (int i = 0; i < workerThreads; i++) {
-                workers.submit(this::workerLoop);
+            int initial = elasticWorkers ? minWorkers : maxWorkers;
+            for (int i = 0; i < initial; i++) {
+                spawnWorker();
             }
+            automationMetricsRecorder.bindObjectChangeWorkers(id.name().toLowerCase(), activeWorkers);
+            if (elasticWorkers) {
+                scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                    Thread thread = new Thread(runnable, "object-change-bus-scale-" + id.name().toLowerCase());
+                    thread.setDaemon(true);
+                    return thread;
+                });
+                scaleScheduler.scheduleAtFixedRate(
+                        this::adjustWorkers,
+                        scaleCheckIntervalMs,
+                        scaleCheckIntervalMs,
+                        TimeUnit.MILLISECONDS
+                );
+            }
+        }
+
+        private void adjustWorkers() {
+            if (!running || scaler == null) {
+                return;
+            }
+            scaler.adjust(queue.size());
+            while (activeWorkers.get() < scaler.targetWorkers() && activeWorkers.get() < maxWorkers) {
+                spawnWorker();
+            }
+        }
+
+        private void spawnWorker() {
+            if (activeWorkers.get() >= maxWorkers) {
+                return;
+            }
+            workers.submit(this::workerLoop);
         }
 
         private boolean hasHandlers() {
@@ -295,21 +368,39 @@ public class ObjectChangeEventBus {
                         event.path()
                 );
                 dispatch(event);
+                return;
+            }
+            if (elasticWorkers && queue.size() >= scaleUpQueueThreshold) {
+                adjustWorkers();
             }
         }
 
         private void workerLoop() {
-            while (running) {
-                try {
-                    ObjectChangeEvent event = queue.poll(1, TimeUnit.SECONDS);
+            activeWorkers.incrementAndGet();
+            try {
+                while (running) {
+                    if (shouldWorkerExit()) {
+                        break;
+                    }
+                    ObjectChangeEvent event = queue.poll(500, TimeUnit.MILLISECONDS);
                     if (event != null) {
                         dispatch(event);
+                    } else if (shouldWorkerExit()) {
+                        break;
                     }
-                } catch (InterruptedException ex) {
-                    Thread.currentThread().interrupt();
-                    break;
                 }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+            } finally {
+                activeWorkers.decrementAndGet();
             }
+        }
+
+        private boolean shouldWorkerExit() {
+            return elasticWorkers
+                    && scaler != null
+                    && activeWorkers.get() > scaler.targetWorkers()
+                    && queue.isEmpty();
         }
 
         private void dispatch(ObjectChangeEvent event) {
@@ -320,6 +411,9 @@ public class ObjectChangeEventBus {
         }
 
         private void shutdown() {
+            if (scaleScheduler != null) {
+                scaleScheduler.shutdownNow();
+            }
             workers.shutdownNow();
         }
     }

@@ -107,6 +107,15 @@ public class AutomationMetricsRecorder {
         ));
     }
 
+    public void bindObjectChangeWorkers(String lane, java.util.concurrent.atomic.AtomicInteger workers) {
+        meterRegistry.ifPresent(registry -> registry.gauge(
+                "ispf.object_change.workers.active",
+                Tags.of("lane", lane),
+                workers,
+                java.util.concurrent.atomic.AtomicInteger::doubleValue
+        ));
+    }
+
     public void bindEventJournalQueue(BlockingQueue<?> queue) {
         this.eventJournalQueue = queue;
         meterRegistry.ifPresent(registry -> {
