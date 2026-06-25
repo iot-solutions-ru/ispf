@@ -9,17 +9,17 @@ $ErrorActionPreference = "Stop"
 Write-Host "==> Upload ClickHouse compose + setup script to $RemoteHost"
 ssh -o BatchMode=yes $RemoteHost "mkdir -p /opt/ispf"
 scp -o BatchMode=yes `
-    "$RepoRoot\deploy\docker-compose.clickhouse.yml" `
-    "$RepoRoot\deploy\clickhouse-local-user.xml" `
     "$RepoRoot\deploy\vps-clickhouse-setup.sh" `
+    "$RepoRoot\deploy\vps-clickhouse-verify.sh" `
     "$RepoRoot\deploy\vps-event-journal-jdbc.sh" `
     "${RemoteHost}:/opt/ispf/"
 
 Write-Host "==> Run vps-clickhouse-setup.sh on VPS"
 ssh -o BatchMode=yes $RemoteHost @"
-chmod +x /opt/ispf/vps-clickhouse-setup.sh /opt/ispf/vps-event-journal-jdbc.sh
-sed -i 's/\r$//' /opt/ispf/vps-clickhouse-setup.sh /opt/ispf/vps-event-journal-jdbc.sh
-bash /opt/ispf/vps-clickhouse-setup.sh /opt/ispf/docker-compose.clickhouse.yml
+chmod +x /opt/ispf/vps-clickhouse-setup.sh /opt/ispf/vps-clickhouse-verify.sh /opt/ispf/vps-event-journal-jdbc.sh
+sed -i 's/\r$//' /opt/ispf/vps-clickhouse-setup.sh /opt/ispf/vps-clickhouse-verify.sh /opt/ispf/vps-event-journal-jdbc.sh
+bash /opt/ispf/vps-clickhouse-setup.sh
+bash /opt/ispf/vps-clickhouse-verify.sh
 "@
 
 Write-Host ""

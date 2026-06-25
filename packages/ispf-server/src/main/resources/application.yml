@@ -107,7 +107,7 @@ ispf:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   variable-history:
     enabled: true
-    min-interval-ms: 5000
+    min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
     retention-days: 90
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}

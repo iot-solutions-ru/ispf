@@ -16,7 +16,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-DEFAULT_COALESCE_MS = [1000, 500, 250, 100, 50, 25, 10]
+DEFAULT_COALESCE_MS = [250, 100, 50, 25, 10, 5, 1]
 ENV_KEY = "ISPF_RUNTIME_TELEMETRY_COALESCE_MS"
 ENV_FILE = "/opt/ispf/ispf-server.env"
 LOAD_TEST = Path(__file__).with_name("events-internal-load-test.py")
@@ -124,7 +124,7 @@ def main() -> int:
         default=",".join(str(v) for v in DEFAULT_COALESCE_MS),
         help="Comma-separated coalesce values (high to low)",
     )
-    parser.add_argument("--restore-default", type=int, default=1000)
+    parser.add_argument("--restore-default", type=int, default=250)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

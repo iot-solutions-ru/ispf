@@ -2,10 +2,8 @@
 """
 MQTT ingress load test — ISPF mqtt driver **subscribes** to broker topics (pull/subscribe).
 
-Default mode (subscribe): no synthetic publisher; devices receive live MQTT from a real broker.
-Optional mode (push): mqtt-loadtest-publisher.py pushes to local Mosquitto (synthetic only).
-
-Before each run: stops virtual loadtest-dev-* drivers and purges competing alert rules.
+Default: historian path (TELEMETRY_ONLY → variable_samples, no alert/automation).
+Use --automation for legacy alert → event journal benchmarking.
 """
 
 from __future__ import annotations
@@ -28,6 +26,8 @@ from mqtt_loadtest_lib import (
     list_mqtt_loadtest_devices,
     read_temperature_raw,
     seed_mqtt_devices,
+    variable_history_metrics,
+    variable_history_sample_count,
 )
 
 SETUP_SCRIPT = Path(__file__).with_name("setup-platform-metrics-monitor.py")
@@ -107,24 +107,35 @@ def wait_for_ingress(client: Client, path: str, timeout_sec: float = 60.0) -> bo
     return False
 
 
-def measure_phase(client: Client, duration_sec: float) -> dict:
+def measure_phase(client: Client, duration_sec: float, historian_only: bool) -> dict:
     t0 = time.perf_counter()
+    start_samples = variable_history_sample_count(client)
     start_events = event_history_count(client)
     start_alerts = alert_fires_count(client)
     time.sleep(duration_sec)
     elapsed = time.perf_counter() - t0
+    end_samples = variable_history_sample_count(client)
     end_events = event_history_count(client)
     end_alerts = alert_fires_count(client)
+    delta_samples = max(0, end_samples - start_samples)
     delta_events = max(0, end_events - start_events)
     delta_alerts = max(0, end_alerts - start_alerts)
-    return {
+    result = {
         "durationSec": round(elapsed, 1),
+        "historianSamplesGenerated": delta_samples,
+        "historianSamplesPerSecond": round(delta_samples / max(elapsed, 0.001), 2),
+        "endHistorianSamples": end_samples,
         "eventsGenerated": delta_events,
         "eventsPerSecond": round(delta_events / max(elapsed, 0.001), 2),
         "alertFiresGenerated": delta_alerts,
         "alertFiresPerSecond": round(delta_alerts / max(elapsed, 0.001), 2),
         "endEvents": end_events,
+        "historianMinIntervalMs": variable_history_metrics(client).get("minIntervalMs"),
     }
+    if historian_only:
+        result["eventsPerSecond"] = result["historianSamplesPerSecond"]
+        result["eventsGenerated"] = delta_samples
+    return result
 
 
 def main() -> int:
@@ -162,6 +173,17 @@ def main() -> int:
         default='self.temperature["value"] > -1000.0',
     )
     parser.add_argument("--telemetry-mix-ratio", type=float, default=0.0)
+    parser.add_argument(
+        "--telemetry-coalesce-ms",
+        type=int,
+        default=50,
+        help="Per-device telemetryCoalesceMs (historian ingest rate; 0 = server default)",
+    )
+    parser.add_argument(
+        "--automation",
+        action="store_true",
+        help="Legacy: FULL telemetry + alert rules → event journal (not historian benchmark)",
+    )
     parser.add_argument("--publish-via-ssh", default="", help="push mode: run publisher on VPS")
     parser.add_argument("--remote-deploy-dir", default="/opt/ispf/loadtest")
     parser.add_argument("--timeout", type=float, default=60.0)
@@ -193,8 +215,12 @@ def main() -> int:
         stats = cleanup_for_mqtt_subscribe_test(client, purge_mqtt=not args.skip_seed)
         print(f"  {format_cleanup_stats(stats)}")
 
+    historian_only = not args.automation
+
     if not args.skip_seed:
-        print(f"Seeding {args.devices} MQTT subscribe devices (broker={broker_url})...")
+        coalesce = args.telemetry_coalesce_ms if args.telemetry_coalesce_ms > 0 else None
+        mode_label = "historian TELEMETRY_ONLY" if historian_only else "automation FULL"
+        print(f"Seeding {args.devices} MQTT devices ({mode_label}, broker={broker_url})...")
         seed_mqtt_devices(
             client,
             args.devices,
@@ -202,6 +228,8 @@ def main() -> int:
             condition_expr,
             telemetry_mix_ratio=args.telemetry_mix_ratio,
             topics=subscribe_topics,
+            telemetry_coalesce_ms=coalesce,
+            historian_only=historian_only,
         )
     else:
         existing = list_mqtt_loadtest_devices(client)
@@ -270,15 +298,17 @@ def main() -> int:
     else:
         print(f"  ingress OK: {sample_path} temperature.raw={read_temperature_raw(client, sample_path)!r}")
 
-    phase = measure_phase(client, args.phase_seconds)
+    phase = measure_phase(client, args.phase_seconds, historian_only)
     phase.update(
         {
             "mode": args.mode,
+            "historianOnly": historian_only,
             "devices": args.devices,
             "brokerUrl": broker_url,
             "topics": subscribe_topics,
             "telemetryMixRatio": args.telemetry_mix_ratio,
-            "conditionExpr": condition_expr,
+            "telemetryCoalesceMs": args.telemetry_coalesce_ms if args.telemetry_coalesce_ms > 0 else None,
+            "conditionExpr": condition_expr if not historian_only else None,
         }
     )
 
@@ -294,11 +324,21 @@ def main() -> int:
 
     label = "MQTT subscribe" if args.mode == "subscribe" else "MQTT push msg/s"
     rate_label = "live feed" if args.mode == "subscribe" else f"{args.messages_per_second:.1f}"
-    print(
-        f"\n{label:>22} {'Events/s':>10} {'Alert/s':>10} {'Journal':>12}\n"
-        f"{rate_label:>22} {phase['eventsPerSecond']:10.1f} "
-        f"{phase['alertFiresPerSecond']:10.1f} {phase['endEvents']:12d}"
-    )
+
+    if historian_only:
+        print(
+            f"\n{'MQTT historian':>22} {'Samples/s':>10} {'Alert/s':>10} {'Samples':>12}\n"
+            f"{rate_label:>22} {phase['historianSamplesPerSecond']:10.1f} "
+            f"{phase['alertFiresPerSecond']:10.1f} {phase['endHistorianSamples']:12d}"
+        )
+        if phase.get("historianMinIntervalMs"):
+            print(f"  historian min-interval-ms: {phase['historianMinIntervalMs']}")
+    else:
+        print(
+            f"\n{label:>22} {'Events/s':>10} {'Alert/s':>10} {'Journal':>12}\n"
+            f"{rate_label:>22} {phase['eventsPerSecond']:10.1f} "
+            f"{phase['alertFiresPerSecond']:10.1f} {phase['endEvents']:12d}"
+        )
 
     report_path = Path(__file__).with_name(f"mqtt-ingress-load-test-report-{int(time.time())}.json")
     report_path.write_text(

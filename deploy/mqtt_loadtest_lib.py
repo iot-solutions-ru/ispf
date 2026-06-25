@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+from loadtest_cleanup_lib import delete_loadtest_alert_rules
 from urllib.parse import quote
 
 import requests
@@ -250,12 +250,70 @@ def automation_metrics(client: Client) -> dict:
     return {}
 
 
+def variable_history_metrics(client: Client) -> dict:
+    r = client.request("GET", "/api/v1/platform/metrics")
+    r.raise_for_status()
+    for section in r.json().get("sections", []):
+        if section.get("id") == "variableHistory":
+            return section.get("values") or {}
+    return {}
+
+
+def variable_history_sample_count(client: Client) -> int:
+    return int(variable_history_metrics(client).get("sampleCount") or 0)
+
+
 def event_history_count(client: Client) -> int:
     return int(automation_metrics(client).get("eventHistoryRecords") or 0)
 
 
 def alert_fires_count(client: Client) -> int:
     return int(automation_metrics(client).get("alertFiresTotal") or 0)
+
+
+def automation_queue_metrics(client: Client) -> dict:
+    m = automation_metrics(client)
+    return {
+        "eventJournalQueueSize": int(m.get("eventJournalQueueSize") or 0),
+        "objectChangeQueueSize": int(m.get("objectChangeQueueSize") or 0),
+        "objectChangeTelemetryQueueSize": int(m.get("objectChangeTelemetryQueueSize") or 0),
+        "objectChangeAutomationQueueSize": int(m.get("objectChangeAutomationQueueSize") or 0),
+    }
+
+
+def reapply_mqtt_coalesce(
+    client: Client,
+    device_paths: list[str],
+    broker_url: str,
+    coalesce_ms: int,
+    topics: list[str] | None = None,
+    poll_ms: int = 5000,
+    historian_only: bool = True,
+) -> int:
+    """Reconfigure running mqtt loadtest devices with a new per-device coalesce override."""
+    started = 0
+    resolved_topics = topics or []
+    pad = 5
+    mode = "TELEMETRY_ONLY" if historian_only else None
+    for index, path in enumerate(sorted(device_paths), start=1):
+        if resolved_topics:
+            topic = resolved_topics[(index - 1) % len(resolved_topics)]
+        else:
+            topic = mqtt_topic(index, pad)
+        client.request("POST", f"/api/v1/drivers/runtime/stop?devicePath={quote(path, safe='')}")
+        configure_mqtt_driver(
+            client,
+            path,
+            broker_url,
+            topic,
+            telemetry_publish_mode=mode,
+            telemetry_coalesce_ms=coalesce_ms,
+            poll_ms=poll_ms,
+            auto_start=False,
+        )
+        if start_mqtt_driver(client, path):
+            started += 1
+    return started
 
 
 def seed_mqtt_devices(
@@ -266,18 +324,28 @@ def seed_mqtt_devices(
     telemetry_mix_ratio: float = 0.0,
     poll_ms: int = 5000,
     topics: list[str] | None = None,
+    telemetry_coalesce_ms: int | None = None,
+    historian_only: bool = True,
 ) -> list[str]:
     pad = max(5, len(str(device_count)))
     model_id = resolve_model_id(client)
     paths: list[str] = []
-    telemetry_only_count = int(device_count * telemetry_mix_ratio) if telemetry_mix_ratio > 0 else 0
+    if historian_only:
+        telemetry_only_count = device_count
+    else:
+        telemetry_only_count = int(device_count * telemetry_mix_ratio) if telemetry_mix_ratio > 0 else 0
     resolved_topics = topics or []
 
     for index in range(1, device_count + 1):
         path = ensure_device(client, index, pad, model_id)
         put_binding_rules(client, path)
         prepare_for_mqtt_driver(client, path)
-        mode = "TELEMETRY_ONLY" if index <= telemetry_only_count else None
+        if historian_only:
+            mode = "TELEMETRY_ONLY"
+        elif telemetry_mix_ratio > 0 and index <= telemetry_only_count:
+            mode = "TELEMETRY_ONLY"
+        else:
+            mode = None
         if resolved_topics:
             topic = resolved_topics[(index - 1) % len(resolved_topics)]
         else:
@@ -288,13 +356,21 @@ def seed_mqtt_devices(
             broker_url,
             topic,
             telemetry_publish_mode=mode,
+            telemetry_coalesce_ms=telemetry_coalesce_ms,
             poll_ms=poll_ms,
             auto_start=False,
         )
-        ensure_alert_rule(client, path, index, condition_expr)
+        if not historian_only:
+            ensure_alert_rule(client, path, index, condition_expr)
         paths.append(path)
         if index % 10 == 0 or index == device_count:
-            print(f"  seeded {index}/{device_count} mqtt devices (subscribe {topic!r})")
+            mode_note = "TELEMETRY_ONLY" if historian_only else "FULL/mixed"
+            print(f"  seeded {index}/{device_count} mqtt devices ({mode_note}, subscribe {topic!r})")
+
+    if historian_only:
+        removed = delete_loadtest_alert_rules(client)
+        if removed:
+            print(f"  removed {removed} stale loadtest alert rules")
 
     started = 0
     for path in paths:
