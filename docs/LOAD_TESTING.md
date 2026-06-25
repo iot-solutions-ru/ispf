@@ -64,7 +64,7 @@ Admin-only: `GET /api/v1/platform/metrics` — секция `automation`:
 | `objectChangeQueueSize` | Глубина async-очереди object-change bus |
 | `eventJournalQueueSize` | Очередь async writer журнала |
 
-Prometheus: `/actuator/prometheus` — counters `ispf.events.fired.total`, `ispf.alert.fires.total`, gauges `ispf.object_change.queue.size{lane=telemetry|automation}`.
+Prometheus: `/actuator/prometheus` (admin role) — counters `ispf.events.fired.total`, `ispf.alert.fires.total`, gauges `ispf.object_change.queue.size{lane=telemetry|automation|total}`, `ispf.event_history.records`, `ispf.workflow_instances.running`, `ispf.variable_history.samples`, `ispf.drivers.active`, `ispf.database.connections.*`.
 
 ## HTTP load test
 

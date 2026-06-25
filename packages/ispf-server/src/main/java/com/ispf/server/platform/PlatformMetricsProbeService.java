@@ -34,6 +34,7 @@ public class PlatformMetricsProbeService {
     private final ObjectManager objectManager;
 
     private Long lastEventHistoryRecords;
+    private Long lastAlertFiresTotal;
     private Instant lastPollTime;
 
     public PlatformMetricsProbeService(
@@ -82,10 +83,14 @@ public class PlatformMetricsProbeService {
             Map<String, Object> history = (Map<String, Object>) snapshot.getOrDefault("variableHistory", Map.of());
 
             long events = longValue(automation.get("eventHistoryRecords"));
-            double eventsPerSecond = computeEventsPerSecond(events);
+            long alertFires = longValue(automation.get("alertFiresTotal"));
+            RateSnapshot rates = computeRates(events, alertFires);
 
             writeInteger("eventHistoryRecords", events);
-            writeDouble("eventsPerSecond", eventsPerSecond);
+            writeDouble("eventsPerSecond", rates.eventsPerSecond());
+            writeInteger("alertFiresTotal", alertFires);
+            writeDouble("alertFiresPerSecond", rates.alertFiresPerSecond());
+            writeInteger("objectChangeQueueSize", longValue(automation.get("objectChangeQueueSize")));
             writeDouble("heapUsedMb", doubleValue(runtime.get("heapUsedMb")));
             writeInteger("activeConnections", longValue(database.get("activeConnections")));
             writeInteger("threadsAwaitingConnection", longValue(database.get("threadsAwaitingConnection")));
@@ -97,19 +102,31 @@ public class PlatformMetricsProbeService {
         }
     }
 
-    private double computeEventsPerSecond(long events) {
+    private RateSnapshot computeRates(long events, long alertFires) {
         Instant now = Instant.now();
-        double rate = 0.0;
-        if (lastEventHistoryRecords != null && lastPollTime != null) {
+        double eventsRate = 0.0;
+        double alertRate = 0.0;
+        if (lastPollTime != null) {
             double seconds = (now.toEpochMilli() - lastPollTime.toEpochMilli()) / 1000.0;
             if (seconds > 0) {
-                rate = Math.max(0.0, (events - lastEventHistoryRecords) / seconds);
+                if (lastEventHistoryRecords != null) {
+                    eventsRate = Math.max(0.0, (events - lastEventHistoryRecords) / seconds);
+                }
+                if (lastAlertFiresTotal != null) {
+                    alertRate = Math.max(0.0, (alertFires - lastAlertFiresTotal) / seconds);
+                }
             }
         }
         lastEventHistoryRecords = events;
+        lastAlertFiresTotal = alertFires;
         lastPollTime = now;
-        return Math.round(rate * 100.0) / 100.0;
+        return new RateSnapshot(
+                Math.round(eventsRate * 100.0) / 100.0,
+                Math.round(alertRate * 100.0) / 100.0
+        );
     }
+
+    private record RateSnapshot(double eventsPerSecond, double alertFiresPerSecond) {}
 
     private boolean probeDeviceExists() {
         return objectManager.tree().findByPath(DEVICE_PATH).isPresent();

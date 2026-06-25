@@ -92,8 +92,10 @@ Dev: `npm run dev`, proxy на backend.
 Actuator endpoints:
 
 - `/actuator/health` — liveness/readiness
-- `/actuator/prometheus` — metrics
+- `/actuator/prometheus` — metrics (admin role); ISPF gauges `ispf_event_history_records`, `ispf_alert_fires_total`, `ispf_object_change_queue_size`, …
 - `/actuator/metrics` — Micrometer
+
+`ISPF_PLATFORM_METRICS_PROBE_ENABLED=true` — in-process sync of `/api/v1/platform/metrics` to `root.platform.devices.platform-metrics-probe` (alternative to external Prometheus during load tests).
 
 ## Логирование
 

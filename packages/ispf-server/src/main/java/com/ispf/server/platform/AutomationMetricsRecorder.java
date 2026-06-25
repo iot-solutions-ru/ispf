@@ -80,6 +80,11 @@ public class AutomationMetricsRecorder {
         Counter.builder("ispf.correlator.triggers.total").register(registry);
         Counter.builder("ispf.object_change.queue.dropped.total").register(registry);
         Counter.builder("ispf.event_journal.queue_full.sync_fallback.total").register(registry);
+        registry.gauge(
+                "ispf.object_change.processed.total",
+                objectChangeProcessed,
+                AtomicLong::doubleValue
+        );
         for (EventFireSource source : EventFireSource.values()) {
             Counter.builder("ispf.events.fired.total")
                     .tag("source", source.tag())
@@ -100,14 +105,6 @@ public class AutomationMetricsRecorder {
                 queue,
                 BlockingQueue::size
         ));
-        if (objectChangeQueues.size() == 1) {
-            meterRegistry.ifPresent(registry -> registry.gauge(
-                    "ispf.object_change.processed.total",
-                    Tags.empty(),
-                    objectChangeProcessed,
-                    AtomicLong::doubleValue
-            ));
-        }
     }
 
     public void bindEventJournalQueue(BlockingQueue<?> queue) {
