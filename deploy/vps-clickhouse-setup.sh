@@ -83,12 +83,12 @@ grep '^ISPF_EVENT_JOURNAL_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/'
 echo "=== Restarting $SERVICE_NAME ==="
 systemctl restart "$SERVICE_NAME"
 
-for i in $(seq 1 90); do
+for i in $(seq 1 120); do
   if curl -sf http://127.0.0.1:8080/actuator/health >/dev/null 2>&1; then
     echo "ISPF health OK"
     break
   fi
-  if [ "$i" -eq 90 ]; then
+  if [ "$i" -eq 120 ]; then
     echo "ISPF failed to start after ClickHouse switch" >&2
     journalctl -u "$SERVICE_NAME" -n 100 --no-pager >&2 || true
     exit 1

@@ -69,7 +69,7 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
         executeStatement("CREATE DATABASE IF NOT EXISTS " + config.getDatabase());
         int retentionDays = properties.getRetentionDays();
         String ttlClause = retentionDays > 0
-                ? " TTL occurred_at + INTERVAL " + retentionDays + " DAY"
+                ? " TTL toDateTime(occurred_at) + INTERVAL " + retentionDays + " DAY"
                 : "";
         executeStatement(String.format("""
                 CREATE TABLE IF NOT EXISTS %s.%s (
