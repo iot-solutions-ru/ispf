@@ -190,8 +190,8 @@ Flyway-миграции (`packages/ispf-server/src/main/resources/db/migration/`
 |---------|------------|
 | `object_nodes` | Узлы дерева (в т.ч. alert rules и correlators) |
 | `object_variables` | Значения переменных (`@bindingRules` — reserved var на объекте) |
-| `variable_samples` | История телеметрии (time-series сэмплы) |
-| `event_history` | Журнал событий |
+| `variable_samples` | История телеметрии (time-series сэмплы; Timescale hypertable — [ADR-0016](decisions/0016-timescaledb-retention.md)) |
+| `event_history` | Журнал событий (Timescale hypertable — [ADR-0022](decisions/0022-event-history-timescale.md)) |
 | `workflow_instances` | Экземпляры BPMN |
 | `workflow_user_tasks` | Задачи оператора |
 | `correlator_hits` | Срабатывания correlators (runtime) |

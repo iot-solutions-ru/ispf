@@ -143,6 +143,7 @@ ispf:
     flush-interval-ms: ${ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS:100}
     writer-threads: ${ISPF_EVENT_JOURNAL_WRITER_THREADS:2}
     recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:2000}
+    retention-days: ${ISPF_EVENT_JOURNAL_RETENTION_DAYS:90}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}

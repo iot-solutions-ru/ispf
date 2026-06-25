@@ -15,6 +15,8 @@ public class EventJournalProperties {
     private long flushIntervalMs = 100;
     private int recentCacheSize = 2000;
     private int writerThreads = 2;
+    /** Platform default retention for event_history rows (Timescale policy or app purge). */
+    private int retentionDays = 90;
 
     public boolean isAsyncEnabled() {
         return asyncEnabled;
@@ -62,5 +64,13 @@ public class EventJournalProperties {
 
     public void setWriterThreads(int writerThreads) {
         this.writerThreads = writerThreads;
+    }
+
+    public int getRetentionDays() {
+        return retentionDays;
+    }
+
+    public void setRetentionDays(int retentionDays) {
+        this.retentionDays = retentionDays;
     }
 }

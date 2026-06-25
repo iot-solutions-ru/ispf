@@ -193,6 +193,7 @@ Configure example:
 - **Telemetry publish mode:** `FULL` | `TELEMETRY_ONLY` на driver binding — управляет `automationEligible` на coalesced driver telemetry
 - **Alert path:** `AlertRuleListener` → CEL → `EventService.fire` → `EventJournalAsyncWriter`
 - **Alert runtime state:** in-memory (`AlertRuleRuntimeStore`); periodic flush to object tree (default 30 s), not on every evaluation
+- **Event journal storage:** `event_history` — Timescale hypertable on prod ([ADR-0022](decisions/0022-event-history-timescale.md)); retention `ISPF_EVENT_JOURNAL_RETENTION_DAYS` (default 90)
 
 ## Связанные документы
 

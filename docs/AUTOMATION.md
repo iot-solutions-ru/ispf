@@ -15,7 +15,7 @@ POST /api/v1/events/fire
 ```
 
 1. Валидация по descriptor объекта
-2. Запись в `event_history`
+2. Запись в `event_history` (Timescale hypertable на prod — [ADR-0022](decisions/0022-event-history-timescale.md))
 3. `ObjectChangeEvent` → WebSocket
 4. Слушатели: correlators, UI
 

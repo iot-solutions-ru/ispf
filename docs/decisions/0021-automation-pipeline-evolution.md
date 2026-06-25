@@ -81,6 +81,7 @@ Legacy objects without `triggerType` but with `variableName` continue to work as
 - Event-triggered workflows can start without an intermediate correlator or alert rule.
 - Index rebuild is required after workflow `triggerJson` / `status` changes (`WorkflowTriggerIndexListener`, `WorkflowService.updateStatus`).
 - Split-lane bus and external journal (JetStream/Redis) are incremental; ADR documents direction without mandating immediate migration.
+- Event journal Timescale tier — [ADR-0022](0022-event-history-timescale.md) (P3a); optional ClickHouse backend — future P3b.
 
 ## Related
 

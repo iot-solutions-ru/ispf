@@ -3,7 +3,9 @@ package com.ispf.server.persistence;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,4 +19,7 @@ public interface EventHistoryRepository extends JpaRepository<EventHistoryEntity
             String objectPath,
             String eventName
     );
+
+    @Modifying
+    long deleteByOccurredAtBefore(Instant cutoff);
 }
