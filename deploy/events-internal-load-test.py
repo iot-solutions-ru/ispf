@@ -122,27 +122,32 @@ def ensure_alert_rules(client: Client, device_paths: list[str], condition_expr: 
     return updated
 
 
-def configure_driver(client: Client, device_path: str, poll_ms: int) -> bool:
-    r = client.request(
-        "PUT",
-        f"/api/v1/drivers/runtime/configure?devicePath={quote(device_path, safe='')}",
-        json={
-            "driverId": "virtual",
-            "pollIntervalMs": poll_ms,
-            "configuration": {"profile": "lab"},
-            "pointMappings": {},
-            "autoStart": True,
-        },
-    )
-    if r.status_code >= 400:
+def configure_driver(client: Client, device_path: str, poll_ms: int, verbose: bool = False) -> bool:
+    body = {
+        "driverId": "virtual",
+        "pollIntervalMs": poll_ms,
+        "configuration": {"profile": "lab"},
+        "pointMappings": {},
+        "autoStart": True,
+    }
+    url = f"/api/v1/drivers/runtime/configure?devicePath={quote(device_path, safe='')}"
+    for attempt in range(3):
+        r = client.request("PUT", url, json=body)
+        if r.status_code < 400:
+            return True
+        if r.status_code in (502, 503, 504) and attempt < 2:
+            time.sleep(1.0)
+            continue
+        if verbose:
+            print(f"  WARN driver {device_path}: HTTP {r.status_code} {r.text[:160]}")
         return False
-    return True
+    return False
 
 
-def ensure_drivers(client: Client, device_paths: list[str], poll_ms: int) -> int:
+def ensure_drivers(client: Client, device_paths: list[str], poll_ms: int, verbose: bool = False) -> int:
     ok = 0
     for path in device_paths:
-        if configure_driver(client, path, poll_ms):
+        if configure_driver(client, path, poll_ms, verbose=verbose):
             ok += 1
     return ok
 
@@ -194,6 +199,7 @@ def main() -> int:
     parser.add_argument("--skip-alert-seed", action="store_true")
     parser.add_argument("--metrics-interval", type=float, default=5.0)
     parser.add_argument("--timeout", type=float, default=60.0)
+    parser.add_argument("--verbose", action="store_true", help="Log driver configure failures")
     args = parser.parse_args()
 
     condition_expr = args.condition_expr
@@ -235,7 +241,7 @@ def main() -> int:
     print("-" * 64)
 
     for poll_ms in poll_levels:
-        drivers_ok = ensure_drivers(client, device_paths, poll_ms)
+        drivers_ok = ensure_drivers(client, device_paths, poll_ms, verbose=args.verbose)
         print(f"  configured {drivers_ok}/{len(device_paths)} drivers @ {poll_ms}ms poll")
         warmup = max(0, args.warmup_seconds)
         if warmup:

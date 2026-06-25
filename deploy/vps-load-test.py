@@ -249,6 +249,24 @@ def apply_lab_models(client: Client, object_path: str, model_ids: dict[str, str]
             print(f"  WARN apply {name} on {object_path}: HTTP {r.status_code} {r.text[:80]}")
 
 
+def configure_virtual_driver(client: Client, device_path: str, poll_ms: int) -> bool:
+    r = client.request(
+        "PUT",
+        f"/api/v1/drivers/runtime/configure?devicePath={quote(device_path, safe='')}",
+        json={
+            "driverId": "virtual",
+            "pollIntervalMs": poll_ms,
+            "configuration": {"profile": "lab"},
+            "pointMappings": {},
+            "autoStart": True,
+        },
+    )
+    if r.status_code >= 400:
+        print(f"  WARN driver configure {device_path}: HTTP {r.status_code} {r.text[:120]}")
+        return False
+    return True
+
+
 def create_device(
     client: Client,
     index: int,
@@ -280,6 +298,8 @@ def create_device(
     if r.status_code == 409:
         if repair_legacy:
             apply_lab_models(client, path, model_ids)
+        if with_driver:
+            configure_virtual_driver(client, path, poll_ms)
         return path
     if r.status_code >= 400:
         print(f"  WARN device {name}: HTTP {r.status_code} {r.text[:120]}")

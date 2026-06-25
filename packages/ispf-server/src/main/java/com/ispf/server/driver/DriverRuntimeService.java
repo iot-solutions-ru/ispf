@@ -222,18 +222,30 @@ public class DriverRuntimeService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
-        objectManager.setVariableValue(
+        Optional<DriverBinding> existing = readBinding(devicePath);
+        if (existing.isPresent() && !existing.get().driverId().equals(binding.driverId())) {
+            throw new IllegalStateException(
+                    "Driver already configured as " + existing.get().driverId()
+                            + "; cannot switch to " + binding.driverId()
+            );
+        }
+        persistDriverBinding(devicePath, binding);
+        return status(devicePath).orElseThrow();
+    }
+
+    private void persistDriverBinding(String devicePath, DriverBinding binding) {
+        objectManager.setSystemVariableValue(
                 devicePath,
                 "driverId",
                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", binding.driverId()))
         );
-        objectManager.setVariableValue(
+        objectManager.setSystemVariableValue(
                 devicePath,
                 "driverPollIntervalMs",
                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", binding.pollIntervalMs()))
         );
         try {
-            objectManager.setVariableValue(
+            objectManager.setSystemVariableValue(
                     devicePath,
                     "driverConfigJson",
                     DataRecord.single(
@@ -241,7 +253,7 @@ public class DriverRuntimeService {
                             Map.of("value", objectMapper.writeValueAsString(binding.configuration()))
                     )
             );
-            objectManager.setVariableValue(
+            objectManager.setSystemVariableValue(
                     devicePath,
                     "driverPointMappingsJson",
                     DataRecord.single(
@@ -252,7 +264,6 @@ public class DriverRuntimeService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to persist driver configuration", e);
         }
-        return status(devicePath).orElseThrow();
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
