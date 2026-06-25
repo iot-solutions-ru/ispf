@@ -104,6 +104,7 @@ class ObjectChangeEventBusUnitTest {
     void isolatesTelemetryAndAutomationLanes() throws InterruptedException {
         CopyOnWriteArrayList<String> automationTrace = new CopyOnWriteArrayList<>();
         CountDownLatch telemetryStarted = new CountDownLatch(1);
+        CountDownLatch automationProcessed = new CountDownLatch(1);
         CountDownLatch releaseTelemetry = new CountDownLatch(1);
 
         ObjectChangeProperties properties = new ObjectChangeProperties();
@@ -132,7 +133,10 @@ class ObjectChangeEventBusUnitTest {
                                 }
                             }
                         },
-                        event -> automationTrace.add(event.path() + ":" + event.variableName())
+                        event -> {
+                            automationTrace.add(event.path() + ":" + event.variableName());
+                            automationProcessed.countDown();
+                        }
                 ),
                 METRICS,
                 OBSERVATION
@@ -142,6 +146,7 @@ class ObjectChangeEventBusUnitTest {
         bus.submit(ObjectChangeEvent.variableUpdated("root.device", "temperature", true));
 
         assertThat(telemetryStarted.await(2, TimeUnit.SECONDS)).isTrue();
+        assertThat(automationProcessed.await(2, TimeUnit.SECONDS)).isTrue();
         assertThat(automationTrace).containsExactly("root.device:temperature");
 
         bus.submit(ObjectChangeEvent.variableUpdated("root.device", "pressure", false));
