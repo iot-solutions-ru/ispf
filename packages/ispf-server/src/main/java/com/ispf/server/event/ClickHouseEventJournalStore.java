@@ -230,11 +230,15 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
     }
 
     private void executeStatement(String sql) {
-        post(sql, "");
+        post(sql, "", "default");
     }
 
     private void post(String query, String body) {
-        HttpResponse<String> response = send(buildRequest(query, body));
+        post(query, body, properties.getClickhouse().getDatabase());
+    }
+
+    private void post(String query, String body, String database) {
+        HttpResponse<String> response = send(buildRequest(query, body, Map.of(), database));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse request failed (" + response.statusCode() + "): " + response.body()
@@ -243,7 +247,7 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
     }
 
     private String postQuery(String query, Map<String, String> params) {
-        HttpResponse<String> response = send(buildRequest(query, "", params));
+        HttpResponse<String> response = send(buildRequest(query, "", params, properties.getClickhouse().getDatabase()));
         if (response.statusCode() >= 400) {
             throw new IllegalStateException(
                     "ClickHouse query failed (" + response.statusCode() + "): " + response.body()
@@ -263,11 +267,11 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
         }
     }
 
-    private HttpRequest buildRequest(String query, String body) {
-        return buildRequest(query, body, Map.of());
+    private HttpRequest buildRequest(String query, String body, Map<String, String> params) {
+        return buildRequest(query, body, params, properties.getClickhouse().getDatabase());
     }
 
-    private HttpRequest buildRequest(String query, String body, Map<String, String> params) {
+    private HttpRequest buildRequest(String query, String body, Map<String, String> params, String database) {
         EventJournalProperties.ClickHouse config = properties.getClickhouse();
         StringBuilder url = new StringBuilder(config.getUrl());
         if (!config.getUrl().contains("?")) {
@@ -275,7 +279,7 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
         } else if (!config.getUrl().endsWith("&") && !config.getUrl().endsWith("?")) {
             url.append('&');
         }
-        url.append("database=").append(encode(config.getDatabase()));
+        url.append("database=").append(encode(database));
         url.append("&query=").append(encode(query));
         for (Map.Entry<String, String> param : params.entrySet()) {
             url.append("&param_").append(encode(param.getKey())).append('=').append(encode(param.getValue()));
