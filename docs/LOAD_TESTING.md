@@ -2,7 +2,9 @@
 
 Нагрузочные сценарии для измерения пропускной способности **HTTP events API** и **внутреннего конвейера автоматизации** (driver → alert rule → event journal).
 
-Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.5**, июнь 2026.
+Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.8**, июнь 2026.
+
+См. также [OBSERVABILITY.md](OBSERVABILITY.md) — Prometheus scrape и OTLP export.
 
 ## Два контура
 

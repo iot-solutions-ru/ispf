@@ -89,6 +89,7 @@ dependencies {
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
 
     implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation("io.micrometer:micrometer-registry-otlp")
 
     implementation("com.haulmont.yarg:yarg:2.2.22") {
         exclude(group = "javax.xml.bind", module = "jaxb-api")

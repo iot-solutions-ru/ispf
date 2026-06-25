@@ -44,3 +44,9 @@ ispf:
   license:
     data-dir: ${java.io.tmpdir}/ispf-test-license
     enforce: false
+
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
