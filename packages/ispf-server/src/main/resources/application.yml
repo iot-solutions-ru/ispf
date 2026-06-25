@@ -76,6 +76,10 @@ ispf:
     url: ${ISPF_NATS_URL:nats://localhost:4222}
     replica-events-enabled: ${ISPF_NATS_REPLICA_EVENTS:true}
     replica-id: ${ISPF_REPLICA_ID:}
+    jet-stream-enabled: ${ISPF_NATS_JETSTREAM_ENABLED:false}
+    jet-stream-stream-name: ${ISPF_NATS_JETSTREAM_STREAM:ispf-automation}
+    jet-stream-max-age-hours: ${ISPF_NATS_JETSTREAM_MAX_AGE_HOURS:24}
+    jet-stream-replica-consumer-prefix: ${ISPF_NATS_JETSTREAM_CONSUMER_PREFIX:ispf-replica-}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   variable-history:

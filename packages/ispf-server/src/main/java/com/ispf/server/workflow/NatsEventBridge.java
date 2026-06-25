@@ -9,6 +9,7 @@ import io.nats.client.Options;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -24,11 +25,17 @@ public class NatsEventBridge {
     private final NatsProperties properties;
     private final ObjectMapper objectMapper;
     private final Connection connection;
+    private final NatsJetStreamSupport jetStreamSupport;
 
-    public NatsEventBridge(NatsProperties properties, ObjectMapper objectMapper) {
+    public NatsEventBridge(
+            NatsProperties properties,
+            ObjectMapper objectMapper,
+            @Lazy NatsJetStreamSupport jetStreamSupport
+    ) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.connection = properties.enabled() ? connect() : null;
+        this.jetStreamSupport = jetStreamSupport;
     }
 
     public Connection connection() {
@@ -45,21 +52,15 @@ public class NatsEventBridge {
         }
         try {
             String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase();
-            Map<String, Object> body = new java.util.LinkedHashMap<>();
-            body.put("type", event.type().name());
-            body.put("path", event.path());
-            if (event.variableName() != null) {
-                body.put("variableName", event.variableName());
-            }
-            body.put("timestamp", event.timestamp().toString());
-            body.put("source", properties.replicaId());
-            String payload = objectMapper.writeValueAsString(body);
-            connection.publish(subject, payload.getBytes(StandardCharsets.UTF_8));
+            byte[] payload = buildPayload(event);
+            connection.publish(subject, payload);
             if (properties.replicaEventsEnabled()) {
-                connection.publish(
-                        "ispf.events." + event.type().name().toLowerCase(),
-                        payload.getBytes(StandardCharsets.UTF_8)
-                );
+                String replicaSubject = "ispf.events." + event.type().name().toLowerCase();
+                if (properties.jetStreamEnabled() && jetStreamSupport.isActive()) {
+                    jetStreamSupport.publishReplicaEvent(replicaSubject, payload);
+                } else {
+                    connection.publish(replicaSubject, payload);
+                }
             }
         } catch (Exception e) {
             log.warn("Failed to publish NATS event for {}: {}", event.path(), e.getMessage());
@@ -120,6 +121,18 @@ public class NatsEventBridge {
             log.warn("NATS connection failed ({}). Event bridge will run in no-op mode.", e.getMessage());
             return null;
         }
+    }
+
+    private byte[] buildPayload(ObjectChangeEvent event) throws Exception {
+        Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("type", event.type().name());
+        body.put("path", event.path());
+        if (event.variableName() != null) {
+            body.put("variableName", event.variableName());
+        }
+        body.put("timestamp", event.timestamp().toString());
+        body.put("source", properties.replicaId());
+        return objectMapper.writeValueAsString(body).getBytes(StandardCharsets.UTF_8);
     }
 
     private static String sanitize(String path) {

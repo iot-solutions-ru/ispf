@@ -48,10 +48,23 @@
 |-----------------|-----------|----------|---------|
 | `ispf.object.{path}.{changeType}` | `NatsEventBridge` | external integrators | path, type, variableName, timestamp, source |
 | `ispf.events.{changeType}` | `NatsEventBridge` (replica fan-out) | `NatsObjectChangeSubscriber` | same |
+| `ispf.events.{changeType}` (JetStream) | `NatsEventBridge` when `jet-stream-enabled` | `NatsObjectChangeSubscriber` durable consumer | same payload, persisted in stream `ispf-automation` |
 | `ispf.workflow.{workflowPath}.{event}` | `WorkflowService` | external / analytics | workflowPath, event, payload |
 | BPMN `publish_nats` task | workflow engine | custom | task-defined subject + message |
 
 Конфигурация: `ispf.nats.url`, `ispf.nats.replica-id`, `ispf.nats.replica-events-enabled`.
+
+### JetStream (optional, ADR-0021)
+
+When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
+
+| Setting | Env | Default |
+|---------|-----|---------|
+| Stream name | `ISPF_NATS_JETSTREAM_STREAM` | `ispf-automation` |
+| Retention | `ISPF_NATS_JETSTREAM_MAX_AGE_HOURS` | `24` |
+| Consumer prefix | `ISPF_NATS_JETSTREAM_CONSUMER_PREFIX` | `ispf-replica-` |
+
+Replica fan-out uses JetStream publish/subscribe instead of core NATS for `ispf.events.>` subjects. Per-replica durable consumers (`ispf-replica-{replicaId}`) allow catch-up after restarts. Object-level subjects (`ispf.object.*`) remain core NATS for external integrators.
 
 ## Sync RPC (primary API)
 

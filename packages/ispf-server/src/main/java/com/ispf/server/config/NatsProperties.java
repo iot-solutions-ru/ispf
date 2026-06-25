@@ -7,7 +7,11 @@ public record NatsProperties(
         boolean enabled,
         String url,
         boolean replicaEventsEnabled,
-        String replicaId
+        String replicaId,
+        boolean jetStreamEnabled,
+        String jetStreamStreamName,
+        int jetStreamMaxAgeHours,
+        String jetStreamReplicaConsumerPrefix
 ) {
     public NatsProperties {
         if (url == null || url.isBlank()) {
@@ -15,6 +19,15 @@ public record NatsProperties(
         }
         if (replicaId == null || replicaId.isBlank()) {
             replicaId = java.util.UUID.randomUUID().toString();
+        }
+        if (jetStreamStreamName == null || jetStreamStreamName.isBlank()) {
+            jetStreamStreamName = "ispf-automation";
+        }
+        if (jetStreamMaxAgeHours <= 0) {
+            jetStreamMaxAgeHours = 24;
+        }
+        if (jetStreamReplicaConsumerPrefix == null || jetStreamReplicaConsumerPrefix.isBlank()) {
+            jetStreamReplicaConsumerPrefix = "ispf-replica-";
         }
     }
 }

@@ -5,9 +5,9 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
-import com.ispf.server.object.ObjectChangeType;
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
+import io.nats.client.JetStreamSubscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -31,17 +31,20 @@ public class NatsObjectChangeSubscriber {
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Connection connection;
+    private final NatsJetStreamSupport jetStreamSupport;
 
     public NatsObjectChangeSubscriber(
             NatsProperties properties,
             ObjectMapper objectMapper,
             ApplicationEventPublisher eventPublisher,
-            NatsEventBridge eventBridge
+            NatsEventBridge eventBridge,
+            NatsJetStreamSupport jetStreamSupport
     ) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
         this.connection = eventBridge.connection();
+        this.jetStreamSupport = jetStreamSupport;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -51,6 +54,21 @@ public class NatsObjectChangeSubscriber {
             return;
         }
         Dispatcher dispatcher = connection.createDispatcher(this::handleMessage);
+        if (properties.jetStreamEnabled() && jetStreamSupport.isActive()) {
+            try {
+                JetStreamSubscription subscription = jetStreamSupport.subscribeReplicaEvents(dispatcher, this::handleMessage);
+                if (subscription != null) {
+                    log.info(
+                            "Subscribed to JetStream replica events (stream={}, replicaId={})",
+                            properties.jetStreamStreamName(),
+                            properties.replicaId()
+                    );
+                    return;
+                }
+            } catch (Exception ex) {
+                log.warn("JetStream replica subscribe failed, falling back to core NATS: {}", ex.getMessage());
+            }
+        }
         dispatcher.subscribe("ispf.events.>");
         log.info("Subscribed to NATS replica events (replicaId={})", properties.replicaId());
     }
