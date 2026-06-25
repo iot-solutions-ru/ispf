@@ -2,7 +2,7 @@
 
 Нагрузочные сценарии для измерения пропускной способности **HTTP events API** и **внутреннего конвейера автоматизации** (driver → alert rule → event journal).
 
-Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.8**, июнь 2026.
+Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.9**, июнь 2026.
 
 См. также [OBSERVABILITY.md](OBSERVABILITY.md) — Prometheus scrape и OTLP export.
 
@@ -112,14 +112,14 @@ self.sineWave["value"] > -1000.0
 | `--poll-ms` | `3000,1000,500` | Интервалы опроса virtual driver |
 | `--max-devices` | 0 (all) | Лимит loadtest-устройств |
 
-### Baseline (0.9.5, 60 devices, poll=1000ms)
+### Baseline (0.9.9, 60 devices, poll=1000ms, warmup=15s)
 
 | conditionExpr | Events/s | Alert fires/s |
 |---------------|----------|---------------|
 | `true` | ~20.7 | ~20.7 |
-| `self.sineWave["value"] > -1000.0` | ~17.4 | ~17.6 |
+| `self.sineWave["value"] > -1000.0` | ~21.9 | ~22.1 |
 
-Разница ~15% — coalescer пропускает неизменившиеся значения sine и задержка async journal (~10–15 s до стабильного delta).
+*(0.9.5 reference: `true` ~20.7, realistic CEL ~17.4 events/s — см. историю в git.)*
 
 ### Важно для интерпретации
 
