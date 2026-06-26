@@ -3,6 +3,7 @@ package com.ispf.server.api;
 import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
+import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,9 +19,14 @@ import java.util.Map;
 public class DriverRuntimeController {
 
     private final DriverRuntimeService driverRuntimeService;
+    private final SystemObjectStructureService structureService;
 
-    public DriverRuntimeController(DriverRuntimeService driverRuntimeService) {
+    public DriverRuntimeController(
+            DriverRuntimeService driverRuntimeService,
+            SystemObjectStructureService structureService
+    ) {
         this.driverRuntimeService = driverRuntimeService;
+        this.structureService = structureService;
     }
 
     @GetMapping("/status")
@@ -49,6 +55,7 @@ public class DriverRuntimeController {
             @RequestParam String devicePath,
             @RequestBody ConfigureDriverRequest request
     ) {
+        structureService.ensureDeviceDriverStructure(devicePath);
         Map<String, String> configuration = mergeConfiguration(request);
         TelemetryPublishMode publishMode = TelemetryPublishMode.parse(configuration.get("telemetryPublishMode"));
         int coalesceMs = parsePositiveInt(configuration.get("telemetryCoalesceMs"));

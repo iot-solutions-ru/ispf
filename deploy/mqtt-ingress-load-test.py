@@ -23,9 +23,12 @@ from mqtt_loadtest_lib import (
     device_path,
     driver_status,
     event_history_count,
+    gateway_path,
     list_mqtt_loadtest_devices,
     read_temperature_raw,
     seed_mqtt_devices,
+    seed_mqtt_gateway_devices,
+    sensor_path,
     variable_history_metrics,
     variable_history_sample_count,
 )
@@ -92,15 +95,22 @@ def run_publisher_ssh(
     )
 
 
-def wait_for_ingress(client: Client, path: str, timeout_sec: float = 60.0) -> bool:
+def wait_for_ingress(
+    client: Client,
+    ingress_path: str,
+    timeout_sec: float = 60.0,
+    driver_path: str | None = None,
+) -> bool:
+    """Wait until MQTT telemetry reaches ingress_path (driver_path defaults to ingress_path)."""
+    driver_path = driver_path or ingress_path
     deadline = time.perf_counter() + timeout_sec
-    baseline_raw: str | None = read_temperature_raw(client, path)
+    baseline_raw: str | None = read_temperature_raw(client, ingress_path)
     while time.perf_counter() < deadline:
-        status = driver_status(client, path)
+        status = driver_status(client, driver_path)
         if not status or status.get("status") != "RUNNING" or not status.get("connected"):
             time.sleep(1.0)
             continue
-        raw = read_temperature_raw(client, path)
+        raw = read_temperature_raw(client, ingress_path)
         if raw is not None and raw.strip() and raw != baseline_raw:
             return True
         time.sleep(1.0)
@@ -184,6 +194,11 @@ def main() -> int:
         action="store_true",
         help="Legacy: FULL telemetry + alert rules → event journal (not historian benchmark)",
     )
+    parser.add_argument(
+        "--gateway",
+        action="store_true",
+        help="Orchestrator mode: 1× mqtt-gateway + N child sensors (dispatchTelemetry)",
+    )
     parser.add_argument("--publish-via-ssh", default="", help="push mode: run publisher on VPS")
     parser.add_argument("--remote-deploy-dir", default="/opt/ispf/loadtest")
     parser.add_argument("--timeout", type=float, default=60.0)
@@ -220,17 +235,30 @@ def main() -> int:
     if not args.skip_seed:
         coalesce = args.telemetry_coalesce_ms if args.telemetry_coalesce_ms > 0 else None
         mode_label = "historian TELEMETRY_ONLY" if historian_only else "automation FULL"
-        print(f"Seeding {args.devices} MQTT devices ({mode_label}, broker={broker_url})...")
-        seed_mqtt_devices(
-            client,
-            args.devices,
-            broker_url,
-            condition_expr,
-            telemetry_mix_ratio=args.telemetry_mix_ratio,
-            topics=subscribe_topics,
-            telemetry_coalesce_ms=coalesce,
-            historian_only=historian_only,
-        )
+        if args.gateway:
+            print(
+                f"Seeding mqtt-gateway orchestrator + {args.devices} child sensors "
+                f"({mode_label}, broker={broker_url})..."
+            )
+            seed_mqtt_gateway_devices(
+                client,
+                args.devices,
+                broker_url,
+                topics=subscribe_topics,
+                telemetry_coalesce_ms=coalesce,
+            )
+        else:
+            print(f"Seeding {args.devices} MQTT devices ({mode_label}, broker={broker_url})...")
+            seed_mqtt_devices(
+                client,
+                args.devices,
+                broker_url,
+                condition_expr,
+                telemetry_mix_ratio=args.telemetry_mix_ratio,
+                topics=subscribe_topics,
+                telemetry_coalesce_ms=coalesce,
+                historian_only=historian_only,
+            )
     else:
         existing = list_mqtt_loadtest_devices(client)
         if len(existing) < args.devices:
@@ -251,9 +279,13 @@ def main() -> int:
         syncer.sync_once()
         syncer.start()
 
-    sample_path = device_path(1)
-    status = driver_status(client, sample_path)
-    print(f"Sample device {sample_path}: {status}")
+    ingress_path = sensor_path(1) if args.gateway else device_path(1)
+    driver_check_path = gateway_path() if args.gateway else ingress_path
+    status = driver_status(client, driver_check_path)
+    if args.gateway:
+        print(f"Gateway {gateway_path()}: {status}")
+    else:
+        print(f"Sample device {ingress_path}: {status}")
 
     pub_proc = None
     if args.mode == "push":
@@ -289,19 +321,25 @@ def main() -> int:
         print(f"  warming up {args.warmup_seconds}s ...")
         time.sleep(args.warmup_seconds)
 
-    if not wait_for_ingress(client, sample_path, timeout_sec=max(60, args.warmup_seconds + 30)):
+    if not wait_for_ingress(
+        client,
+        ingress_path,
+        timeout_sec=max(60, args.warmup_seconds + 30),
+        driver_path=driver_check_path,
+    ):
         print(
-            f"  WARN: no live MQTT ingress on {sample_path} "
+            f"  WARN: no live MQTT ingress on {ingress_path} "
             f"(driver must be RUNNING/connected; broker reachable from ISPF server?)",
             file=sys.stderr,
         )
     else:
-        print(f"  ingress OK: {sample_path} temperature.raw={read_temperature_raw(client, sample_path)!r}")
+        print(f"  ingress OK: {ingress_path} temperature={read_temperature_raw(client, ingress_path)!r}")
 
     phase = measure_phase(client, args.phase_seconds, historian_only)
     phase.update(
         {
             "mode": args.mode,
+            "gateway": args.gateway,
             "historianOnly": historian_only,
             "devices": args.devices,
             "brokerUrl": broker_url,
@@ -342,7 +380,7 @@ def main() -> int:
 
     report_path = Path(__file__).with_name(f"mqtt-ingress-load-test-report-{int(time.time())}.json")
     report_path.write_text(
-        json.dumps({"phase": phase, "sampleDevice": sample_path, "driverStatus": status}, indent=2),
+        json.dumps({"phase": phase, "sampleDevice": ingress_path, "driverStatus": status}, indent=2),
         encoding="utf-8",
     )
     print(f"Report: {report_path}")

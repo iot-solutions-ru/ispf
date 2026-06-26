@@ -1,5 +1,7 @@
 package com.ispf.core.binding;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 /**
@@ -9,10 +11,35 @@ public record BindingActivators(
         boolean onStartup,
         List<BindingVariableRef> onVariableChange,
         String onEvent,
-        long periodicMs
+        long periodicMs,
+        @JsonProperty("async") Boolean asyncFlag
 ) {
     public BindingActivators {
         onVariableChange = onVariableChange != null ? List.copyOf(onVariableChange) : List.of();
+    }
+
+    /** Whether this rule runs on a dedicated async executor (default false). */
+    public boolean async() {
+        return asyncFlag != null && asyncFlag;
+    }
+
+    public BindingActivators(
+            boolean onStartup,
+            List<BindingVariableRef> onVariableChange,
+            String onEvent,
+            long periodicMs
+    ) {
+        this(onStartup, onVariableChange, onEvent, periodicMs, false);
+    }
+
+    public BindingActivators(
+            boolean onStartup,
+            List<BindingVariableRef> onVariableChange,
+            String onEvent,
+            long periodicMs,
+            boolean async
+    ) {
+        this(onStartup, onVariableChange, onEvent, periodicMs, Boolean.valueOf(async));
     }
 
     public static BindingActivators onLocalChange() {

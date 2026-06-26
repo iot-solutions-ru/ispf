@@ -1,6 +1,6 @@
 # Public API для разработчика решений
 
-Стабильная граница между **platform** (ISPF core) и **solution** (ваш bundle). Подробный workflow — [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md). Архитектурные границы — [ADR-0008](decisions/0008-app-platform-boundary.md).
+Стабильная граница между **platform** (ISPF core) и **solution** (ваш bundle). Подробный workflow — [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md). Архитектурные границы — [0001](decisions/0001-app-platform-boundary.md).
 
 ---
 
@@ -29,7 +29,7 @@
 
 | Действие | Почему |
 |----------|--------|
-| Java в `packages/ispf-server/` | [ADR-0008](decisions/0008-app-platform-boundary.md) |
+| Java в `packages/ispf-server/` | [0001](decisions/0001-app-platform-boundary.md) |
 | Flyway миграции app tables в platform | App schema только через migrate API |
 | Отраслевые BFF routes | Только `/api/v1/bff/invoke` |
 | Fork platform server для одного заказчика | Bundle deploy + config |
@@ -62,7 +62,7 @@
 
 ## Commercial bundle
 
-Секция `license` в manifest — см. [ADR-0010](decisions/0010-commercial-bundle-licensing.md). Apache reference bundles (`warehouse`, `lab-training`, `mes-reference`) — без `license`.
+Секция `license` в manifest — см. [0003](decisions/0003-commercial-bundle-licensing.md). Apache reference bundles (`warehouse`, `lab-training`, `mes-reference`) — без `license`.
 
 ## Связанные документы
 

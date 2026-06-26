@@ -96,7 +96,9 @@
 
 ## M
 
-**Model (ModelDefinition)** — шаблон объекта: variables, events, functions, bindings. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. При создании объекта модель применяется автоматически.
+**Model (ModelDefinition)** — шаблон объекта: variables, events, functions, bindings. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE mixins auto-apply при create только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явный apply — через `templateId` или API.
+
+**Fixture model** — demo/lab модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не часть core built-in registry. См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 **Model engine** — плагин `ispf-plugin-model`, применяющий модели к объектам.
 

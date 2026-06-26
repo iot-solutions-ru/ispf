@@ -1,0 +1,143 @@
+{
+  "name": "mqtt-sensor-v1",
+  "description": "MQTT temperature sensor with threshold monitoring (lab fixture)",
+  "type": "RELATIVE",
+  "targetObjectType": "DEVICE",
+  "variables": [
+    {
+      "name": "temperature",
+      "description": "Current temperature reading",
+      "group": "telemetry",
+      "schema": {
+        "name": "temperature",
+        "fields": [
+          { "name": "value", "type": "DOUBLE" },
+          { "name": "unit", "type": "STRING" }
+        ]
+      },
+      "readable": true,
+      "writable": true,
+      "historyEnabled": true,
+      "defaultValue": {
+        "schema": {
+          "name": "temperature",
+          "fields": [
+            { "name": "value", "type": "DOUBLE" },
+            { "name": "unit", "type": "STRING" }
+          ]
+        },
+        "rows": [{ "value": 22.5, "unit": "C" }]
+      }
+    },
+    {
+      "name": "threshold",
+      "description": "Alarm threshold in Celsius",
+      "group": "config",
+      "schema": {
+        "name": "threshold",
+        "fields": [{ "name": "value", "type": "DOUBLE" }]
+      },
+      "readable": true,
+      "writable": true,
+      "defaultValue": {
+        "schema": {
+          "name": "threshold",
+          "fields": [{ "name": "value", "type": "DOUBLE" }]
+        },
+        "rows": [{ "value": 35.0 }]
+      }
+    },
+    {
+      "name": "temperaturePercent",
+      "description": "Temperature normalized to 0-100%",
+      "group": "telemetry",
+      "schema": {
+        "name": "threshold",
+        "fields": [{ "name": "value", "type": "DOUBLE" }]
+      },
+      "readable": true,
+      "writable": false,
+      "defaultValue": {
+        "schema": {
+          "name": "threshold",
+          "fields": [{ "name": "value", "type": "DOUBLE" }]
+        },
+        "rows": [{ "value": 0.0 }]
+      }
+    },
+    {
+      "name": "alarmActive",
+      "description": "Whether temperature exceeds threshold",
+      "group": "status",
+      "schema": {
+        "name": "alarmActive",
+        "fields": [{ "name": "value", "type": "BOOLEAN" }]
+      },
+      "readable": true,
+      "writable": false,
+      "defaultValue": {
+        "schema": {
+          "name": "alarmActive",
+          "fields": [{ "name": "value", "type": "BOOLEAN" }]
+        },
+        "rows": [{ "value": false }]
+      }
+    },
+    {
+      "name": "alarmAcknowledged",
+      "description": "Operator acknowledged the active alarm",
+      "group": "status",
+      "schema": {
+        "name": "booleanValue",
+        "fields": [{ "name": "value", "type": "BOOLEAN" }]
+      },
+      "readable": true,
+      "writable": true,
+      "defaultValue": {
+        "schema": {
+          "name": "booleanValue",
+          "fields": [{ "name": "value", "type": "BOOLEAN" }]
+        },
+        "rows": [{ "value": false }]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "thresholdExceeded",
+      "description": "Temperature exceeded configured threshold",
+      "level": "WARNING",
+      "schema": {
+        "name": "temperature",
+        "fields": [
+          { "name": "value", "type": "DOUBLE" },
+          { "name": "unit", "type": "STRING" }
+        ]
+      }
+    }
+  ],
+  "functions": [
+    {
+      "name": "acknowledgeAlarm",
+      "description": "Acknowledge active temperature alarm",
+      "inputSchema": { "name": "voidInput", "fields": [] },
+      "outputSchema": {
+        "name": "functionResult",
+        "fields": [
+          { "name": "success", "type": "BOOLEAN" },
+          { "name": "message", "type": "STRING" }
+        ]
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "id": "alarm-active",
+      "expression": "hysteresis(temperature, 35, 33)",
+      "targetVariable": "alarmActive"
+    }
+  ],
+  "parameters": {
+    "unit": "C"
+  }
+}

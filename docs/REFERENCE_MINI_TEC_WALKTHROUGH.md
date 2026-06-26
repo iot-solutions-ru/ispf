@@ -52,7 +52,7 @@
 |----------|---------------|
 | **Models** | 6 INSTANCE-моделей + binding rules на hub |
 | **Virtual driver** | Профили `tec-*`, poll в `VirtualTecPoll.java` |
-| **Binding rules** | Cross-object агрегаты на `station-hub` (ADR-0017) |
+| **Binding rules** | Cross-object агрегаты на `station-hub` (0010) |
 | **Workflow** | 4 BPMN: gas trip, load unload, GPU start, ack protection |
 | **Automation** | Alert rules + correlators на защитах |
 | **PF-02** | App SQL: `tec_daily_journal`, `tec_consumer_load` |

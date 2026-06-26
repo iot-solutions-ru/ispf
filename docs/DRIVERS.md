@@ -31,7 +31,11 @@ public interface DeviceDriver {
 
 ## Переменные устройства (driver group)
 
-На объекте `DEVICE` с моделью задаются:
+На объекте `DEVICE` переменные группы `driver` появляются при **provisioning драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через auto-apply RELATIVE-моделей.
+
+`DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedModelIds`.
+
+Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 | Переменная | Описание |
 |------------|----------|
@@ -217,7 +221,7 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 
 ### Stub promotion (demand-driven)
 
-58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [ADR-0009](decisions/0009-dogfooding-gate.md):
+58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [0002](decisions/0002-dogfooding-gate.md):
 
 1. App-команда описывает сценарий (устройство, point mapping, acceptance test).
 2. Platform PR добавляет протокольную логику в существующий `ispf-driver-*` модуль.

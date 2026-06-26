@@ -3,6 +3,8 @@ package com.ispf.server.bootstrap;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.security.PlatformUserService;
 import org.springframework.stereotype.Component;
@@ -15,7 +17,20 @@ import java.util.UUID;
 @Component
 public class PlatformBootstrap {
 
+    private final BootstrapProperties bootstrapProperties;
+
+    public PlatformBootstrap(BootstrapProperties bootstrapProperties) {
+        this.bootstrapProperties = bootstrapProperties;
+    }
+
     public void initialize(ObjectTree tree) {
+        initializeCatalog(tree);
+        if (bootstrapProperties.isFixturesEnabled()) {
+            initializeFixtures(tree);
+        }
+    }
+
+    private void initializeCatalog(ObjectTree tree) {
         register(tree, PlatformCatalogSortOrder.PLATFORM_ROOT, ObjectType.PLATFORM, null);
         register(tree, "root.tenant", ObjectType.TENANT, null);
 
@@ -32,6 +47,12 @@ public class PlatformBootstrap {
         register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
         register(tree, "root.platform.workflows", ObjectType.WORKFLOWS, null);
 
+        register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
+        registerCatalogFolder(tree, "root.platform.instances");
+        register(tree, FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
+    }
+
+    private void initializeFixtures(ObjectTree tree) {
         PlatformObject demoDevice = new PlatformObject(
                 UUID.randomUUID().toString(),
                 "root.platform.devices.demo-sensor-01",
@@ -39,8 +60,8 @@ public class PlatformBootstrap {
                 "Demo Sensor 01",
                 """
                         Sample MQTT temperature device for learning the platform. \
-                        Structure comes from mqtt-sensor-v1 model; pairs with dashboards.demo-sensor and alert rules in the automation catalog.""",
-                "mqtt-sensor-v1"
+                        Fixture model mqtt-sensor-v1 is applied when platform fixtures are enabled.""",
+                FixtureModelBootstrap.MQTT_SENSOR_MODEL
         );
         tree.register(demoDevice);
 
@@ -63,10 +84,6 @@ public class PlatformBootstrap {
                 "dashboard-v1"
         );
         tree.register(snmpDashboard);
-
-        register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
-        registerCatalogFolder(tree, "root.platform.instances");
-        register(tree, FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
 
         PlatformObject demoWorkflow = new PlatformObject(
                 UUID.randomUUID().toString(),

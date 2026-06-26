@@ -41,7 +41,7 @@
   "dialog.dataSourceHint": "Datenquelle in {{path}}. Nach Erstellung Schema angeben und Editor öffnen.",
   "dialog.defaultDriverConfig": "Standardkonfiguration (driverConfigJson)",
   "dialog.deployAppHint": "Deploy-Anwendung: in Applications registrieren, dann POST /api/v1/applications/{id}/deploy mit Bundle.",
-  "dialog.deviceDriverHint": "Bei Erstellung wird Modell device-driver-v1 angewendet und Treibereinstellungen gespeichert. Starten Sie den Treiber nach Erstellung auf der Registerkarte Treiber.",
+  "dialog.deviceDriverHint": "Bei Erstellung werden Treibereinstellungen gespeichert. Starten Sie den Treiber nach Erstellung auf der Registerkarte Treiber.",
   "dialog.driver": "Treiber *",
   "dialog.instanceTypes": "Objekttypen (INSTANCE)",
   "dialog.migrationHint": "SQL-Migration in {{path}}. Anwendung über Schaltfläche im Editor nach Erstellung.",

@@ -28,15 +28,18 @@ public class FunctionScriptEngine {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final WorkflowInstanceCancelService workflowCancelService;
+    private final PlatformScriptBridge platformScriptBridge;
 
     public FunctionScriptEngine(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
-            WorkflowInstanceCancelService workflowCancelService
+            WorkflowInstanceCancelService workflowCancelService,
+            PlatformScriptBridge platformScriptBridge
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.workflowCancelService = workflowCancelService;
+        this.platformScriptBridge = platformScriptBridge;
     }
 
     public DataRecord execute(
@@ -202,6 +205,43 @@ public class FunctionScriptEngine {
                 if (!Objects.equals(String.valueOf(actual), expected)) {
                     yield wireError(outputSchema, step);
                 }
+                yield null;
+            }
+            case "jsonParse" -> {
+                String source = String.valueOf(resolveStepValue(step.get("source"), vars));
+                List<String> fields = PlatformScriptBridge.readStringFields(step.get("fields"));
+                if (fields.isEmpty()) {
+                    throw new IllegalArgumentException("jsonParse requires non-empty fields array");
+                }
+                vars.put(step.path("var").asText(), platformScriptBridge.jsonParse(source, fields));
+                yield null;
+            }
+            case "readVariable" -> {
+                String objectPath = resolveObjectPath(step.path("objectPath").asText(), context);
+                String value = platformScriptBridge.readVariableField(
+                        objectPath,
+                        step.path("variable").asText(),
+                        step.path("field").asText("value")
+                );
+                vars.put(step.path("var").asText(), value);
+                yield null;
+            }
+            case "instantiateModelIfMissing" -> {
+                String instancePath = platformScriptBridge.instantiateModelIfMissing(
+                        String.valueOf(resolveStepValue(step.get("modelName"), vars)),
+                        String.valueOf(resolveStepValue(step.get("parentPath"), vars)),
+                        String.valueOf(resolveStepValue(step.get("instanceName"), vars))
+                );
+                vars.put(step.path("var").asText(), instancePath);
+                yield null;
+            }
+            case "setDriverTelemetry" -> {
+                String objectPath = String.valueOf(resolveStepValue(step.get("objectPath"), vars));
+                platformScriptBridge.setDriverTelemetry(
+                        objectPath,
+                        step.path("variable").asText("temperature"),
+                        resolveFields(step.get("fields"), vars)
+                );
                 yield null;
             }
             case "return" -> toOutputRecord(outputSchema, resolveFields(step.get("fields"), vars));
@@ -441,6 +481,17 @@ public class FunctionScriptEngine {
         Map<String, Object> normalized = new LinkedHashMap<>();
         row.forEach((key, value) -> normalized.put(key.toLowerCase(), value));
         return normalized;
+    }
+
+    private static String resolveObjectPath(String objectPath, ScriptExecutionContext context) {
+        if ("self".equalsIgnoreCase(objectPath)) {
+            String caller = context.callerObjectPath();
+            if (caller == null || caller.isBlank()) {
+                throw new IllegalArgumentException("readVariable self requires caller object path");
+            }
+            return caller;
+        }
+        return objectPath;
     }
 
     private static final Pattern ADD_EXPRESSION = Pattern.compile("^(.+?)\\s*\\+\\s*(.+)$");

@@ -65,8 +65,6 @@ export default function ObjectTableWidgetView({
     }
   }, [rows, editable, selectedPath, setSelection, widget.selectionKey]);
 
-  const rowPaths = useMemo(() => rows.map((row) => row.path), [rows]);
-  const variablesBatch = useVariablesBatchQuery(rowPaths, refreshIntervalMs, Boolean(widget.parentPath));
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const shouldVirtualize = rows.length >= VIRTUALIZE_ROW_THRESHOLD;
   const columnCount = parsedColumns.length + 1;
@@ -80,6 +78,23 @@ export default function ObjectTableWidgetView({
   });
 
   const virtualRows = shouldVirtualize ? rowVirtualizer.getVirtualItems() : [];
+  const rowPaths = useMemo(() => {
+    if (!shouldVirtualize) {
+      return rows.map((row) => row.path);
+    }
+    const visibleIndices = new Set(virtualRows.map((virtualRow) => virtualRow.index));
+    if (selectedPath) {
+      const selectedIndex = rows.findIndex((row) => row.path === selectedPath);
+      if (selectedIndex >= 0) {
+        visibleIndices.add(selectedIndex);
+      }
+    }
+    return [...visibleIndices]
+      .sort((a, b) => a - b)
+      .map((index) => rows[index]?.path)
+      .filter((path): path is string => Boolean(path));
+  }, [rows, selectedPath, shouldVirtualize, virtualRows]);
+  const variablesBatch = useVariablesBatchQuery(rowPaths, refreshIntervalMs, Boolean(widget.parentPath));
   const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
   const paddingBottom =
     virtualRows.length > 0

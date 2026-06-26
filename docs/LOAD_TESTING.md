@@ -267,7 +267,7 @@ Configure example:
 
 ## Архитектура конвейера (кратко)
 
-См. [ADR-0021 automation pipeline evolution](decisions/0021-automation-pipeline-evolution.md):
+См. [0014 automation pipeline evolution](decisions/0014-automation-pipeline-evolution.md):
 
 - **Sync:** bindings, WebSocket
 - **Async bus (dual lane):** telemetry (historian) vs automation (alerts, workflows, correlators)
@@ -275,7 +275,7 @@ Configure example:
 - **Telemetry publish mode:** `FULL` | `TELEMETRY_ONLY` на driver binding — управляет `automationEligible` на coalesced driver telemetry
 - **Alert path:** `AlertRuleListener` → CEL → `EventService.fire` → `EventJournalAsyncWriter`
 - **Alert runtime state:** in-memory (`AlertRuleRuntimeStore`); periodic flush to object tree (default 30 s), not on every evaluation
-- **Event journal storage:** prod VPS — `ISPF_EVENT_JOURNAL_STORE=clickhouse` ([ADR-0023](decisions/0023-clickhouse-event-journal.md)); relational data остаётся в PostgreSQL. Fallback: `jdbc` + Timescale ([ADR-0022](decisions/0022-event-history-timescale.md)). Retention `ISPF_EVENT_JOURNAL_RETENTION_DAYS` (default 90). Скрипты: `deploy/vps-clickhouse-setup.sh`, `deploy/vps-clickhouse-verify.sh`, откат — `deploy/vps-event-journal-jdbc.sh`.
+- **Event journal storage:** prod VPS — `ISPF_EVENT_JOURNAL_STORE=clickhouse` ([0016](decisions/0016-clickhouse-event-journal.md)); relational data остаётся в PostgreSQL. Fallback: `jdbc` + Timescale ([0015](decisions/0015-event-history-timescale.md)). Retention `ISPF_EVENT_JOURNAL_RETENTION_DAYS` (default 90). Скрипты: `deploy/vps-clickhouse-setup.sh`, `deploy/vps-clickhouse-verify.sh`, откат — `deploy/vps-event-journal-jdbc.sh`.
 
 ## Связанные документы
 

@@ -253,7 +253,7 @@ public class ModelEngine {
     }
 
     /**
-     * Applies all RELATIVE models whose suitability expression matches the object.
+     * Applies RELATIVE models with a non-blank applicability (CEL) expression that evaluates to true.
      */
     public List<ModelApplyResult> applyRelativeModels(String targetPath) {
         PlatformObject target = objectTree.require(targetPath);
@@ -268,7 +268,7 @@ public class ModelEngine {
             if (target.appliedModelIds().contains(model.id())) {
                 continue;
             }
-            if (!isSuitable(model, target)) {
+            if (!isSuitableForAutoApply(model, target)) {
                 continue;
             }
             applied.add(applyModel(model.id(), targetPath));
@@ -485,18 +485,31 @@ public class ModelEngine {
     }
 
     private void assertSuitable(ModelDefinition model, PlatformObject target) {
-        if (!isSuitable(model, target)) {
+        if (!isObjectTypeCompatible(model, target)) {
             throw new ModelException("Model " + model.name() + " is not suitable for object " + target.path());
+        }
+        if (!model.suitabilityExpression().isBlank() && !evaluateSuitabilityExpression(model, target)) {
+            throw new ModelException(
+                    "Model " + model.name() + " applicability expression failed for object " + target.path()
+            );
         }
     }
 
-    private boolean isSuitable(ModelDefinition model, PlatformObject target) {
-        if (model.targetObjectType() != null && target.type() != model.targetObjectType()) {
+    private boolean isSuitableForAutoApply(ModelDefinition model, PlatformObject target) {
+        if (!isObjectTypeCompatible(model, target)) {
             return false;
         }
-        if (model.suitabilityExpression() == null || model.suitabilityExpression().isBlank()) {
-            return true;
+        if (model.suitabilityExpression().isBlank()) {
+            return false;
         }
+        return evaluateSuitabilityExpression(model, target);
+    }
+
+    private boolean isObjectTypeCompatible(ModelDefinition model, PlatformObject target) {
+        return model.targetObjectType() == null || target.type() == model.targetObjectType();
+    }
+
+    private boolean evaluateSuitabilityExpression(ModelDefinition model, PlatformObject target) {
         try {
             Object result = expressionEngine.evaluate(model.suitabilityExpression(), target);
             if (result instanceof Boolean bool) {

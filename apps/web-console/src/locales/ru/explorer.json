@@ -41,7 +41,7 @@
   "dialog.dataSourceHint": "Источник данных в {{path}}. После создания укажите schema и откройте редактор.",
   "dialog.defaultDriverConfig": "Конфигурация по умолчанию (driverConfigJson)",
   "dialog.deployAppHint": "Deploy-приложение: регистрация в Applications, затем POST /api/v1/applications/{id}/deploy с bundle.",
-  "dialog.deviceDriverHint": "При создании применяется модель device-driver-v1 и сохраняются настройки драйвера. Запустите драйвер на вкладке «Драйвер» после создания.",
+  "dialog.deviceDriverHint": "При создании сохраняются настройки драйвера. Запустите драйвер на вкладке «Драйвер» после создания.",
   "dialog.driver": "Драйвер *",
   "dialog.instanceTypes": "Типы объектов (INSTANCE)",
   "dialog.migrationHint": "SQL-миграция в {{path}}. Применение — кнопкой в редакторе после создания.",

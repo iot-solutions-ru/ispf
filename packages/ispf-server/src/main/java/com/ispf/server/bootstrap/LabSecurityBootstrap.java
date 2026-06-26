@@ -1,5 +1,6 @@
 package com.ispf.server.bootstrap;
 
+import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
@@ -26,25 +27,37 @@ public class LabSecurityBootstrap {
     private final PlatformUserService userService;
     private final ObjectAccessService objectAccessService;
     private final ObjectAclStore aclStore;
+    private final BootstrapProperties bootstrapProperties;
 
     public LabSecurityBootstrap(
             PlatformUserService userService,
             ObjectAccessService objectAccessService,
-            ObjectAclStore aclStore
+            ObjectAclStore aclStore,
+            BootstrapProperties bootstrapProperties
     ) {
         this.userService = userService;
         this.objectAccessService = objectAccessService;
         this.aclStore = aclStore;
+        this.bootstrapProperties = bootstrapProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     @Transactional
     public void onReady() {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            removeLabFixtureUsersIfPresent();
+            return;
+        }
         userService.ensureUser(LAB_USER_A, "Lab User A", "lab-user-a", List.of(IspfRoles.OPERATOR));
         userService.ensureUser(LAB_USER_B, "Lab User B", "lab-user-b", List.of(IspfRoles.OPERATOR));
         ensureLabDeviceAcl(LabTrainingBundleLayouts.LAB_DEVICE_A, LAB_USER_A, LAB_USER_B);
         ensureLabDeviceAcl(LAB_DEVICE_B, LAB_USER_B, LAB_USER_A);
+    }
+
+    private void removeLabFixtureUsersIfPresent() {
+        userService.deleteUserIfPresent(LAB_USER_A);
+        userService.deleteUserIfPresent(LAB_USER_B);
     }
 
     private void ensureLabDeviceAcl(String devicePath, String ownerUsername, String sharedUsername) {

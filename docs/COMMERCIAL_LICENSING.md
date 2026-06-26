@@ -1,6 +1,6 @@
 # Commercial bundle licensing
 
-RSA-лицензирование commercial bundle при deploy. Архитектурное решение: [ADR-0010](decisions/0010-commercial-bundle-licensing.md).
+RSA-лицензирование commercial bundle при deploy. Архитектурное решение: [0003](decisions/0003-commercial-bundle-licensing.md).
 
 ## Принцип
 

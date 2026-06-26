@@ -41,6 +41,8 @@ public final class AgentPromptBuilder {
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
             - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1; profile lab|unified in driverConfigJson
             - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
+            - MQTT many sensors on one broker: model mqtt-gateway-v1, ingressVariable lastIngress, ingressTopicLanes true, dispatchTelemetry to child sensors
+            - High-rate telemetry: driver telemetryCoalesceMs + TELEMETRY_ONLY; historian store=jdbc (platform default); see search_context topic=telemetry
             - Automation: get_automation_schema → configure_alert, configure_correlator, configure_variable_history
             - Cross-device logic: CUSTOM hub + create_variable refAt(...) + CEL clusterError + configure_alert on hub
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup

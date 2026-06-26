@@ -17,6 +17,22 @@ public class VariableHistoryProperties {
     /** Delete samples older than this many days when variable has no explicit retention. */
     private int retentionDays = 90;
 
+    /**
+     * When true, samples are batched and persisted on background writer threads
+     * ({@link com.ispf.server.history.VariableHistoryAsyncWriter}).
+     */
+    private boolean asyncEnabled = true;
+    private int queueCapacity = 10_000;
+    private int batchSize = 500;
+    private long flushIntervalMs = 50;
+    private int writerThreads = 4;
+
+    /**
+     * Write backend: {@code jdbc} (batched JDBC insert, default) or {@code jpa} (legacy {@code saveAll}).
+     * Future: {@code clickhouse}.
+     */
+    private String store = "jdbc";
+
     /** Variable names never historized (exact match), even if historyEnabled is true. */
     private List<String> excludedVariables = new ArrayList<>(List.of(
             "layout",
@@ -52,6 +68,54 @@ public class VariableHistoryProperties {
 
     public void setRetentionDays(int retentionDays) {
         this.retentionDays = retentionDays;
+    }
+
+    public boolean isAsyncEnabled() {
+        return asyncEnabled;
+    }
+
+    public void setAsyncEnabled(boolean asyncEnabled) {
+        this.asyncEnabled = asyncEnabled;
+    }
+
+    public int getQueueCapacity() {
+        return queueCapacity;
+    }
+
+    public void setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public long getFlushIntervalMs() {
+        return flushIntervalMs;
+    }
+
+    public void setFlushIntervalMs(long flushIntervalMs) {
+        this.flushIntervalMs = flushIntervalMs;
+    }
+
+    public int getWriterThreads() {
+        return writerThreads;
+    }
+
+    public void setWriterThreads(int writerThreads) {
+        this.writerThreads = writerThreads;
+    }
+
+    public String getStore() {
+        return store;
+    }
+
+    public void setStore(String store) {
+        this.store = store;
     }
 
     public List<String> getExcludedVariables() {

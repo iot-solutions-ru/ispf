@@ -101,6 +101,10 @@ export function useObjectWebSocket() {
               queryClient.invalidateQueries({ queryKey: ["events", message.path] });
               queryClient.invalidateQueries({ queryKey: ["events", "all"] });
               queryClient.invalidateQueries({ queryKey: ["events", "operator-sidebar"] });
+              if (message.variableName === "driverStatus") {
+                queryClient.invalidateQueries({ queryKey: ["objects"] });
+                queryClient.invalidateQueries({ queryKey: ["driver-status", message.path] });
+              }
               break;
             case "EVENT_FIRED":
               queryClient.invalidateQueries({ queryKey: ["events", message.path] });

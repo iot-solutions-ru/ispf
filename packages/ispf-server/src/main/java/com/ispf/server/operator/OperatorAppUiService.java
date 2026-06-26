@@ -4,6 +4,7 @@ import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.config.BootstrapProperties;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -27,23 +28,30 @@ public class OperatorAppUiService {
     private final ApplicationBundleDeployService bundleDeployService;
     private final OperatorAppObjectTreeService objectTreeService;
     private final ObjectMapper objectMapper;
+    private final BootstrapProperties bootstrapProperties;
 
     public OperatorAppUiService(
             OperatorAppUiStore store,
             ApplicationDataStore applicationDataStore,
             ApplicationBundleDeployService bundleDeployService,
             OperatorAppObjectTreeService objectTreeService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            BootstrapProperties bootstrapProperties
     ) {
         this.store = store;
         this.applicationDataStore = applicationDataStore;
         this.bundleDeployService = bundleDeployService;
         this.objectTreeService = objectTreeService;
         this.objectMapper = objectMapper;
+        this.bootstrapProperties = bootstrapProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void ensureDefaults() throws Exception {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            removeFixtureDefaultsIfPresent();
+            return;
+        }
         if (store.findByAppId(PLATFORM_APP_ID).isPresent()) {
             return;
         }
@@ -65,6 +73,14 @@ public class OperatorAppUiService {
                 null,
                 Instant.now()
         ));
+        objectTreeService.syncAll();
+    }
+
+    private void removeFixtureDefaultsIfPresent() throws Exception {
+        if (store.findByAppId(PLATFORM_APP_ID).isEmpty()) {
+            return;
+        }
+        store.deleteByAppId(PLATFORM_APP_ID);
         objectTreeService.syncAll();
     }
 

@@ -142,7 +142,7 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 - **Persistence:** `localStorage` (`ispf.ui.locale`), URL `?lang=`, fallback `en`
 - **Adding strings:** key in `en/{namespace}.json` → `useTranslation` + `t('key')` → `npm run i18n:translate` → `npm run i18n:check`
 
-См. [ADR-0020](decisions/0020-web-console-i18n.md).
+См. [0013](decisions/0013-web-console-i18n.md).
 
 ## Федерация
 

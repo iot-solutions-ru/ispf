@@ -33,6 +33,7 @@ public class BindingRuleEngine {
     private final ExpressionEngine expressionEngine;
     private final BindingEvaluationContext evaluationContext;
     private final ApplicationEventPublisher eventPublisher;
+    private final BindingRuleAsyncExecutor asyncExecutor;
 
     public BindingRuleEngine(
             ObjectManager objectManager,
@@ -40,7 +41,8 @@ public class BindingRuleEngine {
             BindingExpressionEvaluator expressionEvaluator,
             ExpressionEngine expressionEngine,
             BindingEvaluationContext evaluationContext,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            BindingRuleAsyncExecutor asyncExecutor
     ) {
         this.objectManager = objectManager;
         this.bindingRulesService = bindingRulesService;
@@ -48,6 +50,7 @@ public class BindingRuleEngine {
         this.expressionEngine = expressionEngine;
         this.evaluationContext = evaluationContext;
         this.eventPublisher = eventPublisher;
+        this.asyncExecutor = asyncExecutor;
     }
 
     public void onStartup(String objectPath) {
@@ -106,11 +109,34 @@ public class BindingRuleEngine {
             if (!matchesTrigger(objectPath, rule, trigger)) {
                 continue;
             }
+            if (rule.activators().async()) {
+                scheduleAsyncRule(objectPath, rule, trigger);
+                continue;
+            }
             if (evaluateRule(object, rule, changedVariables)) {
                 changed = true;
             }
         }
         return changed;
+    }
+
+    private void scheduleAsyncRule(String objectPath, BindingRule rule, Trigger trigger) {
+        asyncExecutor.schedule(objectPath, rule, () -> runSingleAsyncRule(objectPath, rule, trigger));
+    }
+
+    private void runSingleAsyncRule(String objectPath, BindingRule rule, Trigger trigger) {
+        if (!matchesTrigger(objectPath, rule, trigger)) {
+            return;
+        }
+        PlatformObject object = objectManager.require(objectPath);
+        Set<String> changedVariables = new LinkedHashSet<>();
+        if (evaluateRule(object, rule, changedVariables)) {
+            for (String variableName : changedVariables) {
+                if (!BindingRulesConstants.isReservedVariable(variableName)) {
+                    eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(objectPath, variableName));
+                }
+            }
+        }
     }
 
     private boolean matchesTrigger(String objectPath, BindingRule rule, Trigger trigger) {

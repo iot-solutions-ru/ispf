@@ -239,6 +239,14 @@ public class PlatformUserService {
     }
 
     @Transactional
+    public void deleteUserIfPresent(String username) {
+        String normalized = normalizeUsername(username);
+        if (userStore.findByUsername(normalized).isPresent()) {
+            deleteUser(normalized);
+        }
+    }
+
+    @Transactional
     public void deleteUser(String username) {
         PlatformUserStore.PlatformUser user = userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));

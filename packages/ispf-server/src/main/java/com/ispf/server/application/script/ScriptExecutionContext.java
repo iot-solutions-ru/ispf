@@ -8,5 +8,9 @@ public interface ScriptExecutionContext {
 
     int MAX_CALL_DEPTH = 8;
 
+    default String callerObjectPath() {
+        return "";
+    }
+
     DataRecord invokeFunction(String objectPath, String functionName, Map<String, Object> input);
 }

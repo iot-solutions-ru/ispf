@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.time.Duration;
 
 /**
- * Optional JetStream stream for durable automation event fan-out between replicas (ADR-0021).
+ * Optional JetStream stream for durable automation event fan-out between replicas (0014).
  */
 @Component
 public class NatsJetStreamSupport {

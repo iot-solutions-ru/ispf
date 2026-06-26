@@ -1,6 +1,7 @@
 package com.ispf.server.bootstrap;
 
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.report.ReportService;
@@ -23,23 +24,29 @@ public class LabPlatformBootstrap {
     private final ObjectTemplateService objectTemplateService;
     private final ObjectManager objectManager;
     private final ReportService reportService;
+    private final BootstrapProperties bootstrapProperties;
 
     public LabPlatformBootstrap(
             LabModelBootstrap labModelBootstrap,
             ObjectTemplateService objectTemplateService,
             ObjectManager objectManager,
-            ReportService reportService
+            ReportService reportService,
+            BootstrapProperties bootstrapProperties
     ) {
         this.labModelBootstrap = labModelBootstrap;
         this.objectTemplateService = objectTemplateService;
         this.objectManager = objectManager;
         this.reportService = reportService;
+        this.bootstrapProperties = bootstrapProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 21)
     @Transactional
     public void onReady() {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            return;
+        }
         labModelBootstrap.ensureLabModels();
         ensureLabDevice(
                 "lab-userA-01",

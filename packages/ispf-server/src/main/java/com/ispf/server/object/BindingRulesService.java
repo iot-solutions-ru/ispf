@@ -176,14 +176,16 @@ public class BindingRulesService {
             boolean onStartup,
             List<BindingVariableRefDto> onVariableChange,
             String onEvent,
-            long periodicMs
+            long periodicMs,
+            Boolean async
     ) {
         static BindingActivatorsDto from(BindingActivators activators) {
             return new BindingActivatorsDto(
                     activators.onStartup(),
                     activators.onVariableChange().stream().map(BindingVariableRefDto::from).toList(),
                     activators.onEvent(),
-                    activators.periodicMs()
+                    activators.periodicMs(),
+                    activators.async()
             );
         }
 
@@ -191,7 +193,13 @@ public class BindingRulesService {
             List<BindingVariableRef> refs = onVariableChange != null
                     ? onVariableChange.stream().map(BindingVariableRefDto::toRef).toList()
                     : List.of();
-            return new BindingActivators(onStartup, refs, onEvent, periodicMs);
+            return new BindingActivators(
+                    onStartup,
+                    refs,
+                    onEvent,
+                    periodicMs,
+                    async != null && async
+            );
         }
     }
 

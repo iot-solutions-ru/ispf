@@ -20,10 +20,14 @@ from mqtt_loadtest_lib import (
     Client,
     automation_queue_metrics,
     device_path,
+    gateway_path,
     list_mqtt_loadtest_devices,
     mqtt_topic,
+    reapply_gateway_coalesce,
     reapply_mqtt_coalesce,
     seed_mqtt_devices,
+    seed_mqtt_gateway_devices,
+    sensor_path,
 )
 
 SWEEP_SCRIPT = Path(__file__).with_name("mqtt-ingress-load-test.py")
@@ -61,6 +65,11 @@ def main() -> int:
         default=",".join(str(v) for v in DEFAULT_COALESCE_MS),
         help="Comma-separated per-device coalesce values (high to low)",
     )
+    parser.add_argument(
+        "--gateway",
+        action="store_true",
+        help="mqtt-gateway orchestrator (1× mqtt + N child sensors)",
+    )
     parser.add_argument("--skip-cleanup", action="store_true")
     args = parser.parse_args()
 
@@ -78,16 +87,27 @@ def main() -> int:
         print(f"  {format_cleanup_stats(stats)}")
 
     print(f"Seeding {args.devices} mqtt devices (broker={broker_url})...")
-    seed_mqtt_devices(
-        client,
-        args.devices,
-        broker_url,
-        condition_expr,
-        topics=topics[: args.devices],
-        telemetry_coalesce_ms=values[0],
-        historian_only=True,
-    )
-    device_paths = list_mqtt_loadtest_devices(client)[: args.devices]
+    if args.gateway:
+        gw_path, sensor_paths = seed_mqtt_gateway_devices(
+            client,
+            args.devices,
+            broker_url,
+            topics=topics[: args.devices],
+            telemetry_coalesce_ms=values[0],
+        )
+        device_paths = sensor_paths
+    else:
+        seed_mqtt_devices(
+            client,
+            args.devices,
+            broker_url,
+            condition_expr,
+            topics=topics[: args.devices],
+            telemetry_coalesce_ms=values[0],
+            historian_only=True,
+        )
+        device_paths = list_mqtt_loadtest_devices(client)[: args.devices]
+        gw_path = None
 
     results: list[dict] = []
     report_path = Path(__file__).with_name(f"mqtt-coalesce-sweep-report-{int(time.time())}.json")
@@ -98,6 +118,7 @@ def main() -> int:
                 {
                     "baseUrl": args.base_url,
                     "mode": "push",
+                    "gateway": args.gateway,
                     "brokerUrl": broker_url,
                     "devices": args.devices,
                     "messagesPerSecond": args.messages_per_second,
@@ -116,16 +137,28 @@ def main() -> int:
 
     for coalesce_ms in values:
         print(f"\n>>> telemetryCoalesceMs={coalesce_ms} (TELEMETRY_ONLY) ...", flush=True)
-        started = reapply_mqtt_coalesce(
-            client,
-            device_paths,
-            broker_url,
-            coalesce_ms,
-            topics=topics[: args.devices],
-            historian_only=True,
-        )
-        if started < len(device_paths):
-            print(f"  WARN: only {started}/{len(device_paths)} drivers started", flush=True)
+        if args.gateway:
+            started = reapply_gateway_coalesce(
+                client,
+                gw_path,
+                device_paths,
+                broker_url,
+                coalesce_ms,
+                topics=topics[: args.devices],
+            )
+            if started < 1:
+                print("  WARN: gateway driver did not start", flush=True)
+        else:
+            started = reapply_mqtt_coalesce(
+                client,
+                device_paths,
+                broker_url,
+                coalesce_ms,
+                topics=topics[: args.devices],
+                historian_only=True,
+            )
+            if started < len(device_paths):
+                print(f"  WARN: only {started}/{len(device_paths)} drivers started", flush=True)
         time.sleep(3)
 
         duration = args.warmup_seconds + args.phase_seconds + 5
@@ -140,8 +173,11 @@ def main() -> int:
         if args.warmup_seconds > 0:
             time.sleep(args.warmup_seconds)
 
-        sample = device_path(1)
-        if not ingress.wait_for_ingress(client, sample, timeout_sec=30):
+        sample = sensor_path(1) if args.gateway else device_path(1)
+        ingress_driver = gateway_path() if args.gateway else sample
+        if not ingress.wait_for_ingress(
+            client, sample, timeout_sec=30, driver_path=ingress_driver
+        ):
             print(f"  WARN: no ingress on {sample}", flush=True)
 
         phase = ingress.measure_phase(client, args.phase_seconds, historian_only=True)
@@ -156,6 +192,7 @@ def main() -> int:
         row = {
             "telemetryCoalesceMs": coalesce_ms,
             "historianOnly": True,
+            "gateway": args.gateway,
             "messagesPerSecondTarget": args.messages_per_second,
             "publisherSummary": pub_rate,
             **phase,

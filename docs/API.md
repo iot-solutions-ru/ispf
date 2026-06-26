@@ -48,9 +48,19 @@ Content-Type: application/json
   "type": "DEVICE",
   "displayName": "Pump 01",
   "description": "",
-  "templateId": "mqtt-sensor-v1"
+  "templateId": "mqtt-sensor-v1",
+  "driverId": "mqtt",
+  "autoApplyRelativeModels": true
 }
 ```
+
+| Поле | Описание |
+|------|----------|
+| `templateId` | Явное применение модели (INSTANCE name или RELATIVE mixin) |
+| `driverId` | Для `DEVICE`: provisioning драйвера после create |
+| `autoApplyRelativeModels` | Default `true`. RELATIVE mixins с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
+
+`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Функции
 

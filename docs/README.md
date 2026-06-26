@@ -25,7 +25,7 @@
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
 | [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), [gap registry](GAP_REGISTRY.md), sprint roadmap |
-| [ADR (архитектурные решения)](decisions/README.md) | ADR-0008…0011 |
+| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0018 |
 | [Roadmap](ROADMAP.md) | Единый roadmap platform + production ops; **Phase 5** — усиление механизмов |
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
@@ -59,12 +59,16 @@
 
 ## Демо-объекты (после первого запуска)
 
-| Путь | Тип | Модель |
-|------|-----|--------|
-| `root.platform.devices.demo-sensor-01` | DEVICE | `mqtt-sensor-v1` |
-| `root.platform.devices.snmp-localhost` | DEVICE | `snmp-agent-v1` |
+Требуют `ispf.bootstrap.fixtures-enabled=true` (default). Fixture-модели регистрируются `FixtureModelBootstrap`.
+
+| Путь | Тип | Модель (templateId) |
+|------|-----|---------------------|
+| `root.platform.devices.demo-sensor-01` | DEVICE | `mqtt-sensor-v1` (fixture) |
+| `root.platform.devices.snmp-localhost` | DEVICE | `snmp-agent-v1` (fixture) |
 | `root.platform.dashboards.demo-sensor` | DASHBOARD | `dashboard-v1` |
 | `root.platform.workflows.demo-alarm-handler` | WORKFLOW | `workflow-v1` |
+
+См. [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Структура репозитория
 

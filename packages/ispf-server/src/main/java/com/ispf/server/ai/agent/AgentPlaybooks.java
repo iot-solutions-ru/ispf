@@ -1,9 +1,9 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.bootstrap.MiniTecPaths;
 import com.ispf.server.dashboard.DashboardLayouts;
-import com.ispf.server.plugin.model.ModelBootstrap;
 
 /**
  * Curated multi-step recipes for the tree-first agent (referenced from system prompt).
@@ -13,9 +13,9 @@ import com.ispf.server.plugin.model.ModelBootstrap;
  */
 public final class AgentPlaybooks {
 
-    public static final String SNMP_DEVICE_PATH = ModelBootstrap.SNMP_LOCALHOST_PATH;
+    public static final String SNMP_DEVICE_PATH = FixtureModelBootstrap.SNMP_LOCALHOST_PATH;
     public static final String SNMP_DASHBOARD_PATH = "root.platform.dashboards.snmp-host-monitoring";
-    public static final String SNMP_MODEL = ModelBootstrap.SNMP_AGENT_MODEL;
+    public static final String SNMP_MODEL = FixtureModelBootstrap.SNMP_AGENT_MODEL;
     public static final String SNMP_DRIVER_ID = "snmp";
 
     public static final String VIRT_CLUSTER_FOLDER = "root.platform.devices.virt-cluster";
@@ -55,13 +55,13 @@ public final class AgentPlaybooks {
                 3. set_variable path="""
                 + SNMP_DEVICE_PATH
                 + " name=driverConfigJson value="
-                + ModelBootstrap.SNMP_DRIVER_CONFIG
+                + FixtureModelBootstrap.SNMP_DRIVER_CONFIG
                 + """
                 
                 4. set_variable path="""
                 + SNMP_DEVICE_PATH
                 + " name=driverPointMappingsJson value="
-                + ModelBootstrap.SNMP_POINT_MAPPINGS
+                + FixtureModelBootstrap.SNMP_POINT_MAPPINGS
                 + """
                 
                 5. configure_driver devicePath="""
@@ -151,7 +151,7 @@ public final class AgentPlaybooks {
                 
                 driverPointMappingsJson:
                 """
-                + ModelBootstrap.SNMP_POINT_MAPPINGS
+                + FixtureModelBootstrap.SNMP_POINT_MAPPINGS
                 + "\n";
     }
 

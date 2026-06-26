@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Exposes ContextPack slices as MCP resources (ADR-0013 follow-up).
+ * Exposes ContextPack slices as MCP resources (0006 follow-up).
  */
 @Service
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")

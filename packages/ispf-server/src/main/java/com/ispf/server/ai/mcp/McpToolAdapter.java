@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Delegates MCP tool calls to {@link PlatformAgentToolRegistry} (ADR-0013).
+ * Delegates MCP tool calls to {@link PlatformAgentToolRegistry} (0006).
  */
 @Service
 @ConditionalOnProperty(prefix = "ispf.mcp", name = "enabled", havingValue = "true")

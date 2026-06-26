@@ -100,12 +100,9 @@ export const MODEL_CATALOG_ROOTS = [
 export type ModelCatalogRoot = (typeof MODEL_CATALOG_ROOTS)[number];
 
 export const BUILTIN_MODEL_NAMES = new Set([
-  "mqtt-sensor-v1",
   "dashboard-v1",
   "workflow-v1",
   "virtual-lab-v1",
-  "snmp-agent-v1",
-  "vendor-sensor-ext-v1",
 ]);
 
 export function catalogRootForModelType(type: ModelType): ModelCatalogRoot {

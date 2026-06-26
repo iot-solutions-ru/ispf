@@ -173,8 +173,11 @@ public class PlatformMetricsService {
 
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("enabled", variableHistoryProperties.isEnabled());
+        section.put("asyncEnabled", variableHistoryProperties.isAsyncEnabled());
         section.put("minIntervalMs", variableHistoryProperties.getMinIntervalMs());
         section.put("defaultRetentionDays", variableHistoryProperties.getRetentionDays());
+        section.put("queueSize", automationMetricsRecorder.variableHistoryQueueSize());
+        section.put("flushedTotal", automationMetricsRecorder.variableHistoryFlushedTotal());
         section.put("historizedVariables", historizedVariables);
         section.put("sampleCount", sampleCount);
         section.put("oldestSampleAt", oldest != null ? oldest.toString() : null);

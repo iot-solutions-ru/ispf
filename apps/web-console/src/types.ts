@@ -123,6 +123,8 @@ export interface BindingActivators {
   onVariableChange: BindingVariableRef[];
   onEvent: string | null;
   periodicMs: number;
+  /** When true, rule runs on a dedicated single-thread executor (coalesced per rule id). */
+  async?: boolean;
 }
 
 export interface BindingTarget {

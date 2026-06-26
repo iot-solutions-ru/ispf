@@ -19,7 +19,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.ObjectChangeProperties.class,
         com.ispf.server.config.EventJournalProperties.class,
         com.ispf.server.config.PlatformMetricsProbeProperties.class,
-        com.ispf.server.config.IspfRedisProperties.class
+        com.ispf.server.config.IspfRedisProperties.class,
+        com.ispf.server.config.MqttGatewayProperties.class,
+        com.ispf.server.config.BindingProperties.class,
+        com.ispf.server.config.BootstrapProperties.class
 })
 public class IspfServerApplication {
 

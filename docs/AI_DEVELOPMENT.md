@@ -4,7 +4,7 @@ Platform-side development infrastructure for solution developers. AI reads curat
 
 **North star:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
-See [ADR-0011](decisions/0011-ai-artifact-generation-gates.md) and [ADR-0012](decisions/0012-tree-first-ai-agent.md).
+See [0004](decisions/0004-ai-artifact-generation-gates.md) and [0005](decisions/0005-tree-first-ai-agent.md).
 
 ---
 
@@ -176,7 +176,7 @@ Platform tools (Java handlers, ACL-aware):
 | `set_variable` | Update variable (config, dashboard layout, …) |
 | `configure_driver` | SNMP/driver config + mappings + optional start |
 | `driver_control` | start / stop / poll / status |
-| `validate_bundle` | ADR-0011 gate (no DB writes) |
+| `validate_bundle` | 0004 gate (no DB writes) |
 | `dry_run_deploy` | Validate + `wouldApply` |
 | `import_package` | Deploy bundle (requires prior validate/dry-run OK in same run) |
 
@@ -215,7 +215,7 @@ Sessions are **persisted in PostgreSQL** (`agent_sessions`, `agent_turns`) with 
 
 ---
 
-## MCP adapter (ADR-0013)
+## MCP adapter (0006)
 
 Optional profile **`mcp`** exposes the same platform agent tools to external MCP clients (Cursor, CI) without duplicating handlers.
 
@@ -270,7 +270,7 @@ Cursor example (HTTP to local server):
 }
 ```
 
-See [ADR-0013](decisions/0013-mcp-agent-tool-adapter.md).
+See [0006](decisions/0006-mcp-agent-tool-adapter.md).
 
 ---
 

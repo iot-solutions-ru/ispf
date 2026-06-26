@@ -1,0 +1,110 @@
+package com.ispf.server.function;
+
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.object.ObjectTree;
+import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
+import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.bus.ObjectChangeEventBus;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class MqttGatewayFunctionHandlerTest {
+
+    private static final String GATEWAY = "root.gateway";
+    private static final String CHILD = GATEWAY + ".sensors.loadtest-mqtt-sensor-00001";
+    private static final String DEFAULT_PATTERN = "ispf/loadtest/(\\d+)/temperature";
+
+    @Mock
+    private ObjectManager objectManager;
+
+    @Mock
+    private DeviceTelemetryPolicyService telemetryPolicyService;
+
+    @Mock
+    private ObjectChangeEventBus objectChangeEventBus;
+
+    @Test
+    void extractIndexFromLoadtestTopic() {
+        Optional<String> index = MqttGatewayFunctionHandler.extractIndex(
+                "ispf/loadtest/00042/temperature",
+                MqttGatewayFunctionHandlerTest.DEFAULT_PATTERN
+        );
+        assertThat(index).contains("00042");
+    }
+
+    @Test
+    void extractIndexRejectsUnmatchedTopic() {
+        Optional<String> index = MqttGatewayFunctionHandler.extractIndex(
+                "esp2/other/temperature",
+                MqttGatewayFunctionHandlerTest.DEFAULT_PATTERN
+        );
+        assertThat(index).isEmpty();
+    }
+
+    @Test
+    void parseNumericAcceptsFiniteDoubles() {
+        assertThat(MqttGatewayFunctionHandler.parseNumeric("23.7")).contains(23.7);
+        assertThat(MqttGatewayFunctionHandler.parseNumeric(" 42 ")).contains(42.0);
+        assertThat(MqttGatewayFunctionHandler.parseNumeric("not-a-number")).isEmpty();
+    }
+
+    @Test
+    void bypassesChildCoalesceForTelemetryOnlyChild() {
+        MqttGatewayFunctionHandler handler = newHandlerWithTree();
+        when(telemetryPolicyService.automationEligible(CHILD)).thenReturn(false);
+
+        DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
+
+        assertThat(result.firstRow().get("ok")).isEqualTo(true);
+        verify(objectManager).setDriverTelemetryValueDirect(eq(CHILD), eq("temperature"), any(DataRecord.class));
+        verify(objectManager, never()).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
+
+        ArgumentCaptor<ObjectChangeEvent> eventCaptor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(objectChangeEventBus).submit(eventCaptor.capture());
+        ObjectChangeEvent event = eventCaptor.getValue();
+        assertThat(event.path()).isEqualTo(CHILD);
+        assertThat(event.variableName()).isEqualTo("temperature");
+        assertThat(event.telemetry()).isTrue();
+        assertThat(event.automationEligible()).isFalse();
+    }
+
+    @Test
+    void keepsCoalescerForAutomationEligibleChild() {
+        MqttGatewayFunctionHandler handler = newHandlerWithTree();
+        when(telemetryPolicyService.automationEligible(CHILD)).thenReturn(true);
+
+        DataRecord result = handler.dispatchIngress(GATEWAY, "ispf/loadtest/00001/temperature", "23.7", true);
+
+        assertThat(result.firstRow().get("ok")).isEqualTo(true);
+        verify(objectManager).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
+        verify(objectManager, never()).setDriverTelemetryValueDirect(eq(CHILD), eq("temperature"), any(DataRecord.class));
+        verify(objectChangeEventBus, never()).submit(any(ObjectChangeEvent.class));
+    }
+
+    private MqttGatewayFunctionHandler newHandlerWithTree() {
+        ObjectTree tree = new ObjectTree();
+        PlatformObject gateway = new PlatformObject("gateway", GATEWAY, ObjectType.DEVICE, "Gateway", "", null);
+        PlatformObject child = new PlatformObject("child", CHILD, ObjectType.DEVICE, "Sensor", "", null);
+        tree.register(gateway);
+        tree.register(child);
+        when(objectManager.require(GATEWAY)).thenReturn(gateway);
+        when(objectManager.tree()).thenReturn(tree);
+        return new MqttGatewayFunctionHandler(objectManager, telemetryPolicyService, objectChangeEventBus);
+    }
+}

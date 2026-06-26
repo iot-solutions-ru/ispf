@@ -89,9 +89,9 @@ graph LR
 
 ### 2. Модели (шаблоны)
 
-`ModelDefinition` описывает набор переменных, событий, функций и CEL-привязок. Новый датчик создаётся из модели `mqtt-sensor-v1` за секунды.
+`ModelDefinition` описывает набор переменных, событий, функций и CEL-привязок. RELATIVE mixins auto-apply’ятся только при заданном *Applicability condition* (CEL). Demo-модель `mqtt-sensor-v1` — fixture, применяется через `templateId`.
 
-Подробнее: [MODELS.md](MODELS.md).
+Подробнее: [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ### 3. Драйверы устройств
 

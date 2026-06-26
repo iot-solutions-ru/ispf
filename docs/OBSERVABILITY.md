@@ -140,5 +140,5 @@ ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY=10000
 ## Связанные документы
 
 - [LOAD_TESTING.md](LOAD_TESTING.md) — baselines и load test scripts
-- [MESSAGING.md](MESSAGING.md) — JetStream / Redis optional transports (ADR-0021)
-- [decisions/0021-automation-pipeline-evolution.md](decisions/0021-automation-pipeline-evolution.md)
+- [MESSAGING.md](MESSAGING.md) — JetStream / Redis optional transports (0014)
+- [decisions/0014-automation-pipeline-evolution.md](decisions/0014-automation-pipeline-evolution.md)

@@ -256,6 +256,11 @@ export default function CreateObjectDialog({
         const obj = await instantiateModel(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
       }
+      // #region agent log
+      if (type === "DEVICE") {
+        fetch('http://127.0.0.1:7392/ingest/0ec6eb83-ec4e-4401-81d3-b94e141e1b03',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'c91425'},body:JSON.stringify({sessionId:'c91425',location:'CreateObjectDialog.tsx:mutationFn',message:'createObject payload',data:{driverId,type,name},timestamp:Date.now(),hypothesisId:'H2'})}).catch(()=>{});
+      }
+      // #endregion
       const obj = await createObject({
         parentPath,
         name,

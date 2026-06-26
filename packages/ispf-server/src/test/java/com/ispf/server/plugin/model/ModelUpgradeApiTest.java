@@ -1,6 +1,7 @@
 package com.ispf.server.plugin.model;
 
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class ModelUpgradeApiTest {
 
-    private static final String VENDOR_PATH = "root.platform.devices.vendor-sensor-demo";
+    private static final String VENDOR_PATH = FixtureModelBootstrap.VENDOR_SENSOR_DEMO_PATH;
 
     @Autowired
     private MockMvc mockMvc;
@@ -43,7 +44,7 @@ class ModelUpgradeApiTest {
     void vendorDemoDeviceExistsAndBulkUpgradeSucceeds() throws Exception {
         modelApplicationRunner.applyDemoModels();
 
-        var vendorModel = modelRegistry.requireByName("vendor-sensor-ext-v1");
+        var vendorModel = modelRegistry.requireByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL);
         objectManager.require(VENDOR_PATH);
 
         mockMvc.perform(get("/api/v1/models/{id}/instances", vendorModel.id()))
@@ -62,7 +63,7 @@ class ModelUpgradeApiTest {
     @Test
     void singlePathUpgradeApi() throws Exception {
         modelApplicationRunner.applyDemoModels();
-        var vendorModel = modelRegistry.requireByName("vendor-sensor-ext-v1");
+        var vendorModel = modelRegistry.requireByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL);
 
         mockMvc.perform(post("/api/v1/models/{id}/upgrade", vendorModel.id())
                         .param("targetPath", VENDOR_PATH)

@@ -38,7 +38,9 @@ public class PlatformBriefingService {
             feature("dashboards", "Dashboards", "DASHBOARD objects, layout.widgets[], widget types", "dashboard widget layout"),
             feature("events", "Event catalog", "events[] in bundle, WS subscribe_events", "event catalog subscribe"),
             feature("virtual", "Virtual driver", "profiles demo, meter, weighbridge, rack-signals, lab, unified", "virtual profile meter"),
-            feature("history", "Variable history", "historyEnabled, charts, export CSV", "variable history trend"),
+            feature("history", "Variable history", "historyEnabled, JDBC batch store, charts, export CSV", "variable history trend historian"),
+            feature("mqtt-gateway", "MQTT gateway", "mqtt-gateway-v1, lastIngress, dispatchTelemetry, ingressTopicLanes", "mqtt gateway orchestrator ingress"),
+            feature("telemetry", "Telemetry pipeline", "TELEMETRY_ONLY, coalesce, dual-lane bus, loadtest", "telemetry coalesce historian throughput"),
             feature("ai-studio", "AI Studio", "tree-first agent, validate_bundle, import_package", "ai agent studio")
     );
 

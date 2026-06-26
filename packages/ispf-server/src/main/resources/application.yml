@@ -9,7 +9,7 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
 
   datasource:
-    url: ${ISPF_DB_URL:jdbc:postgresql://localhost:5432/ispf}
+    url: ${ISPF_DB_URL:jdbc:postgresql://localhost:5432/ispf?reWriteBatchedInserts=true}
     username: ${ISPF_DB_USER:ispf}
     password: ${ISPF_DB_PASSWORD:ispf}
     driver-class-name: org.postgresql.Driver
@@ -26,6 +26,8 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+          batch_size: ${ISPF_HIBERNATE_JDBC_BATCH_SIZE:500}
+        order_inserts: true
 
   flyway:
     enabled: true
@@ -80,6 +82,8 @@ management:
       enabled: ${ISPF_REDIS_ENABLED:false}
 
 ispf:
+  bootstrap:
+    fixtures-enabled: ${ISPF_BOOTSTRAP_FIXTURES_ENABLED:false}
   platform:
     name: IoT Solutions Platform Framework
     update:
@@ -109,14 +113,25 @@ ispf:
     enabled: true
     min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
     retention-days: 90
+    store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}
+    async-enabled: ${ISPF_VARIABLE_HISTORY_ASYNC_ENABLED:true}
+    queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:10000}
+    batch-size: ${ISPF_VARIABLE_HISTORY_BATCH_SIZE:500}
+    flush-interval-ms: ${ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS:50}
+    writer-threads: ${ISPF_VARIABLE_HISTORY_WRITER_THREADS:4}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true
+    coalesce-scheduler-threads: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_THREADS:4}
+  binding:
+    async-threads: ${ISPF_BINDING_ASYNC_THREADS:16}
+  mqtt-gateway:
+    ingress-dispatch-threads: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_THREADS:8}
   object-change:
     async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_OBJECT_CHANGE_QUEUE_CAPACITY:10000}
     worker-threads: ${ISPF_OBJECT_CHANGE_WORKER_THREADS:4}
-    coalesce-telemetry-updates: ${ISPF_OBJECT_CHANGE_COALESCE_TELEMETRY:true}
+    coalesce-telemetry-updates: ${ISPF_OBJECT_CHANGE_COALESCE_TELEMETRY:false}
     split-lanes-enabled: ${ISPF_OBJECT_CHANGE_SPLIT_LANES:true}
     telemetry-queue-capacity: ${ISPF_OBJECT_CHANGE_TELEMETRY_QUEUE_CAPACITY:10000}
     automation-queue-capacity: ${ISPF_OBJECT_CHANGE_AUTOMATION_QUEUE_CAPACITY:10000}
@@ -132,6 +147,8 @@ ispf:
     telemetry-worker-threads-max: ${ISPF_OBJECT_CHANGE_TELEMETRY_WORKERS_MAX:8}
     automation-worker-threads-min: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN:2}
     automation-worker-threads-max: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX:16}
+    coalesce-scheduler-threads: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_THREADS:2}
+    scale-scheduler-threads: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_THREADS:2}
   alert-rule:
     runtime:
       flush-enabled: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_ENABLED:true}

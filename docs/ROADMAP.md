@@ -169,7 +169,7 @@ Application API (`/applications/{id}/deploy`) сохранён для совме
 | 16.5 | Messaging contract (event bus vs sync RPC) | NET | Done |
 | 16.6 | AI Layer (LlmProvider, ContextPack, tools) + Studio | AI | Done |
 | 16.8 | Tree-first agent (FW-44): sessions, dashboard/SNMP tools, reliability | AI | Done (v0.7.5) |
-| 16.9 | MCP adapter over agent tools (ADR-0013) | AI | Done (v0.7.7) |
+| 16.9 | MCP adapter over agent tools (0006) | AI | Done (v0.7.7) |
 | 16.7 | Licensed driver JAR contract + pilot pack | DRV | Done (v0.7.7) |
 
 Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.md#8-приоритет-реализации-roadmap).
@@ -184,11 +184,11 @@ Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.m
 | 17.2 | Flyway drop `binding_expr` column (V41; V1 без колонки; dev — пересоздание БД) | Done |
 | 17.3 | MCP ContextPack resources (`resources/list`, `resources/read`) | Done |
 | 17.4 | Stub driver promotion process documented (demand-driven) | Done |
-| 17.5 | ADR-0018 typed model catalogs + ADR-0019 visual groups acceptance | Done |
+| 17.5 | 0011 typed model catalogs + 0012 visual groups acceptance | Done |
 
 ## Phase 18 — Reference solutions & v0.8.0 rollout
 
-Волна после Phase 17: **эталон mini-TEC**, production rollout v0.8.0, frontend e2e, demand-driven drivers. Dogfooding gate — [ADR-0009](decisions/0009-dogfooding-gate.md).
+Волна после Phase 17: **эталон mini-TEC**, production rollout v0.8.0, frontend e2e, demand-driven drivers. Dogfooding gate — [0002](decisions/0002-dogfooding-gate.md).
 
 | # | Тема | Статус |
 |---|------|--------|
@@ -207,7 +207,7 @@ Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.m
 
 | # | Тема | Статус |
 |---|------|--------|
-| 19.1 | ADR-0020 + `react-i18next`, `locales/{en,ru,de,zh}/*.json`, `LocaleSwitcher` | Done |
+| 19.1 | 0013 + `react-i18next`, `locales/{en,ru,de,zh}/*.json`, `LocaleSwitcher` | Done |
 | 19.2 | Shell: login, навигация, Explorer, System | Done |
 | 19.3 | Инспекторы, Models, Dashboard/Widget editor, Report Builder | Done |
 | 19.4 | Operator HMI, automation, federation, AI Studio | Done |
@@ -218,7 +218,7 @@ Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.m
 
 **Out of scope (отдельно):** пользовательский контент дерева (`displayName`, BPMN, bundle dashboards), server error messages, AI agent replies.
 
-Track: **UI** (не REQ-PF — не меняет platform API). См. [ADR-0020](decisions/0020-web-console-i18n.md).
+Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](decisions/0013-web-console-i18n.md).
 
 ## Platform baseline
 

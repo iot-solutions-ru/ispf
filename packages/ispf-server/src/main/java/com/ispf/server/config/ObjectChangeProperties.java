@@ -12,7 +12,7 @@ public class ObjectChangeProperties {
     private boolean asyncEnabled = true;
     private int queueCapacity = 10_000;
     private int workerThreads = 4;
-    private boolean coalesceTelemetryUpdates = true;
+    private boolean coalesceTelemetryUpdates = false;
 
     /**
      * When true, telemetry handlers and automation handlers use separate queues and worker pools.
@@ -35,6 +35,12 @@ public class ObjectChangeProperties {
     private int telemetryWorkerThreadsMax = 8;
     private int automationWorkerThreadsMin = 2;
     private int automationWorkerThreadsMax = 16;
+
+    /** Scheduled threads for telemetry bus coalesce flush windows. */
+    private int coalesceSchedulerThreads = 2;
+
+    /** Scheduled threads shared by elastic worker scale checks on all lanes. */
+    private int scaleSchedulerThreads = 2;
 
     public boolean isElasticWorkersEnabled() {
         return elasticWorkersEnabled;
@@ -114,6 +120,22 @@ public class ObjectChangeProperties {
 
     public void setAutomationWorkerThreadsMax(int automationWorkerThreadsMax) {
         this.automationWorkerThreadsMax = automationWorkerThreadsMax;
+    }
+
+    public int getCoalesceSchedulerThreads() {
+        return coalesceSchedulerThreads;
+    }
+
+    public void setCoalesceSchedulerThreads(int coalesceSchedulerThreads) {
+        this.coalesceSchedulerThreads = Math.max(1, coalesceSchedulerThreads);
+    }
+
+    public int getScaleSchedulerThreads() {
+        return scaleSchedulerThreads;
+    }
+
+    public void setScaleSchedulerThreads(int scaleSchedulerThreads) {
+        this.scaleSchedulerThreads = Math.max(1, scaleSchedulerThreads);
     }
 
     public int resolvedWorkerThreadsMin() {

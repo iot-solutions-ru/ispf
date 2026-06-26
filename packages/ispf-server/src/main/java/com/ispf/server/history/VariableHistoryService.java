@@ -41,6 +41,8 @@ public class VariableHistoryService {
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
     private final TimescaleHypertableInitializer timescaleHypertableInitializer;
+    private final VariableHistoryAsyncWriter asyncWriter;
+    private final VariableHistoryBatchPersister batchPersister;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -52,7 +54,9 @@ public class VariableHistoryService {
             ObjectManager objectManager,
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
-            TimescaleHypertableInitializer timescaleHypertableInitializer
+            TimescaleHypertableInitializer timescaleHypertableInitializer,
+            VariableHistoryAsyncWriter asyncWriter,
+            VariableHistoryBatchPersister batchPersister
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
@@ -61,34 +65,48 @@ public class VariableHistoryService {
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
         this.timescaleHypertableInitializer = timescaleHypertableInitializer;
+        this.asyncWriter = asyncWriter;
+        this.batchPersister = batchPersister;
     }
 
-    @Transactional
     public void recordVariableUpdate(String objectPath, String variableName) {
-        if (!properties.isEnabled()) {
+        List<VariableSampleEntity> samples = collectSamples(objectPath, variableName);
+        if (samples.isEmpty()) {
             return;
+        }
+        if (asyncWriter.isAsyncEnabled()) {
+            asyncWriter.enqueue(samples);
+        } else {
+            batchPersister.persistBatch(samples);
+        }
+    }
+
+    private List<VariableSampleEntity> collectSamples(String objectPath, String variableName) {
+        if (!properties.isEnabled()) {
+            return List.of();
         }
         if (properties.getExcludedVariables().contains(variableName)
                 || variableName.startsWith("driver")) {
-            return;
+            return List.of();
         }
         if (!isHistorizedVariable(objectPath, variableName)) {
-            return;
+            return List.of();
         }
 
         Variable variable = objectManager.require(objectPath).getVariable(variableName).orElse(null);
         if (variable == null || variable.value().isEmpty()) {
-            return;
+            return List.of();
         }
 
         DataRecord record = variable.value().get();
         if (record.rowCount() == 0) {
-            return;
+            return List.of();
         }
 
         Map<String, Object> row = record.firstRow();
         Instant now = Instant.now();
         long nowMs = now.toEpochMilli();
+        List<VariableSampleEntity> samples = new ArrayList<>();
 
         for (FieldDefinition field : record.schema().fields()) {
             String fieldName = field.name();
@@ -110,9 +128,10 @@ public class VariableHistoryService {
             sample.setFieldName(fieldName);
             sample.setSampledAt(now);
             sample.setValueDouble(numeric.get());
-            sampleRepository.save(sample);
+            samples.add(sample);
             lastSampleMs.put(debounceKey, nowMs);
         }
+        return samples;
     }
 
     @Transactional(readOnly = true)

@@ -10,6 +10,7 @@ import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
+import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.ObjectManager;
@@ -41,6 +42,7 @@ public class MiniTecPlatformBootstrap {
     private final DriverRuntimeService driverRuntimeService;
     private final OperatorAppUiService operatorAppUiService;
     private final ApplicationDataService applicationDataService;
+    private final BootstrapProperties bootstrapProperties;
 
     public MiniTecPlatformBootstrap(
             MiniTecModelBootstrap modelBootstrap,
@@ -51,7 +53,8 @@ public class MiniTecPlatformBootstrap {
             AutomationTreeService automationTreeService,
             DriverRuntimeService driverRuntimeService,
             OperatorAppUiService operatorAppUiService,
-            ApplicationDataService applicationDataService
+            ApplicationDataService applicationDataService,
+            BootstrapProperties bootstrapProperties
     ) {
         this.modelBootstrap = modelBootstrap;
         this.templateService = templateService;
@@ -62,11 +65,15 @@ public class MiniTecPlatformBootstrap {
         this.driverRuntimeService = driverRuntimeService;
         this.operatorAppUiService = operatorAppUiService;
         this.applicationDataService = applicationDataService;
+        this.bootstrapProperties = bootstrapProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 22)
     public void onReady() throws Exception {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            return;
+        }
         modelBootstrap.ensureMiniTecModels();
         registerApplication();
         ensureSqlSchema();
@@ -88,6 +95,9 @@ public class MiniTecPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     public void startDriversAfterBootstrap() {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            return;
+        }
         startDrivers();
     }
 

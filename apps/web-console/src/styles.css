@@ -772,26 +772,26 @@ code,
 .tree-icon--box { color: #cbd5e1; }
 
 /* Device driver runtime tone in explorer tree */
-.tree-row.driver-stopped .tree-icon,
+.tree-row.driver-stopped .tree-icon .tree-icon-svg,
 .tree-row.driver-stopped .tree-label {
   color: #94a3b8;
 }
 
-.tree-row.driver-warning .tree-icon,
+.tree-row.driver-warning .tree-icon .tree-icon-svg,
 .tree-row.driver-warning .tree-label {
   color: #facc15;
 }
 
-.tree-row.driver-error .tree-icon,
+.tree-row.driver-error .tree-icon .tree-icon-svg,
 .tree-row.driver-error .tree-label {
   color: #ef4444;
 }
 
-.tree-row.driver-stopped.selected .tree-icon,
+.tree-row.driver-stopped.selected .tree-icon .tree-icon-svg,
 .tree-row.driver-stopped.selected .tree-label,
-.tree-row.driver-warning.selected .tree-icon,
+.tree-row.driver-warning.selected .tree-icon .tree-icon-svg,
 .tree-row.driver-warning.selected .tree-label,
-.tree-row.driver-error.selected .tree-icon,
+.tree-row.driver-error.selected .tree-icon .tree-icon-svg,
 .tree-row.driver-error.selected .tree-label {
   opacity: 1;
 }

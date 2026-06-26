@@ -1,5 +1,7 @@
 # Direct VPS deploy: build locally, SCP to staging, apply on server.
 # Does NOT use GitHub Releases. See .cursor/rules/vps-deploy.mdc
+#
+# Optional: -VerifyClickHouse runs deploy/vps-clickhouse-verify.sh after rollout.
 param(
     [Parameter(Mandatory = $true)]
     [string]$Version,
@@ -7,7 +9,8 @@ param(
     [string]$RemoteHost = "root@ispf.iot-solutions.ru",
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [switch]$SkipBuild,
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$VerifyClickHouse
 )
 
 $ErrorActionPreference = "Stop"
@@ -79,6 +82,9 @@ if ($LASTEXITCODE -ne 0) { throw "scp jar failed" }
 scp -o BatchMode=yes $zipPath "${RemoteHost}:${staging}/web-console.zip"
 if ($LASTEXITCODE -ne 0) { throw "scp zip failed" }
 
+Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS"
+Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"
+
 Write-Host "==> Applying update on VPS"
 Invoke-Remote "bash /opt/ispf/bin/apply-platform-update.sh $staging"
 
@@ -97,3 +103,12 @@ try {
 }
 
 Write-Host "Deploy complete: $Version -> $RemoteHost"
+
+if ($VerifyClickHouse) {
+    Write-Host "==> ClickHouse verification"
+    $verifyScript = Join-Path $PSScriptRoot "vps-clickhouse-verify.sh"
+    if (-not (Test-Path $verifyScript)) { throw "Missing $verifyScript" }
+    scp -o BatchMode=yes $verifyScript "${RemoteHost}:/opt/ispf/vps-clickhouse-verify.sh"
+    if ($LASTEXITCODE -ne 0) { throw "scp verify script failed" }
+    Invoke-Remote "chmod +x /opt/ispf/vps-clickhouse-verify.sh && sed -i 's/\r$//' /opt/ispf/vps-clickhouse-verify.sh && bash /opt/ispf/vps-clickhouse-verify.sh $Version"
+}

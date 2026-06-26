@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Map;
@@ -22,10 +25,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class RuntimeTelemetryCoalescerTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private MqttGatewayIngressDispatchService gatewayIngressDispatch;
 
     private RuntimeTelemetryCoalescer coalescer;
 
@@ -64,7 +71,7 @@ class RuntimeTelemetryCoalescerTest {
         properties.setEnabled(false);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
-        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher);
+        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher, gatewayIngressDispatch);
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
@@ -118,14 +125,127 @@ class RuntimeTelemetryCoalescerTest {
         assertThat(RuntimeTelemetryCoalescer.valuesEqual(null, left)).isFalse();
     }
 
+    @Test
+    void coalescesIngressTopicsOnSeparateLanes() {
+        coalescer = newCoalescer(true, 1_000);
+        DataSchema ingress = DataSchema.builder("mqttIngress")
+                .field("topic", FieldType.STRING)
+                .field("raw", FieldType.STRING)
+                .build();
+
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "ispf/loadtest/00001/temperature", "raw", "1.0"))
+        );
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "ispf/loadtest/00002/temperature", "raw", "2.0"))
+        );
+        coalescer.flushNow();
+
+        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(ObjectChangeEvent::variableName)
+                .containsOnly("lastIngress");
+    }
+
+    @Test
+    void coalescesIngressPayloadsOnSeparateLanesWhenEnabled() {
+        coalescer = newCoalescer(true, 1_000, false, true);
+        DataSchema ingress = DataSchema.builder("mqttIngress")
+                .field("topic", FieldType.STRING)
+                .field("raw", FieldType.STRING)
+                .build();
+
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "meter", "raw", "{\"id\":\"meter-0001\",\"temperature\":\"1\"}"))
+        );
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "meter", "raw", "{\"id\":\"meter-0002\",\"temperature\":\"2\"}"))
+        );
+        coalescer.flushNow();
+
+        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues())
+                .extracting(ObjectChangeEvent::variableName)
+                .containsOnly("lastIngress");
+    }
+
+    @Test
+    void coalescesSameTopicWithoutPayloadLanesIntoOneLane() {
+        coalescer = newCoalescer(true, 1_000, false, false);
+        DataSchema ingress = DataSchema.builder("mqttIngress")
+                .field("topic", FieldType.STRING)
+                .field("raw", FieldType.STRING)
+                .build();
+
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "meter", "raw", "{\"id\":\"meter-0001\",\"temperature\":\"1\"}"))
+        );
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "meter", "raw", "{\"id\":\"meter-0002\",\"temperature\":\"2\"}"))
+        );
+        coalescer.flushNow();
+
+        verify(eventPublisher, times(1)).publishEvent(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void parallelGatewayDispatchSkipsBindingEvent() {
+        coalescer = newCoalescer(true, 1_000);
+        org.mockito.Mockito.when(gatewayIngressDispatch.tryScheduleDispatch(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.eq("lastIngress"),
+                org.mockito.ArgumentMatchers.any()
+        )).thenReturn(true);
+        DataSchema ingress = DataSchema.builder("mqttIngress")
+                .field("topic", FieldType.STRING)
+                .field("raw", FieldType.STRING)
+                .build();
+        coalescer.recordUpdate(
+                "root.dev.gateway",
+                "lastIngress",
+                DataRecord.single(ingress, Map.of("topic", "ispf/loadtest/00001/temperature", "raw", "3.0"))
+        );
+        coalescer.flushNow();
+        verifyNoInteractions(eventPublisher);
+    }
+
     private RuntimeTelemetryCoalescer newCoalescer(boolean enabled, long coalesceMs) {
+        return newCoalescer(enabled, coalesceMs, false, false);
+    }
+
+    private RuntimeTelemetryCoalescer newCoalescer(
+            boolean enabled,
+            long coalesceMs,
+            boolean ingressTopicLanes,
+            boolean ingressPayloadLanes
+    ) {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setEnabled(enabled);
         properties.setCoalesceMs(coalesceMs);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.coalesceMs(org.mockito.ArgumentMatchers.anyString())).thenReturn(coalesceMs);
         org.mockito.Mockito.when(policyService.automationEligible(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
-        return new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher);
+        org.mockito.Mockito.when(policyService.ingressTopicLanes(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(ingressTopicLanes);
+        org.mockito.Mockito.when(policyService.ingressPayloadLanes(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(ingressPayloadLanes);
+        org.mockito.Mockito.when(policyService.parallelIngressDispatch(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(ingressTopicLanes || ingressPayloadLanes);
+        return new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher, gatewayIngressDispatch);
     }
 
     private static DataRecord record(DataSchema schema, double value) {

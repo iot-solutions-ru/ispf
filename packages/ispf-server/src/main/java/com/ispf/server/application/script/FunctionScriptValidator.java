@@ -22,6 +22,10 @@ public class FunctionScriptValidator {
             "cancel_workflows",
             "failIfNull",
             "failIfNotEquals",
+            "jsonParse",
+            "readVariable",
+            "instantiateModelIfMissing",
+            "setDriverTelemetry",
             "return"
     );
 
@@ -106,6 +110,20 @@ public class FunctionScriptValidator {
             case "cancel_workflows" -> require(step, "workflowPath");
             case "failIfNull" -> require(step, "var");
             case "failIfNotEquals" -> require(step, "var", "equals");
+            case "jsonParse" -> {
+                require(step, "var", "source");
+                if (!step.has("fields") || !step.get("fields").isArray() || step.get("fields").isEmpty()) {
+                    throw new IllegalArgumentException("jsonParse step requires non-empty fields array");
+                }
+            }
+            case "readVariable" -> require(step, "objectPath", "variable", "var");
+            case "instantiateModelIfMissing" -> require(step, "modelName", "parentPath", "instanceName", "var");
+            case "setDriverTelemetry" -> {
+                require(step, "objectPath");
+                if (!step.has("fields") || !step.get("fields").isObject()) {
+                    throw new IllegalArgumentException("setDriverTelemetry step requires fields object");
+                }
+            }
             case "return" -> {
                 if (!step.has("fields") || !step.get("fields").isObject()) {
                     throw new IllegalArgumentException("return step requires fields object");

@@ -4,7 +4,7 @@
 
 Правила хранятся в системной переменной `@bindingRules` (JSON-массив, reserved). Runtime — **`BindingRuleEngine`** (единственный механизм привязок с v0.8.0).
 
-См. также: [OBJECT_MODEL.md](OBJECT_MODEL.md), [MODELS.md](MODELS.md), ADR [0017](decisions/0017-binding-rules-only.md).
+См. также: [OBJECT_MODEL.md](OBJECT_MODEL.md), [MODELS.md](MODELS.md), ADR [0010](decisions/0010-binding-rules-only.md).
 
 ---
 
@@ -82,7 +82,7 @@ Agent tool: `create_binding_rule` (path, id, targetVariable, expression, remoteO
 
 ## Обновление с v0.7.x (legacy `bindingExpression`)
 
-Поле `bindingExpression` на переменной и колонка `binding_expr` **удалены** (ADR-0017, v0.8.0). Привязки — только `@bindingRules`.
+Поле `bindingExpression` на переменной и колонка `binding_expr` **удалены** (0010, v0.8.0). Привязки — только `@bindingRules`.
 
 **Prod** (`ispf.iot-solutions.ru`): PostgreSQL в Docker (`ispf-postgres`), не H2. **Local dev:** H2 file или docker compose PostgreSQL.
 

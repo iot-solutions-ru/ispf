@@ -71,7 +71,7 @@
   "dialog.driver": "Driver *",
   "dialog.pollIntervalMs": "Poll interval (ms)",
   "dialog.defaultDriverConfig": "Default configuration (driverConfigJson)",
-  "dialog.deviceDriverHint": "On creation, model device-driver-v1 is applied and driver settings are saved. Start the driver on the Driver tab after creation.",
+  "dialog.deviceDriverHint": "On creation, driver settings are saved. Start the driver on the Driver tab after creation.",
   "icons.auto": "Auto",
   "icons.autoByType": "Auto (by type and path)",
   "icons.clickToSelect": "Click to select icon",

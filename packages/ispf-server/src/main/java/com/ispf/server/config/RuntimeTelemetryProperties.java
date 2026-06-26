@@ -9,6 +9,9 @@ public class RuntimeTelemetryProperties {
 
     private long coalesceMs = 1_000;
 
+    /** Threads for scheduled per-lane telemetry coalesce flush (parallel topic lanes). */
+    private int coalesceSchedulerThreads = 4;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -23,5 +26,13 @@ public class RuntimeTelemetryProperties {
 
     public void setCoalesceMs(long coalesceMs) {
         this.coalesceMs = coalesceMs;
+    }
+
+    public int getCoalesceSchedulerThreads() {
+        return coalesceSchedulerThreads;
+    }
+
+    public void setCoalesceSchedulerThreads(int coalesceSchedulerThreads) {
+        this.coalesceSchedulerThreads = Math.max(1, coalesceSchedulerThreads);
     }
 }

@@ -7,7 +7,9 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.dashboard.DashboardLayouts;
+import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowDefinitions;
 import com.ispf.plugin.model.ModelDefinition;
@@ -33,6 +35,7 @@ public class ModelApplicationRunner {
     private final ModelBindingRulesMerger bindingRulesMerger;
     private final ModelApplicationService modelApplicationService;
     private final SystemObjectStructureService structureService;
+    private final DeviceProvisioningService deviceProvisioningService;
 
     public ModelApplicationRunner(
             ModelEngine modelEngine,
@@ -40,7 +43,8 @@ public class ModelApplicationRunner {
             ObjectManager objectManager,
             ModelBindingRulesMerger bindingRulesMerger,
             ModelApplicationService modelApplicationService,
-            SystemObjectStructureService structureService
+            SystemObjectStructureService structureService,
+            DeviceProvisioningService deviceProvisioningService
     ) {
         this.modelEngine = modelEngine;
         this.modelRegistry = modelRegistry;
@@ -48,6 +52,7 @@ public class ModelApplicationRunner {
         this.bindingRulesMerger = bindingRulesMerger;
         this.modelApplicationService = modelApplicationService;
         this.structureService = structureService;
+        this.deviceProvisioningService = deviceProvisioningService;
     }
 
     public void restoreAttachments() {
@@ -60,8 +65,11 @@ public class ModelApplicationRunner {
 
     public void applyDemoModels() {
         ensurePlatformDemoNodes();
-        modelRegistry.findByName("mqtt-sensor-v1").ifPresent(model -> {
-            applyModelWithRules(model, "root.platform.devices.demo-sensor-01");
+        modelRegistry.findByName(FixtureModelBootstrap.MQTT_SENSOR_MODEL).ifPresent(model -> {
+            String devicePath = "root.platform.devices.demo-sensor-01";
+            applyModelWithRules(model, devicePath);
+            deviceProvisioningService.provisionDriver(devicePath, "virtual", 2000, false);
+            objectManager.persistNodeTree(devicePath);
         });
 
         modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
@@ -155,8 +163,8 @@ public class ModelApplicationRunner {
             objectManager.persistNodeTree(path);
         });
 
-        modelRegistry.findByName("vendor-sensor-ext-v1").ifPresent(model -> {
-            String path = "root.platform.devices.vendor-sensor-demo";
+        modelRegistry.findByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL).ifPresent(model -> {
+            String path = FixtureModelBootstrap.VENDOR_SENSOR_DEMO_PATH;
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 modelApplicationService.instantiateWithRules(
                         model.id(),
@@ -169,11 +177,68 @@ public class ModelApplicationRunner {
             }
             objectManager.persistNodeTree(path);
         });
+
+        ensureMeterMqttBusDevice();
+    }
+
+    private void ensureMeterMqttBusDevice() {
+        modelRegistry.findByName(FixtureModelBootstrap.MQTT_METER_BUS_MODEL).ifPresent(model -> {
+            String path = FixtureModelBootstrap.MQTT_METER_BUS_PATH;
+            if (objectManager.tree().findByPath(path).isEmpty()) {
+                objectManager.create(
+                        "root.platform.devices",
+                        "mqtt-meter-bus",
+                        ObjectType.DEVICE,
+                        "MQTT Meter Bus",
+                        "Subscribes to MQTT topic meter and auto-creates Meters instances from JSON payloads",
+                        null
+                );
+            }
+            applyModelWithRules(model, path);
+            ensureMeterBusDriverVariables(path);
+            objectManager.persistNodeTree(path);
+        });
+    }
+
+    private void ensureMeterBusDriverVariables(String path) {
+        structureService.ensureDeviceDriverStructure(path);
+        PlatformObject device = objectManager.require(path);
+        DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
+        String mappings = readVariableStringField(device, "driverPointMappingsJson", "value");
+        if (!mappings.contains("\"ingress\"") || !mappings.contains("meter")) {
+            device.setVariableValue(
+                    "driverPointMappingsJson",
+                    DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.METER_INGRESS_POINT_MAPPINGS))
+            );
+        }
+        String config = readVariableStringField(device, "driverConfigJson", "value");
+        if (!config.contains("ingressVariable") || !config.contains("lastIngress")
+                || !config.contains("ingressPayloadLanes")) {
+            device.setVariableValue(
+                    "driverConfigJson",
+                    DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.METER_INGRESS_DRIVER_CONFIG))
+            );
+        }
+        if (device.getVariable("driverId").isPresent()) {
+            device.setVariableValue(
+                    "driverId",
+                    DataRecord.single(stringSchema, Map.of("value", "mqtt"))
+            );
+        }
+        if (device.getVariable("driverPollIntervalMs").isPresent()) {
+            device.setVariableValue(
+                    "driverPollIntervalMs",
+                    DataRecord.single(
+                            DataSchema.builder("integerValue").field("value", FieldType.INTEGER).build(),
+                            Map.of("value", 5000)
+                    )
+            );
+        }
     }
 
     private void ensurePlatformDemoNodes() {
         ensureNode("root.platform.devices", ObjectType.DEVICES, "Devices", "Connected devices");
-        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor", "mqtt-sensor-v1");
+        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor (fixture)", FixtureModelBootstrap.MQTT_SENSOR_MODEL);
         ensureNode("root.platform.dashboards", ObjectType.DASHBOARDS, "Dashboards", "HMI dashboards");
         ensureNode("root.platform.dashboards.demo-sensor", ObjectType.DASHBOARD, "Demo Sensor Dashboard", "Live HMI for demo MQTT temperature sensor", "dashboard-v1");
         ensureNode("root.platform.dashboards.snmp-host-monitoring", ObjectType.DASHBOARD, "SNMP Host Monitoring", "System monitoring dashboard for SNMP agents (Windows/Linux)", "dashboard-v1");
@@ -200,8 +265,8 @@ public class ModelApplicationRunner {
     }
 
     public void ensureSnmpLocalhostDevice() {
-        modelRegistry.findByName(ModelBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
-            if (objectManager.tree().findByPath(ModelBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
+        modelRegistry.findByName(FixtureModelBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
+            if (objectManager.tree().findByPath(FixtureModelBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
                 modelApplicationService.instantiateWithRules(
                         model.id(),
                         "root.platform.devices",
@@ -209,9 +274,9 @@ public class ModelApplicationRunner {
                         Map.of()
                 );
             } else {
-                syncSnmpAgentDevice(model, ModelBootstrap.SNMP_LOCALHOST_PATH);
+                syncSnmpAgentDevice(model, FixtureModelBootstrap.SNMP_LOCALHOST_PATH);
             }
-            objectManager.persistNodeTree(ModelBootstrap.SNMP_LOCALHOST_PATH);
+            objectManager.persistNodeTree(FixtureModelBootstrap.SNMP_LOCALHOST_PATH);
         });
     }
 
@@ -299,7 +364,7 @@ public class ModelApplicationRunner {
         DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
         device.setVariableValue(
                 "driverPointMappingsJson",
-                DataRecord.single(stringSchema, Map.of("value", ModelBootstrap.SNMP_POINT_MAPPINGS))
+                DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.SNMP_POINT_MAPPINGS))
         );
         if (device.getVariable("driverId").isPresent()) {
             device.setVariableValue(
@@ -312,7 +377,7 @@ public class ModelApplicationRunner {
             if (config.isBlank() || config.equals("{}")) {
                 device.setVariableValue(
                         "driverConfigJson",
-                        DataRecord.single(stringSchema, Map.of("value", ModelBootstrap.SNMP_DRIVER_CONFIG))
+                        DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.SNMP_DRIVER_CONFIG))
                 );
             }
         }

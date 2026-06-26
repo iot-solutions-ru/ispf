@@ -13,6 +13,131 @@
       "sql": "CREATE TABLE IF NOT EXISTS mlt_sensor (sensor_id VARCHAR(64) PRIMARY KEY, object_path VARCHAR(256) NOT NULL, display_name VARCHAR(128) NOT NULL, mqtt_topic VARCHAR(256) NOT NULL, latitude DOUBLE PRECISION NOT NULL, longitude DOUBLE PRECISION NOT NULL); INSERT INTO mlt_sensor (sensor_id, object_path, display_name, mqtt_topic, latitude, longitude) SELECT 'sensor-01', 'root.platform.devices.mqtt-lab.sensors.sensor-01', '1wire test 1', 'esp2/1wire_test1/temperature', 55.761, 37.638 WHERE NOT EXISTS (SELECT 1 FROM mlt_sensor WHERE sensor_id = 'sensor-01'); INSERT INTO mlt_sensor (sensor_id, object_path, display_name, mqtt_topic, latitude, longitude) SELECT 'sensor-02', 'root.platform.devices.mqtt-lab.sensors.sensor-02', '1wire test 2', 'esp2/1wire_test2/temperature', 55.765, 37.645 WHERE NOT EXISTS (SELECT 1 FROM mlt_sensor WHERE sensor_id = 'sensor-02'); INSERT INTO mlt_sensor (sensor_id, object_path, display_name, mqtt_topic, latitude, longitude) SELECT 'sensor-03', 'root.platform.devices.mqtt-lab.sensors.sensor-03', 'Aqua cold corner', 'esp1/aqua_coldcorner_water/temperature', 55.752, 37.621 WHERE NOT EXISTS (SELECT 1 FROM mlt_sensor WHERE sensor_id = 'sensor-03'); INSERT INTO mlt_sensor (sensor_id, object_path, display_name, mqtt_topic, latitude, longitude) SELECT 'sensor-04', 'root.platform.devices.mqtt-lab.sensors.sensor-04', 'Aqua island air', 'esp1/aqua_island_air/temperature', 55.748, 37.615 WHERE NOT EXISTS (SELECT 1 FROM mlt_sensor WHERE sensor_id = 'sensor-04'); CREATE TABLE IF NOT EXISTS mlt_poll_heartbeat (id INT PRIMARY KEY DEFAULT 1, last_tick TIMESTAMPTZ); INSERT INTO mlt_poll_heartbeat (id, last_tick) SELECT 1, NOW() WHERE NOT EXISTS (SELECT 1 FROM mlt_poll_heartbeat WHERE id = 1);"
     }
   ],
+  "models": [
+    {
+      "name": "mqtt-sensor-v1",
+      "description": "MQTT temperature sensor with threshold monitoring (lab fixture)",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "temperature",
+          "description": "Current temperature reading",
+          "group": "telemetry",
+          "schema": {
+            "name": "temperature",
+            "fields": [
+              { "name": "value", "type": "DOUBLE" },
+              { "name": "unit", "type": "STRING" }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "historyEnabled": true,
+          "defaultValue": {
+            "schema": {
+              "name": "temperature",
+              "fields": [
+                { "name": "value", "type": "DOUBLE" },
+                { "name": "unit", "type": "STRING" }
+              ]
+            },
+            "rows": [{ "value": 22.5, "unit": "C" }]
+          }
+        },
+        {
+          "name": "threshold",
+          "description": "Alarm threshold in Celsius",
+          "group": "config",
+          "schema": {
+            "name": "threshold",
+            "fields": [{ "name": "value", "type": "DOUBLE" }]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "threshold",
+              "fields": [{ "name": "value", "type": "DOUBLE" }]
+            },
+            "rows": [{ "value": 35.0 }]
+          }
+        },
+        {
+          "name": "alarmActive",
+          "description": "Whether temperature exceeds threshold",
+          "group": "status",
+          "schema": {
+            "name": "alarmActive",
+            "fields": [{ "name": "value", "type": "BOOLEAN" }]
+          },
+          "readable": true,
+          "writable": false,
+          "defaultValue": {
+            "schema": {
+              "name": "alarmActive",
+              "fields": [{ "name": "value", "type": "BOOLEAN" }]
+            },
+            "rows": [{ "value": false }]
+          }
+        },
+        {
+          "name": "alarmAcknowledged",
+          "description": "Operator acknowledged the active alarm",
+          "group": "status",
+          "schema": {
+            "name": "booleanValue",
+            "fields": [{ "name": "value", "type": "BOOLEAN" }]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "booleanValue",
+              "fields": [{ "name": "value", "type": "BOOLEAN" }]
+            },
+            "rows": [{ "value": false }]
+          }
+        }
+      ],
+      "events": [
+        {
+          "name": "thresholdExceeded",
+          "description": "Temperature exceeded configured threshold",
+          "level": "WARNING",
+          "schema": {
+            "name": "temperature",
+            "fields": [
+              { "name": "value", "type": "DOUBLE" },
+              { "name": "unit", "type": "STRING" }
+            ]
+          }
+        }
+      ],
+      "functions": [
+        {
+          "name": "acknowledgeAlarm",
+          "description": "Acknowledge active temperature alarm",
+          "inputSchema": { "name": "voidInput", "fields": [] },
+          "outputSchema": {
+            "name": "functionResult",
+            "fields": [
+              { "name": "success", "type": "BOOLEAN" },
+              { "name": "message", "type": "STRING" }
+            ]
+          }
+        }
+      ],
+      "bindings": [
+        {
+          "id": "alarm-active",
+          "expression": "hysteresis(temperature, 35, 33)",
+          "targetVariable": "alarmActive"
+        }
+      ],
+      "parameters": { "unit": "C" }
+    }
+  ],
   "objects": [
     {
       "parentPath": "root.platform.devices",

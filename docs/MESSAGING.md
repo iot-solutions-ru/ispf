@@ -54,7 +54,7 @@
 
 Конфигурация: `ispf.nats.url`, `ispf.nats.replica-id`, `ispf.nats.replica-events-enabled`.
 
-### JetStream (optional, ADR-0021)
+### JetStream (optional, 0014)
 
 When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
 
@@ -66,7 +66,7 @@ When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
 
 Replica fan-out uses JetStream publish/subscribe instead of core NATS for `ispf.events.>` subjects. Per-replica durable consumers (`ispf-replica-{replicaId}`) allow catch-up after restarts. Object-level subjects (`ispf.object.*`) remain core NATS for external integrators.
 
-### Redis correlator windows (optional, ADR-0021)
+### Redis correlator windows (optional, 0014)
 
 When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
 

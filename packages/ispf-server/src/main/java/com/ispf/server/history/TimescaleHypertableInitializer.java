@@ -75,6 +75,7 @@ public class TimescaleHypertableInitializer {
                     """);
 
             addRetentionPolicy("variable_samples", 90);
+            enableVariableSamplesCompression();
             variableSamplesTimescaleActive.set(true);
             log.info("TimescaleDB hypertable and retention policy enabled for variable_samples");
         } catch (Exception ex) {
@@ -110,6 +111,30 @@ public class TimescaleHypertableInitializer {
             log.info("TimescaleDB hypertable enabled for event_history (retention {} days)", retentionDays);
         } catch (Exception ex) {
             log.info("TimescaleDB hypertable setup skipped for event_history: {}", ex.getMessage());
+        }
+    }
+
+    private void enableVariableSamplesCompression() {
+        try {
+            jdbcTemplate.execute("""
+                    ALTER TABLE variable_samples SET (
+                        timescaledb.compress,
+                        timescaledb.compress_segmentby = 'object_path, variable_name, field_name'
+                    )
+                    """);
+            jdbcTemplate.execute("""
+                    SELECT add_compression_policy(
+                        'variable_samples',
+                        INTERVAL '7 days',
+                        if_not_exists => TRUE
+                    )
+                    """);
+            log.info(
+                    "TimescaleDB compression policy enabled for variable_samples "
+                            + "(segmentby object_path, variable_name, field_name, after 7 days)"
+            );
+        } catch (Exception ex) {
+            log.info("TimescaleDB compression policy skipped for variable_samples: {}", ex.getMessage());
         }
     }
 

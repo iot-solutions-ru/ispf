@@ -52,6 +52,10 @@ public class OperatorAppUiStore {
         return rows.stream().findFirst();
     }
 
+    public void deleteByAppId(String appId) {
+        jdbcTemplate.update("DELETE FROM %s WHERE app_id = ?".formatted(table), appId);
+    }
+
     public void upsert(OperatorAppUiRecord record) {
         Integer count = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM %s WHERE app_id = ?".formatted(table),

@@ -58,10 +58,13 @@ public class AutomationMetricsRecorder {
     private final AtomicLong objectChangeDroppedCount = new AtomicLong();
     private final AtomicLong eventJournalSyncFallbackCount = new AtomicLong();
     private final AtomicLong eventJournalFlushedCount = new AtomicLong();
+    private final AtomicLong variableHistorySyncFallbackCount = new AtomicLong();
+    private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
     private final List<BlockingQueue<?>> objectChangeQueues = new java.util.concurrent.CopyOnWriteArrayList<>();
     private volatile BlockingQueue<?> eventJournalQueue;
+    private volatile BlockingQueue<?> variableHistoryQueue;
 
     public AutomationMetricsRecorder(Optional<MeterRegistry> meterRegistry) {
         this.meterRegistry = meterRegistry;
@@ -129,6 +132,19 @@ public class AutomationMetricsRecorder {
         });
     }
 
+    public void bindVariableHistoryQueue(BlockingQueue<?> queue) {
+        this.variableHistoryQueue = queue;
+        meterRegistry.ifPresent(registry -> {
+            registry.gauge("ispf.variable_history.queue.size", Tags.empty(), queue, BlockingQueue::size);
+            registry.gauge(
+                    "ispf.variable_history.flushed.total",
+                    Tags.empty(),
+                    variableHistoryFlushedCount,
+                    AtomicLong::doubleValue
+            );
+        });
+    }
+
     public void recordEventFired(EventFireSource source) {
         eventsFiredBySource.get(source).incrementAndGet();
         meterRegistry.ifPresent(registry -> registry.counter(
@@ -182,6 +198,14 @@ public class AutomationMetricsRecorder {
         eventJournalFlushedCount.addAndGet(count);
     }
 
+    public void recordVariableHistorySyncFallback() {
+        variableHistorySyncFallbackCount.incrementAndGet();
+    }
+
+    public void recordVariableHistoryFlushed(long count) {
+        variableHistoryFlushedCount.addAndGet(count);
+    }
+
     public Map<String, Object> automationSnapshot() {
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("eventsFiredTotal", eventsFiredTotal());
@@ -193,6 +217,9 @@ public class AutomationMetricsRecorder {
         section.put("eventJournalQueueSize", eventJournalQueueSize());
         section.put("eventJournalFlushedTotal", eventJournalFlushedCount.get());
         section.put("eventJournalSyncFallbackTotal", eventJournalSyncFallbackCount.get());
+        section.put("variableHistoryQueueSize", variableHistoryQueueSize());
+        section.put("variableHistoryFlushedTotal", variableHistoryFlushedCount.get());
+        section.put("variableHistorySyncFallbackTotal", variableHistorySyncFallbackCount.get());
         return section;
     }
 
@@ -211,5 +238,14 @@ public class AutomationMetricsRecorder {
     public int eventJournalQueueSize() {
         BlockingQueue<?> queue = eventJournalQueue;
         return queue != null ? queue.size() : 0;
+    }
+
+    public int variableHistoryQueueSize() {
+        BlockingQueue<?> queue = variableHistoryQueue;
+        return queue != null ? queue.size() : 0;
+    }
+
+    public long variableHistoryFlushedTotal() {
+        return variableHistoryFlushedCount.get();
     }
 }

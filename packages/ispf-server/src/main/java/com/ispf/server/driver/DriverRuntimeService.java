@@ -25,6 +25,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,7 +191,8 @@ public class DriverRuntimeService {
                 binding.pollIntervalMs(),
                 TimeUnit.MILLISECONDS
         );
-        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null));
+        boolean connected = driver.isConnected();
+        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null, connected));
         poll(devicePath);
         setStatus(devicePath, "RUNNING");
         return status(devicePath).orElseThrow();
@@ -217,9 +221,17 @@ public class DriverRuntimeService {
         }
     }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Transactional
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
         Optional<DriverBinding> existing = readBinding(devicePath);
+        // #region agent log
+        agentLog("DriverRuntimeService.java:configure", "configure invoked", "H4", Map.of(
+                "devicePath", devicePath,
+                "requestedDriverId", binding.driverId(),
+                "existingDriverId", existing.map(DriverBinding::driverId).orElse("(none)"),
+                "willReject", existing.isPresent() && !existing.get().driverId().equals(binding.driverId())
+        ));
+        // #endregion
         if (existing.isPresent() && !existing.get().driverId().equals(binding.driverId())) {
             throw new IllegalStateException(
                     "Driver already configured as " + existing.get().driverId()
@@ -276,19 +288,24 @@ public class DriverRuntimeService {
         }
         try {
             active.driver().readPoints(active.binding().pointMappings());
-            activeDrivers.put(devicePath, new ActiveDriver(
+            boolean connected = active.driver().isConnected();
+            ActiveDriver next = new ActiveDriver(
                     active.driver(),
                     active.binding(),
                     active.future(),
-                    null
-            ));
+                    null,
+                    connected
+            );
+            activeDrivers.put(devicePath, next);
+            notifyConnectionIfChanged(devicePath, active, next);
             setStatus(devicePath, "RUNNING");
         } catch (Exception e) {
             activeDrivers.put(devicePath, new ActiveDriver(
                     active.driver(),
                     active.binding(),
                     active.future(),
-                    e.getMessage()
+                    e.getMessage(),
+                    active.lastKnownConnected()
             ));
             setStatus(devicePath, "ERROR");
             log.warn("Driver poll failed for {}: {}", devicePath, e.getMessage());
@@ -315,12 +332,20 @@ public class DriverRuntimeService {
     }
 
     private void setStatus(String devicePath, String status) {
+        boolean unchanged = readStatusVariable(devicePath).map(status::equals).orElse(false);
         objectManager.setRuntimeVariableValue(
                 devicePath,
                 "driverStatus",
                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", status)),
-                false
+                !unchanged
         );
+    }
+
+    private void notifyConnectionIfChanged(String devicePath, ActiveDriver previous, ActiveDriver next) {
+        if (previous.lastKnownConnected() == next.lastKnownConnected()) {
+            return;
+        }
+        objectManager.publishDriverRuntimeChanged(devicePath);
     }
 
     private static Optional<String> stringValue(PlatformObject node, String variableName) {
@@ -341,7 +366,8 @@ public class DriverRuntimeService {
             DeviceDriver driver,
             DriverBinding binding,
             ScheduledFuture<?> future,
-            String lastError
+            String lastError,
+            boolean lastKnownConnected
     ) {
     }
 
@@ -396,4 +422,27 @@ public class DriverRuntimeService {
         metrics.put("stoppedDrivers", Math.max(0, devices - active));
         return metrics;
     }
+
+    /** Debug-only helper for agent instrumentation session c91425. */
+    public java.util.Optional<String> debugReadDriverId(String devicePath) {
+        return readBinding(devicePath).map(DriverBinding::driverId);
+    }
+
+    // #region agent log
+    private static void agentLog(String location, String message, String hypothesisId, Map<String, Object> data) {
+        try {
+            String json = "{\"sessionId\":\"c91425\",\"timestamp\":" + System.currentTimeMillis()
+                    + ",\"location\":\"" + location + "\",\"message\":\"" + message + "\",\"hypothesisId\":\""
+                    + hypothesisId + "\",\"data\":" + new ObjectMapper().writeValueAsString(data) + "}\n";
+            for (String rel : new String[]{"debug-c91425.log", "../../debug-c91425.log", "../../../debug-c91425.log"}) {
+                Path p = Path.of(rel);
+                if (Files.exists(p.getParent() == null ? Path.of(".") : p.getParent()) || rel.equals("debug-c91425.log")) {
+                    Files.writeString(p, json, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+    // #endregion
 }

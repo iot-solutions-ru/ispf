@@ -5,6 +5,7 @@ import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.server.bootstrap.FixtureModelDefinitions;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,6 +101,15 @@ public class SystemObjectStructureService {
             return;
         }
         applyIntrinsic("correlator-v1", path);
+    }
+
+    @Transactional
+    public void ensureDeviceDriverStructure(String path) {
+        if (objectManager.require(path).getVariable("driverId").isPresent()) {
+            return;
+        }
+        modelEngine.applyIntrinsicStructure(FixtureModelDefinitions.buildDeviceDriverModel(), path);
+        objectManager.persistNodeTree(path);
     }
 
     private void applyIntrinsic(String modelName, String path) {

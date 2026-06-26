@@ -11,6 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $BundlePath = Join-Path $PSScriptRoot "..\examples\lab-mqtt-temperature\bundle.json"
 $ModelName = "mqtt-sensor-v1"
+# Model is deployed via bundle manifest models[] (see examples/lab-mqtt-temperature/mqtt-sensor-v1.model.json).
 
 function Get-AuthHeaders {
     $loginBody = @{ username = $Username; password = $Password } | ConvertTo-Json

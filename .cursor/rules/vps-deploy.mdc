@@ -18,8 +18,12 @@ alwaysApply: true
 From repo root, use [`deploy/vps-deploy-direct.ps1`](deploy/vps-deploy-direct.ps1):
 
 ```powershell
-.\deploy\vps-deploy-direct.ps1 -Version 0.8.0
+.\deploy\vps-deploy-direct.ps1 -Version 0.9.32 -SkipTests -VerifyClickHouse
 ```
+
+`-VerifyClickHouse` — после rollout: `vps-clickhouse-verify.sh` (ping, `store=clickhouse`, smoke `POST /events/fire`).
+
+Отдельно (без deploy): `bash /opt/ispf/vps-clickhouse-verify.sh` на VPS.
 
 Or equivalent manual steps:
 

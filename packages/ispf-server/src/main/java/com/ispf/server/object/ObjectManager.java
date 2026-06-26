@@ -8,9 +8,11 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
+import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
@@ -55,11 +57,13 @@ public class ObjectManager {
     private final ObjectVariableRepository variableRepository;
     private final ObjectEntityMapper mapper;
     private final PlatformBootstrap platformBootstrap;
+    private final BootstrapProperties bootstrapProperties;
     private final ObjectProvider<ModelBootstrap> modelBootstrap;
     private final ObjectProvider<ModelApplicationRunner> modelApplicationRunner;
     private final ObjectProvider<ModelPersistenceService> modelPersistence;
     private final ObjectProvider<ModelEngine> modelEngine;
     private final ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration;
+    private final ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectConfigAuditService configAuditService;
@@ -71,11 +75,13 @@ public class ObjectManager {
             ObjectVariableRepository variableRepository,
             ObjectEntityMapper mapper,
             PlatformBootstrap platformBootstrap,
+            BootstrapProperties bootstrapProperties,
             ObjectProvider<ModelBootstrap> modelBootstrap,
             ObjectProvider<ModelApplicationRunner> modelApplicationRunner,
             ObjectProvider<ModelPersistenceService> modelPersistence,
             ObjectProvider<ModelEngine> modelEngine,
             ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration,
+            ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
             ApplicationEventPublisher eventPublisher,
             ObjectConfigAuditService configAuditService,
@@ -85,11 +91,13 @@ public class ObjectManager {
         this.variableRepository = variableRepository;
         this.mapper = mapper;
         this.platformBootstrap = platformBootstrap;
+        this.bootstrapProperties = bootstrapProperties;
         this.modelBootstrap = modelBootstrap;
         this.modelApplicationRunner = modelApplicationRunner;
         this.modelPersistence = modelPersistence;
         this.modelEngine = modelEngine;
         this.intrinsicModelMigration = intrinsicModelMigration;
+        this.fixtureModelBootstrap = fixtureModelBootstrap;
         this.visualGroupService = visualGroupService;
         this.eventPublisher = eventPublisher;
         this.configAuditService = configAuditService;
@@ -112,12 +120,17 @@ public class ObjectManager {
         modelBootstrap.getObject().ensureBuiltInModels();
         modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
         intrinsicModelMigration.ifAvailable(SystemIntrinsicModelMigration::migrate);
+        if (bootstrapProperties.isFixturesEnabled()) {
+            fixtureModelBootstrap.ifAvailable(FixtureModelBootstrap::ensureFixtureModels);
+            modelApplicationRunner.getObject().applyDemoModels();
+            modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
+        } else {
+            fixtureModelBootstrap.ifAvailable(bootstrap -> bootstrap.removeFixtureModelsIfPresent(this));
+        }
         modelEngine.ifAvailable(engine -> {
             engine.refreshModelCatalogNodes();
             cleanupLegacyModelCatalog();
         });
-        modelApplicationRunner.getObject().applyDemoModels();
-        modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
         modelApplicationRunner.getObject().syncAllModelBackedVariableMetadata();
         modelApplicationRunner.getObject().restoreAttachments();
         initialized = true;
@@ -299,6 +312,16 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
+        Variable variable = setDriverTelemetryValueInMemory(path, name, value);
+        telemetryCoalescer.recordUpdate(path, name, value);
+        return variable;
+    }
+
+    public Variable setDriverTelemetryValueDirect(String path, String name, DataRecord value) {
+        return setDriverTelemetryValueInMemory(path, name, value);
+    }
+
+    private Variable setDriverTelemetryValueInMemory(String path, String name, DataRecord value) {
         PlatformObject node = objectTree.require(path);
         Variable variable = node.getVariable(name).orElseGet(() -> {
             Variable created = new Variable(name, value.schema(), true, false, null);
@@ -306,7 +329,6 @@ public class ObjectManager {
             return created;
         });
         variable.setComputedValue(value);
-        telemetryCoalescer.recordUpdate(path, name, value);
         return variable;
     }
 
@@ -790,6 +812,11 @@ public class ObjectManager {
                 false,
                 true
         ));
+    }
+
+    /** Notifies WebSocket clients that driver runtime hints changed (status or live connection). */
+    public void publishDriverRuntimeChanged(String path) {
+        publish(ObjectChangeEvent.variableUpdated(path, "driverStatus"));
     }
 
     public List<ObjectConfigAuditService.AuditEntry> configAudit(String path, int limit) {

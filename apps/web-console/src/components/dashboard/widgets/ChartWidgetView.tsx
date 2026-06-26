@@ -119,7 +119,7 @@ export default function ChartWidgetView({
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>
         ) : isError && !isDemo ? (
           <div className="dash-chart-placeholder error">{t("view.bindingError")}</div>
-        ) : points.length < 2 ? (
+        ) : points.length < 1 ? (
           <div className="dash-chart-placeholder">
             {variable?.historyEnabled === false
               ? t("view.historyDisabled")

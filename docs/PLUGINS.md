@@ -33,7 +33,7 @@
 - `README` с ограничениями использования и контактом правообладателя
 - Версию и список совместимых версий ISPF
 
-Commercial bundle с секцией `license` — см. [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) и [ADR-0010](decisions/0010-commercial-bundle-licensing.md).
+Commercial bundle с секцией `license` — см. [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) и [0003](decisions/0003-commercial-bundle-licensing.md).
 
 Плагин **не коммитится** в `packages/ispf-server/` и **не** вливается в `main` без отдельного решения о open-source.
 
@@ -47,7 +47,7 @@ Commercial bundle с секцией `license` — см. [COMMERCIAL_LICENSING.md
 | `packages/ispf-ai-openai-compatible` | OpenAI-compatible HTTP API |
 | `packages/ispf-ai-ollama` | Ollama local API |
 
-`ispf-server` содержит только registry, ToolRegistry, audit и admin REST. Конфигурация — Spring profile/env (`ispf.ai.*`). См. [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md), [ADR-0011](decisions/0011-ai-artifact-generation-gates.md).
+`ispf-server` содержит только registry, ToolRegistry, audit и admin REST. Конфигурация — Spring profile/env (`ispf.ai.*`). См. [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md), [0004](decisions/0004-ai-artifact-generation-gates.md).
 
 ## Чеклист перед PR в `main`
 

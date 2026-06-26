@@ -5,6 +5,7 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
+import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
@@ -103,6 +104,132 @@ class ModelEngineTest {
         assertThat(result.attachment().modelName()).isEqualTo("mqtt-sensor-v1");
         assertThat(device.getVariable("temperature")).isPresent();
         assertThat(device.events()).containsKey("thresholdExceeded");
+    }
+
+    @Test
+    void applyRelativeModelsSkipsBlankApplicabilityExpression() {
+        DataSchema temperatureSchema = DataSchema.builder("temperature")
+                .field("value", FieldType.DOUBLE)
+                .build();
+
+        ModelDefinition model = new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "auto-skip-sensor",
+                "Sensor without applicability CEL",
+                ModelType.RELATIVE,
+                ObjectType.DEVICE,
+                "",
+                List.of(ModelVariableDefinition.of(
+                        "temperature",
+                        "Current temperature",
+                        "telemetry",
+                        temperatureSchema,
+                        true,
+                        true, DataRecord.single(temperatureSchema, Map.of("value", 0.0))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createModel(model);
+
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.auto-skip",
+                ObjectType.DEVICE,
+                "auto-skip",
+                null,
+                null
+        );
+        objectTree.register(device);
+
+        List<ModelApplyResult> applied = engine.applyRelativeModels(device.path());
+
+        assertThat(applied).isEmpty();
+        assertThat(device.getVariable("temperature")).isEmpty();
+    }
+
+    @Test
+    void applyRelativeModelsUsesApplicabilityExpression() {
+        DataSchema flagSchema = DataSchema.builder("flag")
+                .field("value", FieldType.BOOLEAN)
+                .build();
+
+        ModelDefinition matching = new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "cel-match",
+                "Applies when flag is true",
+                ModelType.RELATIVE,
+                ObjectType.DEVICE,
+                "self.flag.value == true",
+                List.of(ModelVariableDefinition.of(
+                        "matched",
+                        "Matched marker",
+                        "meta",
+                        flagSchema,
+                        true,
+                        false,
+                        DataRecord.single(flagSchema, Map.of("value", true))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        ModelDefinition nonMatching = new ModelDefinition(
+                UUID.randomUUID().toString(),
+                "cel-no-match",
+                "Applies when flag is false",
+                ModelType.RELATIVE,
+                ObjectType.DEVICE,
+                "self.flag.value == false",
+                List.of(ModelVariableDefinition.of(
+                        "nonMatched",
+                        "Non-matched marker",
+                        "meta",
+                        flagSchema,
+                        true,
+                        false,
+                        DataRecord.single(flagSchema, Map.of("value", false))
+                )),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+        engine.createModel(matching);
+        engine.createModel(nonMatching);
+
+        PlatformObject device = new PlatformObject(
+                UUID.randomUUID().toString(),
+                "root.platform.devices.cel-device",
+                ObjectType.DEVICE,
+                "cel-device",
+                null,
+                null
+        );
+        objectTree.register(device);
+        device.addVariable(new Variable(
+                "flag",
+                flagSchema,
+                true,
+                false,
+                DataRecord.single(flagSchema, Map.of("value", true))
+        ));
+
+        List<ModelApplyResult> applied = engine.applyRelativeModels(device.path());
+
+        assertThat(applied).hasSize(1);
+        assertThat(applied.getFirst().attachment().modelName()).isEqualTo("cel-match");
+        assertThat(device.getVariable("matched")).isPresent();
+        assertThat(device.getVariable("nonMatched")).isEmpty();
     }
 
     @Test

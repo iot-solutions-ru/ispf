@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,13 +15,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = "ispf.bootstrap.fixtures-enabled=true")
 class ModelControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void listsBuiltInMqttSensorModel() throws Exception {
+    void listsFixtureMqttSensorModelWhenFixturesEnabled() throws Exception {
         mockMvc.perform(get("/api/v1/models"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')]").exists())

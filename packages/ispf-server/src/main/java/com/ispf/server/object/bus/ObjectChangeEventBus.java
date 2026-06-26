@@ -19,6 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,6 +59,7 @@ public class ObjectChangeEventBus {
     private Lane telemetryLane;
     private Lane automationLane;
     private ScheduledExecutorService coalesceScheduler;
+    private ScheduledExecutorService sharedScaleScheduler;
     private volatile boolean running;
     private final ConcurrentHashMap<String, ObjectChangeEvent> telemetryCoalesce = new ConcurrentHashMap<>();
     private volatile boolean coalesceFlushScheduled;
@@ -82,6 +84,20 @@ public class ObjectChangeEventBus {
             return;
         }
         running = true;
+        if (properties.isElasticWorkersEnabled()) {
+            AtomicInteger scaleIndex = new AtomicInteger();
+            sharedScaleScheduler = Executors.newScheduledThreadPool(
+                    properties.getScaleSchedulerThreads(),
+                    runnable -> {
+                        Thread thread = new Thread(
+                                runnable,
+                                "object-change-bus-scale-" + scaleIndex.incrementAndGet()
+                        );
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+            );
+        }
         if (properties.isSplitLanesEnabled()) {
             telemetryLane = new Lane(
                     ObjectChangeLane.TELEMETRY,
@@ -105,8 +121,8 @@ public class ObjectChangeEventBus {
                     properties.getElasticScaleCheckIntervalMs(),
                     handlersForLane(ObjectChangeLane.AUTOMATION)
             );
-            telemetryLane.start();
-            automationLane.start();
+            telemetryLane.start(sharedScaleScheduler);
+            automationLane.start(sharedScaleScheduler);
             automationMetricsRecorder.bindObjectChangeQueue("telemetry", telemetryLane.queue);
             automationMetricsRecorder.bindObjectChangeQueue("automation", automationLane.queue);
             log.info(
@@ -133,7 +149,7 @@ public class ObjectChangeEventBus {
                     properties.getElasticScaleCheckIntervalMs(),
                     handlers
             );
-            unifiedLane.start();
+            unifiedLane.start(sharedScaleScheduler);
             automationMetricsRecorder.bindObjectChangeQueue("unified", unifiedLane.queue);
             log.info(
                     "Object change event bus started (workers={}-{}, queueCapacity={}, elastic={}, handlers={})",
@@ -145,11 +161,18 @@ public class ObjectChangeEventBus {
             );
         }
         if (properties.isCoalesceTelemetryUpdates()) {
-            coalesceScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "object-change-coalesce");
-                thread.setDaemon(true);
-                return thread;
-            });
+            AtomicInteger coalesceIndex = new AtomicInteger();
+            coalesceScheduler = Executors.newScheduledThreadPool(
+                    properties.getCoalesceSchedulerThreads(),
+                    runnable -> {
+                        Thread thread = new Thread(
+                                runnable,
+                                "object-change-coalesce-" + coalesceIndex.incrementAndGet()
+                        );
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+            );
         }
     }
 
@@ -249,6 +272,9 @@ public class ObjectChangeEventBus {
         if (coalesceScheduler != null) {
             coalesceScheduler.shutdownNow();
         }
+        if (sharedScaleScheduler != null) {
+            sharedScaleScheduler.shutdownNow();
+        }
     }
 
     public void applyRuntimeTuning() {
@@ -297,7 +323,7 @@ public class ObjectChangeEventBus {
         private volatile int scaleUpQueueThreshold;
         private final int scaleCheckIntervalMs;
         private final int scaleDownSteps;
-        private ScheduledExecutorService scaleScheduler;
+        private ScheduledFuture<?> scaleTask;
 
         private Lane(
                 ObjectChangeLane id,
@@ -330,19 +356,14 @@ public class ObjectChangeEventBus {
             });
         }
 
-        private void start() {
+        private void start(ScheduledExecutorService scaleScheduler) {
             int initial = elasticWorkers ? minWorkers : maxWorkers;
             for (int i = 0; i < initial; i++) {
                 spawnWorker();
             }
             automationMetricsRecorder.bindObjectChangeWorkers(id.name().toLowerCase(), activeWorkers);
-            if (elasticWorkers) {
-                scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                    Thread thread = new Thread(runnable, "object-change-bus-scale-" + id.name().toLowerCase());
-                    thread.setDaemon(true);
-                    return thread;
-                });
-                scaleScheduler.scheduleAtFixedRate(
+            if (elasticWorkers && scaleScheduler != null) {
+                scaleTask = scaleScheduler.scheduleAtFixedRate(
                         this::adjustWorkers,
                         scaleCheckIntervalMs,
                         scaleCheckIntervalMs,
@@ -463,8 +484,8 @@ public class ObjectChangeEventBus {
         }
 
         private void shutdown() {
-            if (scaleScheduler != null) {
-                scaleScheduler.shutdownNow();
+            if (scaleTask != null) {
+                scaleTask.cancel(false);
             }
             workers.shutdownNow();
         }

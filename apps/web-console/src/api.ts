@@ -113,12 +113,23 @@ export function fetchVariables(path: string): Promise<VariableDto[]> {
   return request(`/api/v1/objects/by-path/variables?path=${encodeURIComponent(path)}`);
 }
 
-export function fetchVariablesBatch(paths: string[]): Promise<Record<string, VariableDto[]>> {
+const VARIABLES_BATCH_MAX_PATHS = 50;
+
+export async function fetchVariablesBatch(paths: string[]): Promise<Record<string, VariableDto[]>> {
   if (paths.length === 0) {
-    return Promise.resolve({});
+    return {};
   }
-  const pathsParam = paths.map((path) => encodeURIComponent(path)).join(",");
-  return request(`/api/v1/objects/variables/batch?paths=${pathsParam}`);
+  const uniquePaths = [...new Set(paths.filter(Boolean))];
+  const result: Record<string, VariableDto[]> = {};
+  for (let i = 0; i < uniquePaths.length; i += VARIABLES_BATCH_MAX_PATHS) {
+    const chunk = uniquePaths.slice(i, i + VARIABLES_BATCH_MAX_PATHS);
+    const pathsParam = chunk.map((path) => encodeURIComponent(path)).join(",");
+    const part = await request<Record<string, VariableDto[]>>(
+      `/api/v1/objects/variables/batch?paths=${pathsParam}`
+    );
+    Object.assign(result, part);
+  }
+  return result;
 }
 
 export interface VariableHistorySample {

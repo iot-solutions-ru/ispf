@@ -14,6 +14,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @Component
 @Order(-1)
 public class ScriptFunctionHandler implements FunctionHandler {
@@ -82,17 +84,25 @@ public class ScriptFunctionHandler implements FunctionHandler {
     }
 
     private ScriptExecutionContext nestedContext(String objectPath, String functionName, int depth) {
-        return (nestedPath, nestedName, nestedInput) -> {
-            if (depth >= ScriptExecutionContext.MAX_CALL_DEPTH) {
-                throw new IllegalStateException("Script function call depth exceeded");
+        return new ScriptExecutionContext() {
+            @Override
+            public String callerObjectPath() {
+                return objectPath;
             }
-            DataRecord nestedRecord = nestedInput != null
-                    ? schemaSession.callWithPlatformCatalog(() -> DataRecord.single(
-                            objectManager.require(nestedPath).functions().get(nestedName).inputSchema(),
-                            nestedInput
-                    ))
-                    : null;
-            return functionService.invoke(nestedPath, nestedName, nestedRecord);
+
+            @Override
+            public DataRecord invokeFunction(String nestedPath, String nestedName, Map<String, Object> nestedInput) {
+                if (depth >= ScriptExecutionContext.MAX_CALL_DEPTH) {
+                    throw new IllegalStateException("Script function call depth exceeded");
+                }
+                DataRecord nestedRecord = nestedInput != null
+                        ? schemaSession.callWithPlatformCatalog(() -> DataRecord.single(
+                                objectManager.require(nestedPath).functions().get(nestedName).inputSchema(),
+                                nestedInput
+                        ))
+                        : null;
+                return functionService.invoke(nestedPath, nestedName, nestedRecord);
+            }
         };
     }
 }
