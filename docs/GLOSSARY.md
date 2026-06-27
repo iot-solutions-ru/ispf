@@ -164,7 +164,7 @@
 
 **WebSocket** — `WS /ws/objects` — live-обновления переменных и событий.
 
-**Widget** — элемент дашборда: value, chart, object-table, work-queue, dashboard-link, …
+**Widget** — элемент дашборда: value, chart, object-table, spreadsheet, work-queue, … Справочник: [WIDGETS.md](WIDGETS.md).
 
 **Work Queue** — очередь BPMN user tasks для операторов.
 

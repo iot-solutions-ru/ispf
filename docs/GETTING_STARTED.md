@@ -25,7 +25,26 @@ docker compose up -d
 | Mosquitto | 1883 | MQTT broker |
 | Keycloak | 8180 | OAuth2 (профиль `dev`) |
 
-## 2. Запуск API-сервера
+## 2. Driver packs (обязательно)
+
+Драйверы протоколов **не встроены** в `ispf-server.jar`. Перед первым запуском соберите packs:
+
+```bash
+./gradlew syncAllDriverPacks
+```
+
+Каталог по умолчанию: `./data/drivers` (или `ISPF_DRIVER_PACKS_DIR`).  
+`bootRun` и тесты Gradle автоматически используют `build/driver-packs` после `syncAllDriverPacks`.
+
+Скопируйте packs на сервер:
+
+```bash
+cp -r build/driver-packs/* /opt/ispf/data/drivers/
+```
+
+Подробно: [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md).
+
+## 3. Запуск API-сервера
 
 ### Локальная разработка без OAuth (рекомендуется)
 

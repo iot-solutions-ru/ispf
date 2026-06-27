@@ -518,9 +518,81 @@ export interface NetworkGraphWidget extends DashboardWidgetBase {
   labelField?: string;
 }
 
+export type SheetCellKind = "label" | "input" | "formula" | "readonly" | "binding";
+
+export interface SheetCellFormat {
+  type?: "number" | "text";
+  decimals?: number;
+  suffix?: string;
+  prefix?: string;
+}
+
+export interface SheetCellStyle {
+  color?: string;
+  backgroundColor?: string;
+  fontWeight?: string;
+}
+
+export interface SheetCellValidation {
+  type?: "range" | "pattern";
+  min?: number;
+  max?: number;
+  pattern?: string;
+  message?: string;
+}
+
+export interface SheetCellConfig {
+  kind: SheetCellKind;
+  text?: string;
+  expr?: string;
+  default?: string;
+  objectPath?: string;
+  variableName?: string;
+  valueField?: string;
+  refreshIntervalMs?: number;
+  format?: SheetCellFormat;
+  style?: SheetCellStyle;
+  validation?: SheetCellValidation;
+}
+
+export interface SheetColumnFilter {
+  column: string;
+  value?: string;
+}
+
+export interface SheetDataRegion {
+  startRow: number;
+  startCol: number;
+  variableName: string;
+  columnFields: string[];
+}
+
+export interface SheetConditionalStyle {
+  when: string;
+  style?: SheetCellStyle;
+}
+
+export interface SheetConfig {
+  rows: number;
+  cols: number;
+  frozenRows?: number;
+  frozenCols?: number;
+  colLabels?: string[];
+  cells: Record<string, SheetCellConfig>;
+  columnFilters?: SheetColumnFilter[];
+  dataRegion?: SheetDataRegion;
+  conditionalStyles?: SheetConditionalStyle[];
+}
+
+export type SheetMode = "free" | "configured";
+
 export interface SpreadsheetWidget extends DashboardWidgetBase {
   type: "spreadsheet";
-  variableName: string;
+  sheetMode?: SheetMode;
+  sheetConfigJson?: string;
+  persistMode?: "session" | "variable";
+  valuesVariable?: string;
+  sessionKey?: string;
   editable?: boolean;
 }
 
@@ -639,7 +711,7 @@ export const WIDGET_TYPES: Array<{ type: WidgetType; label: string }> = [
   { type: "steps-panel", label: "Шаги" },
   { type: "gantt-chart", label: "Гантт" },
   { type: "network-graph", label: "Граф сети" },
-  { type: "spreadsheet", label: "Таблица (RECORD_LIST)" },
+  { type: "spreadsheet", label: "Электронная таблица" },
   { type: "liquid-gauge", label: "Жидкий gauge" },
   { type: "nav-menu", label: "Меню навигации" },
 ];

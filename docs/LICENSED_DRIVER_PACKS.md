@@ -1,6 +1,7 @@
 # Licensed driver packs (FW-50)
 
-Commercial protocol drivers ship **outside** `main` as a signed JAR + `driver-pack.json`. Apache in-tree drivers are unchanged.
+All ISPF device drivers ship as **driver packs** (1 driver = 1 pack = 1 `licenseType`).  
+The platform JAR contains only the pack loader — not protocol implementations.
 
 ## Layout
 
@@ -11,7 +12,17 @@ ${ISPF_DRIVER_PACKS_DIR}/
     acme-opc-premium.jar
 ```
 
-Configure:
+## Build (monorepo)
+
+```bash
+./gradlew syncAllDriverPacks
+```
+
+Output: `build/driver-packs/<packId>/` with `driver-pack.json`, `LICENSE`, and JAR.
+
+Catalog source: [gradle/driver-packs.json](../gradle/driver-packs.json) (regenerate via `python tools/generate-driver-packs-json.py`).
+
+## Configure
 
 ```yaml
 ispf:
@@ -27,10 +38,12 @@ ispf:
 | Field | Required | Description |
 |-------|----------|-------------|
 | `packId` | yes | Unique pack identifier |
-| `minPlatformVersion` | yes | Semver gate (e.g. `0.7.5`) |
+| `driverId` | yes | Runtime driver id (e.g. `modbus-tcp`) |
+| `licenseType` | yes | SPDX id: `Apache-2.0`, `GPL-3.0-only`, `LGPL-3.0-or-later`, `MPL-2.0`, `Commercial`, … |
+| `minPlatformVersion` | yes | Semver gate (e.g. `0.9.32`) |
 | `jarFile` | yes | JAR filename relative to pack directory |
-| `drivers[]` | optional | Explicit `driverId` + `driverClass`; if omitted, `ServiceLoader` on `DeviceDriver` |
-| `license` | when `enforce=true` | RSA-signed claims (see below) |
+| `drivers[]` | yes | `driverId` + `driverClass` |
+| `license` | when `enforce=true` for commercial packs | RSA-signed claims (see below) |
 
 Example:
 

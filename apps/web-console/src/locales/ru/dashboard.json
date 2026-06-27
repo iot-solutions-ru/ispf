@@ -4,7 +4,7 @@
   "editor.general": "Общее",
   "editor.layoutHint": "Позицию и размер меняйте перетаскиванием на сетке.",
   "editor.sampleZoneLabel": "Зона А",
-  "editor.selectWidgetHint": "Выберите виджет на сетке или добавьте новый.",
+  "editor.selectWidgetHint": "Выберите виджет на сетке или добавьте новый. Delete — удалить выбранный.",
   "editor.stylesHint": "Ключи элементов: {{keys}}. CSS в camelCase. Пусто — по умолчанию.",
   "editor.styling": "Оформление",
   "editor.titleField": "Заголовок",

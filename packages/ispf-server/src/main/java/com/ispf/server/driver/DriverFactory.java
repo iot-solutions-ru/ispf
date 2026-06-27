@@ -1,139 +1,29 @@
 package com.ispf.server.driver;
 
-import com.ispf.driver.modemat.ModemAtDeviceDriver;
-import com.ispf.driver.sip.SipDeviceDriver;
-import com.ispf.driver.xmpp.XmppDeviceDriver;
-import com.ispf.driver.corba.CorbaDeviceDriver;
-import com.ispf.driver.opcda.OpcDaDeviceDriver;
-import com.ispf.driver.opcbridge.OpcBridgeDeviceDriver;
-import com.ispf.driver.application.ApplicationDeviceDriver;
-import com.ispf.driver.asterisk.AsteriskDeviceDriver;
-import com.ispf.driver.bacnet.BacnetDeviceDriver;
-import com.ispf.driver.dnp3.Dnp3DeviceDriver;
-import com.ispf.driver.coap.CoapDeviceDriver;
-import com.ispf.driver.cwmp.CwmpDeviceDriver;
-import com.ispf.driver.file.FileDeviceDriver;
-import com.ispf.driver.graphdb.GraphDbDeviceDriver;
-import com.ispf.driver.flexible.FlexibleDeviceDriver;
-import com.ispf.driver.gpstracker.GpsTrackerDeviceDriver;
-import com.ispf.driver.folder.FolderDeviceDriver;
-import com.ispf.driver.http.HttpDeviceDriver;
-import com.ispf.driver.httpserver.HttpServerDeviceDriver;
-import com.ispf.driver.icmp.IcmpDeviceDriver;
-import com.ispf.driver.jms.JmsDeviceDriver;
-import com.ispf.driver.iec104.Iec104DeviceDriver;
-import com.ispf.driver.iphost.IpHostDeviceDriver;
-import com.ispf.driver.jdbc.JdbcDeviceDriver;
-import com.ispf.driver.kafka.KafkaDeviceDriver;
-import com.ispf.driver.odbc.OdbcDeviceDriver;
-import com.ispf.driver.jmx.JmxDeviceDriver;
-import com.ispf.driver.messagestream.MessageStreamDeviceDriver;
-import com.ispf.driver.mbus.MbusDeviceDriver;
-import com.ispf.driver.mqtt.MqttDeviceDriver;
-import com.ispf.driver.dlms.DlmsDeviceDriver;
-import com.ispf.driver.ethernetip.EthernetIpDeviceDriver;
-import com.ispf.driver.iec104server.Iec104ServerDeviceDriver;
-import com.ispf.driver.modbus.ModbusTcpDeviceDriver;
-import com.ispf.driver.modbusrtu.ModbusRtuDeviceDriver;
-import com.ispf.driver.modbusudp.ModbusUdpDeviceDriver;
-import com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver;
-import com.ispf.driver.nmea.NmeaDeviceDriver;
-import com.ispf.driver.omronfins.OmronFinsDeviceDriver;
-import com.ispf.driver.opcua.OpcUaDeviceDriver;
-import com.ispf.driver.s7.S7DeviceDriver;
-import com.ispf.driver.smb.SmbDeviceDriver;
-import com.ispf.driver.smpp.SmppDeviceDriver;
-import com.ispf.driver.dhcp.DhcpDeviceDriver;
-import com.ispf.driver.imap.ImapDeviceDriver;
-import com.ispf.driver.ipmi.IpmiDeviceDriver;
-import com.ispf.driver.ldap.LdapDeviceDriver;
-import com.ispf.driver.pop3.Pop3DeviceDriver;
-import com.ispf.driver.radius.RadiusDeviceDriver;
-import com.ispf.driver.smis.SmisDeviceDriver;
-import com.ispf.driver.snmp.SnmpDeviceDriver;
-import com.ispf.driver.wmi.WmiDeviceDriver;
-import com.ispf.driver.soap.SoapDeviceDriver;
-import com.ispf.driver.ssh.SshDeviceDriver;
-import com.ispf.driver.telnet.TelnetDeviceDriver;
-import com.ispf.driver.virtual.VirtualDeviceDriver;
-import com.ispf.driver.vmware.VmwareDeviceDriver;
-import com.ispf.driver.webtransaction.WebTransactionDeviceDriver;
 import com.ispf.server.driver.pack.LicensedDriverRegistry;
+import com.ispf.server.driver.pack.DriverPackIndex;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DriverFactory {
 
     private final LicensedDriverRegistry licensedDriverRegistry;
+    private final DriverPackIndex driverPackIndex;
 
-    public DriverFactory(LicensedDriverRegistry licensedDriverRegistry) {
+    public DriverFactory(LicensedDriverRegistry licensedDriverRegistry, DriverPackIndex driverPackIndex) {
         this.licensedDriverRegistry = licensedDriverRegistry;
+        this.driverPackIndex = driverPackIndex;
     }
 
     public com.ispf.driver.DeviceDriver create(String driverId) {
         if (licensedDriverRegistry.contains(driverId)) {
             return licensedDriverRegistry.create(driverId);
         }
-        return switch (driverId) {
-            case "virtual" -> new VirtualDeviceDriver();
-            case "modbus-tcp" -> new ModbusTcpDeviceDriver();
-            case "modbus-rtu" -> new ModbusRtuDeviceDriver();
-            case "modbus-udp" -> new ModbusUdpDeviceDriver();
-            case "snmp" -> new SnmpDeviceDriver();
-            case "mqtt" -> new MqttDeviceDriver();
-            case "http" -> new HttpDeviceDriver();
-            case "icmp" -> new IcmpDeviceDriver();
-            case "ssh" -> new SshDeviceDriver();
-            case "coap" -> new CoapDeviceDriver();
-            case "opcua" -> new OpcUaDeviceDriver();
-            case "opcua-server" -> new OpcUaServerDeviceDriver();
-            case "s7" -> new S7DeviceDriver();
-            case "iec104" -> new Iec104DeviceDriver();
-            case "iec104-server" -> new Iec104ServerDeviceDriver();
-            case "bacnet" -> new BacnetDeviceDriver();
-            case "dnp3" -> new Dnp3DeviceDriver();
-            case "jmx" -> new JmxDeviceDriver();
-            case "jdbc" -> new JdbcDeviceDriver();
-            case "file" -> new FileDeviceDriver();
-            case "folder" -> new FolderDeviceDriver();
-            case "application" -> new ApplicationDeviceDriver();
-            case "message-stream" -> new MessageStreamDeviceDriver();
-            case "nmea" -> new NmeaDeviceDriver();
-            case "telnet" -> new TelnetDeviceDriver();
-            case "soap" -> new SoapDeviceDriver();
-            case "ip-host" -> new IpHostDeviceDriver();
-            case "kafka" -> new KafkaDeviceDriver();
-            case "gps-tracker" -> new GpsTrackerDeviceDriver();
-            case "flexible" -> new FlexibleDeviceDriver();
-            case "mbus" -> new MbusDeviceDriver();
-            case "dlms" -> new DlmsDeviceDriver();
-            case "ethernet-ip" -> new EthernetIpDeviceDriver();
-            case "omron-fins" -> new OmronFinsDeviceDriver();
-            case "asterisk" -> new AsteriskDeviceDriver();
-            case "smpp" -> new SmppDeviceDriver();
-            case "smb" -> new SmbDeviceDriver();
-            case "modem-at" -> new ModemAtDeviceDriver();
-            case "sip" -> new SipDeviceDriver();
-            case "xmpp" -> new XmppDeviceDriver();
-            case "corba" -> new CorbaDeviceDriver();
-            case "opc-da" -> new OpcDaDeviceDriver();
-            case "opc-bridge" -> new OpcBridgeDeviceDriver();
-            case "odbc" -> new OdbcDeviceDriver();
-            case "jms" -> new JmsDeviceDriver();
-            case "cwmp" -> new CwmpDeviceDriver();
-            case "web-transaction" -> new WebTransactionDeviceDriver();
-            case "http-server" -> new HttpServerDeviceDriver();
-            case "graph-db" -> new GraphDbDeviceDriver();
-            case "vmware" -> new VmwareDeviceDriver();
-            case "smi-s" -> new SmisDeviceDriver();
-            case "ldap" -> new LdapDeviceDriver();
-            case "dhcp" -> new DhcpDeviceDriver();
-            case "imap" -> new ImapDeviceDriver();
-            case "pop3" -> new Pop3DeviceDriver();
-            case "radius" -> new RadiusDeviceDriver();
-            case "ipmi" -> new IpmiDeviceDriver();
-            case "wmi" -> new WmiDeviceDriver();
-            default -> throw new IllegalArgumentException("Unknown driver: " + driverId);
-        };
+        String packId = driverPackIndex.packIdFor(driverId).orElse(null);
+        if (packId != null) {
+            throw new IllegalArgumentException(
+                    "Driver '" + driverId + "' is not installed. Install driver pack '" + packId + "' into ispf.driver.packs-dir.");
+        }
+        throw new IllegalArgumentException("Unknown driver: " + driverId);
     }
 }

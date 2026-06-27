@@ -4,7 +4,7 @@
   "editor.general": "General",
   "editor.layoutHint": "Change position and size by dragging on the grid.",
   "editor.sampleZoneLabel": "Zone A",
-  "editor.selectWidgetHint": "Select a widget on the grid or add a new one.",
+  "editor.selectWidgetHint": "Select a widget on the grid or add a new one. Delete — remove selected.",
   "editor.stylesHint": "Element keys: {{keys}}. CSS in camelCase. Empty — use defaults.",
   "editor.styling": "Styling",
   "editor.titleField": "Title",

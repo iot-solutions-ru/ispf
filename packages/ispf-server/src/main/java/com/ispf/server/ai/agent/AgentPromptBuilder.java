@@ -60,7 +60,7 @@ public final class AgentPromptBuilder {
             - chart/sparkline: configure_variable_history historyEnabled=true before adding widget
             - Widget properties: get_widget_catalog type=<type> for per-type fields; progress uses currentVariable+maxVariable not variableName
             - valueField: value (default), raw (SNMP uptime), online (status link); object-table uses parentPath not objectPath
-            - gauge needs minValue+maxValue or minVariable+maxVariable; pie-chart/spreadsheet need RECORD_LIST variable
+            - gauge needs minValue+maxValue or minVariable+maxVariable; pie-chart/gantt need RECORD_LIST variable; spreadsheet needs sheetConfigJson
             - configure_driver or driver_control start after driver mappings are set
             - list_variables to show metrics to the user in finish summary
             - bundle import only after validate_bundle/dry_run_deploy OK

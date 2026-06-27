@@ -9,6 +9,7 @@ fi
 
 JAR_PATH="$STAGING_DIR/ispf-server.jar"
 UI_ZIP="$STAGING_DIR/web-console.zip"
+DRIVER_PACKS_TAR="$STAGING_DIR/driver-packs.tar.gz"
 INSTALL_ROOT="${ISPF_INSTALL_ROOT:-/opt/ispf}"
 SERVICE_NAME="${ISPF_SERVICE_NAME:-ispf-server}"
 
@@ -40,6 +41,12 @@ else
 fi
 chmod -R a+rX "$INSTALL_ROOT/web-console"
 find "$INSTALL_ROOT/web-console" -type d -exec chmod 755 {} +
+
+if [ -f "$DRIVER_PACKS_TAR" ]; then
+  install -d "$INSTALL_ROOT/data/drivers"
+  tar -xzf "$DRIVER_PACKS_TAR" -C "$INSTALL_ROOT/data/drivers"
+  echo "Driver packs installed to $INSTALL_ROOT/data/drivers"
+fi
 
 systemctl start "$SERVICE_NAME"
 

@@ -24,6 +24,10 @@ allprojects {
 subprojects {
     apply(plugin = "java")
 
+    if (name.startsWith("ispf-driver-") && name != "ispf-driver-api") {
+        apply(plugin = "ispf-driver-pack")
+    }
+
     java {
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(25))
@@ -42,5 +46,26 @@ subprojects {
 
     dependencies {
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    }
+}
+
+val driverPackProjects = subprojects.filter { it.name.startsWith("ispf-driver-") && it.name != "ispf-driver-api" }
+
+tasks.register("assembleAllDriverPacks") {
+    group = "driver packs"
+    description = "Assemble all ISPF driver pack directories"
+    dependsOn(driverPackProjects.map { it.path + ":assembleDriverPack" })
+}
+
+tasks.register<Sync>("syncAllDriverPacks") {
+    group = "driver packs"
+    description = "Copy assembled driver packs to build/driver-packs"
+    dependsOn("assembleAllDriverPacks")
+    into(layout.buildDirectory.dir("driver-packs"))
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    driverPackProjects.forEach { project ->
+        from(project.layout.buildDirectory.dir("driver-pack")) {
+            include("**/*")
+        }
     }
 }

@@ -46,6 +46,15 @@ interface ModalState {
   session: DashboardSession;
 }
 
+function isKeyboardEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return Boolean(
+    target.closest(
+      "input, textarea, select, option, [contenteditable=''], [contenteditable='true']"
+    )
+  );
+}
+
 export default function DashboardBuilder({
   path,
   onClose,
@@ -73,6 +82,8 @@ export default function DashboardBuilder({
   const [showSettings, setShowSettings] = useState(false);
   const [modalDashboard, setModalDashboard] = useState<ModalState | null>(null);
   const layoutRef = useRef<DashboardLayout>(resolveDashboardLayout(undefined));
+  const selectedWidgetIdRef = useRef<string | null>(null);
+  selectedWidgetIdRef.current = selectedWidgetId;
 
   const currentSession = useMemo<DashboardSession>(
     () =>
@@ -247,15 +258,16 @@ export default function DashboardBuilder({
     setDraftLayout({ ...layout, ...patch });
   };
 
-  const deleteWidget = () => {
-    if (!selectedWidgetId) return;
-    const next = {
-      ...layout,
-      widgets: layout.widgets.filter((item) => item.id !== selectedWidgetId),
-    };
-    setDraftLayout(next);
+  const deleteWidget = useCallback(() => {
+    const widgetId = selectedWidgetIdRef.current;
+    if (!widgetId) return;
+    const base = layoutRef.current;
+    setDraftLayout({
+      ...base,
+      widgets: base.widgets.filter((item) => item.id !== widgetId),
+    });
     setSelectedWidgetId(null);
-  };
+  }, []);
 
   const handleLayoutChange = (widgets: DashboardWidget[]) => {
     setDraftLayout((current) => ({ ...(current ?? layout), widgets }));
@@ -290,6 +302,21 @@ export default function DashboardBuilder({
       document.body.classList.remove("dashboard-editor-fullscreen");
     };
   }, [isEditorWorkspace]);
+
+  useEffect(() => {
+    if (!isEditorWorkspace) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Delete") return;
+      if (isKeyboardEditableTarget(event.target)) return;
+      if (!selectedWidgetIdRef.current) return;
+      event.preventDefault();
+      deleteWidget();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [deleteWidget, isEditorWorkspace]);
 
   if (dashboard.isLoading) {
     return <div className="dashboard-shell loading">{t("loading")}</div>;

@@ -27,7 +27,9 @@ public interface DeviceDriver {
 }
 ```
 
-Регистрация в `DriverCatalog` (server). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.
+Регистрация через **driver packs** в `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.
+
+Сборка packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. См. [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md).
 
 ## Переменные устройства (driver group)
 
@@ -54,7 +56,9 @@ PUT  /api/v1/drivers/runtime/configure?devicePath=...
 GET  /api/v1/drivers/runtime/status?devicePath=...
 ```
 
-## Встроенные драйверы
+## Driver packs (не встроены в server JAR)
+
+Каждый протокол — отдельный pack (`ispf-driver-*`). Без установленных packs `GET /api/v1/drivers` пуст.
 
 ### virtual (`ispf-driver-virtual`)
 

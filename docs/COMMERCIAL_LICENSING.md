@@ -6,7 +6,8 @@ RSA-лицензирование commercial bundle при deploy. Архитек
 
 | Слой | Лицензия |
 |------|----------|
-| Ядро ISPF (`main`) | Apache 2.0, без DRM |
+| Platform (`ispf-server`, web-console) | **GNU AGPL v3** (+ optional [LICENSE-COMMERCIAL.md](../LICENSE-COMMERCIAL.md)) |
+| Device driver pack | `licenseType` per pack — see [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
 | Commercial bundle | Optional секция `license` в manifest; verify при deploy |
 
 ## Конфигурация сервера

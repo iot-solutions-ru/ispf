@@ -4,10 +4,9 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.server.config.CommercialLicenseProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.license.CommercialLicenseException;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
@@ -48,7 +47,8 @@ public class LicensedDriverPackLoader {
         this.objectMapper = objectMapper;
     }
 
-    @EventListener(ApplicationReadyEvent.class)
+    /** Before fixture bootstrap provisions demo devices (ObjectManager @ApplicationReadyEvent). */
+    @PostConstruct
     public void loadPacksOnStartup() {
         Path packsRoot = Path.of(packProperties.getPacksDir()).toAbsolutePath().normalize();
         if (!Files.isDirectory(packsRoot)) {

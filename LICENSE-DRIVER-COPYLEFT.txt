@@ -1,0 +1,10 @@
+ISPF Driver Pack — copyleft components
+
+This driver pack contains copyleft-licensed third-party libraries (GPL/LGPL/MPL).
+
+You must comply with the license of bundled libraries when using, modifying, or
+redistributing this pack. See driver-pack.json "licenseType" and
+docs/THIRD_PARTY_NOTICES.md in the ISPF repository.
+
+The ISPF driver wrapper source in the monorepo is under GNU AGPL v3 unless you
+hold a separate commercial license from the copyright holder.

@@ -32,7 +32,8 @@ public final class DashboardWidgetNormalizer {
             "htmlJson",
             "textJson",
             "stylesJson",
-            "demoPreviewJson"
+            "demoPreviewJson",
+            "sheetConfigJson"
     );
 
     private DashboardWidgetNormalizer() {

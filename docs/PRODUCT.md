@@ -119,7 +119,7 @@ Dashboard Builder (админ) и Operator HMI (read-only) используют 
 
 Связь виджетов с данными — через `objectPath` (статический) или `selectionKey` (динамический выбор строки таблицы).
 
-Подробнее: [DASHBOARDS.md](DASHBOARDS.md).
+Подробнее: [DASHBOARDS.md](DASHBOARDS.md), справочник виджетов: [WIDGETS.md](WIDGETS.md).
 
 ### 5. Workflow (BPMN)
 
@@ -311,7 +311,8 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 |----------|----------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Установка и первый запуск |
 | [OBJECT_MODEL.md](OBJECT_MODEL.md) | Дерево, переменные, CEL |
-| [DASHBOARDS.md](DASHBOARDS.md) | Виджеты и layout |
+| [DASHBOARDS.md](DASHBOARDS.md) | Layout, selectionKey, builder |
+| [WIDGETS.md](WIDGETS.md) | Справочник всех виджетов |
 | [WORKFLOWS.md](WORKFLOWS.md) | BPMN-движок |
 | [APPLICATIONS.md](APPLICATIONS.md) | REQ-PF deploy API |
 | [DRIVERS.md](DRIVERS.md) | Каталог драйверов |

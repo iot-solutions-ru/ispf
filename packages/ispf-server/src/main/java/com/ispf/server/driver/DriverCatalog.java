@@ -1,149 +1,22 @@
 package com.ispf.server.driver;
 
 import com.ispf.driver.DriverMetadata;
-import com.ispf.driver.modemat.ModemAtDeviceDriver;
-import com.ispf.driver.sip.SipDeviceDriver;
-import com.ispf.driver.xmpp.XmppDeviceDriver;
-import com.ispf.driver.corba.CorbaDeviceDriver;
-import com.ispf.driver.opcda.OpcDaDeviceDriver;
-import com.ispf.driver.opcbridge.OpcBridgeDeviceDriver;
-import com.ispf.driver.application.ApplicationDeviceDriver;
-import com.ispf.driver.asterisk.AsteriskDeviceDriver;
-import com.ispf.driver.bacnet.BacnetDeviceDriver;
-import com.ispf.driver.dnp3.Dnp3DeviceDriver;
-import com.ispf.driver.coap.CoapDeviceDriver;
-import com.ispf.driver.cwmp.CwmpDeviceDriver;
-import com.ispf.driver.file.FileDeviceDriver;
-import com.ispf.driver.graphdb.GraphDbDeviceDriver;
-import com.ispf.driver.flexible.FlexibleDeviceDriver;
-import com.ispf.driver.gpstracker.GpsTrackerDeviceDriver;
-import com.ispf.driver.folder.FolderDeviceDriver;
-import com.ispf.driver.http.HttpDeviceDriver;
-import com.ispf.driver.httpserver.HttpServerDeviceDriver;
-import com.ispf.driver.icmp.IcmpDeviceDriver;
-import com.ispf.driver.jms.JmsDeviceDriver;
-import com.ispf.driver.iec104.Iec104DeviceDriver;
-import com.ispf.driver.iphost.IpHostDeviceDriver;
-import com.ispf.driver.jdbc.JdbcDeviceDriver;
-import com.ispf.driver.kafka.KafkaDeviceDriver;
-import com.ispf.driver.odbc.OdbcDeviceDriver;
-import com.ispf.driver.jmx.JmxDeviceDriver;
-import com.ispf.driver.messagestream.MessageStreamDeviceDriver;
-import com.ispf.driver.mbus.MbusDeviceDriver;
-import com.ispf.driver.mqtt.MqttDeviceDriver;
-import com.ispf.driver.dlms.DlmsDeviceDriver;
-import com.ispf.driver.ethernetip.EthernetIpDeviceDriver;
-import com.ispf.driver.iec104server.Iec104ServerDeviceDriver;
-import com.ispf.driver.modbus.ModbusTcpDeviceDriver;
-import com.ispf.driver.modbusrtu.ModbusRtuDeviceDriver;
-import com.ispf.driver.modbusudp.ModbusUdpDeviceDriver;
-import com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver;
-import com.ispf.driver.nmea.NmeaDeviceDriver;
-import com.ispf.driver.omronfins.OmronFinsDeviceDriver;
-import com.ispf.driver.opcua.OpcUaDeviceDriver;
-import com.ispf.driver.s7.S7DeviceDriver;
-import com.ispf.driver.smb.SmbDeviceDriver;
-import com.ispf.driver.smpp.SmppDeviceDriver;
-import com.ispf.driver.dhcp.DhcpDeviceDriver;
-import com.ispf.driver.imap.ImapDeviceDriver;
-import com.ispf.driver.ipmi.IpmiDeviceDriver;
-import com.ispf.driver.ldap.LdapDeviceDriver;
-import com.ispf.driver.pop3.Pop3DeviceDriver;
-import com.ispf.driver.radius.RadiusDeviceDriver;
-import com.ispf.driver.smis.SmisDeviceDriver;
-import com.ispf.driver.snmp.SnmpDeviceDriver;
-import com.ispf.driver.wmi.WmiDeviceDriver;
-import com.ispf.driver.soap.SoapDeviceDriver;
-import com.ispf.driver.ssh.SshDeviceDriver;
-import com.ispf.driver.telnet.TelnetDeviceDriver;
-import com.ispf.driver.virtual.VirtualDeviceDriver;
-import com.ispf.driver.vmware.VmwareDeviceDriver;
-import com.ispf.driver.webtransaction.WebTransactionDeviceDriver;
 import com.ispf.server.driver.pack.LicensedDriverRegistry;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Service
 public class DriverCatalog {
 
     private final LicensedDriverRegistry licensedDriverRegistry;
-    private final List<DriverMetadata> builtInDrivers = List.of(
-            new VirtualDeviceDriver().metadata(),
-            new MqttDeviceDriver().metadata(),
-            new ModbusTcpDeviceDriver().metadata(),
-            new ModbusRtuDeviceDriver().metadata(),
-            new ModbusUdpDeviceDriver().metadata(),
-            new SnmpDeviceDriver().metadata(),
-            new HttpDeviceDriver().metadata(),
-            new IcmpDeviceDriver().metadata(),
-            new SshDeviceDriver().metadata(),
-            new CoapDeviceDriver().metadata(),
-            new OpcUaDeviceDriver().metadata(),
-            new OpcUaServerDeviceDriver().metadata(),
-            new S7DeviceDriver().metadata(),
-            new Iec104DeviceDriver().metadata(),
-            new Iec104ServerDeviceDriver().metadata(),
-            new BacnetDeviceDriver().metadata(),
-            new Dnp3DeviceDriver().metadata(),
-            new JmxDeviceDriver().metadata(),
-            new JdbcDeviceDriver().metadata(),
-            new FileDeviceDriver().metadata(),
-            new FolderDeviceDriver().metadata(),
-            new ApplicationDeviceDriver().metadata(),
-            new MessageStreamDeviceDriver().metadata(),
-            new NmeaDeviceDriver().metadata(),
-            new TelnetDeviceDriver().metadata(),
-            new SoapDeviceDriver().metadata(),
-            new IpHostDeviceDriver().metadata(),
-            new KafkaDeviceDriver().metadata(),
-            new GpsTrackerDeviceDriver().metadata(),
-            new FlexibleDeviceDriver().metadata(),
-            new MbusDeviceDriver().metadata(),
-            new DlmsDeviceDriver().metadata(),
-            new EthernetIpDeviceDriver().metadata(),
-            new OmronFinsDeviceDriver().metadata(),
-            new AsteriskDeviceDriver().metadata(),
-            new SmppDeviceDriver().metadata(),
-            new SmbDeviceDriver().metadata(),
-            new ModemAtDeviceDriver().metadata(),
-            new SipDeviceDriver().metadata(),
-            new XmppDeviceDriver().metadata(),
-            new CorbaDeviceDriver().metadata(),
-            new OpcDaDeviceDriver().metadata(),
-            new OpcBridgeDeviceDriver().metadata(),
-            new OdbcDeviceDriver().metadata(),
-            new JmsDeviceDriver().metadata(),
-            new CwmpDeviceDriver().metadata(),
-            new WebTransactionDeviceDriver().metadata(),
-            new HttpServerDeviceDriver().metadata(),
-            new GraphDbDeviceDriver().metadata(),
-            new VmwareDeviceDriver().metadata(),
-            new SmisDeviceDriver().metadata(),
-            new LdapDeviceDriver().metadata(),
-            new DhcpDeviceDriver().metadata(),
-            new ImapDeviceDriver().metadata(),
-            new Pop3DeviceDriver().metadata(),
-            new RadiusDeviceDriver().metadata(),
-            new IpmiDeviceDriver().metadata(),
-            new WmiDeviceDriver().metadata()
-    );
 
     public DriverCatalog(LicensedDriverRegistry licensedDriverRegistry) {
         this.licensedDriverRegistry = licensedDriverRegistry;
     }
 
     public List<DriverMetadata> list() {
-        Map<String, DriverMetadata> merged = new LinkedHashMap<>();
-        for (DriverMetadata driver : builtInDrivers) {
-            merged.put(driver.id(), driver);
-        }
-        for (DriverMetadata licensed : licensedDriverRegistry.metadata()) {
-            merged.putIfAbsent(licensed.id(), licensed);
-        }
-        return merged.values().stream()
+        return licensedDriverRegistry.metadata().stream()
                 .map(driver -> driver.withMaturity(DriverMaturityRegistry.resolve(driver.id())))
                 .toList();
     }

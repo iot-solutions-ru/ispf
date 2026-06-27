@@ -119,7 +119,10 @@ public final class AgentWidgetPropertiesGuide {
                 
                 **timer** — mode: countdown|elapsed; durationSeconds; variableName (для elapsed).
                 
-                **spreadsheet** [req: variableName] — RECORD_LIST таблица; editable: true|false.
+                **spreadsheet** — сетка A1 с формулами (HyperFormula); sheetMode: free|configured;
+                sheetConfigJson задаёт rows/cols/cells; persistMode: session|variable; valuesVariable при variable;
+                sessionKey; editable. free: любая ячейка = значение или =формула; configured: kind label|input|formula|readonly|binding.
+                binding + ISPREF/ISPSUM/ISPHIST для данных платформы.
                 
                 **gantt-chart** [req: variableName] — RECORD_LIST; labelField, startField, endField.
                 
@@ -197,7 +200,8 @@ public final class AgentWidgetPropertiesGuide {
                 - chart без historyEnabled → пустой график
                 - gauge: только minValue без maxValue
                 - function-form fieldsJson: type "string" — неверно, нужно "text"
-                - pie-chart/gantt/spreadsheet: variableName должна быть RECORD_LIST
+                - pie-chart/gantt: variableName должна быть RECORD_LIST
+                - spreadsheet: sheetConfigJson (cells с kind formula|input|binding); sheetMode free|configured; persistMode + valuesVariable
                 - status online: забыть valueField=online при variableName=status
                 - unit и unitField: unit — статическая подпись; unitField — читать поле unit из переменной
                 - Дублировать id виджетов в одном layout
@@ -378,10 +382,15 @@ public final class AgentWidgetPropertiesGuide {
         timerFields.add(f("variableName", "string", false, "For elapsed mode"));
         specs.put("timer", spec("object-variable", List.of(), timerFields, null, null));
 
-        List<Map<String, String>> sheetFields = new ArrayList<>(varFields(true));
-        sheetFields.add(f("editable", "boolean", false, "Allow inline edit"));
-        specs.put("spreadsheet", spec("object-variable", List.of("variableName"), sheetFields,
-                "RECORD_LIST variable", null));
+        List<Map<String, String>> sheetFields = new ArrayList<>(basePathFields());
+        sheetFields.add(f("sheetMode", "enum", false, "free|configured (default free)"));
+        sheetFields.add(f("sheetConfigJson", "string", false, "Grid config JSON: rows, cols, cells"));
+        sheetFields.add(f("persistMode", "enum", false, "session|variable"));
+        sheetFields.add(f("valuesVariable", "string", false, "Variable for persistMode=variable"));
+        sheetFields.add(f("sessionKey", "string", false, "Session params key (default sheet:{id})"));
+        sheetFields.add(f("editable", "boolean", false, "Allow inline input edit"));
+        specs.put("spreadsheet", spec("object-variable", List.of(), sheetFields,
+                "Formula grid; binding cells use kind=binding + objectPath/variableName", null));
 
         List<Map<String, String>> ganttFields = new ArrayList<>(varFields(true));
         ganttFields.add(f("labelField", "string", false, "Row label field"));

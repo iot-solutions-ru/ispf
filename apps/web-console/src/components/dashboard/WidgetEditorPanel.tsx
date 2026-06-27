@@ -1,13 +1,14 @@
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
 import { newWidget, WIDGET_TYPES } from "../../types/dashboard";
-import { WIDGET_STYLE_KEYS_HINT } from "./widgetStyles";
 import { translateWidgetType } from "./widgetI18n";
 import {
   FieldPairs,
   WidgetDataSourceFields,
   WidgetTypeSpecificFields,
 } from "./widgetEditorFields";
+import { WidgetStylesEditor } from "./widgetEditorStructured";
 
 interface WidgetEditorPanelProps {
   widget: DashboardWidget | null;
@@ -27,6 +28,11 @@ export default function WidgetEditorPanel({
   onDelete,
 }: WidgetEditorPanelProps) {
   const { t } = useTranslation(["dashboard", "widgets", "common"]);
+
+  const allVariableNames = useMemo(
+    () => [...new Set(objects.flatMap((o) => o.variableNames))].sort(),
+    [objects]
+  );
 
   if (!widget) {
     return (
@@ -52,6 +58,7 @@ export default function WidgetEditorPanel({
     dashboards,
     reports,
     variables,
+    allVariableNames,
     variableSelectEnabled,
     update,
   };
@@ -97,6 +104,44 @@ export default function WidgetEditorPanel({
               ))}
             </select>
           </label>
+          <label>
+            <span className="field-caption">x</span>
+            <input
+              type="number"
+              min={0}
+              max={11}
+              value={widget.x}
+              onChange={(e) => update({ x: Number(e.target.value) })}
+            />
+          </label>
+          <label>
+            <span className="field-caption">y</span>
+            <input
+              type="number"
+              min={0}
+              value={widget.y}
+              onChange={(e) => update({ y: Number(e.target.value) })}
+            />
+          </label>
+          <label>
+            <span className="field-caption">w</span>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              value={widget.w}
+              onChange={(e) => update({ w: Number(e.target.value) })}
+            />
+          </label>
+          <label>
+            <span className="field-caption">h</span>
+            <input
+              type="number"
+              min={1}
+              value={widget.h}
+              onChange={(e) => update({ h: Number(e.target.value) })}
+            />
+          </label>
           <p className="hint full">{t("editor.layoutHint")}</p>
         </FieldPairs>
 
@@ -104,25 +149,17 @@ export default function WidgetEditorPanel({
         <WidgetTypeSpecificFields {...fieldCtx} />
 
         <FieldPairs>
-          <h5 className="widget-editor-section">{t("editor.styling")}</h5>
-          <label className="full">
-            stylesJson
-            <textarea
-              rows={6}
-              value={widget.stylesJson ?? ""}
-              onChange={(e) => update({ stylesJson: e.target.value || undefined })}
-              placeholder={'{"value":{"fontSize":"0.88rem"},"meta":{"display":"none"}}'}
-            />
-          </label>
-          <p className="hint full">
-            {t("editor.stylesHint", { keys: WIDGET_STYLE_KEYS_HINT })}
-          </p>
+          <WidgetStylesEditor
+            value={widget.stylesJson}
+            onChange={(v) => update({ stylesJson: v })}
+          />
 
           <h5 className="widget-editor-section">{t("editor.advanced")}</h5>
           <label className="full">
             {t("editor.demoPreviewLabel")}
             <textarea
               rows={3}
+              className="mono"
               value={widget.demoPreviewJson ?? ""}
               onChange={(e) => update({ demoPreviewJson: e.target.value || undefined })}
             />

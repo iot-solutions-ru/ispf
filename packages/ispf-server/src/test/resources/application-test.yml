@@ -47,6 +47,8 @@ ispf:
   license:
     data-dir: ${java.io.tmpdir}/ispf-test-license
     enforce: false
+  driver:
+    packs-dir: ${ISPF_DRIVER_PACKS_DIR:../../build/driver-packs}
 
 management:
   otlp:

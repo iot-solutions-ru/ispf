@@ -160,7 +160,18 @@ Content-Type: application/json
 
 ### 9. Calculator grid widget
 
-**Дашборд:** `root.platform.dashboards.lab-calculator` — `function-form` + `value` (результат `sumIntFloat` после calculate; для демо можно смотреть binding sum).
+**Дашборд:** `root.platform.dashboards.lab-calculator` — виджет `spreadsheet` в режиме **configured** (шаблон с подписями и формулами в layout).
+
+**Что попробовать (оператор):**
+
+1. Откройте дашборд **Calculator** в lab operator app.
+2. В ячейках **A2** и **B2** измените числа (Tab — переход между полями).
+3. Убедитесь, что **C2** (Sum) и **D2** (A×110%) пересчитались.
+4. Обновите страницу (**F5**) — значения A2/B2 должны остаться (сохранение в переменную `sheetValues` на `lab-userA-01`).
+
+**Режим free (новые виджеты по умолчанию):** любая ячейка — значение или `=формула`; строка формул, F2, Ctrl+Z, экспорт CSV. Подробнее: [SPREADSHEET_WIDGET.md](SPREADSHEET_WIDGET.md).
+
+**Проверка:** изменить A2 → пересчёт Sum и A×110%; F5 → значения в `sheetValues`.
 
 ---
 

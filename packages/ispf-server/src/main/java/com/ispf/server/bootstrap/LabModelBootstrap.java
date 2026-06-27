@@ -110,6 +110,15 @@ public class LabModelBootstrap {
             .field(new FieldDefinition("rows", FieldType.RECORD_LIST, "", true, TABLE_ROW_SCHEMA))
             .build();
 
+    private static final DataSchema SHEET_CELL_ROW_SCHEMA = DataSchema.builder("sheetCellRow")
+            .field("cell", FieldType.STRING)
+            .field("value", FieldType.STRING)
+            .build();
+
+    private static final DataSchema SHEET_VALUES_SCHEMA = DataSchema.builder("sheetValues")
+            .field(new FieldDefinition("rows", FieldType.RECORD_LIST, "", true, SHEET_CELL_ROW_SCHEMA))
+            .build();
+
     private static final DataSchema MEASUREMENT_SCHEMA = DataSchema.builder("measurement")
             .field("value", FieldType.DOUBLE)
             .field("unit", FieldType.STRING)
@@ -195,6 +204,7 @@ public class LabModelBootstrap {
                         doubleDef("sumIntFloat", "Sum of intValue and floatValue", "telemetry", 0.0),
                         intDef("tableIntSum", "Sum of int column in table", "telemetry", 0),
                         tableDef("table", "Appendable table rows"),
+                        tableDef("sheetValues", "Spreadsheet widget cell values", SHEET_VALUES_SCHEMA),
                         boolDef("alarmLatched", "Latched alarm state", false),
                         boolDef("fanRunning", "Fan running state", false),
                         varDef("driverId", "Attached driver plugin id", "driver", STRING_VALUE_SCHEMA,

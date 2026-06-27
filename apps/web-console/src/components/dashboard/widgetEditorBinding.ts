@@ -86,6 +86,6 @@ export const WIDGET_TYPE_HINTS: Partial<Record<WidgetType, string>> = {
   map: "Маркеры для каждого ребёнка parentPath; координаты из latVariable.",
   "object-table": "Таблица детей parentPath; колонки — columnsJson.",
   "event-feed": "События платформы; фильтр по objectPathPrefix и eventNamesJson.",
-  spreadsheet: "RECORD_LIST в variableName; editable разрешает запись.",
+  spreadsheet: "Сетка A1; sheetMode free|configured; sheetConfigJson; persistMode session|variable.",
   timer: "mode=countdown — таймер; elapsed — variableName как старт/длительность.",
 };

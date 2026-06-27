@@ -1,4 +1,5 @@
 import type { DashboardWidget, WidgetType } from "../../types/dashboard";
+import { FREE_SHEET_CONFIG, sheetConfigToJson } from "./sheet/sheetConfig";
 
 /** Well-known platform paths used in sample widgets (see PlatformBootstrap / DashboardLayouts). */
 export const WIDGET_SAMPLE_PATHS = {
@@ -697,18 +698,16 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
       return {
         ...base,
         type: "spreadsheet",
-        title: "Таблица данных",
+        title: "Калькулятор",
         w: 8,
         h: 5,
         objectPath: LAB,
         modelHintPath: LAB,
-        variableName: "table",
+        sheetMode: "free",
+        persistMode: "variable",
+        valuesVariable: "sheetValues",
         editable: true,
-        demoPreviewJson: j([
-          { int: 1, string: "строка A" },
-          { int: 2, string: "строка B" },
-          { int: 3, string: "строка C" },
-        ]),
+        sheetConfigJson: sheetConfigToJson(FREE_SHEET_CONFIG),
       };
     case "liquid-gauge":
       return {

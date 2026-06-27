@@ -10,6 +10,24 @@ import {
   widgetDataBinding,
   WIDGET_TYPE_HINTS,
 } from "./widgetEditorBinding";
+import {
+  CALCULATOR_SHEET_CONFIG,
+  DEFAULT_SHEET_CONFIG,
+  FREE_SHEET_CONFIG,
+  sheetConfigToJson,
+} from "./sheet/sheetConfig";
+import {
+  AdvancedJsonField,
+  FormFieldsEditor,
+  KeyValueEditor,
+  NavMenuItemsEditor,
+  ObjectTableColumnsEditor,
+  SheetGridSizeEditor,
+  StringListEditor,
+  VariableSelect,
+  IdLabelListEditor,
+  TabPanelMetaEditor,
+} from "./widgetEditorStructured";
 
 type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 type DashboardOption = { path: string; displayName: string };
@@ -21,6 +39,7 @@ export interface WidgetFieldContext {
   dashboards: DashboardOption[];
   reports: ReportOption[];
   variables: string[];
+  allVariableNames: string[];
   variableSelectEnabled: boolean;
   update: (patch: Partial<DashboardWidget>) => void;
 }
@@ -251,13 +270,11 @@ function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "card", t:
               disabled={!mw.rowTargetDashboard}
             />
           </FieldLabel>
-          <FieldLabel caption="rowParamsJson">
-            <textarea
-              rows={2}
-              value={mw.rowParamsJson ?? ""}
-              onChange={(e) => update({ rowParamsJson: e.target.value || undefined })}
-            />
-          </FieldLabel>
+        <KeyValueEditor
+          label="rowParamsJson"
+          value={mw.rowParamsJson}
+          onChange={(v) => update({ rowParamsJson: v })}
+        />
         </FormRow>
       </>
     );
@@ -295,13 +312,11 @@ function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "card", t:
               disabled={!tw.rowTargetDashboard}
             />
           </FieldLabel>
-          <FieldLabel caption="rowParamsJson">
-            <textarea
-              rows={2}
-              value={tw.rowParamsJson ?? ""}
-              onChange={(e) => update({ rowParamsJson: e.target.value || undefined })}
-            />
-          </FieldLabel>
+        <KeyValueEditor
+          label="rowParamsJson"
+          value={tw.rowParamsJson}
+          onChange={(v) => update({ rowParamsJson: v })}
+        />
         </FormRow>
       </>
     );
@@ -339,13 +354,11 @@ function rowNavigationFields(ctx: WidgetFieldContext, prefix: "row" | "card", t:
               disabled={!cw.cardTargetDashboard}
             />
           </FieldLabel>
-          <FieldLabel caption="cardParamsJson">
-            <textarea
-              rows={2}
-              value={cw.cardParamsJson ?? ""}
-              onChange={(e) => update({ cardParamsJson: e.target.value || undefined })}
-            />
-          </FieldLabel>
+        <KeyValueEditor
+          label="cardParamsJson"
+          value={cw.cardParamsJson}
+          onChange={(v) => update({ cardParamsJson: v })}
+        />
         </FormRow>
       </>
     );
@@ -537,7 +550,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
 }
 
 function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNode {
-  const { widget, update } = ctx;
+  const { widget, update, variables, allVariableNames, dashboards } = ctx;
 
   switch (widget.type) {
     case "value":
@@ -622,6 +635,14 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               value={widget.falseColor ?? "#f85149"}
               onChange={(e) => update({ falseColor: e.target.value })}
             />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={widget.alarmMode === true}
+              onChange={(e) => update({ alarmMode: e.target.checked || undefined })}
+            />
+            alarmMode ({t("editor.structured.alarmModeHint")})
           </label>
         </>
       );
@@ -784,13 +805,18 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             />
           </label>
           <label>
-            {t("editor.inputJsonStatic")}
-            <textarea
-              rows={3}
-              value={widget.inputJson ?? ""}
-              onChange={(e) => update({ inputJson: e.target.value || undefined })}
+            workflowPath
+            <input
+              value={widget.workflowPath ?? ""}
+              onChange={(e) => update({ workflowPath: e.target.value || undefined })}
+              placeholder="root.platform.workflows..."
             />
           </label>
+          <KeyValueEditor
+            label={t("editor.inputJsonStatic")}
+            value={widget.inputJson}
+            onChange={(v) => update({ inputJson: v })}
+          />
         </>
       );
 
@@ -819,14 +845,52 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
             />
           </label>
-          <label className="full">
-            fieldsJson
-            <textarea
-              rows={5}
-              value={widget.fieldsJson ?? "[]"}
-              onChange={(e) => update({ fieldsJson: e.target.value })}
+          <label>
+            validateFunctionName
+            <input
+              value={widget.validateFunctionName ?? ""}
+              onChange={(e) => update({ validateFunctionName: e.target.value || undefined })}
             />
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={widget.closeModalOnSuccess !== false}
+              onChange={(e) => update({ closeModalOnSuccess: e.target.checked })}
+            />
+            closeModalOnSuccess
+          </label>
+          <FormFieldsEditor
+            mode="function-form"
+            value={widget.fieldsJson}
+            onChange={(v) => update({ fieldsJson: v })}
+          />
+          <KeyValueEditor
+            label="paramBindingsJson"
+            value={widget.paramBindingsJson}
+            onChange={(v) => update({ paramBindingsJson: v })}
+          />
+          <StringListEditor
+            label="requireSessionParamsJson"
+            value={widget.requireSessionParamsJson}
+            onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
+          />
+          <KeyValueEditor
+            label="syncFieldsToSessionJson"
+            value={widget.syncFieldsToSessionJson}
+            onChange={(v) => update({ syncFieldsToSessionJson: v })}
+          />
+          <StringListEditor
+            label="clearSessionParamsJson"
+            value={widget.clearSessionParamsJson}
+            onChange={(v) => update({ clearSessionParamsJson: v || undefined })}
+          />
+          <AdvancedJsonField
+            label="wizardStepsJson"
+            value={widget.wizardStepsJson}
+            onChange={(v) => update({ wizardStepsJson: v })}
+            rows={3}
+          />
         </>
       );
 
@@ -834,20 +898,18 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.progress")} />
-          <label>
-            currentVariable
-            <input
-              value={widget.currentVariable}
-              onChange={(e) => update({ currentVariable: e.target.value })}
-            />
-          </label>
-          <label>
-            maxVariable
-            <input
-              value={widget.maxVariable}
-              onChange={(e) => update({ maxVariable: e.target.value })}
-            />
-          </label>
+          <VariableSelect
+            label="currentVariable"
+            value={widget.currentVariable}
+            onChange={(v) => update({ currentVariable: v })}
+            variables={variables}
+          />
+          <VariableSelect
+            label="maxVariable"
+            value={widget.maxVariable}
+            onChange={(v) => update({ maxVariable: v })}
+            variables={variables}
+          />
           <label>
             unit
             <input value={widget.unit ?? ""} onChange={(e) => update({ unit: e.target.value })} />
@@ -869,15 +931,36 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.objectTable")} />
-          <label className="full">
-            columnsJson
-            <textarea
-              rows={4}
-              value={widget.columnsJson ?? "[]"}
-              onChange={(e) => update({ columnsJson: e.target.value })}
-              placeholder='[{"variable":"temperature","label":"T"}]'
+          <label>
+            namePattern
+            <input
+              value={widget.namePattern ?? ""}
+              onChange={(e) => update({ namePattern: e.target.value || undefined })}
+              placeholder="gpu-*"
             />
           </label>
+          <label>
+            objectType
+            <select
+              value={widget.objectType ?? ""}
+              onChange={(e) =>
+                update({
+                  objectType: (e.target.value || undefined) as typeof widget.objectType,
+                })
+              }
+            >
+              <option value="">—</option>
+              <option value="DEVICE">DEVICE</option>
+              <option value="FOLDER">FOLDER</option>
+              <option value="DASHBOARD">DASHBOARD</option>
+              <option value="CUSTOM">CUSTOM</option>
+            </select>
+          </label>
+          <ObjectTableColumnsEditor
+            value={widget.columnsJson}
+            onChange={(v) => update({ columnsJson: v })}
+            variableSuggestions={allVariableNames}
+          />
           {rowNavigationFields(ctx, "row", t)}
         </>
       );
@@ -894,14 +977,11 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               placeholder="root.platform.devices"
             />
           </label>
-          <label className="full">
-            eventNamesJson
-            <textarea
-              rows={3}
-              value={widget.eventNamesJson ?? "[]"}
-              onChange={(e) => update({ eventNamesJson: e.target.value })}
-            />
-          </label>
+          <StringListEditor
+            label="eventNamesJson"
+            value={widget.eventNamesJson}
+            onChange={(v) => update({ eventNamesJson: v })}
+          />
           <label>
             maxItems
             <input
@@ -935,6 +1015,13 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             />
           </label>
           <label>
+            operatorAppId
+            <input
+              value={widget.operatorAppId ?? ""}
+              onChange={(e) => update({ operatorAppId: e.target.value || undefined })}
+            />
+          </label>
+          <label>
             maxItems
             <input
               type="number"
@@ -951,20 +1038,18 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.gauge")} />
-          <label>
-            minVariable
-            <input
-              value={widget.minVariable ?? ""}
-              onChange={(e) => update({ minVariable: e.target.value || undefined })}
-            />
-          </label>
-          <label>
-            maxVariable
-            <input
-              value={widget.maxVariable ?? ""}
-              onChange={(e) => update({ maxVariable: e.target.value || undefined })}
-            />
-          </label>
+          <VariableSelect
+            label="minVariable"
+            value={widget.minVariable ?? ""}
+            onChange={(v) => update({ minVariable: v || undefined })}
+            variables={variables}
+          />
+          <VariableSelect
+            label="maxVariable"
+            value={widget.maxVariable ?? ""}
+            onChange={(v) => update({ maxVariable: v || undefined })}
+            variables={variables}
+          />
           <label>
             {t("editor.minValueNoVariable")}
             <input
@@ -1100,14 +1185,12 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.cardGrid")} />
-          <label className="full">
-            variablesJson
-            <textarea
-              rows={3}
-              value={widget.variablesJson ?? "[]"}
-              onChange={(e) => update({ variablesJson: e.target.value })}
-            />
-          </label>
+          <StringListEditor
+            label="variablesJson"
+            value={widget.variablesJson}
+            onChange={(v) => update({ variablesJson: v })}
+            suggestions={allVariableNames}
+          />
           {rowNavigationFields(ctx, "card", t)}
         </>
       );
@@ -1156,22 +1239,21 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               onChange={(e) => update({ confirmMessage: e.target.value || undefined })}
             />
           </label>
-          <label className="full">
-            contextSelectionJson
-            <textarea
-              rows={2}
-              value={widget.contextSelectionJson ?? ""}
-              onChange={(e) => update({ contextSelectionJson: e.target.value || undefined })}
-            />
-          </label>
-          <label className="full">
-            contextParamsJson
-            <textarea
-              rows={2}
-              value={widget.contextParamsJson ?? ""}
-              onChange={(e) => update({ contextParamsJson: e.target.value || undefined })}
-            />
-          </label>
+          <KeyValueEditor
+            label="contextSelectionJson"
+            value={widget.contextSelectionJson}
+            onChange={(v) => update({ contextSelectionJson: v })}
+          />
+          <KeyValueEditor
+            label="contextParamsJson"
+            value={widget.contextParamsJson}
+            onChange={(v) => update({ contextParamsJson: v })}
+          />
+          <StringListEditor
+            label="requireSessionParamsJson"
+            value={widget.requireSessionParamsJson}
+            onChange={(v) => update({ requireSessionParamsJson: v || undefined })}
+          />
         </>
       );
 
@@ -1191,26 +1273,16 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             placeholder="root.platform.reports.ready-items"
           />
           <ReportParameterHints reportPath={rw.reportPath} />
-          <label className="full">
-            {t("editor.parametersJsonStatic")}
-            <textarea
-              rows={2}
-              className="mono"
-              value={rw.parametersJson ?? ""}
-              onChange={(e) => update({ parametersJson: e.target.value || undefined })}
-              placeholder='{"status":"ready"}'
-            />
-          </label>
-          <label className="full">
-            {t("editor.contextParamsJsonReport")}
-            <textarea
-              rows={2}
-              className="mono"
-              value={rw.contextParamsJson ?? ""}
-              onChange={(e) => update({ contextParamsJson: e.target.value || undefined })}
-              placeholder='{"status":"filterStatus"}'
-            />
-          </label>
+          <KeyValueEditor
+            label={t("editor.parametersJsonStatic")}
+            value={rw.parametersJson}
+            onChange={(v) => update({ parametersJson: v })}
+          />
+          <KeyValueEditor
+            label={t("editor.contextParamsJsonReport")}
+            value={rw.contextParamsJson}
+            onChange={(v) => update({ contextParamsJson: v })}
+          />
           <label>
             emptyMessage
             <input
@@ -1268,6 +1340,39 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               <option value="false">{t("common:action.no")}</option>
             </select>
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={rw.selectable === true}
+              onChange={(e) => update({ selectable: e.target.checked || undefined })}
+            />
+            selectable
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={rw.autoSelectFirstRow === true}
+              onChange={(e) => update({ autoSelectFirstRow: e.target.checked || undefined })}
+            />
+            autoSelectFirstRow
+          </label>
+          <label>
+            rowSelectionKey
+            <input
+              value={rw.rowSelectionKey ?? ""}
+              onChange={(e) => update({ rowSelectionKey: e.target.value || undefined })}
+            />
+          </label>
+          <KeyValueEditor
+            label="rowParamsFromRowJson"
+            value={rw.rowParamsFromRowJson}
+            onChange={(v) => update({ rowParamsFromRowJson: v })}
+          />
+          <StringListEditor
+            label="statusDotColumnsJson"
+            value={rw.statusDotColumnsJson}
+            onChange={(v) => update({ statusDotColumnsJson: v || undefined })}
+          />
         </>
       );
     }
@@ -1317,14 +1422,13 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.variableEditor")} />
-          <label className="full">
-            {t("editor.variablesJsonAll")}
-            <textarea
-              rows={3}
-              value={widget.variablesJson ?? "[]"}
-              onChange={(e) => update({ variablesJson: e.target.value })}
-            />
-          </label>
+          <StringListEditor
+            label={t("editor.variablesJsonAll")}
+            value={widget.variablesJson}
+            onChange={(v) => update({ variablesJson: v || undefined })}
+            suggestions={variables}
+            placeholder={t("editor.structured.emptyMeansAll")}
+          />
         </>
       );
 
@@ -1333,20 +1437,105 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
         <>
           <Section title={t("editor.section.spreadsheet")} />
           <label>
-            {t("editor.variableNameRequired")}
+            {t("editor.spreadsheet.sheetMode")}
+            <select
+              value={widget.sheetMode ?? "free"}
+              onChange={(e) =>
+                update({
+                  sheetMode: e.target.value as "free" | "configured",
+                })
+              }
+            >
+              <option value="free">{t("editor.spreadsheet.sheetModeFree")}</option>
+              <option value="configured">{t("editor.spreadsheet.sheetModeConfigured")}</option>
+            </select>
+          </label>
+          <label>
+            {t("editor.spreadsheet.persistMode")}
+            <select
+              value={widget.persistMode ?? "session"}
+              onChange={(e) =>
+                update({
+                  persistMode: e.target.value as "session" | "variable",
+                })
+              }
+            >
+              <option value="session">{t("editor.spreadsheet.persistSession")}</option>
+              <option value="variable">{t("editor.spreadsheet.persistVariable")}</option>
+            </select>
+          </label>
+          {widget.persistMode === "variable" && (
+            <label>
+              {t("editor.spreadsheet.valuesVariable")}
+              <input
+                value={widget.valuesVariable ?? ""}
+                onChange={(e) => update({ valuesVariable: e.target.value })}
+                placeholder="sheetValues"
+              />
+            </label>
+          )}
+          <label>
+            {t("editor.spreadsheet.sessionKey")}
             <input
-              value={widget.variableName}
-              onChange={(e) => update({ variableName: e.target.value })}
+              value={widget.sessionKey ?? ""}
+              onChange={(e) => update({ sessionKey: e.target.value })}
+              placeholder={`sheet:${widget.id}`}
             />
           </label>
           <label>
             <input
               type="checkbox"
-              checked={widget.editable === true}
+              checked={widget.editable !== false}
               onChange={(e) => update({ editable: e.target.checked })}
             />
             {t("editor.editableAllowWrite")}
           </label>
+          <SheetGridSizeEditor
+            sheetConfigJson={widget.sheetConfigJson}
+            onChange={(v) => update({ sheetConfigJson: v })}
+          />
+          <AdvancedJsonField
+            label={t("editor.spreadsheet.sheetConfigJson")}
+            value={widget.sheetConfigJson}
+            onChange={(v) => update({ sheetConfigJson: v })}
+            rows={10}
+            placeholder={t("editor.spreadsheet.sheetConfigPlaceholder")}
+          />
+          <div className="widget-editor-actions">
+            <button
+              type="button"
+              onClick={() =>
+                update({
+                  sheetMode: "free",
+                  sheetConfigJson: sheetConfigToJson(FREE_SHEET_CONFIG),
+                })
+              }
+            >
+              {t("editor.spreadsheet.insertFreeTemplate")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                update({
+                  sheetMode: "configured",
+                  sheetConfigJson: sheetConfigToJson(DEFAULT_SHEET_CONFIG),
+                })
+              }
+            >
+              {t("editor.spreadsheet.insertDefaultTemplate")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                update({
+                  sheetMode: "configured",
+                  sheetConfigJson: sheetConfigToJson(CALCULATOR_SHEET_CONFIG),
+                })
+              }
+            >
+              {t("editor.spreadsheet.insertCalculatorTemplate")}
+            </button>
+          </div>
         </>
       );
 
@@ -1446,7 +1635,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               onChange={(e) => update({ variant: e.target.value as "simple" })}
             />
           </label>
-          <label>
+          <label className="full">
             <input
               type="checkbox"
               checked={widget.collapsible === true}
@@ -1454,14 +1643,12 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
             />
             collapsible
           </label>
-          <label className="full">
-            childrenJson
-            <textarea
-              rows={8}
-              value={widget.childrenJson ?? "[]"}
-              onChange={(e) => update({ childrenJson: e.target.value })}
-            />
-          </label>
+          <AdvancedJsonField
+            label="childrenJson"
+            value={widget.childrenJson}
+            onChange={(v) => update({ childrenJson: v ?? "[]" })}
+            rows={8}
+          />
         </>
       );
 
@@ -1479,14 +1666,12 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               />
             </label>
           )}
-          <label className="full">
-            childrenJson
-            <textarea
-              rows={8}
-              value={widget.childrenJson ?? "[]"}
-              onChange={(e) => update({ childrenJson: e.target.value })}
-            />
-          </label>
+          <AdvancedJsonField
+            label="childrenJson"
+            value={widget.childrenJson}
+            onChange={(v) => update({ childrenJson: v ?? "[]" })}
+            rows={8}
+          />
         </>
       );
 
@@ -1494,14 +1679,16 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.tabs")} />
-          <label className="full">
-            tabsJson
-            <textarea
-              rows={8}
-              value={widget.tabsJson ?? "[]"}
-              onChange={(e) => update({ tabsJson: e.target.value })}
-            />
-          </label>
+          <TabPanelMetaEditor
+            value={widget.tabsJson}
+            onChange={(v) => update({ tabsJson: v })}
+          />
+          <AdvancedJsonField
+            label="tabsJson"
+            value={widget.tabsJson}
+            onChange={(v) => update({ tabsJson: v ?? "[]" })}
+            rows={8}
+          />
         </>
       );
 
@@ -1732,14 +1919,11 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               onChange={(e) => update({ buttonLabel: e.target.value || undefined })}
             />
           </label>
-          <label className="full">
-            fieldsJson
-            <textarea
-              rows={6}
-              value={widget.fieldsJson ?? "[]"}
-              onChange={(e) => update({ fieldsJson: e.target.value })}
-            />
-          </label>
+          <FormFieldsEditor
+            mode="input-form"
+            value={widget.fieldsJson}
+            onChange={(v) => update({ fieldsJson: v })}
+          />
         </>
       );
 
@@ -1747,14 +1931,12 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.carousel")} />
-          <label className="full">
-            slidesJson
-            <textarea
-              rows={6}
-              value={widget.slidesJson ?? "[]"}
-              onChange={(e) => update({ slidesJson: e.target.value })}
-            />
-          </label>
+          <AdvancedJsonField
+            label="slidesJson"
+            value={widget.slidesJson}
+            onChange={(v) => update({ slidesJson: v ?? "[]" })}
+            rows={6}
+          />
           <label>
             {t("editor.autoplayOff")}
             <input
@@ -1771,14 +1953,18 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.steps")} />
-          <label className="full">
-            stepsJson
-            <textarea
-              rows={6}
-              value={widget.stepsJson ?? "[]"}
-              onChange={(e) => update({ stepsJson: e.target.value })}
-            />
-          </label>
+          <IdLabelListEditor
+            label="stepsJson"
+            value={widget.stepsJson}
+            onChange={(v) => update({ stepsJson: v })}
+            idPrefix="step"
+          />
+          <AdvancedJsonField
+            label="stepsJson"
+            value={widget.stepsJson}
+            onChange={(v) => update({ stepsJson: v ?? "[]" })}
+            rows={6}
+          />
           <label>
             {t("editor.activeStepKeyInParams")}
             <input
@@ -1821,20 +2007,18 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.networkGraph")} />
-          <label>
-            nodesVariable
-            <input
-              value={widget.nodesVariable ?? ""}
-              onChange={(e) => update({ nodesVariable: e.target.value || undefined })}
-            />
-          </label>
-          <label>
-            edgesVariable
-            <input
-              value={widget.edgesVariable ?? ""}
-              onChange={(e) => update({ edgesVariable: e.target.value || undefined })}
-            />
-          </label>
+          <VariableSelect
+            label="nodesVariable"
+            value={widget.nodesVariable ?? ""}
+            onChange={(v) => update({ nodesVariable: v || undefined })}
+            variables={variables}
+          />
+          <VariableSelect
+            label="edgesVariable"
+            value={widget.edgesVariable ?? ""}
+            onChange={(v) => update({ edgesVariable: v || undefined })}
+            variables={variables}
+          />
           <label>
             labelField
             <input
@@ -1849,21 +2033,25 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.navMenu")} />
-          <label className="full">
-            itemsJson
-            <textarea
-              rows={6}
-              value={widget.itemsJson ?? "[]"}
-              onChange={(e) => update({ itemsJson: e.target.value })}
-              placeholder={t("editor.navMenuPlaceholder")}
-            />
-          </label>
+          <NavMenuItemsEditor
+            value={widget.itemsJson}
+            onChange={(v) => update({ itemsJson: v })}
+            dashboards={dashboards}
+          />
         </>
       );
 
     case "status-badge":
       return (
         <Section title={t("editor.section.status")} hint={t("editor.statusHint")} />
+      );
+
+    case "mini-tec-sld":
+      return (
+        <Section
+          title="mini-tec-sld"
+          hint={t("editor.structured.miniTecHint")}
+        />
       );
 
     default:

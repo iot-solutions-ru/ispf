@@ -1,0 +1,9 @@
+ISPF Driver Pack — Apache-2.0 components
+
+This driver pack is part of the IoT Solutions Platform Framework (ISPF).
+
+Unless a separate LICENSE file in this directory states otherwise, the ISPF driver
+wrapper code is licensed under GNU AGPL v3 (see repository root LICENSE).
+
+Third-party libraries bundled in this JAR retain their original licenses.
+See docs/THIRD_PARTY_NOTICES.md in the ISPF repository.

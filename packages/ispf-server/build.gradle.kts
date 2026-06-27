@@ -7,64 +7,6 @@ dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-driver-api"))
-    implementation(project(":packages:ispf-driver-mqtt"))
-    implementation(project(":packages:ispf-driver-modbus"))
-    implementation(project(":packages:ispf-driver-modbus-rtu"))
-    implementation(project(":packages:ispf-driver-modbus-udp"))
-    implementation(project(":packages:ispf-driver-snmp"))
-    implementation(project(":packages:ispf-driver-virtual"))
-    implementation(project(":packages:ispf-driver-http"))
-    implementation(project(":packages:ispf-driver-icmp"))
-    implementation(project(":packages:ispf-driver-ssh"))
-    implementation(project(":packages:ispf-driver-coap"))
-    implementation(project(":packages:ispf-driver-opcua"))
-    implementation(project(":packages:ispf-driver-opcua-server"))
-    implementation(project(":packages:ispf-driver-s7"))
-    implementation(project(":packages:ispf-driver-iec104"))
-    implementation(project(":packages:ispf-driver-iec104-server"))
-    implementation(project(":packages:ispf-driver-bacnet"))
-    implementation(project(":packages:ispf-driver-dnp3"))
-    implementation(project(":packages:ispf-driver-jmx"))
-    implementation(project(":packages:ispf-driver-jdbc"))
-    implementation(project(":packages:ispf-driver-file"))
-    implementation(project(":packages:ispf-driver-folder"))
-    implementation(project(":packages:ispf-driver-application"))
-    implementation(project(":packages:ispf-driver-message-stream"))
-    implementation(project(":packages:ispf-driver-nmea"))
-    implementation(project(":packages:ispf-driver-telnet"))
-    implementation(project(":packages:ispf-driver-soap"))
-    implementation(project(":packages:ispf-driver-ip-host"))
-    implementation(project(":packages:ispf-driver-kafka"))
-    implementation(project(":packages:ispf-driver-gps-tracker"))
-    implementation(project(":packages:ispf-driver-flexible"))
-    implementation(project(":packages:ispf-driver-mbus"))
-    implementation(project(":packages:ispf-driver-dlms"))
-    implementation(project(":packages:ispf-driver-ethernet-ip"))
-    implementation(project(":packages:ispf-driver-omron-fins"))
-    implementation(project(":packages:ispf-driver-asterisk"))
-    implementation(project(":packages:ispf-driver-smpp"))
-    implementation(project(":packages:ispf-driver-smb"))
-    implementation(project(":packages:ispf-driver-modem-at"))
-    implementation(project(":packages:ispf-driver-sip"))
-    implementation(project(":packages:ispf-driver-xmpp"))
-    implementation(project(":packages:ispf-driver-corba"))
-    implementation(project(":packages:ispf-driver-opc-da"))
-    implementation(project(":packages:ispf-driver-opc-bridge"))
-    implementation(project(":packages:ispf-driver-odbc"))
-    implementation(project(":packages:ispf-driver-jms"))
-    implementation(project(":packages:ispf-driver-cwmp"))
-    implementation(project(":packages:ispf-driver-web-transaction"))
-    implementation(project(":packages:ispf-driver-http-server"))
-    implementation(project(":packages:ispf-driver-graph-db"))
-    implementation(project(":packages:ispf-driver-vmware"))
-    implementation(project(":packages:ispf-driver-smis"))
-    implementation(project(":packages:ispf-driver-ldap"))
-    implementation(project(":packages:ispf-driver-dhcp"))
-    implementation(project(":packages:ispf-driver-imap"))
-    implementation(project(":packages:ispf-driver-pop3"))
-    implementation(project(":packages:ispf-driver-radius"))
-    implementation(project(":packages:ispf-driver-ipmi"))
-    implementation(project(":packages:ispf-driver-wmi"))
     implementation(project(":packages:ispf-plugin-model"))
     implementation(project(":packages:ispf-plugin-workflow"))
     implementation(project(":packages:ispf-ai-api"))
@@ -115,4 +57,24 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 
 springBoot {
     buildInfo()
+}
+
+tasks.named<ProcessResources>("processResources") {
+    from(rootProject.file("gradle/driver-packs.json")) {
+        into("driver-pack")
+    }
+}
+
+val driverPacksDir = rootProject.layout.buildDirectory.dir("driver-packs")
+
+tasks.named<Test>("test") {
+    dependsOn(rootProject.tasks.named("syncAllDriverPacks"))
+    val packsPath = driverPacksDir.get().asFile.absolutePath
+    environment("ISPF_DRIVER_PACKS_DIR", packsPath)
+    systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    dependsOn(rootProject.tasks.named("syncAllDriverPacks"))
+    environment("ISPF_DRIVER_PACKS_DIR", driverPacksDir.get().asFile.absolutePath)
 }

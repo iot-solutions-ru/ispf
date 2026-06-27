@@ -17,6 +17,8 @@ $ErrorActionPreference = "Stop"
 
 $staging = "/opt/ispf/staging/$Version"
 $jarOut = Join-Path $RepoRoot "packages\ispf-server\build\libs\ispf-server-$Version.jar"
+$packsDir = Join-Path $RepoRoot "build\driver-packs"
+$packsTar = Join-Path $RepoRoot "build\driver-packs.tar.gz"
 $webRoot = Join-Path $RepoRoot "apps\web-console"
 $distDir = Join-Path $webRoot "dist"
 $zipPath = Join-Path $webRoot "web-console.zip"
@@ -31,11 +33,11 @@ if (-not $SkipBuild) {
     Push-Location $RepoRoot
     try {
         if ($SkipTests) {
-            & .\gradlew ":packages:ispf-server:bootJar" "-Pversion=$Version"
+            & .\gradlew ":packages:ispf-server:bootJar" "syncAllDriverPacks" "-Pversion=$Version"
         } else {
-            & .\gradlew ":packages:ispf-server:test" ":packages:ispf-server:bootJar" "-Pversion=$Version"
+            & .\gradlew ":packages:ispf-server:test" ":packages:ispf-server:bootJar" "syncAllDriverPacks" "-Pversion=$Version"
         }
-        if ($LASTEXITCODE -ne 0) { throw "Gradle bootJar failed" }
+        if ($LASTEXITCODE -ne 0) { throw "Gradle build failed" }
     } finally {
         Pop-Location
     }
@@ -61,6 +63,20 @@ if (-not $SkipBuild) {
         throw "Missing dist: $distDir"
     }
 
+    if (-not (Test-Path $packsDir)) {
+        throw "Missing driver packs: $packsDir (run syncAllDriverPacks)"
+    }
+
+    Write-Host "==> Packaging driver-packs.tar.gz"
+    if (Test-Path $packsTar) { Remove-Item $packsTar -Force }
+    Push-Location $packsDir
+    try {
+        tar -c -z -f $packsTar *
+        if ($LASTEXITCODE -ne 0) { throw "tar driver-packs failed" }
+    } finally {
+        Pop-Location
+    }
+
     Write-Host "==> Packaging web-console.zip (tar, Unix paths)"
     Push-Location $distDir
     try {
@@ -74,6 +90,7 @@ if (-not $SkipBuild) {
 
 if (-not (Test-Path $jarOut)) { throw "Jar not found: $jarOut" }
 if (-not (Test-Path $zipPath)) { throw "Zip not found: $zipPath" }
+if (-not (Test-Path $packsTar)) { throw "Driver packs tar not found: $packsTar" }
 
 Write-Host "==> Uploading to ${RemoteHost}:$staging"
 Invoke-Remote "mkdir -p $staging"
@@ -81,6 +98,8 @@ scp -o BatchMode=yes $jarOut "${RemoteHost}:${staging}/ispf-server.jar"
 if ($LASTEXITCODE -ne 0) { throw "scp jar failed" }
 scp -o BatchMode=yes $zipPath "${RemoteHost}:${staging}/web-console.zip"
 if ($LASTEXITCODE -ne 0) { throw "scp zip failed" }
+scp -o BatchMode=yes $packsTar "${RemoteHost}:${staging}/driver-packs.tar.gz"
+if ($LASTEXITCODE -ne 0) { throw "scp driver-packs failed" }
 
 Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS"
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"

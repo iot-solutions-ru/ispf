@@ -30,7 +30,9 @@
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
 | [Драйверы](DRIVERS.md) | 58 встроенных драйверов — полный каталог REQ-PF-14 |
-| [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, виджеты, layout JSON, `objectPath` / `selectionKey` |
+| [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, layout JSON, `objectPath` / `selectionKey` |
+| **[Справочник виджетов](WIDGETS.md)** | Все типы: настройки, использование на HMI, примеры JSON |
+| [Spreadsheet widget](SPREADSHEET_WIDGET.md) | Формулы, функции `SUM`/`ISPREF`, binding-ячейки, сохранение таблиц |
 | [Lab Training (18 заданий)](LAB_TRAINING.md) | Virtual lab device, bundle import, упражнения Phase 15 |
 | [MES reference walkthrough](REFERENCE_MES_WALKTHROUGH.md) | Сквозной MES demo (`examples/mes-reference/`) |
 | [Mini-TEC reference walkthrough](REFERENCE_MINI_TEC_WALKTHROUGH.md) | Эталон АСУ ТП мини-ТЭЦ (`examples/mini-tec/`, Phase 18) |

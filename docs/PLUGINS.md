@@ -4,12 +4,13 @@
 
 | Слой | Репозиторий / ветка | Лицензия |
 |------|---------------------|----------|
-| **Ядро ISPF** | `main` | Apache 2.0 |
+| **Ядро ISPF** | `main` | GNU AGPL-3.0 (+ optional Enterprise EULA) |
+| **Device driver packs** | `packages/ispf-driver-*` → `build/driver-packs/` | Per-pack `licenseType` in `driver-pack.json` |
 | **Reference / отраслевые стенды** | Отдельная ветка или репозиторий (не `main`) | Указана в поставке |
 | **Коммерческие плагины** | Отдельный репозиторий или артефакт | Commercial / EULA — **явно в пакете** |
 | **Проект заказчика** | Репозиторий проекта | По договору |
 
-Ядро **не содержит** отраслевую бизнес-логику в Java и **не смешивается** с коммерческими модулями в одном Apache 2.0-дереве `main`.
+Ядро **не содержит** отраслевую бизнес-логику в Java, **не включает device drivers в server JAR** и **не смешивается** с коммерческими модулями без явной границы лицензии.
 
 **Основной принцип ISPF:** бизнес-логика решения живёт **на платформе** — в моделях, переменных, событиях, функциях и workflow дерева объектов. Ядро поставляет только generic-движки; решение — declarative-конфигурацию. См. [ARCHITECTURE.md](ARCHITECTURE.md#основной-принцип-бизнес-логика-в-механизмах-платформы).
 
@@ -58,6 +59,6 @@ Commercial bundle с секцией `license` — см. [COMMERCIAL_LICENSING.md
 
 ## Связь
 
-- [LICENSE.md](LICENSE.md) — Apache 2.0 ядра vs коммерческие модули
+- [LICENSE.md](LICENSE.md) — AGPL платформы, driver packs, коммерческие модули
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [decisions/](decisions/) — ADR (0008 boundary, 0009 gate, 0010 licensing)
