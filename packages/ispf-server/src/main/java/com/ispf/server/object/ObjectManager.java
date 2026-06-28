@@ -14,6 +14,7 @@ import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
+import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
@@ -68,6 +69,7 @@ public class ObjectManager {
     private final ApplicationEventPublisher eventPublisher;
     private final ObjectConfigAuditService configAuditService;
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
+    private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -85,7 +87,8 @@ public class ObjectManager {
             ObjectProvider<VisualGroupService> visualGroupService,
             ApplicationEventPublisher eventPublisher,
             ObjectConfigAuditService configAuditService,
-            RuntimeTelemetryCoalescer telemetryCoalescer
+            RuntimeTelemetryCoalescer telemetryCoalescer,
+            JavaFunctionRuntimeService javaFunctionRuntimeService
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -102,6 +105,7 @@ public class ObjectManager {
         this.eventPublisher = eventPublisher;
         this.configAuditService = configAuditService;
         this.telemetryCoalescer = telemetryCoalescer;
+        this.javaFunctionRuntimeService = javaFunctionRuntimeService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -535,6 +539,7 @@ public class ObjectManager {
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
         FunctionDescriptor before = node.functions().get(function.name());
+        javaFunctionRuntimeService.syncOnSave(path, function, before);
         node.addFunction(function);
         persistNodeConfig(
                 node,
@@ -556,6 +561,7 @@ public class ObjectManager {
         }
         long revisionBefore = node.revision();
         node.removeFunction(name);
+        javaFunctionRuntimeService.unregister(path, name);
         persistNodeConfig(node, "DELETE_FUNCTION", name, mapper.auditDiff(before, null));
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
     }

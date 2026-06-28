@@ -21,6 +21,13 @@ public record FunctionDescriptor(
     }
 
     public boolean hasScriptBody() {
-        return sourceBody != null && !sourceBody.isBlank();
+        return sourceBody != null && !sourceBody.isBlank() && !hasJavaBody();
+    }
+
+    public boolean hasJavaBody() {
+        return sourceBody != null
+                && !sourceBody.isBlank()
+                && sourceType != null
+                && "java".equalsIgnoreCase(sourceType.trim());
     }
 }

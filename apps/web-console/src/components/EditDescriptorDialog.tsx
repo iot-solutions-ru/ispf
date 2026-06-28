@@ -5,6 +5,7 @@ import { upsertEvent, upsertFunction } from "../api";
 import type { DataSchema, EventDescriptor, FunctionDescriptor } from "../types";
 import DataSchemaEditor from "./schema/DataSchemaEditor";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../utils/dataSchema";
+import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../utils/javaFunctionTemplate";
 
 type DescriptorKind = "function" | "event";
 
@@ -224,9 +225,19 @@ export default function EditDescriptorDialog({
               <h4 className="full">{t("descriptor.scriptSection")}</h4>
               <label>
                 {t("descriptor.sourceType")}
-                <select value={sourceType} onChange={(e) => setSourceType(e.target.value)}>
+                <select
+                  value={sourceType}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setSourceType(next);
+                    if (next === "java" && !sourceBody.trim()) {
+                      setSourceBody(DEFAULT_JAVA_FUNCTION_TEMPLATE);
+                    }
+                  }}
+                >
                   <option value="">{t("descriptor.sourceTypeHandler")}</option>
                   <option value="script">{t("descriptor.sourceTypeScript")}</option>
+                  <option value="java">{t("descriptor.sourceTypeJava")}</option>
                 </select>
               </label>
               <label>
@@ -245,20 +256,26 @@ export default function EditDescriptorDialog({
                   placeholder="root.platform.data-sources.app_myapp"
                 />
               </label>
-              {(sourceType === "script" || sourceBody.trim()) && (
+              {(sourceType === "script" || sourceType === "java" || sourceBody.trim()) && (
                 <label className="full">
-                  {t("descriptor.sourceBody")}
+                  {sourceType === "java" ? t("descriptor.sourceBodyJava") : t("descriptor.sourceBody")}
                   <textarea
                     className="json-editor"
-                    rows={10}
+                    rows={sourceType === "java" ? 16 : 10}
                     value={sourceBody}
                     onChange={(e) => setSourceBody(e.target.value)}
-                    placeholder='{"steps":[{"type":"return","value":{}}]}'
+                    placeholder={
+                      sourceType === "java"
+                        ? "public class MyObjectFunction implements ObjectJavaFunction { ... }"
+                        : '{"steps":[{"type":"return","value":{}}]}'
+                    }
                     spellCheck={false}
                   />
                 </label>
               )}
-              <p className="hint full">{t("descriptor.scriptHint")}</p>
+              <p className="hint full">
+                {sourceType === "java" ? t("descriptor.javaHint") : t("descriptor.scriptHint")}
+              </p>
             </section>
           </>
         )}

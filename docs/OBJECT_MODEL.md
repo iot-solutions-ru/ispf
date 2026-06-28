@@ -161,7 +161,13 @@ POST /api/v1/events/fire
 
 ## Функции
 
-`FunctionDescriptor` — имя, input/output `DataSchema`.
+`FunctionDescriptor` — имя, input/output `DataSchema`, опционально `sourceType` + `sourceBody`.
+
+| `sourceType` | Поведение |
+|--------------|-----------|
+| *(пусто)* | Встроенный platform `FunctionHandler` по имени функции на объекте |
+| `script` | JSON DSL (`steps`) — `ScriptFunctionHandler` |
+| `java` | Исходник public class → `ObjectJavaFunction`; **компиляция при сохранении** (`PUT .../functions`), invoke через `JavaFunctionHandler` |
 
 Вызов:
 
@@ -172,9 +178,11 @@ Content-Type: application/json
 { "schema": {...}, "rows": [{...}] }
 ```
 
+**Java function (MVP):** класс должен `implements com.ispf.core.function.ObjectJavaFunction` с методом `invoke(DataRecord input, JavaFunctionContext context)`. Ограничения безопасности: запрет `Runtime`, `ProcessBuilder`, reflection, сеть и т.п. в `sourceBody`. Только admin save object.
+
 Встроенный handler: `acknowledgeAlarm` на `demo-sensor-01` (сброс `alarmActive`).
 
-Расширение: реализуйте `FunctionHandler` в `ispf-server` и зарегистрируйте как Spring `@Component`.
+Расширение platform: реализуйте `FunctionHandler` в `ispf-server` и зарегистрируйте как Spring `@Component`.
 
 ## Модели (шаблоны)
 
