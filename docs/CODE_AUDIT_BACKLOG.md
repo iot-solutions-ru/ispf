@@ -416,10 +416,10 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 - [x] Login page smoke (mock `/api/v1/auth/config`)
 - [x] Admin Explorer shell smoke (mock session + platform API)
-- [x] Explorer: device deep link + Variables tab (mock editor API)
 - [x] Operator deep link `?mode=operator&app=demo` (public manifest)
 - [x] Optional live login when `E2E_USERNAME` / `E2E_PASSWORD` set
 - [x] CI job `web-console` (mocked e2e + vitest + build)
+- [ ] Explorer: select device, open variables tab (mock editor API + tree expand)
 - [ ] Dashboard preview render (mock dashboard layout + editor tab)
 - [ ] CI against staging / prod URL (`E2E_BASE_URL`)
 

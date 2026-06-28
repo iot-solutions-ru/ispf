@@ -151,6 +151,13 @@ export default function EditDescriptorDialog({
       if (showAdvancedJson) {
         JSON.parse(schemaJson);
       }
+      if (isFunction && !showAdvancedJson) {
+        const st = sourceType.trim();
+        if ((st === "java" || st === "script") && !sourceBody.trim()) {
+          setParseError(t("descriptor.sourceBodyRequired"));
+          return;
+        }
+      }
       setParseError(null);
       mutation.mutate();
     } catch {

@@ -48,6 +48,16 @@ if [ -f "$DRIVER_PACKS_TAR" ]; then
   echo "Driver packs installed to $INSTALL_ROOT/data/drivers"
 fi
 
+REPAIR_SCRIPT="$INSTALL_ROOT/bin/vps-flyway-repair.sh"
+if [ -x "$REPAIR_SCRIPT" ]; then
+  echo "Repairing Flyway checksums..."
+  if ! "$REPAIR_SCRIPT" "$INSTALL_ROOT/ispf-server.jar"; then
+    echo "WARNING: Flyway repair failed; server may not start on checksum mismatch" >&2
+  fi
+else
+  echo "Flyway repair script not found at $REPAIR_SCRIPT (skipping)"
+fi
+
 systemctl start "$SERVICE_NAME"
 
 for i in $(seq 1 60); do

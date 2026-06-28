@@ -52,7 +52,7 @@ final class JavaFunctionCompiler {
                     null,
                     fileManager,
                     diagnostics,
-                    List.of("-classpath", System.getProperty("java.class.path")),
+                    List.of("-classpath", JavaFunctionCompileClasspath.get()),
                     null,
                     List.of(sourceFile)
             ).call();

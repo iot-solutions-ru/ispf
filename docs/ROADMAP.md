@@ -192,7 +192,7 @@ Sprint E–G в [PLATFORM_DEVELOPER_BACKLOG.md §8](PLATFORM_DEVELOPER_BACKLOG.m
 
 | # | Тема | Статус |
 |---|------|--------|
-| 18.1 | Playwright admin e2e smoke (Explorer, operator deep link) | Planned |
+| 18.1 | Playwright admin e2e smoke (Explorer, operator deep link) | Partial |
 | 18.2 | Driver stub promotion — первый кандидат по запросу app-команды | Planned |
 
 **Снято с roadmap (не актуально):** acceptance mini-TEC (`MiniTecPlatformApiTest`, SLD), разовый v0.8.0 prod rollout с пересозданием БД. Mini-TEC остаётся optional demo — [REFERENCE_MINI_TEC_WALKTHROUGH.md](REFERENCE_MINI_TEC_WALKTHROUGH.md), [examples/mini-tec/](../examples/mini-tec/). Runbook миграции pre-0.8.0 — [DEPLOYMENT.md § v0.8.0+](DEPLOYMENT.md#обновление-до-v080).

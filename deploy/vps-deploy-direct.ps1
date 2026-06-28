@@ -306,9 +306,11 @@ if (-not $KeepServiceRunning) {
 Write-Host "==> Preparing staging on ${RemoteHost}:$staging"
 Invoke-Remote "mkdir -p $staging"
 $applyScript = Join-Path $PSScriptRoot "apply-platform-update.sh"
+$flywayRepairScript = Join-Path $PSScriptRoot "vps-flyway-repair.sh"
 
 $uploads = @(
     @{ Local = $applyScript; Remote = "/opt/ispf/bin/apply-platform-update.sh" }
+    @{ Local = $flywayRepairScript; Remote = "/opt/ispf/bin/vps-flyway-repair.sh" }
     @{ Local = $jarOut; Remote = "$staging/ispf-server.jar" }
     @{ Local = $zipPath; Remote = "$staging/web-console.zip" }
 )
@@ -319,7 +321,7 @@ if (-not $SkipDriverPacks) {
 }
 Send-DeployUploads -RemoteHost $RemoteHost -Uploads $uploads
 
-Invoke-Remote "chmod +x /opt/ispf/bin/apply-platform-update.sh; sed -i 's/\r$//' /opt/ispf/bin/apply-platform-update.sh"
+Invoke-Remote "chmod +x /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh; sed -i 's/\r$//' /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh"
 
 Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS"
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"

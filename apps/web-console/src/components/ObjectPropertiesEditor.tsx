@@ -882,12 +882,14 @@ export default function ObjectPropertiesEditor({
                 <li key={fn.name}>
                   <code>{fn.name}</code>
                   {fn.description && <span className="model-var-desc">{fn.description}</span>}
-                  {fn.sourceBody && (
-                    <span className="inline-badge">
-                      {fn.sourceType === "java"
-                        ? t("descriptor.sourceTypeJava")
-                        : t("descriptor.sourceTypeScript")}
-                    </span>
+                  {fn.sourceType === "java" ? (
+                    <span className="inline-badge">{t("descriptor.sourceTypeJava")}</span>
+                  ) : fn.sourceType === "script" ? (
+                    <span className="inline-badge">{t("descriptor.sourceTypeScript")}</span>
+                  ) : fn.sourceBody ? (
+                    <span className="inline-badge">{t("descriptor.sourceTypeScript")}</span>
+                  ) : (
+                    <span className="inline-badge muted">{t("descriptor.sourceTypeHandler")}</span>
                   )}
                   <span className="list-actions">
                     <button

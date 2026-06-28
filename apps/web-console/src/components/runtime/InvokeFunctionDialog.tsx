@@ -18,6 +18,13 @@ function defaultInputRecord(fn: FunctionDescriptor): DataRecord {
   return emptyRecord(cloneSchema(fn.inputSchema));
 }
 
+function functionHasImplementation(fn: FunctionDescriptor): boolean {
+  if (fn.sourceType === "java" || fn.sourceType === "script") {
+    return Boolean(fn.sourceBody?.trim());
+  }
+  return Boolean(fn.sourceBody?.trim());
+}
+
 function isEmptyInput(input: DataRecord): boolean {
   if (!input.rows || input.rows.length === 0) {
     return true;
@@ -39,6 +46,8 @@ export default function InvokeFunctionDialog({
   const [error, setError] = useState<string | null>(null);
 
   const hasInputFields = useMemo(() => fn.inputSchema.fields.length > 0, [fn.inputSchema.fields.length]);
+
+  const hasImplementation = useMemo(() => functionHasImplementation(fn), [fn]);
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -102,6 +111,9 @@ export default function InvokeFunctionDialog({
           ) : (
             <p className="hint">{t("descriptor.emptyInputSchema")}</p>
           )}
+          {!hasImplementation && (
+            <p className="hint error">{t("descriptor.notInvocable")}</p>
+          )}
           {error && <p className="hint error">{error}</p>}
           {resultJson && (
             <label className="full">
@@ -115,7 +127,7 @@ export default function InvokeFunctionDialog({
           <button
             type="button"
             className="btn primary"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || !hasImplementation}
             onClick={() => mutation.mutate()}
           >
             {mutation.isPending ? t("runtime:invokeFunction.invoking") : t("runtime:invokeFunction.invoke")}

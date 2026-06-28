@@ -3,6 +3,10 @@ package com.ispf.server.function.java;
 import com.ispf.core.function.ObjectJavaFunction;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.jar.JarFile;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,6 +37,26 @@ class JavaFunctionCompilerTest {
         assertEquals("EchoJavaFn", artifact.className());
         ObjectJavaFunction fn = JavaFunctionCompiler.instantiate(artifact);
         assertNotNull(fn.invoke(null, new com.ispf.core.function.JavaFunctionContext("root.test", "echo")));
+    }
+
+    @Test
+    void compileClasspathIncludesIspfCoreFromBootJarLayout() throws Exception {
+        JavaFunctionCompileClasspath.clearCacheForTests();
+        Path bootJar = Path.of(System.getProperty("java.class.path").split(java.io.File.pathSeparator)[0]);
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+                bootJar.toString().endsWith(".jar") && Files.exists(bootJar),
+                "boot jar layout test requires jar classpath"
+        );
+        try (JarFile jar = new JarFile(bootJar.toFile())) {
+            boolean hasBootInf = jar.stream().anyMatch(e -> e.getName().startsWith("BOOT-INF/lib/ispf-core"));
+            org.junit.jupiter.api.Assumptions.assumeTrue(hasBootInf, "not a Spring Boot fat jar");
+        }
+        String classpath = JavaFunctionCompileClasspath.get();
+        assertNotNull(classpath);
+        org.junit.jupiter.api.Assertions.assertTrue(
+                classpath.toLowerCase().contains("ispf-core"),
+                () -> "expected ispf-core on compile classpath but got: " + classpath
+        );
     }
 
     @Test
