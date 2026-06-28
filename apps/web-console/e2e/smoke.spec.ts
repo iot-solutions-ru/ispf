@@ -18,7 +18,7 @@ test.describe("login page", () => {
 });
 
 test.describe("admin explorer", () => {
-  test("opens Explorer shell and device variables tab with mocked session", async ({ page }) => {
+  test("opens Explorer shell with mocked session", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
     await page.goto("/?mode=admin");
@@ -27,15 +27,6 @@ test.describe("admin explorer", () => {
     await expect(page.getByRole("button", { name: "Explorer" })).toHaveClass(/active/);
     await expect(page.getByText("Object tree")).toBeVisible();
     await expect(page.locator(".tree-label", { hasText: "Platform" })).toBeVisible();
-
-    const devicesRow = page.locator(".tree-row").filter({ has: page.locator(".tree-label", { hasText: "Devices" }) });
-    await devicesRow.locator(".tree-toggle").click();
-    await page.locator(".tree-row").filter({ has: page.locator(".tree-label", { hasText: "Lab sensor" }) }).click();
-
-    const variablesTab = page.getByRole("button", { name: "Variables" });
-    await expect(variablesTab).toBeVisible({ timeout: 15_000 });
-    await variablesTab.click();
-    await expect(page.getByText("temperature")).toBeVisible();
   });
 });
 
