@@ -401,7 +401,7 @@ Web Console: API first, fallback `public/operator-apps/<appId>.manifest.json` (�
 - Invoke: `POST /api/v1/bff/invoke` или `POST /api/v1/objects/by-path/functions/invoke` по tree path.
 - SQL bindings: `bindingExpression: sqlBinding('appId','var')` на переменной узла.
 
-**Legacy (deprecated, warn-only):** operator manifest `screens[]` в bundle — Phase 3.5; предпочтительно `operatorUi` + dashboards в дереве. См. [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md).
+**Legacy (deprecated, warn-only):** operator manifest `screens[]` в bundle — Phase 3.5; предпочтительно `operatorUi` + dashboards в дереве. Типы экранов legacy manifest: `table`/`report` (BFF), `dashboard` (embedded DASHBOARD path), `chart` (single-variable trend), `map` (child devices). См. [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md).
 
 ## Следующие шаги (backlog)
 

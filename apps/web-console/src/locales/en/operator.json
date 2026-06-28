@@ -63,6 +63,7 @@
   "manifest.reportTruncated": "Not all rows shown (report limit).",
   "manifest.exported": "{{format}} exported",
   "manifest.actionDone": "Done: {{label}}",
+  "manifest.emptyScreen": "Screen has no table, report, dashboard, chart, or map configuration.",
   "bff.selectRow": "Select {{rowKey}}",
   "operatorApps.uiHint": "Operator UI · {{query}} · object {{path}}",
   "operatorApps.loadingConfig": "Loading configuration…",

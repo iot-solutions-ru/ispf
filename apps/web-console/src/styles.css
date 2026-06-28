@@ -5000,6 +5000,26 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   overflow: auto;
 }
 
+.op-manifest-embed {
+  min-height: 320px;
+}
+
+.op-manifest-embed-dashboard .dashboard-shell {
+  min-height: 420px;
+}
+
+.op-manifest-embed-chart .dash-widget-chart {
+  min-height: 280px;
+}
+
+.op-manifest-embed-map .dash-widget-map {
+  min-height: 360px;
+}
+
+.op-manifest-embed-map .maplibregl-map {
+  min-height: 340px;
+}
+
 .op-nav {
   display: flex;
   flex-wrap: wrap;

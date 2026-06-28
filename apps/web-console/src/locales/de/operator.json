@@ -49,6 +49,7 @@
   "loadingManifest": "Manifest wird geladen…",
   "loadingUi": "Bediener-UI wird geladen…",
   "manifest.actionDone": "Erledigt: {{label}}",
+  "manifest.emptyScreen": "Bildschirm nicht konfiguriert: kein table, report, dashboard, chart oder map.",
   "manifest.exported": "{{format}} exportiert",
   "manifest.refresh": "Aktualisieren",
   "manifest.reportTruncated": "Nicht alle Zeilen angezeigt (Berichtslimit).",

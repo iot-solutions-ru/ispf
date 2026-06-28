@@ -49,6 +49,7 @@
   "loadingManifest": "正在加载清单...",
   "loadingUi": "正在加载操作员用户界面...",
   "manifest.actionDone": "已完成：{{label}}",
+  "manifest.emptyScreen": "屏幕未配置：缺少 table、report、dashboard、chart 或 map。",
   "manifest.exported": "{{format}} 已导出",
   "manifest.refresh": "刷新",
   "manifest.reportTruncated": "未显示所有行（报告限制）。",

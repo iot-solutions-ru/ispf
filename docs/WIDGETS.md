@@ -142,19 +142,25 @@
 
 ### chart — График / тренд
 
-**Назначение:** история переменной (line/area/bar и др.).
+**Назначение:** история переменной (line/area/bar и др.) или multi-variable режимы `bubble` / `radar`.
 
 **Оператор:** просмотр; переключатель диапазона на виджете (если включён в UI).
 
 | Поле | Описание |
 |------|----------|
-| `variableName` | **Обязательно.** На переменной нужен `historyEnabled: true` |
-| `chartStyle` | `line` \| `area` |
+| `variableName` | **Обязательно** для line/area/bar/range/candlestick. На переменной нужен `historyEnabled: true` |
+| `chartStyle` | `line` \| `area` (не для bubble/radar) |
 | `chartType` | `line`, `area`, `bar`, `candlestick`, `bubble`, `radar`, `range` |
 | `historyRange` | `live` (скользящее окно), `1h`, `6h`, `24h`, `7d`, `all` |
 | `maxPoints` | Макс. точек (~120 по умолчанию) |
 | `color` | Цвет линии |
 | `decimals`, `unit`, `unitField` | Формат оси/подписи |
+| `bubbleXVariable`, `bubbleYVariable` | **bubble:** траектория X/Y по live/history трендам |
+| `bubbleSizeVariable`, `bubbleDefaultSize` | **bubble:** размер маркера (Z); default 80 |
+| `bubblePointsJson` | **bubble:** snapshot JSON `[{label,xVariable,yVariable,sizeVariable?}]` — перекрывает trajectory |
+| `radarAxesJson` | **radar:** JSON `[{label,variableName,valueField?,max?}]`, минимум 3 оси |
+
+**Ограничения bubble/radar:** trajectory zip по индексу точек (не merge по timestamp); radar — только latest snapshot, не история.
 
 **Пример:**
 

@@ -1,4 +1,4 @@
-import type { DashboardWidget, WidgetType } from "../../types/dashboard";
+import type { DashboardWidget, WidgetType, ChartWidget } from "../../types/dashboard";
 import { FREE_SHEET_CONFIG, sheetConfigToJson } from "./sheet/sheetConfig";
 
 /** Well-known platform paths used in sample widgets (see PlatformBootstrap / DashboardLayouts). */
@@ -765,4 +765,61 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
     default:
       return { ...base, type: "value", title: "Значение", variableName: "temperature", decimals: 1 };
   }
+}
+
+/** Sample chart widget: bubble X/Y trajectory on demo-sensor-01. */
+export function buildChartBubbleSampleWidget(index: number): ChartWidget {
+  const base = sampleBase(index);
+  return {
+    ...base,
+    id: sampleId("chart", index),
+    type: "chart",
+    title: "Bubble: температура vs %",
+    w: 6,
+    h: 4,
+    objectPath: DEVICE,
+    modelHintPath: DEVICE,
+    chartType: "bubble",
+    bubbleXVariable: "temperature",
+    bubbleYVariable: "temperaturePercent",
+    bubbleDefaultSize: 100,
+    maxPoints: 60,
+    color: "#39c5cf",
+    decimals: 1,
+    demoPreviewJson: j([
+      { x: 18, y: 35, z: 90, name: "A" },
+      { x: 22, y: 55, z: 120, name: "B" },
+      { x: 26, y: 72, z: 160, name: "C" },
+    ]),
+    sampleTemplate: true,
+  };
+}
+
+/** Sample chart widget: radar over demo-sensor-01 telemetry axes. */
+export function buildChartRadarSampleWidget(index: number): ChartWidget {
+  const base = sampleBase(index);
+  return {
+    ...base,
+    id: sampleId("chart", index),
+    type: "chart",
+    title: "Radar: датчик",
+    w: 5,
+    h: 4,
+    objectPath: DEVICE,
+    modelHintPath: DEVICE,
+    chartType: "radar",
+    color: "#a371f7",
+    decimals: 1,
+    radarAxesJson: j([
+      { label: "Temp °C", variableName: "temperature", max: 50 },
+      { label: "Temp %", variableName: "temperaturePercent", max: 100 },
+      { label: "Порог", variableName: "threshold", max: 50 },
+    ]),
+    demoPreviewJson: j([
+      { subject: "Temp °C", value: 22, fullMark: 50 },
+      { subject: "Temp %", value: 58, fullMark: 100 },
+      { subject: "Порог", value: 35, fullMark: 50 },
+    ]),
+    sampleTemplate: true,
+  };
 }

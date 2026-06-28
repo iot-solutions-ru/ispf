@@ -474,7 +474,13 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
         </>
       )}
 
-      {binding === "object-variable" && widget.type !== "spreadsheet" && (
+      {binding === "object-variable" &&
+        widget.type !== "spreadsheet" &&
+        !(
+          widget.type === "chart" &&
+          ((widget.chartType ?? widget.chartStyle) === "bubble" ||
+            (widget.chartType ?? widget.chartStyle) === "radar")
+        ) && (
         <FormRow>
           <FieldLabel caption={t("editor.variableName")}>
             <div
@@ -653,7 +659,8 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
         </>
       );
 
-    case "chart":
+    case "chart": {
+      const chartType = widget.chartType ?? widget.chartStyle ?? "area";
       return (
         <>
           <Section title={t("editor.section.chart")} />
@@ -673,7 +680,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
           <label>
             {t("editor.chartType")}
             <select
-              value={widget.chartType ?? widget.chartStyle ?? "area"}
+              value={chartType}
               onChange={(e) => update({ chartType: e.target.value as typeof widget.chartType })}
             >
               <option value="line">line</option>
@@ -681,24 +688,89 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               <option value="bar">bar</option>
               <option value="range">{t("editor.chartTypeRange")}</option>
               <option value="candlestick">{t("editor.chartTypeCandlestick")}</option>
+              <option value="bubble">{t("editor.chartTypeBubble")}</option>
+              <option value="radar">{t("editor.chartTypeRadar")}</option>
             </select>
-            {(widget.chartType ?? widget.chartStyle) === "range" && (
+            {chartType === "range" && (
               <span className="hint">{t("editor.chartTypeRangeHint")}</span>
             )}
-            {(widget.chartType ?? widget.chartStyle) === "candlestick" && (
+            {chartType === "candlestick" && (
               <span className="hint">{t("editor.chartTypeCandlestickHint")}</span>
             )}
+            {chartType === "bubble" && (
+              <span className="hint">{t("editor.chartTypeBubbleHint")}</span>
+            )}
+            {chartType === "radar" && (
+              <span className="hint">{t("editor.chartTypeRadarHint")}</span>
+            )}
           </label>
-          <label>
-            {t("editor.chartStyle")}
-            <select
-              value={widget.chartStyle ?? "area"}
-              onChange={(e) => update({ chartStyle: e.target.value as "line" | "area" })}
-            >
-              <option value="area">area</option>
-              <option value="line">line</option>
-            </select>
-          </label>
+          {chartType === "bubble" && (
+            <>
+              <Section title={t("editor.section.chartBubble")} />
+              <VariableSelect
+                label={t("editor.chartBubbleXVariable")}
+                value={widget.bubbleXVariable ?? ""}
+                onChange={(v) => update({ bubbleXVariable: v || undefined })}
+                variables={ctx.variables}
+                disabled={!ctx.variableSelectEnabled}
+              />
+              <VariableSelect
+                label={t("editor.chartBubbleYVariable")}
+                value={widget.bubbleYVariable ?? ""}
+                onChange={(v) => update({ bubbleYVariable: v || undefined })}
+                variables={ctx.variables}
+                disabled={!ctx.variableSelectEnabled}
+              />
+              <VariableSelect
+                label={t("editor.chartBubbleSizeVariable")}
+                value={widget.bubbleSizeVariable ?? ""}
+                onChange={(v) => update({ bubbleSizeVariable: v || undefined })}
+                variables={ctx.variables}
+                disabled={!ctx.variableSelectEnabled}
+              />
+              <label>
+                {t("editor.chartBubbleDefaultSize")}
+                <input
+                  type="number"
+                  min={10}
+                  max={1000}
+                  value={widget.bubbleDefaultSize ?? 80}
+                  onChange={(e) => update({ bubbleDefaultSize: Number(e.target.value) })}
+                />
+              </label>
+              <AdvancedJsonField
+                label={t("editor.chartBubblePointsJson")}
+                placeholder={t("editor.chartBubblePointsJsonHint")}
+                value={widget.bubblePointsJson ?? ""}
+                onChange={(v) => update({ bubblePointsJson: v || undefined })}
+                rows={5}
+              />
+            </>
+          )}
+          {chartType === "radar" && (
+            <>
+              <Section title={t("editor.section.chartRadar")} />
+              <AdvancedJsonField
+                label={t("editor.chartRadarAxesJson")}
+                placeholder={t("editor.chartRadarAxesJsonHint")}
+                value={widget.radarAxesJson ?? ""}
+                onChange={(v) => update({ radarAxesJson: v || undefined })}
+                rows={6}
+              />
+            </>
+          )}
+          {chartType !== "bubble" && chartType !== "radar" && (
+            <label>
+              {t("editor.chartStyle")}
+              <select
+                value={widget.chartStyle ?? "area"}
+                onChange={(e) => update({ chartStyle: e.target.value as "line" | "area" })}
+              >
+                <option value="area">area</option>
+                <option value="line">line</option>
+              </select>
+            </label>
+          )}
           <label>
             {t("editor.maxPoints")}
             <input
@@ -740,6 +812,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
           </label>
         </>
       );
+    }
 
     case "sparkline":
       return (

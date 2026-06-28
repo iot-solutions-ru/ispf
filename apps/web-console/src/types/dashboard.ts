@@ -155,6 +155,25 @@ export interface ChartWidget extends DashboardWidgetBase {
   decimals?: number;
   unit?: string;
   unitField?: string;
+  /** Bubble: X-axis variable (trajectory mode when paired with bubbleYVariable). */
+  bubbleXVariable?: string;
+  /** Bubble: Y-axis variable. */
+  bubbleYVariable?: string;
+  /** Bubble: optional size variable (Z axis); falls back to bubbleDefaultSize. */
+  bubbleSizeVariable?: string;
+  /** Bubble: default marker size when size variable is unset (default 80). */
+  bubbleDefaultSize?: number;
+  /**
+   * Bubble: optional multi-point snapshot config JSON array
+   * `[{ "label", "xVariable", "yVariable", "sizeVariable?" }]`.
+   * When set, overrides bubbleXVariable/bubbleYVariable trajectory mode.
+   */
+  bubblePointsJson?: string;
+  /**
+   * Radar: categorical axes JSON array
+   * `[{ "label", "variableName", "valueField?", "max?" }]`.
+   */
+  radarAxesJson?: string;
 }
 
 export interface SparklineWidget extends DashboardWidgetBase {

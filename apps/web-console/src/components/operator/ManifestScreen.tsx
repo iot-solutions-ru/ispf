@@ -7,9 +7,15 @@ import ReportExportControls from "../report/ReportExportControls";
 import { invokeInputFromAction, validateActionInput } from "../../api/manifestInput";
 import { isActionVisible } from "../../api/manifestVisibility";
 import type { OperatorManifestScreen } from "../../types/operatorManifest";
-import { selectionKeyForTable } from "../../types/operatorManifest";
+import {
+  resolveManifestScreenKind,
+  selectionKeyForTable,
+} from "../../types/operatorManifest";
 import BffDataTable from "./BffDataTable";
 import ManifestActionForm from "./ManifestActionForm";
+import ManifestChartPanel from "./ManifestChartPanel";
+import ManifestEmbeddedDashboard from "./ManifestEmbeddedDashboard";
+import ManifestMapPanel from "./ManifestMapPanel";
 
 interface ManifestScreenProps {
   screen: OperatorManifestScreen;
@@ -132,13 +138,14 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
   );
 
   const selectable = Boolean(screen.table?.selectable);
+  const screenKind = resolveManifestScreenKind(screen);
 
   return (
     <section className="op-panel">
       <h2 className="op-panel-title">{screen.title}</h2>
       {screen.description && <p className="op-muted">{screen.description}</p>}
 
-      {(simpleActions.length > 0 || screen.table || screen.report) && (
+      {(simpleActions.length > 0 || screenKind === "table" || screenKind === "report") && (
         <div className="op-toolbar">
           {simpleActions.map((action) => {
             const disabled =
@@ -157,12 +164,12 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
               </button>
             );
           })}
-          {screen.table && (
+          {screenKind === "table" && screen.table && (
             <button type="button" className="btn" onClick={() => tableQuery.refetch()}>
               {t("manifest.refresh")}
             </button>
           )}
-          {screen.report && (
+          {screenKind === "report" && screen.report && (
             <>
               <button type="button" className="btn" onClick={() => reportQuery.refetch()}>
                 {t("manifest.refresh")}
@@ -194,12 +201,16 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
         </p>
       )}
 
-      {tableQuery.error && <div className="op-alert op-alert-error">{String(tableQuery.error)}</div>}
-      {reportQuery.error && <div className="op-alert op-alert-error">{String(reportQuery.error)}</div>}
-      {reportQuery.data?.truncated && (
+      {tableQuery.error && screenKind === "table" && (
+        <div className="op-alert op-alert-error">{String(tableQuery.error)}</div>
+      )}
+      {reportQuery.error && screenKind === "report" && (
+        <div className="op-alert op-alert-error">{String(reportQuery.error)}</div>
+      )}
+      {screenKind === "report" && reportQuery.data?.truncated && (
         <div className="op-alert op-alert-info">{t("manifest.reportTruncated")}</div>
       )}
-      {tableQuery.data && (
+      {screenKind === "table" && tableQuery.data && (
         <BffDataTable
           rows={tableQuery.data.rows}
           labels={tableQuery.data.labels}
@@ -211,12 +222,36 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
         />
       )}
 
-      {reportQuery.data && (
+      {screenKind === "report" && reportQuery.data && (
         <BffDataTable
           rows={reportQuery.data.rows}
           labels={reportQuery.data.labels}
           emptyMessage={screen.report?.emptyMessage}
         />
+      )}
+
+      {screenKind === "dashboard" && screen.dashboard && (
+        <ManifestEmbeddedDashboard config={screen.dashboard} />
+      )}
+
+      {screenKind === "chart" && screen.chart && (
+        <ManifestChartPanel
+          screen={screen}
+          chart={screen.chart}
+          refreshIntervalMs={screen.chart.refreshIntervalMs}
+        />
+      )}
+
+      {screenKind === "map" && screen.map && (
+        <ManifestMapPanel
+          screen={screen}
+          map={screen.map}
+          refreshIntervalMs={screen.map.refreshIntervalMs}
+        />
+      )}
+
+      {screenKind === "empty" && (
+        <div className="op-alert op-alert-info">{t("manifest.emptyScreen")}</div>
       )}
     </section>
   );

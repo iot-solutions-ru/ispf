@@ -27,7 +27,7 @@
 | **P0** | Workflow UI | Actions `log`, `publishNats` в ISPF справочнике | BL-02 Done |
 | **P1** | UI ↔ API | Change sets, edit leases, event catalog viewer | BL-04,05,08 Done |
 | **P1** | Inspector | RECORD inline editor | BL-03 Done |
-| **P2** | Dashboard | Chart bubble / radar | BL-65, 20.25 |
+| **P2** | Dashboard | Chart bubble / radar | Done (BL-65) |
 | **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
 | **P1** | Playwright e2e | Admin smoke + inspector/dashboard; staging TBD | BL-50 Partial, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA | BL-20…22 Done |
@@ -65,7 +65,7 @@
 | Frontend e2e (Playwright) | ~60% | CI vs staging/prod URL | BL-50 Partial, Phase 18.1 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~95% | — | BL-01…18 Done |
-| Dashboard widgets (advanced) | ~95% | chart bubble/radar | BL-65 |
+| Dashboard widgets (advanced) | ~98% | — | BL-65 done |
 | Variable inline editor | ~95% | — | BL-03 Done |
 | Binding rules UX | ~95% | runtime `onEvent`/`periodicMs` engine | in progress |
 | Journals | ~100% | invoke/binding audit payloads (V51), drill-down UI | BL-15,16 Done |
@@ -76,7 +76,7 @@
 | Notifications | Done | alert rule vars + correlator actions; `ispf.notifications.email-relay-url` | — |
 | Federation UX | Done | catalog sync preview (SKIP/BIND), federated dashboard layout/title write | — |
 | Platform backup | Done | `GET /platform/backup/export`, `POST /platform/backup/import?dryRun=` + System UI | — |
-| Operator manifest | ~85% | chart/map screen types | BL-51 |
+| Operator manifest | ~95% | responsive shell (BL-52) | BL-52 |
 | Spreadsheet widget | ~95% | history bind (BL-54) | BL-54 |
 | Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
 | Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |

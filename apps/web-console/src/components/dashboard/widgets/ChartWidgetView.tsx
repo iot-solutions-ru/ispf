@@ -28,6 +28,8 @@ import {
   parseDemoPreview,
 } from "../widgetDemoPreview";
 import CandlestickChartBody from "./CandlestickChartBody";
+import ChartBubbleWidgetView from "./ChartBubbleWidgetView";
+import ChartRadarWidgetView from "./ChartRadarWidgetView";
 
 interface ChartWidgetViewProps {
   widget: ChartWidget;
@@ -46,6 +48,26 @@ export default function ChartWidgetView({
   const color = widget.color ?? "#2f81f7";
   const chartStyle = widget.chartStyle ?? "area";
   const chartType = widget.chartType ?? chartStyle;
+
+  if (chartType === "bubble") {
+    return (
+      <ChartBubbleWidgetView
+        widget={widget}
+        refreshIntervalMs={refreshIntervalMs}
+        editable={editable}
+      />
+    );
+  }
+  if (chartType === "radar") {
+    return (
+      <ChartRadarWidgetView
+        widget={widget}
+        refreshIntervalMs={refreshIntervalMs}
+        editable={editable}
+      />
+    );
+  }
+
   const isRangeChart = chartType === "range";
   const isCandlestickChart = chartType === "candlestick";
   const chartMode = isRangeChart ? "range" : isCandlestickChart ? "candlestick" : "line";

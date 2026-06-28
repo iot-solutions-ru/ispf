@@ -49,6 +49,7 @@
   "loadingManifest": "Загрузка манифеста…",
   "loadingUi": "Загрузка пользовательского интерфейса оператора…",
   "manifest.actionDone": "Выполнено: {{label}}",
+  "manifest.emptyScreen": "Экран не настроен: нет table, report, dashboard, chart или map.",
   "manifest.exported": "{{format}} экспортирован",
   "manifest.refresh": "Обновить",
   "manifest.reportTruncated": "Показаны не все строки (лимит отчёта).",

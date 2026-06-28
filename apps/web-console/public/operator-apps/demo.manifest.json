@@ -5,6 +5,39 @@
   "defaultScreen": "ready-items-report",
   "screens": [
     {
+      "id": "demo-hmi",
+      "title": "Demo HMI",
+      "description": "Embedded platform dashboard (BL-51)",
+      "dashboard": {
+        "dashboardPath": "root.platform.dashboards.demo-sensor"
+      }
+    },
+    {
+      "id": "sensor-trend",
+      "title": "Temperature trend",
+      "description": "Chart screen bound to demo-sensor-01",
+      "chart": {
+        "objectPath": "root.platform.devices.demo-sensor-01",
+        "variableName": "temperature",
+        "chartType": "area",
+        "historyRange": "1h",
+        "decimals": 1,
+        "unit": "°C",
+        "color": "#2f81f7"
+      }
+    },
+    {
+      "id": "devices-map",
+      "title": "Devices map",
+      "description": "Map of devices under root.platform.devices",
+      "map": {
+        "parentPath": "root.platform.devices",
+        "centerLat": 55.75,
+        "centerLon": 37.62,
+        "zoom": 4
+      }
+    },
+    {
       "id": "ready-items-report",
       "title": "Готовые позиции",
       "description": "Отчёт ready-items — deploy examples/demo-app/bundle.json",

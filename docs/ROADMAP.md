@@ -238,7 +238,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.12 | Automation index + journals (export/diff, invoke audit payloads, drill-down) | BL-14…16 | P2 | Done |
 | 20.23 | Chart `range` min/max band | BL-63 | P2 | Done |
 | 20.24 | Chart `candlestick` OHLC | BL-64 | P2 | Done |
-| 20.25 | Chart `bubble` / `radar` multi-axis | BL-65 | P3 | Planned |
+| 20.25 | Chart `bubble` / `radar` multi-axis | BL-65 | P3 | Done |
 | 20.13 | Driver write: Modbus, S7, OPC UA | BL-20…22 | P1 | Done |
 | 20.14 | Driver write: BACnet, IEC104, DNP3 poll, DLMS | BL-23…25 | P2 | Done |
 | 20.15 | Driver maturity sync + write UI + tests | BL-27,28,30 | P2 | Partial |
@@ -246,13 +246,13 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.17 | Scale ops: Redis/NATS health, YARG PDF hint | BL-41…43 | P2 | Partial |
 | 20.18 | Notifications, federation polish, backup/restore, MCP admin | BL-44…48 | P3 | Done (BL-44…48) |
 | 20.19 | Playwright e2e (см. также Phase 18.1) | BL-50 | P1 | Partial |
-| 20.20 | Operator manifest screens + spreadsheet history binding | BL-51…54 | P3 | Partial |
+| 20.20 | Operator manifest screens + spreadsheet history binding | BL-51…54 | P3 | Partial (BL-51 Done) |
 | 20.21 | Frontend component tests (widgets, inspector) | BL-55 | P2 | Partial |
 | 20.22 | Haystack/Brick semantic layer (ADR, tags mixin, export) | BL-56…62 | P3 | Deferred |
 
 **Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Planned; 20.16 — settings UI Done, backend write/query Planned; 20.17 — **BL-41,42 Done**, BL-43 Planned; 20.19 = Phase 18.1 smoke baseline; 20.20 — **BL-53 Done**, BL-51/52/54 Planned.
 
-**Следующие приоритеты:** BL-50 (e2e), BL-40 (CH variables backend), BL-23…25 (driver write), BL-65 (bubble/radar).
+**Следующие приоритеты:** BL-52/54 (operator responsive, spreadsheet history), BL-55 (RTL расширение), BL-29 (CWMP write).
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 

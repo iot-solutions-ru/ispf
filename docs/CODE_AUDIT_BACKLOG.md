@@ -48,7 +48,7 @@
 | **BL-12** | `history-table`: настраиваемое окно (сейчас ~5 min hardcoded) | P2 | Done | Dashboard |
 | **BL-63** | Chart widget: тип **range** (min/max band из historian aggregate) | P2 | Done | Dashboard |
 | **BL-64** | Chart widget: тип **candlestick** (OHLC по bucket / schema) | P2 | Done | Dashboard |
-| **BL-65** | Chart widget: типы **bubble** и **radar** (multi-axis / categorical) | P3 | Planned | Dashboard |
+| **BL-65** | Chart widget: типы **bubble** и **radar** (multi-axis / categorical) | P3 | Done | Dashboard |
 | **BL-13** | System settings: toggles Redis / NATS / ClickHouse journal / AI provider / MCP | P2 | Done | System |
 | **BL-14** | Automation index dashboard (`GET /platform/automation-index/stats`) | P2 | Done | System |
 | **BL-15** | Object change history: diff view (before/after по audit entries) | P2 | Done | Journal |
@@ -91,7 +91,7 @@
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
 | **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Done | QA |
-| **BL-51** | Operator manifest: screen types chart / map / embedded dashboard | P3 | Planned | Operator |
+| **BL-51** | Operator manifest: screen types chart / map / embedded dashboard | P3 | Done | Operator |
 | **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Planned | Operator |
 | **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
 | **BL-54** | Spreadsheet: binding ячеек к variable history | P3 | Planned | Spreadsheet |
@@ -296,12 +296,16 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Задачи:**
 
-- [ ] **bubble:** x/y/size — binding к 2–3 variables или static params; `ScatterChart` + `ZAxis`
-- [ ] **radar:** categorical axes — список variables или JSON `axesJson`; `RadarChart`
-- [ ] Отдельные секции редактора (не переиспользовать только `variableName`)
-- [ ] Вернуть options в редактор
+- [x] **bubble:** x/y/size — binding к 2–3 variables или static params; `ScatterChart` + `ZAxis`
+- [x] **radar:** categorical axes — список variables или JSON `axesJson`; `RadarChart`
+- [x] Отдельные секции редактора (не переиспользовать только `variableName`)
+- [x] Вернуть options в редактор
 
 **Acceptance:** bubble/radar на sample dashboard; документированы ограничения data model.
+
+**Реализация (2026-06-28):** `ChartBubbleWidgetView` / `ChartRadarWidgetView`, `chartRadarBubbleUtils.ts`, поля `bubbleXVariable`…`radarAxesJson`, sample builders `buildChartBubbleSampleWidget` / `buildChartRadarSampleWidget`.
+
+**Ограничения:** bubble trajectory — zip по индексу live/history рядов X и Y (не по timestamp); radar — только latest snapshot (≥3 осей); `bubblePointsJson` перекрывает trajectory mode.
 
 **Приоритет:** P3 — после BL-63/64 и по запросу HMI-команды.
 
@@ -564,6 +568,7 @@ Backlog P3 — semantic (по запросу, после ADR)
 | 2026-06-28 | BL-41, BL-42 Done: Redis/NATS health API + System Metrics cards, i18n, BPMN publishNats smoke hint |
 | 2026-06-28 | BL-20: Modbus tcp/rtu `writePoint` (FC5/FC6), loopback + guard-rail tests, DRIVERS.md |
 | 2026-06-28 | BL-64: chart candlestick OHLC (вариант A, `chartOhlcUtils`, `CandlestickChartBody`) |
-| 2026-06-28 | BL-63…65: отложенная реализация chart types (range, candlestick, bubble/radar) после BL-06 opt. B |
+| 2026-06-28 | BL-51: operator manifest screens dashboard/chart/map (`ManifestScreen`, demo.manifest.json) |
+| 2026-06-28 | BL-65: chart bubble (ScatterChart) + radar (RadarChart), editor sections, sample builders |
 | 2026-06-28 | Wave G: Haystack/Brick semantic layer → BL-56…62 (P3, deferred) |
 | 2026-06-28 | Первая версия: code audit → BL-01…BL-55, Wave A–F |
