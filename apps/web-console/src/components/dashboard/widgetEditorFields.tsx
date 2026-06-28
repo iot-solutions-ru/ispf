@@ -680,9 +680,13 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               <option value="area">area</option>
               <option value="bar">bar</option>
               <option value="range">{t("editor.chartTypeRange")}</option>
+              <option value="candlestick">{t("editor.chartTypeCandlestick")}</option>
             </select>
             {(widget.chartType ?? widget.chartStyle) === "range" && (
               <span className="hint">{t("editor.chartTypeRangeHint")}</span>
+            )}
+            {(widget.chartType ?? widget.chartStyle) === "candlestick" && (
+              <span className="hint">{t("editor.chartTypeCandlestickHint")}</span>
             )}
           </label>
           <label>
@@ -2020,6 +2024,22 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               value={widget.endField ?? "end"}
               onChange={(e) => update({ endField: e.target.value })}
             />
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={widget.interactive !== false}
+              onChange={(e) => update({ interactive: e.target.checked })}
+            />
+            {t("editor.ganttInteractive")}
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={widget.allowBarDrag !== false}
+              onChange={(e) => update({ allowBarDrag: e.target.checked })}
+            />
+            {t("editor.ganttAllowBarDrag")}
           </label>
         </>
       );

@@ -11,6 +11,7 @@
   "bpmn.tab.xml": "XML-Quelle",
   "bpmn.title": "BPMN 2.0",
   "bpmn.viewerUnavailable": "Diagramm nicht verfügbar: {{error}}",
+  "bpmn.publishNatsHint": "Erfordert ISPF_NATS_ENABLED und eine live NATS-Verbindung. Status unter System → Metriken. Smoke: ispf:subject=ispf.smoke.test, ispf:message=hello.",
   "instance.node": "Knoten",
   "instance.status": "Status",
   "instance.title": "Instanz",

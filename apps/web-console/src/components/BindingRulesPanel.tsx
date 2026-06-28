@@ -2,36 +2,21 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
-import type { BindingActivators, BindingRule } from "../types";
+import type { BindingRule } from "../types";
 import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
+import {
+  emptyBindingRule,
+  isBindingRuleSaveable,
+  isExistingBindingRule,
+  mergeBindingRules,
+  prepareBindingRuleForSave,
+} from "./bindingRulesUtils";
 
 interface BindingRulesPanelProps {
   path: string;
   canManage: boolean;
   eventNames?: string[];
-}
-
-function defaultActivators(): BindingActivators {
-  return {
-    onStartup: false,
-    onVariableChange: [{ objectPath: "self", variableName: "*" }],
-    onEvent: null,
-    periodicMs: 0,
-  };
-}
-
-function emptyRule(): BindingRule {
-  return {
-    id: "",
-    name: "",
-    enabled: true,
-    order: 0,
-    activators: defaultActivators(),
-    condition: "",
-    expression: "",
-    target: { variableName: "", field: "value" },
-  };
 }
 
 export default function BindingRulesPanel({ path, canManage, eventNames = [] }: BindingRulesPanelProps) {
@@ -47,10 +32,7 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
   const saveMutation = useMutation({
     mutationFn: (rule: BindingRule) => {
       const current = rulesQuery.data ?? [];
-      const next = current.filter((r) => r.id !== rule.id);
-      next.push(rule);
-      next.sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
-      return saveBindingRules(path, next);
+      return saveBindingRules(path, mergeBindingRules(current, rule));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["binding-rules", path] });
@@ -77,7 +59,7 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
     <section className="panel">
       {canManage && (
         <div className="panel-toolbar">
-          <button type="button" className="btn primary small" onClick={() => setEditing(emptyRule())}>
+          <button type="button" className="btn primary small" onClick={() => setEditing(emptyBindingRule())}>
             {t("inspector:bindings.addRule")}
           </button>
         </div>
@@ -138,7 +120,7 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
                 ID
                 <input
                   value={editing.id}
-                  disabled={Boolean(rules.find((r) => r.id === editing.id))}
+                  disabled={Boolean(isExistingBindingRule(rules, editing.id))}
                   onChange={(e) => setEditing({ ...editing, id: e.target.value })}
                   pattern="[A-Za-z0-9_-]+"
                   required
@@ -194,18 +176,8 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
               <button
                 type="button"
                 className="btn primary"
-                disabled={
-                  !editing.id.trim()
-                  || !editing.target.variableName.trim()
-                  || !editing.expression.trim()
-                  || saveMutation.isPending
-                }
-                onClick={() => saveMutation.mutate({
-                  ...editing,
-                  id: editing.id.trim(),
-                  name: editing.name?.trim() || editing.id.trim(),
-                  target: { ...editing.target, field: editing.target.field ?? "value" },
-                })}
+                disabled={!isBindingRuleSaveable(editing) || saveMutation.isPending}
+                onClick={() => saveMutation.mutate(prepareBindingRuleForSave(editing))}
               >
                 {t("common:action.save")}
               </button>

@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformMetrics, type PlatformMetricSection } from "../api/platformMetrics";
 import AutomationIndexStatsCard from "./AutomationIndexStatsCard";
+import RedisHealthCard from "./RedisHealthCard";
+import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
 
 const METRIC_KEYS = [
   "uptimeMs", "uptimeHuman", "heapUsedBytes", "heapMaxBytes", "heapUsedMb", "heapMaxMb",
@@ -119,6 +121,10 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             })}
           </p>
           <AutomationIndexStatsCard />
+          <div className="system-metrics-grid system-backend-health-grid">
+            <RedisHealthCard />
+            <NatsJetStreamHealthCard />
+          </div>
           <div className="system-metrics-grid">
             {metricsQuery.data.sections.map((section) => (
               <MetricSectionCard key={section.id} section={section} />

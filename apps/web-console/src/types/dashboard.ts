@@ -536,6 +536,10 @@ export interface GanttChartWidget extends DashboardWidgetBase {
   labelField?: string;
   startField?: string;
   endField?: string;
+  /** Enable pan/zoom on the timeline in operator mode (default true). */
+  interactive?: boolean;
+  /** Allow dragging bars when the bound variable is writable (default true). */
+  allowBarDrag?: boolean;
 }
 
 export interface NetworkGraphWidget extends DashboardWidgetBase {

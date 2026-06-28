@@ -28,6 +28,7 @@
   "bpmn.allAttributes": "All ISPF attributes",
   "bpmn.applyToElement": "Apply to element",
   "bpmn.viewerUnavailable": "Diagram unavailable: {{error}}",
+  "bpmn.publishNatsHint": "Requires ISPF_NATS_ENABLED and a live NATS connection. Check NATS status in System → Metrics. Smoke: ispf:subject=ispf.smoke.test, ispf:message=hello.",
   "ispfReference.title": "ISPF service task actions",
   "ispfReference.hint": "On a service task, set the ispf:action attribute and fields from the table (in XML or via the editor)."
 }

@@ -20,6 +20,7 @@ import {
 import { objectTreeKey, selectionFromObject, type TreeRowSelection } from "../utils/treeRowKey";
 import ObjectTreeIcon from "./icons/ObjectTreeIcon";
 import TreeBulkContextMenu, { type TreeContextMenuState } from "./TreeBulkContextMenu";
+import DriverWriteDialog from "./DriverWriteDialog";
 import type { TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 import { isTreeContainerType } from "../utils/objectTreeTypes";
 import { isSpecializedEditorObject } from "../utils/editorObject";
@@ -301,6 +302,7 @@ export default function ObjectTree({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(400);
   const [contextMenu, setContextMenu] = useState<TreeContextMenuState | null>(null);
+  const [driverWritePath, setDriverWritePath] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const openContextMenu = useCallback((
@@ -508,6 +510,17 @@ export default function ObjectTree({
             {...bulkActions}
             menu={contextMenu}
             onClose={() => setContextMenu(null)}
+            onDriverWrite={(devicePath) => {
+              setDriverWritePath(devicePath);
+              setContextMenu(null);
+            }}
+          />
+        )}
+        {driverWritePath && (
+          <DriverWriteDialog
+            devicePath={driverWritePath}
+            canManage
+            onClose={() => setDriverWritePath(null)}
           />
         )}
       </TreeDragContext.Provider>

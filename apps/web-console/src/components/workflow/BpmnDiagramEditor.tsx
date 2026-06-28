@@ -218,6 +218,9 @@ export default function BpmnDiagramEditor({ xml, onChange }: BpmnDiagramEditorPr
               />
             </label>
           ))}
+          {currentAction === "publishNats" && (
+            <p className="hint bpmn-publish-nats-hint">{t("bpmn.publishNatsHint")}</p>
+          )}
           <details>
             <summary>{t("bpmn.allAttributes")}</summary>
             {ISPF_ATTRS.filter((a) => a !== "action" && !hintAttrs.includes(a)).map((attr) => (

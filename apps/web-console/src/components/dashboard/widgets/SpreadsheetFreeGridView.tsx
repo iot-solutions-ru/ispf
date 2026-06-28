@@ -37,6 +37,10 @@ import {
   exportXlsxWorkbookFromTabs,
   importXlsxWorkbook,
 } from "../sheet/sheetXlsx";
+import SpreadsheetImportNotice, {
+  hasSpreadsheetImportIssues,
+  type SpreadsheetImportNoticeState,
+} from "./SpreadsheetImportNotice";
 import {
   buildMergeHiddenSet,
   findMergeAt,
@@ -89,7 +93,7 @@ export default function SpreadsheetFreeGridView({
   const [formulaBarEditing, setFormulaBarEditing] = useState(false);
   const [inlineCell, setInlineCell] = useState<string | null>(null);
   const [inlineDraft, setInlineDraft] = useState("");
-  const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [importNotice, setImportNotice] = useState<SpreadsheetImportNoticeState | null>(null);
   const xlsxInputRef = useRef<HTMLInputElement>(null);
 
   const effectiveConfig = useMemo(() => {
@@ -347,7 +351,7 @@ export default function SpreadsheetFreeGridView({
       link.click();
       URL.revokeObjectURL(url);
     } catch {
-      setImportNotice(t("spreadsheet.importXlsxError"));
+      setImportNotice({ kind: "error" });
     }
   }, [
     activeSheetIndex,
@@ -366,24 +370,21 @@ export default function SpreadsheetFreeGridView({
       replaceWorkbook(result.workbook);
       setSelectedCell("A1");
       const sheetCount = result.workbook.sheets.length;
-      if (result.warnings.length > 0) {
-        setImportNotice(
-          t("spreadsheet.importXlsxWorkbookWarnings", {
-            count: sheetCount,
-            warningCount: result.warnings.length,
-            details: result.warnings.slice(0, 5).join("; "),
-          })
-        );
+      if (hasSpreadsheetImportIssues(result.report)) {
+        setImportNotice({
+          kind: "warning",
+          sheetCount,
+          report: result.report,
+        });
       } else {
-        setImportNotice(
-          t("spreadsheet.importXlsxWorkbookSuccess", {
-            count: sheetCount,
-            name: result.workbook.sheets[0]?.name ?? "",
-          })
-        );
+        setImportNotice({
+          kind: "success",
+          sheetCount,
+          firstName: result.workbook.sheets[0]?.name ?? "",
+        });
       }
     },
-    [replaceWorkbook, t]
+    [replaceWorkbook]
   );
 
   const onXlsxFileSelected = useCallback(
@@ -396,7 +397,7 @@ export default function SpreadsheetFreeGridView({
       try {
         await applyXlsxImport(file);
       } catch {
-        setImportNotice(t("spreadsheet.importXlsxError"));
+        setImportNotice({ kind: "error" });
       }
     },
     [applyXlsxImport, canEdit, t]
@@ -464,7 +465,7 @@ export default function SpreadsheetFreeGridView({
   );
 
   useEffect(() => {
-    if (!importNotice) {
+    if (!importNotice || importNotice.kind !== "success") {
       return;
     }
     const timer = window.setTimeout(() => setImportNotice(null), 8000);
@@ -823,9 +824,10 @@ export default function SpreadsheetFreeGridView({
             </div>
           ) : null}
           {importNotice ? (
-            <div className="dash-sheet-import-notice" role="status">
-              {importNotice}
-            </div>
+            <SpreadsheetImportNotice
+              notice={importNotice}
+              onDismiss={() => setImportNotice(null)}
+            />
           ) : null}
           <div className="dash-sheet-formula-bar">
             <span className="dash-sheet-formula-label">{selectedCell ?? ""}</span>

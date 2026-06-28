@@ -62,4 +62,6 @@ jobs:
         run: |
           npm ci
           npm test
+          npx playwright install chromium --with-deps
+          npm run test:e2e
           npm run build

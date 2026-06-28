@@ -39,7 +39,9 @@ import {
   excelAverageifs,
   excelCountifs,
   excelIfs,
+  excelMaxifs,
   excelMedian,
+  excelMinifs,
   excelRoundDown,
   excelRoundUp,
   excelStdevS,
@@ -551,6 +553,12 @@ class Parser {
       case "AVERAGEIFS":
         result = this.parseAverageifsArgs();
         break;
+      case "MAXIFS":
+        result = this.parseMaxifsArgs();
+        break;
+      case "MINIFS":
+        result = this.parseMinifsArgs();
+        break;
       case "IFS":
         result = this.parseIfsArgs();
         break;
@@ -829,6 +837,54 @@ class Parser {
       return ERROR.value;
     }
     return excelAverageifs(avgRange, criteriaRanges, criteria);
+  }
+
+  private parseMaxifsArgs(): SheetEvalResult {
+    const maxRange = this.requireRangeValues();
+    if (typeof maxRange === "string") {
+      return maxRange;
+    }
+    const criteriaRanges: SheetEvalResult[][] = [];
+    const criteria: SheetEvalResult[] = [];
+    while (this.match("comma")) {
+      const criteriaRange = this.tryParseRangeArg();
+      if (!criteriaRange || typeof criteriaRange === "string") {
+        return ERROR.value;
+      }
+      if (!this.match("comma")) {
+        return ERROR.value;
+      }
+      criteriaRanges.push(criteriaRange);
+      criteria.push(this.parseCompare());
+    }
+    if (criteriaRanges.length === 0) {
+      return ERROR.value;
+    }
+    return excelMaxifs(maxRange, criteriaRanges, criteria);
+  }
+
+  private parseMinifsArgs(): SheetEvalResult {
+    const minRange = this.requireRangeValues();
+    if (typeof minRange === "string") {
+      return minRange;
+    }
+    const criteriaRanges: SheetEvalResult[][] = [];
+    const criteria: SheetEvalResult[] = [];
+    while (this.match("comma")) {
+      const criteriaRange = this.tryParseRangeArg();
+      if (!criteriaRange || typeof criteriaRange === "string") {
+        return ERROR.value;
+      }
+      if (!this.match("comma")) {
+        return ERROR.value;
+      }
+      criteriaRanges.push(criteriaRange);
+      criteria.push(this.parseCompare());
+    }
+    if (criteriaRanges.length === 0) {
+      return ERROR.value;
+    }
+    return excelMinifs(minRange, criteriaRanges, criteria);
   }
 
   private parseIfsArgs(): SheetEvalResult {
@@ -1394,6 +1450,57 @@ function invokeFunction(
     return String(args[0] ?? "").toLowerCase();
   }
 
+  if (name === "PROPER") {
+    return String(args[0] ?? "").replace(/\w+/g, (word) =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    );
+  }
+
+  if (name === "CHAR") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const code = Math.trunc(coerceNumber(args[0]));
+    if (code < 1 || code > 65535) {
+      return ERROR.value;
+    }
+    return String.fromCharCode(code);
+  }
+
+  if (name === "CODE") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const text = String(args[0] ?? "");
+    if (text.length === 0) {
+      return ERROR.value;
+    }
+    return text.charCodeAt(0);
+  }
+
+  if (name === "REPT") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const text = String(args[0] ?? "");
+    const times = Math.trunc(coerceNumber(args[1]));
+    if (times < 0) {
+      return ERROR.value;
+    }
+    if (times * text.length > 32767) {
+      return ERROR.value;
+    }
+    return text.repeat(times);
+  }
+
+  if (name === "TRUE") {
+    return true;
+  }
+
+  if (name === "FALSE") {
+    return false;
+  }
+
   if (name === "CONCAT" || name === "CONCATENATE") {
     return args.map((arg) => String(arg ?? "")).join("");
   }
@@ -1568,6 +1675,33 @@ function invokeFunction(
 
   if (name === "ISERR") {
     return isSheetError(args[0]) && args[0] !== ERROR.na;
+  }
+
+  if (name === "NA") {
+    return ERROR.na;
+  }
+
+  if (name === "ISLOGICAL") {
+    return typeof args[0] === "boolean";
+  }
+
+  if (name === "ISODD") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const n = Math.trunc(coerceNumber(args[0]));
+    return Math.abs(n % 2) === 1;
+  }
+
+  if (name === "ISEVEN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.trunc(coerceNumber(args[0])) % 2 === 0;
+  }
+
+  if (name === "CLEAN") {
+    return String(args[0] ?? "").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "");
   }
 
   if (name === "PI") {

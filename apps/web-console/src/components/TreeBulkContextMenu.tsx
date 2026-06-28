@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { pollDriver } from "../api/drivers";
 import {
   canCreateChildAt,
   canCreateVisualGroupAt,
@@ -18,17 +20,29 @@ export interface TreeContextMenuState {
 interface TreeBulkContextMenuProps extends TreeBulkActionsConfig {
   menu: TreeContextMenuState | null;
   onClose: () => void;
+  onDriverWrite?: (devicePath: string) => void;
 }
 
 export default function TreeBulkContextMenu({
   menu,
   onClose,
+  onDriverWrite,
   ...config
 }: TreeBulkContextMenuProps) {
   const { t } = useTranslation("explorer");
+  const queryClient = useQueryClient();
   const menuRef = useRef<HTMLDivElement>(null);
   const [selectedGroupPath, setSelectedGroupPath] = useState("");
   const actions = useTreeBulkActions({ ...config, contextPath: menu?.contextPath, contextObjectType: menu?.contextObjectType });
+
+  const pollMutation = useMutation({
+    mutationFn: (devicePath: string) => pollDriver(devicePath),
+    onSuccess: (_status, devicePath) => {
+      queryClient.invalidateQueries({ queryKey: ["driver-status", devicePath] });
+      queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+    },
+  });
 
   useEffect(() => {
     setSelectedGroupPath("");
@@ -85,6 +99,7 @@ export default function TreeBulkContextMenu({
     && canCreateVisualGroupAt(menu.contextPath!, menu.contextObjectType),
   );
   const createLabel = menu.contextPath ? createContextMenuLabel(menu.contextPath) : "";
+  const isDeviceContext = menu.contextObjectType === "DEVICE" && Boolean(menu.contextPath);
 
   const addToGroupDisabledReason = !actions.canAddToGroup
     ? actions.hasMixedCatalogSelection
@@ -145,6 +160,20 @@ export default function TreeBulkContextMenu({
         {canCreateVisualGroup && config.onCreateVisualGroup && visualGroupParentPath && item(
           t("contextMenu.create.visual-group"),
           () => config.onCreateVisualGroup!(visualGroupParentPath),
+        )}
+        {isDeviceContext && menu.contextPath && (
+          <>
+            <div className="tree-context-menu-sep" role="separator" />
+            {item(
+              t("contextMenu.driver.poll"),
+              () => pollMutation.mutate(menu.contextPath!),
+              { disabled: pollMutation.isPending },
+            )}
+            {onDriverWrite && item(
+              t("contextMenu.driver.write"),
+              () => onDriverWrite(menu.contextPath!),
+            )}
+          </>
         )}
         {(canCreateChild || canCreateVisualGroup) && (
           <div className="tree-context-menu-sep" role="separator" />

@@ -3,6 +3,9 @@ import { resolveSheetMode } from "../sheet/sheetConfig";
 import SpreadsheetConfiguredGridView from "./SpreadsheetConfiguredGridView";
 import SpreadsheetFreeGridView from "./SpreadsheetFreeGridView";
 
+export { default as SpreadsheetImportNotice } from "./SpreadsheetImportNotice";
+export type { SpreadsheetImportNoticeState } from "./SpreadsheetImportNotice";
+
 interface SpreadsheetWidgetViewProps {
   widget: SpreadsheetWidget;
   refreshIntervalMs: number;

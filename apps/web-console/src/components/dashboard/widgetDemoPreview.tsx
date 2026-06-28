@@ -1,6 +1,6 @@
 import type { DashboardWidget } from "../../types/dashboard";
 import type { TrendPoint } from "../../hooks/useTrendSeries";
-import type { RangeTrendPoint } from "../../hooks/useChartTrendSeries";
+import type { CandlestickPoint, RangeTrendPoint } from "../../hooks/useChartTrendSeries";
 import { useTranslation } from "react-i18next";
 
 export function parseDemoPreview<T>(raw: string | undefined): T | null {
@@ -56,6 +56,32 @@ export function buildDemoRangeTrendPoints(
       max,
       avg: point.value,
       band: Math.max(0, max - min),
+    };
+  });
+}
+
+export function buildDemoCandlestickPoints(
+  raw: Array<{ t?: number; v: number }> | null
+): CandlestickPoint[] {
+  const points = buildDemoTrendPoints(raw);
+  if (points.length === 0) {
+    return [];
+  }
+  let previousClose: number | null = null;
+  return points.map((point, index) => {
+    const wave = Math.sin(index / 2) * 2;
+    const open = previousClose ?? point.value - 0.4;
+    const close = point.value + (index % 2 === 0 ? 0.3 : -0.3);
+    const high = Math.max(open, close) + 1.2 + Math.abs(wave) * 0.2;
+    const low = Math.min(open, close) - 1.2 - Math.abs(wave) * 0.2;
+    previousClose = close;
+    return {
+      t: point.t,
+      time: point.time,
+      open,
+      high,
+      low,
+      close,
     };
   });
 }

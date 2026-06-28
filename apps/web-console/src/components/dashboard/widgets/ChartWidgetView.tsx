@@ -21,7 +21,13 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
 import WidgetHistoryControls from "../WidgetHistoryControls";
-import { buildDemoRangeTrendPoints, buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoPreview";
+import {
+  buildDemoCandlestickPoints,
+  buildDemoRangeTrendPoints,
+  buildDemoTrendPoints,
+  parseDemoPreview,
+} from "../widgetDemoPreview";
+import CandlestickChartBody from "./CandlestickChartBody";
 
 interface ChartWidgetViewProps {
   widget: ChartWidget;
@@ -41,6 +47,8 @@ export default function ChartWidgetView({
   const chartStyle = widget.chartStyle ?? "area";
   const chartType = widget.chartType ?? chartStyle;
   const isRangeChart = chartType === "range";
+  const isCandlestickChart = chartType === "candlestick";
+  const chartMode = isRangeChart ? "range" : isCandlestickChart ? "candlestick" : "line";
   const decimals = widget.decimals ?? 1;
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const styles = useWidgetStyles(widget.stylesJson);
@@ -52,7 +60,7 @@ export default function ChartWidgetView({
     refreshIntervalMs,
     maxPoints,
     historyRange,
-    isRangeChart ? "range" : "line"
+    chartMode
   );
 
   const demoPreview = parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson);
@@ -66,13 +74,23 @@ export default function ChartWidgetView({
       : []),
     [demoPreview, editable, isRangeChart, series.rangePoints.length]
   );
+  const demoCandlestickPoints = useMemo(
+    () => (editable && isCandlestickChart && series.candlestickPoints.length < 2
+      ? buildDemoCandlestickPoints(demoPreview)
+      : []),
+    [demoPreview, editable, isCandlestickChart, series.candlestickPoints.length]
+  );
 
   const points = demoLinePoints.length >= 2 ? demoLinePoints : series.points;
   const rangePoints =
     demoRangePoints.length >= 2 ? demoRangePoints : series.rangePoints;
+  const candlestickPoints =
+    demoCandlestickPoints.length >= 2 ? demoCandlestickPoints : series.candlestickPoints;
   const isDemo = isRangeChart
     ? demoRangePoints.length >= 2
-    : demoLinePoints.length >= 2;
+    : isCandlestickChart
+      ? demoCandlestickPoints.length >= 2
+      : demoLinePoints.length >= 2;
 
   const displayStats = isDemo
     ? isRangeChart
@@ -81,11 +99,17 @@ export default function ChartWidgetView({
           min: Math.min(...rangePoints.map((point) => point.min)),
           max: Math.max(...rangePoints.map((point) => point.max)),
         }
-      : {
-          latest: points[points.length - 1]?.value ?? null,
-          min: Math.min(...points.map((point) => point.value)),
-          max: Math.max(...points.map((point) => point.value)),
-        }
+      : isCandlestickChart
+        ? {
+            latest: candlestickPoints[candlestickPoints.length - 1]?.close ?? null,
+            min: Math.min(...candlestickPoints.map((point) => point.low)),
+            max: Math.max(...candlestickPoints.map((point) => point.high)),
+          }
+        : {
+            latest: points[points.length - 1]?.value ?? null,
+            min: Math.min(...points.map((point) => point.value)),
+            max: Math.max(...points.map((point) => point.value)),
+          }
     : series.stats;
 
   const unitRow = series.variable?.value?.rows[0];
@@ -93,13 +117,19 @@ export default function ChartWidgetView({
     widget.unit ??
     (widget.unitField && unitRow ? String(unitRow[widget.unitField] ?? "") : "");
 
-  const chartData = isRangeChart ? rangePoints : points;
+  const chartData = isRangeChart ? rangePoints : isCandlestickChart ? candlestickPoints : points;
   const chartReady = chartData.length >= 1;
   const bandLabel =
     isRangeChart && series.historyBucket
       ? t("view.chartRange.bandPerBucket", { bucket: series.historyBucket })
       : isRangeChart && historyRange === "live"
         ? t("view.chartRange.bandLive")
+        : null;
+  const candlestickLabel =
+    isCandlestickChart && series.historyBucket
+      ? t("view.chartCandlestick.perBucket", { bucket: series.historyBucket })
+      : isCandlestickChart && historyRange === "live"
+        ? t("view.chartCandlestick.liveWindow")
         : null;
 
   return (
@@ -123,8 +153,9 @@ export default function ChartWidgetView({
             {displayStats.min != null && displayStats.max != null && (
               <span className="dash-chart-range">
                 min {displayStats.min.toFixed(decimals)} · max {displayStats.max.toFixed(decimals)}
-                {series.aggregated && series.historyBucket ? ` · ${bandLabel}` : ""}
-                {!isRangeChart && series.aggregated && series.historyBucket
+                {isRangeChart && series.aggregated && series.historyBucket ? ` · ${bandLabel}` : ""}
+                {isCandlestickChart && candlestickLabel ? ` · ${candlestickLabel}` : ""}
+                {!isRangeChart && !isCandlestickChart && series.aggregated && series.historyBucket
                   ? ` · avg/${series.historyBucket}`
                   : ""}
               </span>
@@ -155,6 +186,14 @@ export default function ChartWidgetView({
               ? t("view.historyDisabled")
               : t("view.waitingTrend")}
           </div>
+        ) : isCandlestickChart ? (
+          <CandlestickChartBody
+            data={candlestickPoints}
+            decimals={decimals}
+            unit={unit}
+            upColor={color}
+            t={t}
+          />
         ) : isRangeChart ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={rangePoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

@@ -1,13 +1,21 @@
 import { useTranslation } from "react-i18next";
 import type { BindingActivators } from "../types";
+import {
+  buildRemoteVariableChange,
+  CUSTOM_BINDING_EVENT,
+  patchBindingActivators,
+  remoteActivatorRef,
+  resolveOnEventAfterSelect,
+  resolveOnEventSelectValue,
+} from "./bindingActivatorsUtils";
+
+export { activatorsSummary } from "./bindingActivatorsUtils";
 
 interface BindingActivatorsEditorProps {
   activators: BindingActivators;
   eventNames: string[];
   onChange: (activators: BindingActivators) => void;
 }
-
-const CUSTOM_EVENT = "__custom__";
 
 export default function BindingActivatorsEditor({
   activators,
@@ -16,38 +24,17 @@ export default function BindingActivatorsEditor({
 }: BindingActivatorsEditorProps) {
   const { t } = useTranslation("inspector");
 
-  const remoteRef = activators.onVariableChange.find((ref) => ref.objectPath !== "self");
+  const remoteRef = remoteActivatorRef(activators);
   const remotePath = remoteRef?.objectPath ?? "";
   const remoteVariable = remoteRef?.variableName ?? "";
-
-  const onEventSelectValue = (() => {
-    if (!activators.onEvent) {
-      return "";
-    }
-    if (eventNames.includes(activators.onEvent)) {
-      return activators.onEvent;
-    }
-    return CUSTOM_EVENT;
-  })();
+  const onEventSelectValue = resolveOnEventSelectValue(activators, eventNames);
 
   const patch = (next: Partial<BindingActivators>) => {
-    onChange({ ...activators, ...next });
+    onChange(patchBindingActivators(activators, next));
   };
 
   const setRemote = (path: string, variableName: string) => {
-    const trimmedPath = path.trim();
-    if (!trimmedPath) {
-      patch({
-        onVariableChange: [{ objectPath: "self", variableName: "*" }],
-      });
-      return;
-    }
-    patch({
-      onVariableChange: [{
-        objectPath: trimmedPath,
-        variableName: variableName.trim() || "*",
-      }],
-    });
+    patch({ onVariableChange: buildRemoteVariableChange(path, variableName) });
   };
 
   return (
@@ -80,14 +67,7 @@ export default function BindingActivatorsEditor({
         <select
           value={onEventSelectValue}
           onChange={(e) => {
-            const value = e.target.value;
-            if (!value) {
-              patch({ onEvent: null });
-            } else if (value === CUSTOM_EVENT) {
-              patch({ onEvent: activators.onEvent && !eventNames.includes(activators.onEvent) ? activators.onEvent : "" });
-            } else {
-              patch({ onEvent: value });
-            }
+            patch({ onEvent: resolveOnEventAfterSelect(activators.onEvent, e.target.value, eventNames) });
           }}
         >
           <option value="">{t("bindings.activators.onEventNone")}</option>
@@ -96,11 +76,11 @@ export default function BindingActivatorsEditor({
               {name}
             </option>
           ))}
-          <option value={CUSTOM_EVENT}>{t("bindings.activators.onEventCustom")}</option>
+          <option value={CUSTOM_BINDING_EVENT}>{t("bindings.activators.onEventCustom")}</option>
         </select>
       </label>
 
-      {onEventSelectValue === CUSTOM_EVENT && (
+      {onEventSelectValue === CUSTOM_BINDING_EVENT && (
         <label className="full">
           {t("bindings.activators.onEventName")}
           <input
@@ -131,21 +111,4 @@ export default function BindingActivatorsEditor({
       </label>
     </fieldset>
   );
-}
-
-export function activatorsSummary(rule: { activators: BindingActivators }): string {
-  const parts: string[] = [];
-  if (rule.activators.onStartup) {
-    parts.push("startup");
-  }
-  for (const ref of rule.activators.onVariableChange ?? []) {
-    parts.push(`${ref.objectPath}:${ref.variableName}`);
-  }
-  if (rule.activators.onEvent) {
-    parts.push(`event:${rule.activators.onEvent}`);
-  }
-  if (rule.activators.periodicMs > 0) {
-    parts.push(`${rule.activators.periodicMs}ms`);
-  }
-  return parts.length > 0 ? parts.join(", ") : "—";
 }

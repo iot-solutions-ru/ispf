@@ -180,6 +180,48 @@ export function excelAverageifs(
   return count > 0 ? total / count : "#DIV/0!";
 }
 
+export function excelMaxifs(
+  maxRange: SheetEvalResult[],
+  criteriaRanges: SheetEvalResult[][],
+  criteria: SheetEvalResult[]
+): SheetEvalResult {
+  if (!lengthsMatch([maxRange, ...criteriaRanges])) {
+    return "#REF!";
+  }
+  let max: number | null = null;
+  for (let i = 0; i < maxRange.length; i++) {
+    if (!rowMatchesAllCriteria(i, criteriaRanges, criteria)) {
+      continue;
+    }
+    const n = asNumber(maxRange[i]);
+    if (n !== null && (max === null || n > max)) {
+      max = n;
+    }
+  }
+  return max ?? 0;
+}
+
+export function excelMinifs(
+  minRange: SheetEvalResult[],
+  criteriaRanges: SheetEvalResult[][],
+  criteria: SheetEvalResult[]
+): SheetEvalResult {
+  if (!lengthsMatch([minRange, ...criteriaRanges])) {
+    return "#REF!";
+  }
+  let min: number | null = null;
+  for (let i = 0; i < minRange.length; i++) {
+    if (!rowMatchesAllCriteria(i, criteriaRanges, criteria)) {
+      continue;
+    }
+    const n = asNumber(minRange[i]);
+    if (n !== null && (min === null || n < min)) {
+      min = n;
+    }
+  }
+  return min ?? 0;
+}
+
 export function excelSumproduct(arrays: SheetEvalResult[][]): SheetEvalResult {
   if (arrays.length === 0 || !lengthsMatch(arrays)) {
     return "#REF!";

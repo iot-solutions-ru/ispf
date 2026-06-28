@@ -13,6 +13,9 @@ target/
 # Node
 node_modules/
 dist/
+apps/web-console/playwright-report/
+apps/web-console/test-results/
+apps/web-console/blob-report/
 *.local
 *.tsbuildinfo
 

@@ -151,6 +151,66 @@ describe("sheetFormulaEngine", () => {
     expect(csv.split("\n")[0]).toContain("1");
     engine.destroy();
   });
+
+  it("evaluates MAXIFS and MINIFS in free mode", () => {
+    const engine = createSheetFormulaEngine(
+      { rows: 5, cols: 4, cells: {} },
+      "free",
+      {
+        A2: "x",
+        A3: "y",
+        A4: "x",
+        B2: "10",
+        B3: "30",
+        B4: "20",
+        C1: '=MAXIFS(B2:B4,A2:A4,"x")',
+        D1: '=MINIFS(B2:B4,A2:A4,"x")',
+      }
+    );
+    expect(engine.getCellValue("C1")).toBe(20);
+    expect(engine.getCellValue("D1")).toBe(10);
+    engine.destroy();
+  });
+
+  it("evaluates CHAR, CODE, REPT, and PROPER in free mode", () => {
+    const engine = createSheetFormulaEngine(
+      { rows: 4, cols: 4, cells: {} },
+      "free",
+      {
+        A1: '=CHAR(65)',
+        B1: '=CODE("A")',
+        C1: '=REPT("*",3)',
+        D1: '=PROPER("hello WORLD")',
+      }
+    );
+    expect(engine.getCellValue("A1")).toBe("A");
+    expect(engine.getCellValue("B1")).toBe(65);
+    expect(engine.getCellValue("C1")).toBe("***");
+    expect(engine.getCellValue("D1")).toBe("Hello World");
+    engine.destroy();
+  });
+
+  it("evaluates NA, ISLOGICAL, ISODD, ISEVEN, and CLEAN in free mode", () => {
+    const engine = createSheetFormulaEngine(
+      { rows: 6, cols: 3, cells: {} },
+      "free",
+      {
+        A1: "=NA()",
+        A2: "=ISLOGICAL(TRUE)",
+        A3: "=ISODD(3)",
+        A4: "=ISEVEN(4)",
+        A5: '=IFERROR(A1,"missing")',
+        A6: '=CLEAN("a\u0007b")',
+      }
+    );
+    expect(engine.getCellValue("A1")).toBe("#N/A");
+    expect(engine.getCellValue("A2")).toBe(true);
+    expect(engine.getCellValue("A3")).toBe(true);
+    expect(engine.getCellValue("A4")).toBe(true);
+    expect(engine.getCellValue("A5")).toBe("missing");
+    expect(engine.getCellValue("A6")).toBe("ab");
+    engine.destroy();
+  });
 });
 
 describe("sheetPersist", () => {

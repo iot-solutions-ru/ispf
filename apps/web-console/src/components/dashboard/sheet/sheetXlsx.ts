@@ -17,18 +17,23 @@ export interface SheetXlsxSheetInfo {
   name: string;
 }
 
+export interface SheetImportReport {
+  unsupportedFunctions: string[];
+  truncations: string[];
+}
+
 export interface SheetXlsxImportResult {
   rows: number;
   cols: number;
   contents: SheetValues;
   sheetName: string;
-  warnings: string[];
+  report: SheetImportReport;
   meta: SheetRuntimeMeta;
 }
 
 export interface SheetXlsxWorkbookImportResult {
   workbook: SheetWorkbook;
-  warnings: string[];
+  report: SheetImportReport;
 }
 
 type ImportWorksheet = {
@@ -58,6 +63,7 @@ function importWorksheet(worksheet: ImportWorksheet): SheetXlsxImportResult {
   const cols = Math.max(1, right - left + 1);
   const contents: SheetValues = {};
   const unsupportedFns = new Set<string>();
+  const truncations: string[] = [];
 
   for (let r = top; r <= bottom; r++) {
     for (let c = left; c <= right; c++) {
@@ -84,20 +90,24 @@ function importWorksheet(worksheet: ImportWorksheet): SheetXlsxImportResult {
     right
   );
 
-  const warningList = [...unsupportedFns].map((fn) => `#NAME? for unsupported function: ${fn}`);
   if ((dims?.bottom ?? 0) - top + 1 > MAX_IMPORT_ROWS) {
-    warningList.push(`Grid truncated to ${MAX_IMPORT_ROWS} rows`);
+    truncations.push(`Grid truncated to ${MAX_IMPORT_ROWS} rows`);
   }
   if ((dims?.right ?? 0) - left + 1 > MAX_IMPORT_COLS) {
-    warningList.push(`Grid truncated to ${MAX_IMPORT_COLS} columns`);
+    truncations.push(`Grid truncated to ${MAX_IMPORT_COLS} columns`);
   }
+
+  const report: SheetImportReport = {
+    unsupportedFunctions: [...unsupportedFns].sort(),
+    truncations,
+  };
 
   return {
     rows,
     cols,
     contents,
     sheetName: worksheet.name,
-    warnings: warningList,
+    report,
     meta: {
       rows,
       cols,
@@ -189,11 +199,15 @@ export async function importXlsxWorkbook(file: File): Promise<SheetXlsxWorkbookI
     throw new Error("NO_SHEET");
   }
 
-  const warnings = new Set<string>();
+  const unsupportedFns = new Set<string>();
+  const truncations = new Set<string>();
   const sheets: SheetTabData[] = workbook.worksheets.map((worksheet) => {
     const imported = importWorksheet(worksheet);
-    for (const warning of imported.warnings) {
-      warnings.add(`${imported.sheetName}: ${warning}`);
+    for (const fn of imported.report.unsupportedFunctions) {
+      unsupportedFns.add(fn);
+    }
+    for (const note of imported.report.truncations) {
+      truncations.add(note);
     }
     return {
       name: imported.sheetName,
@@ -209,7 +223,10 @@ export async function importXlsxWorkbook(file: File): Promise<SheetXlsxWorkbookI
 
   return {
     workbook: { activeSheetIndex: 0, sheets },
-    warnings: [...warnings],
+    report: {
+      unsupportedFunctions: [...unsupportedFns].sort(),
+      truncations: [...truncations],
+    },
   };
 }
 

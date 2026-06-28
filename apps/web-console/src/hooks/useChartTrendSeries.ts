@@ -3,11 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchVariableHistoryAggregate, type VariableHistoryBucket } from "../api";
 import type { WidgetHistoryRange } from "../types/dashboard";
 import {
+  bucketsToCandlestickPoints,
+  candlestickStats,
+  livePointsToCandlestickPoints,
+  type CandlestickPoint,
+} from "../utils/chartOhlcUtils";
+import {
   historyBucketForRangeChart,
   historyRangeFrom,
   type HistoryRange,
 } from "./useVariableHistory";
 import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
+
+export type ChartSeriesMode = "line" | "range" | "candlestick";
 
 export interface RangeTrendPoint {
   t: number;
@@ -18,6 +26,8 @@ export interface RangeTrendPoint {
   /** max − min for stacked area band */
   band: number;
 }
+
+export type { CandlestickPoint };
 
 function isHistoryRange(range: WidgetHistoryRange): range is HistoryRange {
   return range !== "live";
@@ -86,10 +96,12 @@ export function useChartTrendSeries(
   refreshIntervalMs: number,
   maxPoints: number,
   historyRange: WidgetHistoryRange = "live",
-  mode: "line" | "range" = "line"
+  mode: ChartSeriesMode = "line"
 ) {
   const field = valueField ?? "value";
   const isRangeMode = mode === "range";
+  const isCandlestickMode = mode === "candlestick";
+  const isBucketMode = isRangeMode || isCandlestickMode;
   const trend = useTrendSeries(
     objectPath,
     variableName,
@@ -97,11 +109,11 @@ export function useChartTrendSeries(
     refreshIntervalMs,
     maxPoints,
     historyRange,
-    isRangeMode
+    isBucketMode
   );
 
   const aggregateBucket =
-    isRangeMode && historyRange !== "live" && isHistoryRange(historyRange)
+    isBucketMode && historyRange !== "live" && isHistoryRange(historyRange)
       ? historyBucketForRangeChart(historyRange)
       : null;
   const from = aggregateBucket && isHistoryRange(historyRange)
@@ -111,7 +123,7 @@ export function useChartTrendSeries(
 
   const aggregateQuery = useQuery({
     queryKey: [
-      "variable-history-range",
+      "variable-history-buckets",
       objectPath,
       variableName,
       field,
@@ -143,6 +155,16 @@ export function useChartTrendSeries(
     return livePointsToRangePoints(trend.points);
   }, [aggregateBucket, aggregateQuery.data, isRangeMode, trend.points]);
 
+  const candlestickPoints = useMemo(() => {
+    if (!isCandlestickMode) {
+      return [] as CandlestickPoint[];
+    }
+    if (aggregateBucket && aggregateQuery.data?.buckets?.length) {
+      return bucketsToCandlestickPoints(aggregateQuery.data.buckets);
+    }
+    return livePointsToCandlestickPoints(trend.points);
+  }, [aggregateBucket, aggregateQuery.data, isCandlestickMode, trend.points]);
+
   const rangeStats = useMemo(() => {
     if (rangePoints.length === 0) {
       return { min: null, max: null, latest: null };
@@ -154,31 +176,42 @@ export function useChartTrendSeries(
     };
   }, [rangePoints]);
 
-  if (!isRangeMode) {
+  const ohlcStats = useMemo(() => candlestickStats(candlestickPoints), [candlestickPoints]);
+
+  if (!isBucketMode) {
     return {
       ...trend,
       mode: "line" as const,
       rangePoints: [] as RangeTrendPoint[],
+      candlestickPoints: [] as CandlestickPoint[],
     };
   }
 
-  const rangeLoading =
+  const bucketPoints = isRangeMode ? rangePoints : candlestickPoints;
+  const bucketLoading =
     trend.historyLoading ||
-    (aggregateBucket != null && aggregateQuery.isLoading && rangePoints.length === 0);
+    (aggregateBucket != null && aggregateQuery.isLoading && bucketPoints.length === 0);
+
+  const stats = isRangeMode ? rangeStats : ohlcStats;
+  const latestValue = isRangeMode
+    ? rangePoints[rangePoints.length - 1]?.avg
+    : candlestickPoints[candlestickPoints.length - 1]?.close;
 
   return {
     ...trend,
-    mode: "range" as const,
+    mode,
     rangePoints,
-    points: rangePoints.map((point) => ({
+    candlestickPoints,
+    points: bucketPoints.map((point) => ({
       t: point.t,
       time: point.time,
-      value: point.avg,
+      value: isRangeMode ? (point as RangeTrendPoint).avg : (point as CandlestickPoint).close,
     })),
-    stats: rangeStats,
-    historyLoading: rangeLoading,
-    isLoading: trend.isLoading || rangeLoading,
+    stats,
+    historyLoading: bucketLoading,
+    isLoading: trend.isLoading || bucketLoading,
     aggregated: aggregateBucket != null,
     historyBucket: aggregateBucket,
+    latestValue,
   };
 }

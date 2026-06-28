@@ -46,3 +46,20 @@ export function configureDriver(
     body: JSON.stringify(payload),
   });
 }
+
+export function pollDriver(devicePath: string): Promise<DriverRuntimeStatus> {
+  const params = new URLSearchParams({ devicePath });
+  return request(`/api/v1/drivers/runtime/poll?${params}`, { method: "POST" });
+}
+
+export function writeDriverPoint(
+  devicePath: string,
+  pointId: string,
+  value: { schema?: unknown; rows: Array<Record<string, unknown>> }
+): Promise<DriverRuntimeStatus> {
+  const params = new URLSearchParams({ devicePath, pointId });
+  return request(`/api/v1/drivers/runtime/write?${params}`, {
+    method: "POST",
+    body: JSON.stringify(value),
+  });
+}
