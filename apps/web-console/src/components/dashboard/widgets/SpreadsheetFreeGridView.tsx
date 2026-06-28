@@ -5,19 +5,37 @@ import type { SpreadsheetWidget } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { rowColToA1 } from "../sheet/sheetAddress";
+import { rowColToA1, a1ToRowCol } from "../sheet/sheetAddress";
+import { applyGridOperation, shiftSelectedCell, type GridOperation } from "../sheet/sheetGridOps";
+import {
+  IconCopy,
+  IconCsv,
+  IconDeleteCol,
+  IconDeleteRow,
+  IconExport,
+  IconImport,
+  IconInsertColLeft,
+  IconInsertColRight,
+  IconInsertRowAbove,
+  IconInsertRowBelow,
+  IconPaste,
+  IconRedo,
+  IconUndo,
+  SheetToolButton,
+  SheetToolDivider,
+} from "../sheet/SheetToolbarIcons";
 import { resolveConditionalStyle } from "../sheet/sheetConditionalFormat";
 import { formatSheetCellValue } from "../sheet/sheetFormat";
 import { moveCellAddress } from "../sheet/sheetNavigation";
 import { useSheetFormulaEngine } from "../sheet/useSheetFormulaEngine";
+import type { WorkbookFormulaContext } from "../sheet/sheetFormulaEngine";
 import { useSheetBindings } from "../sheet/useSheetBindings";
 import { useSheetDataRegion } from "../sheet/useSheetDataRegion";
 import { useSpreadsheetPersist } from "../sheet/useSpreadsheetPersist";
 import {
   exportXlsxWorkbook,
-  importXlsxFile,
-  listXlsxSheets,
-  type SheetXlsxSheetInfo,
+  exportXlsxWorkbookFromTabs,
+  importXlsxWorkbook,
 } from "../sheet/sheetXlsx";
 import {
   buildMergeHiddenSet,
@@ -52,14 +70,18 @@ export default function SpreadsheetFreeGridView({
     localContents,
     setLocalContents,
     schedulePersist,
-    persistNow,
     registerPersistSnapshot,
     localMeta,
-    setLocalMeta,
     hasPersistedContents,
     isLoading,
     canEdit: widgetEditable,
     persistWarning,
+    sheetTabs,
+    activeSheetIndex,
+    switchSheet,
+    replaceWorkbook,
+    getWorkbookSnapshot,
+    commitWorkbook,
   } = useSpreadsheetPersist(widget, objectPath, refreshIntervalMs);
 
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -68,11 +90,6 @@ export default function SpreadsheetFreeGridView({
   const [inlineCell, setInlineCell] = useState<string | null>(null);
   const [inlineDraft, setInlineDraft] = useState("");
   const [importNotice, setImportNotice] = useState<string | null>(null);
-  const [sheetPicker, setSheetPicker] = useState<{
-    file: File;
-    sheets: SheetXlsxSheetInfo[];
-    selectedIndex: number;
-  } | null>(null);
   const xlsxInputRef = useRef<HTMLInputElement>(null);
 
   const effectiveConfig = useMemo(() => {
@@ -102,12 +119,43 @@ export default function SpreadsheetFreeGridView({
   );
   const { regionContents } = useSheetDataRegion(sheetConfig, objectPath, refreshIntervalMs);
 
+  const workbookFormulaContext = useMemo((): WorkbookFormulaContext | undefined => {
+    if (sheetTabs.length <= 1) {
+      return undefined;
+    }
+    const snapshot = getWorkbookSnapshot();
+    const activeTab = snapshot.sheets[activeSheetIndex] ?? snapshot.sheets[0];
+    return {
+      currentSheetName: activeTab?.name ?? "Sheet1",
+      sheets: snapshot.sheets.map((tab, index) => ({
+        name: tab.name,
+        config:
+          index === activeSheetIndex
+            ? effectiveConfig
+            : {
+                rows: tab.rows,
+                cols: tab.cols,
+                cells: mergeRuntimeIntoCells({}, tab.cellStyles),
+                mergedCells: tab.mergedCells,
+              },
+        contents: index === activeSheetIndex ? localContents : tab.contents,
+      })),
+    };
+  }, [
+    sheetTabs.length,
+    getWorkbookSnapshot,
+    activeSheetIndex,
+    effectiveConfig,
+    localContents,
+  ]);
+
   const formula = useSheetFormulaEngine({
     config: effectiveConfig,
     mode: "free",
     contents: localContents,
     externalByAddr,
     ispfContext,
+    workbook: workbookFormulaContext,
   });
 
   useEffect(() => {
@@ -266,14 +314,32 @@ export default function SpreadsheetFreeGridView({
 
   const exportXlsx = useCallback(async () => {
     try {
-      const blob = await exportXlsxWorkbook({
-        rows: effectiveConfig.rows,
-        cols: effectiveConfig.cols,
-        getCellEditContent: (addr) => formula.getCellEditContent(addr),
-        getCellValue: (addr) => formula.getCellValue(addr),
-        sheetName: widget.title || "sheet",
-        meta: localMeta ?? undefined,
-      });
+      const snapshot = getWorkbookSnapshot();
+      const blob =
+        snapshot.sheets.length > 1
+          ? await exportXlsxWorkbookFromTabs({
+              workbook: snapshot,
+              getSheetCellEditContent: (sheetIndex, addr) => {
+                if (sheetIndex === activeSheetIndex) {
+                  return formula.getCellEditContent(addr);
+                }
+                return snapshot.sheets[sheetIndex]?.contents[addr] ?? "";
+              },
+              getSheetCellValue: (sheetIndex, addr) => {
+                if (sheetIndex === activeSheetIndex) {
+                  return formula.getCellValue(addr);
+                }
+                return snapshot.sheets[sheetIndex]?.contents[addr] ?? "";
+              },
+            })
+          : await exportXlsxWorkbook({
+              rows: effectiveConfig.rows,
+              cols: effectiveConfig.cols,
+              getCellEditContent: (addr) => formula.getCellEditContent(addr),
+              getCellValue: (addr) => formula.getCellValue(addr),
+              sheetName: snapshot.sheets[0]?.name ?? (widget.title || "sheet"),
+              meta: localMeta ?? undefined,
+            });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -283,27 +349,41 @@ export default function SpreadsheetFreeGridView({
     } catch {
       setImportNotice(t("spreadsheet.importXlsxError"));
     }
-  }, [effectiveConfig.cols, effectiveConfig.rows, formula, localMeta, t, widget.title]);
+  }, [
+    activeSheetIndex,
+    effectiveConfig.cols,
+    effectiveConfig.rows,
+    formula,
+    getWorkbookSnapshot,
+    localMeta,
+    t,
+    widget.title,
+  ]);
 
   const applyXlsxImport = useCallback(
-    async (file: File, sheetIndex: number) => {
-      const result = await importXlsxFile(file, sheetIndex);
-      setLocalMeta(result.meta);
-      setLocalContents(result.contents);
-      persistNow(result.contents, result.meta);
+    async (file: File) => {
+      const result = await importXlsxWorkbook(file);
+      replaceWorkbook(result.workbook);
       setSelectedCell("A1");
+      const sheetCount = result.workbook.sheets.length;
       if (result.warnings.length > 0) {
         setImportNotice(
-          t("spreadsheet.importXlsxWarnings", {
-            count: result.warnings.length,
+          t("spreadsheet.importXlsxWorkbookWarnings", {
+            count: sheetCount,
+            warningCount: result.warnings.length,
             details: result.warnings.slice(0, 5).join("; "),
           })
         );
       } else {
-        setImportNotice(t("spreadsheet.importXlsxSuccess", { name: result.sheetName }));
+        setImportNotice(
+          t("spreadsheet.importXlsxWorkbookSuccess", {
+            count: sheetCount,
+            name: result.workbook.sheets[0]?.name ?? "",
+          })
+        );
       }
     },
-    [persistNow, setLocalContents, setLocalMeta, t]
+    [replaceWorkbook, t]
   );
 
   const onXlsxFileSelected = useCallback(
@@ -314,12 +394,7 @@ export default function SpreadsheetFreeGridView({
         return;
       }
       try {
-        const sheets = await listXlsxSheets(file);
-        if (sheets.length > 1) {
-          setSheetPicker({ file, sheets, selectedIndex: 0 });
-          return;
-        }
-        await applyXlsxImport(file, 0);
+        await applyXlsxImport(file);
       } catch {
         setImportNotice(t("spreadsheet.importXlsxError"));
       }
@@ -327,18 +402,66 @@ export default function SpreadsheetFreeGridView({
     [applyXlsxImport, canEdit, t]
   );
 
-  const confirmSheetImport = useCallback(async () => {
-    if (!sheetPicker) {
-      return;
-    }
-    try {
-      await applyXlsxImport(sheetPicker.file, sheetPicker.selectedIndex);
-    } catch {
-      setImportNotice(t("spreadsheet.importXlsxError"));
-    } finally {
-      setSheetPicker(null);
-    }
-  }, [applyXlsxImport, sheetPicker, t]);
+  const handleSwitchSheet = useCallback(
+    (index: number) => {
+      if (index === activeSheetIndex) {
+        return;
+      }
+      switchSheet(index);
+      setSelectedCell("A1");
+      setFormulaBarEditing(false);
+      setInlineCell(null);
+    },
+    [activeSheetIndex, switchSheet]
+  );
+
+  const applyGridChange = useCallback(
+    (operation: GridOperation) => {
+      if (!canEdit) {
+        return;
+      }
+      cancelEdit();
+      const snapshot = getWorkbookSnapshot();
+      const nextWorkbook = applyGridOperation(snapshot, activeSheetIndex, operation);
+      if (nextWorkbook === snapshot) {
+        return;
+      }
+      commitWorkbook(nextWorkbook);
+      if (selectedCell) {
+        const count = operation.count ?? 1;
+        const nextSelected = shiftSelectedCell(
+          selectedCell,
+          operation.axis,
+          operation.at,
+          count,
+          operation.mode
+        );
+        setSelectedCell(nextSelected);
+      }
+    },
+    [activeSheetIndex, cancelEdit, canEdit, commitWorkbook, getWorkbookSnapshot, selectedCell]
+  );
+
+  const runGridOpAtSelection = useCallback(
+    (operation: Omit<GridOperation, "at"> & { atOffset?: number }) => {
+      const anchor = selectedCell ?? "A1";
+      const rc = a1ToRowCol(anchor);
+      if (!rc) {
+        return;
+      }
+      const at =
+        operation.axis === "row"
+          ? rc.row + (operation.atOffset ?? 0)
+          : rc.col + (operation.atOffset ?? 0);
+      applyGridChange({
+        axis: operation.axis,
+        mode: operation.mode,
+        at,
+        count: operation.count,
+      });
+    },
+    [applyGridChange, selectedCell]
+  );
 
   useEffect(() => {
     if (!importNotice) {
@@ -561,9 +684,8 @@ export default function SpreadsheetFreeGridView({
           onKeyDown={onContainerKeyDown}
         >
           <div className="dash-sheet-toolbar">
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
+            <SheetToolButton
+              label={t("spreadsheet.undo")}
               disabled={!canEdit}
               onClick={() => {
                 if (formula.undo()) {
@@ -572,13 +694,11 @@ export default function SpreadsheetFreeGridView({
                   schedulePersist(next);
                 }
               }}
-              title={t("spreadsheet.undo")}
             >
-              {t("spreadsheet.undo")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
+              <IconUndo />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.redo")}
               disabled={!canEdit}
               onClick={() => {
                 if (formula.redo()) {
@@ -587,22 +707,19 @@ export default function SpreadsheetFreeGridView({
                   schedulePersist(next);
                 }
               }}
-              title={t("spreadsheet.redo")}
             >
-              {t("spreadsheet.redo")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
+              <IconRedo />
+            </SheetToolButton>
+            <SheetToolDivider />
+            <SheetToolButton
+              label={t("spreadsheet.copy")}
               disabled={!canEdit || !selectedCell}
               onClick={() => selectedCell && formula.copySelection()}
-              title={t("spreadsheet.copy")}
             >
-              {t("spreadsheet.copy")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
+              <IconCopy />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.paste")}
               disabled={!canEdit || !selectedCell}
               onClick={() => {
                 if (selectedCell) {
@@ -612,35 +729,67 @@ export default function SpreadsheetFreeGridView({
                   schedulePersist(next);
                 }
               }}
-              title={t("spreadsheet.paste")}
             >
-              {t("spreadsheet.paste")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
+              <IconPaste />
+            </SheetToolButton>
+            <SheetToolDivider />
+            <SheetToolButton
+              label={t("spreadsheet.insertRowAbove")}
+              disabled={!canEdit}
+              onClick={() => runGridOpAtSelection({ axis: "row", mode: "insert" })}
+            >
+              <IconInsertRowAbove />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.insertRowBelow")}
+              disabled={!canEdit}
+              onClick={() => runGridOpAtSelection({ axis: "row", mode: "insert", atOffset: 1 })}
+            >
+              <IconInsertRowBelow />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.deleteRow")}
+              disabled={!canEdit || effectiveConfig.rows <= 1}
+              onClick={() => runGridOpAtSelection({ axis: "row", mode: "delete" })}
+            >
+              <IconDeleteRow />
+            </SheetToolButton>
+            <SheetToolDivider />
+            <SheetToolButton
+              label={t("spreadsheet.insertColLeft")}
+              disabled={!canEdit}
+              onClick={() => runGridOpAtSelection({ axis: "col", mode: "insert" })}
+            >
+              <IconInsertColLeft />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.insertColRight")}
+              disabled={!canEdit}
+              onClick={() => runGridOpAtSelection({ axis: "col", mode: "insert", atOffset: 1 })}
+            >
+              <IconInsertColRight />
+            </SheetToolButton>
+            <SheetToolButton
+              label={t("spreadsheet.deleteCol")}
+              disabled={!canEdit || effectiveConfig.cols <= 1}
+              onClick={() => runGridOpAtSelection({ axis: "col", mode: "delete" })}
+            >
+              <IconDeleteCol />
+            </SheetToolButton>
+            <SheetToolDivider />
+            <SheetToolButton
+              label={t("spreadsheet.importXlsx")}
               disabled={!canEdit}
               onClick={() => xlsxInputRef.current?.click()}
-              title={t("spreadsheet.importXlsx")}
             >
-              {t("spreadsheet.importXlsx")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
-              onClick={exportXlsx}
-              title={t("spreadsheet.exportXlsx")}
-            >
-              {t("spreadsheet.exportXlsx")}
-            </button>
-            <button
-              type="button"
-              className="dash-sheet-tool-btn"
-              onClick={exportCsv}
-              title={t("spreadsheet.exportCsv")}
-            >
-              {t("spreadsheet.exportCsv")}
-            </button>
+              <IconImport />
+            </SheetToolButton>
+            <SheetToolButton label={t("spreadsheet.exportXlsx")} onClick={exportXlsx}>
+              <IconExport />
+            </SheetToolButton>
+            <SheetToolButton label={t("spreadsheet.exportCsv")} onClick={exportCsv}>
+              <IconCsv />
+            </SheetToolButton>
             <input
               ref={xlsxInputRef}
               type="file"
@@ -649,35 +798,20 @@ export default function SpreadsheetFreeGridView({
               onChange={onXlsxFileSelected}
             />
           </div>
-          {sheetPicker ? (
-            <div className="dash-sheet-import-dialog" role="dialog" aria-label={t("spreadsheet.importSelectSheet")}>
-              <label className="dash-sheet-import-dialog-label" htmlFor="sheet-import-select">
-                {t("spreadsheet.importSelectSheet")}
-              </label>
-              <select
-                id="sheet-import-select"
-                className="dash-sheet-import-dialog-select"
-                value={sheetPicker.selectedIndex}
-                onChange={(e) =>
-                  setSheetPicker((prev) =>
-                    prev ? { ...prev, selectedIndex: Number.parseInt(e.target.value, 10) } : prev
-                  )
-                }
-              >
-                {sheetPicker.sheets.map((sheet) => (
-                  <option key={sheet.index} value={sheet.index}>
-                    {sheet.name}
-                  </option>
-                ))}
-              </select>
-              <div className="dash-sheet-import-dialog-actions">
-                <button type="button" className="dash-sheet-tool-btn" onClick={() => setSheetPicker(null)}>
-                  {t("common:action.cancel")}
+          {sheetTabs.length > 1 ? (
+            <div className="dash-sheet-tabs" role="tablist" aria-label={t("spreadsheet.sheetTabs")}>
+              {sheetTabs.map((tab) => (
+                <button
+                  key={`${tab.index}-${tab.name}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab.index === activeSheetIndex}
+                  className={`dash-sheet-tab${tab.index === activeSheetIndex ? " dash-sheet-tab-active" : ""}`}
+                  onClick={() => handleSwitchSheet(tab.index)}
+                >
+                  {tab.name}
                 </button>
-                <button type="button" className="dash-sheet-tool-btn" onClick={() => void confirmSheetImport()}>
-                  {t("spreadsheet.importConfirm")}
-                </button>
-              </div>
+              ))}
             </div>
           ) : null}
           {persistWarning ? (

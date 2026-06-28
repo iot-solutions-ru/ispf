@@ -5,6 +5,16 @@ import type {
   SheetMergeRange,
 } from "../../../types/dashboard";
 
+export interface SheetTabMeta {
+  name: string;
+  rows: number;
+  cols: number;
+  cellStyles?: Record<string, { style?: SheetCellStyle; format?: SheetCellFormat }>;
+  mergedCells?: SheetMergeRange[];
+  columnWidths?: number[];
+  rowHeights?: number[];
+}
+
 export interface SheetRuntimeMeta {
   rows?: number;
   cols?: number;
@@ -12,6 +22,8 @@ export interface SheetRuntimeMeta {
   mergedCells?: SheetMergeRange[];
   columnWidths?: number[];
   rowHeights?: number[];
+  activeSheetIndex?: number;
+  sheets?: SheetTabMeta[];
 }
 
 export function sheetMetaSessionKey(sessionKey: string): string {
@@ -42,17 +54,51 @@ export function parseSheetRuntimeMeta(raw: unknown): SheetRuntimeMeta | null {
   if (Array.isArray(obj.rowHeights)) {
     meta.rowHeights = obj.rowHeights.filter((n): n is number => typeof n === "number");
   }
+  if (typeof obj.activeSheetIndex === "number") {
+    meta.activeSheetIndex = obj.activeSheetIndex;
+  }
+  if (Array.isArray(obj.sheets)) {
+    meta.sheets = obj.sheets
+      .map((raw) => parseSheetTabMeta(raw))
+      .filter((tab): tab is SheetTabMeta => tab !== null);
+  }
   if (
     meta.rows === undefined &&
     meta.cols === undefined &&
     !meta.cellStyles &&
     !meta.mergedCells &&
     !meta.columnWidths &&
-    !meta.rowHeights
+    !meta.rowHeights &&
+    !meta.sheets?.length &&
+    meta.activeSheetIndex === undefined
   ) {
     return null;
   }
   return meta;
+}
+
+function parseSheetTabMeta(raw: unknown): SheetTabMeta | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return null;
+  }
+  const obj = raw as Record<string, unknown>;
+  if (typeof obj.name !== "string" || typeof obj.rows !== "number" || typeof obj.cols !== "number") {
+    return null;
+  }
+  const tab: SheetTabMeta = { name: obj.name, rows: obj.rows, cols: obj.cols };
+  if (obj.cellStyles && typeof obj.cellStyles === "object" && !Array.isArray(obj.cellStyles)) {
+    tab.cellStyles = obj.cellStyles as SheetTabMeta["cellStyles"];
+  }
+  if (Array.isArray(obj.mergedCells)) {
+    tab.mergedCells = obj.mergedCells as SheetMergeRange[];
+  }
+  if (Array.isArray(obj.columnWidths)) {
+    tab.columnWidths = obj.columnWidths.filter((n): n is number => typeof n === "number");
+  }
+  if (Array.isArray(obj.rowHeights)) {
+    tab.rowHeights = obj.rowHeights.filter((n): n is number => typeof n === "number");
+  }
+  return tab;
 }
 
 export function mergeRuntimeIntoCells(

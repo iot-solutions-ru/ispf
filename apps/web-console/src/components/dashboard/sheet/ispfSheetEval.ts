@@ -1,7 +1,7 @@
-import { a1ToRowCol, rowColToA1 } from "./sheetAddress";
+import { a1ToRowCol, DEFAULT_SHEET_BOUNDS, resolveRangeEndpoints, rowColToA1, type SheetBounds } from "./sheetAddress";
 import { normalizeFormulaSyntax, normalizeFunctionName } from "./sheetFormulaNormalize";
 import {
-  buildMatrixFromRange,
+  buildMatrixFromRangeRefs,
   countBlank,
   countNonBlank,
   countNumeric,
@@ -15,10 +15,82 @@ import {
   type SheetMatrix,
 } from "./sheetExcelFunctions";
 import {
+  excelDate,
+  excelDay,
+  excelDays,
+  excelDatedif,
+  excelEdate,
+  excelEomonth,
+  excelHour,
+  excelMinute,
+  excelMonth,
+  excelNetworkdays,
+  excelNowSerial,
+  excelRand,
+  excelRandBetween,
+  excelSecond,
+  excelTime,
+  excelTodaySerial,
+  excelWeekday,
+  excelWorkday,
+  excelYear,
+} from "./sheetDateFunctions";
+import {
+  excelAverageifs,
+  excelCountifs,
+  excelIfs,
+  excelMedian,
+  excelRoundDown,
+  excelRoundUp,
+  excelStdevS,
+  excelSubtotal,
+  excelSumifs,
+  excelSumproduct,
+  excelTextjoin,
+  excelXlookup,
+} from "./sheetExcelFunctionsReport";
+import {
+  excelChoose,
+  excelDatevalue,
+  excelExact,
+  excelFind,
+  excelFv,
+  excelIfna,
+  excelIrr,
+  excelLarge,
+  excelLn,
+  excelLog,
+  excelLog10,
+  excelMround,
+  excelNper,
+  excelNpv,
+  excelPercentile,
+  excelPmt,
+  excelPv,
+  excelQuartile,
+  excelRank,
+  excelRate,
+  excelReplace,
+  excelSearch,
+  excelSign,
+  excelSmall,
+  excelSubstitute,
+  excelSwitch,
+  excelTimevalue,
+  excelTrunc,
+  excelValue,
+  excelVarP,
+  excelVarS,
+  excelWeeknum,
+  excelYearfrac,
+  numbersFromFlat,
+} from "./sheetExcelFunctionsPhaseB";
+import {
   bindingCacheKey,
   histCacheKey,
   type IspfFormulaContext,
 } from "./sheetFormulaEngineContext";
+import { parseQualifiedCellRef } from "./sheetWorkbook";
 
 export type SheetEvalValue = number | string | boolean;
 export type SheetEvalResult = SheetEvalValue | null;
@@ -28,6 +100,7 @@ const ERROR = {
   ref: "#REF!",
   div0: "#DIV/0!",
   value: "#VALUE!",
+  num: "#NUM!",
   cycle: "#CYCLE!",
   na: "#N/A",
 } as const;
@@ -38,6 +111,7 @@ export function isSheetError(value: unknown): value is string {
     value === ERROR.ref ||
     value === ERROR.div0 ||
     value === ERROR.value ||
+    value === ERROR.num ||
     value === ERROR.cycle ||
     value === ERROR.na
   );
@@ -63,14 +137,26 @@ export function expandRange(start: string, end: string): string[] | null {
 }
 
 export interface SheetEvalEnvironment {
+  /** Address is `A1` or `SheetName!A1`. Unqualified refs use defaultSheet when set. */
   getCell: (address: string) => SheetEvalResult;
+  /** Cell containing the formula (`A1`); used by ROW/COLUMN. */
+  originCell?: string;
+  defaultSheet?: string;
+  /** Grid size for whole-column (`D:D`) and whole-row (`5:5`) refs. */
+  getSheetBounds?: (sheetName?: string) => SheetBounds;
   ispf: IspfFormulaContext;
 }
 
 type Token =
   | { kind: "num"; value: number }
   | { kind: "str"; value: string }
-  | { kind: "cell"; value: string }
+  | {
+      kind: "cell";
+      value: string;
+      sheet?: string;
+      columnOnly?: boolean;
+      rowOnly?: boolean;
+    }
   | { kind: "ident"; value: string }
   | { kind: "op"; value: string }
   | { kind: "lparen" }
@@ -78,6 +164,37 @@ type Token =
   | { kind: "comma" }
   | { kind: "colon" }
   | { kind: "eof" };
+
+type RangeEndpoint = {
+  value: string;
+  columnOnly: boolean;
+  rowOnly: boolean;
+};
+
+function readRangeEndpoint(input: string, start: number): { endpoint: RangeEndpoint; next: number } | string {
+  let i = start;
+  let letters = "";
+  while (i < input.length && /[A-Z$]/i.test(input[i])) {
+    letters += input[i];
+    i++;
+  }
+  let digits = "";
+  while (i < input.length && /[0-9]/.test(input[i])) {
+    digits += input[i];
+    i++;
+  }
+  const col = letters.replace(/\$/g, "").toUpperCase();
+  if (col && digits) {
+    return { endpoint: { value: `${col}${digits}`, columnOnly: false, rowOnly: false }, next: i };
+  }
+  if (col && !digits) {
+    return { endpoint: { value: col, columnOnly: true, rowOnly: false }, next: i };
+  }
+  if (!col && digits) {
+    return { endpoint: { value: digits, columnOnly: false, rowOnly: true }, next: i };
+  }
+  return ERROR.ref;
+}
 
 function tokenize(input: string): Token[] | string {
   const tokens: Token[] = [];
@@ -113,6 +230,11 @@ function tokenize(input: string): Token[] | string {
       i++;
       let value = "";
       while (i < input.length && input[i] !== quote) {
+        if (input[i] === quote && input[i + 1] === quote) {
+          value += quote;
+          i += 2;
+          continue;
+        }
         value += input[i];
         i++;
       }
@@ -120,6 +242,22 @@ function tokenize(input: string): Token[] | string {
         return ERROR.value;
       }
       i++;
+      if (input[i] === "!") {
+        i++;
+        const cellPart = readRangeEndpoint(input, i);
+        if (typeof cellPart === "string") {
+          return cellPart;
+        }
+        i = cellPart.next;
+        tokens.push({
+          kind: "cell",
+          value: cellPart.endpoint.value,
+          sheet: value,
+          columnOnly: cellPart.endpoint.columnOnly,
+          rowOnly: cellPart.endpoint.rowOnly,
+        });
+        continue;
+      }
       tokens.push({ kind: "str", value });
       continue;
     }
@@ -157,11 +295,28 @@ function tokenize(input: string): Token[] | string {
     if (/[A-Za-z_А-ЯЁа-яё]/.test(ch)) {
       let ident = ch;
       i++;
-      while (i < input.length && /[A-Za-z0-9_.А-ЯЁа-яё]/.test(input[i])) {
+      while (i < input.length && /[A-Za-z0-9_.А-ЯЁа-яё ]/.test(input[i])) {
         ident += input[i];
         i++;
       }
-      const upper = ident.toUpperCase();
+      if (input[i] === "!") {
+        const sheetName = ident.trim();
+        i++;
+        const cellPart = readRangeEndpoint(input, i);
+        if (typeof cellPart === "string") {
+          return cellPart;
+        }
+        i = cellPart.next;
+        tokens.push({
+          kind: "cell",
+          value: cellPart.endpoint.value,
+          sheet: sheetName,
+          columnOnly: cellPart.endpoint.columnOnly,
+          rowOnly: cellPart.endpoint.rowOnly,
+        });
+        continue;
+      }
+      const upper = ident.trim().toUpperCase();
       if (/^[A-Z]+\d+$/.test(upper)) {
         tokens.push({ kind: "cell", value: upper });
       } else {
@@ -324,7 +479,10 @@ class Parser {
       if (next.kind === "colon") {
         return ERROR.ref;
       }
-      const value = this.env.getCell(tok.value);
+      if (tok.columnOnly || tok.rowOnly) {
+        return ERROR.ref;
+      }
+      const value = this.env.getCell(this.cellRefFromToken(tok));
       if (isSheetError(value)) {
         return value;
       }
@@ -380,6 +538,42 @@ class Parser {
         break;
       case "AVERAGEIF":
         result = this.parseAverageifArgs();
+        break;
+      case "XLOOKUP":
+        result = this.parseXlookupArgs();
+        break;
+      case "SUMIFS":
+        result = this.parseSumifsArgs();
+        break;
+      case "COUNTIFS":
+        result = this.parseCountifsArgs();
+        break;
+      case "AVERAGEIFS":
+        result = this.parseAverageifsArgs();
+        break;
+      case "IFS":
+        result = this.parseIfsArgs();
+        break;
+      case "TEXTJOIN":
+        result = this.parseTextjoinArgs();
+        break;
+      case "SUBTOTAL":
+        result = this.parseSubtotalArgs();
+        break;
+      case "SUMPRODUCT":
+        result = this.parseSumproductArgs();
+        break;
+      case "ROW":
+        result = this.parseRowArgs();
+        break;
+      case "COLUMN":
+        result = this.parseColumnArgs();
+        break;
+      case "ROWS":
+        result = this.parseRowsArgs();
+        break;
+      case "COLUMNS":
+        result = this.parseColumnsArgs();
         break;
       default:
         result = this.parseGenericFunctionArgs(name);
@@ -532,6 +726,241 @@ class Parser {
     return excelAverageif(rangeValues, criteria, avgRange);
   }
 
+  private parseXlookupArgs(): SheetEvalResult {
+    const lookup = this.parseCompare();
+    if (isSheetError(lookup) || !this.match("comma")) {
+      return ERROR.value;
+    }
+    const lookupArray = this.requireRangeValues();
+    if (typeof lookupArray === "string") {
+      return lookupArray;
+    }
+    if (!this.match("comma")) {
+      return ERROR.value;
+    }
+    const returnArray = this.requireRangeValues();
+    if (typeof returnArray === "string") {
+      return returnArray;
+    }
+    let ifNotFound: SheetEvalResult = "#N/A";
+    let matchMode = 0;
+    let searchMode = 1;
+    if (this.match("comma")) {
+      ifNotFound = this.parseCompare();
+      if (this.match("comma")) {
+        matchMode = Math.trunc(coerceNumber(this.parseCompare()));
+        if (this.match("comma")) {
+          searchMode = Math.trunc(coerceNumber(this.parseCompare()));
+        }
+      }
+    }
+    return excelXlookup(lookup, lookupArray, returnArray, ifNotFound, matchMode, searchMode);
+  }
+
+  private parseSumifsArgs(): SheetEvalResult {
+    const sumRange = this.requireRangeValues();
+    if (typeof sumRange === "string") {
+      return sumRange;
+    }
+    const criteriaRanges: SheetEvalResult[][] = [];
+    const criteria: SheetEvalResult[] = [];
+    while (this.match("comma")) {
+      const criteriaRange = this.tryParseRangeArg();
+      if (!criteriaRange || typeof criteriaRange === "string") {
+        return ERROR.value;
+      }
+      if (!this.match("comma")) {
+        return ERROR.value;
+      }
+      criteriaRanges.push(criteriaRange);
+      criteria.push(this.parseCompare());
+    }
+    if (criteriaRanges.length === 0) {
+      return ERROR.value;
+    }
+    return excelSumifs(sumRange, criteriaRanges, criteria);
+  }
+
+  private parseCountifsArgs(): SheetEvalResult {
+    const criteriaRanges: SheetEvalResult[][] = [];
+    const criteria: SheetEvalResult[] = [];
+    const firstRange = this.tryParseRangeArg();
+    if (!firstRange || typeof firstRange === "string") {
+      return firstRange ?? ERROR.ref;
+    }
+    criteriaRanges.push(firstRange);
+    if (!this.match("comma")) {
+      return ERROR.value;
+    }
+    criteria.push(this.parseCompare());
+    while (this.match("comma")) {
+      const criteriaRange = this.tryParseRangeArg();
+      if (!criteriaRange || typeof criteriaRange === "string") {
+        return ERROR.value;
+      }
+      if (!this.match("comma")) {
+        return ERROR.value;
+      }
+      criteriaRanges.push(criteriaRange);
+      criteria.push(this.parseCompare());
+    }
+    return excelCountifs(criteriaRanges, criteria);
+  }
+
+  private parseAverageifsArgs(): SheetEvalResult {
+    const avgRange = this.requireRangeValues();
+    if (typeof avgRange === "string") {
+      return avgRange;
+    }
+    const criteriaRanges: SheetEvalResult[][] = [];
+    const criteria: SheetEvalResult[] = [];
+    while (this.match("comma")) {
+      const criteriaRange = this.tryParseRangeArg();
+      if (!criteriaRange || typeof criteriaRange === "string") {
+        return ERROR.value;
+      }
+      if (!this.match("comma")) {
+        return ERROR.value;
+      }
+      criteriaRanges.push(criteriaRange);
+      criteria.push(this.parseCompare());
+    }
+    if (criteriaRanges.length === 0) {
+      return ERROR.value;
+    }
+    return excelAverageifs(avgRange, criteriaRanges, criteria);
+  }
+
+  private parseIfsArgs(): SheetEvalResult {
+    const pairs: SheetEvalResult[] = [];
+    if (!this.check("rparen")) {
+      do {
+        pairs.push(this.parseCompare());
+      } while (this.match("comma"));
+    }
+    if (pairs.length < 2 || pairs.length % 2 !== 0) {
+      return ERROR.value;
+    }
+    return excelIfs(pairs);
+  }
+
+  private parseTextjoinArgs(): SheetEvalResult {
+    const delimiter = this.parseCompare();
+    if (isSheetError(delimiter) || !this.match("comma")) {
+      return ERROR.value;
+    }
+    const ignoreEmpty = coerceBool(this.parseCompare());
+    const parts: SheetEvalResult[] = [];
+    while (this.match("comma")) {
+      const rangeArg = this.tryParseRangeArg();
+      if (rangeArg !== undefined) {
+        if (typeof rangeArg === "string" && isSheetError(rangeArg)) {
+          return rangeArg;
+        }
+        if (Array.isArray(rangeArg)) {
+          parts.push(...rangeArg);
+        }
+      } else {
+        parts.push(this.parseCompare());
+      }
+    }
+    return excelTextjoin(delimiter, ignoreEmpty, parts);
+  }
+
+  private parseSubtotalArgs(): SheetEvalResult {
+    const functionNum = Math.trunc(coerceNumber(this.parseCompare()));
+    if (!this.match("comma")) {
+      return ERROR.value;
+    }
+    const values: SheetEvalResult[] = [];
+    do {
+      const rangeArg = this.tryParseRangeArg();
+      if (rangeArg !== undefined) {
+        if (typeof rangeArg === "string" && isSheetError(rangeArg)) {
+          return rangeArg;
+        }
+        if (Array.isArray(rangeArg)) {
+          values.push(...rangeArg);
+        }
+      } else {
+        values.push(this.parseCompare());
+      }
+    } while (this.match("comma"));
+    return excelSubtotal(functionNum, values);
+  }
+
+  private parseSumproductArgs(): SheetEvalResult {
+    const arrays: SheetEvalResult[][] = [];
+    if (!this.check("rparen")) {
+      do {
+        const range = this.tryParseRangeArg();
+        if (!range || typeof range === "string") {
+          return range ?? ERROR.ref;
+        }
+        arrays.push(range);
+      } while (this.match("comma"));
+    }
+    if (arrays.length === 0) {
+      return ERROR.value;
+    }
+    return excelSumproduct(arrays);
+  }
+
+  private parseOptionalCellRowCol(): { row: number; col: number } | undefined {
+    const tok = this.peek();
+    if (tok.kind !== "cell") {
+      return undefined;
+    }
+    this.pos++;
+    return a1ToRowCol(tok.value.toUpperCase()) ?? undefined;
+  }
+
+  private originRowCol(): { row: number; col: number } | string {
+    const origin = this.env.originCell?.toUpperCase();
+    if (!origin) {
+      return ERROR.value;
+    }
+    const rc = a1ToRowCol(origin);
+    return rc ?? ERROR.value;
+  }
+
+  private parseRowArgs(): SheetEvalResult {
+    const ref = this.parseOptionalCellRowCol();
+    if (ref) {
+      return ref.row + 1;
+    }
+    const origin = this.originRowCol();
+    return typeof origin === "string" ? origin : origin.row + 1;
+  }
+
+  private parseColumnArgs(): SheetEvalResult {
+    const ref = this.parseOptionalCellRowCol();
+    if (ref) {
+      return ref.col + 1;
+    }
+    const origin = this.originRowCol();
+    return typeof origin === "string" ? origin : origin.col + 1;
+  }
+
+  private parseRangeDimension(which: "rows" | "cols"): SheetEvalResult {
+    const matrix = this.tryParseRangeMatrix();
+    if (matrix && typeof matrix !== "string") {
+      return which === "rows" ? matrix.length : (matrix[0]?.length ?? 0);
+    }
+    if (this.parseOptionalCellRowCol()) {
+      return 1;
+    }
+    return ERROR.ref;
+  }
+
+  private parseRowsArgs(): SheetEvalResult {
+    return this.parseRangeDimension("rows");
+  }
+
+  private parseColumnsArgs(): SheetEvalResult {
+    return this.parseRangeDimension("cols");
+  }
+
   private requireRangeMatrix(): SheetMatrix | string {
     const matrix = this.tryParseRangeMatrix();
     if (!matrix) {
@@ -548,45 +977,158 @@ class Parser {
     return range;
   }
 
+  private cellRefFromToken(token: Extract<Token, { kind: "cell" }>): string {
+    if (token.sheet) {
+      return `${token.sheet}!${token.value}`;
+    }
+    return token.value;
+  }
+
+  private sheetBoundsFor(sheetName?: string | null): SheetBounds {
+    return this.env.getSheetBounds?.(sheetName ?? this.env.defaultSheet) ?? DEFAULT_SHEET_BOUNDS;
+  }
+
+  private resolveTokenRange(
+    startTok: Extract<Token, { kind: "cell" }>,
+    endTok: Extract<Token, { kind: "cell" }>
+  ): { startRef: string; endRef: string } | string {
+    const sheetName = startTok.sheet ?? endTok.sheet ?? this.env.defaultSheet;
+    const resolved = resolveRangeEndpoints(
+      startTok.value,
+      endTok.value,
+      this.sheetBoundsFor(sheetName),
+      {
+        startColumnOnly: startTok.columnOnly,
+        endColumnOnly: endTok.columnOnly,
+        startRowOnly: startTok.rowOnly,
+        endRowOnly: endTok.rowOnly,
+      }
+    );
+    if (!resolved) {
+      return ERROR.ref;
+    }
+    const sheet = startTok.sheet ?? endTok.sheet;
+    return {
+      startRef: sheet ? `${sheet}!${resolved.start}` : resolved.start,
+      endRef: sheet ? `${sheet}!${resolved.end}` : resolved.end,
+    };
+  }
+
+  private rangeEndToken(index: number): Extract<Token, { kind: "cell" }> | null {
+    const tok = this.tokens[index];
+    if (!tok) {
+      return null;
+    }
+    if (tok.kind === "cell") {
+      return tok;
+    }
+    if (tok.kind === "ident" && /^[A-Z]+$/.test(tok.value)) {
+      return { kind: "cell", value: tok.value, columnOnly: true, rowOnly: false };
+    }
+    if (tok.kind === "ident" && /^[A-Z]+\d+$/.test(tok.value)) {
+      return { kind: "cell", value: tok.value, columnOnly: false, rowOnly: false };
+    }
+    if (tok.kind === "ident" && /^\d+$/.test(tok.value)) {
+      return { kind: "cell", value: tok.value, columnOnly: false, rowOnly: true };
+    }
+    return null;
+  }
+
+  private tryParseBareColumnRange(): SheetEvalResult[] | string | undefined {
+    const startTok = this.peek();
+    if (startTok.kind !== "ident" || !/^[A-Z]+$/.test(startTok.value)) {
+      return undefined;
+    }
+    if (this.tokens[this.pos + 1]?.kind !== "colon") {
+      return undefined;
+    }
+    const endTok = this.tokens[this.pos + 2];
+    if (!endTok || endTok.kind !== "ident" || !/^[A-Z]+$/.test(endTok.value)) {
+      return undefined;
+    }
+    this.pos += 3;
+    const resolved = resolveRangeEndpoints(
+      startTok.value,
+      endTok.value,
+      this.sheetBoundsFor(this.env.defaultSheet),
+      { startColumnOnly: true, endColumnOnly: true }
+    );
+    if (!resolved) {
+      return ERROR.ref;
+    }
+    return this.readRangeValues(resolved.start, resolved.end);
+  }
+
   private tryParseRangeMatrix(): SheetMatrix | string | undefined {
+    const bare = this.tryParseBareColumnRange();
+    if (bare !== undefined) {
+      if (typeof bare === "string") {
+        return bare;
+      }
+      return bare.map((value) => [value]);
+    }
     const startTok = this.peek();
     if (startTok.kind !== "cell") {
       return undefined;
     }
-    if (this.tokens[this.pos + 1]?.kind !== "colon" || this.tokens[this.pos + 2]?.kind !== "cell") {
+    const startIndex = this.pos;
+    if (this.tokens[this.pos + 1]?.kind !== "colon") {
       return undefined;
     }
-    const start = startTok.value;
-    const end = (this.tokens[this.pos + 2] as { kind: "cell"; value: string }).value;
-    this.pos += 3;
-    return buildMatrixFromRange(start, end, (addr) => {
-      const v = this.env.getCell(addr);
+    const endIndex = startIndex + 2;
+    const endTok = this.rangeEndToken(endIndex);
+    if (!endTok) {
+      return undefined;
+    }
+    const range = this.resolveTokenRange(startTok, endTok);
+    if (typeof range === "string") {
+      return range;
+    }
+    this.pos = endIndex + 1;
+    return buildMatrixFromRangeRefs(range.startRef, range.endRef, (ref) => {
+      const v = this.env.getCell(ref);
       return isSheetError(v) ? v : v;
     });
   }
 
   private tryParseRangeArg(): SheetEvalResult[] | string | undefined {
+    const bare = this.tryParseBareColumnRange();
+    if (bare !== undefined) {
+      return bare;
+    }
     const startTok = this.peek();
     if (startTok.kind !== "cell") {
       return undefined;
     }
-    if (this.tokens[this.pos + 1]?.kind !== "colon" || this.tokens[this.pos + 2]?.kind !== "cell") {
+    if (this.tokens[this.pos + 1]?.kind !== "colon") {
       return undefined;
     }
-    const start = startTok.value;
-    const end = (this.tokens[this.pos + 2] as { kind: "cell"; value: string }).value;
-    this.pos += 3;
-    return this.readRangeValues(start, end);
+    const startIndex = this.pos;
+    const endIndex = startIndex + 2;
+    const endTok = this.rangeEndToken(endIndex);
+    if (!endTok) {
+      return undefined;
+    }
+    const range = this.resolveTokenRange(startTok, endTok);
+    if (typeof range === "string") {
+      return range;
+    }
+    this.pos = endIndex + 1;
+    return this.readRangeValues(range.startRef, range.endRef);
   }
 
-  private readRangeValues(start: string, end: string): SheetEvalResult[] | string {
-    const cells = expandRange(start, end);
+  private readRangeValues(startRef: string, endRef: string): SheetEvalResult[] | string {
+    const start = parseQualifiedCellRef(startRef);
+    const end = parseQualifiedCellRef(endRef);
+    const sheetName = start.sheetName ?? end.sheetName ?? this.env.defaultSheet;
+    const cells = expandRange(start.address, end.address);
     if (!cells) {
       return ERROR.ref;
     }
     const values: SheetEvalResult[] = [];
     for (const addr of cells) {
-      const v = this.env.getCell(addr);
+      const ref = sheetName ? `${sheetName}!${addr}` : addr;
+      const v = this.env.getCell(ref);
       if (isSheetError(v)) {
         return v;
       }
@@ -669,6 +1211,13 @@ function invokeFunction(
     return primary;
   }
 
+  if (name === "IFNA") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelIfna(args[0], args[1]);
+  }
+
   for (const arg of args) {
     if (isSheetError(arg)) {
       return arg;
@@ -719,6 +1268,42 @@ function invokeFunction(
     const digits = args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 0;
     const factor = 10 ** digits;
     return Math.round(coerceNumber(args[0]) * factor) / factor;
+  }
+
+  if (name === "ROUNDUP") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelRoundUp(
+      coerceNumber(args[0]),
+      args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 0
+    );
+  }
+
+  if (name === "ROUNDDOWN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelRoundDown(
+      coerceNumber(args[0]),
+      args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 0
+    );
+  }
+
+  if (name === "MEDIAN") {
+    const nums = numbersFromArgs(args);
+    if (typeof nums === "string") {
+      return nums;
+    }
+    return excelMedian(nums);
+  }
+
+  if (name === "STDEV.S" || name === "STDEV") {
+    const nums = numbersFromArgs(args);
+    if (typeof nums === "string") {
+      return nums;
+    }
+    return excelStdevS(nums);
   }
 
   if (name === "MOD") {
@@ -824,14 +1409,138 @@ function invokeFunction(
   }
 
   if (name === "TODAY") {
-    const now = new Date();
-    return Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000;
+    return excelTodaySerial();
   }
 
   if (name === "NOW") {
-    const now = new Date();
-    const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    return (now.getTime() - midnight) / 86_400_000 + TODAY_SERIAL(now);
+    return excelNowSerial();
+  }
+
+  if (name === "YEAR") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelYear(coerceNumber(args[0]));
+  }
+
+  if (name === "MONTH") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelMonth(coerceNumber(args[0]));
+  }
+
+  if (name === "DAY") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelDay(coerceNumber(args[0]));
+  }
+
+  if (name === "DATE") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelDate(coerceNumber(args[0]), coerceNumber(args[1]), coerceNumber(args[2]));
+  }
+
+  if (name === "DAYS") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelDays(coerceNumber(args[0]), coerceNumber(args[1]));
+  }
+
+  if (name === "WEEKDAY") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const returnType = args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 1;
+    return excelWeekday(coerceNumber(args[0]), returnType);
+  }
+
+  if (name === "HOUR") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelHour(coerceNumber(args[0]));
+  }
+
+  if (name === "MINUTE") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelMinute(coerceNumber(args[0]));
+  }
+
+  if (name === "SECOND") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelSecond(coerceNumber(args[0]));
+  }
+
+  if (name === "TIME") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelTime(coerceNumber(args[0]), coerceNumber(args[1]), coerceNumber(args[2]));
+  }
+
+  if (name === "EDATE") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelEdate(coerceNumber(args[0]), coerceNumber(args[1]));
+  }
+
+  if (name === "EOMONTH") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelEomonth(coerceNumber(args[0]), coerceNumber(args[1]));
+  }
+
+  if (name === "DATEDIF") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelDatedif(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      String(args[2] ?? "D")
+    );
+  }
+
+  if (name === "NETWORKDAYS") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const holidays = args.slice(2).map((arg) => Math.trunc(coerceNumber(arg)));
+    return excelNetworkdays(coerceNumber(args[0]), coerceNumber(args[1]), holidays);
+  }
+
+  if (name === "WORKDAY") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const holidays = args.slice(2).map((arg) => Math.trunc(coerceNumber(arg)));
+    return excelWorkday(coerceNumber(args[0]), coerceNumber(args[1]), holidays);
+  }
+
+  if (name === "RAND") {
+    return excelRand();
+  }
+
+  if (name === "RANDBETWEEN") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const value = excelRandBetween(coerceNumber(args[0]), coerceNumber(args[1]));
+    if (!Number.isFinite(value)) {
+      return ERROR.value;
+    }
+    return value;
   }
 
   if (name === "ISBLANK") {
@@ -851,6 +1560,370 @@ function invokeFunction(
 
   if (name === "ISERROR") {
     return isSheetError(args[0]);
+  }
+
+  if (name === "ISNA") {
+    return args[0] === ERROR.na;
+  }
+
+  if (name === "ISERR") {
+    return isSheetError(args[0]) && args[0] !== ERROR.na;
+  }
+
+  if (name === "PI") {
+    return Math.PI;
+  }
+
+  if (name === "EXP") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.exp(coerceNumber(args[0]));
+  }
+
+  if (name === "LN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelLn(coerceNumber(args[0]));
+  }
+
+  if (name === "LOG10") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelLog10(coerceNumber(args[0]));
+  }
+
+  if (name === "LOG") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const base = args.length > 1 ? coerceNumber(args[1]) : undefined;
+    return excelLog(coerceNumber(args[0]), base);
+  }
+
+  if (name === "SIGN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelSign(coerceNumber(args[0]));
+  }
+
+  if (name === "TRUNC") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelTrunc(
+      coerceNumber(args[0]),
+      args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 0
+    );
+  }
+
+  if (name === "MROUND") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelMround(coerceNumber(args[0]), coerceNumber(args[1]));
+  }
+
+  if (name === "FIND") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const start = args.length > 2 ? coerceNumber(args[2]) : 1;
+    return excelFind(args[0], args[1], start);
+  }
+
+  if (name === "SEARCH") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const start = args.length > 2 ? coerceNumber(args[2]) : 1;
+    return excelSearch(args[0], args[1], start);
+  }
+
+  if (name === "SUBSTITUTE") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    const instance = args.length > 3 ? Math.trunc(coerceNumber(args[3])) : undefined;
+    return excelSubstitute(args[0], args[1], args[2], instance);
+  }
+
+  if (name === "REPLACE") {
+    if (args.length < 4) {
+      return ERROR.value;
+    }
+    return excelReplace(args[0], coerceNumber(args[1]), coerceNumber(args[2]), args[3]);
+  }
+
+  if (name === "VALUE") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelValue(args[0]);
+  }
+
+  if (name === "EXACT") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelExact(args[0], args[1]);
+  }
+
+  if (name === "DATEVALUE") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelDatevalue(args[0]);
+  }
+
+  if (name === "TIMEVALUE") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return excelTimevalue(args[0]);
+  }
+
+  if (name === "WEEKNUM") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const returnType = args.length > 1 ? Math.trunc(coerceNumber(args[1])) : 1;
+    return excelWeeknum(coerceNumber(args[0]), returnType);
+  }
+
+  if (name === "YEARFRAC") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const basis = args.length > 2 ? Math.trunc(coerceNumber(args[2])) : 0;
+    return excelYearfrac(coerceNumber(args[0]), coerceNumber(args[1]), basis);
+  }
+
+  if (name === "SWITCH") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelSwitch(args[0], args.slice(1));
+  }
+
+  if (name === "CHOOSE") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelChoose(Math.trunc(coerceNumber(args[0])), args.slice(1));
+  }
+
+  if (name === "VAR.S" || name === "VARS") {
+    const nums = numbersFromFlat(args);
+    return excelVarS(nums);
+  }
+
+  if (name === "VAR" || name === "VAR.P" || name === "VARP") {
+    const nums = numbersFromFlat(args);
+    return excelVarP(nums);
+  }
+
+  if (name === "PERCENTILE") {
+    const nums = numbersFromFlat(args.slice(0, -1));
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelPercentile(nums, coerceNumber(args[args.length - 1]));
+  }
+
+  if (name === "QUARTILE") {
+    const nums = numbersFromFlat(args.slice(0, -1));
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelQuartile(nums, coerceNumber(args[args.length - 1]));
+  }
+
+  if (name === "LARGE") {
+    const nums = numbersFromFlat(args.slice(0, -1));
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelLarge(nums, coerceNumber(args[args.length - 1]));
+  }
+
+  if (name === "SMALL") {
+    const nums = numbersFromFlat(args.slice(0, -1));
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return excelSmall(nums, coerceNumber(args[args.length - 1]));
+  }
+
+  if (name === "RANK") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const number = coerceNumber(args[0]);
+    if (args.length === 2) {
+      return excelRank(number, numbersFromFlat(args.slice(1)), 0);
+    }
+    const order = Math.trunc(coerceNumber(args[args.length - 1]));
+    return excelRank(number, numbersFromFlat(args.slice(1, -1)), order);
+  }
+
+  if (name === "NPV") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    const rate = coerceNumber(args[0]);
+    const values = numbersFromFlat(args.slice(1));
+    return excelNpv(rate, values);
+  }
+
+  if (name === "PMT") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelPmt(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      coerceNumber(args[2]),
+      args.length > 3 ? coerceNumber(args[3]) : 0,
+      args.length > 4 ? Math.trunc(coerceNumber(args[4])) : 0
+    );
+  }
+
+  if (name === "FV") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelFv(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      coerceNumber(args[2]),
+      args.length > 3 ? coerceNumber(args[3]) : 0,
+      args.length > 4 ? Math.trunc(coerceNumber(args[4])) : 0
+    );
+  }
+
+  if (name === "PV") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelPv(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      coerceNumber(args[2]),
+      args.length > 3 ? coerceNumber(args[3]) : 0,
+      args.length > 4 ? Math.trunc(coerceNumber(args[4])) : 0
+    );
+  }
+
+  if (name === "NPER") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelNper(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      coerceNumber(args[2]),
+      args.length > 3 ? coerceNumber(args[3]) : 0,
+      args.length > 4 ? Math.trunc(coerceNumber(args[4])) : 0
+    );
+  }
+
+  if (name === "RATE") {
+    if (args.length < 3) {
+      return ERROR.value;
+    }
+    return excelRate(
+      coerceNumber(args[0]),
+      coerceNumber(args[1]),
+      coerceNumber(args[2]),
+      args.length > 3 ? coerceNumber(args[3]) : 0,
+      args.length > 4 ? Math.trunc(coerceNumber(args[4])) : 0,
+      args.length > 5 ? coerceNumber(args[5]) : 0.1
+    );
+  }
+
+  if (name === "IRR") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    if (args.length >= 2) {
+      return excelIrr(numbersFromFlat(args.slice(0, -1)), coerceNumber(args[args.length - 1]));
+    }
+    return excelIrr(numbersFromFlat(args));
+  }
+
+  if (name === "SIN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.sin(coerceNumber(args[0]));
+  }
+
+  if (name === "COS") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.cos(coerceNumber(args[0]));
+  }
+
+  if (name === "TAN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.tan(coerceNumber(args[0]));
+  }
+
+  if (name === "ASIN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const n = coerceNumber(args[0]);
+    if (n < -1 || n > 1) {
+      return ERROR.num;
+    }
+    return Math.asin(n);
+  }
+
+  if (name === "ACOS") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    const n = coerceNumber(args[0]);
+    if (n < -1 || n > 1) {
+      return ERROR.num;
+    }
+    return Math.acos(n);
+  }
+
+  if (name === "ATAN") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return Math.atan(coerceNumber(args[0]));
+  }
+
+  if (name === "ATAN2") {
+    if (args.length < 2) {
+      return ERROR.value;
+    }
+    return Math.atan2(coerceNumber(args[0]), coerceNumber(args[1]));
+  }
+
+  if (name === "RADIANS") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return (coerceNumber(args[0]) * Math.PI) / 180;
+  }
+
+  if (name === "DEGREES") {
+    if (args.length < 1) {
+      return ERROR.value;
+    }
+    return (coerceNumber(args[0]) * 180) / Math.PI;
   }
 
   if (name === "COUNT") {
@@ -926,11 +1999,6 @@ function invokeFunction(
   }
 
   return ERROR.name;
-}
-
-function TODAY_SERIAL(date: Date): number {
-  const epoch = Date.UTC(1899, 11, 30);
-  return (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - epoch) / 86_400_000;
 }
 
 /** Parse and evaluate a formula string (with or without leading `=`). */

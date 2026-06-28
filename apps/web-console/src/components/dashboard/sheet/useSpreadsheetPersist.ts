@@ -18,6 +18,15 @@ import {
   canWriteSheetValues,
   hasSheetValuesSchema,
 } from "./sheetPersist";
+import type { SheetWorkbook } from "./sheetWorkbook";
+import {
+  activeSheetData,
+  createDefaultWorkbook,
+  sheetTabToRuntimeMeta,
+  syncActiveSheetInWorkbook,
+  workbookFromPersist,
+  workbookToPersist,
+} from "./sheetWorkbook";
 import {
   parseSheetRuntimeMeta,
   sheetMetaSessionKey,
@@ -50,6 +59,7 @@ function hasRuntimeMetaShape(runtimeMeta: SheetRuntimeMeta | null | undefined): 
       (runtimeMeta.rows !== undefined ||
         runtimeMeta.cols !== undefined ||
         runtimeMeta.mergedCells?.length ||
+        runtimeMeta.sheets?.length ||
         (runtimeMeta.cellStyles && Object.keys(runtimeMeta.cellStyles).length > 0))
   );
 }
@@ -129,10 +139,13 @@ export function useSpreadsheetPersist(
   const variableWriteBlockedRef = useRef(false);
   const variableWriteInFlightRef = useRef(false);
   const pendingVariablePersistRef = useRef<{
-    contents: SheetValues;
+    values: SheetValues;
     meta: SheetRuntimeMeta | null;
   } | null>(null);
   const lastVariablePayloadRef = useRef<string>("");
+  const workbookRef = useRef<SheetWorkbook>(
+    createDefaultWorkbook(resolveSheetConfig(widget).rows, resolveSheetConfig(widget).cols)
+  );
 
   const sheetConfig = useMemo(() => resolveSheetConfig(widget), [widget]);
   const sheetMode = resolveSheetMode(widget);
@@ -188,22 +201,54 @@ export function useSpreadsheetPersist(
     return sessionMeta;
   }, [params, metaSessionKey, persistMode, recordMeta]);
 
+  const loadedWorkbook = useMemo(() => {
+    const allValues =
+      persistMode === "variable" && Object.keys(recordValues).length > 0
+        ? recordValues
+        : Object.keys(sessionValues).length > 0
+          ? sessionValues
+          : recordValues;
+    const wb = workbookFromPersist(allValues, loadedMeta, sheetConfig.rows, sheetConfig.cols);
+    if (
+      sheetMode === "free" &&
+      Object.keys(allValues).length === 0 &&
+      !loadedMeta?.sheets?.length &&
+      Object.keys(wb.sheets[0]?.contents ?? {}).length === 0
+    ) {
+      const seeds = loadCellContents(undefined, sheetConfig, sheetMode);
+      if (Object.keys(seeds).length > 0 && wb.sheets[0]) {
+        wb.sheets[0].contents = seeds;
+      }
+    }
+    return wb;
+  }, [
+    persistMode,
+    recordValues,
+    sessionValues,
+    loadedMeta,
+    sheetConfig,
+    sheetMode,
+  ]);
+
   const loadedContents = useMemo(
-    () =>
-      mergeLoadedContents(sheetConfig, sheetMode, sessionValues, recordValues, {
-        persistMode,
-        runtimeMeta: loadedMeta,
-      }),
-    [sheetConfig, sheetMode, sessionValues, recordValues, persistMode, loadedMeta]
+    () => activeSheetData(loadedWorkbook).contents,
+    [loadedWorkbook]
+  );
+  const loadedActiveMeta = useMemo(
+    () => sheetTabToRuntimeMeta(activeSheetData(loadedWorkbook)),
+    [loadedWorkbook]
   );
 
   const sessionSnapshot = useMemo(() => JSON.stringify(sessionValues), [sessionValues]);
   const recordSnapshot = useMemo(() => JSON.stringify(recordValues), [recordValues]);
   const recordMetaSnapshot = useMemo(() => JSON.stringify(recordMeta ?? null), [recordMeta]);
   const metaSnapshot = useMemo(() => JSON.stringify(loadedMeta ?? null), [loadedMeta]);
+  const workbookSnapshot = useMemo(() => JSON.stringify(loadedWorkbook), [loadedWorkbook]);
 
   const [localContents, setLocalContents] = useState<SheetValues>(loadedContents);
-  const [localMeta, setLocalMeta] = useState<SheetRuntimeMeta | null>(loadedMeta);
+  const [localMeta, setLocalMeta] = useState<SheetRuntimeMeta | null>(loadedActiveMeta);
+  const [workbook, setWorkbook] = useState<SheetWorkbook>(loadedWorkbook);
+  const [activeSheetIndex, setActiveSheetIndex] = useState(loadedWorkbook.activeSheetIndex);
   const [persistWarning, setPersistWarning] = useState<string | null>(null);
   const authTokenRef = useRef<string | null>(getStoredSession()?.token ?? null);
 
@@ -225,6 +270,7 @@ export function useSpreadsheetPersist(
 
   latestContentsRef.current = localContents;
   latestMetaRef.current = localMeta;
+  workbookRef.current = workbook;
 
   const setTrackedLocalContents = useCallback((nextContents: SheetValues) => {
     latestContentsRef.current = nextContents;
@@ -256,6 +302,14 @@ export function useSpreadsheetPersist(
     };
   }, []);
 
+  const syncWorkbookFromPayload = useCallback((): SheetWorkbook => {
+    const { contents, meta } = getPersistPayload();
+    const synced = syncActiveSheetInWorkbook(workbookRef.current, contents, meta);
+    workbookRef.current = synced;
+    setWorkbook(synced);
+    return synced;
+  }, [getPersistPayload]);
+
   const buildSessionPatch = useCallback(
     (
       nextContents: SheetValues,
@@ -280,11 +334,13 @@ export function useSpreadsheetPersist(
       skipSessionSyncRef.current = false;
       return;
     }
+    setWorkbook(loadedWorkbook);
+    setActiveSheetIndex(loadedWorkbook.activeSheetIndex);
     setLocalContents(loadedContents);
-    setLocalMeta(loadedMeta);
+    setLocalMeta(loadedActiveMeta);
     // Sync only when persisted session/record/meta snapshots change — not on every params object identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedContents/loadedMeta derived from snapshots
-  }, [widget.id, sessionKey, sessionSnapshot, recordSnapshot, recordMetaSnapshot, metaSnapshot]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadedWorkbook derived from snapshots
+  }, [widget.id, sessionKey, sessionSnapshot, recordSnapshot, recordMetaSnapshot, metaSnapshot, workbookSnapshot]);
 
   const flushVariableWrite = useCallback(() => {
     if (persistMode !== "variable" || !valuesVarName || !objectPath) {
@@ -324,7 +380,7 @@ export function useSpreadsheetPersist(
     pendingVariablePersistRef.current = null;
 
     const record = saveValuesToVariableRecord(
-      nextPersist.contents,
+      nextPersist.values,
       existing,
       nextPersist.meta ?? latestMetaRef.current
     );
@@ -408,32 +464,29 @@ export function useSpreadsheetPersist(
   }, [persistMode, valuesVariable, flushVariableWrite]);
 
   const queueVariablePersist = useCallback(
-    (nextContents: SheetValues, nextMeta?: SheetRuntimeMeta | null) => {
+    (values: SheetValues, meta?: SheetRuntimeMeta | null) => {
       if (!valuesVarName || !objectPath || variableWriteBlockedRef.current) {
         return;
       }
       pendingVariablePersistRef.current = {
-        contents: nextContents,
-        meta: nextMeta ?? latestMetaRef.current,
+        values,
+        meta: meta ?? latestMetaRef.current,
       };
       flushVariableWrite();
     },
     [valuesVarName, objectPath, flushVariableWrite]
   );
 
-  const persistNow = useCallback(
-    (
-      nextContents: SheetValues,
-      nextMeta?: SheetRuntimeMeta | null,
-      allowEmptyContents = true
-    ) => {
+  const persistWorkbook = useCallback(
+    (wb: SheetWorkbook, allowEmptyContents = true) => {
+      const { values, meta } = workbookToPersist(wb);
       if (persistTimerRef.current) {
         clearTimeout(persistTimerRef.current);
         persistTimerRef.current = null;
       }
       pendingPersistRef.current = null;
       if (persistMode === "session") {
-        const patch = buildSessionPatch(nextContents, nextMeta, allowEmptyContents);
+        const patch = buildSessionPatch(values, meta, allowEmptyContents);
         if (!patch) {
           return;
         }
@@ -442,24 +495,37 @@ export function useSpreadsheetPersist(
         return;
       }
       skipSessionSyncRef.current = true;
-      const patch = buildSessionPatch(nextContents, nextMeta, allowEmptyContents);
+      const patch = buildSessionPatch(values, meta, allowEmptyContents);
       if (patch) {
         setParams(patch);
       }
       if (
-        Object.keys(nextContents).length > 0 ||
+        Object.keys(values).length > 0 ||
         allowEmptyContents ||
-        hasRuntimeMetaShape(nextMeta ?? null)
+        hasRuntimeMetaShape(meta)
       ) {
-        queueVariablePersist(nextContents, nextMeta);
+        queueVariablePersist(values, meta);
       }
     },
-    [
-      persistMode,
-      buildSessionPatch,
-      setParams,
-      queueVariablePersist,
-    ]
+    [persistMode, buildSessionPatch, setParams, queueVariablePersist]
+  );
+
+  const persistNow = useCallback(
+    (
+      nextContents: SheetValues,
+      nextMeta?: SheetRuntimeMeta | null,
+      allowEmptyContents = true
+    ) => {
+      const synced = syncActiveSheetInWorkbook(
+        workbookRef.current,
+        nextContents,
+        nextMeta ?? latestMetaRef.current
+      );
+      workbookRef.current = synced;
+      setWorkbook(synced);
+      persistWorkbook(synced, allowEmptyContents);
+    },
+    [persistWorkbook]
   );
 
   const flushPersist = useCallback(() => {
@@ -479,6 +545,60 @@ export function useSpreadsheetPersist(
       }, PERSIST_DEBOUNCE_MS);
     },
     [persistNow, getPersistPayload]
+  );
+
+  const switchSheet = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= workbookRef.current.sheets.length) {
+        return;
+      }
+      const synced = syncWorkbookFromPayload();
+      if (synced.activeSheetIndex === index) {
+        return;
+      }
+      const nextWorkbook = { ...synced, activeSheetIndex: index };
+      workbookRef.current = nextWorkbook;
+      setWorkbook(nextWorkbook);
+      setActiveSheetIndex(index);
+      const tab = nextWorkbook.sheets[index];
+      setLocalContents({ ...tab.contents });
+      setLocalMeta(sheetTabToRuntimeMeta(tab));
+    },
+    [syncWorkbookFromPayload]
+  );
+
+  const replaceWorkbook = useCallback(
+    (nextWorkbook: SheetWorkbook) => {
+      workbookRef.current = nextWorkbook;
+      setWorkbook(nextWorkbook);
+      setActiveSheetIndex(nextWorkbook.activeSheetIndex);
+      const tab = activeSheetData(nextWorkbook);
+      setLocalContents({ ...tab.contents });
+      setLocalMeta(sheetTabToRuntimeMeta(tab));
+      persistWorkbook(nextWorkbook);
+    },
+    [persistWorkbook]
+  );
+
+  const getWorkbookSnapshot = useCallback((): SheetWorkbook => {
+    return syncWorkbookFromPayload();
+  }, [syncWorkbookFromPayload]);
+
+  const commitWorkbook = useCallback(
+    (nextWorkbook: SheetWorkbook) => {
+      workbookRef.current = nextWorkbook;
+      setWorkbook(nextWorkbook);
+      const tab = activeSheetData(nextWorkbook);
+      setTrackedLocalContents({ ...tab.contents });
+      setTrackedLocalMeta(sheetTabToRuntimeMeta(tab));
+      persistWorkbook(nextWorkbook);
+    },
+    [persistWorkbook, setTrackedLocalContents, setTrackedLocalMeta]
+  );
+
+  const sheetTabs = useMemo(
+    () => workbook.sheets.map((sheet, index) => ({ name: sheet.name, index })),
+    [workbook.sheets]
   );
 
   const persistNowRef = useRef(persistNow);
@@ -508,9 +628,18 @@ export function useSpreadsheetPersist(
     localMeta,
     setLocalMeta: setTrackedLocalMeta,
     hasPersistedContents:
-      hasSessionValues || hasRecordValues || (sheetMode === "free" && loadedMeta !== null),
+      hasSessionValues ||
+      hasRecordValues ||
+      (sheetMode === "free" && (loadedMeta !== null || loadedWorkbook.sheets.length > 1)),
     isLoading,
     canEdit,
     persistWarning,
+    sheetTabs,
+    activeSheetIndex,
+    switchSheet,
+    replaceWorkbook,
+    getWorkbookSnapshot,
+    commitWorkbook,
+    workbook,
   };
 }

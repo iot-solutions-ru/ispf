@@ -99,6 +99,48 @@ describe("sheetFormulaEngine", () => {
     engine.destroy();
   });
 
+  it("evaluates cross-sheet cell reference in workbook mode", () => {
+    const grid = { rows: 10, cols: 5, cells: {} };
+    const engine = createSheetFormulaEngine(
+      grid,
+      "free",
+      { B1: "=Sales!A1" },
+      undefined,
+      {
+        currentSheetName: "Summary",
+        sheets: [
+          { name: "Summary", config: grid, contents: { B1: "=Sales!A1" } },
+          { name: "Sales", config: grid, contents: { A1: "100" } },
+        ],
+      }
+    );
+    expect(engine.getCellValue("B1")).toBe(100);
+    engine.destroy();
+  });
+
+  it("evaluates cross-sheet SUM range in workbook mode", () => {
+    const grid = { rows: 10, cols: 5, cells: {} };
+    const engine = createSheetFormulaEngine(
+      grid,
+      "free",
+      { A1: "=SUM(Sales!A1:A3)" },
+      undefined,
+      {
+        currentSheetName: "Summary",
+        sheets: [
+          { name: "Summary", config: grid, contents: { A1: "=SUM(Sales!A1:A3)" } },
+          {
+            name: "Sales",
+            config: grid,
+            contents: { A1: "10", A2: "20", A3: "30" },
+          },
+        ],
+      }
+    );
+    expect(engine.getCellValue("A1")).toBe(60);
+    engine.destroy();
+  });
+
   it("exports csv from grid", () => {
     const engine = createSheetFormulaEngine(
       { rows: 2, cols: 2, cells: {} },

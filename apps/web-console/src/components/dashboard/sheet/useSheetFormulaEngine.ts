@@ -6,6 +6,7 @@ import {
   type IspfFormulaContext,
   type SheetFormulaEngine,
   type SheetValues,
+  type WorkbookFormulaContext,
 } from "./sheetFormulaEngine";
 
 export interface UseSheetFormulaEngineOptions {
@@ -14,6 +15,7 @@ export interface UseSheetFormulaEngineOptions {
   contents: SheetValues;
   externalByAddr?: Map<string, number | string | boolean>;
   ispfContext?: IspfFormulaContext;
+  workbook?: WorkbookFormulaContext;
 }
 
 export interface UseSheetFormulaEngineResult {
@@ -41,12 +43,14 @@ export function useSheetFormulaEngine({
   contents,
   externalByAddr,
   ispfContext,
+  workbook,
 }: UseSheetFormulaEngineOptions): UseSheetFormulaEngineResult {
   const engineRef = useRef<SheetFormulaEngine | null>(null);
   const engineInputsRef = useRef<{
     configKey: string;
     contentsKey: string;
     mode: SheetMode;
+    workbookKey: string | null;
   } | null>(null);
   const [revision, setRevision] = useState(0);
   const contentsKey = useMemo(() => JSON.stringify(contents), [contents]);
@@ -55,6 +59,10 @@ export function useSheetFormulaEngine({
     [externalByAddr]
   );
   const configKey = useMemo(() => JSON.stringify(config), [config]);
+  const workbookKey = useMemo(
+    () => (workbook ? JSON.stringify(workbook) : null),
+    [workbook]
+  );
   const ispfContextKey = useMemo(
     () =>
       JSON.stringify(
@@ -82,14 +90,21 @@ export function useSheetFormulaEngine({
     !previousInputs ||
     previousInputs.configKey !== configKey ||
     previousInputs.mode !== mode ||
+    previousInputs.workbookKey !== workbookKey ||
     (previousInputs.contentsKey !== contentsKey && engineContentsKey !== contentsKey);
 
   if (shouldRecreateEngine) {
     engineRef.current?.destroy();
-    engineRef.current = createSheetFormulaEngine(config, mode, contents, externalByAddr);
-    engineInputsRef.current = { configKey, contentsKey, mode };
+    engineRef.current = createSheetFormulaEngine(
+      config,
+      mode,
+      contents,
+      externalByAddr,
+      workbook
+    );
+    engineInputsRef.current = { configKey, contentsKey, mode, workbookKey };
   } else if (previousInputs?.contentsKey !== contentsKey) {
-    engineInputsRef.current = { configKey, contentsKey, mode };
+    engineInputsRef.current = { configKey, contentsKey, mode, workbookKey };
   }
 
   useEffect(() => {

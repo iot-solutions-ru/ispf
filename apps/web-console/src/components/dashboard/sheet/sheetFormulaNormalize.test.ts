@@ -26,7 +26,7 @@ describe("sheetFormulaNormalize", () => {
   });
 
   it("flags unsupported functions", () => {
-    expect(findUnsupportedFunctions("=XLOOKUP(A1,B1:C10,2,0)")).toEqual(["XLOOKUP"]);
+    expect(findUnsupportedFunctions("=LET(x,1,x)")).toEqual(["LET"]);
     expect(findUnsupportedFunctions("=SUM(A1:A3)+IF(A1>0,1,0)")).toEqual([]);
   });
 });

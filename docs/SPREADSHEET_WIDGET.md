@@ -26,7 +26,8 @@
 |---------|----------|
 | Строка формул | Слева адрес выделенной ячейки, справа сырое содержимое: текст, число или формула с `=` |
 | Сетка | Показывает вычисленные значения; формулы пересчитываются сразу |
-| Панель инструментов | В `free`: undo/redo, copy/paste, **импорт XLSX**, **экспорт XLSX**, экспорт CSV |
+| Панель инструментов | В `free`: undo/redo, copy/paste, вставка/удаление строк и столбцов, **импорт XLSX**, **экспорт XLSX**, экспорт CSV |
+| Вкладки листов | Несколько листов в одной книге; переключение вкладками; cross-sheet формулы (`=Sales!A1`) |
 | Binding-ячейки | Live-данные переменных ISPF; не редактируются оператором |
 
 Горячие клавиши в `free`:
@@ -56,7 +57,7 @@
 =ROUND(A2/3,2)
 ```
 
-Диапазоны пишутся как в Excel: `A1:A10`, `A1:C5`. Поддерживаются английские имена функций и русские алиасы (`СУММ` → `SUM`, `ЕСЛИ` → `IF`). Разделитель аргументов — `,` или `;` (как в русской локали Excel).
+Диапазоны пишутся как в Excel: `A1:A10`, `A1:C5`, **`D:D`** (весь столбец до конца сетки), **`Sheet!D:D`** (столбец на другом листе). Поддерживаются английские имена функций и русские алиасы (`СУММ` → `SUM`, `ЕСЛИ` → `IF`). Разделитель аргументов — `,` или `;` (как в русской локали Excel).
 
 ### Импорт и экспорт XLSX
 
@@ -64,9 +65,9 @@
 
 | Этап | Поведение |
 |------|-----------|
-| Импорт | Выбор листа (если их несколько) → ячейки, формулы, **объединения**, **базовые стили**; сетка до 500×52 |
-| Экспорт | Текущая сетка → `.xlsx` с формулами, стилями и merge |
-| Сессия | Размер сетки, стили и merge сохраняются в `{sessionKey}__meta` |
+| Импорт | Все листы книги → вкладки; ячейки, формулы (в т.ч. `Sheet!A1`), **объединения**, **базовые стили**; сетка до 500×52 |
+| Экспорт | Вся книга → `.xlsx` с формулами, стилями и merge |
+| Сессия | Значения, формулы, метаданные книги (листы, стили, merge) сохраняются в session / variable |
 | Предупреждения | Неподдерживаемые функции дают `#NAME?`; список показывается после импорта |
 
 Оператор конкатенации `&` поддерживается: `="A"&"B"`.
@@ -75,17 +76,41 @@
 
 | Категория | Функции |
 |-----------|---------|
-| Агрегаты | `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `COUNTBLANK`, `PRODUCT` |
-| Условные | `IF`, `IFERROR`, `SUMIF`, `COUNTIF`, `AVERAGEIF` |
-| Lookup | `VLOOKUP`, `HLOOKUP`, `INDEX`, `MATCH` |
-| Математика | `ABS`, `MOD`, `POWER`, `SQRT`, `INT`, `ROUND`, `CEILING`, `FLOOR` |
-| Логика | `AND`, `OR`, `NOT` |
-| Текст | `LEN`, `LEFT`, `RIGHT`, `MID`, `TRIM`, `UPPER`, `LOWER`, `CONCAT`, `CONCATENATE`, `TEXT` |
-| Дата/время | `TODAY`, `NOW` (serial, упрощённо) |
-| Проверки | `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISERROR` |
+| Агрегаты | `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `COUNTBLANK`, `PRODUCT`, `MEDIAN`, `STDEV`, `STDEV.S`, `SUBTOTAL` |
+| Условные | `IF`, `IFERROR`, `IFS`, `SUMIF`, `COUNTIF`, `AVERAGEIF`, `SUMIFS`, `COUNTIFS`, `AVERAGEIFS`, `SUMPRODUCT` |
+| Lookup | `VLOOKUP`, `HLOOKUP`, `INDEX`, `MATCH`, `XLOOKUP` |
+| Математика | `ABS`, `MOD`, `POWER`, `SQRT`, `INT`, `ROUND`, `ROUNDUP`, `ROUNDDOWN`, `CEILING`, `FLOOR`, `TRUNC`, `MROUND`, `LOG`, `LN`, `LOG10`, `EXP`, `PI`, `SIGN`, `RAND`, `RANDBETWEEN` |
+| Логика | `AND`, `OR`, `NOT`, `SWITCH`, `CHOOSE`, `IFNA` |
+| Текст | `LEN`, `LEFT`, `RIGHT`, `MID`, `TRIM`, `UPPER`, `LOWER`, `CONCAT`, `CONCATENATE`, `TEXT`, `TEXTJOIN`, `FIND`, `SEARCH`, `SUBSTITUTE`, `REPLACE`, `VALUE`, `EXACT` |
+| Дата/время | `TODAY`, `NOW`, `YEAR`, `MONTH`, `DAY`, `DATE`, `DAYS`, `WEEKDAY`, `HOUR`, `MINUTE`, `SECOND`, `TIME`, `EDATE`, `EOMONTH`, `DATEDIF`, `NETWORKDAYS`, `WORKDAY`, `DATEVALUE`, `TIMEVALUE`, `WEEKNUM`, `YEARFRAC` |
+| Статистика | `VAR`, `VAR.S`, `PERCENTILE`, `QUARTILE`, `LARGE`, `SMALL`, `RANK` |
+| Финансы | `NPV`, `IRR`, `PMT`, `FV`, `PV`, `NPER`, `RATE` |
+| Тригонометрия | `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `RADIANS`, `DEGREES` |
+| Адресация | `ROW`, `COLUMN`, `ROWS`, `COLUMNS` |
+| Проверки | `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISERROR`, `ISNA`, `ISERR` |
 | ISPF | `ISPREF`, `ISPSUM`, `ISPHIST` |
 
-Русские алиасы: `СУММ`, `ЕСЛИ`, `ПРОСМОТР` (=VLOOKUP), `СУММЕСЛИ`, `СЧЁТЕСЛИ` и др.
+Cross-sheet ссылки: `=Sheet2!A1`, `=SUM(Sales!A1:A10)`.
+
+Примеры для IoT/отчётов:
+
+```text
+=SUMIFS(C2:C100, A2:A100, "sensor-01", B2:B100, ">80")
+=XLOOKUP(E2, A2:A50, C2:C50, "—")
+=IFS(A2>90,"ALARM", A2>70,"WARN", TRUE,"OK")
+=TEXTJOIN(", ", TRUE, A2, B2, C2)
+=NETWORKDAYS(DATE(2026,1,1), TODAY())
+=MEDIAN(H2:H100)
+=NPV(0.08,C2:C24)
+=PMT(0.05/12,36,-10000)
+=FIND("@",A2)
+=DATEVALUE("2026-06-28")
+=(E3-B3)/B3
+```
+
+Русские алиасы: `СУММ`, `ЕСЛИ`, `ЕСЛИМН`, `ПРОСМОТР`, `СМЕЩ`, `СУММЕСЛИМН`, `НАЙТИ`, `ПОДСТАВИТЬ`, `ДАТАЗНАЧ`, `ЧПС`, `ПЛТ`, `ДИСП`, `СТРОКА`, `СТОЛБЕЦ` и др.
+
+Ограничения: `SUBTOTAL` не учитывает скрытые строки; wildcards в `XLOOKUP` не поддерживаются; `YEARFRAC` — упрощённые базы 0/1; `SEARCH` wildcards — базовые `?` и `*`.
 
 ## ISPF-функции
 

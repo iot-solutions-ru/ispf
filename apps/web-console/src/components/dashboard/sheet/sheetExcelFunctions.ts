@@ -1,5 +1,6 @@
 import type { SheetEvalResult } from "./ispfSheetEval";
 import { a1ToRowCol, rowColToA1 } from "./sheetAddress";
+import { parseQualifiedCellRef } from "./sheetWorkbook";
 
 export type SheetMatrix = SheetEvalResult[][];
 
@@ -22,6 +23,36 @@ export function buildMatrixFromRange(
     const row: SheetEvalResult[] = [];
     for (let c = minCol; c <= maxCol; c++) {
       row.push(getCell(rowColToA1(r, c)));
+    }
+    matrix.push(row);
+  }
+  return matrix;
+}
+
+export function buildMatrixFromRangeRefs(
+  startRef: string,
+  endRef: string,
+  getCell: (ref: string) => SheetEvalResult
+): SheetMatrix | "#REF!" {
+  const start = parseQualifiedCellRef(startRef);
+  const end = parseQualifiedCellRef(endRef);
+  const sheetName = start.sheetName ?? end.sheetName;
+  const a = a1ToRowCol(start.address);
+  const b = a1ToRowCol(end.address);
+  if (!a || !b) {
+    return "#REF!";
+  }
+  const minRow = Math.min(a.row, b.row);
+  const maxRow = Math.max(a.row, b.row);
+  const minCol = Math.min(a.col, b.col);
+  const maxCol = Math.max(a.col, b.col);
+  const matrix: SheetMatrix = [];
+  for (let r = minRow; r <= maxRow; r++) {
+    const row: SheetEvalResult[] = [];
+    for (let c = minCol; c <= maxCol; c++) {
+      const addr = rowColToA1(r, c);
+      const ref = sheetName ? `${sheetName}!${addr}` : addr;
+      row.push(getCell(ref));
     }
     matrix.push(row);
   }
