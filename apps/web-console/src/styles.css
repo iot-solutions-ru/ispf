@@ -4983,15 +4983,121 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   vertical-align: middle;
 }
 
+.operator-topbar .topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.operator-sidebar-toggle {
+  display: none;
+}
+
+.operator-sidebar-backdrop {
+  display: none;
+}
+
+.operator-sidebar-mobile-head {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .operator-layout {
     grid-template-columns: 1fr;
   }
 
+  .operator-sidebar-toggle {
+    display: inline-flex;
+  }
+
   .operator-sidebar {
-    border-left: none;
-    border-top: 1px solid var(--border);
-    max-height: 40vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(100vw - 2.5rem, 360px);
+    max-height: none;
+    border-left: 1px solid var(--border);
+    border-top: none;
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    z-index: 210;
+    box-shadow: -12px 0 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .operator-layout--sidebar-open .operator-sidebar,
+  .operator-shell--sidebar-open .operator-sidebar {
+    transform: translateX(0);
+  }
+
+  .operator-sidebar-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.25rem;
+  }
+
+  .operator-sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+  }
+
+  .op-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .op-nav .btn {
+    flex-shrink: 0;
+  }
+
+  .operator-dashboard {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .operator-topbar {
+    flex-wrap: wrap;
+    padding: 0.55rem 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .operator-topbar .brand-sub {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
+  .operator-topbar .topbar-actions .btn:not(.operator-sidebar-toggle) {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.82rem;
+  }
+
+  .op-launcher {
+    padding: 1rem;
+  }
+
+  .op-launcher-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .op-manifest-main {
+    padding: 0.65rem;
   }
 }
 

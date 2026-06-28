@@ -92,7 +92,7 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Done | QA |
 | **BL-51** | Operator manifest: screen types chart / map / embedded dashboard | P3 | Done | Operator |
-| **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Planned | Operator |
+| **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Done | Operator |
 | **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
 | **BL-54** | Spreadsheet: binding ячеек к variable history | P3 | Planned | Spreadsheet |
 | **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL widgets/inspector — TBD | P2 | Partial | QA |
@@ -568,7 +568,7 @@ Backlog P3 — semantic (по запросу, после ADR)
 | 2026-06-28 | BL-41, BL-42 Done: Redis/NATS health API + System Metrics cards, i18n, BPMN publishNats smoke hint |
 | 2026-06-28 | BL-20: Modbus tcp/rtu `writePoint` (FC5/FC6), loopback + guard-rail tests, DRIVERS.md |
 | 2026-06-28 | BL-64: chart candlestick OHLC (вариант A, `chartOhlcUtils`, `CandlestickChartBody`) |
-| 2026-06-28 | BL-51: operator manifest screens dashboard/chart/map (`ManifestScreen`, demo.manifest.json) |
+| 2026-06-28 | BL-52: operator shell responsive drawer sidebar (≤900px), topbar/nav mobile polish |
 | 2026-06-28 | BL-65: chart bubble (ScatterChart) + radar (RadarChart), editor sections, sample builders |
 | 2026-06-28 | Wave G: Haystack/Brick semantic layer → BL-56…62 (P3, deferred) |
 | 2026-06-28 | Первая версия: code audit → BL-01…BL-55, Wave A–F |

@@ -15,7 +15,10 @@ import LocaleSwitcher from "../LocaleSwitcher";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
+import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
+import OperatorSidebarToggle from "./OperatorSidebarToggle";
+import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 
 interface OperatorDashboardAppProps {
   appId: string;
@@ -138,6 +141,8 @@ export default function OperatorDashboardApp({
     () => (ui ? resolveOperatorReport(ui, reportPath) : ""),
     [ui, reportPath]
   );
+  const activePath = viewKind === "report" ? activeReportPath : activeDashboardPath;
+  const sidebarDrawer = useOperatorSidebarDrawer([viewKind, activePath]);
 
   const dashboardSession = useMemo(
     () => (activeDashboardPath ? (sessionsByDashboard[activeDashboardPath] ?? emptySession()) : emptySession()),
@@ -233,7 +238,6 @@ export default function OperatorDashboardApp({
 
   const hasDashboards = Boolean(ui?.dashboards?.length);
   const hasReports = Boolean(ui?.reports?.length);
-  const activePath = viewKind === "report" ? activeReportPath : activeDashboardPath;
 
   if (uiQuery.error || !ui || (!hasDashboards && !hasReports)) {
     return (
@@ -254,7 +258,11 @@ export default function OperatorDashboardApp({
   }
 
   return (
-    <div className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}`}>
+    <div
+      className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
+        sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
+      }`}
+    >
       <OperatorDashboardChrome
         ui={ui}
         viewKind={viewKind}
@@ -265,11 +273,17 @@ export default function OperatorDashboardApp({
         onLogout={onLogout}
         onSelectDashboard={navigateDashboard}
         onSelectReport={navigateReport}
+        sidebarOpen={sidebarDrawer.open}
+        onToggleSidebar={sidebarDrawer.toggle}
       />
       {alarmBar.position === "top" && <AlarmBarOverlay {...alarmBar} />}
-      <div className="operator-layout operator-dashboard-layout">
-        <main className="operator-dashboard operator-dashboard-shell-host">
-          {viewKind === "report" ? (
+      <OperatorShellFrame
+        layoutClassName="operator-dashboard-layout"
+        mainClassName="operator-dashboard operator-dashboard-shell-host"
+        sidebarOpen={sidebarDrawer.open}
+        onSidebarClose={sidebarDrawer.close}
+        main={
+          viewKind === "report" ? (
             <ReportBuilder key={activeReportPath} path={activeReportPath} operatorMode />
           ) : (
             <DashboardBuilder
@@ -280,12 +294,10 @@ export default function OperatorDashboardApp({
               onSessionChange={handleDashboardSessionChange}
               onNavigateDashboard={navigateDashboard}
             />
-          )}
-        </main>
-        <aside className="operator-sidebar">
-          <OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />
-        </aside>
-      </div>
+          )
+        }
+        sidebar={<OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />}
+      />
       {alarmBar.position === "bottom" && <AlarmBarOverlay {...alarmBar} />}
     </div>
   );
@@ -301,6 +313,8 @@ function OperatorDashboardChrome({
   onLogout,
   onSelectDashboard,
   onSelectReport,
+  sidebarOpen,
+  onToggleSidebar,
 }: {
   ui: OperatorUi;
   viewKind: OperatorViewKind;
@@ -311,6 +325,8 @@ function OperatorDashboardChrome({
   onLogout?: () => void;
   onSelectDashboard: (path: string) => void;
   onSelectReport: (path: string) => void;
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }) {
   const { t } = useTranslation(["operator", "common"]);
   const activeTitle =
@@ -329,6 +345,7 @@ function OperatorDashboardChrome({
           </span>
         </div>
         <div className="topbar-actions">
+          <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
           <LocaleSwitcher />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>

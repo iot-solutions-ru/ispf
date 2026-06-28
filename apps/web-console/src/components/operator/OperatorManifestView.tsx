@@ -6,7 +6,10 @@ import { ANIMA_OPERATOR_WIRE_PROFILE } from "../../types/bff";
 import { resolveOperatorScreen } from "../../types/operatorManifest";
 import LocaleSwitcher from "../LocaleSwitcher";
 import ManifestScreen from "./ManifestScreen";
+import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
+import OperatorSidebarToggle from "./OperatorSidebarToggle";
+import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 
 import type { AuthSession } from "../../auth/session";
 
@@ -42,6 +45,7 @@ export default function OperatorManifestView({
     () => (manifest ? resolveOperatorScreen(manifest, screenId) : null),
     [manifest, screenId]
   );
+  const sidebarDrawer = useOperatorSidebarDrawer([activeScreen?.id ?? null]);
 
   const navigateScreen = useCallback(
     (nextId: string) => {
@@ -70,7 +74,7 @@ export default function OperatorManifestView({
   }
 
   return (
-    <div className="operator-shell">
+    <div className={`operator-shell${sidebarDrawer.open ? " operator-shell--sidebar-open" : ""}`}>
       <header className="operator-topbar">
         <div>
           <strong>{manifest.title}</strong>
@@ -80,6 +84,7 @@ export default function OperatorManifestView({
           </span>
         </div>
         <div className="topbar-actions">
+          <OperatorSidebarToggle open={sidebarDrawer.open} onClick={sidebarDrawer.toggle} />
           <LocaleSwitcher />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
@@ -106,14 +111,20 @@ export default function OperatorManifestView({
         ))}
       </nav>
       {statusMessage && <div className="op-alert op-alert-info">{statusMessage}</div>}
-      <div className="operator-layout">
-        <main className="operator-dashboard op-manifest-main">
-          <ManifestScreen screen={activeScreen} wireProfile={wireProfile} appId={appId} onStatus={setStatusMessage} />
-        </main>
-        <aside className="operator-sidebar">
-          <OperatorSidebar operatorId={operatorId} />
-        </aside>
-      </div>
+      <OperatorShellFrame
+        mainClassName="operator-dashboard op-manifest-main"
+        sidebarOpen={sidebarDrawer.open}
+        onSidebarClose={sidebarDrawer.close}
+        main={
+          <ManifestScreen
+            screen={activeScreen}
+            wireProfile={wireProfile}
+            appId={appId}
+            onStatus={setStatusMessage}
+          />
+        }
+        sidebar={<OperatorSidebar operatorId={operatorId} />}
+      />
     </div>
   );
 }
