@@ -1,0 +1,32 @@
+name: E2E live
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "ISPF base URL (UI + API)"
+        required: false
+        default: "https://ispf.iot-solutions.ru"
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web-console/package-lock.json
+
+      - name: Live Playwright smoke
+        working-directory: apps/web-console
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+          npm run test:e2e

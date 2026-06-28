@@ -5846,6 +5846,63 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   margin-bottom: 0.15rem;
 }
 
+.platform-binding-catalog-item-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.platform-binding-catalog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0 0.55rem 0.35rem;
+}
+
+.platform-binding-composer {
+  margin: 0.35rem 0 0.5rem;
+  padding: 0.55rem;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: rgba(47, 129, 247, 0.04);
+}
+
+.platform-binding-composer-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.5rem;
+}
+
+.platform-binding-composer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.82rem;
+}
+
+.platform-binding-composer-field input,
+.platform-binding-composer-field select {
+  width: 100%;
+}
+
+.platform-binding-composer-preview code {
+  font-size: 0.8rem;
+}
+
+.platform-binding-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.binding-expression-variables {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .binding-expression-field input {
   flex: 1 1 12rem;
 }

@@ -17,9 +17,17 @@ interface BindingRulesPanelProps {
   path: string;
   canManage: boolean;
   eventNames?: string[];
+  variableNames?: string[];
+  functionNames?: string[];
 }
 
-export default function BindingRulesPanel({ path, canManage, eventNames = [] }: BindingRulesPanelProps) {
+export default function BindingRulesPanel({
+  path,
+  canManage,
+  eventNames = [],
+  variableNames = [],
+  functionNames = [],
+}: BindingRulesPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<BindingRule | null>(null);
@@ -144,6 +152,9 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
                 <BindingExpressionField
                   value={editing.expression}
                   onChange={(expression) => setEditing({ ...editing, expression })}
+                  objectPath={path}
+                  variableNames={variableNames}
+                  functionNames={functionNames}
                 />
               </label>
               <label className="full">
@@ -152,6 +163,9 @@ export default function BindingRulesPanel({ path, canManage, eventNames = [] }: 
                   value={editing.condition}
                   onChange={(condition) => setEditing({ ...editing, condition })}
                   placeholder={t("inspector:bindings.conditionPlaceholder")}
+                  objectPath={path}
+                  variableNames={variableNames}
+                  functionNames={functionNames}
                 />
               </label>
               <BindingActivatorsEditor

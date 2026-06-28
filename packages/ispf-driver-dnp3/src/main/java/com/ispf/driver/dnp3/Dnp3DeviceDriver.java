@@ -7,19 +7,12 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DNP3 TCP driver — validates outstation connectivity and documents point polling.
+ * DNP3 TCP master driver — Class 0/1/2/3 integrity poll via {@code io.stepfunc:dnp3}.
  * <p>
- * Full DNP3 application-layer reads require native bindings (e.g. {@code io.stepfunc:dnp3}).
- * This driver opens a TCP session to the configured outstation and reports connection state.
  * Point mapping: {@code index:dataType} e.g. {@code 0:ANALOG_INPUT}.
  */
 public class Dnp3DeviceDriver implements DeviceDriver {
@@ -27,30 +20,42 @@ public class Dnp3DeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "dnp3",
             "DNP3 Driver",
-            "0.1.0",
-            "Opens DNP3 TCP sessions to outstations; full object reads require native DNP3 bindings",
+            "0.2.0",
+            "DNP3 TCP master with Class 0/1/2/3 poll (io.stepfunc:dnp3)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
                     "port", "20000",
-                    "localAddress", "0",
+                    "localAddress", "1",
+                    "outstationAddress", "1024",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "1000"
             )
     );
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("dnp3Value")
-            .field("value", FieldType.STRING)
+            .field("value", FieldType.DOUBLE)
+            .field("status", FieldType.STRING)
+            .build();
+
+    private static final DataSchema BOOL_VALUE_SCHEMA = DataSchema.builder("dnp3BoolValue")
+            .field("value", FieldType.BOOLEAN)
+            .field("status", FieldType.STRING)
+            .build();
+
+    private static final DataSchema COUNTER_VALUE_SCHEMA = DataSchema.builder("dnp3CounterValue")
+            .field("value", FieldType.LONG)
             .field("status", FieldType.STRING)
             .build();
 
     private DriverObject driverObject;
-    private Socket socket;
+    private Dnp3MasterSession session;
     private String host = "127.0.0.1";
     private int port = 20000;
+    private int masterAddress = 1;
+    private int outstationAddress = 1024;
     private int timeoutMs = 5000;
     private final Map<String, Dnp3Point> points = new ConcurrentHashMap<>();
-    private volatile boolean connected;
 
     @Override
     public DriverMetadata metadata() {
@@ -62,37 +67,34 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         this.driverObject = driverObject;
         readConfig("host", value -> host = value);
         readConfig("port", value -> port = Integer.parseInt(value));
+        readConfig("localAddress", value -> masterAddress = parseAddress(value, 1));
+        readConfig("outstationAddress", value -> outstationAddress = parseAddress(value, 1024));
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
     }
 
     @Override
     public void connect() throws DriverException {
-        try {
-            socket = new Socket();
-            socket.connect(new InetSocketAddress(host, port), timeoutMs);
-            socket.setSoTimeout(timeoutMs);
-            connected = true;
-            driverObject.log(
-                    DriverLogLevel.INFO,
-                    "DNP3 TCP connected to " + host + ":" + port
-                            + " (application-layer reads need io.stepfunc:dnp3 native bindings)"
-            );
-        } catch (IOException e) {
-            connected = false;
-            closeSocket();
-            throw new DriverException("DNP3 TCP connect failed", e);
-        }
+        disconnect();
+        session = new Dnp3MasterSession(host, port, masterAddress, outstationAddress, timeoutMs);
+        session.connect();
+        driverObject.log(
+                DriverLogLevel.INFO,
+                "DNP3 master connected to " + host + ":" + port
+                        + " (master=" + masterAddress + ", outstation=" + outstationAddress + ")"
+        );
     }
 
     @Override
     public void disconnect() {
-        connected = false;
-        closeSocket();
+        if (session != null) {
+            session.close();
+            session = null;
+        }
     }
 
     @Override
     public boolean isConnected() {
-        return connected && socket != null && socket.isConnected() && !socket.isClosed();
+        return session != null && session.isConnected();
     }
 
     @Override
@@ -101,10 +103,17 @@ public class Dnp3DeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        session.pollAllClasses();
+        Dnp3ReadCache cache = session.cache();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             Dnp3Point point = Dnp3Point.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            try {
+                driverObject.updateVariable(entry.getKey(), readPoint(point, cache));
+            } catch (DriverException ex) {
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(point));
+                driverObject.log(DriverLogLevel.DEBUG, "DNP3 read skipped for " + entry.getKey() + ": " + ex.getMessage());
+            }
         }
     }
 
@@ -113,32 +122,48 @@ public class Dnp3DeviceDriver implements DeviceDriver {
         throw new DriverException("DNP3 write not implemented");
     }
 
-    private DataRecord readPoint(Dnp3Point point) throws DriverException {
-        try {
-            // Placeholder: verify socket is alive. Full DNP3 Class 0/1/2/3 poll needs native stack.
-            InputStream input = socket.getInputStream();
-            OutputStream output = socket.getOutputStream();
-            output.flush();
-            int available = input.available();
-            return DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", "index=" + point.index() + " type=" + point.dataType(),
-                    "status", available >= 0 ? "TCP_CONNECTED" : "TCP_CONNECTED"
-            ));
-        } catch (IOException e) {
-            connected = false;
-            throw new DriverException("DNP3 read failed for index " + point.index(), e);
+    private DataRecord readPoint(Dnp3Point point, Dnp3ReadCache cache) throws DriverException {
+        Object raw = cache.valueFor(point);
+        if (raw == null) {
+            throw new DriverException("No value for index " + point.index() + " type " + point.dataType());
         }
+        String status = cache.qualityFor(point);
+        return switch (point.dataType()) {
+            case BINARY_INPUT, BINARY_OUTPUT -> DataRecord.single(BOOL_VALUE_SCHEMA, Map.of(
+                    "value", (Boolean) raw,
+                    "status", status
+            ));
+            case COUNTER -> DataRecord.single(COUNTER_VALUE_SCHEMA, Map.of(
+                    "value", (Long) raw,
+                    "status", status
+            ));
+            case ANALOG_INPUT, ANALOG_OUTPUT -> DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", ((Number) raw).doubleValue(),
+                    "status", status
+            ));
+        };
     }
 
-    private void closeSocket() {
-        if (socket != null) {
-            try {
-                socket.close();
-            } catch (IOException ignored) {
-                // best effort
-            }
-            socket = null;
-        }
+    private static DataRecord unavailableRecord(Dnp3Point point) {
+        return switch (point.dataType()) {
+            case BINARY_INPUT, BINARY_OUTPUT -> DataRecord.single(BOOL_VALUE_SCHEMA, Map.of(
+                    "value", false,
+                    "status", "UNAVAILABLE"
+            ));
+            case COUNTER -> DataRecord.single(COUNTER_VALUE_SCHEMA, Map.of(
+                    "value", 0L,
+                    "status", "UNAVAILABLE"
+            ));
+            case ANALOG_INPUT, ANALOG_OUTPUT -> DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", 0.0,
+                    "status", "UNAVAILABLE"
+            ));
+        };
+    }
+
+    private static int parseAddress(String value, int defaultValue) {
+        int parsed = Integer.parseInt(value.trim());
+        return parsed > 0 ? parsed : defaultValue;
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {

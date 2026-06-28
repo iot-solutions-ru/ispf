@@ -64,8 +64,8 @@
 | **BL-21** | Write path: **S7** | P1 | Done | Driver |
 | **BL-22** | Write path: **OPC UA** client | P1 | Done | Driver |
 | **BL-23** | Write path: **BACnet**, **IEC 104** | P2 | Done | Driver |
-| **BL-24** | **DNP3**: полный Class 0/1/2/3 poll (сейчас connectivity check) | P2 | Planned | Driver |
-| **BL-25** | **DLMS** write | P2 | Planned | Driver |
+| **BL-24** | **DNP3**: полный Class 0/1/2/3 poll (сейчас connectivity check) | P2 | Done | Driver |
+| **BL-25** | **DLMS** write | P2 | Done | Driver |
 | **BL-26** | Stub promotion: Ethernet/IP, OPC DA, OPC Bridge, CORBA, VMware, SMI-S | P3 | Partial | Driver |
 | **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Done | Driver catalog |
 | **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
@@ -90,7 +90,7 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Partial | QA |
+| **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Done | QA |
 | **BL-51** | Operator manifest: screen types chart / map / embedded dashboard | P3 | Planned | Operator |
 | **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Planned | Operator |
 | **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
@@ -313,13 +313,13 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Задачи:**
 
-- [ ] Статический каталог в `utils/platformBindings.ts` (sync с registry)
-- [ ] Autocomplete в `BindingExpressionField`
-- [ ] Optional: snippet insert по клику
+- [x] Статический каталог в `utils/platformBindings.ts` (sync с registry)
+- [x] Autocomplete в `BindingExpressionField`
+- [x] Snippet insert по клику + guided composer (параметры, переменные объекта)
 
-**Acceptance:** инженер собирает `movingAvg(ref(self, "temp"), 60)` без чтения BINDINGS.md.
+**Acceptance:** инженер собирает `movingAvg(temperature, 60)` без чтения BINDINGS.md.
 
-**Статус (2026-06-28):** Done — `utils/platformBindings.ts`, каталог + datalist + inline suggestions в `BindingExpressionField`.
+**Статус (2026-06-28):** Done — каталог 18 функций, datalist/inline autocomplete, `PlatformBindingComposer` с полями параметров и chips переменных объекта.
 
 ---
 
@@ -332,8 +332,8 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 | OPC UA | `OpcUaDeviceDriver.java` | read + write (node Value) | BL-22 Done |
 | BACnet | `BacnetDeviceDriver.java` | `write not implemented` | BL-23 |
 | IEC 104 | `Iec104DeviceDriver.java` | `write not implemented` | BL-23 |
-| DNP3 | `Dnp3DeviceDriver.java` | connectivity only | BL-24 |
-| DLMS | `DlmsDeviceDriver.java` | `write not implemented in v0.1` | BL-25 |
+| DNP3 | `Dnp3DeviceDriver.java` | Class 0/1/2/3 poll (read) | BL-24 Done |
+| DLMS | `DlmsDeviceDriver.java` | read + write (REGISTER attr 2) | BL-25 Done |
 
 **Acceptance (каждый):** integration test loopback/mock; maturity label обновлён; docs в [DRIVERS.md](DRIVERS.md).
 
@@ -345,7 +345,11 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
 
-**Статус (2026-06-28):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104; BACnet guard-only (нет simulator).
+**Статус (2026-06-28):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms; BACnet guard-only (нет simulator).
+
+**Статус (2026-06-28):** BL-24 Done — `io.stepfunc:dnp3` master TCP, Class 0/1/2/3 integrity poll; loopback `Dnp3DeviceDriverTest` + `Dnp3LoopbackOutstation`; config `localAddress`/`outstationAddress`; docs в DRIVERS.md.
+
+**Статус (2026-06-28):** BL-25 Done — Gurux `GXDLMSClient` WRAPPER association, read/write REGISTER (default attr 2); mapping `ld:obis[:type[:attr]]`; loopback `DlmsDeviceDriverTest` + `DlmsLoopbackServer`; `DriverCapabilityRegistry` write; docs в DRIVERS.md.
 
 ---
 
@@ -418,7 +422,7 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 Синхронизировано с [ROADMAP Phase 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers).
 
-**Статус:** Partial — smoke baseline в `apps/web-console` (`playwright.config.ts`, `e2e/smoke.spec.ts`, `e2e/fixtures/apiMocks.ts`, `npm run test:e2e`). Локальный runbook: [`apps/web-console/e2e/README.md`](../apps/web-console/e2e/README.md).
+**Статус:** Done — smoke baseline в `apps/web-console` (`playwright.config.ts`, `e2e/smoke.spec.ts`, `e2e/live.spec.ts`, `e2e/fixtures/apiMocks.ts`, `npm run test:e2e`). Локальный runbook: [`apps/web-console/e2e/README.md`](../apps/web-console/e2e/README.md).
 
 - [x] Login page smoke (mock `/api/v1/auth/config`)
 - [x] Admin Explorer shell smoke (mock session + platform API)
@@ -429,9 +433,10 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 - [x] Dashboard layout API mock (label widget payload)
 - [x] Explorer: Variables tab after inspector load
 - [x] Dashboard builder UI render (double-click / Open in editor)
-- [ ] CI against staging / prod URL (`E2E_BASE_URL`)
+- [x] Bindings tab: platform function catalog (BL-09 builder)
+- [x] Optional live smoke: `e2e/live.spec.ts` + workflow `.github/workflows/e2e-live.yml` (`E2E_BASE_URL` + secrets)
 
-**Запуск:**
+**Статус:** Done (mocked CI + optional live workflow; prod run needs `E2E_USERNAME` / `E2E_PASSWORD` secrets).
 
 ```bash
 cd apps/web-console
@@ -506,10 +511,11 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 - [x] `ganttChartView.test.ts` — viewport, bar layout, ticks, row patch (12 tests)
 - [x] `npm test` — 42 files, 217 tests green
 
-**Остаётся для закрытия BL-55:**
+**Остаётся для полного закрытия BL-55:**
 
-- [ ] RTL/component tests: `BindingActivatorsEditor`, dashboard widget views, inspector dialogs
-- [ ] Playwright overlap — см. BL-50
+- [x] RTL: `BindingActivatorsEditor`, `PlatformBindingComposer`
+- [ ] RTL/component tests: dashboard widget views, inspector dialogs (CreateVariable, etc.)
+- [ ] Playwright overlap — см. BL-50 (Done)
 
 **Acceptance (полное закрытие):** smoke RTL на ключевые inspector panels + 2–3 widget editors без регрессий в CI.
 

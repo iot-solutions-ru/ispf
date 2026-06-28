@@ -693,6 +693,8 @@ export default function ObjectPropertiesEditor({
             path={path}
             canManage={canManage}
             eventNames={editorData.events.map((event) => event.name)}
+            variableNames={editorData.variables.map((variable) => variable.name)}
+            functionNames={editorData.functions.map((fn) => fn.name)}
           />
           {canManage && !ctx.federated && (
             <label className="binding-audit-toggle panel-toolbar">

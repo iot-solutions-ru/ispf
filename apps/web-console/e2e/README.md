@@ -23,10 +23,11 @@ npm run test:e2e:install
 | Device selection (`?path=` deep link) | `selects a device in the tree` |
 | Inspector Variables tab | `shows Variables tab after device inspector loads` |
 | Dashboard builder (double-click / Open in editor) | `dashboard builder` |
+| Bindings: platform function catalog | `binding expression builder` |
 | Dashboard layout API | `dashboard preview` |
 | Operator `?mode=operator&app=demo` | `operator deep link` |
 
-**In progress:** CI against staging / prod URL (`E2E_BASE_URL`).
+**In progress:** none — optional live workflow [`.github/workflows/e2e-live.yml`](../../../.github/workflows/e2e-live.yml) (`workflow_dispatch`, secrets `E2E_USERNAME` / `E2E_PASSWORD`).
 
 ## Run mocked smoke tests (default)
 

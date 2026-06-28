@@ -25,6 +25,7 @@
 | `com.infiniteautomation:bacnet4j` | `packages/ispf-driver-bacnet` (driver pack) | **GPL-3.0** | Ship only in `ispf-driver-bacnet` pack with GPL notice; optional RSA license block. |
 | `org.gurux:gurux.dlms`, `org.gurux:gurux.net` | `packages/ispf-driver-dlms` (driver pack) | **GPL-2.0** | Ship only in DLMS driver pack. |
 | `org.openmuc:j60870` | `packages/ispf-driver-iec104*` (driver packs) | **GPL** | Ship only in IEC-104 driver packs. |
+| `io.stepfunc:dnp3` | `packages/ispf-driver-dnp3` (driver pack) | **Custom** (Step Function I/O) | Native DNP3 stack; ship only in DNP3 driver pack with license notice. |
 | `org.tinyradius:tinyradius` | `packages/ispf-driver-radius` | LGPL | Можно использовать при соблюдении LGPL, но для appliance/closed поставки проверить условия замены/линковки. |
 | `com.fazecast:jSerialComm` | `packages/ispf-driver-modem-at` | Apache-2.0 / LGPL-3.0 dual | Использовать Apache-2.0 вариант и зафиксировать это в SBOM. |
 | `org.openmuc:jmbus` | `packages/ispf-driver-mbus` | MPL-2.0 | File-level copyleft. Совместимо с коммерческой поставкой при соблюдении MPL notice/source obligations. |
@@ -103,7 +104,7 @@
 
 ### In-tree driver modules without direct runtime third-party libraries
 
-Следующие модули сейчас не объявляют прямых runtime third-party зависимостей в `build.gradle.kts` сверх ISPF project modules и test libraries: `ispf-driver-api`, `ispf-driver-virtual`, `ispf-driver-http`, `ispf-driver-icmp`, `ispf-driver-jdbc`, `ispf-driver-file`, `ispf-driver-folder`, `ispf-driver-application`, `ispf-driver-message-stream`, `ispf-driver-nmea`, `ispf-driver-soap`, `ispf-driver-ip-host`, `ispf-driver-gps-tracker`, `ispf-driver-flexible`, `ispf-driver-dnp3`, `ispf-driver-ethernet-ip`, `ispf-driver-omron-fins`, `ispf-driver-asterisk`, `ispf-driver-corba`, `ispf-driver-opc-da`, `ispf-driver-opc-bridge`, `ispf-driver-odbc`, `ispf-driver-cwmp`, `ispf-driver-web-transaction`, `ispf-driver-http-server`, `ispf-driver-vmware`, `ispf-driver-smis`, `ispf-driver-dhcp`, `ispf-driver-wmi`.
+Следующие модули сейчас не объявляют прямых runtime third-party зависимостей в `build.gradle.kts` сверх ISPF project modules и test libraries: `ispf-driver-api`, `ispf-driver-virtual`, `ispf-driver-http`, `ispf-driver-icmp`, `ispf-driver-jdbc`, `ispf-driver-file`, `ispf-driver-folder`, `ispf-driver-application`, `ispf-driver-message-stream`, `ispf-driver-nmea`, `ispf-driver-soap`, `ispf-driver-ip-host`, `ispf-driver-gps-tracker`, `ispf-driver-flexible`, `ispf-driver-ethernet-ip`, `ispf-driver-omron-fins`, `ispf-driver-asterisk`, `ispf-driver-corba`, `ispf-driver-opc-da`, `ispf-driver-opc-bridge`, `ispf-driver-odbc`, `ispf-driver-cwmp`, `ispf-driver-web-transaction`, `ispf-driver-http-server`, `ispf-driver-vmware`, `ispf-driver-smis`, `ispf-driver-dhcp`, `ispf-driver-wmi`.
 
 ### Test-only Java dependencies
 

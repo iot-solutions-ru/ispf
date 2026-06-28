@@ -22,6 +22,7 @@ final class DriverCapabilityRegistry {
             "bacnet",
             "iec104",
             "iec104-server",
+            "dlms",
             "virtual",
             "http-server"
     );

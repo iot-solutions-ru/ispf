@@ -291,9 +291,9 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 | `iec104` | `ispf-driver-iec104` | IEC 104 client |
 | `iec104-server` | `ispf-driver-iec104-server` | IEC 104 server/slave |
 | `bacnet` | `ispf-driver-bacnet` | BACnet/IP |
-| `dnp3` | `ispf-driver-dnp3` | DNP3 TCP (connectivity) |
+| `dnp3` | `ispf-driver-dnp3` | DNP3 TCP master (Class 0/1/2/3 poll) |
 | `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP session stub |
-| `dlms` | `ispf-driver-dlms` | DLMS/COSEM (Gurux) |
+| `dlms` | `ispf-driver-dlms` | DLMS/COSEM master (Gurux read/write) |
 | `jmx` | `ispf-driver-jmx` | JMX local/remote |
 | `jdbc` | `ispf-driver-jdbc` | SQL JDBC |
 | `odbc` | `ispf-driver-odbc` | ODBC via JDBC bridge JAR |
@@ -337,9 +337,9 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 
 | `driverId` | Что есть сейчас | Для production |
 |------------|-----------------|----------------|
-| `dnp3` | TCP connectivity | `io.stepfunc:dnp3` native |
+| `dnp3` | Class 0/1/2/3 poll (read) | `io.stepfunc:dnp3` native |
 | `ethernet-ip` | Register Session | CIP tag read/write library |
-| `dlms` | TCP + OBIS parse | Gurux association + auth |
+| `dlms` | TCP WRAPPER + read/write | Gurux association (auth NONE v0.2) |
 | `opc-da` | status / proxy TCP | Windows DCOM bridge |
 | `corba` | IIOP TCP | JDK CORBA removed; use bridge |
 | `wmi` | PowerShell | Только Windows |
@@ -396,9 +396,28 @@ Maturity: **beta** (write без loopback integration test — нужен BACnet
 
 ### dnp3 (`ispf-driver-dnp3`)
 
-TCP-сессия к outstation; полный DNP3 application layer требует native (`io.stepfunc:dnp3`).
+DNP3 TCP **master** с integrity poll Class 0/1/2/3 (`io.stepfunc:dnp3` 1.6.0).
 
-Point mapping: `index:dataType` (например `0:ANALOG_INPUT`). Статус: `connected`, `reachable`.
+Конфиг: `host`, `port`, `localAddress` (master link address, default `1`), `outstationAddress` (default `1024`), `timeoutMs`.
+
+Point mapping: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INPUT`, `ANALOG_OUTPUT`, `COUNTER` (например `0:ANALOG_INPUT`).
+
+На каждый `readPoints` выполняется `Request.classRequest(0,1,2,3)`; значения и DNP3 flags (`status`) обновляются в переменных объекта.
+
+Maturity: **beta** (read-only; loopback test `Dnp3DeviceDriverTest`).
+
+### dlms (`ispf-driver-dlms`)
+
+DLMS/COSEM **master** over TCP **WRAPPER** (`gurux.dlms` + `gurux.net`).
+
+Конфиг: `host`, `port` (default `4059`), `clientAddress` (default `16`), `logicalDevice` (default `1`), `timeoutMs`.
+
+Point mapping: `logicalDevice:obis[:objectType[:attribute]]` — по умолчанию `REGISTER`, attribute `2`.  
+Примеры: `1:1.0.1.8.0.255`, `1:0.0.42.0.0.255:DATA:2`.
+
+`readPoints` / `writePoint`: SNRM + AARQ association, Gurux GET/SET. Write: поля `value` или `raw` (numeric для REGISTER).
+
+Maturity: **beta** (auth NONE; loopback `DlmsDeviceDriverTest`).
 
 ### jmx (`ispf-driver-jmx`)
 

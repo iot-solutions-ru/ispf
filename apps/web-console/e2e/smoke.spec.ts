@@ -126,6 +126,37 @@ test.describe("dashboard preview", () => {
   });
 });
 
+test.describe("binding expression builder", () => {
+  test("opens platform function catalog on Bindings tab", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=admin");
+
+    await expandTreeTo(page, "Devices");
+    const editorLoaded = waitForObjectEditor(page, MOCK_DEVICE_PATH);
+    await selectTreeObjectByLabel(page, "Lab sensor");
+    await editorLoaded;
+
+    await page.locator("nav.tabs").getByRole("button", { name: "Bindings" }).click();
+    await page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/objects/by-path/binding-rules")
+        && response.ok(),
+      { timeout: 15_000 },
+    );
+    await expect(page.getByRole("button", { name: "+ Rule" })).toBeVisible();
+    await page.getByRole("button", { name: "+ Rule" }).click();
+
+    await expect(page.getByRole("heading", { name: "New rule" })).toBeVisible();
+    const modal = page.locator(".modal");
+    await modal.locator(".binding-expression-field").first().getByRole("button", { name: "Functions" }).click();
+    const catalog = modal.locator(".platform-binding-catalog");
+    await expect(catalog).toBeVisible();
+    await expect(catalog.locator("code", { hasText: "movingAvg" }).first()).toBeVisible();
+    await expect(catalog.getByRole("button", { name: "Build…" }).first()).toBeVisible();
+  });
+});
+
 test.describe("operator deep link", () => {
   test("loads demo operator manifest from public bundle", async ({ page }) => {
     await mockAuthenticatedApi(page);
@@ -138,29 +169,3 @@ test.describe("operator deep link", () => {
   });
 });
 
-test.describe("live backend", () => {
-  const username = process.env.E2E_USERNAME;
-  const password = process.env.E2E_PASSWORD;
-  const hasLiveCreds = Boolean(username && password);
-
-  test.skip(!hasLiveCreds, "Set E2E_USERNAME and E2E_PASSWORD for live login smoke");
-
-  test("signs in against a running ISPF server", async ({ page }) => {
-    await page.goto("/");
-
-    await expect(page.getByRole("heading", { name: "ISPF" })).toBeVisible({ timeout: 30_000 });
-
-    const localLogin = page.getByLabel("Username");
-    if (!(await localLogin.isVisible().catch(() => false))) {
-      test.skip(true, "Local login form not available (OIDC-only server)");
-    }
-
-    await localLogin.fill(username!);
-    await page.getByLabel("Password").fill(password!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-
-    await expect(page.getByText("Admin console").or(page.getByText("Operator · applications"))).toBeVisible({
-      timeout: 30_000,
-    });
-  });
-});

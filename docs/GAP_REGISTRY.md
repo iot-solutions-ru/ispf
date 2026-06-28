@@ -31,7 +31,7 @@
 | **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
 | **P1** | Playwright e2e | Admin smoke + inspector/dashboard; staging TBD | BL-50 Partial, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA | BL-20…22 Done |
-| **P2** | Driver write (tail) | DNP3 poll, DLMS write | BL-24…25 |
+| **P2** | Driver write (tail) | CWMP write | BL-29 |
 | **P2** | Bindings UX | Каталог platform bindings + activators UI | BL-09,18 Done; runtime engine in progress |
 | **P2** | History scale | ClickHouse variable history backend | BL-40 Done |
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
@@ -60,8 +60,8 @@
 | MCP adapter (0006) | ~100% | — | ContextPack `resources/list` + `resources/read` |
 | Tree-first agent (FW-44) | ~100% | — | [0005](decisions/0005-tree-first-ai-agent.md), **FW-45** briefing |
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
-| Driver stub catalog | ~95% | DNP3/DLMS write; native DNP3 poll | BL-24…26, [DRIVERS.md](DRIVERS.md) |
-| Driver maturity labels | ~95% | DNP3/DLMS/CWMP write paths | BL-24,25,29 |
+| Driver stub catalog | ~95% | CWMP write; native stubs | BL-26,29, [DRIVERS.md](DRIVERS.md) |
+| Driver maturity labels | ~95% | CWMP write paths | BL-29 |
 | Frontend e2e (Playwright) | ~60% | CI vs staging/prod URL | BL-50 Partial, Phase 18.1 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~95% | — | BL-01…18 Done |

@@ -240,7 +240,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.24 | Chart `candlestick` OHLC | BL-64 | P2 | Done |
 | 20.25 | Chart `bubble` / `radar` multi-axis | BL-65 | P3 | Planned |
 | 20.13 | Driver write: Modbus, S7, OPC UA | BL-20…22 | P1 | Done |
-| 20.14 | Driver write: BACnet, IEC104, DNP3 poll, DLMS | BL-23…25 | P2 | Planned |
+| 20.14 | Driver write: BACnet, IEC104, DNP3 poll, DLMS | BL-23…25 | P2 | Done |
 | 20.15 | Driver maturity sync + write UI + tests | BL-27,28,30 | P2 | Partial |
 | 20.16 | ClickHouse variable history | BL-40 | P2 | Partial |
 | 20.17 | Scale ops: Redis/NATS health, YARG PDF hint | BL-41…43 | P2 | Partial |

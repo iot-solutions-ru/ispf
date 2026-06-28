@@ -24,7 +24,7 @@
 
 | driverId | Было | Стало | Примечание |
 |----------|------|-------|------------|
-| `dnp3` | STUB | **BETA** | TCP session + point index mapping; full Class 0/1/2/3 poll needs native stack |
+| `dnp3` | STUB | **BETA** | Class 0/1/2/3 poll via `io.stepfunc:dnp3`; write not implemented |
 | `cwmp` | STUB | **PRODUCTION** | Inform + ACS `GetParameterValues`; TR-069 acceptance tests |
 | `flexible` | BETA | **PRODUCTION** | TCP/UDP request/response |
 | `gps-tracker` | BETA | **PRODUCTION** | GPS/M2M TCP server |

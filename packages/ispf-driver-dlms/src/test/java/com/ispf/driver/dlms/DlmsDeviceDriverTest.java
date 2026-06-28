@@ -1,4 +1,4 @@
-package com.ispf.driver.dnp3;
+package com.ispf.driver.dlms;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -16,69 +16,66 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class Dnp3DeviceDriverTest {
+class DlmsDeviceDriverTest {
 
-    private static final int MASTER_ADDRESS = 1;
-    private static final int OUTSTATION_ADDRESS = 1024;
+    private static final int CLIENT_ADDRESS = 16;
+    private static final int LOGICAL_DEVICE = 1;
 
-    private Dnp3LoopbackOutstation outstation;
+    private static final DataSchema DOUBLE_SCHEMA = DataSchema.builder("doubleValue")
+            .field("value", FieldType.DOUBLE)
+            .build();
+
+    private DlmsLoopbackServer server;
 
     @AfterEach
     void tearDown() {
-        if (outstation != null) {
-            outstation.close();
-            outstation = null;
+        if (server != null) {
+            server.closeServer();
+            server = null;
         }
     }
 
     @Test
-    void readsAnalogInputViaClassPoll() throws Exception {
-        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
-        outstation.awaitBound(5_000);
-
-        StubDriverObject driverObject = new StubDriverObject(Map.of(
-                "host", "127.0.0.1",
-                "port", String.valueOf(outstation.port()),
-                "localAddress", String.valueOf(MASTER_ADDRESS),
-                "outstationAddress", String.valueOf(OUTSTATION_ADDRESS),
-                "timeoutMs", "10000"
-        ));
-        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+    void readsRegisterViaAssociation() throws Exception {
+        server = new DlmsLoopbackServer(CLIENT_ADDRESS);
+        StubDriverObject driverObject = driverConfig(server.port());
+        DlmsDeviceDriver driver = new DlmsDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
         assertTrue(driver.isConnected());
 
-        driver.readPoints(Map.of("temp", "0:ANALOG_INPUT"));
+        driver.readPoints(Map.of("energy", "1:" + DlmsLoopbackServer.ENERGY_OBIS));
 
-        DataRecord record = driverObject.variables.get("temp");
-        assertEquals(12.34, ((Number) record.firstRow().get("value")).doubleValue(), 0.001);
-        assertEquals("0x01", record.firstRow().get("status"));
+        DataRecord record = driverObject.variables.get("energy");
+        assertEquals("42.0", record.firstRow().get("value"));
+        assertEquals("GOOD", record.firstRow().get("quality"));
         driver.disconnect();
     }
 
     @Test
-    void readsBinaryInputAndCounter() throws Exception {
-        outstation = new Dnp3LoopbackOutstation(MASTER_ADDRESS, OUTSTATION_ADDRESS);
-        outstation.awaitBound(5_000);
-
-        StubDriverObject driverObject = new StubDriverObject(Map.of(
-                "host", "127.0.0.1",
-                "port", String.valueOf(outstation.port()),
-                "localAddress", String.valueOf(MASTER_ADDRESS),
-                "outstationAddress", String.valueOf(OUTSTATION_ADDRESS),
-                "timeoutMs", "10000"
-        ));
-        Dnp3DeviceDriver driver = new Dnp3DeviceDriver();
+    void writeRegisterUpdatesServerState() throws Exception {
+        server = new DlmsLoopbackServer(CLIENT_ADDRESS);
+        StubDriverObject driverObject = driverConfig(server.port());
+        DlmsDeviceDriver driver = new DlmsDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
-        driver.readPoints(Map.of(
-                "flag", "0:BINARY_INPUT",
-                "count", "0:COUNTER"
-        ));
+        driver.readPoints(Map.of("energy", "1:" + DlmsLoopbackServer.ENERGY_OBIS));
 
-        assertEquals(true, driverObject.variables.get("flag").firstRow().get("value"));
-        assertEquals(999L, driverObject.variables.get("count").firstRow().get("value"));
+        driver.writePoint("energy", DataRecord.single(DOUBLE_SCHEMA, Map.of("value", 77.5)));
+
+        assertEquals(77.5, server.energyValue(), 0.001);
+        assertEquals("77.5", driverObject.variables.get("energy").firstRow().get("value"));
         driver.disconnect();
+    }
+
+    private static StubDriverObject driverConfig(int port) {
+        return new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "clientAddress", String.valueOf(CLIENT_ADDRESS),
+                "logicalDevice", String.valueOf(LOGICAL_DEVICE),
+                "timeoutMs", "15000"
+        ));
     }
 
     private static final class StubDriverObject implements DeviceDriver.DriverObject {
@@ -98,7 +95,7 @@ class Dnp3DeviceDriverTest {
         @Override
         public PlatformObject deviceObject() {
             return new PlatformObject(
-                    "test-device",
+                    "test-meter",
                     "root.platform.devices.test",
                     ObjectType.DEVICE,
                     "Test",

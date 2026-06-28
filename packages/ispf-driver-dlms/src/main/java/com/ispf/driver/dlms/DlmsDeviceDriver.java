@@ -6,27 +6,24 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
-import gurux.net.GXNet;
-import gurux.net.enums.NetworkType;
+import com.ispf.driver.DriverMaturity;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * DLMS/COSEM meter read driver — TCP wrapper transport with Gurux DLMS library.
+ * DLMS/COSEM meter driver — Gurux client with read/write over TCP WRAPPER.
  * <p>
- * Full authenticated COSEM reads require meter-specific credentials and association;
- * v0.1 reports TCP reachability and parsed OBIS mapping as placeholder values.
- * Point mapping: {@code logicalDevice:obis} e.g. {@code 1:1.0.1.8.0.255}.
+ * Point mapping: {@code logicalDevice:obis[:objectType[:attribute]]}.
  */
 public class DlmsDeviceDriver implements DeviceDriver {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "dlms",
             "DLMS/COSEM Driver",
-            "0.1.0",
-            "Reads DLMS/COSEM smart meters over TCP (Gurux). v0.1 validates TCP reachability and OBIS mapping; "
-                    + "full authenticated reads require meter-specific association settings.",
+            "0.2.0",
+            "DLMS/COSEM smart meters over TCP WRAPPER (Gurux read/write)",
             "ISPF",
             Map.of(
                     "host", "127.0.0.1",
@@ -34,25 +31,30 @@ public class DlmsDeviceDriver implements DeviceDriver {
                     "timeoutMs", "10000",
                     "clientAddress", "16",
                     "serverAddress", "1",
+                    "logicalDevice", "1",
                     "pollIntervalMs", "60000"
-            )
+            ),
+            DriverMaturity.BETA,
+            Set.of("read", "write")
     );
 
     private static final DataSchema VALUE_SCHEMA = DataSchema.builder("dlmsValue")
             .field("value", FieldType.STRING)
             .field("obis", FieldType.STRING)
             .field("logicalDevice", FieldType.INTEGER)
+            .field("objectType", FieldType.STRING)
+            .field("attributeIndex", FieldType.INTEGER)
             .field("quality", FieldType.STRING)
-            .field("tcpConnected", FieldType.BOOLEAN)
             .build();
 
     private DriverObject driverObject;
-    private GXNet media;
+    private DlmsClientCommunicator communicator;
     private String host = "127.0.0.1";
     private int port = 4059;
     private int timeoutMs = 10000;
+    private int clientAddress = 16;
+    private int logicalDevice = 1;
     private final Map<String, DlmsPoint> points = new ConcurrentHashMap<>();
-    private volatile boolean connected;
 
     @Override
     public DriverMetadata metadata() {
@@ -66,6 +68,8 @@ public class DlmsDeviceDriver implements DeviceDriver {
         readConfig("host", value -> host = value);
         readConfig("port", value -> port = Integer.parseInt(value));
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+        readConfig("clientAddress", value -> clientAddress = Integer.parseInt(value));
+        readConfig("logicalDevice", value -> logicalDevice = Integer.parseInt(value));
     }
 
     private void applyConfig(String key, String value) {
@@ -76,43 +80,30 @@ public class DlmsDeviceDriver implements DeviceDriver {
             case "host" -> host = value.trim();
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
+            case "clientAddress" -> clientAddress = Integer.parseInt(value.trim());
+            case "logicalDevice" -> logicalDevice = Integer.parseInt(value.trim());
             default -> { }
         }
     }
 
     @Override
     public void connect() throws DriverException {
-        try {
-            media = new GXNet(NetworkType.TCP, host, port);
-            media.open();
-            connected = media.isOpen();
-            if (!connected) {
-                throw new DriverException("DLMS TCP connect failed");
-            }
-            driverObject.log(DriverLogLevel.INFO, "DLMS TCP connected to " + host + ":" + port);
-        } catch (Exception e) {
-            connected = false;
-            media = null;
-            throw new DriverException("DLMS connect failed", e);
-        }
+        disconnect();
+        communicator = new DlmsClientCommunicator(host, port, clientAddress, logicalDevice, timeoutMs);
+        driverObject.log(DriverLogLevel.INFO, "DLMS associated with " + host + ":" + port);
     }
 
     @Override
     public void disconnect() {
-        connected = false;
-        if (media != null) {
-            try {
-                media.close();
-            } catch (Exception ignored) {
-                // best effort
-            }
-            media = null;
+        if (communicator != null) {
+            communicator.close();
+            communicator = null;
         }
     }
 
     @Override
     public boolean isConnected() {
-        return connected && media != null && media.isOpen();
+        return communicator != null && communicator.isOpen();
     }
 
     @Override
@@ -124,22 +115,49 @@ public class DlmsDeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             DlmsPoint point = DlmsPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            try {
+                driverObject.updateVariable(entry.getKey(), readPoint(point));
+            } catch (DriverException ex) {
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(point));
+                driverObject.log(DriverLogLevel.DEBUG, "DLMS read skipped for " + entry.getKey() + ": " + ex.getMessage());
+            }
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("DLMS write not implemented in v0.1");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        DlmsPoint point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("Unknown point: " + pointId);
+        }
+        communicator.writeAttribute(point, value);
+        driverObject.updateVariable(pointId, readPoint(point));
     }
 
-    private DataRecord readPoint(DlmsPoint point) {
+    private DataRecord readPoint(DlmsPoint point) throws DriverException {
+        Object raw = communicator.readAttribute(point);
+        Object formatted = DlmsValueCodec.formatReadValue(raw);
         return DataRecord.single(VALUE_SCHEMA, Map.of(
-                "value", "PLACEHOLDER",
+                "value", formatted == null ? "" : String.valueOf(formatted),
                 "obis", point.obis(),
                 "logicalDevice", point.logicalDevice(),
-                "quality", "TCP_CONNECTED",
-                "tcpConnected", isConnected()
+                "objectType", point.objectType().name(),
+                "attributeIndex", point.attributeIndex(),
+                "quality", "GOOD"
+        ));
+    }
+
+    private static DataRecord unavailableRecord(DlmsPoint point) {
+        return DataRecord.single(VALUE_SCHEMA, Map.of(
+                "value", "",
+                "obis", point.obis(),
+                "logicalDevice", point.logicalDevice(),
+                "objectType", point.objectType().name(),
+                "attributeIndex", point.attributeIndex(),
+                "quality", "UNAVAILABLE"
         ));
     }
 

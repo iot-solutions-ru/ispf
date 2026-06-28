@@ -179,6 +179,13 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
         });
       case "/api/v1/operator-apps":
         return json(route, []);
+      case "/api/v1/objects/by-path/binding-rules": {
+        const objectPath = searchParams.get("path");
+        if (objectPath === MOCK_DEVICE_PATH || objectPath) {
+          return json(route, []);
+        }
+        return json(route, []);
+      }
       case "/api/v1/objects/by-path/editor": {
         const objectPath = searchParams.get("path");
         if (objectPath === MOCK_DEVICE_PATH) {
@@ -230,6 +237,18 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
       }
       default:
         break;
+    }
+
+    if (pathname.startsWith("/api/v1/platform/binding-invocations")) {
+      return json(route, []);
+    }
+
+    if (pathname.startsWith("/api/v1/platform/binding-audit-status")) {
+      return json(route, {
+        masterEnabled: false,
+        objectEnabled: false,
+        enabled: false,
+      });
     }
 
     if (pathname.startsWith("/api/v1/platform/update/")) {
