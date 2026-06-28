@@ -34,7 +34,7 @@
 | **BL-03** | `DataRecordValueEditor` в `VariableFieldEditor` (RECORD/RECORD_LIST) | P1 | Done | Inspector |
 | **BL-04** | UI для Platform Change Sets (list/create/preview/apply) | P1 | Done | Platform ops |
 | **BL-05** | Edit lease: индикатор «кто редактирует» + acquire/release в Explorer | P1 | Done | Collaboration |
-| **BL-06** | Chart widget: реализовать candlestick/bubble/radar/range **или** убрать из редактора | P1 | Done | Dashboard |
+| **BL-06** | Chart widget: реализовать candlestick/bubble/radar/range **или** убрать из редактора | P1 | Done (opt. B) | Dashboard |
 | **BL-07** | i18n: `WIDGET_TYPES`, `WIDGET_HISTORY_RANGE_OPTIONS`, `widgetEditorBinding` hints → locale | P1 | Done | i18n |
 | **BL-08** | Application Event Catalog viewer (`GET .../applications/{id}/events`) | P1 | Done | Applications |
 
@@ -46,6 +46,9 @@
 | **BL-10** | `network-graph` widget: layout engine (Cytoscape / vis-network) | P2 | Planned | Dashboard |
 | **BL-11** | `gantt-chart` widget: интерактивный timeline | P2 | Planned | Dashboard |
 | **BL-12** | `history-table`: настраиваемое окно (сейчас ~5 min hardcoded) | P2 | Done | Dashboard |
+| **BL-63** | Chart widget: тип **range** (min/max band из historian aggregate) | P2 | Done | Dashboard |
+| **BL-64** | Chart widget: тип **candlestick** (OHLC по bucket / schema) | P2 | Planned | Dashboard |
+| **BL-65** | Chart widget: типы **bubble** и **radar** (multi-axis / categorical) | P3 | Planned | Dashboard |
 | **BL-13** | System settings: toggles Redis / NATS / ClickHouse journal / AI provider / MCP | P2 | Planned | System |
 | **BL-14** | Automation index dashboard (`GET /platform/automation-index/stats`) | P2 | Planned | System |
 | **BL-15** | Object change history: diff view (before/after по audit entries) | P2 | Planned | Journal |
@@ -207,7 +210,63 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 - **A:** реализовать через chart library (recharts extensions / chart.js)
 - **B:** убрать лишние options из `widgetEditorFields.tsx`
 
+**Решение (2026-06-28):** закрыто **вариантом B** — убраны обманчивые options; `ChartType` в `types/dashboard.ts` сохранён для обратной совместимости JSON. Реализация типов → **BL-63…65**.
+
 **Acceptance:** нет silent fallback на area без предупреждения.
+
+---
+
+### BL-63 — Chart `range` (min/max band)
+
+**Контекст:** наиболее полезный для SCADA из отложенных типов; historian aggregate уже отдаёт `min`/`max`/`avg` по bucket (`useVariableHistory`, `fetchVariableHistoryAggregate`).
+
+**Задачи:**
+
+- [ ] `ChartWidgetView`: ветка `chartType === "range"` — `Area` с двумя сериями или band между min/max
+- [ ] Включить aggregate path при `range` + `historyRange` ≠ `live`
+- [ ] Вернуть option в `widgetEditorFields.tsx` только после рендера
+- [ ] i18n + demo preview в редакторе
+
+**Acceptance:** оператор видит коридор min–max за 24h/7d без silent fallback.
+
+**Статус (2026-06-28):** Done — `useChartTrendSeries`, aggregate buckets, `ChartWidgetView` ComposedChart.
+
+---
+
+### BL-64 — Chart `candlestick` (OHLC)
+
+**Контекст:** candlestick требует open/high/low/close на интервал; скалярный historian — только value samples.
+
+**Варианты:**
+
+- **A:** синтетический OHLC из aggregate bucket (open=first, close=last, min/max в bucket) — MVP
+- **B:** отдельная historian schema / multi-field RECORD на variable
+
+**Задачи:**
+
+- [ ] ADR или spike: выбрать A vs B
+- [ ] `ChartWidgetView` + recharts `ComposedChart` / custom shapes (или chart.js)
+- [ ] Поля редактора: bucket size, привязка полей OHLC (если B)
+- [ ] Вернуть option в редактор
+
+**Acceptance:** candlestick на demo device с историей; tooltip показывает O/H/L/C.
+
+---
+
+### BL-65 — Chart `bubble` и `radar`
+
+**Контекст:** не time-series «одна переменная → линия»; нужны несколько осей или категории.
+
+**Задачи:**
+
+- [ ] **bubble:** x/y/size — binding к 2–3 variables или static params; `ScatterChart` + `ZAxis`
+- [ ] **radar:** categorical axes — список variables или JSON `axesJson`; `RadarChart`
+- [ ] Отдельные секции редактора (не переиспользовать только `variableName`)
+- [ ] Вернуть options в редактор
+
+**Acceptance:** bubble/radar на sample dashboard; документированы ограничения data model.
+
+**Приоритет:** P3 — после BL-63/64 и по запросу HMI-команды.
 
 ---
 
@@ -336,6 +395,7 @@ Sprint BL-B (2 недели) — Platform ops + dashboard
 
 Sprint BL-C (3 недели) — HMI polish
   BL-09, BL-10, BL-13, BL-14, BL-15
+  опционально: BL-63 (chart range) если приоритет SCADA-трендов
 
 Sprint BL-D (ongoing) — Drivers по demand ([0002](decisions/0002-dogfooding-gate.md))
   BL-20…25 — порядок по app-команде
@@ -359,5 +419,6 @@ Backlog P3 — semantic (по запросу, после ADR)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-28 | BL-63…65: отложенная реализация chart types (range, candlestick, bubble/radar) после BL-06 opt. B |
 | 2026-06-28 | Wave G: Haystack/Brick semantic layer → BL-56…62 (P3, deferred) |
 | 2026-06-28 | Первая версия: code audit → BL-01…BL-55, Wave A–F |

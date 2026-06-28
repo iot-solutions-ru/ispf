@@ -679,7 +679,11 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               <option value="line">line</option>
               <option value="area">area</option>
               <option value="bar">bar</option>
+              <option value="range">{t("editor.chartTypeRange")}</option>
             </select>
+            {(widget.chartType ?? widget.chartStyle) === "range" && (
+              <span className="hint">{t("editor.chartTypeRangeHint")}</span>
+            )}
           </label>
           <label>
             {t("editor.chartStyle")}

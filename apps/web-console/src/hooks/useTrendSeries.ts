@@ -45,7 +45,8 @@ export function useTrendSeries(
   valueField: string | undefined,
   refreshIntervalMs: number,
   maxPoints: number,
-  historyRange: WidgetHistoryRange = "live"
+  historyRange: WidgetHistoryRange = "live",
+  skipRangedHistory = false
 ) {
   const field = valueField ?? "value";
   const boundQuery = useBoundVariable(objectPath, variableName, valueField, refreshIntervalMs);
@@ -55,7 +56,7 @@ export function useTrendSeries(
   const historyKey = `${objectPath}|${variableName}|${field}|${maxPoints}|${historyRange}`;
   const seededKeyRef = useRef<string | null>(null);
   const recordHistory = boundQuery.variable?.historyEnabled === true;
-  const useRangedHistory = historyRange !== "live" && recordHistory;
+  const useRangedHistory = historyRange !== "live" && recordHistory && !skipRangedHistory;
 
   const rangedHistory = useVariableHistory(objectPath, variableName, {
     field,

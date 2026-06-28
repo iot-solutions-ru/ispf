@@ -1,5 +1,6 @@
 import type { DashboardWidget } from "../../types/dashboard";
 import type { TrendPoint } from "../../hooks/useTrendSeries";
+import type { RangeTrendPoint } from "../../hooks/useChartTrendSeries";
 import { useTranslation } from "react-i18next";
 
 export function parseDemoPreview<T>(raw: string | undefined): T | null {
@@ -34,6 +35,27 @@ export function buildDemoTrendPoints(
       t,
       time: new Date(t).toLocaleTimeString(),
       value: item.v,
+    };
+  });
+}
+
+export function buildDemoRangeTrendPoints(
+  raw: Array<{ t?: number; v: number }> | null
+): RangeTrendPoint[] {
+  const points = buildDemoTrendPoints(raw);
+  if (points.length === 0) {
+    return [];
+  }
+  return points.map((point, index) => {
+    const wave = Math.sin(index / 2) * 2;
+    const min = point.value - 1.5 - Math.abs(wave) * 0.3;
+    const max = point.value + 1.5 + Math.abs(wave) * 0.3;
+    return {
+      ...point,
+      min,
+      max,
+      avg: point.value,
+      band: Math.max(0, max - min),
     };
   });
 }

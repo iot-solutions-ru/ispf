@@ -1,0 +1,184 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchVariableHistoryAggregate, type VariableHistoryBucket } from "../api";
+import type { WidgetHistoryRange } from "../types/dashboard";
+import {
+  historyBucketForRangeChart,
+  historyRangeFrom,
+  type HistoryRange,
+} from "./useVariableHistory";
+import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
+
+export interface RangeTrendPoint {
+  t: number;
+  time: string;
+  min: number;
+  max: number;
+  avg: number;
+  /** max − min for stacked area band */
+  band: number;
+}
+
+function isHistoryRange(range: WidgetHistoryRange): range is HistoryRange {
+  return range !== "live";
+}
+
+function bucketsToRangePoints(buckets: VariableHistoryBucket[]): RangeTrendPoint[] {
+  return buckets
+    .filter(
+      (item) =>
+        item.min != null &&
+        item.max != null &&
+        item.avg != null &&
+        Number.isFinite(item.min) &&
+        Number.isFinite(item.max) &&
+        Number.isFinite(item.avg)
+    )
+    .map((item) => {
+      const t = Date.parse(item.ts);
+      const min = item.min as number;
+      const max = item.max as number;
+      const avg = item.avg as number;
+      return {
+        t: Number.isFinite(t) ? t : Date.now(),
+        time: new Date(Number.isFinite(t) ? t : Date.now()).toLocaleTimeString(),
+        min,
+        max,
+        avg,
+        band: Math.max(0, max - min),
+      };
+    });
+}
+
+function livePointsToRangePoints(points: TrendPoint[], targetBuckets = 16): RangeTrendPoint[] {
+  if (points.length === 0) {
+    return [];
+  }
+  if (points.length === 1) {
+    const point = points[0];
+    return [{ ...point, min: point.value, max: point.value, avg: point.value, band: 0 }];
+  }
+  const chunkSize = Math.max(1, Math.ceil(points.length / targetBuckets));
+  const result: RangeTrendPoint[] = [];
+  for (let index = 0; index < points.length; index += chunkSize) {
+    const chunk = points.slice(index, index + chunkSize);
+    const values = chunk.map((point) => point.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const anchor = chunk[chunk.length - 1];
+    result.push({
+      t: anchor.t,
+      time: anchor.time,
+      min,
+      max,
+      avg,
+      band: Math.max(0, max - min),
+    });
+  }
+  return result;
+}
+
+export function useChartTrendSeries(
+  objectPath: string,
+  variableName: string,
+  valueField: string | undefined,
+  refreshIntervalMs: number,
+  maxPoints: number,
+  historyRange: WidgetHistoryRange = "live",
+  mode: "line" | "range" = "line"
+) {
+  const field = valueField ?? "value";
+  const isRangeMode = mode === "range";
+  const trend = useTrendSeries(
+    objectPath,
+    variableName,
+    valueField,
+    refreshIntervalMs,
+    maxPoints,
+    historyRange,
+    isRangeMode
+  );
+
+  const aggregateBucket =
+    isRangeMode && historyRange !== "live" && isHistoryRange(historyRange)
+      ? historyBucketForRangeChart(historyRange)
+      : null;
+  const from = aggregateBucket && isHistoryRange(historyRange)
+    ? historyRangeFrom(historyRange)
+    : undefined;
+  const to = new Date().toISOString();
+
+  const aggregateQuery = useQuery({
+    queryKey: [
+      "variable-history-range",
+      objectPath,
+      variableName,
+      field,
+      historyRange,
+      maxPoints,
+      aggregateBucket,
+    ],
+    queryFn: () =>
+      fetchVariableHistoryAggregate(objectPath, variableName, {
+        field,
+        bucket: aggregateBucket as string,
+        from,
+        to,
+        limit: maxPoints,
+      }),
+    enabled:
+      Boolean(aggregateBucket && objectPath && variableName && trend.historyEnabled),
+    staleTime: refreshIntervalMs,
+    refetchInterval: refreshIntervalMs,
+  });
+
+  const rangePoints = useMemo(() => {
+    if (!isRangeMode) {
+      return [] as RangeTrendPoint[];
+    }
+    if (aggregateBucket && aggregateQuery.data?.buckets?.length) {
+      return bucketsToRangePoints(aggregateQuery.data.buckets);
+    }
+    return livePointsToRangePoints(trend.points);
+  }, [aggregateBucket, aggregateQuery.data, isRangeMode, trend.points]);
+
+  const rangeStats = useMemo(() => {
+    if (rangePoints.length === 0) {
+      return { min: null, max: null, latest: null };
+    }
+    return {
+      min: Math.min(...rangePoints.map((point) => point.min)),
+      max: Math.max(...rangePoints.map((point) => point.max)),
+      latest: rangePoints[rangePoints.length - 1].avg,
+    };
+  }, [rangePoints]);
+
+  if (!isRangeMode) {
+    return {
+      ...trend,
+      mode: "line" as const,
+      rangePoints: [] as RangeTrendPoint[],
+    };
+  }
+
+  const rangeLoading =
+    trend.historyLoading ||
+    (aggregateBucket != null && aggregateQuery.isLoading && rangePoints.length === 0);
+
+  return {
+    ...trend,
+    mode: "range" as const,
+    rangePoints,
+    points: rangePoints.map((point) => ({
+      t: point.t,
+      time: point.time,
+      value: point.avg,
+    })),
+    stats: rangeStats,
+    historyLoading: rangeLoading,
+    isLoading: trend.isLoading || rangeLoading,
+    aggregated: aggregateBucket != null,
+    historyBucket: aggregateBucket,
+  };
+}

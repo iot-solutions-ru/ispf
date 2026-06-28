@@ -6,6 +6,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -15,12 +16,12 @@ import {
 } from "recharts";
 import type { ChartWidget } from "../../../types/dashboard";
 import { widgetHistoryRangeLabel } from "../../../types/dashboard";
-import { useTrendSeries } from "../../../hooks/useTrendSeries";
+import { useChartTrendSeries } from "../../../hooks/useChartTrendSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
 import WidgetHistoryControls from "../WidgetHistoryControls";
-import { buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoPreview";
+import { buildDemoRangeTrendPoints, buildDemoTrendPoints, parseDemoPreview } from "../widgetDemoPreview";
 
 interface ChartWidgetViewProps {
   widget: ChartWidget;
@@ -39,41 +40,67 @@ export default function ChartWidgetView({
   const color = widget.color ?? "#2f81f7";
   const chartStyle = widget.chartStyle ?? "area";
   const chartType = widget.chartType ?? chartStyle;
+  const isRangeChart = chartType === "range";
   const decimals = widget.decimals ?? 1;
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const styles = useWidgetStyles(widget.stylesJson);
 
-  const { points: livePoints, stats, isLoading, isError, variable, historyEnabled, aggregated, historyBucket } =
-    useTrendSeries(
-      objectPath,
-      widget.variableName ?? "",
-      widget.valueField,
-      refreshIntervalMs,
-      maxPoints,
-      historyRange
-    );
-
-  const demoPoints = useMemo(
-    () =>
-      editable && livePoints.length < 2
-        ? buildDemoTrendPoints(parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson))
-        : [],
-    [editable, livePoints.length, widget.demoPreviewJson]
+  const series = useChartTrendSeries(
+    objectPath,
+    widget.variableName ?? "",
+    widget.valueField,
+    refreshIntervalMs,
+    maxPoints,
+    historyRange,
+    isRangeChart ? "range" : "line"
   );
-  const points = demoPoints.length >= 2 ? demoPoints : livePoints;
-  const isDemo = demoPoints.length >= 2;
-  const displayStats = isDemo
-    ? {
-        latest: points[points.length - 1]?.value ?? null,
-        min: Math.min(...points.map((p) => p.value)),
-        max: Math.max(...points.map((p) => p.value)),
-      }
-    : stats;
 
-  const unitRow = variable?.value?.rows[0];
+  const demoPreview = parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson);
+  const demoLinePoints = useMemo(
+    () => (editable && series.points.length < 2 ? buildDemoTrendPoints(demoPreview) : []),
+    [demoPreview, editable, series.points.length]
+  );
+  const demoRangePoints = useMemo(
+    () => (editable && isRangeChart && series.rangePoints.length < 2
+      ? buildDemoRangeTrendPoints(demoPreview)
+      : []),
+    [demoPreview, editable, isRangeChart, series.rangePoints.length]
+  );
+
+  const points = demoLinePoints.length >= 2 ? demoLinePoints : series.points;
+  const rangePoints =
+    demoRangePoints.length >= 2 ? demoRangePoints : series.rangePoints;
+  const isDemo = isRangeChart
+    ? demoRangePoints.length >= 2
+    : demoLinePoints.length >= 2;
+
+  const displayStats = isDemo
+    ? isRangeChart
+      ? {
+          latest: rangePoints[rangePoints.length - 1]?.avg ?? null,
+          min: Math.min(...rangePoints.map((point) => point.min)),
+          max: Math.max(...rangePoints.map((point) => point.max)),
+        }
+      : {
+          latest: points[points.length - 1]?.value ?? null,
+          min: Math.min(...points.map((point) => point.value)),
+          max: Math.max(...points.map((point) => point.value)),
+        }
+    : series.stats;
+
+  const unitRow = series.variable?.value?.rows[0];
   const unit =
     widget.unit ??
     (widget.unitField && unitRow ? String(unitRow[widget.unitField] ?? "") : "");
+
+  const chartData = isRangeChart ? rangePoints : points;
+  const chartReady = chartData.length >= 1;
+  const bandLabel =
+    isRangeChart && series.historyBucket
+      ? t("view.chartRange.bandPerBucket", { bucket: series.historyBucket })
+      : isRangeChart && historyRange === "live"
+        ? t("view.chartRange.bandLive")
+        : null;
 
   return (
     <div className="dash-widget dash-widget-chart" style={styles.card}>
@@ -96,7 +123,10 @@ export default function ChartWidgetView({
             {displayStats.min != null && displayStats.max != null && (
               <span className="dash-chart-range">
                 min {displayStats.min.toFixed(decimals)} · max {displayStats.max.toFixed(decimals)}
-                {aggregated && historyBucket ? ` · avg/${historyBucket}` : ""}
+                {series.aggregated && series.historyBucket ? ` · ${bandLabel}` : ""}
+                {!isRangeChart && series.aggregated && series.historyBucket
+                  ? ` · avg/${series.historyBucket}`
+                  : ""}
               </span>
             )}
           </div>
@@ -105,7 +135,7 @@ export default function ChartWidgetView({
             variableName={widget.variableName ?? ""}
             valueField={widget.valueField}
             title={widget.title}
-            historyEnabled={historyEnabled}
+            historyEnabled={series.historyEnabled}
             historyRangeLabel={
               historyRange !== "live" ? widgetHistoryRangeLabel(historyRange, t) : undefined
             }
@@ -115,16 +145,72 @@ export default function ChartWidgetView({
       <div className="dash-chart-body" style={styles.chart}>
         {!objectPath && widget.selectionKey ? (
           <div className="dash-chart-placeholder">{t("view.selectDevice")}</div>
-        ) : isLoading && points.length === 0 && !isDemo ? (
+        ) : series.historyLoading && chartData.length === 0 && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>
-        ) : isError && !isDemo ? (
+        ) : series.isError && !isDemo ? (
           <div className="dash-chart-placeholder error">{t("view.bindingError")}</div>
-        ) : points.length < 1 ? (
+        ) : !chartReady ? (
           <div className="dash-chart-placeholder">
-            {variable?.historyEnabled === false
+            {series.variable?.historyEnabled === false
               ? t("view.historyDisabled")
               : t("view.waitingTrend")}
           </div>
+        ) : isRangeChart ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={rangePoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
+              <YAxis
+                tick={{ fontSize: 10 }}
+                width={42}
+                domain={["auto", "auto"]}
+                tickFormatter={(v) => Number(v).toFixed(decimals)}
+              />
+              <Tooltip
+                formatter={(value, name) => {
+                  const numeric = typeof value === "number" ? value : Number(value);
+                  const label =
+                    name === "min"
+                      ? t("view.chartRange.min")
+                      : name === "max"
+                        ? t("view.chartRange.max")
+                        : name === "avg"
+                          ? t("view.chartRange.avg")
+                          : String(name);
+                  return [`${numeric.toFixed(decimals)}${unit ? ` ${unit}` : ""}`, label];
+                }}
+                labelFormatter={(label) => t("view.timeLabel", { label })}
+                contentStyle={{
+                  background: "#161b22",
+                  border: "1px solid #30363d",
+                  borderRadius: 8,
+                }}
+              />
+              <Area
+                dataKey="min"
+                stackId="band"
+                stroke="none"
+                fill="transparent"
+                isAnimationActive={false}
+              />
+              <Area
+                dataKey="band"
+                stackId="band"
+                stroke="none"
+                fill={color}
+                fillOpacity={0.22}
+                isAnimationActive={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="avg"
+                stroke={color}
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (

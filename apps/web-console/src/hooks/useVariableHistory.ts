@@ -43,6 +43,22 @@ export function historyBucketForRange(range: HistoryRange): string | null {
   return null;
 }
 
+/** Bucket sizes for chart min/max band (always uses aggregate API). */
+export function historyBucketForRangeChart(range: HistoryRange): string {
+  switch (range) {
+    case "1h":
+      return "5m";
+    case "6h":
+      return "15m";
+    case "24h":
+      return "30m";
+    case "7d":
+      return "1h";
+    case "all":
+      return "6h";
+  }
+}
+
 function sampleToPoint(ts: string, value: number): TrendPoint {
   const t = Date.parse(ts);
   return {
