@@ -75,6 +75,22 @@ export function widgetHistoryRangeLabel(
   return WIDGET_HISTORY_RANGE_OPTIONS.find((item) => item.id === id)?.label;
 }
 
+/** History table widget range (default 5m for backward compatibility). */
+export type HistoryTableRange = "5m" | Exclude<WidgetHistoryRange, "live">;
+
+export const HISTORY_TABLE_RANGE_IDS: HistoryTableRange[] = ["5m", "1h", "6h", "24h", "7d", "all"];
+
+export function historyTableRangeLabel(
+  range: HistoryTableRange | undefined,
+  t?: (key: string, options?: { ns?: string }) => string
+): string {
+  const id = range ?? "5m";
+  if (t) {
+    return t(`history.${id}`, { ns: "widgets" });
+  }
+  return id;
+}
+
 export interface DashboardWidgetBase {
   id: string;
   type: WidgetType;
@@ -353,6 +369,7 @@ export interface PieChartWidget extends DashboardWidgetBase {
 export interface HistoryTableWidget extends DashboardWidgetBase {
   type: "history-table";
   decimals?: number;
+  historyRange?: HistoryTableRange;
 }
 
 export interface VariableEditorWidget extends DashboardWidgetBase {

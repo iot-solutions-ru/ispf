@@ -53,6 +53,7 @@ import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
 import { resolveApplicationAppId } from "../utils/applicationPath";
+import EditLeaseBanner from "./EditLeaseBanner";
 
 interface ObjectPropertiesEditorProps {
   path: string;
@@ -539,6 +540,13 @@ export default function ObjectPropertiesEditor({
         </div>
         {isDirty && <span className="dirty-pill">{t("common:dirty.changed")}</span>}
       </header>
+
+      <EditLeaseBanner
+        path={path}
+        canManage={canManage}
+        username={authQuery.data?.principal}
+        isEditing={isDirty}
+      />
 
       {saveMutation.isSuccess && <div className="banner success">{t("common:changes.saved")}</div>}
       {staleRemote && (

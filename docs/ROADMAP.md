@@ -225,13 +225,13 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.1 | Correlator actions `SET_VARIABLE`, `OPEN_OPERATOR_REPORT` в UI | BL-01 | P0 | Done |
 | 20.2 | Workflow actions `log`, `publishNats` в ISPF справочнике | BL-02 | P0 | Done |
 | 20.3 | `DataRecordValueEditor` в inline variable editor | BL-03 | P1 | Done |
-| 20.4 | Platform Change Sets UI | BL-04 | P1 | Planned |
-| 20.5 | Edit lease indicator + acquire/release | BL-05 | P1 | Planned |
-| 20.6 | Chart types: render или убрать из редактора | BL-06 | P1 | Planned |
+| 20.4 | Platform Change Sets UI | BL-04 | P1 | Done |
+| 20.5 | Edit lease indicator + acquire/release | BL-05 | P1 | Done |
+| 20.6 | Chart types: render или убрать из редактора | BL-06 | P1 | Done |
 | 20.7 | i18n: widget type labels + binding hints | BL-07 | P1 | Done |
 | 20.8 | Application Event Catalog viewer | BL-08 | P1 | Done |
 | 20.9 | Binding expression builder (18 platform functions) | BL-09 | P2 | Planned |
-| 20.10 | Widgets: network-graph layout, gantt interactive, history-table window | BL-10…12 | P2 | Planned |
+| 20.10 | Widgets: network-graph layout, gantt interactive, history-table window | BL-10…12 | P2 | Partial (BL-12 done) |
 | 20.11 | System settings: Redis/NATS/ClickHouse/AI/MCP toggles | BL-13 | P2 | Planned |
 | 20.12 | Automation index + journal export/diff | BL-14…16 | P2 | Planned |
 | 20.13 | Driver write: Modbus, S7, OPC UA (demand-driven) | BL-20…22 | P1 | Planned |

@@ -99,6 +99,61 @@ code,
   flex-wrap: wrap;
 }
 
+.platform-change-sets-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.platform-change-sets-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.platform-change-sets-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .platform-change-sets-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.platform-change-sets-list .data-table tbody tr {
+  cursor: pointer;
+}
+
+.platform-change-sets-list .data-table tbody tr.selected {
+  background: rgba(47, 129, 247, 0.12);
+}
+
+.platform-change-sets-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.platform-change-sets-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.edit-lease-banner {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0 0 0.75rem;
+}
+
 .system-settings-view {
   display: flex;
   flex-direction: column;

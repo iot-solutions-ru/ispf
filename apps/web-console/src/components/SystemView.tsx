@@ -5,8 +5,9 @@ import SystemSettingsView from "./SystemSettingsView";
 import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
+import PlatformChangeSetsPanel from "./platform/PlatformChangeSetsPanel";
 
-type SystemTab = "metrics" | "settings" | "events" | "functions" | "bindings";
+type SystemTab = "metrics" | "settings" | "events" | "functions" | "bindings" | "changeSets";
 
 export default function SystemView() {
   const { t } = useTranslation("system");
@@ -18,6 +19,7 @@ export default function SystemView() {
     { id: "events", labelKey: "tab.events" },
     { id: "functions", labelKey: "tab.functions" },
     { id: "bindings", labelKey: "tab.bindings" },
+    { id: "changeSets", labelKey: "tab.changeSets" },
   ];
 
   return (
@@ -49,6 +51,7 @@ export default function SystemView() {
       )}
       {tab === "functions" && <FunctionInvokeJournalPanel limit={100} showFilters />}
       {tab === "bindings" && <BindingInvokeJournalPanel limit={100} showFilters />}
+      {tab === "changeSets" && <PlatformChangeSetsPanel />}
     </main>
   );
 }

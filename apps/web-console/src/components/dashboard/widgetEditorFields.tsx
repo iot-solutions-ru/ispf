@@ -4,7 +4,7 @@ import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchReport } from "../../api/reports";
 import type { DashboardWidget } from "../../types/dashboard";
-import { WIDGET_HISTORY_RANGE_OPTIONS } from "../../types/dashboard";
+import { WIDGET_HISTORY_RANGE_OPTIONS, HISTORY_TABLE_RANGE_IDS } from "../../types/dashboard";
 import {
   DATA_BINDING_HINT_KEYS,
   widgetDataBinding,
@@ -679,10 +679,6 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
               <option value="line">line</option>
               <option value="area">area</option>
               <option value="bar">bar</option>
-              <option value="candlestick">candlestick</option>
-              <option value="bubble">bubble</option>
-              <option value="radar">radar</option>
-              <option value="range">range</option>
             </select>
           </label>
           <label>
@@ -1411,6 +1407,21 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.historyTable")} />
+          <label>
+            {t("editor.historyRange")}
+            <select
+              value={widget.historyRange ?? "5m"}
+              onChange={(e) =>
+                update({ historyRange: e.target.value as typeof widget.historyRange })
+              }
+            >
+              {HISTORY_TABLE_RANGE_IDS.map((id) => (
+                <option key={id} value={id}>
+                  {t(`history.${id}`)}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             decimals
             <input

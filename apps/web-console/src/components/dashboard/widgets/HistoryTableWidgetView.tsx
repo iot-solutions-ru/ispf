@@ -2,12 +2,25 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVariableHistory } from "../../../api";
+import type { HistoryTableRange } from "../../../types/dashboard";
+import { historyTableRangeLabel } from "../../../types/dashboard";
 import type { HistoryTableWidget } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
+import { historyRangeFrom, type HistoryRange } from "../../../hooks/useVariableHistory";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
+
+function historyTableFrom(range: HistoryTableRange): string | undefined {
+  if (range === "5m") {
+    return new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
+  }
+  if (range === "all") {
+    return undefined;
+  }
+  return historyRangeFrom(range as HistoryRange);
+}
 
 interface HistoryTableWidgetViewProps {
   widget: HistoryTableWidget;
@@ -26,11 +39,12 @@ export default function HistoryTableWidgetView({
   const field = widget.valueField ?? "value";
   const decimals = widget.decimals ?? 2;
   const variableName = widget.variableName ?? "";
+  const historyRange = widget.historyRange ?? "5m";
 
   const history = useQuery({
-    queryKey: ["variable-history-table", objectPath, variableName, field],
+    queryKey: ["variable-history-table", objectPath, variableName, field, historyRange],
     queryFn: () => {
-      const from = new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
+      const from = historyTableFrom(historyRange);
       const to = new Date().toISOString();
       return fetchVariableHistory(objectPath, variableName, {
         field,
@@ -68,7 +82,7 @@ export default function HistoryTableWidgetView({
       stylesJson={widget.stylesJson}
       className="dash-widget dash-widget-history-table"
       editable={editable}
-      footer={t("view.historyTable.footer")}
+      footer={historyTableRangeLabel(historyRange, t)}
     >
       {!objectPath && widget.selectionKey ? (
         <p className="hint">{t("view.selectObject")}</p>

@@ -1,4 +1,4 @@
-import { request } from "./http";
+import { getAuthHeaders } from "../auth/session";
 
 export interface ChangeSetOp {
   op: string;
@@ -35,31 +35,51 @@ export interface ChangeSetApplyResult {
   count: number;
 }
 
+async function platformRequest<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Request failed: ${response.status}`);
+  }
+  if (response.status === 204) {
+    return undefined as T;
+  }
+  return response.json() as Promise<T>;
+}
+
 export function fetchChangeSets(status?: string): Promise<ChangeSetSummary[]> {
   const params = status ? `?status=${encodeURIComponent(status)}` : "";
-  return request(`/api/v1/platform/change-sets${params}`);
+  return platformRequest(`/api/v1/platform/change-sets${params}`);
 }
 
 export function fetchChangeSet(id: string): Promise<ChangeSetDetail> {
-  return request(`/api/v1/platform/change-sets/${encodeURIComponent(id)}`);
+  return platformRequest(`/api/v1/platform/change-sets/${encodeURIComponent(id)}`);
 }
 
 export function createChangeSet(title: string, ops: ChangeSetOp[]): Promise<ChangeSetDetail> {
-  return request("/api/v1/platform/change-sets", {
+  return platformRequest("/api/v1/platform/change-sets", {
     method: "POST",
     body: JSON.stringify({ title, ops }),
   });
 }
 
 export function previewChangeSet(id: string): Promise<ChangeSetPreview> {
-  return request(`/api/v1/platform/change-sets/${encodeURIComponent(id)}/preview`, {
+  return platformRequest(`/api/v1/platform/change-sets/${encodeURIComponent(id)}/preview`, {
     method: "POST",
   });
 }
 
 export function applyChangeSet(id: string, force = false): Promise<ChangeSetApplyResult> {
   const params = force ? "?force=true" : "";
-  return request(`/api/v1/platform/change-sets/${encodeURIComponent(id)}/apply${params}`, {
+  return platformRequest(`/api/v1/platform/change-sets/${encodeURIComponent(id)}/apply${params}`, {
     method: "POST",
   });
 }
