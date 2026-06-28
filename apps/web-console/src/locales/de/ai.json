@@ -6,6 +6,7 @@
   "agent.details.error": "Was ist schief gelaufen?",
   "agent.details.ok": "Einzelheiten",
   "agent.details.running": "Aktuelle Schritte",
+  "agent.details.waiting": "Warte auf den ersten Schritt…",
   "agent.emptyHint": "Beschreiben Sie eine Aufgabe – der Agent führt Schritte auf der Plattform aus und antwortet in Textform.",
   "agent.executing": "Wird ausgeführt… ({{count}} {{steps}})",
   "agent.llmNotConfigured": "LLM ist nicht konfiguriert – öffnen Sie die Registerkarte „Einstellungen“.",

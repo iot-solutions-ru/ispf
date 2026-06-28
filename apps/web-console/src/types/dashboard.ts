@@ -610,6 +610,8 @@ export interface SheetCellConfig {
   objectPath?: string;
   variableName?: string;
   valueField?: string;
+  /** When set on `binding` cells, load latest historian sample in the window (minutes) instead of live snapshot only. */
+  historyMinutes?: number;
   refreshIntervalMs?: number;
   format?: SheetCellFormat;
   style?: SheetCellStyle;

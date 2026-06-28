@@ -100,6 +100,7 @@
   "editor.spreadsheet.sessionKey": "会话键 (sessionKey)",
   "editor.spreadsheet.sheetConfigJson": "表格配置 (sheetConfigJson)",
   "editor.spreadsheet.sheetConfigPlaceholder": "{\"rows\":10,\"cols\":4,\"cells\":{...}}",
+  "editor.spreadsheet.bindingHistoryHint": "绑定单元格：historyMinutes（如 15）读取窗口内最新 historian 样本；否则为实时值。",
   "editor.spreadsheet.insertFreeTemplate": "模板：自由网格",
   "editor.spreadsheet.insertDefaultTemplate": "模板：基础网格",
   "editor.spreadsheet.insertCalculatorTemplate": "模板：计算器",

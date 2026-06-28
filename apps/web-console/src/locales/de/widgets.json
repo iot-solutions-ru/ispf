@@ -100,6 +100,7 @@
   "editor.spreadsheet.sessionKey": "Sitzungsschlüssel (sessionKey)",
   "editor.spreadsheet.sheetConfigJson": "Tabellenkonfiguration (sheetConfigJson)",
   "editor.spreadsheet.sheetConfigPlaceholder": "{\"rows\":10,\"cols\":4,\"cells\":{...}}",
+  "editor.spreadsheet.bindingHistoryHint": "Binding-Zellen: historyMinutes (z. B. 15) für letzten Historian-Sample im Fenster; sonst Live-Wert.",
   "editor.spreadsheet.insertFreeTemplate": "Vorlage: freies Raster",
   "editor.spreadsheet.insertDefaultTemplate": "Vorlage: Basisraster",
   "editor.spreadsheet.insertCalculatorTemplate": "Vorlage: Rechner",

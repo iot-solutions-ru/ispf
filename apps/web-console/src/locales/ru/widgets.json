@@ -100,6 +100,7 @@
   "editor.spreadsheet.sessionKey": "Ключ сессии (sessionKey)",
   "editor.spreadsheet.sheetConfigJson": "Конфиг сетки (sheetConfigJson)",
   "editor.spreadsheet.sheetConfigPlaceholder": "{\"rows\":10,\"cols\":4,\"cells\":{...}}",
+  "editor.spreadsheet.bindingHistoryHint": "Binding-ячейки: historyMinutes (напр. 15) — последний сэмпл historian в окне; иначе live.",
   "editor.spreadsheet.insertFreeTemplate": "Шаблон: свободная сетка",
   "editor.spreadsheet.insertDefaultTemplate": "Шаблон: базовая сетка",
   "editor.spreadsheet.insertCalculatorTemplate": "Шаблон: калькулятор",

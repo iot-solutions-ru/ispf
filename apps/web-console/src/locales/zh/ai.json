@@ -6,6 +6,7 @@
   "agent.details.error": "出了什么问题",
   "agent.details.ok": "详情",
   "agent.details.running": "当前步骤",
+  "agent.details.waiting": "等待第一个步骤…",
   "agent.emptyHint": "描述一个任务——代理将在平台上运行步骤并以文本形式回复。",
   "agent.executing": "正在执行... ({{count}} {{steps}})",
   "agent.llmNotConfigured": "LLM 未配置 - 打开“设置”选项卡。",

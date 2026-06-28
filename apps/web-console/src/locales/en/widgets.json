@@ -100,6 +100,7 @@
   "editor.spreadsheet.sessionKey": "Session key (sessionKey)",
   "editor.spreadsheet.sheetConfigJson": "Sheet config (sheetConfigJson)",
   "editor.spreadsheet.sheetConfigPlaceholder": "{\"rows\":10,\"cols\":4,\"cells\":{...}}",
+  "editor.spreadsheet.bindingHistoryHint": "Binding cells: add historyMinutes (e.g. 15) to read the latest historian sample in that window; falls back to live value.",
   "editor.spreadsheet.insertFreeTemplate": "Template: free grid",
   "editor.spreadsheet.insertDefaultTemplate": "Template: basic grid",
   "editor.spreadsheet.insertCalculatorTemplate": "Template: calculator",

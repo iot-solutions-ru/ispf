@@ -18,6 +18,12 @@ import {
   type IspfFormulaContext,
 } from "./sheetFormulaEngine";
 import {
+  bindingCellToHistoryRef,
+  mergeSheetHistoryRefs,
+  pickLatestHistorySample,
+  resolveBindingHistoryMinutes,
+} from "./sheetHistoryBinding";
+import {
   extractIspfFormulaVarRefs,
 } from "./sheetIspfFormulaDeps";
 import type { SheetValues } from "./sheetFormulaEngine";
@@ -27,6 +33,7 @@ interface BindingCellRef {
   objectPath: string;
   variableName: string;
   valueField?: string;
+  historyMinutes?: number;
 }
 
 export function useSheetBindings(
@@ -61,6 +68,7 @@ export function useSheetBindings(
         objectPath: path,
         variableName: cell.variableName,
         valueField: cell.valueField,
+        historyMinutes: resolveBindingHistoryMinutes(cell),
       });
     }
     return refs;
@@ -87,7 +95,9 @@ export function useSheetBindings(
   }, [bindingCells, formulaVarRefs]);
 
   const pathsKey = watchedPaths.join("|");
-  const bindingVarsKey = bindingCells.map((b) => `${b.objectPath}:${b.variableName}`).join("|");
+  const bindingVarsKey = bindingCells
+    .map((b) => `${b.objectPath}:${b.variableName}:${b.historyMinutes ?? ""}`)
+    .join("|");
   const formulaVarsKey = formulaVarRefs
     .map((r) => `${r.objectPath}:${r.variableName}:${r.field}:${r.histMinutes ?? ""}`)
     .join("|");
@@ -115,6 +125,7 @@ export function useSheetBindings(
         return;
       }
       void queryClient.invalidateQueries({ queryKey: ["sheet-bindings"] });
+      void queryClient.invalidateQueries({ queryKey: ["sheet-bindings-hist"] });
     };
     window.addEventListener(OBJECT_WS_EVENT, onWs);
     return () => window.removeEventListener(OBJECT_WS_EVENT, onWs);
@@ -135,33 +146,42 @@ export function useSheetBindings(
     refetchInterval: wsConnected ? false : refreshIntervalMs,
   });
 
-  const histRefs = useMemo(
-    () => formulaVarRefs.filter((ref) => ref.histMinutes !== undefined),
-    [formulaVarRefs]
-  );
+  const histRefs = useMemo(() => {
+    const bindingHist = bindingCells
+      .filter((ref) => ref.historyMinutes != null)
+      .map((ref) =>
+        bindingCellToHistoryRef(
+          ref.objectPath,
+          ref.variableName,
+          ref.valueField,
+          ref.historyMinutes as number
+        )
+      );
+    return mergeSheetHistoryRefs(
+      formulaVarRefs.filter((ref) => ref.histMinutes !== undefined),
+      bindingHist
+    );
+  }, [bindingCells, formulaVarRefs]);
 
   const histQuery = useQuery({
-    queryKey: ["sheet-bindings-hist", pathsKey, formulaVarsKey],
+    queryKey: ["sheet-bindings-hist", pathsKey, formulaVarsKey, bindingVarsKey],
     queryFn: async () => {
       const histValues = new Map<string, number>();
       const to = new Date().toISOString();
       await Promise.all(
         histRefs.map(async (ref) => {
-          const minutes = ref.histMinutes ?? 5;
+          const minutes = ref.histMinutes;
           const from = new Date(Date.now() - minutes * 60 * 1000).toISOString();
           try {
             const resp = await fetchVariableHistory(ref.objectPath, ref.variableName, {
               from,
               to,
-              limit: 1,
+              limit: 120,
               field: ref.field,
             });
-            const sample = resp.samples?.[0];
-            if (sample && typeof sample.value === "number") {
-              histValues.set(
-                histCacheKey(ref.objectPath, ref.variableName, minutes),
-                sample.value
-              );
+            const sample = pickLatestHistorySample(resp.samples, ref.field);
+            if (sample != null) {
+              histValues.set(histCacheKey(ref.objectPath, ref.variableName, minutes), sample);
             }
           } catch {
             // historian optional
@@ -183,6 +203,17 @@ export function useSheetBindings(
     const byPath = queries.data;
     if (byPath) {
       for (const ref of bindingCells) {
+        const field = ref.valueField ?? "value";
+        if (ref.historyMinutes != null) {
+          const histVal = histValues.get(
+            histCacheKey(ref.objectPath, ref.variableName, ref.historyMinutes)
+          );
+          if (histVal != null) {
+            externalByAddr.set(ref.address, histVal);
+            bindingValues.set(bindingCacheKey(ref.objectPath, ref.variableName, field), histVal);
+            continue;
+          }
+        }
         const vars = byPath.get(ref.objectPath) ?? [];
         const variable = vars.find((v) => v.name === ref.variableName);
         const raw = readFieldValue(variable?.value?.rows?.[0], ref.valueField);
@@ -190,10 +221,7 @@ export function useSheetBindings(
           const val =
             typeof raw === "number" || typeof raw === "boolean" ? raw : String(raw);
           externalByAddr.set(ref.address, val);
-          bindingValues.set(
-            bindingCacheKey(ref.objectPath, ref.variableName, ref.valueField ?? "value"),
-            val
-          );
+          bindingValues.set(bindingCacheKey(ref.objectPath, ref.variableName, field), val);
         }
       }
 

@@ -289,21 +289,16 @@ export function AgentChatProvider({
     }
     let cancelled = false;
     let pollTimer: number | undefined;
-    let usingPoll = false;
-    let runFinished = false;
     let unsubscribe: (() => void) | undefined;
 
     const applyProgress = (progress: { running: boolean; steps?: AiAgentStep[] }) => {
       if (cancelled) {
         return;
       }
-      if (progress.running && progress.steps) {
+      // Keep listening while isPending — an early { running: false } arrives before POST /messages
+      // registers the run and must not tear down the subscription.
+      if (progress.steps) {
         setLiveSteps(progress.steps);
-      }
-      if (!progress.running) {
-        runFinished = true;
-        unsubscribe?.();
-        unsubscribe = undefined;
       }
     };
 
@@ -316,27 +311,10 @@ export function AgentChatProvider({
       }
     };
 
-    const startPolling = () => {
-      if (usingPoll || cancelled) {
-        return;
-      }
-      usingPoll = true;
-      void poll();
-      pollTimer = window.setInterval(() => void poll(), 1000);
-    };
+    void poll();
+    pollTimer = window.setInterval(() => void poll(), 1000);
 
-    unsubscribe = subscribeAgentRunProgress(
-      activeSessionId,
-      applyProgress,
-      () => {
-        if (cancelled || runFinished || usingPoll) {
-          return;
-        }
-        unsubscribe?.();
-        unsubscribe = undefined;
-        startPolling();
-      }
-    );
+    unsubscribe = subscribeAgentRunProgress(activeSessionId, applyProgress);
 
     return () => {
       cancelled = true;

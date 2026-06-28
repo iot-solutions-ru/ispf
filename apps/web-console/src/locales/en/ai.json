@@ -24,6 +24,7 @@
   "agent.placeholder": "Message to agent…",
   "agent.send": "Send",
   "agent.details.running": "Current steps",
+  "agent.details.waiting": "Waiting for the first tool step…",
   "agent.details.ok": "Details",
   "agent.details.error": "What went wrong",
   "agent.openDevice": "Open device",

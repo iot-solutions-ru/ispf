@@ -199,8 +199,13 @@ export default function AiAgentChat() {
                     })
                   : t("agent.thinking")}
               </div>
-              {liveSteps.length > 0 && (
-                <AgentRunDetails steps={liveSteps} status="RUNNING" open />
+              {isPending && (
+                <AgentRunDetails
+                  steps={liveSteps}
+                  status="RUNNING"
+                  open
+                  placeholder={toolStepCount === 0}
+                />
               )}
             </div>
           )}
@@ -261,11 +266,13 @@ function AgentRunDetails({
   status,
   result,
   open = false,
+  placeholder = false,
 }: {
   steps: AiAgentStep[];
   status?: string;
   result?: Record<string, unknown>;
   open?: boolean;
+  placeholder?: boolean;
 }) {
   const { t } = useTranslation("ai");
   const devicePath = typeof result?.devicePath === "string" ? result.devicePath : undefined;
@@ -284,6 +291,9 @@ function AgentRunDetails({
             : t("agent.details.error")}
         {toolSteps.length > 0 ? ` (${toolSteps.length})` : ""}
       </summary>
+      {placeholder && toolSteps.length === 0 && (
+        <p className="op-muted ai-agent-step-placeholder">{t("agent.details.waiting")}</p>
+      )}
       {toolSteps.length > 0 && (
         <ol className="ai-agent-step-list">
           {toolSteps.map((step) => (

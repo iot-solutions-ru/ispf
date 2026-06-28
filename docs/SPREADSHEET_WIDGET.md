@@ -210,7 +210,23 @@ Cross-sheet ссылки: `=Sheet2!A1`, `=SUM(Sales!A1:A10)`.
 | `input` | `default`, `validation`, `format`, `style` | Ввод оператора |
 | `formula` | `expr`, `format`, `style` | Формула |
 | `readonly` | `default`, `format`, `style` | Нередактируемое значение |
-| `binding` | `objectPath`, `variableName`, `valueField` | Live-значение переменной ISPF |
+| `binding` | `objectPath`, `variableName`, `valueField`, `historyMinutes?` | Live snapshot или historian (см. ниже) |
+
+### Binding + historian (`historyMinutes`)
+
+Для ячеек `kind: "binding"` можно задать `historyMinutes` (целое > 0): виджет запрашивает historian за окно и показывает **последний** числовой сэмпл в интервале (fallback на live snapshot, если historian пуст). То же окно используется в `ISPHIST(path, var, minutes)`.
+
+```json
+"B2": {
+  "kind": "binding",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "variableName": "temperature",
+  "valueField": "value",
+  "historyMinutes": 15
+}
+```
+
+Ограничение: только latest в окне (не avg/min/max); максимум окна — 10080 мин (7 дней).
 
 Пример `dataRegion`:
 

@@ -1534,6 +1534,7 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.spreadsheet")} />
+          <p className="hint">{t("editor.spreadsheet.bindingHistoryHint")}</p>
           <label>
             {t("editor.spreadsheet.sheetMode")}
             <select

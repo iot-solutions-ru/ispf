@@ -77,7 +77,7 @@
 | Federation UX | Done | catalog sync preview (SKIP/BIND), federated dashboard layout/title write | — |
 | Platform backup | Done | `GET /platform/backup/export`, `POST /platform/backup/import?dryRun=` + System UI | — |
 | Operator manifest | ~98% | spreadsheet history (BL-54) | BL-54 |
-| Spreadsheet widget | ~95% | history bind (BL-54) | BL-54 |
+| Spreadsheet widget | ~98% | — | BL-54 done |
 | Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
 | Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |

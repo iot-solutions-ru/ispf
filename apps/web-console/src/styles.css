@@ -7083,6 +7083,11 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   padding: 0;
 }
 
+.ai-agent-step-placeholder {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+
 .ai-agent-step-error {
   color: #f85149;
 }

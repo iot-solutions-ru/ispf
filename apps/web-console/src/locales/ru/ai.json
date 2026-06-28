@@ -6,6 +6,7 @@
   "agent.details.error": "Что пошло не так",
   "agent.details.ok": "Подробности",
   "agent.details.running": "Текущие шаги",
+  "agent.details.waiting": "Ожидание первого шага…",
   "agent.emptyHint": "Опишите задачу — агент выполнит действия на платформе и ответит текстом.",
   "agent.executing": "Выполнение… ({{count}} {{steps}})",
   "agent.llmNotConfigured": "LLM не настроен — откройте вкладку «Настройки».",
