@@ -44,10 +44,10 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-09** | Binding expression builder: каталог 18 platform bindings + autocomplete | P2 | Done | Bindings |
 | **BL-10** | `network-graph` widget: layout engine (Cytoscape / vis-network) | P2 | Done | Dashboard |
-| **BL-11** | `gantt-chart` widget: интерактивный timeline | P2 | Planned | Dashboard |
+| **BL-11** | `gantt-chart` widget: интерактивный timeline | P2 | Done | Dashboard |
 | **BL-12** | `history-table`: настраиваемое окно (сейчас ~5 min hardcoded) | P2 | Done | Dashboard |
 | **BL-63** | Chart widget: тип **range** (min/max band из historian aggregate) | P2 | Done | Dashboard |
-| **BL-64** | Chart widget: тип **candlestick** (OHLC по bucket / schema) | P2 | Planned | Dashboard |
+| **BL-64** | Chart widget: тип **candlestick** (OHLC по bucket / schema) | P2 | Done | Dashboard |
 | **BL-65** | Chart widget: типы **bubble** и **radar** (multi-axis / categorical) | P3 | Planned | Dashboard |
 | **BL-13** | System settings: toggles Redis / NATS / ClickHouse journal / AI provider / MCP | P2 | Done | System |
 | **BL-14** | Automation index dashboard (`GET /platform/automation-index/stats`) | P2 | Done | System |
@@ -60,15 +60,15 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-20** | Write path: **Modbus** (tcp/rtu) | P1 | Planned | Driver |
-| **BL-21** | Write path: **S7** | P1 | Planned | Driver |
-| **BL-22** | Write path: **OPC UA** client | P1 | Planned | Driver |
+| **BL-20** | Write path: **Modbus** (tcp/rtu) | P1 | Done | Driver |
+| **BL-21** | Write path: **S7** | P1 | Done | Driver |
+| **BL-22** | Write path: **OPC UA** client | P1 | Done | Driver |
 | **BL-23** | Write path: **BACnet**, **IEC 104** | P2 | Planned | Driver |
 | **BL-24** | **DNP3**: полный Class 0/1/2/3 poll (сейчас connectivity check) | P2 | Planned | Driver |
 | **BL-25** | **DLMS** write | P2 | Planned | Driver |
 | **BL-26** | Stub promotion: Ethernet/IP, OPC DA, OPC Bridge, CORBA, VMware, SMI-S | P3 | Planned | Driver |
 | **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Planned | Driver catalog |
-| **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Planned | Driver UI |
+| **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
 | **BL-29** | CWMP `SetParameterValues` write | P3 | Planned | Driver |
 | **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Planned | Driver QA |
 
@@ -76,9 +76,9 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-40** | ClickHouse **variable history** store (`VariableHistoryProperties` future) | P2 | Planned | History |
-| **BL-41** | Redis correlator window + ACL cache: prod runbook + health в System | P2 | Planned | Scale |
-| **BL-42** | NATS JetStream: UI статус + workflow `PUBLISH_NATS` smoke hint | P2 | Planned | Scale |
+| **BL-40** | ClickHouse **variable history** store (`VariableHistoryProperties` future) | P2 | Partial | History |
+| **BL-41** | Redis correlator window + ACL cache: prod runbook + health в System | P2 | Done | Scale |
+| **BL-42** | NATS JetStream: UI статус + workflow `PUBLISH_NATS` smoke hint | P2 | Done | Scale |
 | **BL-43** | YARG PDF: LibreOffice path в System + hint в Report Builder | P2 | Planned | Reports |
 | **BL-44** | Notification channels: webhook/email из alert rule / correlator action | P3 | Planned | Automation |
 | **BL-45** | Federation: conflict resolution UI при catalog sync | P3 | Planned | Federation |
@@ -90,12 +90,12 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Planned | QA |
+| **BL-50** | Playwright admin e2e smoke (дублирует [ROADMAP 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers)) | P1 | Partial | QA |
 | **BL-51** | Operator manifest: screen types chart / map / embedded dashboard | P3 | Planned | Operator |
 | **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Planned | Operator |
-| **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Planned | Spreadsheet |
+| **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
 | **BL-54** | Spreadsheet: binding ячеек к variable history | P3 | Planned | Spreadsheet |
-| **BL-55** | Frontend component tests (dashboard widgets, inspector dialogs) | P2 | Planned | QA |
+| **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL widgets/inspector — TBD | P2 | Partial | QA |
 
 ### Wave G — Semantic interoperability (Haystack / Brick)
 
@@ -216,6 +216,41 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 ---
 
+### BL-11 — Gantt interactive timeline
+
+**Контекст:** `gantt-chart` рендерил статичные полосы без шкалы времени; оператор не мог смотреть длинные планы и сдвигать задачи.
+
+**Задачи:**
+
+- [x] `ganttChartView.ts`: viewport (fit/pan/zoom/clamp), layout полос, ticks, patch row times
+- [x] `GanttChartWidgetView`: wheel zoom, drag pan, optional bar drag → `setVariable` при writable RECORD_LIST
+- [x] Редактор: `interactive`, `allowBarDrag`; i18n en/ru/de/zh; CSS axis + interactive cursors
+- [x] Vitest: `ganttChartView.test.ts`
+
+**Acceptance:** в operator mode — scroll zoom, drag pan, double-click reset; при writable variable — drag bar с persist; в editor preview — только pan/zoom без persist.
+
+**Статус (2026-06-28):** Done — `ganttChartView`, `GanttChartWidgetView`, editor toggles, i18n, styles.
+
+---
+
+### BL-53 — Spreadsheet Excel functions + import warnings
+
+**Контекст:** при импорте XLSX неподдерживаемые функции давали `#NAME?` без явного списка; tail Excel functions (CHAR/CODE/REPT/PROPER, MAXIFS/MINIFS, NA/ISLOGICAL/ISODD/ISEVEN/CLEAN) отсутствовали или не были покрыты тестами.
+
+**Задачи:**
+
+- [x] `ispfSheetEval`: NA, ISLOGICAL, ISODD, ISEVEN, CLEAN (+ ru aliases)
+- [x] `sheetFormulaNormalize`: SUPPORTED_SHEET_FUNCTIONS sync
+- [x] `sheetXlsx`: structured `SheetImportReport` (unsupportedFunctions + truncations)
+- [x] `SpreadsheetImportNotice` + free-grid import banner (dismiss, fn list, truncation notes)
+- [x] i18n en/ru/de/zh; vitest `sheetFormulaEngine.test.ts`
+
+**Acceptance:** после импорта книги с LET/SUM — banner с перечнем unsupported fn; CHAR/MAXIFS/NA работают в free mode.
+
+**Статус (2026-06-28):** Done — `SpreadsheetImportNotice`, `sheetXlsx` report, formula engine extensions.
+
+---
+
 ### BL-63 — Chart `range` (min/max band)
 
 **Контекст:** наиболее полезный для SCADA из отложенных типов; historian aggregate уже отдаёт `min`/`max`/`avg` по bucket (`useVariableHistory`, `fetchVariableHistoryAggregate`).
@@ -244,12 +279,14 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Задачи:**
 
-- [ ] ADR или spike: выбрать A vs B
-- [ ] `ChartWidgetView` + recharts `ComposedChart` / custom shapes (или chart.js)
-- [ ] Поля редактора: bucket size, привязка полей OHLC (если B)
-- [ ] Вернуть option в редактор
+- [x] ADR или spike: выбрать A vs B → **вариант A** (синтетический OHLC)
+- [x] `ChartWidgetView` + recharts `ComposedChart` / custom shapes
+- [x] Поля редактора: bucket size через historyRange (как range)
+- [x] Вернуть option в редактор
 
 **Acceptance:** candlestick на demo device с историей; tooltip показывает O/H/L/C.
+
+**Статус (2026-06-28):** Done — вариант A (синтетический OHLC из aggregate buckets + live chunking), `chartOhlcUtils`, `CandlestickChartBody`, редактор.
 
 ---
 
@@ -290,9 +327,9 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 | Driver | Файл | Текущее | BL |
 | ------ | ---- | ------- | -- |
-| Modbus | `ModbusDeviceDriver.java` | read + partial | BL-20 |
+| Modbus | `ModbusTcpDeviceDriver.java`, `ModbusRtuDeviceDriver.java` | read + write (HOLDING/COIL) | BL-20 Done |
 | S7 | `S7DeviceDriver.java` | `write not implemented` | BL-21 |
-| OPC UA | `OpcUaDeviceDriver.java` | `write not implemented` | BL-22 |
+| OPC UA | `OpcUaDeviceDriver.java` | read + write (node Value) | BL-22 Done |
 | BACnet | `BacnetDeviceDriver.java` | `write not implemented` | BL-23 |
 | IEC 104 | `Iec104DeviceDriver.java` | `write not implemented` | BL-23 |
 | DNP3 | `Dnp3DeviceDriver.java` | connectivity only | BL-24 |
@@ -300,23 +337,74 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Acceptance (каждый):** integration test loopback/mock; maturity label обновлён; docs в [DRIVERS.md](DRIVERS.md).
 
+**Статус (2026-06-28):** BL-20 Done — `writePoint` для `modbus-tcp`/`modbus-rtu` (FC5 coil, FC6 holding register); loopback tests в `ModbusTcpDeviceDriverTest`, guard-rail tests в `ModbusRtuDeviceDriverTest`; docs в DRIVERS.md. BL-22 Done — `writePoint` для `opcua` (Milo `writeValue`, type coercion по текущему Variant); loopback test `OpcUaDeviceDriverTest` против `opcua-server`; docs в DRIVERS.md.
+
+**Статус (2026-06-28):** BL-21 Done — `writePoint` для `s7` (encode + `S7Connector.write`, BOOL read-modify-write); mock tests в `S7DeviceDriverTest`, codec roundtrip в `S7ValueCodecTest`; docs в DRIVERS.md.
+
+---
+
+### BL-28 — Driver write UI
+
+**Проблема:** runtime API `POST /drivers/runtime/write` и `poll` были без UI; инженер не мог отправить write из Explorer/inspector.
+
+**Задачи:**
+
+- [x] `POST /api/v1/drivers/runtime/write?devicePath&pointId` + `DriverRuntimeService.writePoint`
+- [x] `DriverWriteForm` + `DriverWriteDialog` в web-console
+- [x] Вкладка Driver в inspector (`DeviceDriverPanel`)
+- [x] Explorer toolbar + context menu (DEVICE): poll / write
+- [x] i18n en/ru/de/zh
+
+**Acceptance:** admin выбирает mapped point, вводит value, driver running → write через UI; poll now обновляет variables.
+
+**Статус (2026-06-28):** Done — UI в `DeviceDriverPanel`, `ExplorerView`, `TreeBulkContextMenu`; API clients `pollDriver` / `writeDriverPoint`.
+
 ---
 
 ### BL-40 — ClickHouse variable history
 
 **Проблема:** event journal уже в ClickHouse; variable history — только JDBC/Timescale.
 
-```java
-// VariableHistoryProperties.java
-// Future: clickhouse.
-```
-
 **Задачи:**
 
 - [ ] `ClickHouseVariableHistoryWriteStore` + query path
-- [ ] Config `ispf.variable-history.store=clickhouse`
+- [x] Config `ispf.variable-history.store=clickhouse` (properties + `application.yml` env vars)
 - [ ] Deploy: `vps-clickhouse-verify.sh` расширить
-- [x] BL-13 UI toggle
+- [x] System settings UI: store toggle + ClickHouse connection fields (`PlatformRuntimeSettingsCatalog`, `SystemSettingsView`)
+
+**Статус (2026-06-28):** UI и runtime-settings catalog для variable history (store jdbc/jpa/clickhouse, ClickHouse url/database/table/credentials) — готово; backend write/query path и verify script — в backlog.
+
+### BL-41 — Redis correlator window + ACL cache health
+
+**Проблема:** Redis optional backend (ACL cache, correlator sliding windows) без операторского статуса в UI.
+
+**Задачи:**
+
+- [x] `GET /api/v1/platform/redis/health` — connection, store backends, TTLs, correlator key count
+- [x] `RedisHealthCard` в System → Metrics (рядом с метриками JVM/DB)
+- [x] i18n `redisHealth.*` (en/ru/de/zh); inline runbook hint (env vars)
+- [x] Док: [MESSAGING.md § Redis correlator windows](MESSAGING.md#redis-correlator-windows-optional-0014)
+
+**Acceptance:** админ видит connected/disconnected, correlator store (redis/jdbc), ACL cache backend, TTLs; ключи окон при Redis.
+
+**Статус (2026-06-28):** Done.
+
+---
+
+### BL-42 — NATS JetStream UI + PUBLISH_NATS smoke hint
+
+**Проблема:** NATS/JetStream replica fan-out и workflow `publishNats` без видимого статуса и smoke-подсказки.
+
+**Задачи:**
+
+- [x] `GET /api/v1/platform/nats/health` — connection, JetStream stream/consumer stats, `publishNatsAvailable`
+- [x] `NatsJetStreamHealthCard` в System → Metrics
+- [x] i18n `natsHealth.*` (en/ru/de/zh); smoke hint в карточке и `workflow.json` → `BpmnDiagramEditor`
+- [x] Auth: `/api/v1/platform/nats/**` в admin rules
+
+**Acceptance:** админ видит JetStream ready, stream messages/bytes, consumer pending; в BPMN editor при `publishNats` — hint со smoke subject.
+
+**Статус (2026-06-28):** Done.
 
 ---
 
@@ -324,12 +412,26 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 Синхронизировано с [ROADMAP Phase 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers).
 
-**Сценарии:**
+**Статус:** Partial — smoke baseline в `apps/web-console` (`playwright.config.ts`, `e2e/smoke.spec.ts`, `e2e/fixtures/apiMocks.ts`, `npm run test:e2e`). Локальный runbook: [`apps/web-console/e2e/README.md`](../apps/web-console/e2e/README.md).
 
-1. Login (OIDC mock / test user)
-2. Explorer: select device, open variables tab
-3. Operator deep link `?mode=operator&app=…`
-4. Dashboard preview render
+- [x] Login page smoke (mock `/api/v1/auth/config`)
+- [x] Admin Explorer shell smoke (mock session + platform API)
+- [x] Explorer: device deep link + Variables tab (mock editor API)
+- [x] Operator deep link `?mode=operator&app=demo` (public manifest)
+- [x] Optional live login when `E2E_USERNAME` / `E2E_PASSWORD` set
+- [x] CI job `web-console` (mocked e2e + vitest + build)
+- [ ] Dashboard preview render (mock dashboard layout + editor tab)
+- [ ] CI against staging / prod URL (`E2E_BASE_URL`)
+
+**Запуск:**
+
+```bash
+cd apps/web-console
+npm ci && npm run test:e2e:install
+npm run test:e2e
+# live backend:
+E2E_BASE_URL=http://localhost:8080 E2E_USERNAME=admin E2E_PASSWORD=admin npm run test:e2e
+```
 
 ---
 
@@ -386,6 +488,25 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 ---
 
+### BL-55 — Frontend vitest (utils + widget logic)
+
+**Сделано (Partial):**
+
+- [x] `bindingActivatorsUtils.test.ts` — event select/remote path/summary (17 tests)
+- [x] `journalExport.test.ts` — CSV mappers, row union, `downloadJournalExport` (node stubs)
+- [x] `chartOhlcUtils.test.ts` — live/bucket OHLC + stats (7 tests)
+- [x] `ganttChartView.test.ts` — viewport, bar layout, ticks, row patch (12 tests)
+- [x] `npm test` — 42 files, 217 tests green
+
+**Остаётся для закрытия BL-55:**
+
+- [ ] RTL/component tests: `BindingActivatorsEditor`, dashboard widget views, inspector dialogs
+- [ ] Playwright overlap — см. BL-50
+
+**Acceptance (полное закрытие):** smoke RTL на ключевые inspector panels + 2–3 widget editors без регрессий в CI.
+
+---
+
 ## Sprint planning (рекомендация)
 
 ```text
@@ -421,6 +542,11 @@ Backlog P3 — semantic (по запросу, после ADR)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-28 | BL-55 Partial: vitest `bindingActivatorsUtils`, `journalExport`, `chartOhlcUtils`, `ganttChartView` (217 tests) |
+| 2026-06-28 | BL-11: gantt interactive timeline (pan/zoom, bar drag, `ganttChartView`, vitest) |
+| 2026-06-28 | BL-41, BL-42 Done: Redis/NATS health API + System Metrics cards, i18n, BPMN publishNats smoke hint |
+| 2026-06-28 | BL-20: Modbus tcp/rtu `writePoint` (FC5/FC6), loopback + guard-rail tests, DRIVERS.md |
+| 2026-06-28 | BL-64: chart candlestick OHLC (вариант A, `chartOhlcUtils`, `CandlestickChartBody`) |
 | 2026-06-28 | BL-63…65: отложенная реализация chart types (range, candlestick, bubble/radar) после BL-06 opt. B |
 | 2026-06-28 | Wave G: Haystack/Brick semantic layer → BL-56…62 (P3, deferred) |
 | 2026-06-28 | Первая версия: code audit → BL-01…BL-55, Wave A–F |

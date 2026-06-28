@@ -66,6 +66,8 @@ When `ispf.nats.jet-stream-enabled=true` (requires `ispf.nats.enabled=true`):
 
 Replica fan-out uses JetStream publish/subscribe instead of core NATS for `ispf.events.>` subjects. Per-replica durable consumers (`ispf-replica-{replicaId}`) allow catch-up after restarts. Object-level subjects (`ispf.object.*`) remain core NATS for external integrators.
 
+**Ops:** live status (connection, stream messages/bytes, consumer pending, `PUBLISH_NATS` availability) — **System → Metrics** → NATS & JetStream card; API `GET /api/v1/platform/nats/health`.
+
 ### Redis correlator windows (optional, 0014)
 
 When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
@@ -75,6 +77,8 @@ When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
 | Correlator windows | `ISPF_REDIS_CORRELATOR_WINDOWS` | `false` |
 
 Sliding-window correlator state (COUNT / SEQUENCE / EVENT_CHAIN hits) is stored in Redis sorted sets (`ispf:corr:hits:{correlatorId}:{objectPath}`) instead of PostgreSQL `correlator_hits`. Enables shared windows across replicas; default remains JDBC for single-node deployments.
+
+**Ops:** live status (connection, correlator store backend, ACL cache backend, TTLs, key count) — **System → Metrics** → Redis card; API `GET /api/v1/platform/redis/health`.
 
 ## Sync RPC (primary API)
 

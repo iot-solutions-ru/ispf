@@ -27,8 +27,7 @@
 | **P0** | Workflow UI | Actions `log`, `publishNats` в ISPF справочнике | BL-02 Done |
 | **P1** | UI ↔ API | Change sets, edit leases, event catalog viewer | BL-04,05,08 Done |
 | **P1** | Inspector | RECORD inline editor | BL-03 Done |
-| **P2** | Dashboard | Chart candlestick / bubble / radar | BL-64…65, 20.24…25 |
-| **P2** | Dashboard | gantt interactive timeline | BL-11, 20.10 |
+| **P2** | Dashboard | Chart bubble / radar | BL-65, 20.25 |
 | **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
 | **P1** | Playwright e2e | Admin smoke (Phase 18.1 = BL-50) | BL-50, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA — `not implemented` | BL-20…22 |
@@ -65,20 +64,20 @@
 | Frontend e2e (Playwright) | ~0% | Admin critical paths | BL-50, Phase 18.1 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~95% | — | BL-01…18 Done |
-| Dashboard widgets (advanced) | ~90% | chart OHLC/bubble-radar, gantt | BL-64…65,11 |
+| Dashboard widgets (advanced) | ~95% | chart bubble/radar | BL-65 |
 | Variable inline editor | ~95% | — | BL-03 Done |
 | Binding rules UX | ~95% | runtime `onEvent`/`periodicMs` engine | in progress |
 | Journals | ~100% | — | BL-15,16 Done |
 | ClickHouse (variables) | ~0% | только event journal | BL-40 |
-| Optional backends UI | ~80% | Redis/NATS health, JetStream status | BL-41,42 |
+| Optional backends UI | ~100% | — | BL-41,42 Done |
 | Platform change management | ~95% | — | BL-04 Done |
 | Collaboration (leases) | ~95% | — | BL-05 Done |
 | Notifications | ~0% | webhook/email | BL-44 |
 | Federation UX | ~85% | dashboard write, sync conflicts | BL-45,46 |
 | Platform backup | ~0% | export/import tree | BL-47 |
 | Operator manifest | ~85% | chart/map screen types | BL-51 |
-| Spreadsheet widget | ~90% | Excel functions tail, history bind | BL-53,54 |
-| Frontend component tests | ~15% | vitest utils/sheet only | BL-55 |
+| Spreadsheet widget | ~95% | history bind (BL-54) | BL-54 |
+| Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
 | Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |
 
@@ -86,6 +85,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-28 | BL-55 Partial: binding activators, journal export, chart/gantt vitest utils |
 | 2026-06-28 | Sprint BL-C close: BL-13…18, journals, system settings, binding activators UI |
 | 2026-06-28 | Wave G: Haystack/Brick → BL-56…62 (P3 deferred), ROADMAP 20.22 |
 | 2026-06-28 | Code audit → [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) (BL-01…55), ROADMAP Phase 20, gap-registry расширен |

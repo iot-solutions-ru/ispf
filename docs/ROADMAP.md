@@ -229,12 +229,12 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.5 | Edit lease indicator + acquire/release | BL-05 | P1 | Done |
 | 20.6 | Chart types: убрать нереализованные options (opt. B) | BL-06 | P1 | Done |
 | 20.23 | Chart `range` min/max band | BL-63 | P2 | Done |
-| 20.24 | Chart `candlestick` OHLC | BL-64 | P2 | Planned |
+| 20.24 | Chart `candlestick` OHLC | BL-64 | P2 | Done |
 | 20.25 | Chart `bubble` / `radar` multi-axis | BL-65 | P3 | Planned |
 | 20.7 | i18n: widget type labels + binding hints | BL-07 | P1 | Done |
 | 20.8 | Application Event Catalog viewer | BL-08 | P1 | Done |
 | 20.9 | Binding expression builder (18 platform functions) | BL-09 | P2 | Done |
-| 20.10 | Widgets: network-graph layout, gantt interactive, history-table window | BL-10…12,63 | P2 | Partial (BL-10,12,63 done) |
+| 20.10 | Widgets: network-graph layout, gantt interactive, history-table window | BL-10…12,63 | P2 | Done |
 | 20.11 | System settings: Redis/NATS/ClickHouse/AI/MCP toggles | BL-13 | P2 | Done |
 | 20.12 | Automation index + journal export/diff | BL-14…16 | P2 | Done |
 | 20.13 | Driver write: Modbus, S7, OPC UA (demand-driven) | BL-20…22 | P1 | Planned |
@@ -245,7 +245,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.18 | Notifications, federation polish, backup/restore, MCP admin | BL-44…48 | P3 | Planned |
 | 20.19 | Playwright e2e (см. также Phase 18.1) | BL-50 | P1 | Planned |
 | 20.20 | Operator manifest screens + spreadsheet history binding | BL-51…54 | P3 | Planned |
-| 20.21 | Frontend component tests (widgets, inspector) | BL-55 | P2 | Planned |
+| 20.21 | Frontend component tests (widgets, inspector) | BL-55 | P2 | Partial |
 | 20.22 | Haystack/Brick semantic layer (ADR, tags mixin, export) | BL-56…62 | P3 | Deferred |
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).

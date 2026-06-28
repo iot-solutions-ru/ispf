@@ -294,7 +294,11 @@
 |------|----------|
 | `variableName` | **Обязательно.** RECORD_LIST |
 | `labelField` | Подпись строки |
-| `startField` / `endField` | Поля начала и конца (ISO time или ms) |
+| `startField` / `endField` | Поля начала и конца (epoch ms, epoch s или числовая шкала) |
+| `interactive` | Pan/zoom шкалы в режиме оператора (по умолчанию `true`; в редакторе отключено) |
+| `allowBarDrag` | Перетаскивание полос при writable RECORD_LIST (по умолчанию `true`) |
+
+**Оператор:** колёсико — zoom, drag по шкале — pan, двойной клик — сброс viewport; drag полосы — сдвиг start/end с persist через `setVariable`.
 
 ---
 

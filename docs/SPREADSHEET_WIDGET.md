@@ -68,7 +68,7 @@
 | Импорт | Все листы книги → вкладки; ячейки, формулы (в т.ч. `Sheet!A1`), **объединения**, **базовые стили**; сетка до 500×52 |
 | Экспорт | Вся книга → `.xlsx` с формулами, стилями и merge |
 | Сессия | Значения, формулы, метаданные книги (листы, стили, merge) сохраняются в session / variable |
-| Предупреждения | Неподдерживаемые функции дают `#NAME?`; список показывается после импорта |
+| Предупреждения | Неподдерживаемые функции дают `#NAME?`; после импорта показывается список функций с кнопкой закрытия (баннер не исчезает автоматически) |
 
 Оператор конкатенации `&` поддерживается: `="A"&"B"`.
 
@@ -77,17 +77,18 @@
 | Категория | Функции |
 |-----------|---------|
 | Агрегаты | `SUM`, `AVERAGE`, `MIN`, `MAX`, `COUNT`, `COUNTA`, `COUNTBLANK`, `PRODUCT`, `MEDIAN`, `STDEV`, `STDEV.S`, `SUBTOTAL` |
-| Условные | `IF`, `IFERROR`, `IFS`, `SUMIF`, `COUNTIF`, `AVERAGEIF`, `SUMIFS`, `COUNTIFS`, `AVERAGEIFS`, `SUMPRODUCT` |
+| Условные | `IF`, `IFERROR`, `IFS`, `SUMIF`, `COUNTIF`, `AVERAGEIF`, `SUMIFS`, `COUNTIFS`, `AVERAGEIFS`, `MAXIFS`, `MINIFS`, `SUMPRODUCT` |
 | Lookup | `VLOOKUP`, `HLOOKUP`, `INDEX`, `MATCH`, `XLOOKUP` |
 | Математика | `ABS`, `MOD`, `POWER`, `SQRT`, `INT`, `ROUND`, `ROUNDUP`, `ROUNDDOWN`, `CEILING`, `FLOOR`, `TRUNC`, `MROUND`, `LOG`, `LN`, `LOG10`, `EXP`, `PI`, `SIGN`, `RAND`, `RANDBETWEEN` |
-| Логика | `AND`, `OR`, `NOT`, `SWITCH`, `CHOOSE`, `IFNA` |
-| Текст | `LEN`, `LEFT`, `RIGHT`, `MID`, `TRIM`, `UPPER`, `LOWER`, `CONCAT`, `CONCATENATE`, `TEXT`, `TEXTJOIN`, `FIND`, `SEARCH`, `SUBSTITUTE`, `REPLACE`, `VALUE`, `EXACT` |
+| Логика | `AND`, `OR`, `NOT`, `TRUE`, `FALSE`, `SWITCH`, `CHOOSE`, `IFNA` |
+| Текст | `LEN`, `LEFT`, `RIGHT`, `MID`, `TRIM`, `UPPER`, `LOWER`, `PROPER`, `CHAR`, `CODE`, `REPT`, `CONCAT`, `CONCATENATE`, `TEXT`, `TEXTJOIN`, `FIND`, `SEARCH`, `SUBSTITUTE`, `REPLACE`, `VALUE`, `EXACT` |
 | Дата/время | `TODAY`, `NOW`, `YEAR`, `MONTH`, `DAY`, `DATE`, `DAYS`, `WEEKDAY`, `HOUR`, `MINUTE`, `SECOND`, `TIME`, `EDATE`, `EOMONTH`, `DATEDIF`, `NETWORKDAYS`, `WORKDAY`, `DATEVALUE`, `TIMEVALUE`, `WEEKNUM`, `YEARFRAC` |
 | Статистика | `VAR`, `VAR.S`, `PERCENTILE`, `QUARTILE`, `LARGE`, `SMALL`, `RANK` |
 | Финансы | `NPV`, `IRR`, `PMT`, `FV`, `PV`, `NPER`, `RATE` |
 | Тригонометрия | `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `RADIANS`, `DEGREES` |
 | Адресация | `ROW`, `COLUMN`, `ROWS`, `COLUMNS` |
-| Проверки | `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISERROR`, `ISNA`, `ISERR` |
+| Проверки | `ISBLANK`, `ISNUMBER`, `ISTEXT`, `ISERROR`, `ISNA`, `ISERR`, `NA`, `ISLOGICAL`, `ISODD`, `ISEVEN` |
+| Текст (очистка) | `CLEAN` |
 | ISPF | `ISPREF`, `ISPSUM`, `ISPHIST` |
 
 Cross-sheet ссылки: `=Sheet2!A1`, `=SUM(Sales!A1:A10)`.
