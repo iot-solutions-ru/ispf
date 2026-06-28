@@ -3566,7 +3566,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 }
 
 .dash-table-wrap {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
   overflow: auto;
   margin-top: 0.35rem;
@@ -3576,6 +3576,12 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
+}
+
+.dash-object-table.dash-sheet-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: auto;
 }
 
 .dash-object-table th,
@@ -3616,8 +3622,47 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   background: transparent;
 }
 
-.dash-sheet-wrap {
+.dash-sheet-wrap.dash-table-wrap {
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
   overflow: auto;
+  margin-top: 0;
+  overscroll-behavior: contain;
+}
+
+.dash-widget-spreadsheet {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dash-widget-spreadsheet > .dash-widget-title {
+  flex-shrink: 0;
+}
+
+.dash-sheet-root,
+.dash-sheet-free-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  height: 0;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+}
+
+.dash-sheet-root:focus-visible,
+.dash-sheet-free-root:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent, #2f81f7);
+  border-radius: 4px;
+}
+
+.dash-sheet-toolbar,
+.dash-sheet-formula-bar,
+.dash-sheet-filters,
+.dash-sheet-import-notice,
+.dash-sheet-import-dialog {
+  flex-shrink: 0;
 }
 
 .dash-sheet-formula-bar {
@@ -3676,6 +3721,27 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   user-select: none;
 }
 
+.dash-sheet-table thead .dash-sheet-col-header,
+.dash-sheet-table thead .dash-sheet-corner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.dash-sheet-table .dash-sheet-row-header {
+  position: sticky;
+  left: 0;
+  top: auto;
+  z-index: 1;
+}
+
+.dash-sheet-table .dash-sheet-corner {
+  position: sticky;
+  left: 0;
+  top: 0;
+  z-index: 3;
+}
+
 .dash-sheet-cell {
   min-width: 4rem;
   padding: 0.15rem 0.35rem;
@@ -3717,15 +3783,6 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
 
 .dash-sheet-cell-empty {
   background: var(--surface-1, #161b22);
-}
-
-.dash-sheet-free-root {
-  outline: none;
-}
-
-.dash-sheet-free-root:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--accent, #2f81f7);
-  border-radius: 4px;
 }
 
 .dash-sheet-toolbar {

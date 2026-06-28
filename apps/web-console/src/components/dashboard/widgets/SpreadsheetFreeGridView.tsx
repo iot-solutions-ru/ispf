@@ -732,8 +732,16 @@ export default function SpreadsheetFreeGridView({
               }}
             />
           </div>
-          <div className="dash-table-wrap dash-sheet-wrap" ref={tableWrapRef} style={styles.body}>
-            <table className="dash-object-table dash-sheet-table">
+          <div
+            className="dash-table-wrap dash-sheet-wrap"
+            ref={tableWrapRef}
+            style={
+              styles.body
+                ? { ...styles.body, flex: "1 1 0", minHeight: 0, overflow: "auto" }
+                : undefined
+            }
+          >
+            <table className="dash-object-table dash-sheet-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="dash-sheet-corner" />

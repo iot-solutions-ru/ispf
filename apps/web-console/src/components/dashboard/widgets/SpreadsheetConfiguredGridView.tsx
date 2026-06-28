@@ -283,7 +283,7 @@ export default function SpreadsheetConfiguredGridView({
       {isLoading ? (
         <p className="hint">{t("common:action.loading")}</p>
       ) : (
-        <>
+        <div className="dash-sheet-root">
           {persistWarning ? (
             <div className="dash-sheet-import-notice dash-sheet-persist-warning" role="status">
               {t(persistWarning, {
@@ -317,8 +317,16 @@ export default function SpreadsheetConfiguredGridView({
               ))}
             </div>
           )}
-          <div className="dash-table-wrap dash-sheet-wrap" ref={tableWrapRef} style={styles.body}>
-            <table className="dash-object-table dash-sheet-table">
+          <div
+            className="dash-table-wrap dash-sheet-wrap"
+            ref={tableWrapRef}
+            style={
+              styles.body
+                ? { ...styles.body, flex: "1 1 0", minHeight: 0, overflow: "auto" }
+                : undefined
+            }
+          >
+            <table className="dash-object-table dash-sheet-table" style={styles.table}>
               <thead>
                 <tr>
                   <th className="dash-sheet-corner" />
@@ -352,7 +360,7 @@ export default function SpreadsheetConfiguredGridView({
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
     </DashWidgetShell>
   );
