@@ -3,11 +3,13 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
 import type { BindingActivators, BindingRule } from "../types";
+import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
 
 interface BindingRulesPanelProps {
   path: string;
   canManage: boolean;
+  eventNames?: string[];
 }
 
 function defaultActivators(): BindingActivators {
@@ -17,20 +19,6 @@ function defaultActivators(): BindingActivators {
     onEvent: null,
     periodicMs: 0,
   };
-}
-
-function activatorsSummary(rule: BindingRule): string {
-  const parts: string[] = [];
-  if (rule.activators.onStartup) {
-    parts.push("startup");
-  }
-  for (const ref of rule.activators.onVariableChange ?? []) {
-    parts.push(`${ref.objectPath}:${ref.variableName}`);
-  }
-  if (rule.activators.periodicMs > 0) {
-    parts.push(`${rule.activators.periodicMs}ms`);
-  }
-  return parts.length > 0 ? parts.join(", ") : "—";
 }
 
 function emptyRule(): BindingRule {
@@ -46,7 +34,7 @@ function emptyRule(): BindingRule {
   };
 }
 
-export default function BindingRulesPanel({ path, canManage }: BindingRulesPanelProps) {
+export default function BindingRulesPanel({ path, canManage, eventNames = [] }: BindingRulesPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<BindingRule | null>(null);
@@ -184,54 +172,11 @@ export default function BindingRulesPanel({ path, canManage }: BindingRulesPanel
                   placeholder={t("inspector:bindings.conditionPlaceholder")}
                 />
               </label>
-              <label className="full">
-                Remote object path (cross-object)
-                <input
-                  value={
-                    editing.activators.onVariableChange.find((r) => r.objectPath !== "self")?.objectPath ?? ""
-                  }
-                  placeholder="root.platform.devices.foo"
-                  onChange={(e) => {
-                    const remotePath = e.target.value.trim();
-                    const remoteVar =
-                      editing.activators.onVariableChange.find((r) => r.objectPath !== "self")?.variableName ?? "";
-                    const activators: BindingActivators = remotePath
-                      ? {
-                          onStartup: editing.activators.onStartup,
-                          onEvent: editing.activators.onEvent,
-                          periodicMs: editing.activators.periodicMs,
-                          onVariableChange: remoteVar
-                            ? [{ objectPath: remotePath, variableName: remoteVar }]
-                            : [{ objectPath: remotePath, variableName: "*" }],
-                        }
-                      : defaultActivators();
-                    setEditing({ ...editing, activators });
-                  }}
-                />
-              </label>
-              <label className="full">
-                Remote variable
-                <input
-                  value={
-                    editing.activators.onVariableChange.find((r) => r.objectPath !== "self")?.variableName ?? ""
-                  }
-                  onChange={(e) => {
-                    const remoteVar = e.target.value.trim();
-                    const remotePath =
-                      editing.activators.onVariableChange.find((r) => r.objectPath !== "self")?.objectPath ?? "";
-                    if (!remotePath) {
-                      return;
-                    }
-                    setEditing({
-                      ...editing,
-                      activators: {
-                        ...editing.activators,
-                        onVariableChange: [{ objectPath: remotePath, variableName: remoteVar || "*" }],
-                      },
-                    });
-                  }}
-                />
-              </label>
+              <BindingActivatorsEditor
+                activators={editing.activators}
+                eventNames={eventNames}
+                onChange={(activators) => setEditing({ ...editing, activators })}
+              />
               <label className="checkbox-label inline full">
                 <input
                   type="checkbox"

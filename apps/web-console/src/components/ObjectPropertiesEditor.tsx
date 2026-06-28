@@ -689,7 +689,11 @@ export default function ObjectPropertiesEditor({
 
       {tab === "bindings" && (
         <section className="panel">
-          <BindingRulesPanel path={path} canManage={canManage} />
+          <BindingRulesPanel
+            path={path}
+            canManage={canManage}
+            eventNames={editorData.events.map((event) => event.name)}
+          />
           {canManage && !ctx.federated && (
             <label className="binding-audit-toggle panel-toolbar">
               <input

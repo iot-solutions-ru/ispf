@@ -67,7 +67,7 @@
 | UI ↔ API parity | ~75% | change sets, leases, correlator actions, event catalog | BL-01…08, Phase 20 |
 | Dashboard widgets (advanced) | ~90% | chart OHLC/bubble-radar, gantt | BL-64…65,11 |
 | Variable inline editor | ~85% | RECORD → structured editor | BL-03 |
-| Binding rules UX | ~90% | activators UI | BL-18 |
+| Binding rules UX | ~100% | runtime `onEvent`/`periodicMs` engine | — |
 | Journals | ~100% | — | — |
 | ClickHouse (variables) | ~0% | только event journal | BL-40 |
 | Optional backends UI | ~70% | Redis, NATS, ClickHouse journal, AI, MCP в System | BL-41,42,48 |

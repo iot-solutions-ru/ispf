@@ -154,6 +154,18 @@ code,
   margin: 0 0 0.75rem;
 }
 
+.binding-activators-editor {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  margin: 0;
+}
+
+.binding-activators-editor legend {
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
 .system-settings-view {
   display: flex;
   flex-direction: column;

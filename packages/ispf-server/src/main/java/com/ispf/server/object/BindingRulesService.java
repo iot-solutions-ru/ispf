@@ -117,7 +117,10 @@ public class BindingRulesService {
         List<BindingRule> normalized = new ArrayList<>();
         for (BindingRule rule : rules) {
             BindingActivators activators = rule.activators();
-            if (activators.onVariableChange().isEmpty() && !activators.onStartup() && activators.periodicMs() <= 0) {
+            if (activators.onVariableChange().isEmpty()
+                    && !activators.onStartup()
+                    && activators.periodicMs() <= 0
+                    && (activators.onEvent() == null || activators.onEvent().isBlank())) {
                 activators = defaultActivators("", rule.expression());
             }
             normalized.add(new BindingRule(
