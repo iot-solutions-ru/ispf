@@ -116,13 +116,7 @@ public class BindingRulesService {
     private static List<BindingRule> normalizeRules(List<BindingRule> rules) {
         List<BindingRule> normalized = new ArrayList<>();
         for (BindingRule rule : rules) {
-            BindingActivators activators = rule.activators();
-            if (activators.onVariableChange().isEmpty()
-                    && !activators.onStartup()
-                    && activators.periodicMs() <= 0
-                    && (activators.onEvent() == null || activators.onEvent().isBlank())) {
-                activators = defaultActivators("", rule.expression());
-            }
+            BindingActivators activators = normalizeActivators(rule.activators(), rule.expression());
             normalized.add(new BindingRule(
                     rule.id(),
                     rule.name(),
@@ -136,6 +130,33 @@ public class BindingRulesService {
         }
         normalized.sort((left, right) -> Integer.compare(left.order(), right.order()));
         return normalized;
+    }
+
+    private static BindingActivators normalizeActivators(BindingActivators activators, String expression) {
+        String onEvent = activators.onEvent();
+        if (onEvent != null) {
+            onEvent = onEvent.trim();
+            if (onEvent.isBlank()) {
+                onEvent = null;
+            }
+        }
+        long periodicMs = Math.max(0L, activators.periodicMs());
+        if (onEvent != activators.onEvent() || periodicMs != activators.periodicMs()) {
+            activators = new BindingActivators(
+                    activators.onStartup(),
+                    activators.onVariableChange(),
+                    onEvent,
+                    periodicMs,
+                    activators.async()
+            );
+        }
+        if (activators.onVariableChange().isEmpty()
+                && !activators.onStartup()
+                && !activators.hasPeriodicSchedule()
+                && (activators.onEvent() == null || activators.onEvent().isBlank())) {
+            activators = defaultActivators("", expression);
+        }
+        return activators;
     }
 
     private record BindingRuleDto(

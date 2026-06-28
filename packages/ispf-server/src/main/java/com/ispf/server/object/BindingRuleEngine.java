@@ -69,6 +69,20 @@ public class BindingRuleEngine {
         runRules(ruleObjectPath, Trigger.variableChange(changedObjectPath, changedVariable), true);
     }
 
+    public void onEvent(String objectPath, String eventName) {
+        if (eventName == null || eventName.isBlank()) {
+            return;
+        }
+        runRules(objectPath, Trigger.event(eventName), false);
+    }
+
+    public void onPeriodic(String objectPath, String ruleId) {
+        if (ruleId == null || ruleId.isBlank()) {
+            return;
+        }
+        runRules(objectPath, Trigger.periodic(ruleId), false);
+    }
+
     public void runRulesForObject(String objectPath) {
         runRules(objectPath, Trigger.manual(), false);
     }
@@ -152,6 +166,8 @@ public class BindingRuleEngine {
                     trigger.changedObjectPath(),
                     trigger.changedVariable()
             );
+            case EVENT -> rule.activators().matchesEvent(trigger.eventName());
+            case PERIODIC -> rule.id().equals(trigger.ruleId()) && rule.activators().hasPeriodicSchedule();
         };
     }
 
@@ -229,19 +245,33 @@ public class BindingRuleEngine {
         }
     }
 
-    private record Trigger(Kind kind, String changedObjectPath, String changedVariable) {
-        enum Kind { STARTUP, VARIABLE_CHANGE, MANUAL }
+    private record Trigger(
+            Kind kind,
+            String changedObjectPath,
+            String changedVariable,
+            String eventName,
+            String ruleId
+    ) {
+        enum Kind { STARTUP, VARIABLE_CHANGE, MANUAL, EVENT, PERIODIC }
 
         static Trigger startup() {
-            return new Trigger(Kind.STARTUP, null, null);
+            return new Trigger(Kind.STARTUP, null, null, null, null);
         }
 
         static Trigger manual() {
-            return new Trigger(Kind.MANUAL, null, null);
+            return new Trigger(Kind.MANUAL, null, null, null, null);
         }
 
         static Trigger variableChange(String changedObjectPath, String changedVariable) {
-            return new Trigger(Kind.VARIABLE_CHANGE, changedObjectPath, changedVariable);
+            return new Trigger(Kind.VARIABLE_CHANGE, changedObjectPath, changedVariable, null, null);
+        }
+
+        static Trigger event(String eventName) {
+            return new Trigger(Kind.EVENT, null, null, eventName, null);
+        }
+
+        static Trigger periodic(String ruleId) {
+            return new Trigger(Kind.PERIODIC, null, null, null, ruleId);
         }
     }
 }

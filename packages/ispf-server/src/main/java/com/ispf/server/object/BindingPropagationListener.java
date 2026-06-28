@@ -20,6 +20,10 @@ public class BindingPropagationListener {
     @EventListener
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public void onObjectChange(ObjectChangeEvent event) {
+        if (event.type() == ObjectChangeType.EVENT_FIRED && event.variableName() != null) {
+            bindingRuleEngine.onEvent(event.path(), event.variableName());
+            return;
+        }
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }

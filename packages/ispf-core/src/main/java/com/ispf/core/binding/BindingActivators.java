@@ -57,4 +57,12 @@ public record BindingActivators(
         return onVariableChange.stream()
                 .anyMatch(ref -> ref.matches(ruleObjectPath, changedObjectPath, changedVariable));
     }
+
+    public boolean matchesEvent(String eventName) {
+        return onEvent != null && !onEvent.isBlank() && onEvent.equals(eventName);
+    }
+
+    public boolean hasPeriodicSchedule() {
+        return periodicMs > 0;
+    }
 }
