@@ -21,6 +21,11 @@ final class AgentLoopGuard {
         if (steps == null || steps.isEmpty()) {
             return defaultHint(steps, maxStepsTotal);
         }
+        if ("run_report".equals(lastTool)) {
+            return """
+                    Report data received. Prefer finish with a summary if the goal is met; \
+                    otherwise continue with one more targeted read tool.""";
+        }
         if (isRepeatedTool(lastTool, steps)) {
             return """
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \

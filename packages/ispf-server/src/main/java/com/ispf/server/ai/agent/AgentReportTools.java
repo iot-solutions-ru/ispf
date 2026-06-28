@@ -78,13 +78,29 @@ final class AgentReportTools {
                         continue;
                     }
                     ReportService.ReportView view = reportService.getReport(child.path());
+                    OperatorAgentScope operatorScope = context.operatorScope();
+                    if (operatorScope != null && !operatorScope.isPathAllowed(view.path())) {
+                        continue;
+                    }
                     String haystack = (view.path() + " " + view.title() + " " + view.reportType()).toLowerCase(Locale.ROOT);
                     if (!query.isBlank() && !haystack.contains(query)) {
                         continue;
                     }
                     rows.add(reportSummary(view));
                 }
-                return Map.of("status", "OK", "count", rows.size(), "reports", rows);
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("status", "OK");
+                response.put("count", rows.size());
+                response.put("reports", rows);
+                if (context.operatorScope() != null) {
+                    response.put("operatorAppId", context.operatorScope().appId());
+                    response.put(
+                            "scopeNote",
+                            "Only reports allowed for operator app " + context.operatorScope().appId()
+                                    + ". Use exact path from this list for run_report."
+                    );
+                }
+                return response;
             }
         };
     }

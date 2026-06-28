@@ -11,6 +11,7 @@ import {
 import type { OperatorUi, OperatorUiDashboard } from "../types/operatorUi";
 import type { OperatorAlarmBarConfig } from "../types/operatorAlarmBar";
 import OperatorAlarmBarEditor from "./operator/OperatorAlarmBarEditor";
+import OperatorAppKnowledgePanel from "./operator/OperatorAppKnowledgePanel";
 import {
   operatorAppLeafFromPath,
   resolveOperatorAppId,
@@ -49,6 +50,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
   const [defaultDashboard, setDefaultDashboard] = useState("");
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [alarmBar, setAlarmBar] = useState<OperatorAlarmBarConfig | undefined>(undefined);
+  const [agentInstructions, setAgentInstructions] = useState("");
 
   const uiQuery = useQuery({
     queryKey: ["operator-app-ui", selectedAppId],
@@ -63,6 +65,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setDefaultDashboard(ui.defaultDashboard);
       setSelectedPaths(ui.dashboards.map((item) => item.path));
       setAlarmBar(ui.alarmBar);
+      setAgentInstructions(ui.agentInstructions ?? "");
       return;
     }
     if (pathLeaf) {
@@ -70,6 +73,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       setDefaultDashboard("");
       setSelectedPaths([]);
       setAlarmBar(undefined);
+      setAgentInstructions("");
     }
   }, [uiQuery.data, pathLeaf]);
 
@@ -121,6 +125,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       defaultDashboard: resolvedDefault,
       dashboards,
       alarmBar,
+      agentInstructions: agentInstructions.trim() || undefined,
     };
   };
 
@@ -134,7 +139,7 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
       return true;
     }
     return JSON.stringify(ui) !== JSON.stringify(draft);
-  }, [uiQuery.data, title, defaultDashboard, selectedPaths, selectedAppId, availableDashboards, alarmBar]);
+  }, [uiQuery.data, title, defaultDashboard, selectedPaths, selectedAppId, availableDashboards, alarmBar, agentInstructions]);
 
   const handleSave = () => {
     const ui = buildUi();
@@ -235,6 +240,13 @@ export default function OperatorAppsPanel({ canManage, selectedPath }: OperatorA
               onChange={setAlarmBar}
               disabled={!canManage}
               dashboardPaths={selectedPaths}
+            />
+
+            <OperatorAppKnowledgePanel
+              appId={selectedAppId}
+              canManage={canManage}
+              agentInstructions={agentInstructions}
+              onAgentInstructionsChange={setAgentInstructions}
             />
 
             {canManage && (

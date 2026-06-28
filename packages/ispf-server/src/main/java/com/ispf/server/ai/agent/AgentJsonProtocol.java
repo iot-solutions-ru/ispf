@@ -5,6 +5,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 public final class AgentJsonProtocol {
 
@@ -24,6 +25,27 @@ public final class AgentJsonProtocol {
         String normalized = normalizeModelContent(content);
         JsonNode root = readActionRoot(objectMapper, normalized);
         return parseActionNode(objectMapper, root);
+    }
+
+    /**
+     * Operator copilot fallback when the model answers in plain language after tool steps.
+     */
+    public static Optional<AgentAction> tryParsePlainTextFinish(String content) {
+        String normalized = normalizeModelContent(content);
+        if (normalized == null || normalized.isBlank()) {
+            return Optional.empty();
+        }
+        String trimmed = normalized.trim();
+        if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return Optional.empty();
+        }
+        if (trimmed.length() < 16) {
+            return Optional.empty();
+        }
+        if (trimmed.contains("{\"type\"") || trimmed.contains("{\"type\":")) {
+            return Optional.empty();
+        }
+        return Optional.of(new AgentAction("finish", null, null, trimmed, Map.of()));
     }
 
     private static JsonNode readActionRoot(ObjectMapper objectMapper, String normalized) throws Exception {

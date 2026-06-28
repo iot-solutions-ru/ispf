@@ -25,6 +25,8 @@ export interface OperatorUi {
   workQueueWorkflowPathPrefix?: string;
   /** Global popup alarm bar configuration for operator mode. */
   alarmBar?: OperatorAlarmBarConfig;
+  /** Custom instructions for the operator AI assistant (admin-authored). */
+  agentInstructions?: string;
 }
 
 export function resolveOperatorDashboard(

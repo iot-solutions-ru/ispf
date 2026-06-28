@@ -61,7 +61,8 @@ public class OperatorAppController {
                     request.title(),
                     request.defaultDashboard(),
                     request.dashboards(),
-                    request.alarmBar()
+                    request.alarmBar(),
+                    request.agentInstructions()
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -77,7 +78,8 @@ public class OperatorAppController {
             String title,
             String defaultDashboard,
             List<Map<String, String>> dashboards,
-            Map<String, Object> alarmBar
+            Map<String, Object> alarmBar,
+            String agentInstructions
     ) {
     }
 }

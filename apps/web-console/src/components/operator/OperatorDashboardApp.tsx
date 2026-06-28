@@ -18,6 +18,7 @@ import AlarmBarOverlay from "./AlarmBarOverlay";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
+import OperatorAgentFab from "./OperatorAgentFab";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 
 interface OperatorDashboardAppProps {
@@ -299,6 +300,11 @@ export default function OperatorDashboardApp({
         sidebar={<OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />}
       />
       {alarmBar.position === "bottom" && <AlarmBarOverlay {...alarmBar} />}
+      <OperatorAgentFab
+        appId={appId}
+        onOpenDashboard={navigateDashboard}
+        onOpenReport={navigateReport}
+      />
     </div>
   );
 }

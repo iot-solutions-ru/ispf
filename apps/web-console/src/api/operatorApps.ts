@@ -57,6 +57,7 @@ export async function saveOperatorAppUi(appId: string, ui: OperatorUi): Promise<
       defaultDashboard: ui.defaultDashboard,
       dashboards: ui.dashboards,
       alarmBar: ui.alarmBar ?? null,
+      agentInstructions: ui.agentInstructions?.trim() || null,
     }),
   });
   if (!response.ok) {

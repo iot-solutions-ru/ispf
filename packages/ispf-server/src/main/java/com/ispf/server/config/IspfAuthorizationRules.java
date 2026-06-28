@@ -33,8 +33,14 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/runtime-settings")
                 .hasRole(IspfRoles.ADMIN);
 
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/ai/provider")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
         auth.requestMatchers("/api/v1/ai/**")
                 .hasRole(IspfRoles.ADMIN);
+
+        auth.requestMatchers("/api/v1/operator-apps/*/agent/**")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
         auth.requestMatchers("/api/v1/platform/update/**")
                 .hasRole(IspfRoles.ADMIN);

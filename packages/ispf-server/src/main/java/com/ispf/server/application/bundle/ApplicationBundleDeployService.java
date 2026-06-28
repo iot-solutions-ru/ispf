@@ -244,6 +244,23 @@ public class ApplicationBundleDeployService {
         return objectMapper.readValue(snapshot.manifestJson(), BundleManifest.class);
     }
 
+    /** Report object paths from the active application bundle (operator agent scope). */
+    public List<String> activeReportPaths(String appId) {
+        try {
+            BundleManifest manifest = requireActiveManifest(appId);
+            if (manifest.reports() == null || manifest.reports().isEmpty()) {
+                return List.of();
+            }
+            List<String> paths = new ArrayList<>();
+            for (BundleReport report : manifest.reports()) {
+                paths.add(ReportService.reportPath(report.reportId()));
+            }
+            return paths;
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
     private Map<String, Object> syncTreeArtifactsFromActiveManifest(String appId, boolean createMissingOnly) {
         try {
             BundleManifest manifest = requireActiveManifest(appId);

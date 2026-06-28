@@ -41,8 +41,20 @@ public final class AgentStepHumanizer {
             case "validate_bundle" -> "Проверяю bundle «" + arg(arguments, "appId") + "»";
             case "dry_run_deploy" -> "Dry-run деплоя «" + arg(arguments, "appId") + "»";
             case "import_package" -> "Импортирую пакет «" + orDefault(arg(arguments, "packageId"), arg(arguments, "appId")) + "»";
+            case "get_variable_history" -> "История «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
+            case "get_variable_trend" -> "Тренд «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
+            case "list_work_queue" -> "Открытые задачи оператора";
+            case "list_app_memory" -> "Память приложения" + memoryQuery(arguments);
+            case "remember_app_memory" -> "Запоминаю для приложения";
+            case "run_report" -> "Отчёт «" + arg(arguments, "path") + "»";
+            case "list_events" -> "События «" + orDefault(arg(arguments, "objectPath"), "платформа") + "»";
             default -> "Вызов " + tool;
         };
+    }
+
+    private static String memoryQuery(Map<String, Object> arguments) {
+        String query = arg(arguments, "query");
+        return query.isBlank() ? "" : " («" + query + "»)";
     }
 
     private static String widgetCatalogLabel(Map<String, Object> arguments) {

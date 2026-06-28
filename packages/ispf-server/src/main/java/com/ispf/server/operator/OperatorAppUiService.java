@@ -139,7 +139,8 @@ public class OperatorAppUiService {
             String title,
             String defaultDashboard,
             List<Map<String, String>> dashboards,
-            Map<String, Object> alarmBar
+            Map<String, Object> alarmBar,
+            String agentInstructions
     ) throws Exception {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("title is required");
@@ -156,7 +157,7 @@ public class OperatorAppUiService {
         if (!defaultFound) {
             throw new IllegalArgumentException("defaultDashboard must be one of dashboards[].path");
         }
-        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar);
+        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, agentInstructions);
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 appId,
                 title.trim(),
@@ -178,10 +179,41 @@ public class OperatorAppUiService {
         return saveUi(appId, title, defaultDashboard, dashboards, null);
     }
 
+    public Map<String, Object> saveUi(
+            String appId,
+            String title,
+            String defaultDashboard,
+            List<Map<String, String>> dashboards,
+            Map<String, Object> alarmBar
+    ) throws Exception {
+        return saveUi(appId, title, defaultDashboard, dashboards, alarmBar, null);
+    }
+
+    public String getAgentInstructions(String appId) {
+        try {
+            return store.findByAppId(appId)
+                    .map(OperatorAppUiStore.OperatorAppUiRecord::uiExtrasJson)
+                    .map(this::readAgentInstructions)
+                    .orElse("");
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
+    private String readAgentInstructions(String uiExtrasJson) {
+        try {
+            Map<String, Object> extras = readExtras(uiExtrasJson);
+            Object raw = extras.get("agentInstructions");
+            return raw != null ? String.valueOf(raw).trim() : "";
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
     public void saveUiExtras(String appId, Map<String, Object> alarmBar) throws Exception {
         OperatorAppUiStore.OperatorAppUiRecord record = store.findByAppId(appId)
                 .orElseThrow(() -> new IllegalArgumentException("Operator app not found: " + appId));
-        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar);
+        String uiExtrasJson = buildUiExtrasJson(appId, alarmBar, null);
         store.upsert(new OperatorAppUiStore.OperatorAppUiRecord(
                 record.appId(),
                 record.title(),
@@ -192,13 +224,21 @@ public class OperatorAppUiService {
         ));
     }
 
-    private String buildUiExtrasJson(String appId, Map<String, Object> alarmBar) throws Exception {
+    private String buildUiExtrasJson(String appId, Map<String, Object> alarmBar, String agentInstructions) throws Exception {
         Map<String, Object> extras = readExtras(store.findByAppId(appId).map(OperatorAppUiStore.OperatorAppUiRecord::uiExtrasJson).orElse(null));
         if (alarmBar != null) {
             if (alarmBar.isEmpty()) {
                 extras.remove("alarmBar");
             } else {
                 extras.put("alarmBar", alarmBar);
+            }
+        }
+        if (agentInstructions != null) {
+            String trimmed = agentInstructions.trim();
+            if (trimmed.isEmpty()) {
+                extras.remove("agentInstructions");
+            } else {
+                extras.put("agentInstructions", trimmed);
             }
         }
         if (extras.isEmpty()) {
@@ -230,6 +270,10 @@ public class OperatorAppUiService {
         Object alarmBar = extras.get("alarmBar");
         if (alarmBar != null) {
             ui.put("alarmBar", alarmBar);
+        }
+        Object agentInstructions = extras.get("agentInstructions");
+        if (agentInstructions != null) {
+            ui.put("agentInstructions", agentInstructions);
         }
         return ui;
     }

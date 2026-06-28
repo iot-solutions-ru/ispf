@@ -7,6 +7,7 @@ import com.ispf.server.ai.llm.LlmProviderRegistry;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -38,6 +39,17 @@ final class AgentLlmActionResolver {
             Function<List<LlmMessage>, LlmRequest> requestFactory,
             int maxAttempts
     ) throws Exception {
+        return resolve(objectMapper, llmProviderRegistry, messages, requestFactory, maxAttempts, false);
+    }
+
+    static ParseAttempt resolve(
+            ObjectMapper objectMapper,
+            LlmProviderRegistry llmProviderRegistry,
+            List<LlmMessage> messages,
+            Function<List<LlmMessage>, LlmRequest> requestFactory,
+            int maxAttempts,
+            boolean allowPlainTextFinish
+    ) throws Exception {
         int attempts = Math.max(1, maxAttempts);
         LlmResponse lastResponse = null;
         String lastError = null;
@@ -52,6 +64,14 @@ final class AgentLlmActionResolver {
                     messages.add(new LlmMessage("assistant", lastResponse.content()));
                     messages.add(new LlmMessage("user", JSON_NUDGE));
                 }
+            }
+        }
+        if (allowPlainTextFinish && lastResponse != null) {
+            Optional<AgentJsonProtocol.AgentAction> plain = AgentJsonProtocol.tryParsePlainTextFinish(
+                    lastResponse.content()
+            );
+            if (plain.isPresent()) {
+                return new ParseAttempt(lastResponse, plain.get(), false, null);
             }
         }
         return new ParseAttempt(lastResponse, null, true, lastError);

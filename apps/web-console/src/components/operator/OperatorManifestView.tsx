@@ -9,6 +9,7 @@ import ManifestScreen from "./ManifestScreen";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
+import OperatorAgentFab from "./OperatorAgentFab";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 
 import type { AuthSession } from "../../auth/session";
@@ -125,6 +126,7 @@ export default function OperatorManifestView({
         }
         sidebar={<OperatorSidebar operatorId={operatorId} />}
       />
+      <OperatorAgentFab appId={appId} />
     </div>
   );
 }

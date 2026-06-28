@@ -10,6 +10,11 @@ import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.config.AiProperties;
+import com.ispf.server.operator.OperatorAgentMemoryLearner;
+import com.ispf.server.operator.OperatorAgentMemoryService;
+import com.ispf.server.operator.OperatorAgentResultEnricher;
+import com.ispf.server.operator.OperatorAppDocumentService;
+import com.ispf.server.operator.OperatorAppUiService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +53,19 @@ class TreeFirstAgentServiceSessionTest {
     @Mock
     private AgentSessionStore sessionStore;
 
+    @Mock
+    private OperatorAgentScopeService operatorScopeService;
+    @Mock
+    private OperatorAgentMemoryService operatorMemoryService;
+    @Mock
+    private OperatorAgentMemoryLearner operatorMemoryLearner;
+    @Mock
+    private OperatorAppDocumentService operatorDocumentService;
+    @Mock
+    private OperatorAppUiService operatorAppUiService;
+    @Mock
+    private OperatorAgentResultEnricher operatorResultEnricher;
+
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
     private AgentRunCancellationRegistry cancellationRegistry;
@@ -72,11 +90,17 @@ class TreeFirstAgentServiceSessionTest {
                 aiProperties,
                 objectMapper,
                 sessionStore,
-                cancellationRegistry
+                cancellationRegistry,
+                operatorScopeService,
+                operatorMemoryService,
+                operatorMemoryLearner,
+                operatorDocumentService,
+                operatorAppUiService,
+                operatorResultEnricher
         );
 
         when(llmProviderRegistry.isGenerationAvailable()).thenReturn(true);
-        when(toolRegistry.toolCatalog()).thenReturn(List.of());
+        when(toolRegistry.toolCatalog(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
         when(contextPackService.contextPackVersion()).thenReturn("test-pack");
         when(platformBriefingService.buildBriefing(any(), any(Boolean.class))).thenReturn("drivers: snmp, virtual");
         when(llmProviderRegistry.status()).thenReturn(Map.of("providerId", "test"));

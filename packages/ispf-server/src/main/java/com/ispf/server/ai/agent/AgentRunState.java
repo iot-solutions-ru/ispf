@@ -14,6 +14,8 @@ public final class AgentRunState {
 
     private final Map<String, Boolean> validatedBundles = new ConcurrentHashMap<>();
     private volatile AgentPendingContinuation pending;
+    private volatile String agentProfile = AgentProfile.ADMIN.storageValue();
+    private volatile String operatorAppId;
 
     public void markBundleValidated(String appId) {
         if (appId != null && !appId.isBlank()) {
@@ -41,9 +43,29 @@ public final class AgentRunState {
         this.pending = null;
     }
 
+    public AgentProfile agentProfile() {
+        return AgentProfile.fromString(agentProfile);
+    }
+
+    public void setAgentProfile(AgentProfile profile) {
+        this.agentProfile = profile != null ? profile.storageValue() : AgentProfile.ADMIN.storageValue();
+    }
+
+    public String operatorAppId() {
+        return operatorAppId;
+    }
+
+    public void setOperatorAppId(String appId) {
+        this.operatorAppId = appId != null && !appId.isBlank() ? appId.trim() : null;
+    }
+
     public Map<String, Object> snapshot(ObjectMapper objectMapper) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("validatedBundles", Map.copyOf(validatedBundles));
+        map.put("agentProfile", agentProfile);
+        if (operatorAppId != null && !operatorAppId.isBlank()) {
+            map.put("operatorAppId", operatorAppId);
+        }
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -72,6 +94,14 @@ public final class AgentRunState {
             }
         }
         AgentPendingContinuation.fromMap(objectMapper, raw.get("pending")).ifPresent(value -> pending = value);
+        Object profileRaw = raw.get("agentProfile");
+        if (profileRaw != null) {
+            agentProfile = AgentProfile.fromString(String.valueOf(profileRaw)).storageValue();
+        }
+        Object appRaw = raw.get("operatorAppId");
+        if (appRaw != null && !String.valueOf(appRaw).isBlank()) {
+            operatorAppId = String.valueOf(appRaw).trim();
+        }
     }
 
     /** @deprecated use {@link #snapshot(ObjectMapper)} */

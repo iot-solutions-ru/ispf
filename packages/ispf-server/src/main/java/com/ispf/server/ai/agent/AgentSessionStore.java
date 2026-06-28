@@ -26,6 +26,15 @@ public class AgentSessionStore {
         return session;
     }
 
+    public AgentSession createOperator(String actor, OperatorAgentScope scope) {
+        evictExpired();
+        AgentSession session = AgentSession.create(actor, scope.briefingRoot());
+        session.runState().setAgentProfile(AgentProfile.OPERATOR);
+        session.runState().setOperatorAppId(scope.appId());
+        repository.insert(session);
+        return session;
+    }
+
     public Optional<AgentSession> get(String sessionId, String actor) {
         evictExpired();
         return repository.find(sessionId, actor);

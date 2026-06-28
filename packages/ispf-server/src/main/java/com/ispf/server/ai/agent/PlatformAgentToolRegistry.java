@@ -26,6 +26,8 @@ import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
 import com.ispf.server.function.FunctionService;
+import com.ispf.server.operator.OperatorAgentMemoryService;
+import com.ispf.server.operator.OperatorAppDocumentService;
 import com.ispf.server.operator.OperatorAppUiService;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
@@ -38,6 +40,8 @@ import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
+import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.workflow.WorkQueueService;
 import com.ispf.server.workflow.WorkflowService;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -47,10 +51,42 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 @Service
 public class PlatformAgentToolRegistry {
+
+    static final Set<String> OPERATOR_TOOLS = Set.of(
+            "get_operator_scope",
+            "list_objects",
+            "get_object",
+            "search_objects",
+            "list_variables",
+            "describe_variables",
+            "list_functions",
+            "get_function",
+            "invoke_bff",
+            "invoke_tree_function",
+            "list_events",
+            "get_event_schema",
+            "list_event_catalog",
+            "list_reports",
+            "get_report_schema",
+            "run_report",
+            "get_dashboard_layout",
+            "list_automation",
+            "get_automation_schema",
+            "get_variable_history",
+            "get_variable_trend",
+            "list_work_queue",
+            "list_app_memory",
+            "remember_app_memory",
+            "list_app_documents",
+            "read_app_document",
+            "search_app_documents",
+            "get_operator_link"
+    );
 
     private final Map<String, PlatformAgentTool> toolsByName;
     private final ObjectMapper objectMapper;
@@ -85,7 +121,11 @@ public class PlatformAgentToolRegistry {
             BindingRulesService bindingRulesService,
             BindingDependencyIndex bindingDependencyIndex,
             BindingRuleEngine bindingRuleEngine,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            VariableHistoryService variableHistoryService,
+            WorkQueueService workQueueService,
+            OperatorAgentMemoryService operatorAgentMemoryService,
+            OperatorAppDocumentService operatorAppDocumentService
     ) {
         this.objectMapper = objectMapper;
         List<PlatformAgentTool> tools = new ArrayList<>();
@@ -165,6 +205,14 @@ public class PlatformAgentToolRegistry {
                 dryRunDeployTool(objectMapper, aiToolRegistry),
                 importPackageTool(objectMapper, bundleDeployService)
         ));
+        tools.addAll(AgentOperatorTools.all(
+                variableHistoryService,
+                workQueueService,
+                objectAccessService,
+                tenantScopeService,
+                operatorAgentMemoryService,
+                operatorAppDocumentService
+        ));
         Map<String, PlatformAgentTool> index = new LinkedHashMap<>();
         for (PlatformAgentTool tool : tools) {
             index.put(tool.name(), tool);
@@ -173,7 +221,12 @@ public class PlatformAgentToolRegistry {
     }
 
     public List<Map<String, Object>> toolCatalog() {
+        return toolCatalog(AgentProfile.ADMIN);
+    }
+
+    public List<Map<String, Object>> toolCatalog(AgentProfile profile) {
         return toolsByName.values().stream()
+                .filter(tool -> profile != AgentProfile.OPERATOR || OPERATOR_TOOLS.contains(tool.name()))
                 .map(tool -> Map.<String, Object>of(
                         "name", tool.name(),
                         "description", tool.description()
@@ -183,6 +236,19 @@ public class PlatformAgentToolRegistry {
 
     public Map<String, Object> execute(String toolName, Map<String, Object> arguments, AgentContext context)
             throws Exception {
+        if (context.isOperator() && !OPERATOR_TOOLS.contains(toolName)) {
+            return Map.of(
+                    "status", "ERROR",
+                    "error", "Tool not allowed in operator mode: " + toolName
+            );
+        }
+        if (context.isOperator()) {
+            try {
+                AgentScopeGuard.enforceOperatorScope(toolName, arguments != null ? arguments : Map.of(), context.operatorScope());
+            } catch (IllegalArgumentException ex) {
+                return Map.of("status", "ERROR", "error", ex.getMessage());
+            }
+        }
         PlatformAgentTool tool = toolsByName.get(toolName);
         if (tool == null) {
             throw new IllegalArgumentException("Unknown tool: " + toolName);

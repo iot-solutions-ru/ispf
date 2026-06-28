@@ -7,6 +7,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentJsonProtocolTest {
 
@@ -140,5 +141,15 @@ class AgentJsonProtocolTest {
                 """;
         AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
         assertEquals("finish", action.type());
+    }
+
+    @Test
+    void acceptsPlainTextFinishFallback() {
+        var action = AgentJsonProtocol.tryParsePlainTextFinish(
+                "Сменный отчёт: средняя температура 72.4°C, максимум 81°C за последние 8 часов."
+        );
+        assertTrue(action.isPresent());
+        assertEquals("finish", action.get().type());
+        assertTrue(action.get().summary().contains("72.4"));
     }
 }

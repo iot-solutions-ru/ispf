@@ -261,7 +261,7 @@ function stepStatusBadge(status: string | undefined): React.ReactNode {
   return <span className={`badge ${badgeClass}`}>{label}</span>;
 }
 
-function AgentRunDetails({
+export function AgentRunDetails({
   steps,
   status,
   result,
