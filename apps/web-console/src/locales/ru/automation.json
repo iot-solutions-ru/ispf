@@ -52,5 +52,18 @@
   "correlator.actionTargetEventPlaceholder": "thresholdAcknowledged",
   "correlator.actionTargetSetVariablePlaceholder": "alarmLatched=true",
   "correlator.actionTargetReportPlaceholder": "root.platform.reports.shift-summary",
-  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler"
+  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler",
+  "catalog.alertRulesTitle": "Правила алертов",
+  "catalog.alertRulesSubtitle": "CEL-условия при изменении переменных",
+  "catalog.correlatorsTitle": "Корреляторы событий",
+  "catalog.correlatorsSubtitle": "Паттерны по событиям → workflow или действия",
+  "catalog.alertRulesEmpty": "Правил алертов пока нет",
+  "catalog.correlatorsEmpty": "Корреляторов пока нет",
+  "catalog.createAlertRule": "Новое правило",
+  "catalog.createCorrelator": "Новый коррелятор",
+  "catalog.column.targetObject": "Целевой объект",
+  "catalog.column.variable": "Переменная",
+  "catalog.column.event": "Событие",
+  "catalog.column.pattern": "Паттерн",
+  "catalog.column.action": "Действие"
 }

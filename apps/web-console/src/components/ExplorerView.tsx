@@ -17,9 +17,12 @@ import { isSecurityUserPath, isSecurityUsersRoot } from "../utils/securityUserPa
 import { isSecurityRolePath, isSecurityRolesRoot } from "../utils/securityRolePath";
 import {
   isAlertRulePath,
+  isAlertRulesRoot,
   isCorrelatorPath,
+  isCorrelatorsRoot,
 } from "../utils/automationPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
+import AutomationRulesListPanel from "./automation/AutomationRulesListPanel";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
@@ -67,6 +70,8 @@ export default function ExplorerView({
   const isRoleObject = isSecurityRolePath(selectedPath);
   const isAlertRule = isAlertRulePath(selectedPath);
   const isCorrelator = isCorrelatorPath(selectedPath);
+  const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
+  const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
@@ -84,6 +89,8 @@ export default function ExplorerView({
     || isRoleObject
     || isAlertRule
     || isCorrelator
+    || isAlertRulesFolder
+    || isCorrelatorsFolder
     || isFederation
     || isTenants
     || isCatalogFolder
@@ -129,6 +136,10 @@ export default function ExplorerView({
         <SecurityRolesPanel canManage={isAdmin} onSelectRole={onSelectPath} />
       ) : isRoleObject ? (
         <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+      ) : isAlertRulesFolder ? (
+        <AutomationRulesListPanel kind="alert-rules" canManage={isAdmin} onSelectPath={onSelectPath} />
+      ) : isCorrelatorsFolder ? (
+        <AutomationRulesListPanel kind="correlators" canManage={isAdmin} onSelectPath={onSelectPath} />
       ) : isAlertRule ? (
         <AlertRuleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} />
       ) : isCorrelator ? (

@@ -52,5 +52,18 @@
   "correlator.actionTargetEventPlaceholder": "thresholdAcknowledged",
   "correlator.actionTargetSetVariablePlaceholder": "alarmLatched=true",
   "correlator.actionTargetReportPlaceholder": "root.platform.reports.shift-summary",
-  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler"
+  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler",
+  "catalog.alertRulesTitle": "Alert rules",
+  "catalog.alertRulesSubtitle": "CEL conditions on variable changes",
+  "catalog.correlatorsTitle": "Event correlators",
+  "catalog.correlatorsSubtitle": "Pattern matching on events → workflow or actions",
+  "catalog.alertRulesEmpty": "No alert rules yet",
+  "catalog.correlatorsEmpty": "No correlators yet",
+  "catalog.createAlertRule": "New alert rule",
+  "catalog.createCorrelator": "New correlator",
+  "catalog.column.targetObject": "Target object",
+  "catalog.column.variable": "Variable",
+  "catalog.column.event": "Event",
+  "catalog.column.pattern": "Pattern",
+  "catalog.column.action": "Action"
 }

@@ -52,5 +52,18 @@
   "correlator.actionTargetEventPlaceholder": "thresholdAcknowledged",
   "correlator.actionTargetSetVariablePlaceholder": "alarmLatched=true",
   "correlator.actionTargetReportPlaceholder": "root.platform.reports.shift-summary",
-  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler"
+  "correlator.actionTargetWorkflowPlaceholder": "root.platform.workflows.demo-alarm-handler",
+  "catalog.alertRulesTitle": "告警规则",
+  "catalog.alertRulesSubtitle": "变量变更上的 CEL 条件",
+  "catalog.correlatorsTitle": "事件关联器",
+  "catalog.correlatorsSubtitle": "事件模式 → 工作流或动作",
+  "catalog.alertRulesEmpty": "暂无告警规则",
+  "catalog.correlatorsEmpty": "暂无关联器",
+  "catalog.createAlertRule": "新建告警规则",
+  "catalog.createCorrelator": "新建关联器",
+  "catalog.column.targetObject": "目标对象",
+  "catalog.column.variable": "变量",
+  "catalog.column.event": "事件",
+  "catalog.column.pattern": "模式",
+  "catalog.column.action": "动作"
 }
