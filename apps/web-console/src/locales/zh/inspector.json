@@ -102,6 +102,7 @@
   "driver.write.polling": "轮询中…",
   "driver.write.submit": "写入",
   "driver.write.writing": "写入中…",
+  "driver.write.readOnlyDriver": "该驱动在目录中为只读（无 write 能力）。",
   "driver.lastError": "最后错误：{{message}}",
   "driver.loading": "正在加载驱动设置…",
   "driver.mappingsLabel": "点位 (mappings)",

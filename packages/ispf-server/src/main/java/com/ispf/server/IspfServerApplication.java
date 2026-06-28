@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.PlatformUpdateProperties.class,
         com.ispf.server.config.CommercialLicenseProperties.class,
         com.ispf.server.config.AiProperties.class,
+        com.ispf.server.config.McpProperties.class,
         com.ispf.server.config.DriverPackProperties.class,
         com.ispf.server.config.ReportYargProperties.class,
         com.ispf.server.config.RuntimeTelemetryProperties.class,
@@ -23,7 +24,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.MqttGatewayProperties.class,
         com.ispf.server.config.BindingProperties.class,
         com.ispf.server.config.FunctionProperties.class,
-        com.ispf.server.config.BootstrapProperties.class
+        com.ispf.server.config.BootstrapProperties.class,
+        com.ispf.server.config.NotificationProperties.class
 })
 public class IspfServerApplication {
 

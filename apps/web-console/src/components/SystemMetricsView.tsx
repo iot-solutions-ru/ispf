@@ -4,6 +4,9 @@ import { fetchPlatformMetrics, type PlatformMetricSection } from "../api/platfor
 import AutomationIndexStatsCard from "./AutomationIndexStatsCard";
 import RedisHealthCard from "./RedisHealthCard";
 import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
+import YargHealthCard from "./YargHealthCard";
+import McpHealthCard from "./McpHealthCard";
+import PlatformBackupPanel from "./platform/PlatformBackupPanel";
 
 const METRIC_KEYS = [
   "uptimeMs", "uptimeHuman", "heapUsedBytes", "heapMaxBytes", "heapUsedMb", "heapMaxMb",
@@ -124,7 +127,10 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
           <div className="system-metrics-grid system-backend-health-grid">
             <RedisHealthCard />
             <NatsJetStreamHealthCard />
+            <YargHealthCard />
+            <McpHealthCard />
           </div>
+          <PlatformBackupPanel />
           <div className="system-metrics-grid">
             {metricsQuery.data.sections.map((section) => (
               <MetricSectionCard key={section.id} section={section} />

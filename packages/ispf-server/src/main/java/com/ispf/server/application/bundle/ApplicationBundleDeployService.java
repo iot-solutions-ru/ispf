@@ -772,7 +772,9 @@ public class ApplicationBundleDeployService {
                     rule.enabled(),
                     rule.edgeTrigger(),
                     rule.delaySeconds(),
-                    rule.sustainWhileTrue()
+                    rule.sustainWhileTrue(),
+                    null,
+                    null
             );
             automationTreeService.resetAlertRuleRuntimeState(path);
             return;
@@ -787,7 +789,9 @@ public class ApplicationBundleDeployService {
                 rule.enabled() == null || rule.enabled(),
                 rule.edgeTrigger() == null || rule.edgeTrigger(),
                 rule.delaySeconds() != null ? rule.delaySeconds() : 0,
-                rule.sustainWhileTrue() != null && rule.sustainWhileTrue()
+                rule.sustainWhileTrue() != null && rule.sustainWhileTrue(),
+                null,
+                null
         );
         automationTreeService.resetAlertRuleRuntimeState(path);
     }

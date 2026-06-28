@@ -63,28 +63,28 @@
 | **BL-20** | Write path: **Modbus** (tcp/rtu) | P1 | Done | Driver |
 | **BL-21** | Write path: **S7** | P1 | Done | Driver |
 | **BL-22** | Write path: **OPC UA** client | P1 | Done | Driver |
-| **BL-23** | Write path: **BACnet**, **IEC 104** | P2 | Planned | Driver |
+| **BL-23** | Write path: **BACnet**, **IEC 104** | P2 | Done | Driver |
 | **BL-24** | **DNP3**: полный Class 0/1/2/3 poll (сейчас connectivity check) | P2 | Planned | Driver |
 | **BL-25** | **DLMS** write | P2 | Planned | Driver |
-| **BL-26** | Stub promotion: Ethernet/IP, OPC DA, OPC Bridge, CORBA, VMware, SMI-S | P3 | Planned | Driver |
-| **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Planned | Driver catalog |
+| **BL-26** | Stub promotion: Ethernet/IP, OPC DA, OPC Bridge, CORBA, VMware, SMI-S | P3 | Partial | Driver |
+| **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Done | Driver catalog |
 | **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
 | **BL-29** | CWMP `SetParameterValues` write | P3 | Planned | Driver |
-| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Planned | Driver QA |
+| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Partial | Driver QA |
 
 ### Wave D — Scale, ops, federation
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-40** | ClickHouse **variable history** store (`VariableHistoryProperties` future) | P2 | Partial | History |
+| **BL-40** | ClickHouse **variable history** store (`VariableHistoryProperties` future) | P2 | Done | History |
 | **BL-41** | Redis correlator window + ACL cache: prod runbook + health в System | P2 | Done | Scale |
 | **BL-42** | NATS JetStream: UI статус + workflow `PUBLISH_NATS` smoke hint | P2 | Done | Scale |
-| **BL-43** | YARG PDF: LibreOffice path в System + hint в Report Builder | P2 | Planned | Reports |
-| **BL-44** | Notification channels: webhook/email из alert rule / correlator action | P3 | Planned | Automation |
-| **BL-45** | Federation: conflict resolution UI при catalog sync | P3 | Planned | Federation |
-| **BL-46** | Federation: dashboard write на proxy (сейчас read-only) | P3 | Planned | Federation |
-| **BL-47** | Platform backup/restore (export/import object tree + configs) | P3 | Planned | Platform ops |
-| **BL-48** | MCP server admin UI (`ispf.mcp.enabled`) | P3 | Planned | AI |
+| **BL-43** | YARG PDF: LibreOffice path в System + hint в Report Builder | P2 | Done | Reports |
+| **BL-44** | Notification channels: webhook/email из alert rule / correlator action | P3 | Done | Automation |
+| **BL-45** | Federation: conflict resolution UI при catalog sync | P3 | Done | Federation |
+| **BL-46** | Federation: dashboard write на proxy (сейчас read-only) | P3 | Done | Federation |
+| **BL-47** | Platform backup/restore (export/import object tree + configs) | P3 | Done | Platform ops |
+| **BL-48** | MCP server admin UI (`ispf.mcp.enabled`) | P3 | Done | AI |
 
 ### Wave E — Operator, spreadsheet, QA
 
@@ -341,6 +341,12 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-21 Done — `writePoint` для `s7` (encode + `S7Connector.write`, BOOL read-modify-write); mock tests в `S7DeviceDriverTest`, codec roundtrip в `S7ValueCodecTest`; docs в DRIVERS.md.
 
+**Статус (2026-06-28):** BL-23 Done — `writePoint` для `bacnet` (`RequestUtils.writeProperty`, AO/BO/AV/BV/MO/MV) и `iec104` (`singleCommand` / `setShortFloatCommand` / `setNormalizedValueCommand`); loopback `Iec104DeviceDriverTest` против `iec104-server`; guard tests `BacnetDeviceDriverTest`; maturity **beta**.
+
+**Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
+
+**Статус (2026-06-28):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104; BACnet guard-only (нет simulator).
+
 ---
 
 ### BL-28 — Driver write UI
@@ -367,12 +373,12 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Задачи:**
 
-- [ ] `ClickHouseVariableHistoryWriteStore` + query path
+- [x] `ClickHouseVariableHistoryStore` write + query path (`VariableHistoryQueryStore`)
 - [x] Config `ispf.variable-history.store=clickhouse` (properties + `application.yml` env vars)
-- [ ] Deploy: `vps-clickhouse-verify.sh` расширить
+- [x] Deploy: `vps-clickhouse-verify.sh` расширен (variable_samples table + optional write smoke)
 - [x] System settings UI: store toggle + ClickHouse connection fields (`PlatformRuntimeSettingsCatalog`, `SystemSettingsView`)
 
-**Статус (2026-06-28):** UI и runtime-settings catalog для variable history (store jdbc/jpa/clickhouse, ClickHouse url/database/table/credentials) — готово; backend write/query path и verify script — в backlog.
+**Статус (2026-06-28):** Done — `ClickHouseVariableHistoryStore` (append + query/aggregate), `JdbcVariableHistoryQueryStore` для jdbc/jpa, Timescale skip при `store=clickhouse`, unit test + verify script.
 
 ### BL-41 — Redis correlator window + ACL cache health
 
@@ -421,8 +427,8 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 - [x] CI job `web-console` (mocked e2e + vitest + build)
 - [x] Explorer: expand Devices, select device (`?path=` deep link)
 - [x] Dashboard layout API mock (label widget payload)
-- [ ] Explorer: Variables tab after inspector load
-- [ ] Dashboard builder UI render (double-click / Open in editor)
+- [x] Explorer: Variables tab after inspector load
+- [x] Dashboard builder UI render (double-click / Open in editor)
 - [ ] CI against staging / prod URL (`E2E_BASE_URL`)
 
 **Запуск:**
@@ -530,7 +536,7 @@ Sprint BL-E (2 недели) — QA
   BL-50, BL-55
 
 Backlog P3 (квартал)
-  BL-40…48, BL-51…54, BL-44…47
+  BL-51…54 (BL-44…48 Done — Wave D ops/federation tail закрыт)
 
 Backlog P3 — semantic (по запросу, после ADR)
   BL-56…62 — Haystack/Brick ([§ BL-56…62](CODE_AUDIT_BACKLOG.md#bl-5662--haystack--brick-schema-semantic-layer))
@@ -544,7 +550,10 @@ Backlog P3 — semantic (по запросу, после ADR)
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-06-28 | BL-55 Partial: vitest `bindingActivatorsUtils`, `journalExport`, `chartOhlcUtils`, `ganttChartView` (217 tests) |
+| 2026-06-28 | BL-44…47 Done: notifications (webhook/email), federation catalog preview + dashboard write proxy, platform backup export/import |
+| 2026-06-28 | BL-23, BL-27 Done; BL-30 Partial; BL-43, BL-48 Done (YARG/MCP health cards) |
+| 2026-06-28 | BL-40 Done: ClickHouse variable history write/query, `VariableHistoryQueryStore`, verify script |
+| 2026-06-28 | BL-50: Variables tab + Dashboard builder Playwright smoke; AI `/api/v1/ai/*` mocks; `AiStudioSettingsTab` tools guard |
 | 2026-06-28 | BL-11: gantt interactive timeline (pan/zoom, bar drag, `ganttChartView`, vitest) |
 | 2026-06-28 | BL-41, BL-42 Done: Redis/NATS health API + System Metrics cards, i18n, BPMN publishNats smoke hint |
 | 2026-06-28 | BL-20: Modbus tcp/rtu `writePoint` (FC5/FC6), loopback + guard-rail tests, DRIVERS.md |

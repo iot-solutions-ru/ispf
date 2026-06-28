@@ -2,6 +2,7 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import com.ispf.core.object.ObjectType;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
@@ -9,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,19 +33,74 @@ public class FederationCatalogService {
         this.objectManager = objectManager;
     }
 
+    @Transactional(readOnly = true)
+    public CatalogSyncPreview previewCatalogSync(UUID peerId) {
+        FederationPeer peer = requirePeer(peerId);
+        String localRoot = FederationPaths.peerCatalogRoot(peer.name());
+        List<RemoteEntry> entries = collectRemoteEntries(peer);
+        List<CatalogSyncConflict> conflicts = new ArrayList<>();
+        int createCount = 0;
+        int updateCount = 0;
+        for (RemoteEntry entry : entries) {
+            Optional<CatalogSyncConflict> conflict = detectConflict(entry, peerId);
+            if (conflict.isPresent()) {
+                conflicts.add(conflict.get());
+                continue;
+            }
+            if (objectManager.tree().findByPath(entry.localPath()).isPresent()) {
+                updateCount++;
+            } else {
+                createCount++;
+            }
+        }
+        return new CatalogSyncPreview(localRoot, entries.size(), createCount, updateCount, conflicts);
+    }
+
     @Transactional
     public SyncResult syncCatalog(UUID peerId) {
-        FederationPeer peer = peerStore.findById(peerId)
-                .orElseThrow(() -> new IllegalArgumentException("Peer not found: " + peerId));
+        return syncCatalog(peerId, List.of());
+    }
+
+    @Transactional
+    public SyncResult syncCatalog(UUID peerId, List<CatalogSyncResolution> resolutions) {
+        FederationPeer peer = requirePeer(peerId);
         String localRoot = FederationPaths.peerCatalogRoot(peer.name());
         ensureCatalogRoot(localRoot, peer);
-        JsonNode remoteObjects = federationService.proxyObjectList(peerId);
-        if (!remoteObjects.isArray()) {
-            throw new IllegalStateException("Remote object list is not an array");
+        List<RemoteEntry> entries = collectRemoteEntries(peer);
+        Map<String, CatalogSyncResolutionAction> resolutionByPath = new HashMap<>();
+        for (CatalogSyncResolution resolution : resolutions) {
+            resolutionByPath.put(resolution.localPath(), resolution.action());
         }
 
         int created = 0;
         int updated = 0;
+        int skipped = 0;
+        for (RemoteEntry entry : entries) {
+            Optional<CatalogSyncConflict> conflict = detectConflict(entry, peerId);
+            if (conflict.isPresent()) {
+                CatalogSyncResolutionAction action = resolutionByPath.get(entry.localPath());
+                if (action != CatalogSyncResolutionAction.BIND) {
+                    skipped++;
+                    continue;
+                }
+            }
+            if (objectManager.tree().findByPath(entry.localPath()).isPresent()) {
+                markProxy(entry.localPath(), peerId, entry.remotePath());
+                updated++;
+            } else {
+                createProxyNode(entry.localPath(), entry.remote(), peerId, entry.remotePath());
+                created++;
+            }
+        }
+        return new SyncResult(localRoot, created, updated, entries.size(), skipped);
+    }
+
+    private List<RemoteEntry> collectRemoteEntries(FederationPeer peer) {
+        JsonNode remoteObjects = federationService.proxyObjectList(peer.id());
+        if (!remoteObjects.isArray()) {
+            throw new IllegalStateException("Remote object list is not an array");
+        }
+        String localRoot = FederationPaths.peerCatalogRoot(peer.name());
         String prefix = normalizePrefix(peer.pathPrefix());
         List<RemoteEntry> entries = new ArrayList<>();
         for (JsonNode remote : remoteObjects) {
@@ -61,17 +120,45 @@ public class FederationCatalogService {
             entries.add(new RemoteEntry(remotePath, localRoot + suffix, remote));
         }
         entries.sort(Comparator.comparingInt(entry -> entry.remotePath().length()));
+        return entries;
+    }
 
-        for (RemoteEntry entry : entries) {
-            if (objectManager.tree().findByPath(entry.localPath()).isPresent()) {
-                markProxy(entry.localPath(), peerId, entry.remotePath());
-                updated++;
-                continue;
-            }
-            createProxyNode(entry.localPath(), entry.remote(), peerId, entry.remotePath());
-            created++;
+    private Optional<CatalogSyncConflict> detectConflict(RemoteEntry entry, UUID peerId) {
+        Optional<PlatformObject> existing = objectManager.tree().findByPath(entry.localPath());
+        if (existing.isEmpty()) {
+            return Optional.empty();
         }
-        return new SyncResult(localRoot, created, updated, remoteObjects.size());
+        PlatformObject node = existing.get();
+        if (!FederationProxyMetadata.isProxy(node)) {
+            return Optional.of(new CatalogSyncConflict(
+                    entry.localPath(),
+                    entry.remotePath(),
+                    CatalogSyncConflictType.LOCAL_NATIVE,
+                    null,
+                    null,
+                    node.displayName(),
+                    node.type().name()
+            ));
+        }
+        UUID existingPeerId = FederationProxyMetadata.peerId(node).orElse(null);
+        String existingRemotePath = FederationProxyMetadata.remotePath(node).orElse("");
+        if (!peerId.equals(existingPeerId) || !entry.remotePath().equals(existingRemotePath)) {
+            return Optional.of(new CatalogSyncConflict(
+                    entry.localPath(),
+                    entry.remotePath(),
+                    CatalogSyncConflictType.PROXY_MISMATCH,
+                    existingPeerId != null ? existingPeerId.toString() : null,
+                    existingRemotePath,
+                    node.displayName(),
+                    node.type().name()
+            ));
+        }
+        return Optional.empty();
+    }
+
+    private FederationPeer requirePeer(UUID peerId) {
+        return peerStore.findById(peerId)
+                .orElseThrow(() -> new IllegalArgumentException("Peer not found: " + peerId));
     }
 
     private record RemoteEntry(String remotePath, String localPath, JsonNode remote) {
@@ -122,10 +209,6 @@ public class FederationCatalogService {
         return FederationProxyNodeHelper.textOrNull(node, field);
     }
 
-    private static String textOrDefault(JsonNode node, String field, String defaultValue) {
-        return FederationProxyNodeHelper.textOrDefault(node, field, defaultValue);
-    }
-
     private static String normalizePrefix(String pathPrefix) {
         if (pathPrefix == null || pathPrefix.isBlank()) {
             return "root.platform";
@@ -137,6 +220,29 @@ public class FederationCatalogService {
         return trimmed;
     }
 
-    public record SyncResult(String localRoot, int created, int updated, int remoteCount) {
+    public record CatalogSyncConflict(
+            String localPath,
+            String remotePath,
+            CatalogSyncConflictType type,
+            String existingPeerId,
+            String existingRemotePath,
+            String localDisplayName,
+            String localType
+    ) {
+    }
+
+    public record CatalogSyncPreview(
+            String localRoot,
+            int remoteCount,
+            int createCount,
+            int updateCount,
+            List<CatalogSyncConflict> conflicts
+    ) {
+    }
+
+    public record CatalogSyncResolution(String localPath, CatalogSyncResolutionAction action) {
+    }
+
+    public record SyncResult(String localRoot, int created, int updated, int remoteCount, int skipped) {
     }
 }

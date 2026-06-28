@@ -1,11 +1,15 @@
 import { test, expect } from "@playwright/test";
 import {
+  doubleClickTreeObjectByLabel,
   expandTreeTo,
   mockAuthConfig,
   mockAuthenticatedApi,
   MOCK_DASHBOARD_PATH,
   MOCK_DEVICE_PATH,
   seedAuthSession,
+  selectTreeObjectByLabel,
+  waitForDashboardLoad,
+  waitForObjectEditor,
 } from "./fixtures/apiMocks";
 
 test.describe("login page", () => {
@@ -54,6 +58,55 @@ test.describe("explorer device variables", () => {
 
     await expandTreeTo(page, "Devices");
     await expect(page.locator(".tree-label", { hasText: "Lab sensor" })).toBeVisible();
+  });
+
+  test("shows Variables tab after device inspector loads", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=admin");
+
+    await expandTreeTo(page, "Devices");
+    const editorLoaded = waitForObjectEditor(page, MOCK_DEVICE_PATH);
+    await selectTreeObjectByLabel(page, "Lab sensor");
+    await editorLoaded;
+
+    await expect(page.locator(".properties-editor")).toBeVisible();
+    await page.getByRole("button", { name: "Variables" }).click();
+    await expect(page.locator(".property-name", { hasText: "temperature" })).toBeVisible();
+  });
+});
+
+test.describe("dashboard builder", () => {
+  test("opens dashboard builder from tree double-click", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=admin");
+
+    await expandTreeTo(page, "Dashboards");
+    const dashboardLoaded = waitForDashboardLoad(page, MOCK_DASHBOARD_PATH);
+    await doubleClickTreeObjectByLabel(page, "Ops board");
+    await dashboardLoaded;
+
+    await expect(page.locator(".dashboard-shell")).toBeVisible();
+    await expect(page.getByText("Dashboard · HMI")).toBeVisible();
+    await expect(page.getByText("42.5 °C")).toBeVisible();
+  });
+
+  test("opens dashboard builder via Open in editor", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=admin");
+
+    await expandTreeTo(page, "Dashboards");
+    await selectTreeObjectByLabel(page, "Ops board");
+    await expect(page.getByRole("button", { name: "Open in editor" })).toBeVisible();
+
+    const dashboardLoaded = waitForDashboardLoad(page, MOCK_DASHBOARD_PATH);
+    await page.getByRole("button", { name: "Open in editor" }).click();
+    await dashboardLoaded;
+
+    await expect(page.locator(".dashboard-shell")).toBeVisible();
+    await expect(page.locator(".dashboard-shell").getByRole("heading", { name: "Ops board" })).toBeVisible();
   });
 });
 

@@ -187,5 +187,13 @@
   "natsHealth.publishNatsReady": "可用",
   "natsHealth.publishNatsUnavailable": "不可用（请启用 NATS）",
   "natsHealth.hint": "启用：ISPF_NATS_ENABLED。JetStream 扇出：ISPF_NATS_JETSTREAM_ENABLED=true。状态亦在 System → 指标。",
-  "natsHealth.publishNatsSmokeHint": "冒烟：service task ispf:action=publishNats，ispf:subject=ispf.smoke.test，ispf:message=hello — 然后订阅 NATS subject 或查看上方流消息数。"
+  "natsHealth.publishNatsSmokeHint": "冒烟：service task ispf:action=publishNats，ispf:subject=ispf.smoke.test，ispf:message=hello — 然后订阅 NATS subject 或查看上方流消息数。",
+  "backup.title": "平台备份",
+  "backup.subtitle": "导出或导入 root.platform 子树（节点、变量、事件、函数）。导入时跳过联邦代理节点。",
+  "backup.export": "导出 JSON",
+  "backup.chooseFile": "选择备份文件…",
+  "backup.importApply": "应用导入",
+  "backup.exportDone": "已导出 {{count}} 个节点。",
+  "backup.previewResult": "预览：{{nodeCount}} 个节点 — 新建 {{createCount}}，更新 {{updateCount}}，警告 {{warnings}}。",
+  "backup.importDone": "导入完成：创建 {{created}}，更新 {{updated}}，跳过 {{skipped}}。"
 }

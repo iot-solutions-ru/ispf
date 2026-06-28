@@ -1,6 +1,7 @@
 package com.ispf.server.history;
 
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.VariableHistoryProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -24,12 +25,18 @@ public class TimescaleHypertableInitializer {
 
     private final JdbcTemplate jdbcTemplate;
     private final EventJournalProperties eventJournalProperties;
+    private final VariableHistoryProperties variableHistoryProperties;
     private final AtomicBoolean variableSamplesTimescaleActive = new AtomicBoolean(false);
     private final AtomicBoolean eventHistoryTimescaleActive = new AtomicBoolean(false);
 
-    public TimescaleHypertableInitializer(DataSource dataSource, EventJournalProperties eventJournalProperties) {
+    public TimescaleHypertableInitializer(
+            DataSource dataSource,
+            EventJournalProperties eventJournalProperties,
+            VariableHistoryProperties variableHistoryProperties
+    ) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         this.eventJournalProperties = eventJournalProperties;
+        this.variableHistoryProperties = variableHistoryProperties;
     }
 
     /** @deprecated use {@link #isVariableSamplesTimescaleActive()} */
@@ -61,6 +68,10 @@ public class TimescaleHypertableInitializer {
     }
 
     private void ensureVariableSamplesHypertable() {
+        if (variableHistoryProperties.isClickHouseStore()) {
+            log.info("TimescaleDB hypertable skipped for variable_samples (variable-history.store=clickhouse)");
+            return;
+        }
         try {
             jdbcTemplate.execute("ALTER TABLE variable_samples DROP CONSTRAINT IF EXISTS variable_samples_pkey");
             jdbcTemplate.execute("ALTER TABLE variable_samples ADD PRIMARY KEY (sampled_at, id)");

@@ -25,6 +25,8 @@ export interface AlertRule {
   enabled: boolean;
   edgeTrigger: boolean;
   lastConditionMet: boolean | null;
+  notificationWebhookUrl?: string | null;
+  notificationEmailTarget?: string | null;
   createdAt: string;
   updatedAt: string;
 }

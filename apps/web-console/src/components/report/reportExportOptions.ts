@@ -25,7 +25,7 @@ export const REPORT_EXPORT_OPTIONS: ReportExportOption[] = [
   {
     value: "pdf",
     label: "PDF",
-    title: "PDF через YARG-шаблон (.xls, .docx) или таблица, если шаблон не подошёл",
+    title: "PDF через YARG-шаблон (.xls, .docx); на сервере нужен LibreOffice (см. System → Metrics → YARG)",
   },
 ];
 

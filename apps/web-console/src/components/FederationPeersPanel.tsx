@@ -18,12 +18,12 @@ import {
   fetchTunnelSessions,
   probeFederationObject,
   refreshPeerToken,
-  syncFederationCatalog,
   type FederationPeerPayload,
 } from "../api/federation";
 import { fetchSecurityUsers, issueFederationToken } from "../api/securityUsers";
 import { fetchPlatformInfo } from "../api";
 import FederationPeersTab from "./federation/FederationPeersTab";
+import FederationCatalogSyncDialog from "./federation/FederationCatalogSyncDialog";
 import FederationProbeTab from "./federation/FederationProbeTab";
 import FederationTokensTab from "./federation/FederationTokensTab";
 import FederationTunnelTab from "./federation/FederationTunnelTab";
@@ -54,6 +54,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
   const [formError, setFormError] = useState<string | null>(null);
   const [tokenPanelError, setTokenPanelError] = useState<string | null>(null);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [catalogSyncPeer, setCatalogSyncPeer] = useState<{ id: string; name: string } | null>(null);
 
   const [tokenUser, setTokenUser] = useState("admin");
   const [tokenTtlHours, setTokenTtlHours] = useState("12");
@@ -162,26 +163,12 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["federation-peers"] }),
   });
 
-  const syncMutation = useMutation({
-    mutationFn: (id: string) => syncFederationCatalog(id),
-    onSuccess: (result) => {
-      setSyncFeedback(
-        t("peers.syncResult", {
-          localRoot: result.localRoot,
-          created: result.created,
-          updated: result.updated,
-          remoteCount: result.remoteCount,
-        }),
-      );
-      setFormError(null);
-      queryClient.invalidateQueries({ queryKey: ["objects"] });
-      queryClient.invalidateQueries({ queryKey: ["federation-peers"] });
-    },
-    onError: (error: Error) => {
-      setSyncFeedback(null);
-      setFormError(error.message);
-    },
-  });
+  const handleCatalogSynced = (message: string) => {
+    setSyncFeedback(message);
+    setFormError(null);
+    queryClient.invalidateQueries({ queryKey: ["objects"] });
+    queryClient.invalidateQueries({ queryKey: ["federation-peers"] });
+  };
 
   const probeMutation = useMutation({
     mutationFn: () => {
@@ -405,7 +392,7 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
           tokenApiMissing={tokenApiMissing}
           createMutation={createMutation}
           deleteMutation={deleteMutation}
-          syncMutation={syncMutation}
+          onSyncCatalog={(peer) => setCatalogSyncPeer({ id: peer.id, name: peer.name })}
           refreshTokenMutation={refreshTokenMutation}
           remoteTokenMutation={remoteTokenMutation}
           setFormError={setFormError}
@@ -473,6 +460,19 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
           probeMutation={probeMutation}
         />
       </div>
+      {catalogSyncPeer && (
+        <FederationCatalogSyncDialog
+          peerId={catalogSyncPeer.id}
+          peerName={catalogSyncPeer.name}
+          onClose={() => setCatalogSyncPeer(null)}
+          onSynced={handleCatalogSynced}
+          onError={(message) => {
+            setSyncFeedback(null);
+            setFormError(message);
+            setCatalogSyncPeer(null);
+          }}
+        />
+      )}
     </section>
   );
 }

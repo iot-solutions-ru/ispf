@@ -188,7 +188,7 @@ export default function AiStudioSettingsTab() {
           {toolsQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}
           {toolsQuery.data && (
             <ul className="ai-studio-tools-list">
-              {toolsQuery.data.tools.map((tool) => (
+              {toolsQuery.data?.tools?.map((tool) => (
                 <li key={tool.name}>
                   <code>{tool.name}</code>
                   <span className="op-muted"> — {tool.description}</span>

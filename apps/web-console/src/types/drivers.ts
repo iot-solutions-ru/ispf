@@ -8,6 +8,11 @@ export interface DriverMetadata {
   vendor: string;
   configurationSchema: Record<string, string>;
   maturity?: DriverMaturity;
+  capabilities?: string[];
+}
+
+export function driverSupportsWrite(driver: DriverMetadata | undefined): boolean {
+  return Boolean(driver?.capabilities?.includes("write"));
 }
 
 export interface DriverRuntimeStatus {

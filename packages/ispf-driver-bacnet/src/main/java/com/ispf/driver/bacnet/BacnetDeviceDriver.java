@@ -15,9 +15,12 @@ import com.serotonin.bacnet4j.service.unconfirmed.WhoIsRequest;
 import com.serotonin.bacnet4j.transport.DefaultTransport;
 import com.serotonin.bacnet4j.type.Encodable;
 import com.serotonin.bacnet4j.type.constructed.Address;
+import com.serotonin.bacnet4j.type.enumerated.BinaryPV;
+import com.serotonin.bacnet4j.type.enumerated.ObjectType;
 import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
 import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
 import com.serotonin.bacnet4j.type.primitive.OctetString;
+import com.serotonin.bacnet4j.type.primitive.Real;
 import com.serotonin.bacnet4j.type.primitive.Unsigned16;
 import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
 import com.serotonin.bacnet4j.util.RequestUtils;
@@ -135,7 +138,76 @@ public class BacnetDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("BACnet write not implemented");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        BacnetPoint point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("Unknown point: " + pointId);
+        }
+        if (!isWritable(point)) {
+            throw new DriverException("BACnet object type is read-only: " + point.objectType());
+        }
+        try {
+            ObjectIdentifier objectId = new ObjectIdentifier(point.objectType(), point.instance());
+            Encodable encoded = encodeWriteValue(point, value);
+            RequestUtils.writeProperty(localDevice, remoteDevice, objectId, point.property(), encoded);
+            driverObject.updateVariable(pointId, readPoint(point));
+        } catch (DriverException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DriverException("BACnet write failed for point " + pointId, e);
+        }
+    }
+
+    private static boolean isWritable(BacnetPoint point) {
+        ObjectType type = point.objectType();
+        if (type.equals(ObjectType.analogInput)
+                || type.equals(ObjectType.binaryInput)
+                || type.equals(ObjectType.multiStateInput)) {
+            return false;
+        }
+        return point.property().equals(PropertyIdentifier.presentValue);
+    }
+
+    private static Encodable encodeWriteValue(BacnetPoint point, DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("raw");
+        if (raw == null) {
+            raw = value.firstRow().get("value");
+        }
+        if (raw == null) {
+            throw new DriverException("BACnet write requires value or raw field");
+        }
+        ObjectType type = point.objectType();
+        if (type.equals(ObjectType.analogOutput) || type.equals(ObjectType.analogValue)) {
+            return new Real((float) extractDouble(raw));
+        }
+        if (type.equals(ObjectType.binaryOutput) || type.equals(ObjectType.binaryValue)) {
+            return extractBoolean(raw) ? BinaryPV.active : BinaryPV.inactive;
+        }
+        if (type.equals(ObjectType.multiStateOutput) || type.equals(ObjectType.multiStateValue)) {
+            return new UnsignedInteger((int) extractDouble(raw));
+        }
+        throw new DriverException("Unsupported BACnet write type: " + type);
+    }
+
+    private static double extractDouble(Object raw) throws DriverException {
+        if (raw instanceof Number number) {
+            return number.doubleValue();
+        }
+        try {
+            return Double.parseDouble(String.valueOf(raw));
+        } catch (NumberFormatException e) {
+            throw new DriverException("BACnet write requires numeric value: " + raw, e);
+        }
+    }
+
+    private static boolean extractBoolean(Object raw) {
+        if (raw instanceof Boolean bool) {
+            return bool;
+        }
+        String text = String.valueOf(raw).trim().toLowerCase();
+        return "true".equals(text) || "1".equals(text) || "on".equals(text) || "active".equals(text);
     }
 
     private DataRecord readPoint(BacnetPoint point) throws DriverException {

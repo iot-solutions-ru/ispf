@@ -57,10 +57,19 @@ echo "=== event_history count (before) ==="
 COUNT_BEFORE=$(docker exec ispf-clickhouse clickhouse-client --password "$PASS" -q "SELECT count() FROM ispf.event_history")
 echo "$COUNT_BEFORE"
 
+VAR_STORE=$(grep '^ISPF_VARIABLE_HISTORY_STORE=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "jdbc")
+if [ "$VAR_STORE" = "clickhouse" ]; then
+  echo "=== variable history env (clickhouse) ==="
+  grep '^ISPF_VARIABLE_HISTORY_CLICKHOUSE_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/' || true
+  echo "=== variable_samples count (before) ==="
+  VAR_COUNT_BEFORE=$(docker exec ispf-clickhouse clickhouse-client --password "$PASS" -q "SELECT count() FROM ispf.variable_samples")
+  echo "$VAR_COUNT_BEFORE"
+fi
+
 echo "=== Startup log (ClickHouse journal) ==="
 journalctl -u ispf-server -n 300 --no-pager \
-  | grep -E 'ClickHouse event journal ready|TimescaleDB hypertable skipped for event_history' \
-  | tail -3 || echo "(no matching log lines — check journalctl -u ispf-server)"
+  | grep -E 'ClickHouse event journal ready|ClickHouse variable history ready|TimescaleDB hypertable skipped for event_history|TimescaleDB hypertable skipped for variable_samples' \
+  | tail -5 || echo "(no matching log lines — check journalctl -u ispf-server)"
 
 if [ "$SMOKE_WRITE" = "true" ]; then
   echo "=== Write smoke (POST /api/v1/events/fire → ClickHouse) ==="
@@ -83,6 +92,24 @@ if [ "$SMOKE_WRITE" = "true" ]; then
     fi
     echo "OK: +$((COUNT_AFTER - COUNT_BEFORE)) row(s)"
   fi
+fi
+
+if [ "$VAR_STORE" = "clickhouse" ] && [ "$SMOKE_WRITE" = "true" ] && [ -n "${TOKEN:-}" ]; then
+  echo "=== Variable history smoke (setVariable → ClickHouse) ==="
+  UNIQUE=$(date +%s)
+  SET_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \
+    "${API_BASE}/api/v1/objects/by-path/variables/value?path=root.platform.devices.demo-sensor-01&name=temperature" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H 'Content-Type: application/json' \
+    -d "{\"schema\":{\"name\":\"temperature\",\"fields\":[{\"name\":\"value\",\"type\":\"DOUBLE\"}]},\"rows\":[{\"value\":${UNIQUE}.5}]}")
+  [ "$SET_STATUS" = "200" ] || fail "set variable HTTP $SET_STATUS"
+  sleep 3
+  VAR_COUNT_AFTER=$(docker exec ispf-clickhouse clickhouse-client --password "$PASS" -q "SELECT count() FROM ispf.variable_samples")
+  echo "variable_samples count (after): $VAR_COUNT_AFTER"
+  if [ "$VAR_COUNT_AFTER" -le "$VAR_COUNT_BEFORE" ]; then
+    fail "variable_samples count did not increase ($VAR_COUNT_BEFORE -> $VAR_COUNT_AFTER)"
+  fi
+  echo "OK: +$((VAR_COUNT_AFTER - VAR_COUNT_BEFORE)) variable sample row(s)"
 fi
 
 echo "=== OK: ClickHouse event journal verified ==="

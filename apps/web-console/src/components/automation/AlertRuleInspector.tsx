@@ -25,6 +25,8 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
     payloadVariable: variableString(variables, "payloadVariable"),
     enabled: variableBoolean(variables, "enabled", true),
     edgeTrigger: variableBoolean(variables, "edgeTrigger", true),
+    notificationWebhookUrl: variableString(variables, "notificationWebhookUrl"),
+    notificationEmailTarget: variableString(variables, "notificationEmailTarget"),
   };
 
   const saveMutation = useMutation({
@@ -75,6 +77,8 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
             payloadVariable: String(data.get("payloadVariable") ?? ""),
             enabled: data.get("enabled") === "on",
             edgeTrigger: data.get("edgeTrigger") === "on",
+            notificationWebhookUrl: String(data.get("notificationWebhookUrl") ?? "").trim() || undefined,
+            notificationEmailTarget: String(data.get("notificationEmailTarget") ?? "").trim() || undefined,
           });
         }}
       >
@@ -103,6 +107,25 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
         <label className="full">
           {t("automation:alertRule.payloadVariable")}
           <input name="payloadVariable" defaultValue={form.payloadVariable} readOnly={!canManage} />
+        </label>
+        <p className="hint full">{t("automation:alertRule.notificationHint")}</p>
+        <label className="full">
+          {t("automation:alertRule.notificationWebhook")}
+          <input
+            name="notificationWebhookUrl"
+            defaultValue={form.notificationWebhookUrl}
+            readOnly={!canManage}
+            placeholder="https://hooks.example.com/alerts"
+          />
+        </label>
+        <label className="full">
+          {t("automation:alertRule.notificationEmail")}
+          <input
+            name="notificationEmailTarget"
+            defaultValue={form.notificationEmailTarget}
+            readOnly={!canManage}
+            placeholder="ops@example.com|Alert|Threshold exceeded"
+          />
         </label>
         <label className="checkbox">
           <input

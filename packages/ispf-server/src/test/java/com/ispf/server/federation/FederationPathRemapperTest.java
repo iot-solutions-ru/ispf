@@ -47,4 +47,24 @@ class FederationPathRemapperTest {
                 )
         );
     }
+
+    @Test
+    void unremapsWidgetObjectPathsInLayoutJson() {
+        String layoutJson = """
+                {
+                  "widgets": [
+                    {
+                      "objectPath": "root.platform.federation.site-a.devices.demo-sensor-01"
+                    }
+                  ]
+                }
+                """;
+        String unremapped = FederationPathRemapper.unremapLayoutJson(
+                layoutJson,
+                "root.platform",
+                "root.platform.federation.site-a",
+                objectMapper
+        );
+        assertTrue(unremapped.contains("root.platform.devices.demo-sensor-01"));
+    }
 }

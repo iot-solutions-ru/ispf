@@ -19,6 +19,12 @@ public record AlertRule(
         Instant conditionTrueSince,
         Instant lastFiredAt,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String notificationWebhookUrl,
+        String notificationEmailTarget
 ) {
+    public boolean hasNotificationChannel() {
+        return (notificationWebhookUrl != null && !notificationWebhookUrl.isBlank())
+                || (notificationEmailTarget != null && !notificationEmailTarget.isBlank());
+    }
 }

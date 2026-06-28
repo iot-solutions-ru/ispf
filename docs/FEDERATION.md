@@ -23,13 +23,16 @@ Spike реализации REQ-PF-13: реестр peer-инстансов, prox
 | `/ws/federation/tunnel` | WebSocket tunnel (registration code или session reconnect) |
 | `POST /api/v1/federation/remote-token` | Логин на remote ISPF (server-side), возвращает Bearer для `authToken` |
 | `POST /api/v1/security/users/{username}/federation-token` | Выпуск Bearer-сессии для service user на **этом** узле |
-| `POST /api/v1/federation/peers/{id}/sync-catalog` | Импорт remote object list в локальное дерево |
+| `POST /api/v1/federation/peers/{id}/sync-catalog` | Импорт remote object list в локальное дерево (опц. body: resolutions) |
+| `GET /api/v1/federation/peers/{id}/catalog-sync-preview` | Preview: create/update counts + конфликты перед sync |
 | Proxy-узлы | AGENT с переменными `federationProxy`, `federationPeerId`, `federationRemotePath` |
 | `GET /api/v1/federation/proxy/objects/by-path` | Прямой proxy-read без catalog sync |
 | `PATCH /api/v1/federation/proxy/objects/by-path/variables/value` | Proxy-write переменной на remote peer |
 | `POST /api/v1/federation/proxy/objects/by-path/functions/invoke` | Proxy-invoke функции на remote peer |
 | `GET /api/v1/objects/by-path` | Для proxy-узлов в дереве — прозрачный read через peer |
 | `GET /api/v1/dashboards/by-path` | Proxy layout; widget paths remapped на `root.platform.federation.{peer}.*` |
+| `PUT /api/v1/dashboards/by-path/layout` | Local или federated: layout проксируется на remote с unremap путей виджетов |
+| `PUT /api/v1/dashboards/by-path/title` | Local или federated: title проксируется на remote |
 | `GET /api/v1/objects/by-path/variables/history*` | Proxy historian для federated paths |
 | `FederationWebSocketFanoutService` | Fan-out platform events к подписчикам federated paths (базовый notify) |
 | `POST/PATCH/DELETE /api/v1/federation/binds` | Federation bind: overlay remote peer на **локальный** путь (REQ-PF-13c) |
@@ -76,6 +79,34 @@ POST /api/v1/federation/binds
 
 ## Catalog sync
 
+### Preview и конфликты (BL-45)
+
+Перед sync Web Console открывает диалог **Catalog sync** (`FederationCatalogSyncDialog`): `GET /api/v1/federation/peers/{peerId}/catalog-sync-preview`.
+
+| Тип конфликта | Когда | Resolution |
+|---------------|-------|------------|
+| `LOCAL_NATIVE` | На локальном пути уже есть **не-proxy** объект | `SKIP` (по умолчанию) или `BIND` (перезаписать proxy-метаданными) |
+| `PROXY_MISMATCH` | Proxy существует, но `peerId` / `remotePath` не совпадают с импортом | `SKIP` или `BIND` |
+
+Применение:
+
+```http
+POST /api/v1/federation/peers/{peerId}/sync-catalog
+Content-Type: application/json
+
+{
+  "resolutions": [
+    { "localPath": "root.platform.federation.site-a.devices.pump-01", "action": "BIND" }
+  ]
+}
+```
+
+`action`: `SKIP` | `BIND`. Пустой body — sync без resolutions: конфликты **пропускаются** (безопаснее, чем silent overwrite).
+
+Ответ: `{ localRoot, created, updated, remoteCount, skipped }`.
+
+### Импорт узлов
+
 `POST /api/v1/federation/peers/{peerId}/sync-catalog` загружает список объектов с peer и создаёт локальные proxy-узлы:
 
 ```text
@@ -85,9 +116,21 @@ root.platform.federation.{peer-name}.devices.demo-sensor-01
   federationProxy = true
 ```
 
-Web Console: кнопка **Sync** на панели Federation peers.
+Web Console: кнопка **Sync catalog** на панели Federation peers → preview-диалог → **Sync catalog**.
 
-Повторный sync **идемпотентен**: уже импортированные узлы обновляют proxy-метаданные (`updated`), новые не дублируются. При loopback peer пути `root.platform.federation.*` на remote side игнорируются, чтобы не создавать вложенные зеркала каталога.
+Повторный sync **идемпотентен** для совпадающих proxy: узлы с тем же `peerId` + `remotePath` обновляют metadata (`updated`). При loopback peer пути `root.platform.federation.*` на remote side игнорируются, чтобы не создавать вложенные зеркала каталога.
+
+## Dashboard write через proxy (BL-46)
+
+Federated dashboard (`federationProxy=true` под `root.platform.federation.*` или bind на `DASHBOARD`) раньше возвращал **403** на `PUT layout/title`. Теперь:
+
+1. Клиент сохраняет layout с **локальными** путями виджетов (`root.platform.federation.{peer}.*`).
+2. `DashboardController` → `FederationProxyService.proxyDashboardSaveLayout` / `SaveTitle`.
+3. `FederationPathRemapper.unremapLayoutJson` переводит пути обратно в remote prefix peer.
+4. `PUT` на remote `/api/v1/dashboards/by-path/layout|title`.
+5. Ответ снова remap'ится для локального UI.
+
+`refreshIntervalMs` по-прежнему через variable PUT на proxy-объекте (как и другие writable variables).
 
 ## pathPrefix
 
@@ -151,8 +194,10 @@ Hub ──proxy_request──► Edge ──local services──► response
 
 ## Ограничения spike / production gaps
 
-- Write proxy — variable patch и function invoke; полная двусторонняя синхронизация дерева не поддерживается.
-- Catalog sync — только import (не merge конфликтов без оператора).
+- Write proxy — variable patch, function invoke, **dashboard layout/title**; полная двусторонняя синхронизация дерева не поддерживается.
+- Catalog sync — import + operator resolutions; без `BIND` конфликтующие local native / proxy mismatch **не перезаписываются**.
+- ~~Federated dashboards read-only~~ — **Done (BL-46):** layout/title write проксируется на remote.
+- ~~Catalog sync без merge конфликтов~~ — **Done (BL-45):** preview + SKIP/BIND в UI.
 - ~~Tenant scope на federation API~~ — **Done v0.3.0** (`FederationAccessService`, peer CRUD admin-only, proxy scoped).
 - ~~WS subscribe-by-path~~ — **Done v0.3.0** (`ObjectWebSocketHandler` + `FederationSubscribePollService` + Web Console hook).
 

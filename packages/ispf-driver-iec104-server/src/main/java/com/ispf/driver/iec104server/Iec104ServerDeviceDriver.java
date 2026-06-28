@@ -11,7 +11,9 @@ import org.openmuc.j60870.Connection;
 import org.openmuc.j60870.ConnectionEventListener;
 import org.openmuc.j60870.Server;
 import org.openmuc.j60870.ServerEventListener;
+import org.openmuc.j60870.ie.IeNormalizedValue;
 import org.openmuc.j60870.ie.IeScaledValue;
+import org.openmuc.j60870.ie.IeShortFloat;
 import org.openmuc.j60870.ie.IeSingleCommand;
 import org.openmuc.j60870.ie.InformationElement;
 import org.openmuc.j60870.ie.InformationObject;
@@ -169,6 +171,15 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             Double parsed = decodeWriteValue(informationObject);
             if (parsed != null) {
                 ioaValues.put(ioa, parsed);
+                refreshPointsForIoa(ioa);
+            }
+        }
+    }
+
+    private void refreshPointsForIoa(int ioa) {
+        for (Map.Entry<String, Iec104ServerPoint> entry : points.entrySet()) {
+            if (entry.getValue().ioa() == ioa) {
+                driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue()));
             }
         }
     }
@@ -184,6 +195,12 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
         }
         if (element instanceof IeSingleCommand singleCommand) {
             return singleCommand.isCommandStateOn() ? 1.0 : 0.0;
+        }
+        if (element instanceof IeShortFloat shortFloat) {
+            return (double) shortFloat.getValue();
+        }
+        if (element instanceof IeNormalizedValue normalizedValue) {
+            return (double) normalizedValue.getNormalizedValue();
         }
         return null;
     }

@@ -111,7 +111,8 @@ public class AutomationTreeService {
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 createAlertRuleNode(path, entity.getName(), entity.getObjectPath(), entity.getWatchVariable(),
                         entity.getConditionExpr(), entity.getEventName(), entity.getPayloadVariable(),
-                        entity.isEnabled(), entity.isEdgeTrigger(), 0, false, entity.getLastConditionMet());
+                        entity.isEnabled(), entity.isEdgeTrigger(), 0, false, entity.getLastConditionMet(),
+                        null, null);
             }
         }
         legacyAlertRuleRepository.deleteAll();
@@ -173,11 +174,14 @@ public class AutomationTreeService {
             boolean enabled,
             boolean edgeTrigger,
             int delaySeconds,
-            boolean sustainWhileTrue
+            boolean sustainWhileTrue,
+            String notificationWebhookUrl,
+            String notificationEmailTarget
     ) {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
-                payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null);
+                payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null,
+                notificationWebhookUrl, notificationEmailTarget);
         AlertRule rule = getAlertRule(path);
         indexRefresh.afterAlertRuleCreated(rule);
         return rule;
@@ -186,7 +190,8 @@ public class AutomationTreeService {
     @Transactional
     public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
             String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
-            Integer delaySeconds, Boolean sustainWhileTrue) {
+            Integer delaySeconds, Boolean sustainWhileTrue, String notificationWebhookUrl,
+            String notificationEmailTarget) {
         AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
@@ -218,6 +223,12 @@ public class AutomationTreeService {
         }
         if (sustainWhileTrue != null) {
             setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
+        }
+        if (notificationWebhookUrl != null) {
+            setRuntimeString(path, "notificationWebhookUrl", notificationWebhookUrl);
+        }
+        if (notificationEmailTarget != null) {
+            setRuntimeString(path, "notificationEmailTarget", notificationEmailTarget);
         }
         objectManager.persistNodeTree(path);
         AlertRule rule = getAlertRule(path);
@@ -401,7 +412,9 @@ public class AutomationTreeService {
                 true,
                 true,
                 0,
-                false
+                false,
+                null,
+                null
         );
     }
 
@@ -473,12 +486,14 @@ public class AutomationTreeService {
             String watchVariable,
             String conditionExpr,
             String eventName,
-            String payloadVariable,
-            boolean enabled,
-            boolean edgeTrigger,
-            int delaySeconds,
-            boolean sustainWhileTrue,
-            Boolean lastConditionMet
+        String payloadVariable,
+        boolean enabled,
+        boolean edgeTrigger,
+        int delaySeconds,
+        boolean sustainWhileTrue,
+        Boolean lastConditionMet,
+        String notificationWebhookUrl,
+        String notificationEmailTarget
     ) {
         ensureParent(path);
         String name = leafName(path);
@@ -494,6 +509,12 @@ public class AutomationTreeService {
         setBoolean(path, "edgeTrigger", edgeTrigger);
         setInteger(path, "delaySeconds", delaySeconds);
         setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
+        if (notificationWebhookUrl != null) {
+            setRuntimeString(path, "notificationWebhookUrl", notificationWebhookUrl);
+        }
+        if (notificationEmailTarget != null) {
+            setRuntimeString(path, "notificationEmailTarget", notificationEmailTarget);
+        }
         objectManager.persistNodeTree(path);
         if (lastConditionMet != null) {
             alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
@@ -561,7 +582,9 @@ public class AutomationTreeService {
                 runtime.conditionTrueSince(),
                 runtime.lastFiredAt(),
                 createdAt,
-                createdAt
+                createdAt,
+                blankToNull(readString(node, "notificationWebhookUrl").orElse(null)),
+                blankToNull(readString(node, "notificationEmailTarget").orElse(null))
         );
     }
 

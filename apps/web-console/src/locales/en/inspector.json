@@ -121,6 +121,7 @@
   "driver.write.polling": "Polling…",
   "driver.write.submit": "Write",
   "driver.write.writing": "Writing…",
+  "driver.write.readOnlyDriver": "This driver is read-only in the catalog (no write capability).",
   "model.meta.type": "Model type",
   "model.meta.targetObjectType": "Target ObjectType",
   "model.meta.treePath": "Tree path",

@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * High-throughput append path for {@code variable_samples}.
- * Reads and retention purge remain on JPA / {@link com.ispf.server.persistence.VariableSampleRepository}.
+ * Reads use {@link VariableHistoryQueryStore}; retention purge is store-specific.
  */
 public interface VariableHistoryWriteStore {
 

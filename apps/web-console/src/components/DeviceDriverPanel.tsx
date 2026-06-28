@@ -12,6 +12,7 @@ import {
 import { formatDriverConfigJson } from "../utils/driverDefaults";
 import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBadge";
 import DriverWriteForm from "./DriverWriteForm";
+import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
 
 interface DeviceDriverPanelProps {
@@ -358,7 +359,11 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
         <p className="hint error">{(actionError as Error).message}</p>
       )}
 
-      <DriverWriteForm devicePath={devicePath} canManage={canManage} />
+      <DriverWriteForm
+        devicePath={devicePath}
+        canManage={canManage}
+        supportsWrite={driverSupportsWrite(selectedDriver)}
+      />
     </section>
   );
 }

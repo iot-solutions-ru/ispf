@@ -148,6 +148,42 @@ public class FederationService {
         );
     }
 
+    public JsonNode proxyDashboardLayoutPut(UUID peerId, String remotePath, String layoutJson) {
+        FederationPeer peer = requirePeer(peerId);
+        String resolvedRemotePath = resolveRemotePath(peer.pathPrefix(), remotePath);
+        String body;
+        try {
+            body = objectMapper.writeValueAsString(Map.of("layoutJson", layoutJson));
+        } catch (tools.jackson.core.JacksonException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid layout JSON");
+        }
+        return sendJson(
+                peer,
+                "PUT",
+                "/api/v1/dashboards/by-path/layout?path="
+                        + URLEncoder.encode(resolvedRemotePath, StandardCharsets.UTF_8),
+                body
+        );
+    }
+
+    public JsonNode proxyDashboardTitlePut(UUID peerId, String remotePath, String title) {
+        FederationPeer peer = requirePeer(peerId);
+        String resolvedRemotePath = resolveRemotePath(peer.pathPrefix(), remotePath);
+        String body;
+        try {
+            body = objectMapper.writeValueAsString(Map.of("title", title));
+        } catch (tools.jackson.core.JacksonException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid title");
+        }
+        return sendJson(
+                peer,
+                "PUT",
+                "/api/v1/dashboards/by-path/title?path="
+                        + URLEncoder.encode(resolvedRemotePath, StandardCharsets.UTF_8),
+                body
+        );
+    }
+
     public JsonNode proxyVariableHistory(
             UUID peerId,
             String objectPath,

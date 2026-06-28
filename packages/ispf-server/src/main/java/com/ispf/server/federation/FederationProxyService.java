@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -90,6 +91,50 @@ public class FederationProxyService {
             copy.set("layout", objectMapper.valueToTree(remappedLayout));
         }
         return copy;
+    }
+
+    public DashboardService.DashboardView proxyDashboardSaveLayout(
+            FederationProxyTarget target,
+            String localLayoutJson
+    ) {
+        FederationPeer peer = requirePeer(target.peerId());
+        String remotePrefix = FederationPathRemapper.normalizePrefix(peer.pathPrefix());
+        String localRoot = FederationPathRemapper.localCatalogRoot(
+                target.localPath(),
+                target.remotePath(),
+                remotePrefix
+        );
+        String remoteLayoutJson = FederationPathRemapper.unremapLayoutJson(
+                localLayoutJson,
+                remotePrefix,
+                localRoot,
+                objectMapper
+        );
+        federationService.proxyDashboardLayoutPut(
+                target.peerId(),
+                target.remotePath(),
+                remoteLayoutJson
+        );
+        return mapDashboardView(target, proxyDashboard(target));
+    }
+
+    public DashboardService.DashboardView proxyDashboardSaveTitle(
+            FederationProxyTarget target,
+            String title
+    ) {
+        federationService.proxyDashboardTitlePut(target.peerId(), target.remotePath(), title);
+        return mapDashboardView(target, proxyDashboard(target));
+    }
+
+    private DashboardService.DashboardView mapDashboardView(FederationProxyTarget target, JsonNode json) {
+        String localPath = json.path("path").asText(target.localPath());
+        String resolvedTitle = json.path("title").asText(localPath);
+        int refreshIntervalMs = json.path("refreshIntervalMs").asInt(5000);
+        String layoutJson = json.path("layoutJson").asText("");
+        Object layout = json.hasNonNull("layout")
+                ? objectMapper.convertValue(json.get("layout"), Object.class)
+                : objectMapper.convertValue(json.path("layoutJson").asText("{}"), Object.class);
+        return new DashboardService.DashboardView(localPath, resolvedTitle, refreshIntervalMs, layout, layoutJson);
     }
 
     public JsonNode proxyVariableHistory(

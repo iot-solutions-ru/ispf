@@ -376,15 +376,23 @@ Write (`writePoint`):
 
 ### iec104 (`ispf-driver-iec104`)
 
-IEC 60870-5-104 master. Конфиг: `host`, `port` (2404), `commonAddress`.
+IEC 60870-5-104 master. Конфиг: `host`, `port` (2404), `commonAddress`, `timeoutMs`.
 
-Point mapping: `ioa:type` (например `1001:M_ME_NC_1`).
+Point mapping: `ioa:dataType` (например `2001:BOOL`, `3001:FLOAT`, `1001:M_ME_NA_1`).
+
+**Write (BL-23):** `BOOL` / `M_SP_NA_1` → `singleCommand`; `FLOAT` / `M_ME_NC_1` → `setShortFloatCommand`; `INT` / `M_ME_NA_1` → `setNormalizedValueCommand`. После write переменная обновляется локально (`quality=GOOD`); poll read может вернуть `NOT_AVAILABLE` если outstation не отвечает на read command.
+
+Loopback test: `Iec104DeviceDriverTest` против `iec104-server`.
 
 ### bacnet (`ispf-driver-bacnet`)
 
-BACnet/IP read property. Конфиг: `broadcastAddress`, `localBindAddress`, `port` (47808).
+BACnet/IP read/write property (`present-value`). Конфиг: `host`, `port` (47808), `localDeviceId`, `remoteDeviceId`, `timeoutMs`.
 
-Point mapping: `deviceId:objectType:instance:propertyId`.
+Point mapping: `objectType:instance:property` (например `analog-output:1:present-value`).
+
+**Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
+
+Maturity: **beta** (write без loopback integration test — нужен BACnet simulator).
 
 ### dnp3 (`ispf-driver-dnp3`)
 

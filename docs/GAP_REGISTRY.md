@@ -29,14 +29,14 @@
 | **P1** | Inspector | RECORD inline editor | BL-03 Done |
 | **P2** | Dashboard | Chart bubble / radar | BL-65, 20.25 |
 | **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
-| **P1** | Playwright e2e | Admin smoke baseline (Phase 18.1 = BL-50) | BL-50 Partial, 18.1 |
+| **P1** | Playwright e2e | Admin smoke + inspector/dashboard; staging TBD | BL-50 Partial, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA | BL-20…22 Done |
-| **P2** | Driver write (tail) | BACnet, IEC 104, DNP3 poll, DLMS | BL-23…25 |
+| **P2** | Driver write (tail) | DNP3 poll, DLMS write | BL-24…25 |
 | **P2** | Bindings UX | Каталог platform bindings + activators UI | BL-09,18 Done; runtime engine in progress |
-| **P2** | History scale | ClickHouse только для events, не variables | BL-40 |
+| **P2** | History scale | ClickHouse variable history backend | BL-40 Done |
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
-| **P3** | Federation | Dashboard write read-only на proxy; sync conflicts | BL-45,46 |
-| **P3** | Notifications | Нет webhook/email из alert/correlator | BL-44 |
+| **P3** | Federation polish | catalog sync preview + dashboard write proxy | BL-45,46 Done |
+| **P3** | Notifications | webhook/email alert + correlator | BL-44 Done |
 | **P3** | Semantic (Haystack/Brick) | Нет overlay тегов / export; tree-only semantics | BL-56…62, 20.22 |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 | **Низкий** | CWMP write | `SetParameterValues` — read-only | BL-29 |
@@ -60,22 +60,22 @@
 | MCP adapter (0006) | ~100% | — | ContextPack `resources/list` + `resources/read` |
 | Tree-first agent (FW-44) | ~100% | — | [0005](decisions/0005-tree-first-ai-agent.md), **FW-45** briefing |
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
-| Driver stub catalog | ~95% | BACnet/IEC104/DNP3/DLMS write; STUB/BETA promotion | BL-23…26, [DRIVERS.md](DRIVERS.md) |
-| Driver maturity labels | ~70% | PRODUCTION в каталоге при read-only v0.1 | BL-27 |
-| Frontend e2e (Playwright) | ~25% | Smoke only; critical paths TBD | BL-50 Partial, Phase 18.1 |
+| Driver stub catalog | ~95% | DNP3/DLMS write; native DNP3 poll | BL-24…26, [DRIVERS.md](DRIVERS.md) |
+| Driver maturity labels | ~95% | DNP3/DLMS/CWMP write paths | BL-24,25,29 |
+| Frontend e2e (Playwright) | ~60% | CI vs staging/prod URL | BL-50 Partial, Phase 18.1 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~95% | — | BL-01…18 Done |
 | Dashboard widgets (advanced) | ~95% | chart bubble/radar | BL-65 |
 | Variable inline editor | ~95% | — | BL-03 Done |
 | Binding rules UX | ~95% | runtime `onEvent`/`periodicMs` engine | in progress |
 | Journals | ~100% | invoke/binding audit payloads (V51), drill-down UI | BL-15,16 Done |
-| ClickHouse (variables) | ~15% | UI settings Done; backend store Planned | BL-40 Partial |
+| ClickHouse (variables) | ~95% | prod rollout `ISPF_VARIABLE_HISTORY_STORE=clickhouse` | BL-40 Done |
 | Optional backends UI | ~100% | — | BL-41,42 Done |
 | Platform change management | ~95% | — | BL-04 Done |
 | Collaboration (leases) | ~95% | — | BL-05 Done |
-| Notifications | ~0% | webhook/email | BL-44 |
-| Federation UX | ~85% | dashboard write, sync conflicts | BL-45,46 |
-| Platform backup | ~0% | export/import tree | BL-47 |
+| Notifications | Done | alert rule vars + correlator actions; `ispf.notifications.email-relay-url` | — |
+| Federation UX | Done | catalog sync preview (SKIP/BIND), federated dashboard layout/title write | — |
+| Platform backup | Done | `GET /platform/backup/export`, `POST /platform/backup/import?dryRun=` + System UI | — |
 | Operator manifest | ~85% | chart/map screen types | BL-51 |
 | Spreadsheet widget | ~95% | history bind (BL-54) | BL-54 |
 | Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
@@ -86,6 +86,8 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-28 | BL-44…47 Done: notifications, federation catalog conflicts + dashboard write proxy, platform backup API/UI |
+| 2026-06-28 | BL-40 Done: ClickHouse variable history write/query; BL-50 e2e Variables + Dashboard builder |
 | 2026-06-28 | ROADMAP Phase 20 sync с CODE_AUDIT: BL-20…22/28/41/42 Done; Partial на 20.15–17,19–21; журналы 0.9.33 |
 | 2026-06-28 | BL-55 Partial: binding activators, journal export, chart/gantt vitest utils |
 | 2026-06-28 | Sprint BL-C close: BL-13…18, journals, system settings, binding activators UI |

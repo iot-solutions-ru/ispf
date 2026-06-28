@@ -166,15 +166,60 @@ export function refreshPeerToken(peerId: string): Promise<FederationPeerAuthStat
   });
 }
 
-export function syncFederationCatalog(peerId: string): Promise<{
+export type CatalogSyncConflictType = "LOCAL_NATIVE" | "PROXY_MISMATCH";
+export type CatalogSyncResolutionAction = "SKIP" | "BIND";
+
+export interface CatalogSyncConflict {
+  localPath: string;
+  remotePath: string;
+  type: CatalogSyncConflictType;
+  existingPeerId: string | null;
+  existingRemotePath: string | null;
+  localDisplayName: string;
+  localType: string;
+}
+
+export interface CatalogSyncPreview {
+  localRoot: string;
+  remoteCount: number;
+  createCount: number;
+  updateCount: number;
+  conflicts: CatalogSyncConflict[];
+}
+
+export interface CatalogSyncResolution {
+  localPath: string;
+  action: CatalogSyncResolutionAction;
+}
+
+export function previewFederationCatalogSync(peerId: string): Promise<CatalogSyncPreview> {
+  return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/catalog-sync-preview`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Catalog preview failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function syncFederationCatalog(
+  peerId: string,
+  resolutions?: CatalogSyncResolution[]
+): Promise<{
   localRoot: string;
   created: number;
   updated: number;
   remoteCount: number;
+  skipped: number;
 }> {
   return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/sync-catalog`, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(resolutions?.length ? { resolutions } : {}),
   }).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Sync catalog failed: ${response.status}`));

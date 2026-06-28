@@ -244,7 +244,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.15 | Driver maturity sync + write UI + tests | BL-27,28,30 | P2 | Partial |
 | 20.16 | ClickHouse variable history | BL-40 | P2 | Partial |
 | 20.17 | Scale ops: Redis/NATS health, YARG PDF hint | BL-41…43 | P2 | Partial |
-| 20.18 | Notifications, federation polish, backup/restore, MCP admin | BL-44…48 | P3 | Planned |
+| 20.18 | Notifications, federation polish, backup/restore, MCP admin | BL-44…48 | P3 | Done (BL-44…48) |
 | 20.19 | Playwright e2e (см. также Phase 18.1) | BL-50 | P1 | Partial |
 | 20.20 | Operator manifest screens + spreadsheet history binding | BL-51…54 | P3 | Partial |
 | 20.21 | Frontend component tests (widgets, inspector) | BL-55 | P2 | Partial |

@@ -2,7 +2,9 @@ export type CorrelatorActionType =
   | "RUN_WORKFLOW"
   | "FIRE_EVENT"
   | "SET_VARIABLE"
-  | "OPEN_OPERATOR_REPORT";
+  | "OPEN_OPERATOR_REPORT"
+  | "SEND_WEBHOOK"
+  | "SEND_EMAIL";
 
 export type CorrelatorPatternType = "COUNT" | "SEQUENCE" | "EVENT_CHAIN";
 
@@ -15,6 +17,8 @@ export interface CreateAlertRulePayload {
   payloadVariable?: string;
   enabled: boolean;
   edgeTrigger: boolean;
+  notificationWebhookUrl?: string;
+  notificationEmailTarget?: string;
 }
 
 export interface CreateCorrelatorPayload {

@@ -150,14 +150,27 @@ npm run i18n:translate   # regenerate ru/de/zh from en (tools/i18n/generate-loca
 
 | Вкладка | Содержимое |
 |---------|------------|
-| **Узлы** | Таблица peers, форма нового узла, получение authToken |
+| **Узлы** | Таблица peers, форма нового узла, **Sync catalog** (preview конфликтов → SKIP/BIND) |
 | **Токены** | Выпуск локального federation-токена для другого ISPF |
 | **Туннель** | Inbound registrations, outbound agents, secrets-key (если capability `federation-tunnel`) |
 | **Проверка** | Proxy read probe по выбранному узлу |
 
 На объекте устройства/дашборда — панель **Привязка к федерации** (`FederationBindPanel`): проверка remote path, bind/rebind, inline-подтверждение отвязки. Для зеркала каталога — callout «Разместить локально».
 
-Компоненты: `FederationPeersPanel`, `components/federation/*`, `FederationBindPanel`.
+Компоненты: `FederationPeersPanel`, `FederationCatalogSyncDialog`, `components/federation/*`, `FederationBindPanel`.
+
+## System (admin)
+
+Раздел **Система** (`SystemView`) — вкладки:
+
+| Вкладка | Содержимое |
+|---------|------------|
+| **Metrics** | Platform metrics, health cards (Redis, NATS, YARG, MCP), **Platform backup** |
+| **Runtime settings** | `GET/PATCH /api/v1/platform/runtime-settings` |
+| **Events / Functions / Bindings** | Журналы invoke/audit |
+| **Change sets** | Platform change management |
+
+**Platform backup** (`PlatformBackupPanel`, BL-47): export JSON поддерева `root.platform`; import с dry-run preview. API: `GET /api/v1/platform/backup/export`, `POST /api/v1/platform/backup/import?dryRun=true|false`. Federation proxy-узлы при import пропускаются.
 
 ## AI Studio
 

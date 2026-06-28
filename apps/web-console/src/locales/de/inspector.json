@@ -102,6 +102,7 @@
   "driver.write.polling": "Abfrage…",
   "driver.write.submit": "Schreiben",
   "driver.write.writing": "Schreiben…",
+  "driver.write.readOnlyDriver": "Dieser Treiber ist im Katalog schreibgeschützt (keine Write-Fähigkeit).",
   "driver.lastError": "Letzter Fehler: {{message}}",
   "driver.loading": "Treibereinstellungen werden geladen…",
   "driver.mappingsLabel": "Punkte (mappings)",

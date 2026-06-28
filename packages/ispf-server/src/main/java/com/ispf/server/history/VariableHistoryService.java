@@ -11,8 +11,6 @@ import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +19,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class VariableHistoryService {
 
     private static final String RETENTION_LOCK = "variable_history_retention";
-    private static final int MAX_AGGREGATE_SAMPLE_ROWS = 100_000;
 
     private final VariableHistoryProperties properties;
     private final VariableSampleRepository sampleRepository;
@@ -40,9 +36,9 @@ public class VariableHistoryService {
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
-    private final TimescaleHypertableInitializer timescaleHypertableInitializer;
     private final VariableHistoryAsyncWriter asyncWriter;
     private final VariableHistoryBatchPersister batchPersister;
+    private final VariableHistoryQueryStore queryStore;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -54,9 +50,9 @@ public class VariableHistoryService {
             ObjectManager objectManager,
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
-            TimescaleHypertableInitializer timescaleHypertableInitializer,
             VariableHistoryAsyncWriter asyncWriter,
-            VariableHistoryBatchPersister batchPersister
+            VariableHistoryBatchPersister batchPersister,
+            VariableHistoryQueryStore queryStore
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
@@ -64,9 +60,9 @@ public class VariableHistoryService {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
-        this.timescaleHypertableInitializer = timescaleHypertableInitializer;
         this.asyncWriter = asyncWriter;
         this.batchPersister = batchPersister;
+        this.queryStore = queryStore;
     }
 
     public void recordVariableUpdate(String objectPath, String variableName) {
@@ -154,35 +150,14 @@ public class VariableHistoryService {
 
         int cappedLimit = Math.min(Math.max(limit, 1), 10_000);
 
-        List<VariableSampleEntity> rows;
-        if (from != null && to != null) {
-            rows = sampleRepository.findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
-                    objectPath,
-                    variableName,
-                    field,
-                    from,
-                    to
-            );
-            if (rows.size() > cappedLimit) {
-                rows = rows.subList(rows.size() - cappedLimit, rows.size());
-            }
-        } else {
-            rows = new ArrayList<>(sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderBySampledAtDesc(
-                    objectPath,
-                    variableName,
-                    field,
-                    PageRequest.of(0, cappedLimit)
-            ));
-            rows = rows.reversed();
-        }
-
-        List<VariableHistorySample> samples = rows.stream()
-                .map(row -> new VariableHistorySample(
-                        row.getSampledAt(),
-                        row.getValueDouble(),
-                        row.getValueText()
-                ))
-                .toList();
+        List<VariableHistorySample> samples = queryStore.query(
+                objectPath,
+                variableName,
+                field,
+                from,
+                to,
+                cappedLimit
+        );
 
         return new VariableHistoryResponse(objectPath, variableName, field, samples);
     }
@@ -219,9 +194,15 @@ public class VariableHistoryService {
         }
 
         int cappedBuckets = Math.min(Math.max(maxBuckets, 1), 2_000);
-        List<VariableHistoryBucket> result = timescaleHypertableInitializer.isPostgreSql()
-                ? aggregateWithSql(objectPath, variableName, field, resolvedFrom, resolvedTo, bucket, cappedBuckets)
-                : aggregateWithJvm(objectPath, variableName, field, resolvedFrom, resolvedTo, bucket, cappedBuckets);
+        List<VariableHistoryBucket> result = queryStore.aggregateBuckets(
+                objectPath,
+                variableName,
+                field,
+                resolvedFrom,
+                resolvedTo,
+                bucket,
+                cappedBuckets
+        );
 
         return new VariableHistoryAggregateResponse(
                 objectPath,
@@ -230,75 +211,6 @@ public class VariableHistoryService {
                 formatBucket(bucket),
                 result
         );
-    }
-
-    private List<VariableHistoryBucket> aggregateWithSql(
-            String objectPath,
-            String variableName,
-            String fieldName,
-            Instant from,
-            Instant to,
-            Duration bucket,
-            int maxBuckets
-    ) {
-        long bucketSeconds = bucket.getSeconds();
-        return sampleRepository.aggregateBuckets(
-                        objectPath,
-                        variableName,
-                        fieldName,
-                        from,
-                        to,
-                        bucketSeconds,
-                        maxBuckets
-                ).stream()
-                .map(row -> new VariableHistoryBucket(
-                        row.getBucketStart(),
-                        row.getAvgVal(),
-                        row.getMinVal(),
-                        row.getMaxVal(),
-                        row.getSampleCount() != null ? row.getSampleCount().intValue() : 0
-                ))
-                .toList();
-    }
-
-    private List<VariableHistoryBucket> aggregateWithJvm(
-            String objectPath,
-            String variableName,
-            String fieldName,
-            Instant from,
-            Instant to,
-            Duration bucket,
-            int maxBuckets
-    ) {
-        List<VariableSampleEntity> rows = sampleRepository
-                .findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
-                        objectPath,
-                        variableName,
-                        fieldName,
-                        from,
-                        to,
-                        PageRequest.of(0, MAX_AGGREGATE_SAMPLE_ROWS, Sort.by("sampledAt").ascending())
-                );
-
-        Map<Instant, BucketAccumulator> buckets = new LinkedHashMap<>();
-        for (VariableSampleEntity row : rows) {
-            Double value = row.getValueDouble();
-            if (value == null || !Double.isFinite(value)) {
-                continue;
-            }
-            Instant bucketStart = truncateToBucket(row.getSampledAt(), bucket);
-            buckets.computeIfAbsent(bucketStart, ignored -> new BucketAccumulator()).add(value);
-        }
-
-        List<VariableHistoryBucket> result = buckets.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> entry.getValue().toBucket(entry.getKey()))
-                .toList();
-
-        if (result.size() > maxBuckets) {
-            result = result.subList(result.size() - maxBuckets, result.size());
-        }
-        return result;
     }
 
     static Duration parseBucket(String bucketSpec) {
@@ -329,15 +241,6 @@ public class VariableHistoryService {
         return to.minus(Math.max(retentionDays, 1), ChronoUnit.DAYS);
     }
 
-    private static Instant truncateToBucket(Instant instant, Duration bucket) {
-        long bucketSeconds = bucket.getSeconds();
-        if (bucketSeconds <= 0) {
-            return instant;
-        }
-        long floored = Math.floorDiv(instant.getEpochSecond(), bucketSeconds) * bucketSeconds;
-        return Instant.ofEpochSecond(floored);
-    }
-
     private static String formatBucket(Duration bucket) {
         long seconds = bucket.getSeconds();
         if (seconds % 86_400 == 0) {
@@ -347,24 +250,6 @@ public class VariableHistoryService {
             return (seconds / 3_600) + "h";
         }
         return (seconds / 60) + "m";
-    }
-
-    private static final class BucketAccumulator {
-        private double sum;
-        private double min = Double.POSITIVE_INFINITY;
-        private double max = Double.NEGATIVE_INFINITY;
-        private int count;
-
-        void add(double value) {
-            sum += value;
-            min = Math.min(min, value);
-            max = Math.max(max, value);
-            count++;
-        }
-
-        VariableHistoryBucket toBucket(Instant ts) {
-            return new VariableHistoryBucket(ts, sum / count, min, max, count);
-        }
     }
 
     @Transactional(readOnly = true)
@@ -426,7 +311,7 @@ public class VariableHistoryService {
     }
 
     void purgeExpiredSamplesInternal() {
-        if (timescaleHypertableInitializer.isTimescaleRetentionActive()) {
+        if (!queryStore.supportsApplicationRetentionPurge()) {
             return;
         }
         Instant now = Instant.now();

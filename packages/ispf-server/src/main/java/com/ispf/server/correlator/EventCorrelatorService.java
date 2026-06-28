@@ -14,6 +14,7 @@ import com.ispf.server.event.RecentEventCache;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
+import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.workflow.WorkflowService;
 import org.slf4j.Logger;
@@ -61,6 +62,7 @@ public class EventCorrelatorService {
     private final ObjectEntityMapper entityMapper;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final RecentEventCache recentEventCache;
+    private final NotificationDispatchService notificationDispatchService;
 
     public EventCorrelatorService(
             AutomationTreeService automationTreeService,
@@ -72,7 +74,8 @@ public class EventCorrelatorService {
             ExpressionEngine expressionEngine,
             ObjectEntityMapper entityMapper,
             AutomationMetricsRecorder automationMetricsRecorder,
-            RecentEventCache recentEventCache
+            RecentEventCache recentEventCache,
+            NotificationDispatchService notificationDispatchService
     ) {
         this.automationTreeService = automationTreeService;
         this.windowStore = windowStore;
@@ -84,6 +87,7 @@ public class EventCorrelatorService {
         this.entityMapper = entityMapper;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.recentEventCache = recentEventCache;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Transactional(readOnly = true)
@@ -348,6 +352,24 @@ public class EventCorrelatorService {
                         objectPath,
                         "openOperatorReport",
                         DataRecord.single(REPORT_PATH_PAYLOAD, Map.of("reportPath", correlator.actionTarget()))
+                );
+                case SEND_WEBHOOK -> notificationDispatchService.sendWebhook(
+                        correlator.actionTarget(),
+                        notificationDispatchService.baseContext(
+                                "correlator",
+                                correlator.id(),
+                                objectPath,
+                                correlator.eventName()
+                        )
+                );
+                case SEND_EMAIL -> notificationDispatchService.sendEmail(
+                        correlator.actionTarget(),
+                        notificationDispatchService.baseContext(
+                                "correlator",
+                                correlator.id(),
+                                objectPath,
+                                correlator.eventName()
+                        )
                 );
             }
         } catch (Exception e) {

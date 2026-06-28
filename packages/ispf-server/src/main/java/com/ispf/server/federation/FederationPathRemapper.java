@@ -22,6 +22,86 @@ public final class FederationPathRemapper {
     private FederationPathRemapper() {
     }
 
+    public static String unremapLayoutJson(
+            String layoutJson,
+            String remotePrefix,
+            String localRoot,
+            ObjectMapper objectMapper
+    ) {
+        if (layoutJson == null || layoutJson.isBlank()) {
+            return layoutJson;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(layoutJson);
+            if (!(root instanceof ObjectNode layout)) {
+                return layoutJson;
+            }
+            JsonNode widgets = layout.get("widgets");
+            if (widgets instanceof ArrayNode widgetArray) {
+                for (JsonNode widget : widgetArray) {
+                    if (widget instanceof ObjectNode widgetObject) {
+                        unremapWidgetPaths(widgetObject, remotePrefix, localRoot);
+                    }
+                }
+            }
+            return objectMapper.writeValueAsString(layout);
+        } catch (Exception ex) {
+            return layoutJson;
+        }
+    }
+
+    public static Object unremapLayoutObject(
+            Object layout,
+            String remotePrefix,
+            String localRoot,
+            ObjectMapper objectMapper
+    ) {
+        if (layout == null) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.valueToTree(layout);
+            if (!(root instanceof ObjectNode layoutObject)) {
+                return layout;
+            }
+            JsonNode widgets = layoutObject.get("widgets");
+            if (widgets instanceof ArrayNode widgetArray) {
+                for (JsonNode widget : widgetArray) {
+                    if (widget instanceof ObjectNode widgetObject) {
+                        unremapWidgetPaths(widgetObject, remotePrefix, localRoot);
+                    }
+                }
+            }
+            return objectMapper.convertValue(layoutObject, Object.class);
+        } catch (Exception ex) {
+            return layout;
+        }
+    }
+
+    static String unremapPath(String path, String remotePrefix, String localRoot) {
+        if (path == null || path.isBlank()) {
+            return path;
+        }
+        if (path.equals(localRoot) || path.startsWith(localRoot + ".")) {
+            String suffix = path.equals(localRoot) ? "" : path.substring(localRoot.length());
+            return remotePrefix + suffix;
+        }
+        return path;
+    }
+
+    private static void unremapWidgetPaths(ObjectNode widget, String remotePrefix, String localRoot) {
+        for (String field : WIDGET_PATH_FIELDS) {
+            JsonNode value = widget.get(field);
+            if (value != null && value.isTextual()) {
+                widget.put(field, unremapPath(value.asText(), remotePrefix, localRoot));
+            }
+        }
+        JsonNode fieldsJson = widget.get("fieldsJson");
+        if (fieldsJson != null && fieldsJson.isTextual() && !fieldsJson.asText().isBlank()) {
+            widget.put("fieldsJson", remapFieldsJson(fieldsJson.asText(), remotePrefix, localRoot, true));
+        }
+    }
+
     public static String remapLayoutJson(
             String layoutJson,
             String remotePrefix,
@@ -99,11 +179,20 @@ public final class FederationPathRemapper {
         }
         JsonNode fieldsJson = widget.get("fieldsJson");
         if (fieldsJson != null && fieldsJson.isTextual() && !fieldsJson.asText().isBlank()) {
-            widget.put("fieldsJson", remapFieldsJson(fieldsJson.asText(), remotePrefix, localRoot));
+            widget.put("fieldsJson", remapFieldsJson(fieldsJson.asText(), remotePrefix, localRoot, false));
         }
     }
 
     private static String remapFieldsJson(String fieldsJson, String remotePrefix, String localRoot) {
+        return remapFieldsJson(fieldsJson, remotePrefix, localRoot, false);
+    }
+
+    private static String remapFieldsJson(
+            String fieldsJson,
+            String remotePrefix,
+            String localRoot,
+            boolean reverse
+    ) {
         try {
             ObjectMapper mapper = JsonMapper.builder().build();
             JsonNode fields = mapper.readTree(fieldsJson);
@@ -116,7 +205,9 @@ public final class FederationPathRemapper {
                     if (optionsFrom != null && optionsFrom.isTextual()) {
                         fieldObject.put(
                                 "optionsFrom",
-                                remapPath(optionsFrom.asText(), remotePrefix, localRoot)
+                                reverse
+                                        ? unremapPath(optionsFrom.asText(), remotePrefix, localRoot)
+                                        : remapPath(optionsFrom.asText(), remotePrefix, localRoot)
                         );
                     }
                 }

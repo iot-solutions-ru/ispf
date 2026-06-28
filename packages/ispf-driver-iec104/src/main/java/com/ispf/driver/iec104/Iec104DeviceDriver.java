@@ -7,13 +7,16 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import org.openmuc.j60870.ASdu;
+import org.openmuc.j60870.CauseOfTransmission;
 import org.openmuc.j60870.ClientConnectionBuilder;
 import org.openmuc.j60870.Connection;
 import org.openmuc.j60870.ConnectionEventListener;
 import org.openmuc.j60870.ie.IeDoublePointWithQuality;
-import org.openmuc.j60870.ie.IeShortFloat;
-import org.openmuc.j60870.ie.IeSinglePointWithQuality;
 import org.openmuc.j60870.ie.IeNormalizedValue;
+import org.openmuc.j60870.ie.IeQualifierOfSetPointCommand;
+import org.openmuc.j60870.ie.IeShortFloat;
+import org.openmuc.j60870.ie.IeSingleCommand;
+import org.openmuc.j60870.ie.IeSinglePointWithQuality;
 import org.openmuc.j60870.ie.InformationElement;
 import org.openmuc.j60870.ie.InformationObject;
 
@@ -127,13 +130,107 @@ public class Iec104DeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             Iec104Point point = Iec104Point.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            try {
+                driverObject.updateVariable(entry.getKey(), readPoint(point));
+            } catch (DriverException ex) {
+                driverObject.updateVariable(entry.getKey(), unavailableRecord(point));
+                driverObject.log(DriverLogLevel.DEBUG, "IEC104 read skipped for " + entry.getKey() + ": " + ex.getMessage());
+            }
         }
+    }
+
+    private static DataRecord unavailableRecord(Iec104Point point) {
+        return switch (point.dataType()) {
+            case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of("value", false, "quality", "NOT_AVAILABLE"));
+            default -> DataRecord.single(VALUE_SCHEMA, Map.of("value", 0.0, "quality", "NOT_AVAILABLE"));
+        };
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("IEC104 write not implemented");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        Iec104Point point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("Unknown point: " + pointId);
+        }
+        try {
+            switch (point.dataType()) {
+                case BOOL, M_SP_NA_1 -> connection.singleCommand(
+                        commonAddress,
+                        CauseOfTransmission.ACTIVATION,
+                        point.ioa(),
+                        new IeSingleCommand(extractBoolean(value), 0, false)
+                );
+                case FLOAT, M_ME_NC_1, M_ME_TF_1 -> connection.setShortFloatCommand(
+                        commonAddress,
+                        CauseOfTransmission.ACTIVATION,
+                        point.ioa(),
+                        new IeShortFloat((float) extractDouble(value)),
+                        new IeQualifierOfSetPointCommand(0, false)
+                );
+                case INT, M_ME_NA_1 -> connection.setNormalizedValueCommand(
+                        commonAddress,
+                        CauseOfTransmission.ACTIVATION,
+                        point.ioa(),
+                        new IeNormalizedValue((float) extractDouble(value)),
+                        new IeQualifierOfSetPointCommand(0, false)
+                );
+                default -> throw new DriverException("Unsupported IEC104 write data type: " + point.dataType());
+            }
+            driverObject.updateVariable(pointId, writeResult(point, value));
+        } catch (DriverException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DriverException("IEC104 write failed for point " + pointId, e);
+        }
+    }
+
+    private DataRecord writeResult(Iec104Point point, DataRecord value) throws DriverException {
+        return switch (point.dataType()) {
+            case BOOL, M_SP_NA_1 -> DataRecord.single(BOOL_SCHEMA, Map.of(
+                    "value", extractBoolean(value),
+                    "quality", "GOOD"
+            ));
+            default -> DataRecord.single(VALUE_SCHEMA, Map.of(
+                    "value", extractDouble(value),
+                    "quality", "GOOD"
+            ));
+        };
+    }
+
+    private static boolean extractBoolean(DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("value");
+        if (raw == null) {
+            raw = value.firstRow().get("raw");
+        }
+        if (raw instanceof Boolean bool) {
+            return bool;
+        }
+        if (raw == null) {
+            throw new DriverException("IEC104 write requires boolean value field");
+        }
+        String text = String.valueOf(raw).trim().toLowerCase();
+        return "true".equals(text) || "1".equals(text) || "on".equals(text);
+    }
+
+    private static double extractDouble(DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("raw");
+        if (raw == null) {
+            raw = value.firstRow().get("value");
+        }
+        if (raw instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (raw == null) {
+            throw new DriverException("IEC104 write requires numeric value field");
+        }
+        try {
+            return Double.parseDouble(String.valueOf(raw));
+        } catch (NumberFormatException e) {
+            throw new DriverException("IEC104 write requires numeric value: " + raw, e);
+        }
     }
 
     private DataRecord readPoint(Iec104Point point) throws DriverException {

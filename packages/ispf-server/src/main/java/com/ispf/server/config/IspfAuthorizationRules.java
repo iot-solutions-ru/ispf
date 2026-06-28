@@ -28,6 +28,8 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/binding-invocations", "/api/v1/platform/binding-audit-status",
                         "/api/v1/platform/installation-id", "/api/v1/platform/automation-index/**",
                         "/api/v1/platform/redis/**", "/api/v1/platform/nats/**",
+                        "/api/v1/platform/reports/yarg/**", "/api/v1/platform/mcp/**",
+                        "/api/v1/platform/backup/**",
                         "/api/v1/platform/runtime-settings")
                 .hasRole(IspfRoles.ADMIN);
 

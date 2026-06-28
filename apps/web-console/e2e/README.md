@@ -21,10 +21,12 @@ npm run test:e2e:install
 | Login form | `login page` |
 | Explorer shell + tree | `admin explorer`, `explorer device variables` |
 | Device selection (`?path=` deep link) | `selects a device in the tree` |
+| Inspector Variables tab | `shows Variables tab after device inspector loads` |
+| Dashboard builder (double-click / Open in editor) | `dashboard builder` |
 | Dashboard layout API | `dashboard preview` |
 | Operator `?mode=operator&app=demo` | `operator deep link` |
 
-**In progress:** inspector Variables tab + Dashboard builder UI render (React Query / lazy-tree timing).
+**In progress:** CI against staging / prod URL (`E2E_BASE_URL`).
 
 ## Run mocked smoke tests (default)
 

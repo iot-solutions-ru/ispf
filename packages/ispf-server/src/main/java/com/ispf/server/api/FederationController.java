@@ -2,6 +2,8 @@ package com.ispf.server.api;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.federation.CatalogSyncConflictType;
+import com.ispf.server.federation.CatalogSyncResolutionAction;
 import com.ispf.server.federation.FederationAccessService;
 import com.ispf.server.federation.FederationAuthMode;
 import com.ispf.server.federation.FederationAuthStatus;
@@ -137,10 +139,43 @@ public class FederationController {
     }
 
     @PostMapping("/peers/{id}/sync-catalog")
-    public SyncCatalogResponse syncCatalog(Authentication authentication, @PathVariable UUID id) {
+    public SyncCatalogResponse syncCatalog(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @RequestBody(required = false) CatalogSyncRequest request
+    ) {
         federationAccessService.requireAdmin(authentication);
-        FederationCatalogService.SyncResult result = federationCatalogService.syncCatalog(id);
-        return new SyncCatalogResponse(result.localRoot(), result.created(), result.updated(), result.remoteCount());
+        List<FederationCatalogService.CatalogSyncResolution> resolutions = request != null && request.resolutions() != null
+                ? request.resolutions().stream()
+                .map(item -> new FederationCatalogService.CatalogSyncResolution(
+                        item.localPath(),
+                        item.action()
+                ))
+                .toList()
+                : List.of();
+        FederationCatalogService.SyncResult result = federationCatalogService.syncCatalog(id, resolutions);
+        return new SyncCatalogResponse(
+                result.localRoot(),
+                result.created(),
+                result.updated(),
+                result.remoteCount(),
+                result.skipped()
+        );
+    }
+
+    @GetMapping("/peers/{id}/catalog-sync-preview")
+    public CatalogSyncPreviewResponse previewCatalogSync(Authentication authentication, @PathVariable UUID id) {
+        federationAccessService.requireAdmin(authentication);
+        FederationCatalogService.CatalogSyncPreview preview = federationCatalogService.previewCatalogSync(id);
+        return new CatalogSyncPreviewResponse(
+                preview.localRoot(),
+                preview.remoteCount(),
+                preview.createCount(),
+                preview.updateCount(),
+                preview.conflicts().stream()
+                        .map(CatalogSyncConflictDto::from)
+                        .toList()
+        );
     }
 
     @GetMapping("/binds")
@@ -362,8 +397,49 @@ public class FederationController {
             String localRoot,
             int created,
             int updated,
-            int remoteCount
+            int remoteCount,
+            int skipped
     ) {
+    }
+
+    public record CatalogSyncRequest(List<CatalogSyncResolutionRequest> resolutions) {
+    }
+
+    public record CatalogSyncResolutionRequest(
+            String localPath,
+            CatalogSyncResolutionAction action
+    ) {
+    }
+
+    public record CatalogSyncPreviewResponse(
+            String localRoot,
+            int remoteCount,
+            int createCount,
+            int updateCount,
+            List<CatalogSyncConflictDto> conflicts
+    ) {
+    }
+
+    public record CatalogSyncConflictDto(
+            String localPath,
+            String remotePath,
+            CatalogSyncConflictType type,
+            String existingPeerId,
+            String existingRemotePath,
+            String localDisplayName,
+            String localType
+    ) {
+        static CatalogSyncConflictDto from(FederationCatalogService.CatalogSyncConflict conflict) {
+            return new CatalogSyncConflictDto(
+                    conflict.localPath(),
+                    conflict.remotePath(),
+                    conflict.type(),
+                    conflict.existingPeerId(),
+                    conflict.existingRemotePath(),
+                    conflict.localDisplayName(),
+                    conflict.localType()
+            );
+        }
     }
 
     public record FederationPeerDto(

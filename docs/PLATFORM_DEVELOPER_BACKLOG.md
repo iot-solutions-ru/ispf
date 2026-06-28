@@ -539,7 +539,12 @@ Post-PF (P2–P3+) — REQ-FW (§12)
 
 ## 9. Распределённая архитектура и федерация (roadmap, P3+)
 
-**REQ-PF-13** — spike **Done** в `main` (peers, proxy read/write, catalog sync, WS fan-out). **Phase 7 Done:** auth auto-refresh (`SERVICE_ACCOUNT`), outbound WebSocket tunnel для NAT edge (см. [FEDERATION.md](FEDERATION.md)).
+**REQ-PF-13** — spike **Done** в `main` (peers, proxy read/write, catalog sync, WS fan-out). **Phase 7 Done:** auth auto-refresh (`SERVICE_ACCOUNT`), outbound WebSocket tunnel для NAT edge (см. [FEDERATION.md](FEDERATION.md)). **BL-45/46 Done:** catalog sync preview (SKIP/BIND), federated dashboard layout/title write.
+
+**REQ-PF-13d acceptance (ops tail — BL-45, BL-46):**
+
+1. `GET .../catalog-sync-preview` показывает `LOCAL_NATIVE` / `PROXY_MISMATCH` до sync; оператор выбирает SKIP или BIND per path.
+2. `PUT /api/v1/dashboards/by-path/layout` на federated `DASHBOARD` сохраняет layout на remote; widget paths в UI — local mirror paths.
 
 **REQ-PF-13b acceptance (Phase 7):**
 

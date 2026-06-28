@@ -187,5 +187,13 @@
   "natsHealth.publishNatsReady": "Verfügbar",
   "natsHealth.publishNatsUnavailable": "Nicht verfügbar (NATS aktivieren)",
   "natsHealth.hint": "Aktivierung: ISPF_NATS_ENABLED. JetStream-Fan-out: ISPF_NATS_JETSTREAM_ENABLED=true. Status auch unter System → Metriken.",
-  "natsHealth.publishNatsSmokeHint": "Smoke: Service-Task ispf:action=publishNats, ispf:subject=ispf.smoke.test, ispf:message=hello — dann NATS-Subject abonnieren oder Stream-Nachrichten oben prüfen."
+  "natsHealth.publishNatsSmokeHint": "Smoke: Service-Task ispf:action=publishNats, ispf:subject=ispf.smoke.test, ispf:message=hello — dann NATS-Subject abonnieren oder Stream-Nachrichten oben prüfen.",
+  "backup.title": "Plattform-Backup",
+  "backup.subtitle": "Export oder Import des root.platform-Unterbaums (Knoten, Variablen, Events, Funktionen). Federation-Proxy-Knoten werden beim Import übersprungen.",
+  "backup.export": "JSON exportieren",
+  "backup.chooseFile": "Backup-Datei wählen…",
+  "backup.importApply": "Import anwenden",
+  "backup.exportDone": "{{count}} Knoten exportiert.",
+  "backup.previewResult": "Vorschau: {{nodeCount}} Knoten — {{createCount}} neu, {{updateCount}} aktualisieren, {{warnings}} Warnungen.",
+  "backup.importDone": "Import abgeschlossen: {{created}} erstellt, {{updated}} aktualisiert, {{skipped}} übersprungen."
 }

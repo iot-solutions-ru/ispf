@@ -9,6 +9,7 @@ import { variableString } from "../utils/variableFieldValue";
 interface DriverWriteFormProps {
   devicePath: string;
   canManage: boolean;
+  supportsWrite?: boolean;
   showPoll?: boolean;
   onSuccess?: () => void;
 }
@@ -16,6 +17,7 @@ interface DriverWriteFormProps {
 export default function DriverWriteForm({
   devicePath,
   canManage,
+  supportsWrite = true,
   showPoll = true,
   onSuccess,
 }: DriverWriteFormProps) {
@@ -103,6 +105,10 @@ export default function DriverWriteForm({
 
   if (!canManage) {
     return <p className="hint">{t("common:hint.adminOnly")}</p>;
+  }
+
+  if (!supportsWrite) {
+    return <p className="hint warning driver-hint-box">{t("inspector:driver.write.readOnlyDriver")}</p>;
   }
 
   return (

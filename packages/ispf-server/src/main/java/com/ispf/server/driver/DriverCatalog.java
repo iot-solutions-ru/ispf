@@ -17,7 +17,12 @@ public class DriverCatalog {
 
     public List<DriverMetadata> list() {
         return licensedDriverRegistry.metadata().stream()
-                .map(driver -> driver.withMaturity(DriverMaturityRegistry.resolve(driver.id())))
+                .map(driver -> {
+                    String id = driver.id();
+                    return driver
+                            .withMaturity(DriverMaturityRegistry.resolve(id))
+                            .withCapabilities(DriverCapabilityRegistry.resolve(id));
+                })
                 .toList();
     }
 }

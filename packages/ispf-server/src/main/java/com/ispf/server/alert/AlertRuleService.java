@@ -7,7 +7,10 @@ import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,24 +21,29 @@ import java.util.List;
 @Service
 public class AlertRuleService {
 
+    private static final Logger log = LoggerFactory.getLogger(AlertRuleService.class);
+
     private final AutomationTreeService automationTreeService;
     private final ObjectManager objectManager;
     private final ExpressionEngine expressionEngine;
     private final EventService eventService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final NotificationDispatchService notificationDispatchService;
 
     public AlertRuleService(
             AutomationTreeService automationTreeService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
             EventService eventService,
-            AutomationMetricsRecorder automationMetricsRecorder
+            AutomationMetricsRecorder automationMetricsRecorder,
+            NotificationDispatchService notificationDispatchService
     ) {
         this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
         this.expressionEngine = expressionEngine;
         this.eventService = eventService;
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Transactional(readOnly = true)
@@ -61,7 +69,9 @@ public class AlertRuleService {
                 request.enabled(),
                 request.edgeTrigger(),
                 request.resolvedDelaySeconds(),
-                request.resolvedSustainWhileTrue()
+                request.resolvedSustainWhileTrue(),
+                request.notificationWebhookUrl(),
+                request.notificationEmailTarget()
         );
     }
 
@@ -86,7 +96,9 @@ public class AlertRuleService {
                 request.enabled(),
                 request.edgeTrigger(),
                 request.delaySeconds(),
-                request.sustainWhileTrue()
+                request.sustainWhileTrue(),
+                request.notificationWebhookUrl(),
+                request.notificationEmailTarget()
         );
     }
 
@@ -153,6 +165,7 @@ public class AlertRuleService {
                 DataRecord payload = resolvePayload(node, rule.payloadVariable());
                 eventService.fireAutomation(objectPath, rule.eventName(), payload);
                 automationMetricsRecorder.recordAlertFire();
+                dispatchNotifications(rule, objectPath);
                 if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
                     automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
                 }
@@ -168,6 +181,28 @@ public class AlertRuleService {
     @Transactional
     public void ensureDemoRules() {
         automationTreeService.ensureDemoAlertRule();
+    }
+
+    private void dispatchNotifications(AlertRule rule, String objectPath) {
+        if (!rule.hasNotificationChannel()) {
+            return;
+        }
+        var context = notificationDispatchService.baseContext(
+                "alert-rule",
+                rule.id(),
+                objectPath,
+                rule.eventName()
+        );
+        try {
+            if (rule.notificationWebhookUrl() != null && !rule.notificationWebhookUrl().isBlank()) {
+                notificationDispatchService.sendWebhook(rule.notificationWebhookUrl(), context);
+            }
+            if (rule.notificationEmailTarget() != null && !rule.notificationEmailTarget().isBlank()) {
+                notificationDispatchService.sendEmail(rule.notificationEmailTarget(), context);
+            }
+        } catch (Exception ex) {
+            log.warn("Alert rule {} notification failed: {}", rule.id(), ex.getMessage());
+        }
     }
 
     private DataRecord resolvePayload(PlatformObject node, String payloadVariable) {
@@ -228,7 +263,9 @@ public class AlertRuleService {
             boolean enabled,
             boolean edgeTrigger,
             Integer delaySeconds,
-            Boolean sustainWhileTrue
+            Boolean sustainWhileTrue,
+            String notificationWebhookUrl,
+            String notificationEmailTarget
     ) {
         public int resolvedDelaySeconds() {
             return delaySeconds != null ? delaySeconds : 0;
@@ -249,7 +286,9 @@ public class AlertRuleService {
             Boolean enabled,
             Boolean edgeTrigger,
             Integer delaySeconds,
-            Boolean sustainWhileTrue
+            Boolean sustainWhileTrue,
+            String notificationWebhookUrl,
+            String notificationEmailTarget
     ) {
     }
 }

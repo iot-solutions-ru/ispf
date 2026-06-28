@@ -155,7 +155,9 @@ final class AgentAutomationTools {
                             enabled != null ? enabled : true,
                             edgeTrigger != null ? edgeTrigger : true,
                             delaySeconds != null ? delaySeconds : 0,
-                            sustainWhileTrue != null ? sustainWhileTrue : false
+                            sustainWhileTrue != null ? sustainWhileTrue : false,
+                            null,
+                            null
                     );
                     return Map.of("status", "OK", "path", path, "alert", alertPreview(updated));
                 } catch (Exception ex) {

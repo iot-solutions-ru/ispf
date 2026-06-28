@@ -102,6 +102,7 @@
   "driver.write.polling": "Опрос…",
   "driver.write.submit": "Записать",
   "driver.write.writing": "Запись…",
+  "driver.write.readOnlyDriver": "Драйвер в каталоге только для чтения (нет capability write).",
   "driver.lastError": "Последняя ошибка: {{message}}",
   "driver.loading": "Загрузка настроек драйвера…",
   "driver.mappingsLabel": "Точки (mappings)",

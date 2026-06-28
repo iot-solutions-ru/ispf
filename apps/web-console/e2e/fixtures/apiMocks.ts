@@ -271,6 +271,28 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
       return json(route, []);
     }
 
+    if (pathname.startsWith("/api/v1/ai/")) {
+      switch (pathname) {
+        case "/api/v1/ai/provider":
+          return json(route, {
+            enabled: false,
+            providerId: "e2e-mock",
+            available: false,
+            reason: "e2e-mock",
+          });
+        case "/api/v1/ai/tools/context-pack":
+          return json(route, {
+            contextPackVersion: "e2e-mock",
+            platformVersion: "0.9.33-e2e",
+            exampleCount: 0,
+          });
+        case "/api/v1/ai/agent/tools":
+          return json(route, { tools: [] });
+        default:
+          return json(route, { message: "mock not implemented" }, 501);
+      }
+    }
+
     return json(route, []);
   });
 }
@@ -309,4 +331,36 @@ export async function expandTreeTo(page: Page, label: string) {
     await toggle.click();
     await childrenLoaded;
   }
+}
+
+export function waitForObjectEditor(page: Page, objectPath: string) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/objects/by-path/editor")
+      && response.url().includes(encodeURIComponent(objectPath))
+      && response.ok(),
+    { timeout: 15_000 },
+  );
+}
+
+export function waitForDashboardLoad(page: Page, dashboardPath: string) {
+  return page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/dashboards/by-path")
+      && response.url().includes(encodeURIComponent(dashboardPath))
+      && response.ok(),
+    { timeout: 15_000 },
+  );
+}
+
+export async function selectTreeObjectByLabel(page: Page, label: string) {
+  const labelLocator = page.locator(".tree-label", { hasText: label });
+  await expect(labelLocator).toBeVisible({ timeout: 15_000 });
+  await page.locator(".tree-row").filter({ has: labelLocator }).click();
+}
+
+export async function doubleClickTreeObjectByLabel(page: Page, label: string) {
+  const labelLocator = page.locator(".tree-label", { hasText: label });
+  await expect(labelLocator).toBeVisible({ timeout: 15_000 });
+  await page.locator(".tree-row").filter({ has: labelLocator }).dblclick();
 }
