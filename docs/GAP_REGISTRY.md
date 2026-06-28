@@ -23,16 +23,16 @@
 
 | Приоритет | Область | Суть | BL / Phase |
 |-----------|---------|------|------------|
-| **P0** | Automation UI | Correlator `SET_VARIABLE` / `OPEN_OPERATOR_REPORT` — backend есть, UI нет | BL-01, 20.1 |
-| **P0** | Workflow UI | Actions `log`, `publishNats` не в ISPF справочнике | BL-02, 20.2 |
-| **P1** | UI ↔ API | Change sets, edit leases, event catalog viewer | BL-04,05,08 |
-| **P1** | Inspector | RECORD inline — JSON textarea вместо `DataRecordValueEditor` | BL-03, 20.3 |
+| **P0** | Automation UI | Correlator `SET_VARIABLE` / `OPEN_OPERATOR_REPORT` | BL-01 Done |
+| **P0** | Workflow UI | Actions `log`, `publishNats` в ISPF справочнике | BL-02 Done |
+| **P1** | UI ↔ API | Change sets, edit leases, event catalog viewer | BL-04,05,08 Done |
+| **P1** | Inspector | RECORD inline editor | BL-03 Done |
 | **P2** | Dashboard | Chart candlestick / bubble / radar | BL-64…65, 20.24…25 |
-| **P1** | Dashboard | gantt interactive timeline | BL-11, 20.10 |
-| **P1** | i18n tails | `WIDGET_TYPES` и binding hints на русском в TS | BL-07, 20.7 |
+| **P2** | Dashboard | gantt interactive timeline | BL-11, 20.10 |
+| **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
 | **P1** | Playwright e2e | Admin smoke (Phase 18.1 = BL-50) | BL-50, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA — `not implemented` | BL-20…22 |
-| **P2** | Bindings UX | Каталог platform bindings в UI | — |
+| **P2** | Bindings UX | Каталог platform bindings + activators UI | BL-09,18 Done; runtime engine in progress |
 | **P2** | History scale | ClickHouse только для events, не variables | BL-40 |
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
 | **P3** | Federation | Dashboard write read-only на proxy; sync conflicts | BL-45,46 |
@@ -63,16 +63,16 @@
 | Driver stub catalog | ~95% | write path + 6 STUB/BETA promotion | BL-20…30, [DRIVERS.md](DRIVERS.md) |
 | Driver maturity labels | ~70% | PRODUCTION в каталоге при read-only v0.1 | BL-27 |
 | Frontend e2e (Playwright) | ~0% | Admin critical paths | BL-50, Phase 18.1 |
-| Web Console i18n | ~95% | widget labels + binding hints в TS, не в locale | BL-07, Phase 19 |
-| UI ↔ API parity | ~75% | change sets, leases, correlator actions, event catalog | BL-01…08, Phase 20 |
+| Web Console i18n | ~98% | tails | BL-07 Done |
+| UI ↔ API parity | ~95% | — | BL-01…18 Done |
 | Dashboard widgets (advanced) | ~90% | chart OHLC/bubble-radar, gantt | BL-64…65,11 |
-| Variable inline editor | ~85% | RECORD → structured editor | BL-03 |
-| Binding rules UX | ~100% | runtime `onEvent`/`periodicMs` engine | — |
-| Journals | ~100% | — | — |
+| Variable inline editor | ~95% | — | BL-03 Done |
+| Binding rules UX | ~95% | runtime `onEvent`/`periodicMs` engine | in progress |
+| Journals | ~100% | — | BL-15,16 Done |
 | ClickHouse (variables) | ~0% | только event journal | BL-40 |
-| Optional backends UI | ~70% | Redis, NATS, ClickHouse journal, AI, MCP в System | BL-41,42,48 |
-| Platform change management | ~50% | API без UI | BL-04 |
-| Collaboration (leases) | ~50% | API без UI | BL-05 |
+| Optional backends UI | ~80% | Redis/NATS health, JetStream status | BL-41,42 |
+| Platform change management | ~95% | — | BL-04 Done |
+| Collaboration (leases) | ~95% | — | BL-05 Done |
 | Notifications | ~0% | webhook/email | BL-44 |
 | Federation UX | ~85% | dashboard write, sync conflicts | BL-45,46 |
 | Platform backup | ~0% | export/import tree | BL-47 |
@@ -86,7 +86,7 @@
 
 | Дата | Изменение |
 |------|-----------|
-| 2026-06-28 | BL-10: network-graph Cytoscape layout (nodes/edges RECORD_LIST, cose/circle/grid/breadthfirst) |
+| 2026-06-28 | Sprint BL-C close: BL-13…18, journals, system settings, binding activators UI |
 | 2026-06-28 | Wave G: Haystack/Brick → BL-56…62 (P3 deferred), ROADMAP 20.22 |
 | 2026-06-28 | Code audit → [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) (BL-01…55), ROADMAP Phase 20, gap-registry расширен |
 | 2026-06-28 | Phase 18 сужена: mini-TEC acceptance и v0.8.0 prod rollout сняты; остались Playwright e2e + demand-driven drivers |
