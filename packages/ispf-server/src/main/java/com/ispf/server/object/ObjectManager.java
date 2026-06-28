@@ -293,8 +293,9 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        Map<String, String> before = metadataSnapshot(node);
         node.updateInfo(displayName, description);
-        persistNodeConfig(node, "UPDATE_INFO", "metadata", null);
+        persistNodeConfig(node, "UPDATE_INFO", "metadata", mapper.auditDiff(before, metadataSnapshot(node)));
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return node;
     }
@@ -304,8 +305,14 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        boolean before = node.bindingAuditEnabled();
         node.setBindingAuditEnabled(enabled);
-        persistNodeConfig(node, "UPDATE_BINDING_AUDIT", "bindingAuditEnabled", String.valueOf(enabled));
+        persistNodeConfig(
+                node,
+                "UPDATE_BINDING_AUDIT",
+                "bindingAuditEnabled",
+                mapper.auditDiff(before, enabled)
+        );
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return node;
     }
@@ -319,8 +326,14 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        boolean before = node.functionAuditEnabled();
         node.setFunctionAuditEnabled(enabled);
-        persistNodeConfig(node, "UPDATE_FUNCTION_AUDIT", "functionAuditEnabled", String.valueOf(enabled));
+        persistNodeConfig(
+                node,
+                "UPDATE_FUNCTION_AUDIT",
+                "functionAuditEnabled",
+                mapper.auditDiff(before, enabled)
+        );
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return node;
     }
@@ -385,11 +398,19 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        DataRecord before = node.getVariable(name).flatMap(Variable::value).orElse(null);
         node.setVariableValue(name, value);
         Variable variable = node.getVariable(name).orElseThrow();
         persistVariable(path, variable);
         bumpRevision(node);
-        recordAudit(path, "SET_VARIABLE_VALUE", name, revisionBefore, node.revision(), null);
+        recordAudit(
+                path,
+                "SET_VARIABLE_VALUE",
+                name,
+                revisionBefore,
+                node.revision(),
+                mapper.auditDiff(before, value)
+        );
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
         return variable;
     }
@@ -399,14 +420,23 @@ public class ObjectManager {
         assertUserVariable(name);
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
-        if (node.getVariable(name).isEmpty()) {
+        Optional<Variable> existing = node.getVariable(name);
+        if (existing.isEmpty()) {
             return;
         }
         long revisionBefore = node.revision();
+        Map<String, Object> before = variableSnapshot(existing.get());
         node.removeVariable(name);
         variableRepository.deleteByObjectPathAndName(path, name);
         bumpRevision(node);
-        recordAudit(path, "DELETE_VARIABLE", name, revisionBefore, node.revision(), null);
+        recordAudit(
+                path,
+                "DELETE_VARIABLE",
+                name,
+                revisionBefore,
+                node.revision(),
+                mapper.auditDiff(before, null)
+        );
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
     }
 
@@ -445,7 +475,14 @@ public class ObjectManager {
         node.addVariable(variable);
         persistVariable(path, variable);
         bumpRevision(node);
-        recordAudit(path, "CREATE_VARIABLE", name, revisionBefore, node.revision(), null);
+        recordAudit(
+                path,
+                "CREATE_VARIABLE",
+                name,
+                revisionBefore,
+                node.revision(),
+                mapper.auditDiff(null, variableSnapshot(variable))
+        );
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
         return node.getVariable(name).orElseThrow();
     }
@@ -465,6 +502,7 @@ public class ObjectManager {
         if (ObjectUiIconService.UI_ICON_VARIABLE.equals(name) || BindingStateVariables.isReserved(name)) {
             throw new IllegalArgumentException("Cannot modify reserved variable: " + name);
         }
+        Map<String, Object> before = variableDefinitionSnapshot(variable);
         boolean nextReadable = readable != null ? readable : variable.readable();
         boolean nextWritable = writable != null ? writable : variable.writable();
         Variable updated = variable.withDefinition(
@@ -476,7 +514,14 @@ public class ObjectManager {
         node.addVariable(updated);
         persistVariable(path, updated);
         bumpRevision(node);
-        recordAudit(path, "UPDATE_VARIABLE", name, revisionBefore, node.revision(), null);
+        recordAudit(
+                path,
+                "UPDATE_VARIABLE",
+                name,
+                revisionBefore,
+                node.revision(),
+                mapper.auditDiff(before, variableDefinitionSnapshot(updated))
+        );
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
         return updated;
     }
@@ -489,8 +534,14 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        FunctionDescriptor before = node.functions().get(function.name());
         node.addFunction(function);
-        persistNodeConfig(node, "UPSERT_FUNCTION", function.name(), null);
+        persistNodeConfig(
+                node,
+                "UPSERT_FUNCTION",
+                function.name(),
+                mapper.auditDiff(before, function)
+        );
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return function;
     }
@@ -499,12 +550,13 @@ public class ObjectManager {
     public void deleteFunction(String path, String name) {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
-        if (!node.functions().containsKey(name)) {
+        FunctionDescriptor before = node.functions().get(name);
+        if (before == null) {
             return;
         }
         long revisionBefore = node.revision();
         node.removeFunction(name);
-        persistNodeConfig(node, "DELETE_FUNCTION", name, null);
+        persistNodeConfig(node, "DELETE_FUNCTION", name, mapper.auditDiff(before, null));
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
     }
 
@@ -516,8 +568,9 @@ public class ObjectManager {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
+        EventDescriptor before = node.events().get(event.name());
         node.addEvent(event);
-        persistNodeConfig(node, "UPSERT_EVENT", event.name(), null);
+        persistNodeConfig(node, "UPSERT_EVENT", event.name(), mapper.auditDiff(before, event));
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
         return event;
     }
@@ -526,12 +579,13 @@ public class ObjectManager {
     public void deleteEvent(String path, String name) {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
-        if (!node.events().containsKey(name)) {
+        EventDescriptor before = node.events().get(name);
+        if (before == null) {
             return;
         }
         long revisionBefore = node.revision();
         node.removeEvent(name);
-        persistNodeConfig(node, "DELETE_EVENT", name, null);
+        persistNodeConfig(node, "DELETE_EVENT", name, mapper.auditDiff(before, null));
         publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
     }
 
@@ -547,11 +601,19 @@ public class ObjectManager {
         long revisionBefore = node.revision();
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + name));
+        Map<String, Object> before = variableHistorySnapshot(variable);
         Variable updated = variable.withHistorySettings(historyEnabled, historyRetentionDays);
         node.addVariable(updated);
         persistVariable(path, updated);
         bumpRevision(node);
-        recordAudit(path, "UPDATE_VARIABLE_HISTORY", name, revisionBefore, node.revision(), null);
+        recordAudit(
+                path,
+                "UPDATE_VARIABLE_HISTORY",
+                name,
+                revisionBefore,
+                node.revision(),
+                mapper.auditDiff(before, variableHistorySnapshot(updated))
+        );
         publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
         return updated;
     }
@@ -859,5 +921,34 @@ public class ObjectManager {
         if (BindingStateVariables.isReserved(name)) {
             throw new IllegalArgumentException("Cannot modify reserved variable: " + name);
         }
+    }
+
+    private static Map<String, String> metadataSnapshot(PlatformObject node) {
+        Map<String, String> snapshot = new HashMap<>();
+        snapshot.put("displayName", node.displayName());
+        snapshot.put("description", node.description() != null ? node.description() : "");
+        return snapshot;
+    }
+
+    private static Map<String, Object> variableSnapshot(Variable variable) {
+        Map<String, Object> snapshot = new HashMap<>(variableDefinitionSnapshot(variable));
+        snapshot.put("historyEnabled", variable.historyEnabled());
+        variable.historyRetentionDays().ifPresent(days -> snapshot.put("historyRetentionDays", days));
+        variable.value().ifPresent(value -> snapshot.put("value", value));
+        return snapshot;
+    }
+
+    private static Map<String, Object> variableDefinitionSnapshot(Variable variable) {
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("readable", variable.readable());
+        snapshot.put("writable", variable.writable());
+        return snapshot;
+    }
+
+    private static Map<String, Object> variableHistorySnapshot(Variable variable) {
+        Map<String, Object> snapshot = new HashMap<>();
+        snapshot.put("historyEnabled", variable.historyEnabled());
+        variable.historyRetentionDays().ifPresent(days -> snapshot.put("historyRetentionDays", days));
+        return snapshot;
     }
 }

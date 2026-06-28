@@ -13,5 +13,10 @@
   "filter.fieldPlaceholder": "Field name…",
   "filter.actorPlaceholder": "Actor…",
   "changeHistory.title": "Change history",
-  "changeHistory.subtitle": "Configuration audit trail for this object"
+  "changeHistory.subtitle": "Configuration audit trail for this object",
+  "changeHistory.diff": "Diff",
+  "changeHistory.showDiff": "Diff",
+  "changeHistory.hideDiff": "Hide",
+  "changeHistory.before": "Before",
+  "changeHistory.after": "After"
 }

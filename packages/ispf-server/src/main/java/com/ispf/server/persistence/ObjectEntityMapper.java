@@ -106,6 +106,21 @@ public class ObjectEntityMapper {
         return writeJson(record);
     }
 
+    /** JSON object {@code {"before":…,"after":…}} for object_config_audit.summary_json. */
+    public String auditDiff(Object before, Object after) {
+        java.util.Map<String, Object> summary = new java.util.LinkedHashMap<>();
+        if (before != null) {
+            summary.put("before", before);
+        }
+        if (after != null) {
+            summary.put("after", after);
+        }
+        if (summary.isEmpty()) {
+            return null;
+        }
+        return writeJson(summary);
+    }
+
     public List<String> readAppliedModelIds(String json) {
         if (json == null || json.isBlank()) {
             return List.of();

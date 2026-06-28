@@ -2,6 +2,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchObjectAudit, type ObjectConfigAuditEntry } from "../../api";
+import {
+  formatAuditValue,
+  hasObjectAuditDiff,
+  parseObjectAuditSummary,
+} from "../../utils/objectAuditSummary";
 import JournalViewShell, { type JournalViewMode } from "./JournalViewShell";
 
 const LIVE_LIMIT = 25;
@@ -136,6 +141,7 @@ export default function ObjectChangeHistoryPanel({
               <th>{t("common:field.field")}</th>
               <th>{t("common:field.actor")}</th>
               <th>Rev</th>
+              <th className="journal-audit-diff-col" aria-label={t("changeHistory.diff")} />
             </tr>
           </thead>
           <tbody>
@@ -150,16 +156,54 @@ export default function ObjectChangeHistoryPanel({
 }
 
 function AuditRow({ entry }: { entry: ObjectConfigAuditEntry }) {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation(["journal", "common"]);
+  const [expanded, setExpanded] = useState(false);
+  const diff = useMemo(() => parseObjectAuditSummary(entry.summaryJson), [entry.summaryJson]);
+  const showDiff = hasObjectAuditDiff(diff);
+
   return (
-    <tr>
-      <td className="mono small">{new Date(entry.occurredAt).toLocaleString()}</td>
-      <td>{entry.changeType}</td>
-      <td>{entry.field || t("empty.dash")}</td>
-      <td>{entry.actor || t("empty.dash")}</td>
-      <td className="mono small">
-        {entry.revisionBefore}→{entry.revisionAfter}
-      </td>
-    </tr>
+    <>
+      <tr className={showDiff ? "journal-audit-row-expandable" : undefined}>
+        <td className="mono small">{new Date(entry.occurredAt).toLocaleString()}</td>
+        <td>{entry.changeType}</td>
+        <td>{entry.field || t("common:empty.dash")}</td>
+        <td>{entry.actor || t("common:empty.dash")}</td>
+        <td className="mono small">
+          {entry.revisionBefore}→{entry.revisionAfter}
+        </td>
+        <td className="journal-audit-diff-col">
+          {showDiff && (
+            <button
+              type="button"
+              className="btn small journal-audit-diff-toggle"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((open) => !open)}
+            >
+              {expanded ? t("changeHistory.hideDiff") : t("changeHistory.showDiff")}
+            </button>
+          )}
+        </td>
+      </tr>
+      {expanded && showDiff && diff && (
+        <tr className="journal-audit-diff-row">
+          <td colSpan={6}>
+            <div className="journal-audit-diff-grid">
+              <div className="journal-audit-diff-pane">
+                <h4>{t("changeHistory.before")}</h4>
+                <pre className="journal-audit-diff-pre">
+                  {formatAuditValue(diff.before) || t("common:empty.dash")}
+                </pre>
+              </div>
+              <div className="journal-audit-diff-pane">
+                <h4>{t("changeHistory.after")}</h4>
+                <pre className="journal-audit-diff-pre">
+                  {formatAuditValue(diff.after) || t("common:empty.dash")}
+                </pre>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }

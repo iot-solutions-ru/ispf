@@ -13,5 +13,10 @@
   "filter.fieldPlaceholder": "Имя поля…",
   "filter.actorPlaceholder": "Актор…",
   "changeHistory.title": "История изменений",
-  "changeHistory.subtitle": "Аудит конфигурации объекта"
+  "changeHistory.subtitle": "Аудит конфигурации объекта",
+  "changeHistory.diff": "Diff",
+  "changeHistory.showDiff": "Diff",
+  "changeHistory.hideDiff": "Скрыть",
+  "changeHistory.before": "Было",
+  "changeHistory.after": "Стало"
 }

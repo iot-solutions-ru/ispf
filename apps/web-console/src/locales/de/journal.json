@@ -13,5 +13,10 @@
   "filter.fieldPlaceholder": "Feldname…",
   "filter.actorPlaceholder": "Akteur…",
   "changeHistory.title": "Änderungsverlauf",
-  "changeHistory.subtitle": "Konfigurations-Audit für dieses Objekt"
+  "changeHistory.subtitle": "Konfigurations-Audit für dieses Objekt",
+  "changeHistory.diff": "Diff",
+  "changeHistory.showDiff": "Diff",
+  "changeHistory.hideDiff": "Ausblenden",
+  "changeHistory.before": "Vorher",
+  "changeHistory.after": "Nachher"
 }

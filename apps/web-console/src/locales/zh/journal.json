@@ -13,5 +13,10 @@
   "filter.fieldPlaceholder": "字段名…",
   "filter.actorPlaceholder": "操作者…",
   "changeHistory.title": "变更历史",
-  "changeHistory.subtitle": "此对象的配置审计记录"
+  "changeHistory.subtitle": "此对象的配置审计记录",
+  "changeHistory.diff": "差异",
+  "changeHistory.showDiff": "差异",
+  "changeHistory.hideDiff": "隐藏",
+  "changeHistory.before": "变更前",
+  "changeHistory.after": "变更后"
 }
