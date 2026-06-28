@@ -110,15 +110,21 @@ ispf:
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   variable-history:
-    enabled: true
+    enabled: ${ISPF_VARIABLE_HISTORY_ENABLED:true}
     min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
-    retention-days: 90
+    retention-days: ${ISPF_VARIABLE_HISTORY_RETENTION_DAYS:90}
     store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}
     async-enabled: ${ISPF_VARIABLE_HISTORY_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:10000}
     batch-size: ${ISPF_VARIABLE_HISTORY_BATCH_SIZE:500}
     flush-interval-ms: ${ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS:50}
     writer-threads: ${ISPF_VARIABLE_HISTORY_WRITER_THREADS:4}
+    clickhouse:
+      url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
+      database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
+      table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
+      username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
+      password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true

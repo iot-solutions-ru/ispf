@@ -1,5 +1,10 @@
 package com.ispf.server.api;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.server.api.dto.DataRecordPayloadRequest;
+import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
@@ -48,6 +53,19 @@ public class DriverRuntimeController {
     @PostMapping("/poll")
     public DriverRuntimeService.DriverRuntimeStatus poll(@RequestParam String devicePath) {
         return driverRuntimeService.pollNow(devicePath);
+    }
+
+    @PostMapping("/write")
+    public DriverRuntimeService.DriverRuntimeStatus write(
+            @RequestParam String devicePath,
+            @RequestParam String pointId,
+            @RequestBody(required = false) DataRecordPayloadRequest value
+    ) {
+        DataSchema schema = DataSchema.builder("driverWrite")
+                .field("value", FieldType.STRING)
+                .build();
+        DataRecord record = DataRecordPayloadResolver.resolve(schema, value);
+        return driverRuntimeService.writePoint(devicePath, pointId, record);
     }
 
     @PutMapping("/configure")

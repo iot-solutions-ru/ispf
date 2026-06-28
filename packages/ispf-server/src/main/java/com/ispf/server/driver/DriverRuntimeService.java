@@ -281,6 +281,46 @@ public class DriverRuntimeService {
         return status(devicePath).orElseThrow();
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DriverRuntimeStatus writePoint(String devicePath, String pointId, DataRecord value) {
+        if (pointId == null || pointId.isBlank()) {
+            throw new IllegalArgumentException("pointId is required");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value is required");
+        }
+        ActiveDriver active = activeDrivers.get(devicePath);
+        if (active == null) {
+            throw new IllegalStateException("Driver is not running for: " + devicePath);
+        }
+        if (!active.binding().pointMappings().containsKey(pointId)) {
+            throw new IllegalArgumentException("Unknown point mapping: " + pointId);
+        }
+        try {
+            active.driver().writePoint(pointId, value);
+            boolean connected = active.driver().isConnected();
+            activeDrivers.put(devicePath, new ActiveDriver(
+                    active.driver(),
+                    active.binding(),
+                    active.future(),
+                    null,
+                    connected
+            ));
+            setStatus(devicePath, "RUNNING");
+        } catch (DriverException e) {
+            activeDrivers.put(devicePath, new ActiveDriver(
+                    active.driver(),
+                    active.binding(),
+                    active.future(),
+                    e.getMessage(),
+                    active.lastKnownConnected()
+            ));
+            setStatus(devicePath, "ERROR");
+            throw new IllegalStateException("Driver write failed: " + e.getMessage(), e);
+        }
+        return status(devicePath).orElseThrow();
+    }
+
     private void poll(String devicePath) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {

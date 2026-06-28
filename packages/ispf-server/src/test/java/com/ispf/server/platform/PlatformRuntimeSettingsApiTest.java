@@ -38,6 +38,7 @@ class PlatformRuntimeSettingsApiTest {
                 .andExpect(jsonPath("$.sections.length()").value(greaterThan(0)))
                 .andExpect(jsonPath("$.sections[*].id", hasItem("automation")))
                 .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("event-journal.store")))
+                .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("variable-history.store")))
                 .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("mcp.enabled")));
     }
 

@@ -184,7 +184,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
         }
         points.clear();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            OpcUaServerPoint point = OpcUaServerPoint.parse(entry.getValue(), namespaceIndex);
+            OpcUaServerPoint point = OpcUaServerPoint.parse(entry.getValue(), namespace.getNamespaceIndex().intValue());
             points.put(entry.getKey(), point);
             namespace.ensureVariable(point);
             driverObject.updateVariable(entry.getKey(), readPoint(point));

@@ -57,6 +57,14 @@ public class NatsJetStreamSupport {
         return jetStream != null && management != null;
     }
 
+    public boolean isStreamReady() {
+        return streamReady;
+    }
+
+    public JetStreamManagement management() {
+        return management;
+    }
+
     public void ensureStream() throws IOException, JetStreamApiException {
         if (!isActive()) {
             return;

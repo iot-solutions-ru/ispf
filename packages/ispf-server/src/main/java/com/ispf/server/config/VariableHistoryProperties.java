@@ -28,10 +28,59 @@ public class VariableHistoryProperties {
     private int writerThreads = 4;
 
     /**
-     * Write backend: {@code jdbc} (batched JDBC insert, default) or {@code jpa} (legacy {@code saveAll}).
-     * Future: {@code clickhouse}.
+     * Write backend: {@code jdbc} (batched JDBC insert, default), {@code jpa} (legacy {@code saveAll}),
+     * or {@code clickhouse} (column store; BL-40 backend).
      */
     private String store = "jdbc";
+    private ClickHouse clickhouse = new ClickHouse();
+
+    public static class ClickHouse {
+        private String url = "http://localhost:8123";
+        private String database = "ispf";
+        private String table = "variable_samples";
+        private String username = "default";
+        private String password = "";
+
+        public String getUrl() {
+            return url;
+        }
+
+        public void setUrl(String url) {
+            this.url = url;
+        }
+
+        public String getDatabase() {
+            return database;
+        }
+
+        public void setDatabase(String database) {
+            this.database = database;
+        }
+
+        public String getTable() {
+            return table;
+        }
+
+        public void setTable(String table) {
+            this.table = table;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
+    }
 
     /** Variable names never historized (exact match), even if historyEnabled is true. */
     private List<String> excludedVariables = new ArrayList<>(List.of(
@@ -116,6 +165,18 @@ public class VariableHistoryProperties {
 
     public void setStore(String store) {
         this.store = store;
+    }
+
+    public ClickHouse getClickhouse() {
+        return clickhouse;
+    }
+
+    public void setClickhouse(ClickHouse clickhouse) {
+        this.clickhouse = clickhouse;
+    }
+
+    public boolean isClickHouseStore() {
+        return "clickhouse".equalsIgnoreCase(store);
     }
 
     public List<String> getExcludedVariables() {

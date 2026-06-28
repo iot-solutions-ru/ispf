@@ -46,6 +46,50 @@ class PlatformMetricsApiTest {
     }
 
     @Test
+    void adminCanReadRedisHealth() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/redis/health")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").exists())
+                .andExpect(jsonPath("$.connected").exists())
+                .andExpect(jsonPath("$.correlatorWindowStore").value("jdbc"))
+                .andExpect(jsonPath("$.aclCacheBackend").value("local"));
+    }
+
+    @Test
+    void adminCanReadNatsHealth() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/nats/health")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").exists())
+                .andExpect(jsonPath("$.connected").exists())
+                .andExpect(jsonPath("$.replicaId").exists())
+                .andExpect(jsonPath("$.publishNatsAvailable").exists());
+    }
+
+    @Test
+    void operatorCannotReadMessagingHealth() throws Exception {
+        MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "operator", "password": "operator" }
+                                """))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String token = login.getResponse().getContentAsString()
+                .replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/platform/redis/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/platform/nats/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void operatorCannotReadPlatformMetrics() throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

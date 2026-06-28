@@ -10,6 +10,13 @@ import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 
 import java.util.Map;
@@ -27,7 +34,7 @@ public class OpcUaDeviceDriver implements DeviceDriver {
             "opcua",
             "OPC UA Driver",
             "0.1.0",
-            "Polls OPC UA servers (SecurityPolicy None) and maps node values to ISPF variables",
+            "Polls and writes OPC UA servers (SecurityPolicy None) and maps node values to ISPF variables",
             "ISPF",
             Map.of(
                     "endpointUrl", "opc.tcp://localhost:4840",
@@ -116,7 +123,31 @@ public class OpcUaDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("OPC UA write not implemented");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        OpcUaPoint point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("Unknown point: " + pointId);
+        }
+        try {
+            DataValue current = client.readValue(
+                    0.0,
+                    TimestampsToReturn.Neither,
+                    point.nodeId()
+            ).get(timeoutMs, TimeUnit.MILLISECONDS);
+            Variant variant = toWriteVariant(extractWriteObject(value), current.getValue());
+            StatusCode status = client.writeValue(point.nodeId(), new DataValue(variant))
+                    .get(timeoutMs, TimeUnit.MILLISECONDS);
+            if (status == null || !status.isGood()) {
+                throw new DriverException("OPC UA write rejected: " + status);
+            }
+            driverObject.updateVariable(pointId, readPoint(point));
+        } catch (DriverException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new DriverException("OPC UA write failed for point " + pointId, e);
+        }
     }
 
     private DataRecord readPoint(OpcUaPoint point) throws DriverException {
@@ -136,6 +167,94 @@ public class OpcUaDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             throw new DriverException("OPC UA read failed at " + point.nodeId(), e);
         }
+    }
+
+    private static Object extractWriteObject(DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("raw");
+        if (raw != null) {
+            return raw;
+        }
+        Object val = value.firstRow().get("value");
+        if (val != null) {
+            return val;
+        }
+        throw new DriverException("OPC UA write requires value or raw field");
+    }
+
+    private static Variant toWriteVariant(Object writeObject, Variant current) {
+        Object sample = current != null && !current.isNull() ? current.getValue() : null;
+        return new Variant(coerceValue(writeObject, sample));
+    }
+
+    private static Object coerceValue(Object writeObject, Object sample) {
+        if (sample instanceof Boolean) {
+            return toBoolean(writeObject);
+        }
+        if (sample instanceof Float) {
+            return (float) toDouble(writeObject);
+        }
+        if (sample instanceof Double) {
+            return toDouble(writeObject);
+        }
+        if (sample instanceof Byte) {
+            return (byte) toLong(writeObject);
+        }
+        if (sample instanceof Short) {
+            return (short) toLong(writeObject);
+        }
+        if (sample instanceof Integer) {
+            return (int) toLong(writeObject);
+        }
+        if (sample instanceof Long) {
+            return toLong(writeObject);
+        }
+        if (sample instanceof UByte) {
+            return Unsigned.ubyte((short) toLong(writeObject));
+        }
+        if (sample instanceof UShort) {
+            return Unsigned.ushort((int) toLong(writeObject));
+        }
+        if (sample instanceof UInteger) {
+            return Unsigned.uint(toLong(writeObject));
+        }
+        if (sample instanceof ULong) {
+            return Unsigned.ulong(toLong(writeObject));
+        }
+        if (sample instanceof String) {
+            return writeObject.toString();
+        }
+        if (writeObject instanceof Boolean bool) {
+            return bool;
+        }
+        if (writeObject instanceof Number number) {
+            double d = number.doubleValue();
+            if (Double.isFinite(d) && d == Math.rint(d)) {
+                return (long) d;
+            }
+            return d;
+        }
+        return writeObject.toString();
+    }
+
+    private static boolean toBoolean(Object value) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        return Boolean.parseBoolean(value.toString());
+    }
+
+    private static double toDouble(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return Double.parseDouble(value.toString());
+    }
+
+    private static long toLong(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(value.toString());
     }
 
     private void readConfig(String name, java.util.function.Consumer<String> consumer) {

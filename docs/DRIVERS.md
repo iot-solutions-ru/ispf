@@ -52,9 +52,13 @@ Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) —
 ```http
 POST /api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01
 POST /api/v1/drivers/runtime/stop?devicePath=...
+POST /api/v1/drivers/runtime/poll?devicePath=...
+POST /api/v1/drivers/runtime/write?devicePath=...&pointId=<variableName>
 PUT  /api/v1/drivers/runtime/configure?devicePath=...
 GET  /api/v1/drivers/runtime/status?devicePath=...
 ```
+
+`write` body — `DataRecord` с полем `value` (число, boolean или string). `pointId` — ключ из `driverPointMappingsJson` (имя переменной).
 
 ## Driver packs (не встроены в server JAR)
 
@@ -102,11 +106,29 @@ Point mapping: `variableName → mqttTopicSuffix`.
 
 ### modbus-tcp (`ispf-driver-modbus`)
 
-j2mod, Modbus TCP.
+j2mod, Modbus TCP. Poll/read/write через `readPoints` / `writePoint`.
 
 Формат точки: `slaveId:registerType:address[:count]`
 
 Типы регистров: `HOLDING`, `INPUT`, `COIL`, `DISCRETE`.
+
+Write (`writePoint`):
+
+| Тип | Modbus function | Поле в `DataRecord` |
+|-----|-----------------|---------------------|
+| `HOLDING` | Write Single Register (FC6) | `raw` или `value` (число) |
+| `COIL` | Write Single Coil (FC5) | `value` (boolean) |
+| `INPUT`, `DISCRETE` | — | read-only, ошибка |
+
+Конфиг: `host`, `port`, `timeoutMs`, `pollIntervalMs`.
+
+### modbus-rtu (`ispf-driver-modbus-rtu`)
+
+j2mod, Modbus RTU serial. Тот же формат точек и write matrix, что у `modbus-tcp`.
+
+Write: `HOLDING` (FC6), `COIL` (FC5); `INPUT`/`DISCRETE` read-only.
+
+Конфиг: `serialPort`, `baudRate`, `dataBits`, `stopBits`, `parity`, `timeoutMs`, `pollIntervalMs`.
 
 ### snmp (`ispf-driver-snmp`)
 
@@ -324,15 +346,33 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 
 ### Примеры (кратко)
 
-OPC UA client. Конфиг: `endpointUrl`, `securityPolicy` (optional), credentials.
+### opcua (`ispf-driver-opcua`)
+
+OPC UA client (Eclipse Milo). Poll/read/write через `readPoints` / `writePoint`.
 
 Point mapping: `ns=2;s=TagName` (NodeId).
 
+Write (`writePoint`): Milo `writeValue` на Value attribute; тип Variant подбирается по текущему значению узла (boolean, numeric, string, unsigned). Поля `value` или `raw`.
+
+Конфиг: `endpointUrl`, `timeoutMs`, `pollIntervalMs` (SecurityPolicy None).
+
 ### s7 (`ispf-driver-s7`)
 
-Siemens S7 over ISO-on-TCP. Конфиг: `host`, `port` (102), `rack`, `slot`, `timeoutMs`.
+Siemens S7 over ISO-on-TCP. Poll/read/write через `readPoints` / `writePoint`.
 
-Point mapping: `DB1.DBD0:REAL` или area/offset.
+Point mapping: `area:dbNumber:offset:type` (например `DB:1:0:REAL`).
+
+Поддерживаемые типы: `BOOL`, `BYTE`, `SINT`, `USINT`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL`, `LREAL`.
+
+Write (`writePoint`):
+
+| Тип | Поле в `DataRecord` |
+|-----|---------------------|
+| `BOOL` | `value` (boolean); read-modify-write бита 0 в байте offset |
+| целочисленные | `raw` или `value` (число) |
+| `REAL`, `LREAL` | `value` или `raw` (число) |
+
+Конфиг: `host`, `port` (102), `rack`, `slot`, `timeoutMs`.
 
 ### iec104 (`ispf-driver-iec104`)
 
