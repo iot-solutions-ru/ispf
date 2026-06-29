@@ -1,17 +1,20 @@
 import type {
+  MimicBindingSlot,
+  MimicCustomSymbol,
   MimicElement,
   MimicLayer,
+  MimicSymbolBehavior,
   ScadaMimicDocument,
 } from "../types/scadaMimic";
 
 export const DEFAULT_LAYER_ID = "layer-default";
 
 export const EMPTY_MIMIC_DOCUMENT: ScadaMimicDocument = {
-  version: 1,
+  version: 2,
   width: 1600,
   height: 900,
   background: "var(--bg)",
-  grid: { size: 20, snap: false, visible: false },
+  grid: { size: 1, snap: false, visible: false },
   layers: [{ id: DEFAULT_LAYER_ID, name: "Main", visible: true }],
   elements: [],
   connections: [],
@@ -27,7 +30,8 @@ export function parseMimicDocument(raw: string | undefined): ScadaMimicDocument 
   }
   try {
     const parsed = JSON.parse(raw) as Partial<ScadaMimicDocument>;
-    return normalizeMimicDocument(parsed);
+    const normalized = normalizeMimicDocument(parsed);
+    return normalized;
   } catch {
     return { ...EMPTY_MIMIC_DOCUMENT, layers: [...EMPTY_MIMIC_DOCUMENT.layers] };
   }
@@ -45,7 +49,7 @@ export function normalizeMimicDocument(
       ? input.layers.map(normalizeLayer)
       : base.layers;
   return {
-    version: 1,
+    version: 2,
     width: positiveNumber(input.width, base.width),
     height: positiveNumber(input.height, base.height),
     background: typeof input.background === "string" ? input.background : base.background,
@@ -55,7 +59,37 @@ export function normalizeMimicDocument(
     connections: Array.isArray(input.connections)
       ? input.connections.filter((c) => c && typeof c.id === "string")
       : [],
+    customSymbols: normalizeCustomSymbols(input.customSymbols),
   };
+}
+
+function normalizeBindingSchema(raw: MimicBindingSlot[] | undefined): MimicBindingSlot[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  return raw.filter((s) => s && typeof s.key === "string");
+}
+
+function normalizeBehaviors(raw: MimicSymbolBehavior[] | undefined): MimicSymbolBehavior[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  return raw.filter((b) => b && typeof b.bind === "string" && typeof b.type === "string");
+}
+
+function normalizeCustomSymbols(raw: MimicCustomSymbol[] | undefined): MimicCustomSymbol[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out = raw
+    .filter((s) => s && typeof s.id === "string" && typeof s.svg === "string")
+    .map((s) => ({
+      id: s.id,
+      name: typeof s.name === "string" && s.name.trim() ? s.name.trim() : s.id,
+      svg: s.svg,
+      width: positiveNumber(s.width, 64),
+      height: positiveNumber(s.height, 64),
+      viewBox: typeof s.viewBox === "string" ? s.viewBox : undefined,
+      ports: Array.isArray(s.ports) ? s.ports : undefined,
+      bindingSchema: normalizeBindingSchema(s.bindingSchema),
+      behaviors: normalizeBehaviors(s.behaviors),
+      sourceSymbolId: typeof s.sourceSymbolId === "string" ? s.sourceSymbolId : undefined,
+    }));
+  return out.length > 0 ? out : undefined;
 }
 
 function normalizeLayer(layer: MimicLayer): MimicLayer {
@@ -90,7 +124,7 @@ function normalizeGrid(
 ): ScadaMimicDocument["grid"] {
   if (!grid) return fallback;
   return {
-    size: positiveNumber(grid.size, fallback?.size ?? 20),
+    size: positiveNumber(grid.size, fallback?.size ?? 1),
     snap: grid.snap === true,
     visible: grid.visible === true,
   };
@@ -118,5 +152,5 @@ export function snapCanvasCoordinate(
   value: number,
   grid: ScadaMimicDocument["grid"] | undefined
 ): number {
-  return snapToGrid(value, grid?.size ?? 20, grid?.snap === true);
+  return snapToGrid(value, grid?.size ?? 1, grid?.snap === true);
 }

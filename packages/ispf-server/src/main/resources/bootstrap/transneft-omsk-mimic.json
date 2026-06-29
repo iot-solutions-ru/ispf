@@ -1,10 +1,10 @@
 {
-  "version": 1,
+  "version": 2,
   "width": 1400,
   "height": 420,
   "background": "#4a5159",
   "grid": {
-    "size": 20,
+    "size": 1,
     "snap": false,
     "visible": false
   },
@@ -20,7 +20,7 @@
       "bindings": {},
       "layerId": "layer-default",
       "id": "hdr-title",
-      "symbolId": "label",
+      "symbolId": "custom:lib-label",
       "x": 320,
       "y": 8,
       "props": {
@@ -34,7 +34,7 @@
       "bindings": {},
       "layerId": "layer-default",
       "id": "hdr-product-y",
-      "symbolId": "label",
+      "symbolId": "custom:lib-label",
       "x": 150,
       "y": 36,
       "props": {
@@ -48,7 +48,7 @@
       "bindings": {},
       "layerId": "layer-default",
       "id": "hdr-product-b",
-      "symbolId": "label",
+      "symbolId": "custom:lib-label",
       "x": 150,
       "y": 196,
       "props": {
@@ -69,7 +69,7 @@
       },
       "layerId": "layer-default",
       "id": "level-11",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 64,
       "props": {
@@ -90,7 +90,7 @@
       },
       "layerId": "layer-default",
       "id": "level-12",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 90,
       "props": {
@@ -111,7 +111,7 @@
       },
       "layerId": "layer-default",
       "id": "level-13",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 116,
       "props": {
@@ -132,7 +132,7 @@
       },
       "layerId": "layer-default",
       "id": "level-14",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 142,
       "props": {
@@ -153,7 +153,7 @@
       },
       "layerId": "layer-default",
       "id": "level-15",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 168,
       "props": {
@@ -174,7 +174,7 @@
       },
       "layerId": "layer-default",
       "id": "level-16",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 194,
       "props": {
@@ -195,7 +195,7 @@
       },
       "layerId": "layer-default",
       "id": "level-17",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 220,
       "props": {
@@ -216,7 +216,7 @@
       },
       "layerId": "layer-default",
       "id": "level-18",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 246,
       "props": {
@@ -237,7 +237,7 @@
       },
       "layerId": "layer-default",
       "id": "level-19",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 272,
       "props": {
@@ -258,7 +258,7 @@
       },
       "layerId": "layer-default",
       "id": "level-20",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 298,
       "props": {
@@ -279,7 +279,7 @@
       },
       "layerId": "layer-default",
       "id": "level-21",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 324,
       "props": {
@@ -300,7 +300,7 @@
       },
       "layerId": "layer-default",
       "id": "level-22",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 350,
       "props": {
@@ -321,7 +321,7 @@
       },
       "layerId": "layer-default",
       "id": "level-23",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 376,
       "props": {
@@ -342,7 +342,7 @@
       },
       "layerId": "layer-default",
       "id": "level-24",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 12,
       "y": 402,
       "props": {
@@ -375,13 +375,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-11",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 150,
       "y": 56,
       "props": {
         "label": "11",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -395,7 +397,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v11",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 224,
       "y": 174,
       "props": {
@@ -426,13 +428,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-12",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 258,
       "y": 56,
       "props": {
         "label": "12",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -446,7 +450,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v12",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 332,
       "y": 174,
       "props": {
@@ -477,13 +481,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-13",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 366,
       "y": 56,
       "props": {
         "label": "13",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -497,7 +503,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v13",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 440,
       "y": 174,
       "props": {
@@ -528,13 +534,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-14",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 474,
       "y": 56,
       "props": {
         "label": "14",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -548,7 +556,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v14",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 548,
       "y": 174,
       "props": {
@@ -579,13 +587,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-15",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 582,
       "y": 56,
       "props": {
         "label": "15",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -599,7 +609,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v15",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 656,
       "y": 174,
       "props": {
@@ -630,13 +640,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-16",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 690,
       "y": 56,
       "props": {
         "label": "16",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -650,7 +662,7 @@
       },
       "layerId": "layer-default",
       "id": "yellow-v16",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 764,
       "y": 174,
       "props": {
@@ -681,20 +693,22 @@
       },
       "layerId": "layer-default",
       "id": "tank-17",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 798,
       "y": 56,
       "props": {
         "label": "17",
         "tankStroke": "#d4a72c",
-        "liquidColor": "#9e6a03"
+        "liquidColor": "#9e6a03",
+        "width": 80,
+        "height": 120
       }
     },
     {
       "bindings": {},
       "layerId": "layer-default",
       "id": "yellow-bus",
-      "symbolId": "pipe.segment",
+      "symbolId": "custom:lib-pipe-segment",
       "x": 150,
       "y": 184,
       "props": {
@@ -726,13 +740,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-18",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 150,
       "y": 216,
       "props": {
         "label": "18",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -746,7 +762,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v18",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 224,
       "y": 334,
       "props": {
@@ -777,13 +793,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-19",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 258,
       "y": 216,
       "props": {
         "label": "19",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -797,7 +815,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v19",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 332,
       "y": 334,
       "props": {
@@ -828,13 +846,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-20",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 366,
       "y": 216,
       "props": {
         "label": "20",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -848,7 +868,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v20",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 440,
       "y": 334,
       "props": {
@@ -879,13 +899,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-21",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 474,
       "y": 216,
       "props": {
         "label": "21",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -899,7 +921,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v21",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 548,
       "y": 334,
       "props": {
@@ -930,13 +952,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-22",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 582,
       "y": 216,
       "props": {
         "label": "22",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -950,7 +974,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v22",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 656,
       "y": 334,
       "props": {
@@ -981,13 +1005,15 @@
       },
       "layerId": "layer-default",
       "id": "tank-23",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 690,
       "y": 216,
       "props": {
         "label": "23",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
@@ -1001,7 +1027,7 @@
       },
       "layerId": "layer-default",
       "id": "blue-v23",
-      "symbolId": "valve.butterfly",
+      "symbolId": "custom:lib-valve-butterfly",
       "x": 764,
       "y": 334,
       "props": {
@@ -1032,20 +1058,22 @@
       },
       "layerId": "layer-default",
       "id": "tank-24",
-      "symbolId": "tank.vertical",
+      "symbolId": "custom:lib-tank-vertical",
       "x": 798,
       "y": 216,
       "props": {
         "label": "24",
         "tankStroke": "#58a6ff",
-        "liquidColor": "#1f6feb"
+        "liquidColor": "#1f6feb",
+        "width": 80,
+        "height": 120
       }
     },
     {
       "bindings": {},
       "layerId": "layer-default",
       "id": "blue-bus",
-      "symbolId": "pipe.segment",
+      "symbolId": "custom:lib-pipe-segment",
       "x": 150,
       "y": 344,
       "props": {
@@ -1071,7 +1099,7 @@
       },
       "layerId": "layer-default",
       "id": "hub-data",
-      "symbolId": "data-block",
+      "symbolId": "custom:lib-data-block",
       "x": 980,
       "y": 120,
       "props": {
@@ -1092,7 +1120,7 @@
       },
       "layerId": "layer-default",
       "id": "hub-pressure",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 980,
       "y": 208,
       "props": {
@@ -1113,7 +1141,7 @@
       },
       "layerId": "layer-default",
       "id": "hub-flow",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 1076,
       "y": 208,
       "props": {
@@ -1134,7 +1162,7 @@
       },
       "layerId": "layer-default",
       "id": "hub-temp",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 980,
       "y": 242,
       "props": {
@@ -1155,7 +1183,7 @@
       },
       "layerId": "layer-default",
       "id": "hub-volume",
-      "symbolId": "value-badge",
+      "symbolId": "custom:lib-value-badge",
       "x": 1076,
       "y": 242,
       "props": {
@@ -1169,7 +1197,7 @@
       "bindings": {},
       "layerId": "layer-default",
       "id": "legend",
-      "symbolId": "label",
+      "symbolId": "custom:lib-label",
       "x": 980,
       "y": 286,
       "props": {
@@ -1544,6 +1572,268 @@
           "y": 352
         }
       ]
+    }
+  ],
+  "customSymbols": [
+    {
+      "id": "lib-label",
+      "name": "symbols.label",
+      "svg": "<g><text x=\"0\" y=\"10\" fill=\"#e6edf3\" font-size=\"14\">Sample</text></g>",
+      "width": 560,
+      "height": 20,
+      "viewBox": "0 0 560 20",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "lib-value-badge",
+      "name": "symbols.valueBadge",
+      "svg": "<g><rect width=\"120\" height=\"22\" rx=\"4\" fill=\"#0d1117\" stroke=\"#30363d\"></rect><text x=\"60\" y=\"15\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"11\" font-weight=\"600\">42 мм</text></g>",
+      "width": 120,
+      "height": 22,
+      "viewBox": "0 0 120 22",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "lib-tank-vertical",
+      "name": "11",
+      "svg": "<rect x=\"4\" y=\"4\" width=\"72\" height=\"112\" rx=\"4\" fill=\"#161b22\" stroke=\"#30363d\" stroke-width=\"2\"/><rect id=\"ispf-liquid\" data-ispf-full-y=\"36\" data-ispf-full-height=\"66\" x=\"6\" y=\"102\" width=\"68\" height=\"0\" fill=\"#238636\" opacity=\"0.85\"/>",
+      "width": 80,
+      "height": 120,
+      "viewBox": "0 0 80 120",
+      "ports": [
+        {
+          "id": "n",
+          "x": 40,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 40,
+          "y": 120
+        },
+        {
+          "id": "e",
+          "x": 80,
+          "y": 60
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 60
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "fillLevel",
+          "labelKey": "bindings.fillLevel",
+          "type": "number"
+        },
+        {
+          "key": "maxLevel",
+          "labelKey": "bindings.maxLevel",
+          "type": "number",
+          "optional": true
+        },
+        {
+          "key": "rate",
+          "labelKey": "bindings.rate",
+          "type": "number",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "fillLevel",
+          "type": "fillLevel",
+          "target": "#ispf-liquid",
+          "maxBind": "maxLevel",
+          "inset": 0
+        }
+      ],
+      "sourceSymbolId": "tank.vertical"
+    },
+    {
+      "id": "lib-valve-butterfly",
+      "name": "symbols.valveButterfly",
+      "svg": "<rect id=\"ispf-accent\" data-ispf-accent=\"1\" x=\"4\" y=\"4\" width=\"20\" height=\"28\" rx=\"4\" fill=\"#161b22\" stroke=\"#484f58\" stroke-width=\"2\"/><text x=\"14\" y=\"14\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"10\">valve.butterfly</text><text id=\"ispf-value\" x=\"14\" y=\"30\" text-anchor=\"middle\" fill=\"#3fb950\" font-size=\"10\"></text>",
+      "width": 28,
+      "height": 36,
+      "viewBox": "0 0 28 36",
+      "ports": [
+        {
+          "id": "n",
+          "x": 20,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 20,
+          "y": 60
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "open",
+          "labelKey": "bindings.open",
+          "type": "boolean"
+        },
+        {
+          "key": "intermediate",
+          "labelKey": "bindings.intermediate",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "open",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#3fb950",
+          "falseColor": "#484f58"
+        },
+        {
+          "bind": "intermediate",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#3fb950",
+          "falseColor": "#484f58"
+        }
+      ],
+      "sourceSymbolId": "valve.butterfly"
+    },
+    {
+      "id": "lib-pipe-segment",
+      "name": "symbols.pipeSegment",
+      "svg": "<g><line x1=\"0\" y1=\"8\" x2=\"688\" y2=\"8\" stroke=\"#58a6ff\" stroke-width=\"4\"></line></g>",
+      "width": 688,
+      "height": 16,
+      "viewBox": "0 0 688 16",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 8
+        },
+        {
+          "id": "e",
+          "x": 80,
+          "y": 8
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "flowing",
+          "labelKey": "bindings.flowing",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "flowing",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#3fb950",
+          "falseColor": "#484f58"
+        }
+      ],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "lib-data-block",
+      "name": "symbols.dataBlock",
+      "svg": "<g><rect width=\"120\" height=\"72\" rx=\"4\" fill=\"#161b22\" stroke=\"#30363d\"></rect><text x=\"6\" y=\"16\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"30\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"44\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"58\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text></g>",
+      "width": 120,
+      "height": 72,
+      "viewBox": "0 0 120 72",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "line1",
+          "labelKey": "bindings.line1",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "key": "line2",
+          "labelKey": "bindings.line2",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "key": "line3",
+          "labelKey": "bindings.line3",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "key": "line4",
+          "labelKey": "bindings.line4",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "line1",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        },
+        {
+          "bind": "line2",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        },
+        {
+          "bind": "line3",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        },
+        {
+          "bind": "line4",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "data-block"
     }
   ]
 }

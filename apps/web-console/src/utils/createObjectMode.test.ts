@@ -20,6 +20,10 @@ describe("canCreateChildAt", () => {
     expect(canCreateChildAt("root.platform.site.building", "CUSTOM")).toBe(true);
   });
 
+  it("allows create in mimics catalog", () => {
+    expect(canCreateChildAt("root.platform.mimics", "MIMICS")).toBe(true);
+  });
+
   it("blocks create on model definition leaves", () => {
     expect(canCreateChildAt("root.platform.instance-types.sensor-v1", "MODEL")).toBe(false);
   });
@@ -30,6 +34,7 @@ describe("resolveCreateLabelKind", () => {
     const { resolveCreateLabelKind } = await import("./createObjectMode");
     expect(resolveCreateLabelKind("root.platform.devices")).toBe("device");
     expect(resolveCreateLabelKind("root.platform.dashboards")).toBe("dashboard");
+    expect(resolveCreateLabelKind("root.platform.mimics")).toBe("mimic");
     expect(resolveCreateLabelKind("root.platform.workflows")).toBe("workflow");
     expect(resolveCreateLabelKind("root.platform.alert-rules")).toBe("alert-rule");
     expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("model");
@@ -69,6 +74,7 @@ describe("filterVisualGroupsInCatalog", () => {
 describe("defaultObjectTypeForParent", () => {
   it("maps parent folders to sensible default types", () => {
     expect(defaultObjectTypeForParent("root.platform.devices")).toBe("DEVICE");
+    expect(defaultObjectTypeForParent("root.platform.mimics")).toBe("MIMIC");
     expect(defaultObjectTypeForParent("root.platform.instance-types")).toBe("MODEL");
     expect(defaultObjectTypeForParent("root.platform.my-folder")).toBe("CUSTOM");
   });

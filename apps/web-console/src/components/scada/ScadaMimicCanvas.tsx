@@ -1,8 +1,9 @@
 import { useMemo } from "react";
-import type { MimicConnection, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
+import type { MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
 import { applyFormatRules } from "../../scada/formatRules";
-import { connectionPolylinePoints } from "../../scada/connectionRouting";
-import { getSymbol, getSymbolRender, symbolSize } from "../../scada/symbols/registry";
+import { connectionPolylinePoints, getElementPortPosition } from "../../scada/connectionRouting";
+import { elementRenderProps } from "../../scada/elementRenderProps";
+import { getSymbolRender, resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
 import { asBool } from "../../scada/utils";
 
 export interface ScadaMimicCanvasProps {
@@ -11,14 +12,30 @@ export interface ScadaMimicCanvasProps {
   valuesByConnectionId: Record<string, Record<string, unknown>>;
   editable?: boolean;
   editMode?: boolean;
+  connectMode?: boolean;
+  connectFrom?: { elementId: string; port: string } | null;
   selectedIds?: Set<string>;
   selectedConnectionId?: string | null;
   onSelectElement?: (id: string, additive?: boolean) => void;
   onSelectConnection?: (id: string | null) => void;
   onElementClick?: (element: MimicElement) => void;
   onCanvasClick?: (x: number, y: number) => void;
+  onConnectAtPoint?: (x: number, y: number) => void;
+  onElementConnectClick?: (element: MimicElement, x: number, y: number) => void;
   onElementDrag?: (id: string, x: number, y: number) => void;
+  onElementDragEnd?: () => void;
+  customSymbols?: MimicCustomSymbol[];
   viewTransform?: { panX: number; panY: number; zoom: number };
+}
+
+function clientToSvg(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } | null {
+  const pt = svg.createSVGPoint();
+  pt.x = clientX;
+  pt.y = clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  const local = pt.matrixTransform(ctm.inverse());
+  return { x: local.x, y: local.y };
 }
 
 function ConnectionPath({
@@ -27,14 +44,16 @@ function ConnectionPath({
   values,
   selected,
   onSelect,
+  customSymbols,
 }: {
   connection: MimicConnection;
   elements: MimicElement[];
   values: Record<string, unknown>;
   selected?: boolean;
   onSelect?: () => void;
+  customSymbols?: MimicCustomSymbol[];
 }) {
-  const points = connectionPolylinePoints(connection, elements);
+  const points = connectionPolylinePoints(connection, elements, customSymbols);
   if (points.length < 2) return null;
   const d = points.map((p: { x: number; y: number }, i: number) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   const flowing = asBool(values.flowing);
@@ -63,13 +82,19 @@ export default function ScadaMimicCanvas({
   valuesByConnectionId,
   editable,
   editMode,
+  connectMode,
+  connectFrom,
   selectedIds,
   selectedConnectionId,
   onSelectElement,
   onSelectConnection,
   onElementClick,
   onCanvasClick,
+  onConnectAtPoint,
+  onElementConnectClick,
   onElementDrag,
+  onElementDragEnd,
+  customSymbols,
   viewTransform,
 }: ScadaMimicCanvasProps) {
   const visibleLayers = useMemo(
@@ -80,24 +105,55 @@ export default function ScadaMimicCanvas({
   const elements = document.elements.filter((el) => visibleLayers.has(el.layerId));
   const connections = document.connections.filter((c) => visibleLayers.has(c.layerId));
 
+  const portHints = useMemo(() => {
+    if (!connectMode) return [];
+    const hints: {
+      key: string;
+      x: number;
+      y: number;
+      active: boolean;
+    }[] = [];
+    for (const el of elements) {
+      const symbol = resolveElementSymbol(el, customSymbols);
+      if (!symbol) continue;
+      for (const port of symbol.ports) {
+        const pos = getElementPortPosition(el, port.id, customSymbols);
+        if (!pos) continue;
+        hints.push({
+          key: `${el.id}-${port.id}`,
+          x: pos.x,
+          y: pos.y,
+          active: connectFrom?.elementId === el.id && connectFrom.port === port.id,
+        });
+      }
+    }
+    return hints;
+  }, [connectMode, connectFrom, elements]);
+
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!editMode || !onCanvasClick) return;
-    const svg = e.currentTarget;
-    const pt = svg.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return;
-    const local = pt.matrixTransform(ctm.inverse());
-    onCanvasClick(local.x, local.y);
+    if (!editMode) return;
+    const local = clientToSvg(e.currentTarget, e.clientX, e.clientY);
+    if (!local) return;
+    if (connectMode && onConnectAtPoint) {
+      onConnectAtPoint(local.x, local.y);
+      return;
+    }
+    onCanvasClick?.(local.x, local.y);
   };
 
+  const gridSize = document.grid?.size ?? 1;
+  const showGrid = editMode && document.grid?.visible === true && gridSize > 1;
+
   return (
+    <div
+      className={`scada-mimic-artboard${connectMode ? " scada-mimic-artboard-connect" : ""}`}
+      style={{ width: document.width, height: document.height }}
+    >
     <svg
       className="scada-mimic-svg"
       viewBox={`0 0 ${document.width} ${document.height}`}
-      width="100%"
-      height="100%"
+      width={document.width}
+      height={document.height}
       preserveAspectRatio="xMidYMid meet"
       style={{
         background: document.background ?? "var(--bg)",
@@ -108,14 +164,14 @@ export default function ScadaMimicCanvas({
       }}
       onClick={handleSvgClick}
     >
-      {document.grid?.visible && editMode && (
+      {showGrid && (
         <defs>
-          <pattern id="scada-grid" width={document.grid.size} height={document.grid.size} patternUnits="userSpaceOnUse">
-            <path d={`M ${document.grid.size} 0 L 0 0 0 ${document.grid.size}`} fill="none" stroke="var(--border)" strokeWidth={0.5} opacity={0.4} />
+          <pattern id="scada-grid" width={gridSize} height={gridSize} patternUnits="userSpaceOnUse">
+            <path d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} fill="none" stroke="var(--border)" strokeWidth={0.5} opacity={0.35} />
           </pattern>
         </defs>
       )}
-      {document.grid?.visible && editMode && (
+      {showGrid && (
         <rect width={document.width} height={document.height} fill="url(#scada-grid)" pointerEvents="none" />
       )}
 
@@ -126,15 +182,27 @@ export default function ScadaMimicCanvas({
           elements={document.elements}
           values={valuesByConnectionId[conn.id] ?? {}}
           selected={selectedConnectionId === conn.id}
-          onSelect={editMode ? () => onSelectConnection?.(conn.id) : undefined}
+          onSelect={editMode && !connectMode ? () => onSelectConnection?.(conn.id) : undefined}
+          customSymbols={customSymbols}
         />
       ))}
 
+      {portHints.map((hint) => (
+        <g key={hint.key} pointerEvents="none">
+          <circle
+            className={`scada-port-hint${hint.active ? " scada-port-hint-active" : ""}`}
+            cx={hint.x}
+            cy={hint.y}
+            r={hint.active ? 7 : 5}
+          />
+        </g>
+      ))}
+
       {elements.map((el) => {
-        const symbol = getSymbol(el.symbolId);
-        const Render = getSymbolRender(el.symbolId);
+        const symbol = resolveElementSymbol(el, customSymbols);
+        const Render = getSymbolRender(el.symbolId, customSymbols);
         if (!symbol || !Render) return null;
-        const { width, height } = symbolSize(el);
+        const { width, height } = symbolSize(el, customSymbols);
         const values = valuesByElementId[el.id] ?? {};
         const styleOverrides = applyFormatRules(values, el.formatRules);
         const selected = selectedIds?.has(el.id);
@@ -145,6 +213,14 @@ export default function ScadaMimicCanvas({
             transform={transform}
             onClick={(e) => {
               e.stopPropagation();
+              const svg = e.currentTarget.ownerSVGElement;
+              if (!svg) return;
+              const local = clientToSvg(svg, e.clientX, e.clientY);
+              if (!local) return;
+              if (connectMode && onElementConnectClick) {
+                onElementConnectClick(el, local.x, local.y);
+                return;
+              }
               if (editMode) {
                 onSelectElement?.(el.id, e.shiftKey);
               } else if (onElementClick) {
@@ -152,16 +228,18 @@ export default function ScadaMimicCanvas({
               }
             }}
             onMouseDown={(e) => {
-              if (!editMode || !onElementDrag || e.button !== 0) return;
+              if (!editMode || connectMode || !onElementDrag || e.button !== 0) return;
               e.stopPropagation();
               onSelectElement?.(el.id);
               const startX = e.clientX;
               const startY = e.clientY;
               const origX = el.x;
               const origY = el.y;
-              const svg = (e.currentTarget.ownerSVGElement as SVGSVGElement | null);
+              let dragged = false;
+              const svg = e.currentTarget.ownerSVGElement as SVGSVGElement | null;
               const move = (ev: MouseEvent) => {
                 if (!svg) return;
+                dragged = true;
                 const scale = svg.clientWidth / document.width;
                 const dx = (ev.clientX - startX) / scale;
                 const dy = (ev.clientY - startY) / scale;
@@ -170,17 +248,22 @@ export default function ScadaMimicCanvas({
               const up = () => {
                 window.removeEventListener("mousemove", move);
                 window.removeEventListener("mouseup", up);
+                if (dragged) {
+                  onElementDragEnd?.();
+                }
               };
               window.addEventListener("mousemove", move);
               window.addEventListener("mouseup", up);
             }}
-            style={{ cursor: editMode ? "move" : onElementClick ? "pointer" : undefined }}
+            style={{
+              cursor: connectMode ? "crosshair" : editMode ? "move" : onElementClick ? "pointer" : undefined,
+            }}
           >
             <Render
               width={width}
               height={height}
               values={values}
-              props={el.props ?? {}}
+              props={elementRenderProps(el, symbol)}
               styleOverrides={styleOverrides}
               editable={editable}
               selected={selected}
@@ -189,5 +272,6 @@ export default function ScadaMimicCanvas({
         );
       })}
     </svg>
+    </div>
   );
 }

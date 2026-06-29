@@ -1,5 +1,7 @@
 import type { ComponentType } from "react";
-import type { SymbolDefinition, SymbolRenderProps } from "../../types/scadaMimic";
+import type { MimicCustomSymbol, MimicElement, SymbolDefinition, SymbolRenderProps } from "../../types/scadaMimic";
+import { defaultEdgePorts, portsFromProps } from "../customSvg";
+import { CustomSvgSymbol } from "./customSvg";
 import {
   BreakerSymbol,
   BusbarHorizontalSymbol,
@@ -1093,6 +1095,16 @@ const SYMBOLS: RegisteredSymbol[] = [
     render: ConnectorSymbol,
   },
   {
+    id: "custom.svg",
+    category: "common",
+    nameKey: "symbols.customSvg",
+    defaultWidth: 64,
+    defaultHeight: 64,
+    ports: [port("n", 32, 0), port("s", 32, 64), port("e", 64, 32), port("w", 0, 32)],
+    bindingSchema: [],
+    render: CustomSvgSymbol,
+  },
+  {
     id: "legend.box",
     category: "common",
     nameKey: "symbols.legendBox",
@@ -1123,8 +1135,85 @@ export function getSymbol(id: string): RegisteredSymbol | undefined {
   return byId.get(id);
 }
 
-export function getSymbolRender(id: string): ComponentType<SymbolRenderProps> | undefined {
-  return byId.get(id)?.render;
+export function customSymbolToRegistered(def: MimicCustomSymbol): RegisteredSymbol {
+  const w = def.width;
+  const h = def.height;
+  return {
+    id: `custom:${def.id}`,
+    category: "custom",
+    nameKey: def.name,
+    displayName: def.name,
+    defaultWidth: w,
+    defaultHeight: h,
+    ports: def.ports ?? defaultEdgePorts(w, h),
+    bindingSchema: def.bindingSchema ?? [],
+    render: CustomSvgSymbol,
+    paletteProps: {
+      svg: def.svg,
+      viewBox: def.viewBox ?? `0 0 ${w} ${h}`,
+      behaviors: def.behaviors,
+    },
+  };
+}
+
+export function listDocumentCustomSymbols(customSymbols?: MimicCustomSymbol[]): RegisteredSymbol[] {
+  if (!customSymbols?.length) return [];
+  return customSymbols.map(customSymbolToRegistered);
+}
+
+/** Resolve symbol for a placed element (built-in, inline custom.svg, or library custom:id). */
+export function resolveElementSymbol(
+  element: Pick<MimicElement, "symbolId" | "props">,
+  customSymbols?: MimicCustomSymbol[]
+): RegisteredSymbol | undefined {
+  if (element.symbolId.startsWith("custom:")) {
+    const id = element.symbolId.slice("custom:".length);
+    const def = customSymbols?.find((s) => s.id === id);
+    if (!def) return undefined;
+    const reg = customSymbolToRegistered(def);
+    const w = Number(element.props?.width) || def.width;
+    const h = Number(element.props?.height) || def.height;
+    return {
+      ...reg,
+      ports: portsFromProps(element.props, w, h),
+    };
+  }
+  const base = getSymbol(element.symbolId);
+  if (!base) return undefined;
+  if (element.symbolId === "custom.svg") {
+    const w = Number(element.props?.width) || base.defaultWidth;
+    const h = Number(element.props?.height) || base.defaultHeight;
+    const schemaRaw = element.props?.bindingSchema;
+    const bindingSchema = Array.isArray(schemaRaw)
+      ? (schemaRaw as RegisteredSymbol["bindingSchema"])
+      : base.bindingSchema;
+    return {
+      ...base,
+      bindingSchema,
+      ports: portsFromProps(element.props, w, h),
+    };
+  }
+  return base;
+}
+
+/** Resolve symbol when picking from palette (placement). */
+export function resolvePlacementSymbol(
+  symbolId: string,
+  customSymbols?: MimicCustomSymbol[]
+): RegisteredSymbol | undefined {
+  if (symbolId.startsWith("custom:")) {
+    const id = symbolId.slice("custom:".length);
+    const def = customSymbols?.find((s) => s.id === id);
+    return def ? customSymbolToRegistered(def) : undefined;
+  }
+  return getSymbol(symbolId);
+}
+
+export function getSymbolRender(
+  id: string,
+  customSymbols?: MimicCustomSymbol[]
+): ComponentType<SymbolRenderProps> | undefined {
+  return resolvePlacementSymbol(id, customSymbols)?.render ?? byId.get(id)?.render;
 }
 
 export function listSymbolsByCategory(category: string): RegisteredSymbol[] {
@@ -1137,13 +1226,30 @@ export function listAllSymbols(): RegisteredSymbol[] {
 
 export const SYMBOL_CATEGORIES = ["process", "electrical", "common", ...DOMAIN_CATEGORY_IDS] as const;
 
-export function symbolSize(element: { symbolId: string; scale?: number; props?: Record<string, unknown> }) {
-  const sym = getSymbol(element.symbolId);
+export function symbolSize(
+  element: Pick<MimicElement, "symbolId" | "scale" | "props">,
+  customSymbols?: MimicCustomSymbol[]
+) {
   const scale = element.scale ?? 1;
   const propW = typeof element.props?.width === "number" ? element.props.width : Number(element.props?.width);
   const propH = typeof element.props?.height === "number" ? element.props.height : Number(element.props?.height);
+
+  let defaultW = 64;
+  let defaultH = 64;
+  if (element.symbolId.startsWith("custom:")) {
+    const def = customSymbols?.find((s) => s.id === element.symbolId.slice("custom:".length));
+    if (def) {
+      defaultW = def.width;
+      defaultH = def.height;
+    }
+  } else {
+    const sym = getSymbol(element.symbolId);
+    defaultW = sym?.defaultWidth ?? 64;
+    defaultH = sym?.defaultHeight ?? 64;
+  }
+
   return {
-    width: (Number.isFinite(propW) && propW > 0 ? propW : (sym?.defaultWidth ?? 64)) * scale,
-    height: (Number.isFinite(propH) && propH > 0 ? propH : (sym?.defaultHeight ?? 64)) * scale,
+    width: (Number.isFinite(propW) && propW > 0 ? propW : defaultW) * scale,
+    height: (Number.isFinite(propH) && propH > 0 ? propH : defaultH) * scale,
   };
 }

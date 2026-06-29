@@ -218,6 +218,7 @@ export default function ScadaMimicWidgetView({
           valuesByElementId={resolved.byElementId}
           valuesByConnectionId={resolved.byConnectionId}
           editable={editable}
+          customSymbols={document.customSymbols}
           onElementClick={hasActions ? handleElementClick : undefined}
           viewTransform={
             panEnabled

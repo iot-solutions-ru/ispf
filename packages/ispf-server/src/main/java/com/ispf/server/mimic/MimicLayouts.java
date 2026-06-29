@@ -7,11 +7,11 @@ public final class MimicLayouts {
 
     public static final String EMPTY_MIMIC = """
             {
-              "version": 1,
+              "version": 2,
               "width": 1600,
               "height": 900,
               "background": "var(--bg)",
-              "grid": { "size": 20, "snap": true, "visible": true },
+              "grid": { "size": 1, "snap": false, "visible": false },
               "layers": [{ "id": "layer-default", "name": "Main", "visible": true }],
               "elements": [],
               "connections": []

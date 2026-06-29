@@ -26,7 +26,6 @@ const VariableEditorWidgetView = lazy(() => import("./widgets/VariableEditorWidg
 const SvgWidgetView = lazy(() => import("./widgets/SvgWidgetView"));
 const LabelWidgetView = lazy(() => import("./widgets/LabelWidgetView"));
 const ImageWidgetView = lazy(() => import("./widgets/ImageWidgetView"));
-const MiniTecSldWidgetView = lazy(() => import("./widgets/MiniTecSldWidgetView"));
 const ScadaMimicWidgetView = lazy(() => import("./widgets/ScadaMimicWidgetView"));
 const HtmlSnippetWidgetView = lazy(() => import("./widgets/HtmlSnippetWidgetView"));
 const ObjectTreeWidgetView = lazy(() => import("./widgets/ObjectTreeWidgetView"));
@@ -258,16 +257,6 @@ export default function DashboardWidgetContent({
       return (
         <LazyWidget>
           <ImageWidgetView widget={widget} editable={editable} />
-        </LazyWidget>
-      );
-    case "mini-tec-sld":
-      return (
-        <LazyWidget>
-          <MiniTecSldWidgetView
-            widget={widget}
-            refreshIntervalMs={refreshIntervalMs}
-            editable={editable}
-          />
         </LazyWidget>
       );
     case "scada-mimic":

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
+import { DASHBOARD_GRID_MARGIN } from "../../types/dashboard";
 import { mergeWidgetLayout } from "../../types/dashboard";
 import renderDashboardWidget from "./renderDashboardWidget";
 import {
@@ -15,7 +16,7 @@ import {
 
 const SELECTED_Z_BOOST = 10_000;
 
-const GRID_MARGIN: [number, number] = [12, 12];
+const GRID_MARGIN = DASHBOARD_GRID_MARGIN;
 const DRAG_CANCEL_SELECTOR =
   "button, input, select, textarea, a, .dash-chart-body, .dash-sparkline-body, .dashboard-grid-resize-handle, .dash-object-table, .dash-event-feed-list, .dash-work-queue-list, .function-form-fields, .dashboard-link-btn, .dash-object-card, .dash-pie-chart-body, .dash-variable-editor-list, .dash-svg-widget-btn, .dash-composite-body";
 

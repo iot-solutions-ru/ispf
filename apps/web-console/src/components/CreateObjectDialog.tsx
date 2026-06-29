@@ -60,6 +60,7 @@ export default function CreateObjectDialog({
 }: CreateObjectDialogProps) {
   const { t } = useTranslation(["explorer", "common", "platform"]);
   const mode = resolveCreateDialogMode(parentPath);
+  const isMimicCatalog = parentPath.endsWith(".mimics");
   const [name, setName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [description, setDescription] = useState("");
@@ -113,9 +114,11 @@ export default function CreateObjectDialog({
       default:
         return presetType === "VISUAL_GROUP"
           ? t("dialog.newVisualGroup")
-          : t("dialog.newObject");
+          : isMimicCatalog
+            ? t("dialog.newMimic")
+            : t("dialog.newObject");
     }
-  }, [mode, presetType, t]);
+  }, [isMimicCatalog, mode, presetType, t]);
 
   const driversQuery = useQuery({
     queryKey: ["drivers"],
@@ -270,11 +273,13 @@ export default function CreateObjectDialog({
         templateId:
           type === "DASHBOARD"
             ? "dashboard-v1"
-            : type === "REPORT"
-              ? "report-v1"
-              : type === "WORKFLOW"
-                ? "workflow-v1"
-                : undefined,
+            : type === "MIMIC"
+              ? "mimic-v1"
+              : type === "REPORT"
+                ? "report-v1"
+                : type === "WORKFLOW"
+                  ? "workflow-v1"
+                  : undefined,
         driverId: type === "DEVICE" ? driverId : undefined,
         driverPollIntervalMs: type === "DEVICE" ? pollIntervalMs : undefined,
         autoStartDriver: false,
@@ -331,6 +336,9 @@ export default function CreateObjectDialog({
                 </select>
               </label>
             </>
+          )}
+          {mode === "object" && isMimicCatalog && (
+            <p className="hint">{t("dialog.mimicHint", { path: parentPath })}</p>
           )}
           {mode === "data-source" && (
             <p className="hint">{t("dialog.dataSourceHint", { path: parentPath })}</p>
@@ -482,7 +490,7 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {mode === "object" && (
+            {mode === "object" && !isMimicCatalog && (
               <label>
                 {t("dialog.type")}
                 <select

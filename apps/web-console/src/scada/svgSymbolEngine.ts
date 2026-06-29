@@ -1,0 +1,117 @@
+import type { MimicSymbolBehavior } from "../types/scadaMimic";
+import { replaceCssVars, sanitizeSvgMarkup } from "./customSvg";
+import { asBool, asNum, clamp01, fmtNum, fmtText } from "./utils";
+
+export interface ApplySvgBehaviorsOptions {
+  svg: string;
+  values: Record<string, unknown>;
+  behaviors?: MimicSymbolBehavior[];
+  styleOverrides?: Record<string, string>;
+  props?: Record<string, unknown>;
+}
+
+function resolveBool(values: Record<string, unknown>, props: Record<string, unknown>, bind: string): boolean {
+  const raw = values[bind] ?? props[bind];
+  return asBool(raw);
+}
+
+function resolveNum(values: Record<string, unknown>, props: Record<string, unknown>, bind: string): number | null {
+  return asNum(values[bind] ?? props[bind]);
+}
+
+function setAttr(el: Element, name: string, value: string): void {
+  el.setAttribute(name, value);
+}
+
+function queryTarget(doc: Document | Element, target: string): Element | null {
+  if (target.startsWith("#")) {
+    return doc.querySelector(target);
+  }
+  return doc.querySelector(`[data-ispf-bind-target="${target}"]`);
+}
+
+/** Apply binding values and format overrides to inner SVG markup. */
+export function applySvgBehaviors({
+  svg,
+  values,
+  behaviors = [],
+  styleOverrides = {},
+  props = {},
+}: ApplySvgBehaviorsOptions): string {
+  const raw = replaceCssVars(sanitizeSvgMarkup(svg));
+  if (!raw.trim()) return raw;
+
+  const wrapped = `<svg xmlns="http://www.w3.org/2000/svg">${raw}</svg>`;
+  const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
+  const root = doc.documentElement;
+  if (root.querySelector("parsererror")) return raw;
+
+  for (const behavior of behaviors) {
+    const el = queryTarget(root, behavior.target);
+    if (!el) continue;
+
+    switch (behavior.type) {
+      case "visibility": {
+        const on = resolveBool(values, props, behavior.bind);
+        const show = behavior.when === "falsy" ? !on : on;
+        setAttr(el, "display", show ? "" : "none");
+        if (show) el.removeAttribute("display");
+        break;
+      }
+      case "hidden": {
+        const on = resolveBool(values, props, behavior.bind);
+        const hide = behavior.when === "falsy" ? !on : on;
+        setAttr(el, "display", hide ? "none" : "");
+        if (!hide) el.removeAttribute("display");
+        break;
+      }
+      case "text": {
+        const rawVal = values[behavior.bind] ?? props[behavior.bind];
+        const text =
+          behavior.format === "number"
+            ? fmtNum(rawVal, behavior.decimals ?? 0, behavior.suffix ?? "")
+            : fmtText(rawVal, "");
+        el.textContent = text;
+        break;
+      }
+      case "fillLevel": {
+        const level = resolveNum(values, props, behavior.bind);
+        const max =
+          resolveNum(values, props, behavior.maxBind ?? "maxLevel") ??
+          asNum(props.maxLevel) ??
+          100;
+        const inset = behavior.inset ?? 0;
+        const ratio = level != null && max > 0 ? clamp01(level / max) : 0;
+        if (el.tagName.toLowerCase() === "rect") {
+          const fullH = Number(el.getAttribute("data-ispf-full-height") ?? el.getAttribute("height") ?? 0);
+          const fullY = Number(el.getAttribute("data-ispf-full-y") ?? el.getAttribute("y") ?? 0);
+          const h = Math.max(0, (fullH - inset * 2) * ratio);
+          setAttr(el, "y", String(fullY + (fullH - inset * 2 - h)));
+          setAttr(el, "height", String(h));
+        }
+        break;
+      }
+      case "fill": {
+        const on = resolveBool(values, props, behavior.bind);
+        setAttr(el, "fill", on ? (behavior.trueColor ?? "#3fb950") : (behavior.falseColor ?? "#484f58"));
+        break;
+      }
+      case "stroke": {
+        const on = resolveBool(values, props, behavior.bind);
+        setAttr(el, "stroke", on ? (behavior.trueColor ?? "#3fb950") : (behavior.falseColor ?? "#484f58"));
+        break;
+      }
+    }
+  }
+
+  if (styleOverrides.stroke) {
+    const accent = root.querySelector("#ispf-accent") ?? root.querySelector("[data-ispf-accent]");
+    if (accent) setAttr(accent, "stroke", styleOverrides.stroke);
+  }
+  if (styleOverrides.fill) {
+    const accent = root.querySelector("#ispf-accent") ?? root.querySelector("[data-ispf-accent]");
+    if (accent) setAttr(accent, "fill", styleOverrides.fill);
+  }
+
+  return root.innerHTML;
+}

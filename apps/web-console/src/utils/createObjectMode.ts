@@ -39,6 +39,7 @@ function isPlatformCatalogContainer(path: string): boolean {
     || path.endsWith(".absolute-models")
     || path.endsWith(".instances")
     || path.endsWith(".dashboards")
+    || path.endsWith(".mimics")
     || isPlatformReportsFolder(path)
     || path.endsWith(".workflows")
     || path.endsWith(".alert-rules")
@@ -97,6 +98,8 @@ export function resolveCreateLabelKind(parentPath: string): string {
       return "device";
     case "DASHBOARD":
       return "dashboard";
+    case "MIMIC":
+      return "mimic";
     case "REPORT":
       return "report";
     case "WORKFLOW":
@@ -212,6 +215,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     "MIGRATIONS",
     "APPLICATIONS",
     "OPERATOR_APPS",
+    "MIMICS",
     "MODEL",
     "CUSTOM",
   ];
@@ -234,6 +238,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     || path.endsWith(".absolute-models")
     || path.endsWith(".instances")
     || path.endsWith(".dashboards")
+    || path.endsWith(".mimics")
     || path.endsWith(".reports")
     || path.endsWith(".workflows")
     || path.endsWith(".alert-rules")
@@ -244,6 +249,9 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
 export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   if (parentPath.endsWith(".dashboards")) {
     return "DASHBOARD";
+  }
+  if (parentPath.endsWith(".mimics")) {
+    return "MIMIC";
   }
   if (parentPath.endsWith(".reports")) {
     return "REPORT";
@@ -271,6 +279,9 @@ export function instanceTypeFilterForParent(parentPath: string): ObjectType | un
   }
   if (parentPath.endsWith(".dashboards")) {
     return "DASHBOARD";
+  }
+  if (parentPath.endsWith(".mimics")) {
+    return "MIMIC";
   }
   if (parentPath.endsWith(".reports")) {
     return "REPORT";

@@ -1,4 +1,4 @@
-/** SCADA mimic diagram document schema (v1). */
+/** SCADA mimic diagram document schema (v2, SVG symbol library). */
 
 export type MimicRotation = 0 | 90 | 180 | 270;
 
@@ -93,8 +93,31 @@ export interface MimicConnection {
   };
 }
 
+/** Declarative mapping from binding values to SVG presentation. */
+export type MimicSymbolBehavior =
+  | { bind: string; type: "visibility"; target: string; when?: "truthy" | "falsy" }
+  | { bind: string; type: "hidden"; target: string; when?: "truthy" | "falsy" }
+  | { bind: string; type: "text"; target: string; format?: "string" | "number"; suffix?: string; decimals?: number }
+  | { bind: string; type: "fillLevel"; target: string; maxBind?: string; inset?: number }
+  | { bind: string; type: "fill"; target: string; trueColor?: string; falseColor?: string }
+  | { bind: string; type: "stroke"; target: string; trueColor?: string; falseColor?: string };
+
+export interface MimicCustomSymbol {
+  id: string;
+  name: string;
+  svg: string;
+  width: number;
+  height: number;
+  viewBox?: string;
+  ports?: MimicPort[];
+  bindingSchema?: MimicBindingSlot[];
+  behaviors?: MimicSymbolBehavior[];
+  /** Optional trace to a built-in palette symbol id (e.g. breaker). */
+  sourceSymbolId?: string;
+}
+
 export interface ScadaMimicDocument {
-  version: 1;
+  version: 2;
   width: number;
   height: number;
   background?: string;
@@ -102,6 +125,7 @@ export interface ScadaMimicDocument {
   layers: MimicLayer[];
   elements: MimicElement[];
   connections: MimicConnection[];
+  customSymbols?: MimicCustomSymbol[];
 }
 
 export interface MimicPort {
@@ -124,6 +148,8 @@ export interface SymbolDefinition {
   id: string;
   category: string;
   nameKey: string;
+  /** When set, shown instead of i18n nameKey (custom symbols). */
+  displayName?: string;
   defaultWidth: number;
   defaultHeight: number;
   ports: MimicPort[];

@@ -66,6 +66,10 @@ public final class SystemObjectDescriptions {
                 HMI dashboard catalog. DASHBOARD objects store widget layouts for admin preview and operator mode. \
                 Widgets bind to device variables, sub-dashboards, SQL reports, maps, and workflows. \
                 Operator Apps reference dashboards by path; open the Dashboard editor with a double-click."""));
+        map.put("root.platform.mimics", new Entry("SCADA Mimics", """
+                SCADA mimic diagram catalog. MIMIC objects store SVG symbol libraries, element bindings, and connections \
+                for one-line diagrams and process graphics. Open the mimic editor with a double-click; embed diagrams in \
+                dashboards via the scada-mimic widget."""));
         map.put("root.platform.reports", new Entry("Reports", """
                 Platform-wide report catalog. REPORT children use report-v1 (SQL against a data source) or \
                 tree-variables-report-v1 (scan device variables by path pattern). \

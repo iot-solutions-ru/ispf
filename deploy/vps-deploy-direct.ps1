@@ -137,8 +137,15 @@ function Send-FileWithProgress {
     $activity = "Uploading to VPS"
 
     $existingBytes = Get-RemoteFileSize -RemoteHost $RemoteHost -RemotePath $RemotePath
-    if ($existingBytes -ge $fileBytes -and $fileBytes -gt 0) {
-        Write-Host "    OK $fileName ($(Format-DeployByteSize $fileBytes), already on VPS)"
+    $localHash = (Get-FileHash -LiteralPath $LocalPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $remoteHash = ""
+    $escapedForHash = $RemotePath.Replace("'", "'\\''")
+    $hashResult = Invoke-SshQuiet -RemoteHost $RemoteHost -RemoteCommand "sha256sum '$escapedForHash' 2>/dev/null | awk '{print `$1}'"
+    if ($hashResult.ExitCode -eq 0 -and $hashResult.Output) {
+        $remoteHash = ("$($hashResult.Output)".Trim().Split([char]10)[0]).ToLowerInvariant()
+    }
+    if ($remoteHash -eq $localHash) {
+        Write-Host "    OK $fileName ($(Format-DeployByteSize $fileBytes), unchanged)"
         return
     }
 

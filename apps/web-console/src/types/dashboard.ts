@@ -41,7 +41,6 @@ export type WidgetType =
   | "spreadsheet"
   | "liquid-gauge"
   | "nav-menu"
-  | "mini-tec-sld"
   | "scada-mimic";
 
 export type DashboardOpenMode = "navigate" | "modal";
@@ -411,11 +410,6 @@ export interface SvgWidget extends DashboardWidgetBase {
   confirmMessage?: string;
 }
 
-/** Live SCADA single-line diagram for the mini-TEC reference plant. */
-export interface MiniTecSldWidget extends DashboardWidgetBase {
-  type: "mini-tec-sld";
-}
-
 /** Configurable SCADA mimic diagram with symbol library and live bindings. */
 export interface ScadaMimicWidget extends DashboardWidgetBase {
   type: "scada-mimic";
@@ -711,7 +705,6 @@ export type DashboardWidget =
   | HistoryTableWidget
   | VariableEditorWidget
   | SvgWidget
-  | MiniTecSldWidget
   | ScadaMimicWidget
   | CompositeWidget
   | SubDashboardWidget
@@ -735,6 +728,13 @@ export type DashboardWidget =
   | SpreadsheetWidget
   | LiquidGaugeWidget
   | NavMenuWidget;
+
+/** Fine-grained dashboard grid (px per row unit). */
+export const DASHBOARD_ROW_HEIGHT = 8;
+export const DASHBOARD_GRID_MARGIN: readonly [number, number] = [4, 4];
+/** Legacy 12-column layouts map to this many fine columns (12 × scale). */
+export const DASHBOARD_FINE_GRID_SCALE = 7;
+export const DASHBOARD_COLUMNS = 12 * DASHBOARD_FINE_GRID_SCALE;
 
 export interface DashboardLayout {
   columns: number;
@@ -803,13 +803,12 @@ export const WIDGET_TYPES: Array<{ type: WidgetType; label: string }> = (
     "spreadsheet",
     "liquid-gauge",
     "nav-menu",
-    "mini-tec-sld",
     "scada-mimic",
   ] as WidgetType[]
 ).map((type) => ({ type, label: type }));
 
 export function emptyLayout(): DashboardLayout {
-  return { columns: 12, rowHeight: 72, widgets: [] };
+  return { columns: DASHBOARD_COLUMNS, rowHeight: DASHBOARD_ROW_HEIGHT, widgets: [] };
 }
 
 function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
@@ -828,8 +827,8 @@ export function normalizeDashboardLayout(
   layout: Partial<DashboardLayout> | DashboardLayout
 ): DashboardLayout {
   return {
-    columns: layout.columns ?? 12,
-    rowHeight: layout.rowHeight ?? 72,
+    columns: layout.columns ?? DASHBOARD_COLUMNS,
+    rowHeight: layout.rowHeight ?? DASHBOARD_ROW_HEIGHT,
     theme: typeof layout.theme === "string" ? layout.theme : undefined,
     widgets: Array.isArray(layout.widgets) ? layout.widgets.map(normalizeLayoutWidget) : [],
   };

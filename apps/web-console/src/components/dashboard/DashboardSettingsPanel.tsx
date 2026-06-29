@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { DashboardLayout } from "../../types/dashboard";
+import { DASHBOARD_COLUMNS, DASHBOARD_ROW_HEIGHT } from "../../types/dashboard";
 
 interface DashboardSettingsPanelProps {
   layout: DashboardLayout;
@@ -58,8 +59,8 @@ export default function DashboardSettingsPanel({
           {t("settings.gridColumns")}
           <input
             type="number"
-            min={4}
-            max={24}
+            min={DASHBOARD_COLUMNS}
+            max={DASHBOARD_COLUMNS * 2}
             value={layout.columns}
             onChange={(e) => onLayoutChange({ columns: Number(e.target.value) })}
           />
@@ -68,7 +69,7 @@ export default function DashboardSettingsPanel({
           {t("settings.rowHeight")}
           <input
             type="number"
-            min={32}
+            min={DASHBOARD_ROW_HEIGHT}
             max={200}
             value={layout.rowHeight}
             onChange={(e) => onLayoutChange({ rowHeight: Number(e.target.value) })}

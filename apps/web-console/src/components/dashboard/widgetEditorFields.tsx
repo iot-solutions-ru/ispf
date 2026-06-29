@@ -2204,14 +2204,6 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
         <Section title={t("editor.section.status")} hint={t("editor.statusHint")} />
       );
 
-    case "mini-tec-sld":
-      return (
-        <Section
-          title="mini-tec-sld"
-          hint={t("editor.structured.miniTecHint")}
-        />
-      );
-
     case "scada-mimic":
       return <ScadaMimicWidgetEditorFields widget={widget} update={update} />;
 

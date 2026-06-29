@@ -9,6 +9,7 @@ export type TreeIconKind =
   | "driver"
   | "model"
   | "dashboard"
+  | "mimic"
   | "workflow"
   | "alert"
   | "agent"
@@ -57,6 +58,7 @@ export const TREE_ICON_CATALOG: TreeIconDefinition[] = [
   { id: "driver", category: "objects" },
   { id: "model", category: "objects" },
   { id: "dashboard", category: "objects" },
+  { id: "mimic", category: "objects" },
   { id: "workflow", category: "objects" },
   { id: "application", category: "objects" },
   { id: "report", category: "objects" },
@@ -111,6 +113,9 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
   if (path.includes(".reports")) {
     return "report";
   }
+  if (path.endsWith(".mimics") || path.includes(".mimics.")) {
+    return "mimic";
+  }
 
   switch (type) {
     case "ROOT":
@@ -130,6 +135,9 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "DASHBOARDS":
     case "DASHBOARD":
       return "dashboard";
+    case "MIMICS":
+    case "MIMIC":
+      return "mimic";
     case "WORKFLOWS":
     case "WORKFLOW":
     case "CORRELATORS":
@@ -234,6 +242,16 @@ const ICONS: Record<TreeIconKind, ReactNode> = {
       <rect x="2.5" y="2.5" width="5" height="5" rx="0.8" />
       <rect x="8.5" y="2.5" width="5" height="5" rx="0.8" />
       <rect x="2.5" y="8.5" width="11" height="5" rx="0.8" />
+    </>
+  ),
+  mimic: (
+    <>
+      <rect x="2" y="2.5" width="12" height="11" rx="1" />
+      <ellipse cx="5" cy="10" rx="1.5" ry="2" />
+      <path d="M6.8 10h2.2" />
+      <rect x="9.3" y="8.8" width="2.6" height="2.4" rx="0.4" />
+      <path d="M4 5.5h8" />
+      <circle cx="8" cy="5.5" r="0.9" fill="currentColor" stroke="none" />
     </>
   ),
   workflow: (

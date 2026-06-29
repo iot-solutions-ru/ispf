@@ -53,7 +53,6 @@ const BINDING_BY_TYPE: Record<WidgetType, WidgetDataBinding> = {
   "steps-panel": "composition",
   "composite-widget": "composition",
   "nav-menu": "composition",
-  "mini-tec-sld": "composition",
   "scada-mimic": "static",
 };
 

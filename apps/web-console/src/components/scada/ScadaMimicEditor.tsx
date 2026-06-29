@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import type { MimicConnection, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
+import type { MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
+import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload } from "../../scada/customSvg";
 import {
   createMimicId,
   DEFAULT_LAYER_ID,
@@ -9,16 +10,32 @@ import {
   parseMimicDocument,
   snapCanvasCoordinate,
 } from "../../scada/document";
-import { findNearestPort, getElementPortPosition, rerouteConnectionsForElement, routeOrthogonal } from "../../scada/connectionRouting";
+import { findNearestPort, findPortOnElement, getElementPortPosition, rerouteConnectionsForElement, routeOrthogonal } from "../../scada/connectionRouting";
 import { collectBindingPaths, resolveDocumentBindings } from "../../scada/bindingResolver";
-import { getSymbol } from "../../scada/symbols/registry";
+import { resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
 import { useDashboardContext } from "../dashboard/DashboardContext";
 import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
+import {
+  IconConnect,
+  IconPlace,
+  IconRedo,
+  IconSelect,
+  IconTrash,
+  IconUndo,
+} from "./ScadaEditorIcons";
 
 export type ScadaEditorTool = "select" | "place" | "connect";
+
+const CANVAS_MIN = 100;
+const CANVAS_MAX = 10000;
+
+function clampCanvasDimension(value: number, fallback: number): number {
+  if (!Number.isFinite(value) || value <= 0) return fallback;
+  return Math.max(CANVAS_MIN, Math.min(CANVAS_MAX, Math.round(value)));
+}
 
 interface ScadaMimicEditorProps {
   diagramJson: string;
@@ -38,6 +55,14 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const [history, setHistory] = useState<ScadaMimicDocument[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [importText, setImportText] = useState("");
+  const documentRef = useRef(document);
+  documentRef.current = document;
+
+  useEffect(() => {
+    if (tool !== "connect") {
+      setConnectFrom(null);
+    }
+  }, [tool]);
 
   const pushHistory = useCallback((next: ScadaMimicDocument) => {
     setHistory((h) => [...h.slice(0, historyIndex + 1), next]);
@@ -80,30 +105,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     setConnectFrom(null);
   }, [diagramJson]);
 
-  const handleCanvasClick = (x: number, y: number) => {
-    const sx = snapCanvasCoordinate(x, document.grid);
-    const sy = snapCanvasCoordinate(y, document.grid);
-
-    if (tool === "place" && placeSymbolId) {
-      const symbol = getSymbol(placeSymbolId);
-      if (!symbol) return;
-      const el: MimicElement = {
-        id: createMimicId("el"),
-        symbolId: placeSymbolId,
-        layerId: DEFAULT_LAYER_ID,
-        x: sx,
-        y: sy,
-        bindings: {},
-        props: {},
-      };
-      updateDocument((doc) => ({ ...doc, elements: [...doc.elements, el] }));
-      setSelectedIds(new Set([el.id]));
-      setSelectedConnectionId(null);
-      return;
-    }
-
-    if (tool === "connect") {
-      const hit = findNearestPort(document.elements, sx, sy);
+  const applyConnectHit = useCallback(
+    (hit: { element: MimicElement; port: { id: string }; x: number; y: number } | null) => {
       if (!hit) {
         setConnectFrom(null);
         return;
@@ -116,23 +119,135 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         setConnectFrom(null);
         return;
       }
-      const fromEl = document.elements.find((e) => e.id === connectFrom.elementId);
-      const toEl = hit.element;
+      const fromEl = documentRef.current.elements.find((e) => e.id === connectFrom.elementId);
       if (!fromEl) return;
-      const fromPos = getElementPortPosition(fromEl, connectFrom.port);
+      const fromPos = getElementPortPosition(fromEl, connectFrom.port, documentRef.current.customSymbols);
       if (!fromPos) return;
       const points = routeOrthogonal(fromPos.x, fromPos.y, hit.x, hit.y);
       const conn: MimicConnection = {
         id: createMimicId("conn"),
         layerId: DEFAULT_LAYER_ID,
         from: connectFrom,
-        to: { elementId: toEl.id, port: hit.port.id },
+        to: { elementId: hit.element.id, port: hit.port.id },
         points,
       };
       updateDocument((doc) => ({ ...doc, connections: [...doc.connections, conn] }));
       setConnectFrom(null);
       setSelectedConnectionId(conn.id);
       setSelectedIds(new Set());
+    },
+    [connectFrom, updateDocument]
+  );
+
+  const handleConnectAtPoint = useCallback(
+    (x: number, y: number) => {
+      const sx = snapCanvasCoordinate(x, documentRef.current.grid);
+      const sy = snapCanvasCoordinate(y, documentRef.current.grid);
+      applyConnectHit(findNearestPort(documentRef.current.elements, sx, sy, undefined, 24, documentRef.current.customSymbols));
+    },
+    [applyConnectHit]
+  );
+
+  const handleElementConnectClick = useCallback(
+    (element: MimicElement, x: number, y: number) => {
+      const sx = snapCanvasCoordinate(x, documentRef.current.grid);
+      const sy = snapCanvasCoordinate(y, documentRef.current.grid);
+      const portHit = findPortOnElement(element, sx, sy, documentRef.current.customSymbols);
+      if (!portHit) {
+        setConnectFrom(null);
+        return;
+      }
+      applyConnectHit({ element, port: portHit.port, x: portHit.x, y: portHit.y });
+    },
+    [applyConnectHit]
+  );
+
+  const handleElementDragEnd = useCallback(() => {
+    pushHistory(documentRef.current);
+  }, [pushHistory]);
+
+  const handleAddCustomSymbol = useCallback(
+    (def: MimicCustomSymbol) => {
+      updateDocument((doc) => ({
+        ...doc,
+        customSymbols: [...(doc.customSymbols ?? []), def],
+      }));
+    },
+    [updateDocument]
+  );
+
+  const handleUploadCustomSymbol = useCallback(
+    (file: File) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const parsed = parseSvgUpload(String(reader.result ?? ""));
+        const id = createMimicId("csym");
+        const def: MimicCustomSymbol = {
+          id,
+          name: file.name.replace(/\.svg$/i, "") || t("props.customSvgDefaultName"),
+          svg: parsed.svg,
+          width: parsed.width,
+          height: parsed.height,
+          viewBox: parsed.viewBox,
+          ports: parsed.ports,
+        };
+        updateDocument((doc) => ({
+          ...doc,
+          customSymbols: [...(doc.customSymbols ?? []), def],
+        }));
+        setPlaceSymbolId(`custom:${id}`);
+        setTool("place");
+      };
+      reader.readAsText(file);
+    },
+    [t, updateDocument]
+  );
+
+  const handleCanvasClick = (x: number, y: number) => {
+    const sx = snapCanvasCoordinate(x, document.grid);
+    const sy = snapCanvasCoordinate(y, document.grid);
+
+    if (tool === "place" && placeSymbolId) {
+      const symbol = resolvePlacementSymbol(placeSymbolId, document.customSymbols);
+      if (!symbol) return;
+
+      let props: Record<string, unknown> = {};
+      if (placeSymbolId === "custom.svg") {
+        props = {
+          svg: DEFAULT_CUSTOM_SVG_INNER,
+          viewBox: "0 0 64 64",
+          width: symbol.defaultWidth,
+          height: symbol.defaultHeight,
+        };
+      } else if (placeSymbolId.startsWith("custom:")) {
+        const def = document.customSymbols?.find((s) => s.id === placeSymbolId.slice("custom:".length));
+        if (def) {
+          props = {
+            svg: def.svg,
+            viewBox: def.viewBox ?? `0 0 ${def.width} ${def.height}`,
+            width: def.width,
+            height: def.height,
+          };
+        }
+      }
+
+      const el: MimicElement = {
+        id: createMimicId("el"),
+        symbolId: placeSymbolId,
+        layerId: DEFAULT_LAYER_ID,
+        x: sx,
+        y: sy,
+        bindings: {},
+        props,
+      };
+      updateDocument((doc) => ({ ...doc, elements: [...doc.elements, el] }));
+      setSelectedIds(new Set([el.id]));
+      setSelectedConnectionId(null);
+      return;
+    }
+
+    if (tool === "connect") {
+      handleConnectAtPoint(x, y);
       return;
     }
 
@@ -145,7 +260,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     const sy = snapCanvasCoordinate(y, document.grid);
     updateDocument((doc) => {
       const elements = doc.elements.map((el) => (el.id === id ? { ...el, x: sx, y: sy } : el));
-      const connections = rerouteConnectionsForElement(id, doc.connections, elements);
+      const connections = rerouteConnectionsForElement(id, doc.connections, elements, doc.customSymbols);
       return { ...doc, elements, connections };
     }, false);
   };
@@ -191,28 +306,112 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     };
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        handleDeleteSelected();
+        return;
+      }
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+          e.preventDefault();
+          redo();
+        } else if (e.key === "s") {
+          e.preventDefault();
+          onSave(mimicDocumentToJson(document));
+        }
+        return;
+      }
+      if (e.key === "v" || e.key === "V") setTool("select");
+      if (e.key === "p" || e.key === "P") setTool("place");
+      if (e.key === "c" || e.key === "C") setTool("connect");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [document, handleDeleteSelected, historyIndex, history.length, onSave, redo, undo]);
+
+  const toolLabel = t(`tools.${tool === "select" ? "select" : tool === "place" ? "place" : "connect"}`);
+
   const overlay = (
     <div className="scada-mimic-editor-overlay">
       <div className="scada-mimic-editor">
         <header className="scada-mimic-editor-toolbar">
-          <div className="scada-toolbar-group">
-            <button type="button" className={tool === "select" ? "active" : ""} onClick={() => setTool("select")}>{t("tools.select")}</button>
-            <button type="button" className={tool === "place" ? "active" : ""} onClick={() => setTool("place")}>{t("tools.place")}</button>
-            <button type="button" className={tool === "connect" ? "active" : ""} onClick={() => setTool("connect")}>{t("tools.connect")}</button>
+          <div className="scada-toolbar-brand">
+            <span className="scada-toolbar-logo" aria-hidden />
+            <div className="scada-toolbar-brand-text">
+              <strong>{t("editor.title")}</strong>
+              <span className="scada-toolbar-subtitle">
+                {t("editor.meta", { width: document.width, height: document.height, count: document.elements.length })}
+              </span>
+            </div>
           </div>
-          <div className="scada-toolbar-group">
-            <button type="button" onClick={undo} disabled={historyIndex <= 0}>{t("tools.undo")}</button>
-            <button type="button" onClick={redo} disabled={historyIndex >= history.length - 1}>{t("tools.redo")}</button>
-            <button type="button" onClick={handleDeleteSelected}>{t("tools.delete")}</button>
+
+          <div className="scada-toolbar-segment" role="toolbar" aria-label={t("editor.tools")}>
+            <button
+              type="button"
+              className={`scada-tool-btn${tool === "select" ? " active" : ""}`}
+              onClick={() => setTool("select")}
+              title={`${t("tools.select")} (V)`}
+            >
+              <IconSelect className="scada-tool-icon" />
+              <span>{t("tools.select")}</span>
+            </button>
+            <button
+              type="button"
+              className={`scada-tool-btn${tool === "place" ? " active" : ""}`}
+              onClick={() => setTool("place")}
+              title={`${t("tools.place")} (P)`}
+            >
+              <IconPlace className="scada-tool-icon" />
+              <span>{t("tools.place")}</span>
+            </button>
+            <button
+              type="button"
+              className={`scada-tool-btn${tool === "connect" ? " active" : ""}`}
+              onClick={() => setTool("connect")}
+              title={`${t("tools.connect")} (C)`}
+            >
+              <IconConnect className="scada-tool-icon" />
+              <span>{t("tools.connect")}</span>
+            </button>
           </div>
-          <div className="scada-toolbar-group scada-toolbar-spacer" />
-          <button type="button" onClick={() => onSave(mimicDocumentToJson(document))}>{t("tools.save")}</button>
-          <button type="button" onClick={onClose}>{t("tools.close")}</button>
+
+          <div className="scada-toolbar-actions">
+            <button type="button" className="scada-icon-btn" onClick={undo} disabled={historyIndex <= 0} title={`${t("tools.undo")} (Ctrl+Z)`}>
+              <IconUndo className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" onClick={redo} disabled={historyIndex >= history.length - 1} title={`${t("tools.redo")} (Ctrl+Y)`}>
+              <IconRedo className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={t("tools.delete")}>
+              <IconTrash className="scada-tool-icon" />
+            </button>
+          </div>
+
+          <div className="scada-toolbar-spacer" />
+
+          <span className="scada-toolbar-tool-hint">{toolLabel}</span>
+
+          <div className="scada-toolbar-primary-actions">
+            <button type="button" className="scada-btn-ghost" onClick={onClose}>{t("tools.close")}</button>
+            <button type="button" className="scada-btn-primary" onClick={() => onSave(mimicDocumentToJson(document))}>
+              {t("tools.save")}
+            </button>
+          </div>
         </header>
         <div className="scada-mimic-editor-body">
-          <aside className="scada-mimic-editor-sidebar">
+          <aside className="scada-mimic-editor-sidebar scada-editor-panel">
             <SymbolPalette
               selectedSymbolId={placeSymbolId}
+              customSymbols={document.customSymbols}
+              onUploadCustomSymbol={handleUploadCustomSymbol}
               onSelectSymbol={(id) => {
                 setPlaceSymbolId(id);
                 setTool("place");
@@ -220,40 +419,61 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             />
           </aside>
           <main className="scada-mimic-editor-canvas-wrap">
-            <ScadaMimicCanvas
-              document={document}
-              valuesByElementId={resolvedBindings.byElementId}
-              valuesByConnectionId={resolvedBindings.byConnectionId}
-              editMode
-              selectedIds={selectedIds}
-              selectedConnectionId={selectedConnectionId}
-              onSelectElement={(id, additive) => {
-                setSelectedConnectionId(null);
-                setSelectedIds((prev) => {
-                  if (additive) {
-                    const next = new Set(prev);
-                    if (next.has(id)) next.delete(id);
-                    else next.add(id);
-                    return next;
-                  }
-                  return new Set([id]);
-                });
-              }}
-              onSelectConnection={setSelectedConnectionId}
-              onCanvasClick={handleCanvasClick}
-              onElementDrag={handleElementDrag}
-            />
+            <div className="scada-canvas-stage">
+              <div className="scada-canvas-stage-header">
+                <span>{t("editor.canvas")}</span>
+                <span className="scada-canvas-stage-meta">{document.width} × {document.height}</span>
+              </div>
+              <div className="scada-canvas-viewport">
+                <ScadaMimicCanvas
+                  document={document}
+                  valuesByElementId={resolvedBindings.byElementId}
+                  valuesByConnectionId={resolvedBindings.byConnectionId}
+                  editMode
+                  connectMode={tool === "connect"}
+                  connectFrom={connectFrom}
+                  selectedIds={selectedIds}
+                  selectedConnectionId={selectedConnectionId}
+                  onSelectElement={(id, additive) => {
+                    if (tool === "connect") return;
+                    setSelectedConnectionId(null);
+                    setSelectedIds((prev) => {
+                      if (additive) {
+                        const next = new Set(prev);
+                        if (next.has(id)) next.delete(id);
+                        else next.add(id);
+                        return next;
+                      }
+                      return new Set([id]);
+                    });
+                  }}
+                  onSelectConnection={setSelectedConnectionId}
+                  onCanvasClick={handleCanvasClick}
+                  onConnectAtPoint={handleConnectAtPoint}
+                  onElementConnectClick={handleElementConnectClick}
+                  onElementDrag={handleElementDrag}
+                  onElementDragEnd={handleElementDragEnd}
+                  customSymbols={document.customSymbols}
+                />
+              </div>
+            </div>
           </main>
-          <aside className="scada-mimic-editor-props">
+          <aside className="scada-mimic-editor-props scada-editor-panel">
             <MimicPropertiesPanel
               document={document}
               selectedElement={selectedElement}
               selectedConnection={selectedConnection}
               onUpdateElement={(el) =>
-                updateDocument((doc) => ({
-                  ...doc,
-                  elements: doc.elements.map((item) => (item.id === el.id ? el : item)),
-                }))
+                updateDocument((doc) => {
+                  const elements = doc.elements.map((item) => (item.id === el.id ? el : item));
+                  const connections = rerouteConnectionsForElement(
+                    el.id,
+                    doc.connections,
+                    elements,
+                    doc.customSymbols,
+                  );
+                  return { ...doc, elements, connections };
+                })
               }
               onUpdateConnection={(conn) =>
                 updateDocument((doc) => ({
@@ -262,6 +482,14 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                 }))
               }
               onDeleteSelected={handleDeleteSelected}
+              onAddCustomSymbol={handleAddCustomSymbol}
+              onUpdateCanvasSize={(width, height) =>
+                updateDocument((doc) => ({
+                  ...doc,
+                  width: clampCanvasDimension(width, doc.width),
+                  height: clampCanvasDimension(height, doc.height),
+                }))
+              }
             />
             <details className="scada-import-export">
               <summary>{t("importExport.title")}</summary>
