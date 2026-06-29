@@ -77,7 +77,16 @@ class FlexibleDriverRuntimeTest {
                     byte[] buffer = new byte[256];
                     int read = in.read(buffer);
                     if (read > 0) {
-                        out.write("TEMP=23.5\r\n".getBytes(StandardCharsets.UTF_8));
+                        if (read >= 2 && buffer[0] == 0x01) {
+                            out.write(framedGaugeResponse());
+                        } else {
+                            String request = new String(buffer, 0, read, StandardCharsets.US_ASCII);
+                            if (request.startsWith("GETSTATUS")) {
+                                out.write("STATUS=OK\n".getBytes(StandardCharsets.US_ASCII));
+                            } else {
+                                out.write("TEMP=23.5\r\n".getBytes(StandardCharsets.US_ASCII));
+                            }
+                        }
                         out.flush();
                     }
                 } catch (IOException e) {
@@ -148,5 +157,102 @@ class FlexibleDriverRuntimeTest {
                         .param("name", "flexTemp"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.value.rows[0].value").value("23.5"));
+    }
+
+    @Test
+    void flexibleDriverReadsFramedPipelineWithGroupedExtractors() throws Exception {
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", devicePath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "flexible",
+                                  "pollIntervalMs": 60000,
+                                  "configuration": {
+                                    "protocol": "TCP",
+                                    "host": "127.0.0.1",
+                                    "port": "%d",
+                                    "timeoutMs": "5000",
+                                    "readMode": "delimiter",
+                                    "readUntilHex": "03",
+                                    "checksumAlgorithm": "sum16-complement-hex",
+                                    "checksumMarker": "&&",
+                                    "checksumLength": "4"
+                                  },
+                                  "pointMappings": {
+                                    "gaugeVolume": "req:\\\\x01i20101|extract:asciiHexFloat:0:after:07",
+                                    "gaugeHeight": "req:\\\\x01i20101|extract:asciiHexFloat:2:after:07"
+                                  },
+                                  "autoStart": true
+                                }
+                                """.formatted(echoPort)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("RUNNING"));
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", devicePath)
+                        .param("name", "gaugeVolume"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value("1.0"));
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", devicePath)
+                        .param("name", "gaugeHeight"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value("4.0"));
+    }
+
+    @Test
+    void flexibleDriverReadsDelimiterFramedAsciiWithRegex() throws Exception {
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", devicePath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "flexible",
+                                  "pollIntervalMs": 60000,
+                                  "configuration": {
+                                    "protocol": "TCP",
+                                    "host": "127.0.0.1",
+                                    "port": "%d",
+                                    "timeoutMs": "5000",
+                                    "readMode": "delimiter",
+                                    "readUntilHex": "0A"
+                                  },
+                                  "pointMappings": {
+                                    "deviceStatus": "req:GETSTATUS|extract:regex:STATUS=(\\\\w+):1"
+                                  },
+                                  "autoStart": true
+                                }
+                                """.formatted(echoPort)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", devicePath)
+                        .param("name", "deviceStatus"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value("OK"));
+    }
+
+    private static byte[] framedGaugeResponse() {
+        String body = "\u0001i20101250629150001R0000073F800000400000004080000040A0000";
+        int sum = 0;
+        for (byte b : body.getBytes(StandardCharsets.US_ASCII)) {
+            sum = (sum + (b & 0xFF)) & 0xFFFF;
+        }
+        String checksum = String.format("%04X", (0x10000 - sum) & 0xFFFF);
+        return (body + "&&" + checksum + "\u0003").getBytes(StandardCharsets.US_ASCII);
     }
 }

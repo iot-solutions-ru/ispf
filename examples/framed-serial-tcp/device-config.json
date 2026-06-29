@@ -1,0 +1,25 @@
+{
+  "driverId": "flexible",
+  "pollIntervalMs": 30000,
+  "configuration": {
+    "protocol": "TCP",
+    "host": "192.168.1.50",
+    "port": "10001",
+    "timeoutMs": "5000",
+    "encoding": "escapes",
+    "readMode": "delimiter",
+    "readUntilHex": "03",
+    "checksumAlgorithm": "none",
+    "securityCode": "",
+    "tank": "01"
+  },
+  "pointMappings": {
+    "tank01_volume": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:0:after:07",
+    "tank01_tcVolume": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:1:after:07",
+    "tank01_ullage": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:2:after:07",
+    "tank01_height": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:3:after:07",
+    "tank01_water": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:4:after:07",
+    "tank01_temperature": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:5:after:07",
+    "tank01_waterVolume": "req:\\x01${securityCode}i20101|extract:asciiHexFloat:6:after:07"
+  }
+}

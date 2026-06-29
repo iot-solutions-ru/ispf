@@ -671,6 +671,7 @@ export interface LiquidGaugeWidget extends DashboardWidgetBase {
   minValue?: number;
   maxValue?: number;
   decimals?: number;
+  unit?: string;
 }
 
 export interface NavMenuWidget extends DashboardWidgetBase {

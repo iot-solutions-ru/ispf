@@ -30,6 +30,11 @@ export default function LiquidGaugeWidgetView({
   const min = widget.minValue ?? Number(minQuery.rawValue ?? 0);
   const max = widget.maxValue ?? Number(maxQuery.rawValue ?? 100);
   const pct = Math.min(100, Math.max(0, ((value - min) / (max - min || 1)) * 100));
+  const pctLabel = `${pct.toFixed(widget.decimals ?? 0)}%`;
+  const valueLabel =
+    widget.unit != null && widget.unit !== ""
+      ? `${value.toFixed(widget.decimals ?? 0)} ${widget.unit}`
+      : null;
 
   return (
     <DashWidgetShell
@@ -40,7 +45,12 @@ export default function LiquidGaugeWidgetView({
     >
       <div className="dash-liquid-gauge" style={styles.body}>
         <div className="dash-liquid-fill" style={{ height: `${pct}%`, ...styles.value }} />
-        <span className="dash-liquid-label">{value.toFixed(widget.decimals ?? 0)}%</span>
+        <div className="dash-liquid-label" style={styles.value}>
+          <span className="dash-liquid-label-pct">{pctLabel}</span>
+          {valueLabel ? (
+            <span className="dash-liquid-label-value hint">{valueLabel}</span>
+          ) : null}
+        </div>
       </div>
     </DashWidgetShell>
   );

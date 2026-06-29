@@ -16,13 +16,16 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 
 /**
- * Flexible driver — TCP/UDP request/response with hex or UTF-8 encoding.
+ * Flexible driver — TCP/UDP request/response with legacy regex mode or exchange pipeline.
  */
 public class FlexibleDeviceDriver implements DeviceDriver {
 
@@ -35,15 +38,18 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "flexible",
             "Flexible Protocol Driver",
-            "0.1.0",
-            "Sends request bytes/strings over TCP or UDP and maps responses to ISPF variables",
+            "0.2.0",
+            "TCP/UDP request/response with optional framed I/O, checksum verification, and extractors",
             "ISPF",
             Map.of(
                     "protocol", "TCP",
                     "host", "127.0.0.1",
                     "port", "5000",
                     "timeoutMs", "5000",
-                    "encoding", "utf8"
+                    "encoding", "utf8",
+                    "readMode", "idle",
+                    "readMaxBytes", "8192",
+                    "checksumAlgorithm", "none"
             )
     );
 
@@ -53,7 +59,13 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     private int port = 5000;
     private int timeoutMs = 5000;
     private String encoding = "utf8";
-    private final Map<String, FlexiblePoint> points = new ConcurrentHashMap<>();
+    private String readMode = "idle";
+    private int readUntilDelimiter = 0x03;
+    private int readMaxBytes = 8192;
+    private String checksumAlgorithm = "none";
+    private String checksumMarker = "&&";
+    private int checksumLength = 4;
+    private final Map<String, String> configuration = new HashMap<>();
     private volatile boolean connected;
 
     @Override
@@ -64,7 +76,11 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     @Override
     public void initialize(DriverObject driverObject) {
         this.driverObject = driverObject;
-        driverObject.configuration().forEach(this::applyConfig);
+        configuration.clear();
+        driverObject.configuration().forEach((key, value) -> {
+            configuration.put(key, value);
+            applyConfig(key, value);
+        });
     }
 
     private void applyConfig(String key, String value) {
@@ -77,6 +93,12 @@ public class FlexibleDeviceDriver implements DeviceDriver {
             case "port" -> port = Integer.parseInt(value.trim());
             case "timeoutMs" -> timeoutMs = Integer.parseInt(value.trim());
             case "encoding" -> encoding = value.trim().toLowerCase(Locale.ROOT);
+            case "readMode" -> readMode = value.trim().toLowerCase(Locale.ROOT);
+            case "readUntilHex" -> readUntilDelimiter = Integer.parseInt(value.trim(), 16) & 0xFF;
+            case "readMaxBytes" -> readMaxBytes = Integer.parseInt(value.trim());
+            case "checksumAlgorithm" -> checksumAlgorithm = value.trim();
+            case "checksumMarker" -> checksumMarker = value.trim();
+            case "checksumLength" -> checksumLength = Integer.parseInt(value.trim());
             default -> { }
         }
     }
@@ -85,7 +107,8 @@ public class FlexibleDeviceDriver implements DeviceDriver {
     public void connect() throws DriverException {
         connected = true;
         driverObject.log(DriverLogLevel.INFO,
-                "Flexible driver ready (" + protocol + " " + host + ":" + port + ", encoding=" + encoding + ")");
+                "Flexible driver ready (" + protocol + " " + host + ":" + port
+                        + ", encoding=" + encoding + ", readMode=" + readMode + ")");
     }
 
     @Override
@@ -103,64 +126,115 @@ public class FlexibleDeviceDriver implements DeviceDriver {
         if (!isConnected()) {
             throw new DriverException("Not connected");
         }
-        points.clear();
+
+        List<Map.Entry<String, FlexiblePoint>> legacyPoints = new ArrayList<>();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
-            FlexiblePoint point = FlexiblePoint.parse(entry.getValue());
-            points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), exchange(point));
+            if (FlexExchangePoint.isPipeline(entry.getValue())) {
+                continue;
+            }
+            legacyPoints.add(Map.entry(entry.getKey(), FlexiblePoint.parse(entry.getValue())));
+        }
+
+        for (Map.Entry<String, FlexiblePoint> entry : legacyPoints) {
+            driverObject.updateVariable(entry.getKey(), exchangeLegacy(entry.getValue()));
+        }
+
+        Map<String, List<Map.Entry<String, FlexExchangePoint>>> groups =
+                FlexExchangePoint.groupByRequest(pointMappings, configuration);
+        for (List<Map.Entry<String, FlexExchangePoint>> group : groups.values()) {
+            if (group.isEmpty()) {
+                continue;
+            }
+            FlexExchangePoint sample = group.get(0).getValue();
+            byte[] request = sample.renderRequest(configuration);
+            byte[] frame = sendAndReceive(request);
+            String payload = resolvePayload(frame, sample.verifyChecksum());
+            for (Map.Entry<String, FlexExchangePoint> entry : group) {
+                FlexExchangePoint point = entry.getValue();
+                String value = point.extractor().extract(payload);
+                driverObject.updateVariable(entry.getKey(), pipelineRecord(payload, frame.length, value));
+            }
         }
     }
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("Flexible driver is read-only in v0.1");
+        throw new DriverException("Flexible driver is read-only");
     }
 
-    private DataRecord exchange(FlexiblePoint point) throws DriverException {
+    private String resolvePayload(byte[] frame, boolean pointVerifyChecksum) throws DriverException {
+        boolean verify = pointVerifyChecksum || shouldVerifyChecksum();
+        if (!verify) {
+            return FlexTemplate.asPrintable(frame);
+        }
+        return FlexChecksum.verifyAndPayload(frame, checksumAlgorithm, checksumMarker, checksumLength);
+    }
+
+    private boolean shouldVerifyChecksum() {
+        return checksumAlgorithm != null
+                && !checksumAlgorithm.isBlank()
+                && !"none".equalsIgnoreCase(checksumAlgorithm);
+    }
+
+    private DataRecord pipelineRecord(String payload, int bytesRead, String value) {
+        return DataRecord.single(RESPONSE_SCHEMA, Map.of(
+                "value", value == null ? "" : value,
+                "raw", payload == null ? "" : payload,
+                "bytesRead", bytesRead
+        ));
+    }
+
+    private DataRecord exchangeLegacy(FlexiblePoint point) throws DriverException {
+        byte[] request = encodeLegacyRequest(point.request());
+        byte[] frame = sendAndReceive(request);
+        String raw = decodeLegacyResponse(frame);
+        return toLegacyRecord(raw, point);
+    }
+
+    private byte[] sendAndReceive(byte[] request) throws DriverException {
         try {
             if ("UDP".equals(protocol)) {
-                return exchangeUdp(point);
+                return exchangeUdpBytes(request);
             }
-            return exchangeTcp(point);
+            return exchangeTcpBytes(request);
         } catch (IOException e) {
-            throw new DriverException("Flexible exchange failed for " + point.request(), e);
+            throw new DriverException("Flexible exchange failed", e);
         }
     }
 
-    private DataRecord exchangeTcp(FlexiblePoint point) throws IOException {
+    private byte[] exchangeTcpBytes(byte[] request) throws IOException {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(host, port), timeoutMs);
             socket.setSoTimeout(timeoutMs);
-            byte[] request = encodeRequest(point.request());
             OutputStream out = socket.getOutputStream();
             out.write(request);
             out.flush();
-            String raw = readResponse(socket.getInputStream());
-            return toRecord(raw, point);
+            return FlexResponseReader.read(
+                    socket.getInputStream(), readMode, readUntilDelimiter, readMaxBytes, timeoutMs);
         }
     }
 
-    private DataRecord exchangeUdp(FlexiblePoint point) throws IOException {
+    private byte[] exchangeUdpBytes(byte[] request) throws IOException {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(timeoutMs);
-            byte[] request = encodeRequest(point.request());
             DatagramPacket send = new DatagramPacket(
                     request, request.length,
                     InetSocketAddress.createUnresolved(host, port));
             socket.send(send);
-            byte[] buffer = new byte[4096];
+            byte[] buffer = new byte[readMaxBytes];
             DatagramPacket receive = new DatagramPacket(buffer, buffer.length);
             try {
                 socket.receive(receive);
             } catch (SocketTimeoutException e) {
-                return toRecord("", point);
+                return new byte[0];
             }
-            String raw = decodeResponse(buffer, receive.getLength());
-            return toRecord(raw, point);
+            byte[] frame = new byte[receive.getLength()];
+            System.arraycopy(buffer, 0, frame, 0, receive.getLength());
+            return frame;
         }
     }
 
-    private DataRecord toRecord(String raw, FlexiblePoint point) {
+    private DataRecord toLegacyRecord(String raw, FlexiblePoint point) {
         String value = raw;
         if (point.responseRegex() != null) {
             Matcher matcher = point.responseRegex().matcher(raw);
@@ -179,43 +253,21 @@ public class FlexibleDeviceDriver implements DeviceDriver {
         ));
     }
 
-    private byte[] encodeRequest(String request) {
+    private byte[] encodeLegacyRequest(String request) {
         if ("hex".equals(encoding)) {
             return hexToBytes(request.replaceAll("\\s+", ""));
+        }
+        if ("escapes".equals(encoding)) {
+            return FlexTemplate.render(request, configuration);
         }
         return request.getBytes(StandardCharsets.UTF_8);
     }
 
-    private String decodeResponse(byte[] buffer, int length) {
+    private String decodeLegacyResponse(byte[] frame) {
         if ("hex".equals(encoding)) {
-            return bytesToHex(buffer, length);
+            return bytesToHex(frame, frame.length);
         }
-        return new String(buffer, 0, length, StandardCharsets.UTF_8);
-    }
-
-    private static String readResponse(InputStream in) throws IOException {
-        byte[] buffer = new byte[4096];
-        int total = 0;
-        long deadline = System.currentTimeMillis() + 5000;
-        while (System.currentTimeMillis() < deadline) {
-            while (in.available() > 0 && total < buffer.length) {
-                int read = in.read(buffer, total, buffer.length - total);
-                if (read < 0) {
-                    break;
-                }
-                total += read;
-            }
-            if (total > 0 && in.available() == 0) {
-                break;
-            }
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-        return new String(buffer, 0, total, StandardCharsets.UTF_8);
+        return FlexTemplate.asPrintable(frame);
     }
 
     static byte[] hexToBytes(String hex) {

@@ -505,9 +505,52 @@ Point mapping: `feed` — последняя строка/буфер.
 
 ### flexible (`ispf-driver-flexible`)
 
-Универсальный TCP/UDP. Конфиг: `protocol`, `host`, `port`, `encoding` (`hex`|`utf8`), `timeoutMs`.
+Универсальный TCP/UDP. Версия **0.2.0** — legacy-режим и **exchange pipeline** для framed request/response.
 
-Point mapping: `request[:responseRegex]` — отправка и опциональный regex capture.
+#### Legacy (без изменений)
+
+Конфиг: `protocol`, `host`, `port`, `encoding` (`hex`|`utf8`|`escapes`), `timeoutMs`.
+
+Point mapping: `request[:responseRegex]` — отправка и опциональный regex capture group 1.
+
+#### Exchange pipeline
+
+Для ASCII/фреймовых протоколов (SOH/ETX, optional checksum, structured extractors). Типичный случай — **serial computer format over TCP**: ASCII function code + ASCII-hex floats; checksum на проводе часто **не проверяют** (`checksumAlgorithm: none`), т.к. TCP уже обеспечивает транспорт.
+
+Конфиг device:
+
+| Ключ | Значение | Описание |
+|------|----------|----------|
+| `readMode` | `idle` (default) \| `delimiter` | `idle` — читать пока буфер пуст; `delimiter` — до байта `readUntilHex` |
+| `readUntilHex` | `03` | терминатор (hex), при `readMode=delimiter` |
+| `readMaxBytes` | `8192` | лимит ответа |
+| `checksumAlgorithm` | `none` \| `sum16-complement-hex` | `none` — типично для serial-over-TCP; `sum16-complement-hex` — если шлюз требует проверку |
+| `checksumMarker` | `&&` | маркер перед checksum |
+| `checksumLength` | `4` | длина checksum (hex-символы) |
+| произвольные ключи | | подстановка в `${key}` шаблонах запроса |
+
+Point mapping (pipeline):
+
+```
+req:{template}|var:{k}={v}|verifyChecksum|extract:{type}:{args}
+```
+
+| Сегмент | Пример |
+|---------|--------|
+| `req:` | `\x01${securityCode}i20101` — `\xHH` escapes, `${var}` из config/point |
+| `var:` | `tank=01` — per-point переменные |
+| `verifyChecksum` | явная проверка (или auto при `checksumAlgorithm`) |
+| `extract:regex:{pattern}:{group}` | regex capture |
+| `extract:asciiHexFloat:{index}` | N-й 8-nibble IEEE float в payload |
+| `extract:asciiHexFloat:{index}:after:{marker}` | floats после ASCII-маркера |
+| `extract:slice:{start}:{len}` | подстрока |
+| `extract:literal:{text}` | константа |
+
+Points с одинаковым resolved `req:` **группируются** — один TCP/UDP exchange на poll.
+
+Пример (ASCII serial-over-TCP, без checksum): [examples/framed-serial-tcp](../examples/framed-serial-tcp/README.md).
+
+Response schema: `value`, `raw`, `bytesRead` (STRING/STRING/INTEGER).
 
 ### mbus (`ispf-driver-mbus`)
 
