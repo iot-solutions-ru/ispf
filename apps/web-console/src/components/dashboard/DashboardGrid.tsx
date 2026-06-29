@@ -3,6 +3,13 @@ import { useTranslation } from "react-i18next";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
 import { mergeWidgetLayout } from "../../types/dashboard";
 import renderDashboardWidget from "./renderDashboardWidget";
+import {
+  isWidgetVisible,
+  resolveWidgetZIndex,
+  sortWidgetsForRender,
+} from "./widgetLayerUtils";
+
+const SELECTED_Z_BOOST = 10_000;
 
 const GRID_MARGIN: [number, number] = [12, 12];
 const DRAG_CANCEL_SELECTOR =
@@ -197,6 +204,14 @@ export default function DashboardGrid({
 
   const height = canvasHeight(layout.widgets, metrics);
 
+  const renderWidgets = useMemo(() => {
+    const sorted = sortWidgetsForRender(layout.widgets);
+    if (editable) {
+      return sorted;
+    }
+    return sorted.filter(isWidgetVisible);
+  }, [editable, layout.widgets]);
+
   return (
     <div
       ref={containerRef}
@@ -207,17 +222,22 @@ export default function DashboardGrid({
         className="dashboard-grid-canvas"
         style={{ height }}
       >
-        {layout.widgets.map((widget) => {
+        {renderWidgets.map((widget) => {
+          const widgetIndex = layout.widgets.findIndex((item) => item.id === widget.id);
           const rect = itemRect(widget, metrics);
+          const baseZ = resolveWidgetZIndex(widget, widgetIndex >= 0 ? widgetIndex : 0);
+          const isSelected = selectedWidgetId === widget.id;
+          const hiddenInEditor = editable && !isWidgetVisible(widget);
           return (
             <div
               key={widget.id}
-              className={`dashboard-grid-item ${selectedWidgetId === widget.id ? "selected" : ""}`}
+              className={`dashboard-grid-item${isSelected ? " selected" : ""}${hiddenInEditor ? " dashboard-grid-item--hidden" : ""}`}
               style={{
                 left: rect.left,
                 top: rect.top,
                 width: rect.width,
                 height: rect.height,
+                zIndex: baseZ + (editable && isSelected ? SELECTED_Z_BOOST : 0),
               }}
               onMouseDown={(event) => {
                 if (!editable) return;

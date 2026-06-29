@@ -9,22 +9,32 @@ import {
   WidgetTypeSpecificFields,
 } from "./widgetEditorFields";
 import { WidgetStylesEditor } from "./widgetEditorStructured";
+import {
+  bringWidgetForward,
+  bringWidgetToFront,
+  sendWidgetBackward,
+  sendWidgetToBack,
+} from "./widgetLayerUtils";
 
 interface WidgetEditorPanelProps {
   widget: DashboardWidget | null;
+  widgets: DashboardWidget[];
   objects: Array<{ path: string; displayName: string; variableNames: string[] }>;
   dashboards?: Array<{ path: string; displayName: string }>;
   reports?: Array<{ path: string; displayName: string }>;
   onChange: (widget: DashboardWidget) => void;
+  onWidgetsChange: (widgets: DashboardWidget[]) => void;
   onDelete: () => void;
 }
 
 export default function WidgetEditorPanel({
   widget,
+  widgets,
   objects,
   dashboards = [],
   reports = [],
   onChange,
+  onWidgetsChange,
   onDelete,
 }: WidgetEditorPanelProps) {
   const { t } = useTranslation(["dashboard", "widgets", "common"]);
@@ -94,6 +104,8 @@ export default function WidgetEditorPanel({
                   y: widget.y,
                   w: widget.w,
                   h: widget.h,
+                  zIndex: widget.zIndex,
+                  visible: widget.visible,
                 });
               }}
             >
@@ -143,6 +155,59 @@ export default function WidgetEditorPanel({
             />
           </label>
           <p className="hint full">{t("editor.layoutHint")}</p>
+
+          <h5 className="widget-editor-section">{t("editor.layerTitle")}</h5>
+          <label className="widget-layer-visible">
+            <input
+              type="checkbox"
+              checked={widget.visible !== false}
+              onChange={(e) => update({ visible: e.target.checked })}
+            />
+            <span>{t("editor.layerVisible")}</span>
+          </label>
+          <label>
+            <span className="field-caption">{t("editor.layerZIndex")}</span>
+            <input
+              type="number"
+              value={widget.zIndex ?? ""}
+              placeholder={t("editor.layerZIndexAuto")}
+              onChange={(e) => {
+                const raw = e.target.value.trim();
+                update({ zIndex: raw === "" ? undefined : Number(raw) });
+              }}
+            />
+          </label>
+          <div className="widget-layer-actions full">
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => onWidgetsChange(sendWidgetBackward(widgets, widget.id))}
+            >
+              {t("editor.layerBackward")}
+            </button>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => onWidgetsChange(bringWidgetForward(widgets, widget.id))}
+            >
+              {t("editor.layerForward")}
+            </button>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => onWidgetsChange(sendWidgetToBack(widgets, widget.id))}
+            >
+              {t("editor.layerToBack")}
+            </button>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => onWidgetsChange(bringWidgetToFront(widgets, widget.id))}
+            >
+              {t("editor.layerToFront")}
+            </button>
+          </div>
+          <p className="hint full">{t("editor.layerHint")}</p>
         </FieldPairs>
 
         <WidgetDataSourceFields {...fieldCtx} />

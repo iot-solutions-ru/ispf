@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISPF — IoT Solutions Platform Framework · IoT · SCADA · MES</title>
+  <meta name="description" content="IoT Solutions Platform Framework (ISPF) — единая платформа IoT, SCADA и MES: 58 драйверов, HMI, historian, BPMN, bundle deploy. Энергетика, нефтегаз, производство." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg-elevated: #121820;
+      --bg-card: #161d27;
+      --surface: #1c2430;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.14);
+      --text: #eef2f7;
+      --text-muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --accent-glow: rgba(59, 130, 246, 0.35);
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --cyan: #06b6d4;
+      --purple: #a855f7;
+      --purple-soft: rgba(168, 85, 247, 0.14);
+      --purple-glow: rgba(168, 85, 247, 0.28);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --ease: cubic-bezier(0.2, 0, 0, 1);
+      --max: 1180px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 20%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    .glow {
+      position: fixed; width: 600px; height: 600px; border-radius: 50%;
+      filter: blur(120px); opacity: 0.18; pointer-events: none; z-index: 0;
+    }
+    .glow-1 { top: -200px; left: -100px; background: var(--accent); }
+    .glow-2 { top: 40%; right: -200px; background: var(--cyan); opacity: 0.12; }
+    .glow-3 { top: 55%; left: 30%; background: var(--purple); opacity: 0.14; width: 480px; height: 480px; }
+
+    .section-label.ai { color: var(--purple); }
+    .badge.ai {
+      background: var(--purple-soft);
+      border-color: rgba(168, 85, 247, 0.35);
+      color: #d8b4fe;
+    }
+
+
+    .platform-section {
+      padding: 100px 0;
+      background: linear-gradient(180deg, rgba(59,130,246,0.07) 0%, transparent 55%);
+      border-bottom: 1px solid var(--border);
+    }
+    .platform-triad {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px;
+    }
+    .platform-card {
+      padding: 28px; border-radius: var(--radius-lg); border: 1px solid var(--border);
+      background: var(--bg-card); transition: border-color 0.25s var(--ease), transform 0.25s var(--ease);
+    }
+    .platform-card:hover { border-color: rgba(59,130,246,0.4); transform: translateY(-2px); }
+    .platform-card .tag {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--cyan); margin-bottom: 12px; display: block;
+    }
+    .platform-card h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; }
+    .platform-card p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px; }
+    .platform-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .platform-card li { font-size: 0.82rem; color: var(--text-muted); padding-left: 14px; position: relative; }
+    .platform-card li::before { content: "•"; position: absolute; left: 0; color: var(--accent); }
+    .section-label.industrial { color: var(--cyan); }
+
+    .ai-section {
+      padding: 100px 0;
+      background: linear-gradient(180deg, rgba(168,85,247,0.06) 0%, transparent 45%);
+      border-top: 1px solid rgba(168, 85, 247, 0.12);
+      border-bottom: 1px solid rgba(168, 85, 247, 0.12);
+    }
+
+    .ai-dual {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 72px;
+    }
+    .ai-pillar {
+      padding: 28px; border-radius: var(--radius-lg);
+      border: 1px solid var(--border); background: var(--bg-card);
+      transition: border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+    .ai-pillar:hover {
+      border-color: rgba(168, 85, 247, 0.35);
+      box-shadow: 0 0 48px var(--purple-glow);
+    }
+    .ai-pillar-tag {
+      display: inline-block; font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+    }
+    .ai-pillar-tag.dev { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .ai-pillar-tag.op { background: var(--purple-soft); color: #d8b4fe; }
+    .ai-pillar h3 { font-size: 1.25rem; font-weight: 800; margin-bottom: 10px; letter-spacing: -0.02em; }
+    .ai-pillar p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
+    .ai-pillar ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .ai-pillar li {
+      font-size: 0.84rem; color: var(--text-muted); padding-left: 16px; position: relative;
+    }
+    .ai-pillar li::before {
+      content: "→"; position: absolute; left: 0; color: var(--purple); font-weight: 700;
+    }
+
+    .ai-flow {
+      display: flex; align-items: stretch; gap: 0; margin: 48px 0 72px;
+      border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
+    }
+    .ai-flow-step {
+      flex: 1; padding: 20px 16px; text-align: center; background: var(--bg-card);
+      border-right: 1px solid var(--border);
+    }
+    .ai-flow-step:last-child { border-right: none; }
+    .ai-flow-step strong { display: block; font-size: 0.82rem; margin-bottom: 4px; }
+    .ai-flow-step span { font-size: 0.75rem; color: var(--text-muted); }
+    .ai-flow-arrow {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 6px; color: var(--purple); font-size: 1.1rem; background: var(--surface);
+    }
+
+    .screenshot-frame.ai-frame {
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 24px 80px rgba(0,0,0,0.5), 0 0 72px var(--purple-glow);
+    }
+
+    a { color: var(--accent); text-decoration: none; transition: color 0.2s var(--ease); }
+    a:hover { color: #60a5fa; }
+    .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(16px);
+      background: rgba(10, 14, 20, 0.82);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; color: var(--text); }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      display: grid; place-items: center; font-size: 0.7rem; font-weight: 800;
+    }
+    .nav-links { display: flex; gap: 28px; list-style: none; }
+    .nav-links a { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { display: flex; gap: 10px; align-items: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
+      border: 1px solid var(--border-strong); background: var(--surface); color: var(--text);
+      cursor: pointer; transition: transform 0.15s var(--ease), background 0.2s var(--ease);
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #2563eb; color: #fff; }
+    .btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+    .btn-ghost:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+    .hero { padding: 80px 0 60px; }
+    .hero-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 48px; align-items: center; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px;
+      background: var(--accent-soft); border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #93c5fd; font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .hero h1 {
+      font-size: clamp(2.2rem, 4.5vw, 3.4rem); font-weight: 800;
+      line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance; margin-bottom: 20px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #60a5fa, #22d3ee);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-lead { font-size: 1.15rem; color: var(--text-muted); max-width: 520px; margin-bottom: 32px; text-wrap: pretty; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
+    .hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
+    .stat-item strong { display: block; font-size: 1.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-item span { font-size: 0.82rem; color: var(--text-muted); }
+
+    .screenshot-frame {
+      border-radius: var(--radius-lg); border: 1px solid var(--border-strong);
+      background: var(--bg-elevated); overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 24px 80px rgba(0,0,0,0.5), 0 0 60px var(--accent-glow);
+    }
+    .screenshot-chrome {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border);
+    }
+    .chrome-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .chrome-dot.r { background: #ff5f57; }
+    .chrome-dot.y { background: #febc2e; }
+    .chrome-dot.g { background: #28c840; }
+    .chrome-url {
+      flex: 1; margin-left: 8px; padding: 4px 12px; border-radius: 6px;
+      background: rgba(0,0,0,0.3); font-size: 0.72rem; color: var(--text-muted);
+      font-family: ui-monospace, monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .screenshot-body { line-height: 0; background: #0d1117; }
+    .screenshot-body img {
+      display: block; width: 100%; height: auto;
+      outline: 1px solid rgba(255, 255, 255, 0.06);
+      outline-offset: -1px;
+    }
+    .screenshot-caption {
+      padding: 10px 16px; font-size: 0.78rem; color: var(--text-muted);
+      border-top: 1px solid var(--border); background: var(--bg-card);
+    }
+
+    .stats-bar {
+      padding: 40px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+    .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 24px; text-align: center; }
+    .stats-grid .num { font-size: 2rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+    .stats-grid .lbl { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+    section { padding: 100px 0; }
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--accent); margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800;
+      letter-spacing: -0.02em; text-wrap: balance; margin-bottom: 16px;
+    }
+    .section-desc { font-size: 1.05rem; color: var(--text-muted); max-width: 640px; margin-bottom: 48px; text-wrap: pretty; }
+
+    .feature-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 56px;
+      align-items: center; margin-bottom: 100px;
+    }
+    .feature-row.reverse { direction: rtl; }
+    .feature-row.reverse > * { direction: ltr; }
+    .feature-row:last-child { margin-bottom: 0; }
+
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+    .feature-list li { display: flex; gap: 14px; align-items: flex-start; }
+    .feature-check {
+      flex-shrink: 0; width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(34, 197, 94, 0.15); color: var(--success);
+      display: grid; place-items: center; font-size: 0.75rem; font-weight: 700; margin-top: 2px;
+    }
+    .feature-list strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+    .feature-list span { font-size: 0.88rem; color: var(--text-muted); }
+    .section-desc code, .hero-lead code {
+      font-family: ui-monospace, monospace; font-size: 0.88em;
+      color: #93c5fd; background: rgba(59,130,246,0.1); padding: 1px 6px; border-radius: 4px;
+    }
+
+    .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 28px; transition: border-color 0.25s var(--ease), transform 0.25s var(--ease);
+    }
+    .card:hover { border-color: rgba(59,130,246,0.35); transform: translateY(-2px); }
+    .card-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 1.2rem; margin-bottom: 16px;
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 0.88rem; color: var(--text-muted); }
+
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+    .compare-col { border-radius: var(--radius); padding: 28px; border: 1px solid var(--border); }
+    .compare-col.bad { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.2); }
+    .compare-col.good { background: rgba(34,197,94,0.04); border-color: rgba(34,197,94,0.2); }
+    .compare-col h3 { font-size: 1rem; margin-bottom: 16px; }
+    .compare-col.bad h3 { color: #fca5a5; }
+    .compare-col.good h3 { color: #86efac; }
+    .compare-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .compare-col li { font-size: 0.88rem; color: var(--text-muted); padding-left: 20px; position: relative; }
+    .compare-col.bad li::before { content: "✕"; position: absolute; left: 0; color: var(--danger); }
+    .compare-col.good li::before { content: "✓"; position: absolute; left: 0; color: var(--success); font-weight: 700; }
+
+    .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 48px; }
+    .gallery .screenshot-frame { box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 16px 48px rgba(0,0,0,0.4); }
+
+    .stack-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+    .stack-tag {
+      padding: 8px 16px; border-radius: 8px; background: var(--surface);
+      border: 1px solid var(--border); font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
+    }
+
+    .cta { padding: 80px 0; }
+    .cta-box {
+      text-align: center; padding: 64px 40px; border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(6,182,212,0.08));
+      border: 1px solid rgba(59, 130, 246, 0.28);
+    }
+    .cta-box h2 { font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; text-wrap: balance; }
+    .cta-box p { color: var(--text-muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto 32px; }
+    .cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    footer {
+      padding: 40px 0; border-top: 1px solid var(--border);
+      text-align: center; color: var(--text-muted); font-size: 0.82rem;
+    }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 960px) {
+      .hero-grid, .feature-row, .compare, .gallery, .ai-dual, .platform-triad { grid-template-columns: 1fr; }
+      .ai-flow { flex-direction: column; }
+      .ai-flow-step { border-right: none; border-bottom: 1px solid var(--border); }
+      .ai-flow-arrow { padding: 8px; transform: rotate(90deg); }
+      .feature-row.reverse { direction: ltr; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+      .cards-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 600px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero { padding: 48px 0 40px; }
+      section { padding: 64px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+
+  <nav>
+    <div class="wrap nav-inner">
+      <div class="logo"><div class="logo-mark">IS</div>ISPF</div>
+      <ul class="nav-links">
+        <li><a href="#platform">IoT · SCADA · MES</a></li>
+        <li><a href="#features">Возможности</a></li>
+        <li><a href="#screenshots">Интерфейс</a></li>
+        <li><a href="#ai">ИИ</a></li>
+        <li><a href="#stack">Стек</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a class="btn btn-ghost" href="https://ispf.iot-solutions.ru" target="_blank" rel="noopener">Демо</a>
+        <a class="btn btn-primary" href="#cta">Начать</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div class="reveal">
+        <div class="badge"><span class="badge-dot"></span> IoT · SCADA · MES · Production v0.9.41</div>
+        <h1>Единая платформа<br><em>IoT, SCADA и MES</em></h1>
+        <p class="hero-lead">
+          Сбор данных с поля, operator HMI, historian, алерты и производственные процессы —
+          вокруг одного дерева объектов. Энергетика, нефтегаз, дискретное производство:
+          от датчика Modbus до MES-отчёта без зоопарка OPC, historian и отдельного MES.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://ispf.iot-solutions.ru" target="_blank" rel="noopener">Открыть демо-стенд →</a>
+          <a class="btn" href="#platform">IoT · SCADA · MES</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat-item"><strong>58</strong><span>протокольных драйверов</span></div>
+          <div class="stat-item"><strong>Historian</strong><span>TimescaleDB · CSV export</span></div>
+          <div class="stat-item"><strong>MES</strong><span>bundle deploy · SQL reports</span></div>
+        </div>
+      </div>
+
+      <figure class="screenshot-frame reveal">
+        <div class="screenshot-chrome">
+          <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+          <span class="chrome-url">ispf.iot-solutions.ru · SNMP Host Monitoring</span>
+        </div>
+        <div class="screenshot-body">
+          <img src="assets/screenshots/hero-dashboard.png" alt="SCADA дашборд SNMP Host Monitoring: CPU, память, сеть" width="1920" height="1080" />
+        </div>
+        <figcaption class="screenshot-caption">SCADA-мониторинг: CPU, MEM, NET · historian · live charts</figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="wrap">
+      <div class="stats-grid reveal">
+        <div><div class="num">IoT</div><div class="lbl">58 драйверов · MQTT · OPC UA</div></div>
+        <div><div class="num">SCADA</div><div class="lbl">HMI · historian · алерты</div></div>
+        <div><div class="num">MES</div><div class="lbl">Bundle · отчёты · workflow</div></div>
+        <div><div class="num">58</div><div class="lbl">Device drivers</div></div>
+        <div><div class="num">40+</div><div class="lbl">HMI-виджетов</div></div>
+        <div><div class="num">BPMN</div><div class="lbl">Work queue · user tasks</div></div>
+      </div>
+    </div>
+  </div>
+
+  <section id="platform" class="platform-section">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label industrial">IoT · SCADA · MES</div>
+        <h2 class="section-title">Три уровня автоматизации — один продукт</h2>
+        <p class="section-desc">
+          Классический проект: OPC-сервер + historian + SCADA + MES + интеграция.
+          ISPF закрывает весь стек declarative-конфигурацией на дереве объектов —
+          от полевого уровня до производственных отчётов и operator HMI.
+        </p>
+      </div>
+      <div class="platform-triad reveal">
+        <div class="platform-card">
+          <span class="tag">IoT · полевой уровень</span>
+          <h3>Подключение и нормализация данных</h3>
+          <p>Modbus, OPC UA, SNMP, MQTT, JDBC, Kafka — 58 драйверов. Auto-provisioning, virtual profiles, CEL-bindings.</p>
+          <ul>
+            <li>MQTT Meter Bus · auto-create instances</li>
+            <li>Per-object ACL и federation bind</li>
+            <li>WebSocket live-updates переменных</li>
+          </ul>
+        </div>
+        <div class="platform-card">
+          <span class="tag">SCADA · оперативный контур</span>
+          <h3>Мониторинг, HMI и управление</h3>
+          <p>Dashboard builder, operator shell, alarm rules, correlators, SLD, map, network graph, historian.</p>
+          <ul>
+            <li>Мини-ТЭЦ: ГПУ, ГРПБ, РУМБ, ДГУ</li>
+            <li>SNMP / IT + промышленные объекты</li>
+            <li>Work queue · журнал событий · alarm bar</li>
+          </ul>
+        </div>
+        <div class="platform-card">
+          <span class="tag">MES · производственный слой</span>
+          <h3>Учёт, процессы и отчёты</h3>
+          <p>Application platform: bundle deploy, SQL-отчёты, BPMN, JSON-функции, scheduler — без Java в ядре.</p>
+          <ul>
+            <li>warehouse-app · mes-reference · mini-tec</li>
+            <li>User tasks и эскалация в BPMN</li>
+            <li>Operator reports · Excel export</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="features">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label">Почему ISPF</div>
+        <h2 class="section-title">SCADA/MES без зоопарка модулей</h2>
+        <p class="section-desc">
+          OPC-сервер, historian, HMI, workflow и MES-логика — узлы одного дерева объектов
+          с единым REST/WebSocket API. Reference apps: энергетика (mini-tec), склад (warehouse), MES.
+        </p>
+      </div>
+
+      <div class="compare reveal">
+        <div class="compare-col bad">
+          <h3>Классический подход</h3>
+          <ul>
+            <li>OPC + historian + SCADA + MES — отдельные вендоры</li>
+            <li>Интеграция поля и учёта — ручной ETL и скрипты</li>
+            <li>Кастомизация = месяцы Java и интеграторы</li>
+            <li>HMI, алерты и workflow — разные миры</li>
+            <li>Vendor lock-in на каждом уровне</li>
+          </ul>
+        </div>
+        <div class="compare-col good">
+          <h3>ISPF</h3>
+          <ul>
+            <li>IoT + SCADA + MES на одном object tree</li>
+            <li>58 драйверов: Modbus, OPC UA, MQTT, SNMP…</li>
+            <li>Historian, алерты, BPMN — без отдельных серверов</li>
+            <li>Alert rules, correlators и workflow — узлы дерева</li>
+            <li>AGPL ядро + коммерческие bundle и driver packs</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cards-grid reveal" style="margin-top:64px">
+        <div class="card">
+          <div class="card-icon" style="background:rgba(6,182,212,0.15);color:#22d3ee">⚡</div>
+          <h3>IoT · 58 драйверов</h3>
+          <p>Modbus, OPC UA, SNMP, MQTT, JDBC, Kafka — полевой уровень без Java в ядре.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">◈</div>
+          <h3>SCADA · HMI + historian</h3>
+          <p>40+ виджетов, operator shell, CEL alert rules, correlators, TimescaleDB historian.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(34,197,94,0.15);color:#4ade80">▣</div>
+          <h3>MES · Application Platform</h3>
+          <p>Bundle deploy, SQL-отчёты, BPMN, work queue, JSON-функции — declarative MES.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">⬡</div>
+          <h3>Дерево объектов</h3>
+          <p>Устройство, дашборд, workflow, alert и приложение — единая модель данных.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(245,158,11,0.15);color:#fbbf24">⟳</div>
+          <h3>BPMN + Work Queue</h3>
+          <p>User tasks для оператора, service tasks, CEL-шлюзы, эскалация без кода.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(239,68,68,0.15);color:#f87171">◎</div>
+          <h3>Федерация</h3>
+          <p>Edge + hub, catalog sync, bind overlay — распределённые площадки.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screenshots">
+    <div class="wrap">
+      <div class="feature-row reveal">
+        <div>
+          <div class="section-label">SCADA · Object Tree</div>
+          <h2 class="section-title">Центр вселенной — иерархическое дерево объектов</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Устройства, модели, дашборды и приложения — в единой иерархии с типизированными
+            переменными, событиями, функциями и auto-provisioning через MQTT.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>MQTT auto-provisioning</strong><span>Автосоздание экземпляров из JSON-пayload</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>CEL-привязки</strong><span>Google CEL для вычисляемых переменных и условий</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Variable historian</strong><span>TimescaleDB, экспорт, агрегации на графиках</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Per-object ACL</strong><span>Гранулярные права на уровне объекта</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Explorer · mqtt-meter-bus</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/explorer-object-tree.png" alt="Обозреватель объектов: MQTT Meter Bus с auto-provisioning" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">MQTT Meter Bus · auto-creates Meters from JSON payloads</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reverse reveal">
+        <div>
+          <div class="section-label">SCADA · HMI Builder</div>
+          <h2 class="section-title">HMI любой сложности — drag-and-drop</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            40+ виджетов: графики, gauge, network graph, spreadsheet, map, SLD.
+            Дорабатывайте экраны, созданные ИИ-студией, в visual editor.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Network Graph</strong><span>Топология ПЛК → шлюз → датчики на одном экране</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Spreadsheet widget</strong><span>Таблицы с формулами прямо на дашборде</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>JSON-редактор</strong><span>Layout как код для power users</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>selectionKey</strong><span>Динамическая привязка виджетов к строке таблицы</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Dashboard Builder · spreadsheet</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/dashboard-builder.png" alt="Редактор дашборда: chart, network graph, spreadsheet" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Chart · Network Graph · Spreadsheet · Navigation — на одном экране</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reveal">
+        <div>
+          <div class="section-label">MES · BPMN</div>
+          <h2 class="section-title">Автоматизация процессов без программирования</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            BPMN 2.0 редактор с live-логами, user tasks в work queue, CEL-шлюзы
+            и alert rules — всё как узлы дерева объектов.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>User tasks → Work Queue</strong><span>Claim/complete прямо из operator sidebar</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Service tasks</strong><span>fire_event, read_variable, start_workflow</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Live execution log</strong><span>Отладка процесса в реальном времени</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Diagram + XML</strong><span>Визуальный редактор и исходный BPMN</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Workflow · demo-alarm-handler</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/bpmn-workflow.png" alt="BPMN редактор Demo Alarm Handler с live-логами" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Demo Alarm Handler · активен · BPMN.io + execution log</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reverse reveal">
+        <div>
+          <div class="section-label">SCADA · Alert Rules</div>
+          <h2 class="section-title">CEL-алерты с webhook и email из коробки</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Правила алерта — узлы дерева. CEL-условие на переменную → событие →
+            webhook, email, workflow. Edge trigger и federation bind.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>CEL validation</strong><span>Кнопка «Проверить CEL» перед сохранением</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Webhook + Email</strong><span>Интеграция с PagerDuty, Slack, почтой</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Отраслевые правила</strong><span>GPU overload, gas leak, fire — из коробки в mini-tec</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Event correlators</strong><span>COUNT, SEQUENCE, EVENT_CHAIN → workflow</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Alert Rule · mini-tec-gpu-overload</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/alert-automation.png" alt="Правило алерта Mini-TEC GPU overload на CEL" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Mini-TEC GPU overload · CEL · webhook · email</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <div class="wrap">
+      <div class="feature-row reverse reveal">
+        <div>
+          <div class="section-label">Federation</div>
+          <h2 class="section-title">Распределённая архитектура из коробки</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Peer registry, catalog sync, federation bind и outbound tunnel —
+            edge-узлы за NAT подключаются к public hub без изменения object path.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Peer registry</strong><span>CRUD удалённых ISPF-инстансов</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Catalog sync</strong><span>Bulk-импорт remote object list</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Federation bind</strong><span>Remote overlay на локальный path</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Outbound tunnel</strong><span>WebSocket NAT edge → public hub</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Federation · peer registry</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/federation.png" alt="Панель федерации: peer registry, tokens, tunnel" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Федерация · узлы · токены · туннель · проверка</figcaption>
+        </figure>
+      </div>
+
+      <div class="cards-grid reveal" style="margin-top:80px">
+        <div class="card"><h3>MES Functions</h3><p>JSON script runtime: setVar, when/if, INVOKE_FUNCTION — бизнес-логика без Java в server.</p></div>
+        <div class="card"><h3>SQL Reports</h3><p>Отчёты на SQL с параметрами, экспорт из operator shell.</p></div>
+        <div class="card"><h3>BFF Gateway</h3><p>POST /bff/invoke — единая точка для UI без hardcoded routes.</p></div>
+      </div>
+    </div>
+  </section>
+
+  
+
+
+
+  <section id="ai"  class="ai-section">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label ai">ИИ-слой · дополнительно</div>
+        <h2 class="section-title">ИИ ускоряет внедрение SCADA и MES</h2>
+        <p class="section-desc">
+          ИИ-студия ускоряет настройку IoT/SCADA (устройства, дашборды, bundle).
+          ИИ-агент на operator HMI помогает с отчётами и регламентами — поверх готового MES/HMI.
+        </p>
+      </div>
+
+      <div class="ai-dual reveal">
+        <div class="ai-pillar">
+          <span class="ai-pillar-tag dev">Для администратора · ИИ-студия</span>
+          <h3>Tree-first agent</h3>
+          <p>Опишите задачу обычным языком — агент выполняет шаги на платформе: создаёт устройства, дашборды, alert rules, публикует bundle.</p>
+          <ul>
+            <li>Агент · Пакет bundle · Настройки</li>
+            <li>Validate → dry-run → publish</li>
+            <li>OpenAI, Ollama, любой compatible API</li>
+            <li>Фоновое выполнение + MCP для Cursor</li>
+          </ul>
+        </div>
+        <div class="ai-pillar">
+          <span class="ai-pillar-tag op">Для оператора · ИИ-агент приложения</span>
+          <h3>Контекстный помощник на HMI</h3>
+          <p>Чат поверх operator shell: отчёты, дашборды, тренды, память сессии — с инструкциями и техдокументацией вашего приложения.</p>
+          <ul>
+            <li>База знаний: MD, TXT, CSV, JSON, YAML</li>
+            <li>Agent instructions под отрасль</li>
+            <li>Запуск отчётов и переход на экраны</li>
+            <li>Настраивается в Operator Apps</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="ai-flow reveal">
+        <div class="ai-flow-step"><strong>IoT</strong><span>Драйвер · device · variables</span></div>
+        <div class="ai-flow-arrow">→</div>
+        <div class="ai-flow-step"><strong>SCADA</strong><span>Dashboard · alerts · historian</span></div>
+        <div class="ai-flow-arrow">→</div>
+        <div class="ai-flow-step"><strong>MES</strong><span>Reports · BPMN · functions</span></div>
+        <div class="ai-flow-arrow">→</div>
+        <div class="ai-flow-step"><strong>+ ИИ</strong><span>Студия · operator agent</span></div>
+      </div>
+
+      <div class="feature-row reveal">
+        <div>
+          <div class="section-label ai">ИИ-студия</div>
+          <h2 class="section-title">«Создай SNMP localhost и дашборд CPU/RAM/сеть» — и готово</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Tree-first агент работает на живом object tree: создаёт <code>snmp-localhost</code>,
+            настраивает метрики, собирает HMI — с прозрачным логом шагов и ссылками «Открыть устройство».
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Мультичат</strong><span>Контекст сохраняется между вкладками и перезагрузкой</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Bundle generate</strong><span>Промпт → JSON manifest → validate → publish</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Platform tools</strong><span>Драйверы, BFF, workflow, correlators, federation</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Context Pack</strong><span>58 драйверов, widget types, reference apps в промпте</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame ai-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">ИИ-студия → snmp-host-monitoring</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/hero-dashboard.png" alt="Дашборд SNMP Host Monitoring, созданный через ИИ-студию" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Результат агента: SNMP Host Monitoring · CPU · MEM · NET I/O</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reverse reveal">
+        <div>
+          <div class="section-label ai">ИИ-агент · runtime</div>
+          <h2 class="section-title">Оператор спрашивает — агент действует</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            На HMI Мини-ТЭЦ оператор пишет «Запусти сменный отчёт» — агент находит нужный SQL-отчёт,
+            предлагает кнопку запуска и объясняет цифры станционной сводки на русском языке.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Natural language</strong><span>Отчёты, тренды, аварии — без меню и поиска</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>App-scoped tools</strong><span>list_reports, open_dashboard, invoke_bff</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Live progress</strong><span>WebSocket шагов агента в drawer</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Session memory</strong><span>Контекст диалога в рамках смены</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame ai-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Operator · ИИ-помощник · mini-tec</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/operator-hmi.png" alt="ИИ-помощник оператора на HMI Мини-ТЭЦ" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Станционная сводка + чат агента · Daily Energy Log</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reveal">
+        <div>
+          <div class="section-label ai">ИИ-агент · настройка</div>
+          <h2 class="section-title">База знаний и инструкции — без кода</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            В Operator Apps загрузите СОП, README, регламенты. Задайте системный промпт:
+            «Отвечай по-русски, знаешь всё о ТЭЦ, будь вежлив» — агент станет экспертом вашей площадки.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Knowledge base upload</strong><span>Техдокументация до 2 MB на файл</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Agent instructions</strong><span>Тон, язык, приоритеты безопасности</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Per-app isolation</strong><span>Свой агент у каждого operator app</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>RAG на документах</strong><span>Ответы с опорой на ваши файлы</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame ai-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Operator Apps · База знаний ИИ</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/ai-agent.png" alt="Настройка базы знаний ИИ для operator app Мини-ТЭЦ" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Мини-ТЭЦ · instructions · README.md в knowledge base</figcaption>
+        </figure>
+      </div>
+
+      <div class="gallery reveal">
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Bundle generate · validate · publish</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/dashboard-builder.png" alt="Dashboard Builder — результат работы ИИ-студии и ручной доработки" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">ИИ-студия + builder: chart, network graph, spreadsheet</figcaption>
+        </figure>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Application · mini-tec · rev.62</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/application-deploy.png" alt="Application bundle Мини-ТЭЦ с operator UI и агентом" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Bundle deploy · operator UI · functions · reports</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+<section id="stack">
+    <div class="wrap reveal">
+      <div class="section-label">Cloud-Native Stack 2026</div>
+      <h2 class="section-title">Промышленный стек 2026</h2>
+      <p class="section-desc">
+        Протоколы поля, historian на TimescaleDB, BPMN и web-HMI на React —
+        production-ready для энергетики, нефтегаза и дискретного производства.
+      </p>
+      <div class="stack-grid">
+        <span class="stack-tag">Modbus</span>
+        <span class="stack-tag">OPC UA</span>
+        <span class="stack-tag">MQTT</span>
+        <span class="stack-tag">SNMP</span>
+        <span class="stack-tag">TimescaleDB</span>
+        <span class="stack-tag">Historian</span>
+        <span class="stack-tag">BPMN 2.0</span>
+        <span class="stack-tag">Google CEL</span>
+        <span class="stack-tag">PostgreSQL</span>
+        <span class="stack-tag">Java 25</span>
+        <span class="stack-tag">Spring Boot 4.0</span>
+        <span class="stack-tag">React 19</span>
+        <span class="stack-tag">Keycloak OIDC</span>
+        <span class="stack-tag">NATS</span>
+        <span class="stack-tag">ИИ-студия</span>
+        <span class="stack-tag">Operator Agent</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta"  id="cta">
+    <div class="wrap">
+      <div class="cta-box reveal">
+        <h2>Готовы заменить зоопарк SCADA/MES?</h2>
+        <p>
+          Demo-стенд: <strong>Мини-ТЭЦ</strong> (энергетика), SNMP-мониторинг, warehouse и BPMN.
+          IoT → SCADA → MES на одной платформе — попробуйте на своих сценариях.
+        </p>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="https://ispf.iot-solutions.ru" target="_blank" rel="noopener">Демо-стенд →</a>
+          <a class="btn" href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/PRODUCT.md" target="_blank" rel="noopener">Документация</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>© 2026 IoT Solutions Platform Framework (ISPF) · iot-solutions.ru</p>
+      <p style="margin-top:8px">IoT · SCADA · MES — единая платформа промышленной автоматизации</p>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+    );
+    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+  </script>
+</body>
+</html>

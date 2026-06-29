@@ -22,6 +22,7 @@ import DashboardGrid from "./DashboardGrid";
 import DashboardModal from "./DashboardModal";
 import WidgetEditorPanel from "./WidgetEditorPanel";
 import DashboardSettingsPanel from "./DashboardSettingsPanel";
+import { nextWidgetZIndex } from "./widgetLayerUtils";
 
 interface DashboardBuilderProps {
   path: string;
@@ -239,11 +240,19 @@ export default function DashboardBuilder({
   });
 
   const addWidget = (type: WidgetType) => {
-    const widget = newWidget(type, layout.widgets.length);
+    const widget = {
+      ...newWidget(type, layout.widgets.length),
+      zIndex: nextWidgetZIndex(layout.widgets),
+      visible: true,
+    };
     const next = { ...layout, widgets: [...layout.widgets, widget] };
     setDraftLayout(next);
     setSelectedWidgetId(widget.id);
     setMode("edit");
+  };
+
+  const updateWidgets = (widgets: DashboardWidget[]) => {
+    setDraftLayout({ ...layout, widgets });
   };
 
   const updateWidget = (widget: DashboardWidget) => {
@@ -451,10 +460,12 @@ export default function DashboardBuilder({
           ) : (
             <WidgetEditorPanel
               widget={selectedWidget}
+              widgets={layout.widgets}
               objects={bindingObjects}
               dashboards={dashboardObjects}
               reports={reportObjects}
               onChange={updateWidget}
+              onWidgetsChange={updateWidgets}
               onDelete={deleteWidget}
             />
           )}

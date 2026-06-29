@@ -120,6 +120,10 @@ export interface DashboardWidgetBase {
   demoPreviewJson?: string;
   /** Widget inserted from palette with sample configuration */
   sampleTemplate?: boolean;
+  /** Stacking order on the dashboard canvas (higher = on top). */
+  zIndex?: number;
+  /** When false, hidden in view mode; still shown dimmed in editor. */
+  visible?: boolean;
 }
 
 export interface ValueWidget extends DashboardWidgetBase {

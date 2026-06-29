@@ -2379,6 +2379,29 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   overflow: hidden;
 }
 
+.dashboard-grid-item--hidden {
+  opacity: 0.38;
+  pointer-events: auto;
+}
+
+.dashboard-grid-item--hidden > .dash-widget {
+  outline: 1px dashed var(--text-muted);
+  outline-offset: -2px;
+}
+
+.widget-layer-visible {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.widget-layer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .dashboard-grid-item.selected > .dash-widget {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
