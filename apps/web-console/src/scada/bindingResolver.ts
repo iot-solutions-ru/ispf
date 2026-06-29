@@ -12,28 +12,55 @@ export interface ResolvedBindingValues {
 
 export function collectBindingPaths(
   elements: MimicElement[],
-  connections: MimicConnection[]
+  connections: MimicConnection[],
+  session?: Pick<DashboardSession, "selection" | "params">
 ): string[] {
   const paths = new Set<string>();
   for (const el of elements) {
     for (const binding of Object.values(el.bindings)) {
-      addPath(paths, binding);
+      addPath(paths, binding, session);
     }
     for (const action of el.actions ?? []) {
-      if (action.objectPath) paths.add(action.objectPath);
+      const actionPath = session
+        ? resolveWidgetPath(
+            action.objectPath,
+            action.selectionKey,
+            session.selection,
+            undefined,
+            session.params
+          )
+        : action.objectPath?.trim();
+      if (actionPath) {
+        paths.add(actionPath);
+      }
     }
   }
   for (const conn of connections) {
     for (const binding of Object.values(conn.bindings ?? {})) {
-      if (binding) addPath(paths, binding);
+      if (binding) {
+        addPath(paths, binding, session);
+      }
     }
   }
   return [...paths];
 }
 
-function addPath(paths: Set<string>, binding: MimicBinding): void {
-  if (binding.objectPath?.trim()) {
-    paths.add(binding.objectPath.trim());
+function addPath(
+  paths: Set<string>,
+  binding: MimicBinding,
+  session?: Pick<DashboardSession, "selection" | "params">
+): void {
+  const objectPath = session
+    ? resolveWidgetPath(
+        binding.objectPath,
+        binding.selectionKey,
+        session.selection,
+        undefined,
+        session.params
+      )
+    : binding.objectPath?.trim();
+  if (objectPath?.trim()) {
+    paths.add(objectPath.trim());
   }
 }
 

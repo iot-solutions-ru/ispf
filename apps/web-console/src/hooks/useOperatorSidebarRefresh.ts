@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { refreshWorkQueue } from "./workQueueCache";
 import type { OperatorUi } from "../types/operatorUi";
 import { collectOperatorAppWatchPaths } from "../utils/operatorSidebarScope";
-import { OBJECT_WS_EVENT, subscribeObjectPaths, type ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, trackObjectPathSubscriptions, type ObjectWsMessage } from "./useObjectWebSocket";
 
 export const OPERATOR_SIDEBAR_EVENTS_QUERY_KEY = "operator-sidebar";
 
@@ -15,11 +15,10 @@ export function useOperatorSidebarRefresh(appId?: string, ui?: OperatorUi) {
       return;
     }
     const paths = collectOperatorAppWatchPaths(ui, appId);
-    if (paths.length > 0) {
-      subscribeObjectPaths(paths);
-      const retry = window.setInterval(() => subscribeObjectPaths(paths), 4000);
-      return () => window.clearInterval(retry);
+    if (paths.length === 0) {
+      return;
     }
+    return trackObjectPathSubscriptions(paths);
   }, [appId, ui]);
 
   useEffect(() => {

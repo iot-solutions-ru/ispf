@@ -62,8 +62,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   );
 
   const bindingPaths = useMemo(
-    () => collectBindingPaths(document.elements, document.connections),
-    [document]
+    () => collectBindingPaths(document.elements, document.connections, session),
+    [document, session]
   );
   const variablesBatch = useVariablesBatchQuery(bindingPaths, 3000, bindingPaths.length > 0);
   const resolvedBindings = useMemo(

@@ -30,11 +30,22 @@ async function fetchLocaleBundles(
   return bundles;
 }
 
+async function withDomainScada(
+  locale: AppLocale,
+  bundles: Record<string, Record<string, string>>,
+): Promise<Record<string, Record<string, string>>> {
+  if (!bundles.scada) return bundles;
+  const { buildDomainI18n } = await import("../scada/symbols/domainCatalog");
+  const domain = buildDomainI18n();
+  const extra = locale === "ru" ? domain.ru : domain.en;
+  return { ...bundles, scada: { ...bundles.scada, ...extra } };
+}
+
 export async function loadLocale(locale: AppLocale): Promise<void> {
   if (loadedLocales.has(locale)) {
     return;
   }
-  const bundles = await fetchLocaleBundles(locale);
+  const bundles = await withDomainScada(locale, await fetchLocaleBundles(locale));
   for (const [namespace, strings] of Object.entries(bundles)) {
     i18n.addResourceBundle(locale, namespace, strings, true, true);
   }
@@ -58,13 +69,13 @@ async function initI18n(): Promise<void> {
 
   const resources: Record<string, Record<string, Record<string, string>>> = {};
 
-  resources.en = await fetchLocaleBundles("en");
+  resources.en = await withDomainScada("en", await fetchLocaleBundles("en"));
   loadedLocales.add("en");
 
   let activeLocale: AppLocale = "en";
   if (initialLocale !== "en") {
     try {
-      resources[initialLocale] = await fetchLocaleBundles(initialLocale);
+      resources[initialLocale] = await withDomainScada(initialLocale, await fetchLocaleBundles(initialLocale));
       loadedLocales.add(initialLocale);
       activeLocale = initialLocale;
     } catch (error) {

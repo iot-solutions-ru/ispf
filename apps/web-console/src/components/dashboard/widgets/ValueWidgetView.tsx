@@ -2,7 +2,6 @@ import type { ValueWidget } from "../../../types/dashboard";
 import { useTranslation } from "react-i18next";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { useDashboardContext } from "../DashboardContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 
@@ -19,7 +18,6 @@ export default function ValueWidgetView({
 }: ValueWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
-  const { operatorMode } = useDashboardContext();
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const { rawValue, variable, isLoading, isError } = useBoundVariable(
     objectPath,
@@ -38,7 +36,7 @@ export default function ValueWidgetView({
   let display = "—";
   if (isLoading) {
     display = "…";
-  } else if (isError) {
+  } else if (isError && !variable) {
     display = "!";
   } else if (typeof rawValue === "number") {
     const decimals = widget.decimals ?? 1;
@@ -59,18 +57,12 @@ export default function ValueWidgetView({
       ? "dash-widget-text dash-widget-text-multiline"
       : "dash-widget-text";
 
-  const metaFooter =
-    operatorMode || !widget.variableName
-      ? undefined
-      : `${(objectPath || widget.objectPath || "—").split(".").pop()}.${widget.variableName}`;
-
   return (
     <DashWidgetShell
       title={widget.title}
       stylesJson={widget.stylesJson}
       className="dash-widget dash-widget-value"
       editable={editable}
-      footer={metaFooter}
     >
       {!objectPath && widget.selectionKey ? (
         <p className="hint">{t("view.selectDevice")}</p>

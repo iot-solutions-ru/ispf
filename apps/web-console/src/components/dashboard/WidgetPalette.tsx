@@ -65,7 +65,7 @@ const PALETTE_GROUPS: PaletteGroup[] = [
   {
     id: "scada",
     titleKey: "palette.scada",
-    types: ["scada-mimic", "mini-tec-sld"],
+    types: ["scada-mimic"],
   },
   {
     id: "content",

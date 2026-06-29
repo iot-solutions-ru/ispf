@@ -2611,7 +2611,7 @@ body.scada-mimic-editor-open {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 220px 1fr 280px;
+  grid-template-columns: 280px 1fr 280px;
 }
 
 .scada-mimic-editor-sidebar,
@@ -2638,15 +2638,30 @@ body.scada-mimic-editor-open {
 }
 
 .scada-palette-categories {
+  display: none;
+}
+
+.scada-palette-category-select {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.25rem;
   margin-bottom: 0.5rem;
 }
 
-.scada-palette-categories button.active {
-  background: var(--accent);
-  color: var(--bg);
+.scada-palette-category-select select {
+  width: 100%;
+  font-size: 0.8rem;
+}
+
+.scada-palette-category-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.scada-palette-list-header {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
 }
 
 .scada-palette-list {
@@ -2658,9 +2673,25 @@ body.scada-mimic-editor-open {
 .scada-palette-item {
   text-align: left;
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.45rem;
+  width: 100%;
+}
+
+.scada-palette-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: block;
+}
+
+.scada-palette-item-text {
+  display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  padding: 0.35rem 0.5rem;
+  min-width: 0;
 }
 
 .scada-palette-item.active {

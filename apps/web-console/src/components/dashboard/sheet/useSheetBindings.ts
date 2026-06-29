@@ -8,8 +8,8 @@ import { useDashboardContext } from "../DashboardContext";
 import {
   isObjectWebSocketConnected,
   OBJECT_WS_EVENT,
-  subscribeObjectPaths,
   subscribeObjectWebSocketConnection,
+  trackObjectPathSubscriptions,
   type ObjectWsMessage,
 } from "../../../hooks/useObjectWebSocket";
 import {
@@ -106,9 +106,7 @@ export function useSheetBindings(
     if (watchedPaths.length === 0) {
       return;
     }
-    subscribeObjectPaths(watchedPaths);
-    const retry = window.setInterval(() => subscribeObjectPaths(watchedPaths), 4000);
-    return () => window.clearInterval(retry);
+    return trackObjectPathSubscriptions(watchedPaths);
   }, [pathsKey, watchedPaths]);
 
   useEffect(() => {

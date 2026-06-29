@@ -87,8 +87,8 @@ export default function ScadaMimicWidgetView({
   }, [widget.diagramJson, widget.mimicPath, mimicQuery.data?.diagramJson]);
 
   const bindingPaths = useMemo(
-    () => collectBindingPaths(document.elements, document.connections),
-    [document]
+    () => collectBindingPaths(document.elements, document.connections, session),
+    [document, session]
   );
 
   const variablesBatch = useVariablesBatchQuery(bindingPaths, refreshIntervalMs, bindingPaths.length > 0);

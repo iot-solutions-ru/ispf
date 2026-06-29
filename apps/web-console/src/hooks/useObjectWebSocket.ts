@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { getStoredSession } from "../auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT } from "../auth/validateSession";
@@ -19,6 +19,8 @@ export const OBJECT_WS_EVENT = "ispf-object-ws-message";
 let activeSocket: WebSocket | null = null;
 let wsConnected = false;
 const wsConnectionListeners = new Set<() => void>();
+/** Ref-counted path interests merged into one WS subscribe message. */
+const pathRefCounts = new Map<string, number>();
 
 function setWsConnected(connected: boolean) {
   if (wsConnected === connected) {
@@ -50,12 +52,58 @@ function wsUrl(): string {
   return `${base}?${params.toString()}`;
 }
 
-export function subscribeObjectPaths(paths: string[]) {
-  const unique = [...new Set(paths.filter((path) => path.trim().length > 0))];
+function pushMergedSubscriptionsToServer() {
   if (!activeSocket || activeSocket.readyState !== WebSocket.OPEN) {
     return;
   }
-  activeSocket.send(JSON.stringify({ type: "subscribe", paths: unique }));
+  const paths = [...pathRefCounts.keys()];
+  activeSocket.send(JSON.stringify({ type: "subscribe", paths }));
+}
+
+/** @deprecated Prefer trackObjectPathSubscriptions / useObjectPathsSubscription. */
+export function subscribeObjectPaths(paths: string[]) {
+  pathRefCounts.clear();
+  for (const path of paths) {
+    if (path.trim().length > 0) {
+      pathRefCounts.set(path.trim(), 1);
+    }
+  }
+  pushMergedSubscriptionsToServer();
+}
+
+/** Register interest in object paths; merged with other dashboard/inspector consumers. */
+export function trackObjectPathSubscriptions(paths: string[]): () => void {
+  const unique = [...new Set(paths.filter((path) => path.trim().length > 0))];
+  for (const path of unique) {
+    pathRefCounts.set(path, (pathRefCounts.get(path) ?? 0) + 1);
+  }
+  pushMergedSubscriptionsToServer();
+  return () => {
+    for (const path of unique) {
+      const next = (pathRefCounts.get(path) ?? 1) - 1;
+      if (next <= 0) {
+        pathRefCounts.delete(path);
+      } else {
+        pathRefCounts.set(path, next);
+      }
+    }
+    pushMergedSubscriptionsToServer();
+  };
+}
+
+export function useObjectPathsSubscription(paths: string[]) {
+  const pathsKey = paths
+    .filter((path) => path.trim().length > 0)
+    .sort()
+    .join("\0");
+
+  useEffect(() => {
+    if (!pathsKey) {
+      return;
+    }
+    const unique = pathsKey.split("\0");
+    return trackObjectPathSubscriptions(unique);
+  }, [pathsKey]);
 }
 
 export function sendPresence(path: string, username: string, mode: "view" | "edit") {
@@ -94,7 +142,7 @@ export function useObjectWebSocket(enabled = true) {
 
       socket.onopen = () => {
         setWsConnected(true);
-        // reconnect subscriptions happen via useFederatedPathSubscription
+        pushMergedSubscriptionsToServer();
       };
 
       socket.onmessage = (event) => {
@@ -175,19 +223,10 @@ export function useObjectWebSocket(enabled = true) {
 
 /** Subscribe WebSocket to a federated object/dashboard path for background refresh. */
 export function useFederatedPathSubscription(path: string | null | undefined) {
-  const previous = useRef<string | null>(null);
-
   useEffect(() => {
     if (!path || !isFederatedCatalogPath(path)) {
-      previous.current = null;
       return;
     }
-    if (previous.current === path) {
-      return;
-    }
-    previous.current = path;
-    subscribeObjectPaths([path]);
-    const retry = window.setInterval(() => subscribeObjectPaths([path]), 4000);
-    return () => window.clearInterval(retry);
+    return trackObjectPathSubscriptions([path]);
   }, [path]);
 }

@@ -4,6 +4,7 @@ import { fetchVariables, fetchVariablesBatch } from "../api";
 import {
   isObjectWebSocketConnected,
   subscribeObjectWebSocketConnection,
+  useObjectPathsSubscription,
 } from "./useObjectWebSocket";
 
 export function useVariablesQuery(
@@ -17,11 +18,14 @@ export function useVariablesQuery(
     () => false,
   );
 
+  useObjectPathsSubscription(enabled && objectPath ? [objectPath] : []);
+
   return useQuery({
     queryKey: ["variables", objectPath],
     queryFn: () => fetchVariables(objectPath),
     enabled: enabled && Boolean(objectPath),
     refetchInterval: wsConnected ? false : refreshIntervalMs,
+    retry: 2,
   });
 }
 
@@ -37,10 +41,13 @@ export function useVariablesBatchQuery(
   );
   const uniquePaths = [...new Set(objectPaths.filter(Boolean))];
 
+  useObjectPathsSubscription(enabled && uniquePaths.length > 0 ? uniquePaths : []);
+
   return useQuery({
     queryKey: ["variables-batch", uniquePaths],
     queryFn: () => fetchVariablesBatch(uniquePaths),
     enabled: enabled && uniquePaths.length > 0,
     refetchInterval: wsConnected ? false : refreshIntervalMs,
+    retry: 2,
   });
 }

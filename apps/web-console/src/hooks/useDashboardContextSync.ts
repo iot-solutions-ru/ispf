@@ -9,7 +9,7 @@ import {
   sessionFromServerContext,
   sessionsEqual,
 } from "../utils/dashboardContext";
-import { OBJECT_WS_EVENT, subscribeObjectPaths, type ObjectWsMessage } from "./useObjectWebSocket";
+import { OBJECT_WS_EVENT, trackObjectPathSubscriptions, type ObjectWsMessage } from "./useObjectWebSocket";
 
 const SYNC_DEBOUNCE_MS = 300;
 
@@ -47,7 +47,10 @@ export function useDashboardContextSync({
   });
 
   useEffect(() => {
-    subscribeObjectPaths([path]);
+    if (!path) {
+      return;
+    }
+    return trackObjectPathSubscriptions([path]);
   }, [path]);
 
   useEffect(() => {

@@ -1,0 +1,608 @@
+{
+  "version": 1,
+  "width": 1200,
+  "height": 400,
+  "background": "var(--bg)",
+  "grid": {
+    "size": 20,
+    "snap": false,
+    "visible": false
+  },
+  "layers": [
+    {
+      "id": "layer-default",
+      "name": "Main",
+      "visible": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "island-banner",
+      "symbolId": "alarm.banner",
+      "layerId": "layer-default",
+      "x": 420,
+      "y": 8,
+      "props": {
+        "width": 360,
+        "height": 22,
+        "text": "Островной режим / Island mode"
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+          "variableName": "islandMode",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "label-gas",
+      "symbolId": "label",
+      "layerId": "layer-default",
+      "x": 28,
+      "y": 116,
+      "props": {
+        "text": "Gas",
+        "width": 40,
+        "height": 16
+      },
+      "bindings": {}
+    },
+    {
+      "id": "grpb-flow",
+      "symbolId": "data-block",
+      "layerId": "layer-default",
+      "x": 120,
+      "y": 78,
+      "props": {
+        "width": 104,
+        "height": 88,
+        "line1": "GRPB",
+        "line2": "Gas"
+      },
+      "bindings": {
+        "line3": {
+          "objectPath": "root.platform.devices.mini-tec-plant.grpb",
+          "variableName": "gasFlowRate",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "grpb-alarm",
+      "symbolId": "sensor.indicator",
+      "layerId": "layer-default",
+      "x": 168,
+      "y": 158,
+      "bindings": {
+        "state": {
+          "objectPath": "root.platform.devices.mini-tec-plant.grpb",
+          "variableName": "fireAlarm",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "formatRules": [
+        {
+          "id": "alarm-red",
+          "bindingKey": "state",
+          "operator": "==",
+          "value": true,
+          "style": {
+            "fill": "#f85149"
+          }
+        }
+      ]
+    },
+    {
+      "id": "busbar-main",
+      "symbolId": "busbar.horizontal",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 114,
+      "props": {
+        "width": 680,
+        "height": 12
+      },
+      "bindings": {
+        "energized": {
+          "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+          "variableName": "islandMode",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "hub-freq",
+      "symbolId": "value-badge",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 88,
+      "props": {
+        "unit": " Hz",
+        "decimals": 2
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+          "variableName": "gridFrequencyHz",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "hub-power",
+      "symbolId": "value-badge",
+      "layerId": "layer-default",
+      "x": 620,
+      "y": 88,
+      "props": {
+        "unit": " kW",
+        "decimals": 0
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
+          "variableName": "totalGenPowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "gen-gpu1",
+      "symbolId": "gen.block",
+      "layerId": "layer-default",
+      "x": 268,
+      "y": 24,
+      "props": {
+        "label": "GPU-1",
+        "ratedKw": 1480
+      },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+          "variableName": "running",
+          "valueField": "value",
+          "transform": "bool"
+        },
+        "power": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
+          "variableName": "activePowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "gen-gpu2",
+      "symbolId": "gen.block",
+      "layerId": "layer-default",
+      "x": 418,
+      "y": 24,
+      "props": {
+        "label": "GPU-2",
+        "ratedKw": 1480
+      },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+          "variableName": "running",
+          "valueField": "value",
+          "transform": "bool"
+        },
+        "power": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
+          "variableName": "activePowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "gen-gpu3",
+      "symbolId": "gen.block",
+      "layerId": "layer-default",
+      "x": 568,
+      "y": 24,
+      "props": {
+        "label": "GPU-3",
+        "ratedKw": 1480
+      },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+          "variableName": "running",
+          "valueField": "value",
+          "transform": "bool"
+        },
+        "power": {
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
+          "variableName": "activePowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "dgu-block",
+      "symbolId": "gen.block",
+      "layerId": "layer-default",
+      "x": 488,
+      "y": 44,
+      "props": {
+        "label": "DGU",
+        "ratedKw": 500
+      },
+      "bindings": {
+        "running": {
+          "objectPath": "root.platform.devices.mini-tec-plant.dgu",
+          "variableName": "running",
+          "valueField": "value",
+          "transform": "bool"
+        },
+        "power": {
+          "objectPath": "root.platform.devices.mini-tec-plant.dgu",
+          "variableName": "activePowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "breaker-rumb",
+      "symbolId": "breaker",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 90,
+      "bindings": {
+        "closed": {
+          "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
+          "variableName": "breakerClosed",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "actions": [
+        {
+          "id": "toggle-breaker",
+          "type": "invokeFunction",
+          "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
+          "functionName": "breaker_operate"
+        }
+      ]
+    },
+    {
+      "id": "rumb-block",
+      "symbolId": "data-block",
+      "layerId": "layer-default",
+      "x": 792,
+      "y": 80,
+      "props": {
+        "width": 108,
+        "height": 84,
+        "line1": "RUMB",
+        "line2": "10/0.4 kV",
+        "line3": "Breaker"
+      },
+      "bindings": {
+        "line4": {
+          "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
+          "variableName": "breakerClosed",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "xfmr-rumb",
+      "symbolId": "transformer.two-winding",
+      "layerId": "layer-default",
+      "x": 782,
+      "y": 122,
+      "bindings": {
+        "loaded": {
+          "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
+          "variableName": "breakerClosed",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "load-block",
+      "symbolId": "load.block",
+      "layerId": "layer-default",
+      "x": 944,
+      "y": 68,
+      "props": {
+        "width": 128,
+        "height": 104,
+        "label": "Load"
+      },
+      "bindings": {
+        "power": {
+          "objectPath": "root.platform.devices.mini-tec-plant.load-module",
+          "variableName": "activePowerKw",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "legend-panel",
+      "symbolId": "data-block",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 300,
+      "props": {
+        "width": 1152,
+        "height": 84,
+        "line1": "Legend",
+        "line2": "● Generation  ● Gas  ● DGU reserve  — Busbar  □ Load",
+        "line3": "Rated values are nameplate; live values update from plant model"
+      },
+      "bindings": {}
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn-gas-feed",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "grpb-flow",
+        "port": "w"
+      },
+      "to": {
+        "elementId": "grpb-flow",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 52,
+          "y": 122
+        },
+        {
+          "x": 118,
+          "y": 122
+        }
+      ],
+      "style": {
+        "stroke": "#f0883e",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-grpb-bus",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "grpb-flow",
+        "port": "e"
+      },
+      "to": {
+        "elementId": "busbar-main",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 224,
+          "y": 122
+        },
+        {
+          "x": 248,
+          "y": 122
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-gen1-bus",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "gen-gpu1",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "busbar-main",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 324,
+          "y": 136
+        },
+        {
+          "x": 324,
+          "y": 120
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-gen2-bus",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "gen-gpu2",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "busbar-main",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 474,
+          "y": 136
+        },
+        {
+          "x": 474,
+          "y": 120
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-gen3-bus",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "gen-gpu3",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "busbar-main",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 624,
+          "y": 136
+        },
+        {
+          "x": 624,
+          "y": 120
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-dgu-bus",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "dgu-block",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "busbar-main",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 544,
+          "y": 156
+        },
+        {
+          "x": 544,
+          "y": 120
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-bus-breaker",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "busbar-main",
+        "port": "e"
+      },
+      "to": {
+        "elementId": "breaker-rumb",
+        "port": "n"
+      },
+      "points": [
+        {
+          "x": 748,
+          "y": 120
+        },
+        {
+          "x": 768,
+          "y": 120
+        },
+        {
+          "x": 780,
+          "y": 90
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-breaker-xfmr",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "breaker-rumb",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "xfmr-rumb",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 780,
+          "y": 142
+        },
+        {
+          "x": 782,
+          "y": 142
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    },
+    {
+      "id": "conn-feed-load",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "xfmr-rumb",
+        "port": "e"
+      },
+      "to": {
+        "elementId": "load-block",
+        "port": "n"
+      },
+      "points": [
+        {
+          "x": 838,
+          "y": 142
+        },
+        {
+          "x": 920,
+          "y": 142
+        },
+        {
+          "x": 920,
+          "y": 120
+        },
+        {
+          "x": 944,
+          "y": 120
+        },
+        {
+          "x": 1008,
+          "y": 120
+        },
+        {
+          "x": 1008,
+          "y": 68
+        }
+      ],
+      "style": {
+        "stroke": "#58a6ff",
+        "strokeWidth": 3
+      }
+    }
+  ]
+}

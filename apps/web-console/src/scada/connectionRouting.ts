@@ -1,5 +1,5 @@
 import type { MimicConnection, MimicElement, MimicPort } from "../types/scadaMimic";
-import { getSymbol } from "./symbols/registry";
+import { getSymbol, symbolSize } from "./symbols/registry";
 
 export interface PortPosition {
   elementId: string;
@@ -16,18 +16,23 @@ export function getElementPortPosition(
   if (!symbol) return null;
   const port = symbol.ports.find((p) => p.id === portId);
   if (!port) return null;
-  const scale = element.scale ?? 1;
-  const w = symbol.defaultWidth * scale;
-  const h = symbol.defaultHeight * scale;
-  const cx = element.x + w / 2;
-  const cy = element.y + h / 2;
-  const px = element.x + port.x * scale;
-  const py = element.y + port.y * scale;
+  const { width, height } = symbolSize(element);
+  const scaleX = width / symbol.defaultWidth;
+  const scaleY = height / symbol.defaultHeight;
+  const cx = element.x + width / 2;
+  const cy = element.y + height / 2;
+  const px = element.x + port.x * scaleX;
+  const py = element.y + port.y * scaleY;
   if (element.rotation === 90) {
     return { elementId: element.id, portId, x: cx + (py - cy), y: cy - (px - cx) };
   }
   if (element.rotation === 180) {
-    return { elementId: element.id, portId, x: element.x + w - (px - element.x), y: element.y + h - (py - element.y) };
+    return {
+      elementId: element.id,
+      portId,
+      x: element.x + width - (px - element.x),
+      y: element.y + height - (py - element.y),
+    };
   }
   if (element.rotation === 270) {
     return { elementId: element.id, portId, x: cx - (py - cy), y: cy + (px - cx) };

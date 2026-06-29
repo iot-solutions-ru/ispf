@@ -58,10 +58,12 @@ export function DisconnectorSymbol({ width, height, values, selected, onClick }:
 }
 
 export function BusbarHorizontalSymbol({ width, height, values, selected }: SymbolRenderProps) {
-  const energized = asBool(values.energized);
+  const raw = values.energized;
+  const fill =
+    raw === undefined || raw === null ? "#484f58" : asBool(raw) ? "#3fb950" : "#58a6ff";
   return (
     <g>
-      <rect x={0} y={height / 2 - 3} width={width} height={6} fill={energized ? "#58a6ff" : "#484f58"} />
+      <rect x={0} y={height / 2 - 3} width={width} height={6} fill={fill} />
       {selectionOutline(selected, width, height)}
     </g>
   );
