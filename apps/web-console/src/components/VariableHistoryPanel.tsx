@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { downloadVariableHistoryExport } from "../api";
+import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../utils/chartTheme";
 import {
   type HistoryRange,
   historyRangeFrom,
@@ -157,7 +158,7 @@ export default function VariableHistoryPanel({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={points}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
               <XAxis
                 dataKey="time"
                 tick={{ fontSize: 10 }}
@@ -165,17 +166,11 @@ export default function VariableHistoryPanel({
                 interval="preserveStartEnd"
               />
               <YAxis tick={{ fontSize: 10 }} width={48} domain={["auto", "auto"]} />
-              <Tooltip
-                contentStyle={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  fontSize: "0.8rem",
-                }}
-              />
+              <Tooltip contentStyle={{ ...CHART_TOOLTIP_STYLE, fontSize: "0.8rem" }} />
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#2f81f7"
+                stroke="var(--accent)"
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}

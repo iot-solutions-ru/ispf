@@ -74,7 +74,7 @@ function GenBlock({ x, y, label, ratedKw, powerRaw, runningRaw }: GenBlockProps)
         width="112"
         height="84"
         rx="6"
-        fill="#161b22"
+        fill="var(--bg-elevated)"
         stroke={stroke}
         strokeWidth="2.5"
         style={{ filter: running ? `drop-shadow(0 0 6px ${glow})` : undefined }}
@@ -87,7 +87,7 @@ function GenBlock({ x, y, label, ratedKw, powerRaw, runningRaw }: GenBlockProps)
         x="56"
         y="44"
         textAnchor="middle"
-        fill="#e6edf3"
+        fill="var(--text)"
         fontFamily="Segoe UI, system-ui, sans-serif"
         fontSize="14"
         fontWeight="600"
@@ -98,18 +98,18 @@ function GenBlock({ x, y, label, ratedKw, powerRaw, runningRaw }: GenBlockProps)
         x="56"
         y="58"
         textAnchor="middle"
-        fill="#8b949e"
+        fill="var(--text-muted)"
         fontFamily="Segoe UI, system-ui, sans-serif"
         fontSize="10"
       >
         {ratedKw} kW
       </text>
-      <rect x="14" y="64" width="84" height="18" rx="4" fill="#0d1117" stroke="#30363d" />
+      <rect x="14" y="64" width="84" height="18" rx="4" fill="var(--bg)" stroke="var(--border)" />
       <text
         x="56"
         y="77"
         textAnchor="middle"
-        fill={running ? "#3fb950" : "#8b949e"}
+        fill={running ? "var(--success)" : "var(--text-muted)"}
         fontFamily="ui-monospace, Consolas, monospace"
         fontSize="11"
         fontWeight="600"
@@ -124,14 +124,14 @@ function GenBlock({ x, y, label, ratedKw, powerRaw, runningRaw }: GenBlockProps)
 function BreakerSymbol({ x, y, closed }: { x: number; y: number; closed: boolean }) {
   return (
     <g transform={`translate(${x},${y})`}>
-      <line x1="0" y1="20" x2="0" y2="4" stroke="#e6edf3" strokeWidth="2.5" />
-      <line x1="0" y1="36" x2="0" y2="20" stroke="#e6edf3" strokeWidth="2.5" />
+      <line x1="0" y1="20" x2="0" y2="4" stroke="var(--text)" strokeWidth="2.5" />
+      <line x1="0" y1="36" x2="0" y2="20" stroke="var(--text)" strokeWidth="2.5" />
       {closed ? (
         <line x1="-8" y1="20" x2="8" y2="20" stroke="#3fb950" strokeWidth="2.5" />
       ) : (
         <line x1="-8" y1="28" x2="8" y2="12" stroke="#f0883e" strokeWidth="2.5" />
       )}
-      <line x1="0" y1="36" x2="0" y2="52" stroke="#e6edf3" strokeWidth="2.5" />
+      <line x1="0" y1="36" x2="0" y2="52" stroke="var(--text)" strokeWidth="2.5" />
     </g>
   );
 }
@@ -199,7 +199,7 @@ export default function MiniTecSldWidgetView({
           </filter>
         </defs>
 
-        <rect width="1200" height="400" fill="#0d1117" rx="8" />
+        <rect width="1200" height="400" fill="var(--bg)" rx="8" />
 
         {islandOn && (
           <g>
@@ -208,7 +208,7 @@ export default function MiniTecSldWidgetView({
               x="600"
               y="23"
               textAnchor="middle"
-              fill="#3fb950"
+              fill="var(--success)"
               fontFamily="Segoe UI, system-ui, sans-serif"
               fontSize="12"
               fontWeight="600"
@@ -238,7 +238,7 @@ export default function MiniTecSldWidgetView({
             width="104"
             height="88"
             rx="6"
-            fill="#161b22"
+            fill="var(--bg-elevated)"
             stroke="#f0883e"
             strokeWidth="2"
           />
@@ -246,7 +246,7 @@ export default function MiniTecSldWidgetView({
             x="52"
             y="26"
             textAnchor="middle"
-            fill="#e6edf3"
+            fill="var(--text)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="14"
             fontWeight="600"
@@ -257,7 +257,7 @@ export default function MiniTecSldWidgetView({
             x="52"
             y="44"
             textAnchor="middle"
-            fill="#8b949e"
+            fill="var(--text-muted)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="10"
           >
@@ -321,7 +321,7 @@ export default function MiniTecSldWidgetView({
             width="112"
             height="76"
             rx="6"
-            fill="#161b22"
+            fill="var(--bg-elevated)"
             stroke={asBool(dguRun) ? "#a371f7" : "#484f58"}
             strokeWidth="2"
           />
@@ -329,7 +329,7 @@ export default function MiniTecSldWidgetView({
             x="56"
             y="26"
             textAnchor="middle"
-            fill="#e6edf3"
+            fill="var(--text)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="14"
             fontWeight="600"
@@ -340,7 +340,7 @@ export default function MiniTecSldWidgetView({
             x="56"
             y="44"
             textAnchor="middle"
-            fill="#8b949e"
+            fill="var(--text-muted)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="10"
           >
@@ -372,7 +372,7 @@ export default function MiniTecSldWidgetView({
             width="108"
             height="84"
             rx="6"
-            fill="#161b22"
+            fill="var(--bg-elevated)"
             stroke="#58a6ff"
             strokeWidth="2"
           />
@@ -380,7 +380,7 @@ export default function MiniTecSldWidgetView({
             x="98"
             y="34"
             textAnchor="middle"
-            fill="#e6edf3"
+            fill="var(--text)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="14"
             fontWeight="600"
@@ -391,7 +391,7 @@ export default function MiniTecSldWidgetView({
             x="98"
             y="52"
             textAnchor="middle"
-            fill="#8b949e"
+            fill="var(--text-muted)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="10"
           >
@@ -419,7 +419,7 @@ export default function MiniTecSldWidgetView({
             width="128"
             height="104"
             rx="6"
-            fill="#161b22"
+            fill="var(--bg-elevated)"
             stroke="#d29922"
             strokeWidth="2"
           />
@@ -427,7 +427,7 @@ export default function MiniTecSldWidgetView({
             x="88"
             y="40"
             textAnchor="middle"
-            fill="#e6edf3"
+            fill="var(--text)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="14"
             fontWeight="600"
@@ -438,7 +438,7 @@ export default function MiniTecSldWidgetView({
             x="88"
             y="58"
             textAnchor="middle"
-            fill="#8b949e"
+            fill="var(--text-muted)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="10"
           >
@@ -459,7 +459,7 @@ export default function MiniTecSldWidgetView({
             x="88"
             y="98"
             textAnchor="middle"
-            fill="#8b949e"
+            fill="var(--text-muted)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="9"
           >
@@ -469,41 +469,41 @@ export default function MiniTecSldWidgetView({
 
         {/* Legend */}
         <g transform="translate(24,300)">
-          <rect width="1152" height="84" rx="6" fill="#161b22" stroke="#30363d" />
+          <rect width="1152" height="84" rx="6" fill="var(--bg-elevated)" stroke="var(--border)" />
           <text
             x="20"
             y="24"
-            fill="#e6edf3"
+            fill="var(--text)"
             fontFamily="Segoe UI, system-ui, sans-serif"
             fontSize="12"
             fontWeight="600"
           >
             {t("miniTec.legend")}
           </text>
-          <circle cx="36" cy="46" r="5" fill="#3fb950" />
-          <text x="48" y="50" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <circle cx="36" cy="46" r="5" fill="var(--success)" />
+          <text x="48" y="50" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.legendGeneration")}
           </text>
           <circle cx="210" cy="46" r="5" fill="#f0883e" />
-          <text x="222" y="50" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="222" y="50" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.legendGas")}
           </text>
           <circle cx="360" cy="46" r="5" fill="#a371f7" />
-          <text x="372" y="50" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="372" y="50" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.legendDgu")}
           </text>
           <line x1="36" y1="68" x2="76" y2="68" stroke="#58a6ff" strokeWidth="3" />
-          <text x="86" y="72" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="86" y="72" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.legendBusbar")}
           </text>
           <rect x="520" y="36" width="14" height="14" rx="2" fill="none" stroke="#d29922" strokeWidth="2" />
-          <text x="542" y="48" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="542" y="48" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.legendLoad")}
           </text>
-          <text x="680" y="48" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="680" y="48" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.ratedNote")}
           </text>
-          <text x="680" y="68" fill="#8b949e" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
+          <text x="680" y="68" fill="var(--text-muted)" fontFamily="Segoe UI, system-ui, sans-serif" fontSize="11">
             {t("miniTec.liveUpdate")}
           </text>
         </g>

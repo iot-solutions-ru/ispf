@@ -8,6 +8,7 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 import { useEditorDemoRows } from "../widgetDemoPreview";
+import { CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
 
 const SLICE_COLORS = ["#2f81f7", "#3fb950", "#d29922", "#f85149", "#a371f7", "#39c5cf"];
 
@@ -98,11 +99,7 @@ export default function PieChartWidgetView({
               </Pie>
               <Tooltip
                 formatter={(value) => Number(value).toFixed(decimals)}
-                contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #30363d",
-                  borderRadius: 8,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
               <Legend />
             </PieChart>

@@ -772,7 +772,7 @@ export function WidgetStylesEditor({
           color
           <input
             type="color"
-            value={typeof current.color === "string" && current.color.startsWith("#") ? current.color : "#e6edf3"}
+            value={typeof current.color === "string" && current.color.startsWith("#") ? current.color : "var(--text)"}
             onChange={(e) => patchStyle("color", e.target.value)}
           />
         </label>

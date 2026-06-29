@@ -1,17 +1,34 @@
-:root {
+:root,
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #0d1117;
   --bg-elevated: #161b22;
   --bg-hover: #1c2128;
   --surface: #161b22;
+  --surface-0: #0d1117;
+  --surface-1: #161b22;
   --surface-2: #21262d;
+  --surface-elevated: #1b212a;
+  --panel: #161b22;
+  --panel-bg: rgba(0, 0, 0, 0.15);
   --border: #30363d;
+  --border-subtle: rgba(255, 255, 255, 0.08);
   --text: #e6edf3;
   --text-muted: #8b949e;
+  --muted: #8b949e;
   --accent: #2f81f7;
   --accent-hover: #58a6ff;
+  --accent-soft: rgba(47, 129, 247, 0.12);
+  --accent-fg: #ffffff;
   --danger: #f85149;
   --success: #3fb950;
+  --warn: #d29922;
+  --chart-grid-stroke: rgba(255, 255, 255, 0.08);
+  --chart-polar-grid-stroke: rgba(255, 255, 255, 0.12);
+  --widget-bg-start: #1a2030;
+  --widget-bg-end: #12161f;
+  --network-node-text: #e8eaed;
+  --network-edge-color: #6b7280;
   --sidebar-width: 320px;
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -21,6 +38,44 @@
     0 1px 2px rgba(0, 0, 0, 0.14),
     0 4px 12px rgba(0, 0, 0, 0.08);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f5f8;
+  --bg-elevated: #ffffff;
+  --bg-hover: #e8edf4;
+  --surface: #ffffff;
+  --surface-0: #f3f5f8;
+  --surface-1: #ffffff;
+  --surface-2: #eef2f7;
+  --surface-elevated: #ffffff;
+  --panel: #ffffff;
+  --panel-bg: rgba(15, 23, 42, 0.06);
+  --border: #cfd7e3;
+  --border-subtle: rgba(15, 23, 42, 0.1);
+  --text: #1f2937;
+  --text-muted: #667085;
+  --muted: #667085;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.1);
+  --accent-fg: #ffffff;
+  --danger: #dc2626;
+  --success: #15803d;
+  --warn: #b45309;
+  --chart-grid-stroke: rgba(15, 23, 42, 0.08);
+  --chart-polar-grid-stroke: rgba(15, 23, 42, 0.12);
+  --widget-bg-start: #ffffff;
+  --widget-bg-end: #f0f4f9;
+  --network-node-text: #374151;
+  --network-edge-color: #9ca3af;
+  --ui-shadow-surface:
+    0 0 0 1px rgba(15, 23, 42, 0.03),
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 8px 24px rgba(15, 23, 42, 0.08);
   background: var(--bg);
   color: var(--text);
 }
@@ -38,13 +93,15 @@ body,
 body {
   margin: 0;
   overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-wrap: pretty;
 }
 
 select {
-  color-scheme: dark;
+  color-scheme: inherit;
   background-color: var(--bg-elevated);
   color: var(--text);
 }
@@ -435,12 +492,14 @@ code,
   gap: 0.5rem;
 }
 
-.locale-switcher {
+.locale-switcher,
+.theme-switcher {
   display: inline-flex;
   align-items: center;
 }
 
-.locale-switcher-select {
+.locale-switcher-select,
+.theme-switcher-select {
   font: inherit;
   font-size: 0.85rem;
   padding: 0.35rem 0.5rem;
@@ -448,12 +507,18 @@ code,
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text);
-  color-scheme: dark;
+  color-scheme: inherit;
+}
+
+.theme-switcher-select {
+  min-width: 6.75rem;
 }
 
 .login-card-head {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.5rem;
 }
 
@@ -2354,7 +2419,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   padding: 0.85rem 1rem;
   border-radius: 10px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, #1a2030 0%, #12161f 100%);
+  background: linear-gradient(180deg, var(--widget-bg-start) 0%, var(--widget-bg-end) 100%);
   overflow: hidden;
   box-shadow: var(--ui-shadow-surface);
 }
@@ -2381,7 +2446,7 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   flex: 1;
   min-height: 0;
   object-fit: contain;
-  outline: 1px solid rgba(255, 255, 255, 0.1);
+  outline: 1px solid var(--border-subtle);
   outline-offset: -1px;
 }
 
@@ -7961,4 +8026,22 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+/* Recharts — follow app theme tokens */
+.recharts-cartesian-axis-tick text,
+.recharts-polar-angle-axis-tick text,
+.recharts-polar-radius-axis-tick text {
+  fill: var(--text-muted);
+}
+
+.recharts-legend-item-text {
+  color: var(--text) !important;
+}
+
+.recharts-default-tooltip {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px !important;
+  color: var(--text) !important;
 }

@@ -42,8 +42,9 @@ import {
 import AgentChatStatusBar from "./components/AgentChatStatusBar";
 import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
-import LocaleSwitcher from "./components/LocaleSwitcher";
+import ShellPreferences from "./components/ShellPreferences";
 import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
+import { ThemeProvider, useThemeController } from "./theme";
 import { isModelsPath } from "./types/models";
 import { isOperatorAppChildPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
@@ -106,6 +107,15 @@ function useAppMode(session: AuthSession | null): ["admin" | "operator", (mode: 
 }
 
 export default function App() {
+  const theme = useThemeController();
+  return (
+    <ThemeProvider value={theme}>
+      <AppShell />
+    </ThemeProvider>
+  );
+}
+
+function AppShell() {
   const { t } = useTranslation(["shell", "common", "explorer"]);
   const [session, setSession] = useState<AuthSession | null>(() => getStoredSession());
   const [authBootstrapping, setAuthBootstrapping] = useState(
@@ -518,6 +528,9 @@ export default function App() {
     return (
       <div className="login-shell">
         <div className="login-card">
+          <div className="login-card-head">
+            <ShellPreferences />
+          </div>
           <p className="login-sub">{t("shell:login.oidcCompleting")}</p>
         </div>
       </div>
@@ -561,7 +574,7 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          <LocaleSwitcher />
+          <ShellPreferences />
           <button type="button" className="btn" onClick={() => void handleLogout()}>
             {t("common:action.logout")}
           </button>

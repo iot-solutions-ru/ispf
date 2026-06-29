@@ -15,6 +15,7 @@ import {
   parseNetworkGraphData,
   toCytoscapeElements,
 } from "../../../utils/networkGraphData";
+import { useThemeColors } from "../../../utils/themeColors";
 
 interface NetworkGraphWidgetViewProps {
   widget: NetworkGraphWidget;
@@ -22,33 +23,41 @@ interface NetworkGraphWidgetViewProps {
   editable?: boolean;
 }
 
-const CYTOSCAPE_STYLE: StylesheetStyle[] = [
-  {
-    selector: "node",
-    style: {
-      label: "data(label)",
-      "text-valign": "center",
-      "text-halign": "center",
-      "background-color": "#2f81f7",
-      color: "#e8eaed",
-      "font-size": "10px",
-      "text-wrap": "wrap",
-      "text-max-width": "72px",
-      width: 40,
-      height: 40,
+interface ThemeGraphColors {
+  accent: string;
+  networkNodeText: string;
+  networkEdgeColor: string;
+}
+
+function buildCytoscapeStyle(colors: ThemeGraphColors): StylesheetStyle[] {
+  return [
+    {
+      selector: "node",
+      style: {
+        label: "data(label)",
+        "text-valign": "center",
+        "text-halign": "center",
+        "background-color": colors.accent,
+        color: colors.networkNodeText,
+        "font-size": "10px",
+        "text-wrap": "wrap",
+        "text-max-width": "72px",
+        width: 40,
+        height: 40,
+      },
     },
-  },
-  {
-    selector: "edge",
-    style: {
-      width: 2,
-      "line-color": "#6b7280",
-      "target-arrow-color": "#6b7280",
-      "target-arrow-shape": "triangle",
-      "curve-style": "bezier",
+    {
+      selector: "edge",
+      style: {
+        width: 2,
+        "line-color": colors.networkEdgeColor,
+        "target-arrow-color": colors.networkEdgeColor,
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier",
+      },
     },
-  },
-];
+  ];
+}
 
 function layoutOptions(layout: NetworkGraphLayout): LayoutOptions {
   if (layout === "cose") {
@@ -73,6 +82,8 @@ export default function NetworkGraphWidgetView({
   editable,
 }: NetworkGraphWidgetViewProps) {
   const { t } = useTranslation("widgets");
+  const themeColors = useThemeColors();
+  const cytoscapeStyle = useMemo(() => buildCytoscapeStyle(themeColors), [themeColors]);
   const styles = useWidgetStyles(widget.stylesJson);
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -131,7 +142,7 @@ export default function NetworkGraphWidgetView({
     const cy = cytoscape({
       container,
       elements: [],
-      style: CYTOSCAPE_STYLE,
+      style: cytoscapeStyle,
       minZoom: 0.4,
       maxZoom: 2.5,
       wheelSensitivity: 0.2,
@@ -152,7 +163,7 @@ export default function NetworkGraphWidgetView({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [editable]);
+  }, [editable, cytoscapeStyle]);
 
   useEffect(() => {
     const cy = cyRef.current;

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { login } from "../auth/login";
 import { fetchAuthConfig, startOidcLogin } from "../auth/oidc";
 import type { AuthSession } from "../auth/session";
-import LocaleSwitcher from "./LocaleSwitcher";
+import ShellPreferences from "./ShellPreferences";
 
 interface LoginViewProps {
   onLoggedIn: (session: AuthSession) => void;
@@ -58,7 +58,7 @@ export default function LoginView({ onLoggedIn }: LoginViewProps) {
     <div className="login-shell">
       <form className="login-card" onSubmit={(event) => void submit(event)}>
         <div className="login-card-head">
-          <LocaleSwitcher />
+          <ShellPreferences />
         </div>
         <h1>{t("shell:login.title")}</h1>
         <p className="login-sub">{t("shell:login.subtitle")}</p>

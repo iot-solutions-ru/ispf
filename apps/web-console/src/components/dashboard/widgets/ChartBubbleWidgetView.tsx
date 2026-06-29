@@ -14,6 +14,7 @@ import type { ChartWidget } from "../../../types/dashboard";
 import { useChartBubbleSeries } from "../../../hooks/useChartBubbleSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
+import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
 import { parseDemoPreview } from "../widgetDemoPreview";
 import { parseDemoBubblePoints } from "../../../utils/chartRadarBubbleUtils";
@@ -75,7 +76,7 @@ export default function ChartBubbleWidgetView({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
               <XAxis
                 type="number"
                 dataKey="x"
@@ -102,11 +103,7 @@ export default function ChartBubbleWidgetView({
                   const row = payload?.[0]?.payload as { name?: string } | undefined;
                   return row?.name ?? "";
                 }}
-                contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #30363d",
-                  borderRadius: 8,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
               <Scatter name={widget.title} data={points} fill={color} isAnimationActive={false} />
             </ScatterChart>

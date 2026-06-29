@@ -11,7 +11,7 @@ import {
 } from "../../types/operatorUi";
 import type { DashboardSession } from "../dashboard/DashboardContext";
 import { emptySession, mergeSession } from "../dashboard/DashboardContext";
-import LocaleSwitcher from "../LocaleSwitcher";
+import ShellPreferences from "../ShellPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
@@ -352,7 +352,7 @@ function OperatorDashboardChrome({
         </div>
         <div className="topbar-actions">
           <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
-          <LocaleSwitcher />
+          <ShellPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
               {t("common:action.logout")}

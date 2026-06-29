@@ -9,8 +9,13 @@ import {
   YAxis,
 } from "recharts";
 import type { CandlestickPoint } from "../../../utils/chartOhlcUtils";
+import {
+  CHART_GRID_STROKE,
+  CHART_TOOLTIP_MUTED_COLOR,
+  CHART_TOOLTIP_STYLE,
+} from "../../../utils/chartTheme";
 
-const DEFAULT_DOWN_COLOR = "#f85149";
+const DEFAULT_DOWN_COLOR = "var(--danger)";
 
 interface CandlestickBarShapeProps {
   x?: number;
@@ -92,14 +97,12 @@ function CandlestickTooltipContent({
   return (
     <div
       style={{
-        background: "#161b22",
-        border: "1px solid #30363d",
-        borderRadius: 8,
+        ...CHART_TOOLTIP_STYLE,
         padding: "8px 10px",
         fontSize: 12,
       }}
     >
-      <div style={{ marginBottom: 6, color: "#8b949e" }}>
+      <div style={{ marginBottom: 6, color: CHART_TOOLTIP_MUTED_COLOR }}>
         {t("view.timeLabel", { label: label ?? "" })}
       </div>
       {rows.map(({ key, label: name }) => (
@@ -135,7 +138,7 @@ export default function CandlestickChartBody({
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
         <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
         <YAxis
           tick={{ fontSize: 10 }}

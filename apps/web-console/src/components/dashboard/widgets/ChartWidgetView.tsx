@@ -27,6 +27,7 @@ import {
   buildDemoTrendPoints,
   parseDemoPreview,
 } from "../widgetDemoPreview";
+import { CHART_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
 import CandlestickChartBody from "./CandlestickChartBody";
 import ChartBubbleWidgetView from "./ChartBubbleWidgetView";
 import ChartRadarWidgetView from "./ChartRadarWidgetView";
@@ -219,7 +220,7 @@ export default function ChartWidgetView({
         ) : isRangeChart ? (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={rangePoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
               <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
               <YAxis
                 tick={{ fontSize: 10 }}
@@ -241,11 +242,7 @@ export default function ChartWidgetView({
                   return [`${numeric.toFixed(decimals)}${unit ? ` ${unit}` : ""}`, label];
                 }}
                 labelFormatter={(label) => t("view.timeLabel", { label })}
-                contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #30363d",
-                  borderRadius: 8,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
               <Area
                 dataKey="min"
@@ -276,7 +273,7 @@ export default function ChartWidgetView({
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
               <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis tick={{ fontSize: 10 }} width={42} />
                 <Tooltip />
@@ -284,7 +281,7 @@ export default function ChartWidgetView({
               </BarChart>
             ) : chartStyle === "line" ? (
               <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis
                   tick={{ fontSize: 10 }}
@@ -301,11 +298,7 @@ export default function ChartWidgetView({
                     ];
                   }}
                   labelFormatter={(label) => t("view.timeLabel", { label })}
-                  contentStyle={{
-                    background: "#161b22",
-                    border: "1px solid #30363d",
-                    borderRadius: 8,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
                 />
                 <Line
                   type="monotone"
@@ -318,7 +311,7 @@ export default function ChartWidgetView({
               </LineChart>
             ) : (
               <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis
                   tick={{ fontSize: 10 }}
@@ -335,11 +328,7 @@ export default function ChartWidgetView({
                     ];
                   }}
                   labelFormatter={(label) => t("view.timeLabel", { label })}
-                  contentStyle={{
-                    background: "#161b22",
-                    border: "1px solid #30363d",
-                    borderRadius: 8,
-                  }}
+                  contentStyle={CHART_TOOLTIP_STYLE}
                 />
                 <Area
                   type="monotone"

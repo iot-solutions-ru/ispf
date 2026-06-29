@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchOperatorApps, type OperatorAppEntry } from "../../api/operatorApps";
-import LocaleSwitcher from "../LocaleSwitcher";
+import ShellPreferences from "../ShellPreferences";
 
 interface OperatorAppLauncherProps {
   onOpenApp: (appId: string) => void;
@@ -31,7 +31,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
           <span className="brand-sub">{t("operator:launcher.subtitle")}</span>
         </div>
         <div className="topbar-actions">
-          <LocaleSwitcher />
+          <ShellPreferences />
           {onSwitchAdmin && (
             <button type="button" className="btn" onClick={onSwitchAdmin}>
               {t("operator:launcher.switchAdmin")}

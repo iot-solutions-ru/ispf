@@ -13,6 +13,7 @@ import type { ChartWidget } from "../../../types/dashboard";
 import { useChartRadarSeries } from "../../../hooks/useChartRadarSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
+import { CHART_POLAR_GRID_STROKE, CHART_TOOLTIP_STYLE } from "../../../utils/chartTheme";
 import WidgetDragHandle from "../WidgetDragHandle";
 import { parseDemoPreview } from "../widgetDemoPreview";
 import { parseDemoRadarRows } from "../../../utils/chartRadarBubbleUtils";
@@ -75,7 +76,7 @@ export default function ChartRadarWidgetView({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart cx="50%" cy="50%" outerRadius="78%" data={rows}>
-              <PolarGrid stroke="rgba(255,255,255,0.12)" />
+              <PolarGrid stroke={CHART_POLAR_GRID_STROKE} />
               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
               <PolarRadiusAxis
                 angle={30}
@@ -99,11 +100,7 @@ export default function ChartRadarWidgetView({
                     widget.title,
                   ];
                 }}
-                contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #30363d",
-                  borderRadius: 8,
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
               />
             </RadarChart>
           </ResponsiveContainer>

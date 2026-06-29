@@ -33,7 +33,7 @@ export default function StatusBadgeWidgetView({
   );
 
   const status = bound.rawValue != null ? String(bound.rawValue) : "";
-  const color = DISPATCH_STATUS_COLORS[status] ?? "#8b949e";
+  const color = DISPATCH_STATUS_COLORS[status] ?? "var(--text-muted)";
 
   return (
     <DashWidgetShell

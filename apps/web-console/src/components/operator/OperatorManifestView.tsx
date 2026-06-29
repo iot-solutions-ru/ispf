@@ -4,7 +4,7 @@ import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
 import { useOperatorManifest } from "../../hooks/useOperatorManifest";
 import { ANIMA_OPERATOR_WIRE_PROFILE } from "../../types/bff";
 import { resolveOperatorScreen } from "../../types/operatorManifest";
-import LocaleSwitcher from "../LocaleSwitcher";
+import ShellPreferences from "../ShellPreferences";
 import ManifestScreen from "./ManifestScreen";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
@@ -86,7 +86,7 @@ export default function OperatorManifestView({
         </div>
         <div className="topbar-actions">
           <OperatorSidebarToggle open={sidebarDrawer.open} onClick={sidebarDrawer.toggle} />
-          <LocaleSwitcher />
+          <ShellPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
               {t("common:action.logout")}
