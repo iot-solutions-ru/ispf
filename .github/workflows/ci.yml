@@ -36,7 +36,7 @@ jobs:
           :packages:ispf-plugin-workflow:test
           :packages:ispf-server:test
           --no-daemon
-          -Dorg.gradle.workers.max=2
+          -Dorg.gradle.workers.max=1
 
       - name: Scale gate — list_devices p99 baseline
         run: >
@@ -44,7 +44,7 @@ jobs:
           :packages:ispf-server:test
           --tests com.ispf.server.api.ListDevicesLoadTest
           --no-daemon
-          -Dorg.gradle.workers.max=2
+          -Dorg.gradle.workers.max=1
 
   web-console:
     runs-on: ubuntu-latest

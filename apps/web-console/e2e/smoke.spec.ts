@@ -73,6 +73,65 @@ test.describe("explorer device variables", () => {
     await expect(page.locator(".properties-editor")).toBeVisible();
     await page.getByRole("button", { name: "Variables" }).click();
     await expect(page.locator(".property-name", { hasText: "temperature" })).toBeVisible();
+    await expect(page.locator(".properties-editor input[type=\"number\"]").first()).toHaveValue("21.5");
+  });
+
+  test("refreshes variable value after websocket invalidation", async ({ page }) => {
+    let temperature = 21.5;
+    await mockAuthenticatedApi(page);
+    await page.route("**/api/v1/objects/by-path/variables**", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            name: "temperature",
+            value: {
+              schema: {
+                name: "temperature",
+                fields: [{ name: "value", type: "DOUBLE" }],
+              },
+              rows: [{ value: temperature }],
+            },
+            readable: true,
+            writable: true,
+            updatedAt: "2026-06-30T00:00:00.000Z",
+            historyEnabled: false,
+            historyRetentionDays: null,
+          },
+        ]),
+      }),
+    );
+    await seedAuthSession(page);
+    await page.goto("/?mode=admin");
+
+    await expandTreeTo(page, "Devices");
+    const editorLoaded = waitForObjectEditor(page, MOCK_DEVICE_PATH);
+    await selectTreeObjectByLabel(page, "Lab sensor");
+    await editorLoaded;
+    await page.getByRole("button", { name: "Variables" }).click();
+    await expect(page.locator(".properties-editor input[type=\"number\"]").first()).toHaveValue("21.5");
+
+    temperature = 88.0;
+    const refreshed = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/objects/by-path/variables")
+        && response.ok(),
+    );
+    await page.evaluate(({ path }) => {
+      window.dispatchEvent(
+        new CustomEvent("ispf-object-ws-message", {
+          detail: {
+            type: "VARIABLE_UPDATED",
+            path,
+            variableName: "temperature",
+            timestamp: new Date().toISOString(),
+          },
+        }),
+      );
+    }, { path: MOCK_DEVICE_PATH });
+    await refreshed;
+    await expect(page.locator(".properties-editor input[type=\"number\"]").first()).toHaveValue("88");
   });
 });
 
@@ -137,13 +196,14 @@ test.describe("binding expression builder", () => {
     await selectTreeObjectByLabel(page, "Lab sensor");
     await editorLoaded;
 
-    await page.locator("nav.tabs").getByRole("button", { name: "Bindings" }).click();
-    await page.waitForResponse(
+    const rulesLoaded = page.waitForResponse(
       (response) =>
         response.url().includes("/api/v1/objects/by-path/binding-rules")
         && response.ok(),
       { timeout: 15_000 },
     );
+    await page.locator("nav.tabs").getByRole("button", { name: "Bindings" }).click();
+    await rulesLoaded;
     await expect(page.getByRole("button", { name: "+ Rule" })).toBeVisible();
     await page.getByRole("button", { name: "+ Rule" }).click();
 

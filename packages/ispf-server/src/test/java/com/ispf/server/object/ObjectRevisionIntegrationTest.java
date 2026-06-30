@@ -1,5 +1,6 @@
 package com.ispf.server.object;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +26,20 @@ class ObjectRevisionIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectManager objectManager;
+
+    @AfterEach
+    void restoreDemoSensorDisplayName() {
+        String path = "root.platform.devices.demo-sensor-01";
+        objectManager.tree().findByPath(path).ifPresent(device -> {
+            if (!"Demo Sensor 01".equals(device.displayName())) {
+                device.updateInfo("Demo Sensor 01", null);
+                objectManager.persistNodeTree(path);
+            }
+        });
+    }
 
     @Test
     void staleIfMatchReturns409() throws Exception {

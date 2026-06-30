@@ -42,10 +42,20 @@ subprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
         maxParallelForks = 1
+        systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     }
 
     dependencies {
         testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    }
+}
+
+gradle.projectsEvaluated {
+    val testTasks = subprojects
+        .flatMap { project -> project.tasks.withType<Test>().toList() }
+        .sortedBy { it.path }
+    for (index in 1 until testTasks.size) {
+        testTasks[index].mustRunAfter(testTasks[index - 1])
     }
 }
 

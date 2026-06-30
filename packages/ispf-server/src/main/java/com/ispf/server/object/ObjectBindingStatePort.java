@@ -160,6 +160,9 @@ public class ObjectBindingStatePort implements BindingStatePort {
     }
 
     private ObjectNode readRootFromObject(String objectPath) {
+        if (objectManager.tree().findByPath(objectPath).isEmpty()) {
+            return objectMapper.createObjectNode();
+        }
         PlatformObject node = objectManager.require(objectPath);
         return node.getVariable(BindingStateVariables.BINDING_STATE)
                 .flatMap(Variable::value)
@@ -186,6 +189,10 @@ public class ObjectBindingStatePort implements BindingStatePort {
         KeyParts parts = KeyParts.parse(key);
         ObjectNode root = cacheByObjectPath.get(parts.objectPath());
         if (root == null) {
+            return;
+        }
+        if (objectManager.tree().findByPath(parts.objectPath()).isEmpty()) {
+            cacheByObjectPath.remove(parts.objectPath());
             return;
         }
         try {

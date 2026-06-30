@@ -186,6 +186,13 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
         }
         return json(route, []);
       }
+      case "/api/v1/objects/by-path/variables": {
+        const objectPath = searchParams.get("path");
+        if (objectPath === MOCK_DEVICE_PATH) {
+          return json(route, MOCK_DEVICE_EDITOR.variables);
+        }
+        return json(route, []);
+      }
       case "/api/v1/objects/by-path/editor": {
         const objectPath = searchParams.get("path");
         if (objectPath === MOCK_DEVICE_PATH) {

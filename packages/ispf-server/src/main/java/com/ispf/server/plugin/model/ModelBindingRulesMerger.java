@@ -31,6 +31,15 @@ public class ModelBindingRulesMerger {
     }
 
     public void mergeModelRules(String objectPath, ModelDefinition model, Map<String, String> parameters) {
+        mergeModelRules(objectPath, model, parameters, true);
+    }
+
+    public void mergeModelRules(
+            String objectPath,
+            ModelDefinition model,
+            Map<String, String> parameters,
+            boolean evaluateRules
+    ) {
         if (model.bindingRules().isEmpty()) {
             return;
         }
@@ -46,7 +55,9 @@ public class ModelBindingRulesMerger {
         }
         bindingRulesService.saveRules(objectPath, new ArrayList<>(byId.values()));
         dependencyIndex.rebuild(objectPath);
-        bindingRuleEngine.runRulesForObject(objectPath);
+        if (evaluateRules) {
+            bindingRuleEngine.runRulesForObject(objectPath);
+        }
     }
 
     private static BindingRule resolve(ModelBindingRule modelRule, Map<String, String> parameters) {

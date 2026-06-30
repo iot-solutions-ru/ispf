@@ -12,7 +12,7 @@ class AgentWidgetCatalogTest {
 
     @Test
     void catalogListsAllWidgetTypes() {
-        assertEquals(42, AgentWidgetCatalog.all().size());
+        assertEquals(43, AgentWidgetCatalog.all().size());
     }
 
     @Test

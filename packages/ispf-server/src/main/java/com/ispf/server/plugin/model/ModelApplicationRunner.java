@@ -5,6 +5,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.object.ObjectBindingStatePort;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.bootstrap.FixtureModelBootstrap;
@@ -38,6 +39,7 @@ public class ModelApplicationRunner {
     private final SystemObjectStructureService structureService;
     private final DeviceProvisioningService deviceProvisioningService;
     private final DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap;
+    private final ObjectBindingStatePort bindingStatePort;
 
     public ModelApplicationRunner(
             ModelEngine modelEngine,
@@ -47,7 +49,8 @@ public class ModelApplicationRunner {
             ModelApplicationService modelApplicationService,
             SystemObjectStructureService structureService,
             DeviceProvisioningService deviceProvisioningService,
-            DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap
+            DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap,
+            ObjectBindingStatePort bindingStatePort
     ) {
         this.modelEngine = modelEngine;
         this.modelRegistry = modelRegistry;
@@ -57,6 +60,7 @@ public class ModelApplicationRunner {
         this.structureService = structureService;
         this.deviceProvisioningService = deviceProvisioningService;
         this.dashboardDemoRulesBootstrap = dashboardDemoRulesBootstrap;
+        this.bindingStatePort = bindingStatePort;
     }
 
     public void restoreAttachments() {
@@ -68,13 +72,7 @@ public class ModelApplicationRunner {
     }
 
     public void applyDemoModels() {
-        ensurePlatformDemoNodes();
-        modelRegistry.findByName(FixtureModelBootstrap.MQTT_SENSOR_MODEL).ifPresent(model -> {
-            String devicePath = "root.platform.devices.demo-sensor-01";
-            applyModelWithRules(model, devicePath);
-            deviceProvisioningService.provisionDriver(devicePath, "virtual", 2000, false);
-            objectManager.persistNodeTree(devicePath);
-        });
+        ensureDemoFixtures();
 
         modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
             String path = "root.platform.dashboards.demo-sensor";
@@ -183,6 +181,40 @@ public class ModelApplicationRunner {
         });
 
         ensureMeterMqttBusDevice();
+    }
+
+    /** Re-seeds platform demo nodes when tests delete fixture objects. */
+    public synchronized void ensureDemoFixtures() {
+        ensureDemoFixtures(true);
+    }
+
+    /** Restores platform demo nodes between integration tests without touching driver runtime. */
+    public synchronized void ensureTestFixtures() {
+        ensureDemoFixtures(false);
+    }
+
+    private void ensureDemoFixtures(boolean provisionDriver) {
+        ensurePlatformDemoNodes();
+        modelRegistry.findByName(FixtureModelBootstrap.MQTT_SENSOR_MODEL)
+                .ifPresent(model -> restoreDemoSensorFixture(model, provisionDriver));
+    }
+
+    private void restoreDemoSensorFixture(ModelDefinition model, boolean provisionDriver) {
+        String devicePath = "root.platform.devices.demo-sensor-01";
+        if (objectManager.tree().findByPath(devicePath).isEmpty()) {
+            return;
+        }
+        PlatformObject device = objectManager.require(devicePath);
+        if (device.getVariable("temperature").isEmpty()) {
+            bindingStatePort.invalidateCache(devicePath);
+            modelEngine.applyModel(model.id(), devicePath);
+            bindingRulesMerger.mergeModelRules(devicePath, model, Map.of(), false);
+            objectManager.persistNodeTree(devicePath);
+        }
+        if (provisionDriver) {
+            deviceProvisioningService.provisionDriver(devicePath, "virtual", 2000, false);
+            objectManager.persistNodeTree(devicePath);
+        }
     }
 
     /** Idempotent demo platform rules — runs on every startup (prod has fixtures disabled). */

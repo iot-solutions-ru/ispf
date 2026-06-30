@@ -56,7 +56,9 @@ tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
 }
 
 springBoot {
-    buildInfo()
+    buildInfo {
+        excludes.set(setOf("time"))
+    }
 }
 
 tasks.named<ProcessResources>("processResources") {
@@ -68,10 +70,12 @@ tasks.named<ProcessResources>("processResources") {
 val driverPacksDir = rootProject.layout.buildDirectory.dir("driver-packs")
 
 tasks.named<Test>("test") {
+    dependsOn(tasks.named("bootBuildInfo"))
     dependsOn(rootProject.tasks.named("syncAllDriverPacks"))
     val packsPath = driverPacksDir.get().asFile.absolutePath
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
+    systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     maxHeapSize = "2g"
 }
 

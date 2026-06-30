@@ -1,20 +1,11 @@
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { getStoredSession } from "../auth/session";
 import { SESSION_INVALID_EVENT, SESSION_UPDATED_EVENT } from "../auth/validateSession";
 import { isFederatedCatalogPath } from "../utils/federationPath";
-import { refreshWorkQueue } from "./workQueueCache";
+import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./objectWebSocketTypes";
 
-export interface ObjectWsMessage {
-  type: "CREATED" | "UPDATED" | "DELETED" | "VARIABLE_UPDATED" | "EVENT_FIRED" | "presence";
-  path: string;
-  variableName: string;
-  timestamp: string;
-  revision?: number;
-  changedBy?: string;
-}
-
-export const OBJECT_WS_EVENT = "ispf-object-ws-message";
+export type { ObjectWsMessage } from "./objectWebSocketTypes";
+export { OBJECT_WS_EVENT } from "./objectWebSocketTypes";
 
 let activeSocket: WebSocket | null = null;
 let wsConnected = false;
@@ -114,7 +105,6 @@ export function sendPresence(path: string, username: string, mode: "view" | "edi
 }
 
 export function useObjectWebSocket(enabled = true) {
-  const queryClient = useQueryClient();
   const [authToken, setAuthToken] = useState(() => getStoredSession()?.token ?? "");
 
   useEffect(() => {
@@ -150,44 +140,8 @@ export function useObjectWebSocket(enabled = true) {
           const message = JSON.parse(event.data) as ObjectWsMessage;
           window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
 
-          switch (message.type) {
-            case "CREATED":
-            case "UPDATED":
-            case "DELETED":
-              window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
-              queryClient.invalidateQueries({ queryKey: ["objects"] });
-              queryClient.invalidateQueries({ queryKey: ["object", message.path] });
-              queryClient.invalidateQueries({ queryKey: ["object-editor", message.path] });
-              break;
-            case "VARIABLE_UPDATED":
-              queryClient.invalidateQueries({ queryKey: ["variables", message.path] });
-              queryClient.invalidateQueries({ queryKey: ["variables-batch"] });
-              queryClient.invalidateQueries({ queryKey: ["events", message.path] });
-              queryClient.invalidateQueries({ queryKey: ["events", "all"] });
-              queryClient.invalidateQueries({ queryKey: ["events", "operator-sidebar"] });
-              if (message.variableName === "driverStatus") {
-                queryClient.invalidateQueries({ queryKey: ["objects"] });
-                queryClient.invalidateQueries({ queryKey: ["driver-status", message.path] });
-              }
-              break;
-            case "EVENT_FIRED":
-              queryClient.invalidateQueries({ queryKey: ["events", message.path] });
-              queryClient.invalidateQueries({ queryKey: ["events", "all"] });
-              queryClient.invalidateQueries({ queryKey: ["events", "operator-sidebar"] });
-              break;
-            case "presence":
-              break;
-          }
-
-          if (message.type === "UPDATED" || message.type === "DELETED") {
-            queryClient.invalidateQueries({ queryKey: ["dashboard", message.path] });
-            queryClient.invalidateQueries({ queryKey: ["workflow", message.path] });
-          }
-          if (message.type === "UPDATED") {
-            void refreshWorkQueue(queryClient);
-          }
-          if (message.type === "VARIABLE_UPDATED" || message.type === "EVENT_FIRED") {
-            void refreshWorkQueue(queryClient);
+          if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
+            window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
           }
         } catch {
           // ignore malformed messages
@@ -218,7 +172,7 @@ export function useObjectWebSocket(enabled = true) {
       }
       socket?.close();
     };
-  }, [queryClient, enabled, authToken]);
+  }, [enabled, authToken]);
 }
 
 /** Subscribe WebSocket to a federated object/dashboard path for background refresh. */

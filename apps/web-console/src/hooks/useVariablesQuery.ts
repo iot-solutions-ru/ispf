@@ -6,6 +6,7 @@ import {
   subscribeObjectWebSocketConnection,
   useObjectPathsSubscription,
 } from "./useObjectWebSocket";
+import { variablesRefetchIntervalMs } from "./variablesQueryPolicy";
 
 export function useVariablesQuery(
   objectPath: string,
@@ -24,7 +25,7 @@ export function useVariablesQuery(
     queryKey: ["variables", objectPath],
     queryFn: () => fetchVariables(objectPath),
     enabled: enabled && Boolean(objectPath),
-    refetchInterval: wsConnected ? false : refreshIntervalMs,
+    refetchInterval: variablesRefetchIntervalMs(refreshIntervalMs, wsConnected),
     retry: 2,
   });
 }
@@ -47,7 +48,7 @@ export function useVariablesBatchQuery(
     queryKey: ["variables-batch", uniquePaths],
     queryFn: () => fetchVariablesBatch(uniquePaths),
     enabled: enabled && uniquePaths.length > 0,
-    refetchInterval: wsConnected ? false : refreshIntervalMs,
+    refetchInterval: variablesRefetchIntervalMs(refreshIntervalMs, wsConnected),
     retry: 2,
   });
 }

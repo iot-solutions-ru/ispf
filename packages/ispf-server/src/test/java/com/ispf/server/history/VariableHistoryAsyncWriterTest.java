@@ -24,6 +24,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,7 +77,7 @@ class VariableHistoryAsyncWriterTest {
         writer.awaitQueueDrain(5, TimeUnit.SECONDS);
 
         ArgumentCaptor<List<VariableSampleEntity>> captor = ArgumentCaptor.forClass(List.class);
-        verify(batchPersister, atLeastOnce()).persistBatch(captor.capture());
+        verify(batchPersister, timeout(5000).atLeastOnce()).persistBatch(captor.capture());
         assertTrue(captor.getValue().size() >= 2);
         verify(automationMetricsRecorder, atLeastOnce()).recordVariableHistoryFlushed(2);
     }

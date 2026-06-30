@@ -17,6 +17,7 @@ class PlatformCatalogSortOrderTest {
                         "root.platform.alert-rules",
                         "root.platform.operator-apps",
                         "root.platform.dashboards",
+                        "root.platform.mimics",
                         "root.platform.relative-models",
                         "root.platform.absolute-models",
                         "root.platform.instance-types",

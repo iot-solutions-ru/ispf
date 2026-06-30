@@ -181,6 +181,7 @@ public final class AgentWidgetPropertiesGuide {
                 **context-list** — отладка: показывает selection и params (без полей).
                 **image** — imageUrl, alt.
                 **html-snippet** — htmlJson.
+                **scada-mimic** — diagramJson (inline v2 document) или mimicPath (object path); defaultZoom, panEnabled, showGrid.
                 
                 ### composition (вложенные виджеты)
                 
@@ -576,6 +577,14 @@ public final class AgentWidgetPropertiesGuide {
         List<Map<String, String>> navFields = new ArrayList<>();
         navFields.add(f("itemsJson", "string", false, "[{label,dashboardPath}]"));
         specs.put("nav-menu", spec("composition", List.of(), navFields, null, null));
+
+        List<Map<String, String>> mimicFields = new ArrayList<>();
+        mimicFields.add(f("diagramJson", "string", false, "Inline SCADA mimic v2 document JSON"));
+        mimicFields.add(f("mimicPath", "string", false, "Object path to MIMIC document"));
+        mimicFields.add(f("defaultZoom", "number", false, "Initial zoom (default 1)"));
+        mimicFields.add(f("panEnabled", "boolean", false, "Allow pan/zoom in operator view"));
+        mimicFields.add(f("showGrid", "boolean", false, "Show alignment grid"));
+        specs.put("scada-mimic", spec("static", List.of(), mimicFields, null, null));
 
         return Map.copyOf(specs);
     }

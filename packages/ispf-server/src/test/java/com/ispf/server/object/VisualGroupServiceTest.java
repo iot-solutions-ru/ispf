@@ -58,7 +58,19 @@ class VisualGroupServiceTest {
     @Test
     void removesDeletedMemberFromVisualGroups() {
         String groupPath = "root.platform.devices.test-visual-group-cleanup";
-        String memberPath = "root.platform.devices.demo-sensor-01";
+        String memberName = "test-visual-group-member";
+        String memberPath = "root.platform.devices." + memberName;
+
+        if (objectManager.tree().findByPath(memberPath).isEmpty()) {
+            objectManager.create(
+                    "root.platform.devices",
+                    memberName,
+                    ObjectType.DEVICE,
+                    "Visual group cleanup member",
+                    "",
+                    null
+            );
+        }
 
         if (objectManager.tree().findByPath(groupPath).isEmpty()) {
             objectManager.create(
