@@ -69,7 +69,7 @@
 | **BL-26** | Stub promotion: Ethernet/IP, OPC DA, OPC Bridge, CORBA, VMware, SMI-S | P3 | Partial | Driver |
 | **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Done | Driver catalog |
 | **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
-| **BL-29** | CWMP `SetParameterValues` write | P3 | Planned | Driver |
+| **BL-29** | CWMP `SetParameterValues` write | P3 | Done | Driver |
 | **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Partial | Driver QA |
 
 ### Wave D — Scale, ops, federation
@@ -95,7 +95,7 @@
 | **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Done | Operator |
 | **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
 | **BL-54** | Spreadsheet: binding ячеек к variable history | P3 | Done | Spreadsheet |
-| **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL widgets/inspector — TBD | P2 | Partial | QA |
+| **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL PlatformLicenseCard, CreateVariableDialog | P2 | Partial | QA |
 
 ### Wave G — Semantic interoperability (Haystack / Brick)
 
@@ -531,7 +531,8 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 **Остаётся для полного закрытия BL-55:**
 
 - [x] RTL: `BindingActivatorsEditor`, `PlatformBindingComposer`
-- [ ] RTL/component tests: dashboard widget views, inspector dialogs (CreateVariable, etc.)
+- [x] RTL: `PlatformLicenseCard`, `CreateVariableDialog`
+- [ ] RTL/component tests: dashboard widget views (remaining)
 - [ ] Playwright overlap — см. BL-50 (Done)
 
 **Acceptance (полное закрытие):** smoke RTL на ключевые inspector panels + 2–3 widget editors без регрессий в CI.
@@ -655,6 +656,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-29 Done: CWMP `SetParameterValues` write + runtime API test; BL-55: RTL `PlatformLicenseCard`, `CreateVariableDialog` |
 | 2026-06-30 | Wave H: time & timezones → BL-66…71, [ADR-0020](decisions/0020-time-and-timezones.md), [ROADMAP Phase 21](ROADMAP.md#phase-21--time--timezones) |
 | 2026-06-28 | BL-44…47 Done: notifications (webhook/email), federation catalog preview + dashboard write proxy, platform backup export/import |
 | 2026-06-28 | BL-23, BL-27 Done; BL-30 Partial; BL-43, BL-48 Done (YARG/MCP health cards) |

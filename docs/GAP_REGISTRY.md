@@ -31,7 +31,7 @@
 | **P1** | i18n tails | widget types + binding hints в locale | BL-07 Done |
 | **P1** | Playwright e2e | Admin smoke + inspector/dashboard; staging TBD | BL-50 Partial, 18.1 |
 | **P1** | Driver write | Modbus, S7, OPC UA | BL-20…22 Done |
-| **P2** | Driver write (tail) | CWMP write | BL-29 |
+| **P2** | Driver write (tail) | CWMP write | BL-29 Done |
 | **P2** | Bindings UX | Каталог platform bindings + activators UI | BL-09,18 Done; runtime engine in progress |
 | **P2** | History scale | ClickHouse variable history backend | BL-40 Done |
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
@@ -41,8 +41,6 @@
 | **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
 | **P3** | Time & TZ (deep) | Historian `observedAt` — **Done** (BL-69); reports `reportTimeZone` — follow-up | BL-69 poll SPI, reports |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
-| **Низкий** | CWMP write | `SetParameterValues` — read-only | BL-29 |
-
 ## Таблица подсистем
 
 | Подсистема | Готовность | Главный пробел | REQ |
@@ -62,8 +60,8 @@
 | MCP adapter (0006) | ~100% | — | ContextPack `resources/list` + `resources/read` |
 | Tree-first agent (FW-44) | ~100% | — | [0005](decisions/0005-tree-first-ai-agent.md), **FW-45** briefing |
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
-| Driver stub catalog | ~95% | CWMP write; native stubs | BL-26,29, [DRIVERS.md](DRIVERS.md) |
-| Driver maturity labels | ~95% | CWMP write paths | BL-29 |
+| Driver stub catalog | ~98% | native stubs | BL-26, [DRIVERS.md](DRIVERS.md) |
+| Driver maturity labels | ~98% | — | — |
 | Frontend e2e (Playwright) | ~60% | CI vs staging/prod URL | BL-50 Partial, Phase 18.1 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~95% | — | BL-01…18 Done |
@@ -80,7 +78,7 @@
 | Platform backup | Done | `GET /platform/backup/export`, `POST /platform/backup/import?dryRun=` + System UI | — |
 | Operator manifest | ~98% | spreadsheet history (BL-54) | BL-54 |
 | Spreadsheet widget | ~98% | — | BL-54 done |
-| Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
+| Frontend component tests | ~55% | RTL dashboard widget views | BL-55 Partial |
 | Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |
 | Time & timezones | ~100% | — | [0020](decisions/0020-time-and-timezones.md) |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |
@@ -89,7 +87,7 @@
 
 | Дата | Изменение |
 |------|-----------|
-| 2026-06-30 | Wave H / Phase 21: time & timezones → BL-66…71, ADR-0020, REQ-FW-60 |
+| 2026-06-30 | BL-29 Done: CWMP SetParameterValues write; BL-55: RTL PlatformLicenseCard, CreateVariableDialog |
 | 2026-06-28 | BL-44…47 Done: notifications, federation catalog conflicts + dashboard write proxy, platform backup API/UI |
 | 2026-06-28 | BL-40 Done: ClickHouse variable history write/query; BL-50 e2e Variables + Dashboard builder |
 | 2026-06-28 | ROADMAP Phase 20 sync с CODE_AUDIT: BL-20…22/28/41/42 Done; Partial на 20.15–17,19–21; журналы 0.9.33 |

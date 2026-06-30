@@ -51,6 +51,7 @@ class CwmpDriverIntegrationTest {
     private HttpServer acsServer;
     private String acsUrl;
     private final AtomicInteger informCount = new AtomicInteger();
+    private final AtomicInteger setParameterResponseCount = new AtomicInteger();
 
     @BeforeEach
     void createDevice() {
@@ -65,6 +66,7 @@ class CwmpDriverIntegrationTest {
     @BeforeEach
     void startMockAcs() throws IOException {
         informCount.set(0);
+        setParameterResponseCount.set(0);
         acsServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         acsServer.createContext("/", this::handleAcsRequest);
         acsServer.start();
@@ -114,6 +116,9 @@ class CwmpDriverIntegrationTest {
                       </soap-env:Body>
                     </soap-env:Envelope>
                     """;
+        } else if (body.contains("SetParameterValuesResponse")) {
+            setParameterResponseCount.incrementAndGet();
+            response = "<ok/>";
         } else {
             response = "<ok/>";
         }
@@ -170,5 +175,55 @@ class CwmpDriverIntegrationTest {
                 .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-2.0.1"));
 
         org.junit.jupiter.api.Assertions.assertTrue(informCount.get() >= 1);
+    }
+
+    @Test
+    void cwmpDriverWriteViaRuntimeApi() throws Exception {
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", devicePath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "cwmp",
+                                  "pollIntervalMs": 60000,
+                                  "configuration": {
+                                    "acsUrl": "%s",
+                                    "deviceId": "TEST-CPE-001",
+                                    "timeoutMs": "5000",
+                                    "informParameters": "Device.DeviceInfo.SoftwareVersion"
+                                  },
+                                  "pointMappings": {
+                                    "softwareVersion": "Device.DeviceInfo.SoftwareVersion",
+                                    "cwmpConnected": "connected"
+                                  },
+                                  "autoStart": true
+                                }
+                                """.formatted(acsUrl)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", devicePath))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/write")
+                        .param("devicePath", devicePath)
+                        .param("pointId", "softwareVersion")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "rows": [{ "value": "ISPF-CWMP-3.0.0" }]
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                        .param("path", devicePath)
+                        .param("name", "softwareVersion"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-3.0.0"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(1, setParameterResponseCount.get());
     }
 }

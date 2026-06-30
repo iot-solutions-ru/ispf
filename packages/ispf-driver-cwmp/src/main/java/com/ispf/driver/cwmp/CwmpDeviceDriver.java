@@ -36,8 +36,8 @@ public class CwmpDeviceDriver implements DeviceDriver {
     private static final DriverMetadata METADATA = new DriverMetadata(
             "cwmp",
             "TR-069 CWMP Client Driver",
-            "0.2.0",
-            "TR-069 CPE client: Periodic Inform to ACS, parses ACS RPC responses and GetParameterValues results",
+            "0.2.1",
+            "TR-069 CPE client: Periodic Inform to ACS, GetParameterValues read and SetParameterValues write",
             "ISPF",
             Map.of(
                     "acsUrl", "http://127.0.0.1:7547/",
@@ -137,7 +137,33 @@ public class CwmpDeviceDriver implements DeviceDriver {
 
     @Override
     public void writePoint(String pointId, DataRecord value) throws DriverException {
-        throw new DriverException("CWMP driver is read-only in v0.1");
+        if (!isConnected()) {
+            throw new DriverException("Not connected");
+        }
+        CwmpPoint point = points.get(pointId);
+        if (point == null) {
+            throw new DriverException("Unknown point: " + pointId);
+        }
+        if (point.isConnectedPoint()) {
+            throw new DriverException("Cannot write connected status point");
+        }
+        String newValue = extractWriteValue(value);
+        lastParameters.put(point.parameterName(), newValue);
+        postSoap(buildSetParameterValuesResponse());
+        driverObject.updateVariable(pointId, readPoint(point));
+        driverObject.log(DriverLogLevel.INFO,
+                "CWMP SetParameterValues applied for " + point.parameterName() + "=" + newValue);
+    }
+
+    private static String extractWriteValue(DataRecord value) throws DriverException {
+        Object raw = value.firstRow().get("raw");
+        if (raw == null) {
+            raw = value.firstRow().get("value");
+        }
+        if (raw == null) {
+            throw new DriverException("CWMP write requires value or raw field");
+        }
+        return String.valueOf(raw);
     }
 
     private void sendInform() throws DriverException {
@@ -190,15 +216,27 @@ public class CwmpDeviceDriver implements DeviceDriver {
     }
 
     private void handleAcsRpc(String responseBody) throws DriverException {
-        if (!responseBody.contains("GetParameterValues")) {
-            return;
+        if (responseBody.contains("GetParameterValues") && !responseBody.contains("GetParameterValuesResponse")) {
+            java.util.List<String> requested = extractGetParameterNames(responseBody);
+            if (!requested.isEmpty()) {
+                String response = postSoap(buildGetParameterValuesResponse(requested));
+                parseParameters(response, lastParameters);
+            }
         }
-        java.util.List<String> requested = extractGetParameterNames(responseBody);
-        if (requested.isEmpty()) {
-            return;
+        if (responseBody.contains("SetParameterValues") && !responseBody.contains("SetParameterValuesResponse")) {
+            Map<String, String> writes = new HashMap<>();
+            parseParameters(responseBody, writes);
+            if (!writes.isEmpty()) {
+                lastParameters.putAll(writes);
+                for (Map.Entry<String, CwmpPoint> entry : points.entrySet()) {
+                    CwmpPoint mapped = entry.getValue();
+                    if (!mapped.isConnectedPoint() && writes.containsKey(mapped.parameterName())) {
+                        driverObject.updateVariable(entry.getKey(), readPoint(mapped));
+                    }
+                }
+                postSoap(buildSetParameterValuesResponse());
+            }
         }
-        String response = postSoap(buildGetParameterValuesResponse(requested));
-        parseParameters(response, lastParameters);
     }
 
     static java.util.List<String> extractGetParameterNames(String xml) {
@@ -231,6 +269,23 @@ public class CwmpDeviceDriver implements DeviceDriver {
         } catch (Exception e) {
             throw new DriverException("CWMP SOAP exchange failed", e);
         }
+    }
+
+    private String buildSetParameterValuesResponse() {
+        return """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/"
+                                   xmlns:cwmp="urn:dslforum-org:cwmp-1-0">
+                  <soap-env:Header>
+                    <cwmp:ID soap-env:mustUnderstand="1">3</cwmp:ID>
+                  </soap-env:Header>
+                  <soap-env:Body>
+                    <cwmp:SetParameterValuesResponse>
+                      <Status>0</Status>
+                    </cwmp:SetParameterValuesResponse>
+                  </soap-env:Body>
+                </soap-env:Envelope>
+                """;
     }
 
     private String buildGetParameterValuesResponse(java.util.List<String> parameterNames) {

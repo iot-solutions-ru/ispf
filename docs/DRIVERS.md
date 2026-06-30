@@ -264,7 +264,7 @@ Point mapping: путь `/sensor/temp` или полный `coap://host:5683/...
 | `vmware` | STUB/BETA | vSphere SOAP stub |
 | `smi-s` | STUB/BETA | SMI-S CIM-XML stub |
 
-Отдельный хвост: **CWMP write** (`SetParameterValues`) — read-only сейчас; см. § cwmp ниже.
+Отдельный хвост: native STUB promotion — см. § Stub promotion ниже.
 
 См. [ROADMAP.md § Phase 17.4](ROADMAP.md#phase-17--post-baseline-hardening-v080), [GAP_REGISTRY.md](GAP_REGISTRY.md).
 
@@ -495,7 +495,7 @@ TR-069 CPE client: Periodic Inform к ACS, обработка `GetParameterValue
 
 Point mapping: TR-069 parameter name (например `Device.DeviceInfo.SoftwareVersion`) или `connected` (статус последнего Inform).
 
-Ограничения: read-only; write SetParameterValues — backlog.
+Write: `POST /api/v1/drivers/runtime/write` с `pointId` и `{ "rows": [{ "value": "..." }] }` — драйвер применяет `SetParameterValues` локально и отправляет `SetParameterValuesResponse` на ACS. Требуется предварительный poll (point mapping в памяти). Псевдо-точка `connected` — read-only.
 
 ### gps-tracker (`ispf-driver-gps-tracker`)
 

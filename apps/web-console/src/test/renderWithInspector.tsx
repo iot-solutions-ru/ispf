@@ -4,6 +4,7 @@ import { render, type RenderOptions } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import type { ReactElement, ReactNode } from "react";
 import enInspector from "../locales/en/inspector.json";
+import enCommon from "../locales/en/common.json";
 
 const testI18n = i18n.createInstance();
 
@@ -13,6 +14,7 @@ void testI18n.use(initReactI18next).init({
   resources: {
     en: {
       inspector: enInspector,
+      common: enCommon,
     },
   },
   interpolation: { escapeValue: false },

@@ -332,7 +332,7 @@ flowchart LR
 - [~] **Driver stub promotion** — demand-driven (Phase 18.2)
 - [~] **ClickHouse variable history** — settings UI done, backend query planned (BL-40)
 - [~] **Haystack/Brick semantic layer** — deferred (BL-56…62)
-- [ ] **CWMP driver write** — BL-29
+- [x] **CWMP driver write** — BL-29 (`SetParameterValues` via runtime API)
 
 Подробный актуальный план: [ROADMAP.md](ROADMAP.md), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
 
