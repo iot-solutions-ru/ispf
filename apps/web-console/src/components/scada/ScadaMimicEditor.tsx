@@ -11,6 +11,18 @@ import {
   snapCanvasCoordinate,
 } from "../../scada/document";
 import { findNearestPort, findPortOnElement, getElementPortPosition, rerouteConnectionsForElement, routeOrthogonal } from "../../scada/connectionRouting";
+import { snapElementPosition, type SnapGuide } from "../../scada/elementSnap";
+import {
+  alignElements,
+  applyElementResize,
+  distributeElements,
+  flipElement,
+  rotateElement,
+  setElementSize,
+  type AlignMode,
+  type DistributeAxis,
+  type ResizeHandle,
+} from "../../scada/layoutOps";
 import { collectBindingPaths, resolveDocumentBindings } from "../../scada/bindingResolver";
 import { resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
@@ -19,10 +31,24 @@ import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
 import {
+  IconAlignBottom,
+  IconAlignCenterH,
+  IconAlignLeft,
+  IconAlignMiddleV,
+  IconAlignRight,
+  IconAlignTop,
   IconConnect,
+  IconDistributeH,
+  IconDistributeV,
+  IconFlipH,
+  IconFlipV,
+  IconGrid,
   IconPlace,
   IconRedo,
+  IconRotateCcw,
+  IconRotateCw,
   IconSelect,
+  IconSnapGrid,
   IconTrash,
   IconUndo,
 } from "./ScadaEditorIcons";
@@ -55,7 +81,10 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const [history, setHistory] = useState<ScadaMimicDocument[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [importText, setImportText] = useState("");
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const documentRef = useRef(document);
+  const dragOriginsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const resizeOriginRef = useRef<MimicElement | null>(null);
   documentRef.current = document;
 
   useEffect(() => {
@@ -163,8 +192,110 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   );
 
   const handleElementDragEnd = useCallback(() => {
+    dragOriginsRef.current = new Map();
+    setSnapGuides([]);
     pushHistory(documentRef.current);
   }, [pushHistory]);
+
+  const rerouteElements = useCallback(
+    (connections: MimicConnection[], elements: MimicElement[], ids: Iterable<string>, customSymbols?: MimicCustomSymbol[]) => {
+      let next = connections;
+      for (const id of ids) {
+        next = rerouteConnectionsForElement(id, next, elements, customSymbols);
+      }
+      return next;
+    },
+    []
+  );
+
+  const handleAlign = useCallback(
+    (mode: AlignMode) => {
+      if (selectedIds.size < 2 || tool === "connect") return;
+      updateDocument((doc) => {
+        const elements = alignElements(doc.elements, selectedIds, mode, doc.customSymbols);
+        return {
+          ...doc,
+          elements,
+          connections: rerouteElements(doc.connections, elements, selectedIds, doc.customSymbols),
+        };
+      });
+    },
+    [rerouteElements, selectedIds, tool, updateDocument]
+  );
+
+  const handleDistribute = useCallback(
+    (axis: DistributeAxis) => {
+      if (selectedIds.size < 3 || tool === "connect") return;
+      updateDocument((doc) => {
+        const elements = distributeElements(doc.elements, selectedIds, axis, doc.customSymbols);
+        return {
+          ...doc,
+          elements,
+          connections: rerouteElements(doc.connections, elements, selectedIds, doc.customSymbols),
+        };
+      });
+    },
+    [rerouteElements, selectedIds, tool, updateDocument]
+  );
+
+  const handleFlip = useCallback(
+    (axis: "h" | "v") => {
+      if (selectedIds.size === 0 || tool === "connect") return;
+      updateDocument((doc) => {
+        const elements = doc.elements.map((el) =>
+          selectedIds.has(el.id) ? flipElement(el, axis) : el
+        );
+        return {
+          ...doc,
+          elements,
+          connections: rerouteElements(doc.connections, elements, selectedIds, doc.customSymbols),
+        };
+      });
+    },
+    [rerouteElements, selectedIds, tool, updateDocument]
+  );
+
+  const handleRotate = useCallback(
+    (delta: 90 | -90) => {
+      if (selectedIds.size === 0 || tool === "connect") return;
+      updateDocument((doc) => {
+        const elements = doc.elements.map((el) =>
+          selectedIds.has(el.id) ? rotateElement(el, delta) : el
+        );
+        return {
+          ...doc,
+          elements,
+          connections: rerouteElements(doc.connections, elements, selectedIds, doc.customSymbols),
+        };
+      });
+    },
+    [rerouteElements, selectedIds, tool, updateDocument]
+  );
+
+  const toggleGridVisible = useCallback(() => {
+    updateDocument((doc) => ({
+      ...doc,
+      grid: {
+        size: doc.grid?.size ?? 10,
+        snap: doc.grid?.snap ?? false,
+        visible: !(doc.grid?.visible === true),
+      },
+    }));
+  }, [updateDocument]);
+
+  const toggleGridSnap = useCallback(() => {
+    updateDocument((doc) => {
+      const snap = !(doc.grid?.snap === true);
+      return {
+        ...doc,
+        grid: {
+          size: doc.grid?.size && doc.grid.size > 1 ? doc.grid.size : 10,
+          snap,
+          visible: doc.grid?.visible ?? false,
+        },
+      };
+    });
+  }, [updateDocument]);
 
   const handleAddCustomSymbol = useCallback(
     (def: MimicCustomSymbol) => {
@@ -255,17 +386,81 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     setSelectedConnectionId(null);
   };
 
-  const handleElementDrag = (id: string, x: number, y: number) => {
-    const sx = snapCanvasCoordinate(x, document.grid);
-    const sy = snapCanvasCoordinate(y, document.grid);
+  const handleElementDragStart = useCallback((id: string, origins: Map<string, { x: number; y: number }>) => {
+    dragOriginsRef.current = origins;
+    if (!origins.has(id)) {
+      const el = documentRef.current.elements.find((e) => e.id === id);
+      if (el) dragOriginsRef.current.set(id, { x: el.x, y: el.y });
+    }
+  }, []);
+
+  const handleElementDrag = useCallback((id: string, x: number, y: number) => {
+    const origins = dragOriginsRef.current;
+    const leaderOrig = origins.get(id);
+    if (!leaderOrig) return;
+    const leader = documentRef.current.elements.find((e) => e.id === id);
+    if (!leader) return;
+
+    const excludeIds = new Set(origins.keys());
+    const snapped = snapElementPosition(
+      leader,
+      leaderOrig.x,
+      leaderOrig.y,
+      x,
+      y,
+      documentRef.current.elements,
+      excludeIds,
+      documentRef.current.grid,
+      documentRef.current.customSymbols
+    );
+    setSnapGuides(snapped.guides);
+    const dx = snapped.x - leaderOrig.x;
+    const dy = snapped.y - leaderOrig.y;
+
     updateDocument((doc) => {
-      const elements = doc.elements.map((el) => (el.id === id ? { ...el, x: sx, y: sy } : el));
-      const connections = rerouteConnectionsForElement(id, doc.connections, elements, doc.customSymbols);
+      const elements = doc.elements.map((el) => {
+        const orig = origins.get(el.id);
+        if (!orig) return el;
+        return {
+          ...el,
+          x: snapCanvasCoordinate(orig.x + dx, doc.grid),
+          y: snapCanvasCoordinate(orig.y + dy, doc.grid),
+        };
+      });
+      const connections = rerouteElements(doc.connections, elements, origins.keys(), doc.customSymbols);
       return { ...doc, elements, connections };
     }, false);
-  };
+  }, [rerouteElements, updateDocument]);
 
-  const handleDeleteSelected = () => {
+  const handleElementResizeStart = useCallback((id: string) => {
+    const el = documentRef.current.elements.find((e) => e.id === id);
+    resizeOriginRef.current = el ? { ...el, props: el.props ? { ...el.props } : {} } : null;
+  }, []);
+
+  const handleElementResize = useCallback(
+    (id: string, handle: ResizeHandle, dx: number, dy: number, aspectLock: boolean) => {
+      const base = resizeOriginRef.current;
+      if (!base || base.id !== id) return;
+      const size = applyElementResize(base, handle, dx, dy, documentRef.current.customSymbols, {
+        aspectLock,
+        grid: documentRef.current.grid?.snap ? documentRef.current.grid : undefined,
+      });
+      updateDocument((doc) => {
+        const updated = setElementSize({ ...base, x: size.x, y: size.y }, size.width, size.height, doc.customSymbols);
+        const elements = doc.elements.map((el) => (el.id === id ? updated : el));
+        const connections = rerouteConnectionsForElement(id, doc.connections, elements, doc.customSymbols);
+        return { ...doc, elements, connections };
+      }, false);
+    },
+    [updateDocument]
+  );
+
+  const handleElementResizeEnd = useCallback(() => {
+    resizeOriginRef.current = null;
+    pushHistory(documentRef.current);
+  }, [pushHistory]);
+
+  const handleDeleteSelected = useCallback(() => {
     if (selectedConnectionId) {
       updateDocument((doc) => ({
         ...doc,
@@ -283,7 +478,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       ),
     }));
     setSelectedIds(new Set());
-  };
+  }, [selectedConnectionId, selectedIds, updateDocument]);
 
   const undo = () => {
     if (historyIndex <= 0) return;
@@ -310,6 +505,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if ((e.target as HTMLElement | null)?.isContentEditable) return;
 
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
@@ -336,6 +532,10 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [document, handleDeleteSelected, historyIndex, history.length, onSave, redo, undo]);
+
+  const layoutDisabled = tool === "connect" || selectedIds.size === 0;
+  const alignDisabled = layoutDisabled || selectedIds.size < 2;
+  const distributeDisabled = layoutDisabled || selectedIds.size < 3;
 
   const toolLabel = t(`tools.${tool === "select" ? "select" : tool === "place" ? "place" : "connect"}`);
 
@@ -383,6 +583,73 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             </button>
           </div>
 
+          <span className="scada-toolbar-divider" aria-hidden />
+
+          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.transform")}>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("h")} title={t("tools.flipH")}>
+              <IconFlipH className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("v")} title={t("tools.flipV")}>
+              <IconFlipV className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(90)} title={t("tools.rotateCw")}>
+              <IconRotateCw className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(-90)} title={t("tools.rotateCcw")}>
+              <IconRotateCcw className="scada-tool-icon" />
+            </button>
+          </div>
+
+          <span className="scada-toolbar-divider" aria-hidden />
+
+          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.align")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("left")} title={t("tools.alignLeft")}>
+              <IconAlignLeft className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerX")} title={t("tools.alignCenterH")}>
+              <IconAlignCenterH className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("right")} title={t("tools.alignRight")}>
+              <IconAlignRight className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("top")} title={t("tools.alignTop")}>
+              <IconAlignTop className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerY")} title={t("tools.alignMiddleV")}>
+              <IconAlignMiddleV className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("bottom")} title={t("tools.alignBottom")}>
+              <IconAlignBottom className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("horizontal")} title={t("tools.distributeH")}>
+              <IconDistributeH className="scada-tool-icon" />
+            </button>
+            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("vertical")} title={t("tools.distributeV")}>
+              <IconDistributeV className="scada-tool-icon" />
+            </button>
+          </div>
+
+          <span className="scada-toolbar-divider" aria-hidden />
+
+          <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.grid")}>
+            <button
+              type="button"
+              className={`scada-icon-btn${document.grid?.visible ? " active" : ""}`}
+              onClick={toggleGridVisible}
+              title={t("tools.gridVisible")}
+            >
+              <IconGrid className="scada-tool-icon" />
+            </button>
+            <button
+              type="button"
+              className={`scada-icon-btn${document.grid?.snap ? " active" : ""}`}
+              onClick={toggleGridSnap}
+              title={t("tools.gridSnap")}
+            >
+              <IconSnapGrid className="scada-tool-icon" />
+            </button>
+          </div>
+
           <div className="scada-toolbar-actions">
             <button type="button" className="scada-icon-btn" onClick={undo} disabled={historyIndex <= 0} title={`${t("tools.undo")} (Ctrl+Z)`}>
               <IconUndo className="scada-tool-icon" />
@@ -390,7 +657,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             <button type="button" className="scada-icon-btn" onClick={redo} disabled={historyIndex >= history.length - 1} title={`${t("tools.redo")} (Ctrl+Y)`}>
               <IconRedo className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={t("tools.delete")}>
+            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={`${t("tools.delete")} (Del)`}>
               <IconTrash className="scada-tool-icon" />
             </button>
           </div>
@@ -434,6 +701,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                   connectFrom={connectFrom}
                   selectedIds={selectedIds}
                   selectedConnectionId={selectedConnectionId}
+                  snapGuides={snapGuides}
+                  showResizeHandles={tool === "select"}
                   onSelectElement={(id, additive) => {
                     if (tool === "connect") return;
                     setSelectedConnectionId(null);
@@ -451,8 +720,12 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                   onCanvasClick={handleCanvasClick}
                   onConnectAtPoint={handleConnectAtPoint}
                   onElementConnectClick={handleElementConnectClick}
+                  onElementDragStart={handleElementDragStart}
                   onElementDrag={handleElementDrag}
                   onElementDragEnd={handleElementDragEnd}
+                  onElementResizeStart={handleElementResizeStart}
+                  onElementResize={handleElementResize}
+                  onElementResizeEnd={handleElementResizeEnd}
                   customSymbols={document.customSymbols}
                 />
               </div>

@@ -2670,6 +2670,32 @@ body.scada-mimic-editor-open {
   flex-shrink: 0;
 }
 
+.scada-toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 0.15rem;
+}
+
+.scada-snap-guide {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.85;
+}
+
+.scada-resize-handle {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  pointer-events: all;
+}
+
+.scada-resize-handle:hover {
+  fill: var(--accent);
+}
+
 .scada-toolbar-actions {
   display: flex;
   gap: 0.25rem;
@@ -3066,6 +3092,12 @@ body.scada-mimic-editor-open {
 
 .scada-mimic-artboard .scada-mimic-svg {
   display: block;
+}
+
+.scada-mimic-editor .scada-mimic-artboard .scada-mimic-svg {
+  width: auto;
+  height: auto;
+  min-height: 0;
 }
 
 .scada-mimic-artboard-connect .scada-mimic-svg {

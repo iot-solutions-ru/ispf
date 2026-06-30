@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { MimicAction, MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
 import { createMimicId } from "../../scada/document";
-import { resolveElementSymbol } from "../../scada/symbols/registry";
+import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
 import CustomSvgEditor, { isCustomSvgElement } from "./CustomSvgEditor";
 
 interface MimicPropertiesPanelProps {
@@ -193,6 +193,44 @@ export default function MimicPropertiesPanel({
               step={1}
               value={selectedElement.y}
               onChange={(e) => onUpdateElement({ ...selectedElement, y: Number(e.target.value) })}
+            />
+          </label>
+        </div>
+        <div className="scada-form-row">
+          <label className="scada-form-field scada-form-field-half">
+            <span className="scada-form-label">{t("props.sizeWidth")}</span>
+            <input
+              type="number"
+              className="scada-form-input"
+              min={16}
+              step={1}
+              value={Math.round(symbolSize(selectedElement, document.customSymbols).width)}
+              onChange={(e) => {
+                const { height } = symbolSize(selectedElement, document.customSymbols);
+                onUpdateElement({
+                  ...selectedElement,
+                  scale: 1,
+                  props: { ...(selectedElement.props ?? {}), width: Number(e.target.value), height },
+                });
+              }}
+            />
+          </label>
+          <label className="scada-form-field scada-form-field-half">
+            <span className="scada-form-label">{t("props.sizeHeight")}</span>
+            <input
+              type="number"
+              className="scada-form-input"
+              min={16}
+              step={1}
+              value={Math.round(symbolSize(selectedElement, document.customSymbols).height)}
+              onChange={(e) => {
+                const { width } = symbolSize(selectedElement, document.customSymbols);
+                onUpdateElement({
+                  ...selectedElement,
+                  scale: 1,
+                  props: { ...(selectedElement.props ?? {}), width, height: Number(e.target.value) },
+                });
+              }}
             />
           </label>
         </div>

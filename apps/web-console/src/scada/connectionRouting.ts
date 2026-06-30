@@ -20,25 +20,19 @@ export function getElementPortPosition(
   const { width, height } = symbolSize(element, customSymbols);
   const scaleX = width / symbol.defaultWidth;
   const scaleY = height / symbol.defaultHeight;
+  const flipX = element.props?.flipX === true ? -1 : 1;
+  const flipY = element.props?.flipY === true ? -1 : 1;
+  let lx = port.x * scaleX - width / 2;
+  let ly = port.y * scaleY - height / 2;
+  lx *= flipX;
+  ly *= flipY;
+  const rotation = element.rotation ?? 0;
+  const rad = (rotation * Math.PI) / 180;
+  const rx = lx * Math.cos(rad) - ly * Math.sin(rad);
+  const ry = lx * Math.sin(rad) + ly * Math.cos(rad);
   const cx = element.x + width / 2;
   const cy = element.y + height / 2;
-  const px = element.x + port.x * scaleX;
-  const py = element.y + port.y * scaleY;
-  if (element.rotation === 90) {
-    return { elementId: element.id, portId, x: cx + (py - cy), y: cy - (px - cx) };
-  }
-  if (element.rotation === 180) {
-    return {
-      elementId: element.id,
-      portId,
-      x: element.x + width - (px - element.x),
-      y: element.y + height - (py - element.y),
-    };
-  }
-  if (element.rotation === 270) {
-    return { elementId: element.id, portId, x: cx - (py - cy), y: cy + (px - cx) };
-  }
-  return { elementId: element.id, portId, x: px, y: py };
+  return { elementId: element.id, portId, x: cx + rx, y: cy + ry };
 }
 
 export function connectionPolylinePoints(
