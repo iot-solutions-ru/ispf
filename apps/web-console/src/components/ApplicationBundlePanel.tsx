@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deployApplicationBundle,
   exportApplicationBundle,
+  pullApplicationBundleFromTree,
   validateApplicationBundle,
 } from "../api/applications";
 import {
@@ -27,6 +28,8 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
   const [addParentPath, setAddParentPath] = useState("root.platform.devices");
   const [addName, setAddName] = useState("");
   const [addType, setAddType] = useState("DEVICE");
+  const [pullPath, setPullPath] = useState("");
+  const [pullMessage, setPullMessage] = useState<string | null>(null);
 
   const exportQuery = useQuery({
     queryKey: ["application-bundle-export", appId],
@@ -74,6 +77,22 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
       queryClient.invalidateQueries({ queryKey: ["deploy-history", appId] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
     },
+  });
+
+  const pullMutation = useMutation({
+    mutationFn: (options?: { sections?: string[]; paths?: string[] }) =>
+      pullApplicationBundleFromTree(appId, { ...options, mergeActive: true }),
+    onSuccess: (result) => {
+      setManifestText(JSON.stringify(result.manifest, null, 2));
+      const summary = Object.entries(result.pulled ?? {})
+        .map(([section, count]) => `${section}: ${count}`)
+        .join(", ");
+      const warnings = (result.warnings ?? []).join("\n");
+      setPullMessage(
+        [t("bundle.pullSuccess", { summary }), warnings].filter(Boolean).join("\n")
+      );
+    },
+    onError: (error) => setPullMessage(String(error)),
   });
 
   const downloadManifest = () => {
@@ -141,6 +160,14 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
             <button
               type="button"
               className="btn"
+              disabled={pullMutation.isPending}
+              onClick={() => pullMutation.mutate(undefined)}
+            >
+              {pullMutation.isPending ? t("bundle.pulling") : t("bundle.pullFromTree")}
+            </button>
+            <button
+              type="button"
+              className="btn"
               disabled={validateMutation.isPending || !manifestText.trim()}
               onClick={() => validateMutation.mutate()}
             >
@@ -176,6 +203,7 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
       </label>
 
       {validationMessage && <pre className="mono small validation-output">{validationMessage}</pre>}
+      {pullMessage && <pre className="mono small validation-output">{pullMessage}</pre>}
       {deployMutation.error && (
         <div className="op-alert op-alert-error">{String(deployMutation.error)}</div>
       )}
@@ -241,8 +269,61 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
               {t("bundle.addObject")}
             </button>
           </div>
+
+          <h4>{t("bundle.pullPathTitle")}</h4>
+          <p className="op-muted">{t("bundle.pullPathHint")}</p>
+          <div className="bundle-add-object-form">
+            <label className="full">
+              objectPath
+              <input
+                value={pullPath}
+                onChange={(event) => setPullPath(event.target.value)}
+                placeholder="root.platform.dashboards.my-dashboard"
+              />
+            </label>
+            <button
+              type="button"
+              className="btn"
+              disabled={pullMutation.isPending || !pullPath.trim()}
+              onClick={() => {
+                const path = pullPath.trim();
+                const section = inferSectionFromPath(path);
+                pullMutation.mutate({ sections: [section], paths: [path] });
+              }}
+            >
+              {t("bundle.pullPath")}
+            </button>
+          </div>
         </>
       )}
     </div>
   );
+}
+
+function inferSectionFromPath(path: string): string {
+  if (path.includes(".dashboards.")) {
+    return "dashboards";
+  }
+  if (path.includes(".workflows.")) {
+    return "workflows";
+  }
+  if (path.includes(".reports.")) {
+    return "reports";
+  }
+  if (path.includes(".alert-rules.")) {
+    return "alertRules";
+  }
+  if (path.includes(".correlators.")) {
+    return "correlators";
+  }
+  if (path.includes(".schedules.")) {
+    return "schedules";
+  }
+  if (path.includes(".bindings.")) {
+    return "bindings";
+  }
+  if (path.includes(".migrations.")) {
+    return "migrations";
+  }
+  return "objects";
 }

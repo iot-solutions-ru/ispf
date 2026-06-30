@@ -262,3 +262,42 @@ export async function deployApplicationBundle(
   }
   return response.json() as Promise<Record<string, unknown>>;
 }
+
+export interface PullFromTreeResult {
+  appId: string;
+  baseVersion?: string;
+  manifest: Record<string, unknown>;
+  discoveredPaths?: string[];
+  pulled?: Record<string, number>;
+  warnings?: string[];
+}
+
+export async function pullApplicationBundleFromTree(
+  appId: string,
+  options?: {
+    sections?: string[];
+    paths?: string[];
+    mergeActive?: boolean;
+  }
+): Promise<PullFromTreeResult> {
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/bundle/pull-from-tree`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        sections: options?.sections,
+        paths: options?.paths,
+        mergeActive: options?.mergeActive ?? true,
+      }),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle pull-from-tree failed: ${response.status}`);
+  }
+  return response.json() as Promise<PullFromTreeResult>;
+}

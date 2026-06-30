@@ -336,6 +336,17 @@ POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false
 
 `export` возвращает активный (или указанный) snapshot manifest из `application_bundle_deployments`. Web Console: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, validate, deploy, таблица ресурсов (add/remove в manifest).
 
+```http
+POST /api/v1/applications/{appId}/bundle/pull-from-tree
+{
+  "sections": ["dashboards", "workflows"],
+  "paths": ["root.platform.dashboards.demo"],
+  "mergeActive": true
+}
+```
+
+Собирает manifest из **live object tree** (visual groups + app stores). `paths` — опционально, только указанные узлы; без `paths` — все members bundle visual groups. `models[]` не reverse-engineer'ится (остаётся из base manifest).
+
 Поддерево object tree (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — вкладка **JSON export** в Inspector.
 
 ## Отчёты (REQ-PF-12)
