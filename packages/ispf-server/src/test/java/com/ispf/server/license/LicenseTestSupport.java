@@ -51,4 +51,24 @@ final class LicenseTestSupport {
         license.put("signature", Base64.getEncoder().encodeToString(signature.sign()));
         return license;
     }
+
+    static Map<String, Object> signedPlatformLicense(
+            String tier,
+            String installationId,
+            KeyPair keyPair
+    ) throws Exception {
+        String expiresAt = Instant.now().plus(365, ChronoUnit.DAYS).toString();
+        Map<String, String> claims = new LinkedHashMap<>();
+        claims.put("tier", tier);
+        claims.put("minPlatformVersion", "0.0.0");
+        claims.put("installationId", installationId);
+        claims.put("expiresAt", expiresAt);
+        String payload = BundleManifestCanonicalizer.canonicalJson(claims);
+        Signature signature = Signature.getInstance("SHA256withRSA");
+        signature.initSign(keyPair.getPrivate());
+        signature.update(payload.getBytes(StandardCharsets.UTF_8));
+        Map<String, Object> license = new LinkedHashMap<>(claims);
+        license.put("signature", Base64.getEncoder().encodeToString(signature.sign()));
+        return license;
+    }
 }

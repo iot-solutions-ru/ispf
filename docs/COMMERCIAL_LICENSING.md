@@ -23,8 +23,8 @@ ispf:
 | Переменная | Назначение |
 |------------|------------|
 | `ISPF_DATA_DIR` | Каталог для `.ispf-installation-id` |
-| `ISPF_LICENSE_PUBLIC_KEY_PEM` | PEM публичного RSA-ключа поставщика |
-| `ISPF_LICENSE_ENFORCE` | `true` — invalid license → HTTP 403 |
+| `ISPF_LICENSE_PUBLIC_KEY_PEM` | PEM публичного RSA-ключа поставщика (можно несколько PEM-блоков подряд для ротации) |
+| `ISPF_LICENSE_ENFORCE` | `true` — invalid bundle/driver/platform license блокирует deploy / pack load / **старт сервера** |
 
 ## Installation ID
 
@@ -35,6 +35,19 @@ GET /api/v1/platform/installation-id
 ```
 
 Admin передаёт `installationId` поставщику для выпуска лицензии.
+
+Статус лицензии (admin): `GET /api/v1/platform/license` — mode, tier, valid, enforce, installationId. Карточка в Web Console: **System → Metrics**.
+
+## Platform license file (`platform-license.json`)
+
+Файл `{data-dir}/platform-license.json` — Enterprise exemption от AGPL (см. [LICENSE-COMMERCIAL.md](../LICENSE-COMMERCIAL.md)).
+
+| Условие | Результат |
+|---------|-----------|
+| Файл отсутствует | Community (AGPL), старт разрешён |
+| Файл + valid | Commercial tier active |
+| Файл + invalid + `enforce=false` | WARN в логе, старт разрешён |
+| Файл + invalid + `enforce=true` | **Сервер не стартует** (`IllegalStateException`) |
 
 ## Формат `license` в bundle
 
@@ -70,7 +83,7 @@ CLI: [tools/license-builder/README.md](../tools/license-builder/README.md).
 | Шаг | Действие |
 |-----|----------|
 | 1 | Сгенерировать новую пару ключей (`tools/license-builder/`); сохранить старый private key до конца grace period |
-| 2 | На platform: задеплоить **новый** PEM в `ISPF_LICENSE_PUBLIC_KEY_PEM` (или multi-line config); при dual-key — временно держать оба public key в ops runbook и проверять signature против любого из них *(если один ключ — просто заменить и перевыпустить лицензии)* |
+| 2 | На platform: задеплоить **оба** public key в `ISPF_LICENSE_PUBLIC_KEY_PEM` (несколько `-----BEGIN PUBLIC KEY-----` блоков в одной переменной); подпись принимается, если совпала с любым ключом |
 | 3 | Перевыпустить commercial bundle / driver pack signatures для активных клиентов |
 | 4 | Grace period (рекомендуется ≥30 дней): старые подписи ещё принимаются только если public key не меняли; после замены ключа старые лицензии **невалидны** — планировать окно обслуживания |
 | 5 | `enforce=true` на staging до prod; мониторить WARN/403 в deploy logs |
