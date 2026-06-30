@@ -37,7 +37,7 @@
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
 | **P3** | Federation polish | catalog sync preview + dashboard write proxy | BL-45,46 Done |
 | **P3** | Notifications | webhook/email alert + correlator | BL-44 Done |
-| **P3** | Semantic (Haystack/Brick) | BL-61 Done; BL-60 Brick (demand) | BL-56…62, 20.22 |
+| **P3** | Semantic (Haystack/Brick) | Wave G Done (BL-56…62) | BL-56…62, 20.22 |
 | **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
 | **P3** | Time & TZ (deep) | Historian `observedAt` — **Done** (BL-69); reports `reportTimeZone` — follow-up | BL-69 poll SPI, reports |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
@@ -79,7 +79,7 @@
 | Operator manifest | ~98% | spreadsheet history (BL-54) | BL-54 |
 | Spreadsheet widget | ~98% | — | BL-54 done |
 | Frontend component tests | ~90% | — | BL-55 Done |
-| Semantic interoperability | ~65% | Brick export (BL-60, demand-driven) | BL-56…62, Phase 20.22 |
+| Semantic interoperability | ~90% | Full Brick reasoner (out of scope) | BL-56…62, Phase 20.22 |
 | Time & timezones | ~100% | — | [0020](decisions/0020-time-and-timezones.md) |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |
 

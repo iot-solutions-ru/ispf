@@ -67,7 +67,9 @@ This is an **ISPF interchange format** inspired by Haystack JSON grids, not a fu
 
 ### 5. Brick Schema (BL-60)
 
-Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD export subset, `hasPoint` via explicit refs or bindings. Requires separate REQ from app team per [0002](0002-dogfooding-gate.md).
+`brick-metadata-v1` RELATIVE mixin: `brickClass` URI on DEVICE. Export subset via `GET /api/v1/platform/brick/export` (`format=jsonld|turtle`). `brick:hasPoint` from driver point mappings (same point discovery as Haystack export). Demo: `root.platform.devices.lab-userA-01`.
+
+Out of scope: full Brick reasoner, runtime replacement of object paths.
 
 ## Consequences
 
@@ -86,6 +88,8 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 
 **Update (2026-06-30):** BL-61 Done — `ispf-driver-haystack` polls external Haystack servers via HTTP JSON `read`.
 
+**Update (2026-06-30):** BL-60 Done — `brick-metadata-v1`, `GET /platform/brick/export` (JSON-LD + Turtle), demo equip/point on `lab-userA-01`.
+
 ## Implementation map (BL-56…62)
 
 | BL | Deliverable | Status |
@@ -96,7 +100,7 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 | BL-59 | Extended driver point mappings → Haystack export | Done |
 | BL-62 | Tag search + dashboard auto-bind + agent tool | Done |
 | BL-61 | External Haystack poll driver pack | Done |
-| BL-60 | Brick Schema overlay | Planned |
+| BL-60 | Brick Schema overlay + RDF export | Done |
 
 ## Related materials
 

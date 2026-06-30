@@ -29,6 +29,7 @@ public class LabPlatformBootstrap {
 
     private final LabModelBootstrap labModelBootstrap;
     private final HaystackModelBootstrap haystackModelBootstrap;
+    private final BrickModelBootstrap brickModelBootstrap;
     private final ModelRegistry modelRegistry;
     private final ModelApplicationService modelApplicationService;
     private final ObjectTemplateService objectTemplateService;
@@ -39,6 +40,7 @@ public class LabPlatformBootstrap {
     public LabPlatformBootstrap(
             LabModelBootstrap labModelBootstrap,
             HaystackModelBootstrap haystackModelBootstrap,
+            BrickModelBootstrap brickModelBootstrap,
             ModelRegistry modelRegistry,
             ModelApplicationService modelApplicationService,
             ObjectTemplateService objectTemplateService,
@@ -48,6 +50,7 @@ public class LabPlatformBootstrap {
     ) {
         this.labModelBootstrap = labModelBootstrap;
         this.haystackModelBootstrap = haystackModelBootstrap;
+        this.brickModelBootstrap = brickModelBootstrap;
         this.modelRegistry = modelRegistry;
         this.modelApplicationService = modelApplicationService;
         this.objectTemplateService = objectTemplateService;
@@ -65,6 +68,7 @@ public class LabPlatformBootstrap {
         }
         labModelBootstrap.ensureLabModels();
         haystackModelBootstrap.ensureHaystackModel();
+        brickModelBootstrap.ensureBrickModel();
         ensureLabDevice(
                 "lab-userA-01",
                 "Lab User A Device 01",
@@ -122,6 +126,20 @@ public class LabPlatformBootstrap {
                     path,
                     "haystackRef",
                     DataRecord.single(stringSchema, Map.of("value", HaystackModelBootstrap.DEMO_HAYSTACK_REF))
+            );
+            objectManager.persistNodeTree(path);
+        });
+        modelRegistry.findByName(BrickModelBootstrap.BRICK_METADATA_MODEL).ifPresent(model -> {
+            if (!objectManager.require(path).appliedModelIds().contains(model.id())) {
+                modelApplicationService.applyModelWithRules(model, path, model.parameters());
+            }
+            DataSchema stringSchema = DataSchema.builder("stringValue")
+                    .field("value", FieldType.STRING)
+                    .build();
+            objectManager.setVariableValue(
+                    path,
+                    "brickClass",
+                    DataRecord.single(stringSchema, Map.of("value", BrickModelBootstrap.DEMO_BRICK_CLASS))
             );
             objectManager.persistNodeTree(path);
         });

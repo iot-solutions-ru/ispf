@@ -109,6 +109,8 @@ Runtime poll/write использует только protocol address; Haystack 
 
 Demo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).
 
+Brick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on device → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` from the same point mappings.
+
 ## REST Runtime API
 
 ```http

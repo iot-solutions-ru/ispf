@@ -107,7 +107,7 @@
 | **BL-57** | RELATIVE model `haystack-metadata-v1`: `haystackTags`, `haystackRef`, `kind` на DEVICE/variables | P3 | Done | Models |
 | **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Done | API |
 | **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Done | Drivers |
-| **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Planned | Semantic |
+| **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Done | Semantic |
 | **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Done | Driver |
 | **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Done | Dashboard |
 
@@ -504,8 +504,9 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 **BL-60 — Brick (demand-only)**
 
-- [ ] `brickClass` URI на object; export Turtle/JSON-LD subset
-- [ ] Связи `hasPoint` через `refAt` bindings или explicit refs
+- [x] `brickClass` URI на object (`brick-metadata-v1` mixin)
+- [x] Export: `GET /api/v1/platform/brick/export?format=jsonld|turtle`
+- [x] `hasPoint` через driver point mappings + demo на `lab-userA-01`
 
 **BL-61 — External Haystack driver**
 
@@ -660,6 +661,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-60 Done: `brick-metadata-v1` + `GET /platform/brick/export` (JSON-LD/Turtle) |
 | 2026-06-30 | BL-30 Done: `BacnetDeviceDriverNetworkTest`, `BacnetPointTest`; loopback subnet for 127.0.0.1 |
 | 2026-06-30 | BL-57 Done: `HaystackMetadataPanel` inspector tab + marker multiselect |
 | 2026-06-30 | BL-56/58 Done: ADR-0021 + `haystack-metadata-v1` demo + `GET /platform/haystack/export`; BL-57 Partial (inspector tag editor) |
