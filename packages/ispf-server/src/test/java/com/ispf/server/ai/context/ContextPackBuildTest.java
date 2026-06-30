@@ -23,7 +23,7 @@ class ContextPackBuildTest {
         Map<String, Object> pack = contextPackService.loadPack();
 
         assertFalse(String.valueOf(pack.get("contextPackVersion")).contains("0.1.0-SNAPSHOT"));
-        assertTrue(pack.get("driverCatalog") instanceof List<?> drivers && !drivers.isEmpty());
+        assertTrue(pack.get("driverCatalog") instanceof List<?> drivers && drivers.size() >= 50);
         assertTrue(pack.get("exampleSummaries") instanceof List<?> examples && !examples.isEmpty());
         assertTrue(pack.get("featureIndex") instanceof List<?> features && !features.isEmpty());
         assertTrue(pack.get("docChunks") instanceof List<?> chunks && !chunks.isEmpty());

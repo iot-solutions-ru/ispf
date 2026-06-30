@@ -15,6 +15,7 @@ import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.bundle.BundleManifestJsonSupport;
@@ -48,6 +49,7 @@ import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.time.PlatformTimeZoneResolver;
+import com.ispf.server.plugin.model.ModelApplicationService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.workflow.WorkQueueService;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
@@ -60,6 +62,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -111,6 +114,8 @@ public class PlatformAgentToolRegistry {
             ApplicationEventCatalogService eventCatalogService,
             EventService eventService,
             ModelRegistry modelRegistry,
+            ModelApplicationService modelApplicationService,
+            LabModelBootstrap labModelBootstrap,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
@@ -131,6 +136,7 @@ public class PlatformAgentToolRegistry {
             BindingRulesService bindingRulesService,
             BindingDependencyIndex bindingDependencyIndex,
             BindingRuleEngine bindingRuleEngine,
+            AgentRecipeCatalog agentRecipeCatalog,
             ObjectMapper objectMapper,
             VariableHistoryService variableHistoryService,
             WorkQueueService workQueueService,
@@ -203,6 +209,23 @@ public class PlatformAgentToolRegistry {
                 tenantScopeService,
                 objectMapper
         ));
+        tools.addAll(AgentVirtualDeviceTools.all(
+                objectManager,
+                objectAccessService,
+                objectTemplateService,
+                deviceProvisioningService,
+                driverRuntimeService,
+                labModelBootstrap,
+                modelRegistry,
+                objectMapper
+        ));
+        tools.addAll(AgentModelTools.all(
+                modelRegistry,
+                modelApplicationService,
+                objectManager,
+                objectAccessService,
+                tenantScopeService
+        ));
         tools.addAll(AgentDiscoveryTools.all(
                 objectManager,
                 objectAccessService,
@@ -231,6 +254,7 @@ public class PlatformAgentToolRegistry {
                 bindingRulesService,
                 bindingDependencyIndex,
                 bindingRuleEngine,
+                agentRecipeCatalog,
                 objectMapper
         ));
         tools.addAll(List.of(
@@ -333,12 +357,15 @@ public class PlatformAgentToolRegistry {
 
             @Override
             public String description() {
-                return "List child objects under a parent path. Args: parent (default root), lite (bool, default true).";
+                return "List child objects under a parent path. Args: parent or parentPath (default root), lite (bool, default true).";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 String parent = stringArg(arguments, "parent");
+                if (parent.isBlank()) {
+                    parent = stringArg(arguments, "parentPath");
+                }
                 if (parent.isBlank()) {
                     parent = "root";
                 }
@@ -434,11 +461,25 @@ public class PlatformAgentToolRegistry {
                 }
                 ObjectType type = ObjectType.valueOf(typeRaw.trim().toUpperCase(Locale.ROOT));
                 var auth = context.authentication();
+                if (objectManager.tree().findByPath(parentPath).isEmpty()) {
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "Parent not found: " + parentPath,
+                            "hint", "Call list_objects on an existing parent folder and use paths from the tool result — "
+                                    + "do not invent parentPath from playbooks or recipes."
+                    );
+                }
                 objectAccessService.requireWrite(parentPath, auth);
                 federationBindService.assertParentAllowsChildren(parentPath);
                 String fullPath = objectManager.tree().resolveChildPath(parentPath, name);
                 if (objectManager.tree().findByPath(fullPath).isPresent()) {
-                    return Map.of("status", "ERROR", "error", "Object exists: " + fullPath);
+                    return Map.of(
+                            "status", "ERROR",
+                            "error", "Object exists: " + fullPath,
+                            "hint", "Reuse this object: get_object path=" + fullPath
+                                    + " and list_variables — do not create a duplicate.",
+                            "existingPath", fullPath
+                    );
                 }
                 String templateId = optionalString(arguments, "templateId");
                 String description = optionalString(arguments, "description");
@@ -478,7 +519,21 @@ public class PlatformAgentToolRegistry {
                 }
                 PlatformObject saved = objectManager.require(node.path());
                 ObjectDto created = ObjectDto.from(saved, objectUiIconService.readIconId(saved).orElse(null));
-                return Map.of("status", "OK", "path", node.path(), "object", created);
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("status", "OK");
+                response.put("path", node.path());
+                response.put("object", created);
+                if (type == ObjectType.DEVICE && "virtual".equals(driverId)) {
+                    String tpl = templateId != null ? templateId : "";
+                    if (tpl.isBlank() || tpl.contains("device-v1")) {
+                        response.put(
+                                "warning",
+                                "Virtual DEVICE needs templateId virtual-lab-v1 or virtual-unified-v1, "
+                                        + "or use create_virtual_device. Without model template there are no telemetry variables."
+                        );
+                    }
+                }
+                return response;
             }
         };
     }
@@ -890,15 +945,29 @@ public class PlatformAgentToolRegistry {
                 objectAccessService.requireWrite(devicePath, auth);
                 try {
                     objectManager.require(devicePath);
+                    Optional<DriverBinding> existingBinding = driverRuntimeService.readBinding(devicePath);
                     Map<String, String> configuration = readStringMap(objectMapper, arguments.get("configuration"));
                     Map<String, String> pointMappings = readStringMap(objectMapper, arguments.get("pointMappings"));
+                    if (configuration == null || configuration.isEmpty()) {
+                        configuration = existingBinding.map(DriverBinding::configuration).orElse(Map.of());
+                    }
+                    if (pointMappings == null || pointMappings.isEmpty()) {
+                        pointMappings = existingBinding.map(DriverBinding::pointMappings).orElse(Map.of());
+                    }
+                    String driverId = optionalString(arguments, "driverId");
+                    if (driverId == null || driverId.isBlank()) {
+                        driverId = existingBinding.map(DriverBinding::driverId)
+                                .orElse(DriverBinding.DEFAULT_DRIVER_ID);
+                    }
+                    int pollIntervalMs = intArg(arguments, "pollIntervalMs", 0);
+                    if (pollIntervalMs <= 0) {
+                        pollIntervalMs = existingBinding.map(DriverBinding::pollIntervalMs).orElse(5000);
+                    }
                     DriverBinding binding = DriverBinding.of(
-                            optionalString(arguments, "driverId") != null
-                                    ? stringArg(arguments, "driverId")
-                                    : DriverBinding.DEFAULT_DRIVER_ID,
-                            intArg(arguments, "pollIntervalMs", 5000),
-                            configuration != null ? configuration : Map.of(),
-                            pointMappings != null ? pointMappings : Map.of()
+                            driverId,
+                            pollIntervalMs,
+                            configuration,
+                            pointMappings
                     );
                     driverRuntimeService.configure(devicePath, binding);
                     if (boolArg(arguments, "autoStart", true)) {

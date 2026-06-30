@@ -1,0 +1,121 @@
+{
+  "industries": [
+    "oil-gas-upstream",
+    "oil-gas-midstream",
+    "oil-gas-downstream",
+    "oil-terminal",
+    "gas-distribution",
+    "power-thermal",
+    "power-renewables",
+    "power-grid",
+    "water-treatment",
+    "wastewater",
+    "water-utility",
+    "irrigation",
+    "environmental",
+    "weather-stations",
+    "flood-control",
+    "desalination",
+    "chemical",
+    "pharma",
+    "food-beverage",
+    "dairy",
+    "pulp-paper",
+    "cement",
+    "mining",
+    "metals",
+    "hvac-building",
+    "smart-city",
+    "datacenter",
+    "telecom-noc",
+    "fire-security",
+    "elevator-lift",
+    "campus",
+    "hospital",
+    "rail",
+    "maritime",
+    "aviation-ground",
+    "automotive-plant",
+    "warehouse",
+    "cold-chain",
+    "retail-chain",
+    "agriculture",
+    "semiconductor",
+    "print-packaging",
+    "glass",
+    "refrigeration",
+    "ogp-print-line",
+    "lab-training",
+    "virtual-demo",
+    "edge-gateway",
+    "generic-scada",
+    "training-sandbox"
+  ],
+  "archetypes": [
+    {
+      "slug": "snmp-infra",
+      "layers": ["driver", "object-model", "dashboard", "automation"],
+      "toolChain": ["driver.bind", "dashboard.compose", "alert.rule"],
+      "verify": ["poll.snmp.health", "alarm.thresholds", "dashboard.refresh"]
+    },
+    {
+      "slug": "virt-cluster",
+      "layers": ["driver", "object-model", "automation", "report"],
+      "toolChain": ["virtual.seed", "model.generate", "report.build"],
+      "verify": ["sim.profile.run", "workflow.loop", "report.export"]
+    },
+    {
+      "slug": "pump-station",
+      "layers": ["driver", "scada", "dashboard", "automation"],
+      "toolChain": ["modbus.map", "mimic.compose", "workflow.guard"],
+      "verify": ["pump.interlock", "level.protection", "operator.ack"]
+    },
+    {
+      "slug": "tank-farm",
+      "layers": ["driver", "scada", "report", "dashboard"],
+      "toolChain": ["historian.link", "mimic.compose", "report.kpi"],
+      "verify": ["inventory.balance", "leak.alert", "trend.window"]
+    },
+    {
+      "slug": "pipeline-scada",
+      "layers": ["driver", "scada", "automation", "integration"],
+      "toolChain": ["edge.gateway", "mimic.compose", "event.route"],
+      "verify": ["segment.pressure", "linepack.delta", "valve.command"]
+    },
+    {
+      "slug": "mes-filling",
+      "layers": ["object-model", "dashboard", "report", "integration"],
+      "toolChain": ["workflow.order", "dashboard.compose", "report.batch"],
+      "verify": ["order.trace", "batch.complete", "lot.export"]
+    },
+    {
+      "slug": "mini-tec",
+      "layers": ["driver", "object-model", "dashboard", "lifecycle"],
+      "toolChain": ["bundle.init", "widget.compose", "life.ops"],
+      "verify": ["deploy.dryrun", "backup.restore", "ops.checklist"]
+    },
+    {
+      "slug": "modbus-field",
+      "layers": ["driver", "object-model", "automation", "dashboard"],
+      "toolChain": ["modbus.map", "model.bind", "workflow.guard"],
+      "verify": ["register.scan", "write.policy", "field.heartbeat"]
+    },
+    {
+      "slug": "mqtt-field",
+      "layers": ["driver", "integration", "dashboard", "automation"],
+      "toolChain": ["topic.map", "event.route", "dashboard.compose"],
+      "verify": ["topic.qos", "payload.schema", "command.roundtrip"]
+    },
+    {
+      "slug": "full-8layer",
+      "layers": ["driver", "object-model", "logic", "automation", "dashboard", "scada", "report", "integration"],
+      "toolChain": ["bundle.plan", "model.bind", "flow.verify"],
+      "verify": ["stack.smoke", "operator.journey", "release.readiness"]
+    }
+  ],
+  "defaults": {
+    "layers": ["model", "logic"],
+    "toolChain": ["catalog.select", "verify.run"],
+    "verify": ["lint.bundle", "api.health", "scenario.smoke"]
+  }
+}

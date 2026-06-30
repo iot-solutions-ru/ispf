@@ -48,13 +48,15 @@ final class AgentAutomationTools {
             BindingRulesService bindingRulesService,
             BindingDependencyIndex bindingDependencyIndex,
             BindingRuleEngine bindingRuleEngine,
+            AgentRecipeCatalog recipeCatalog,
             ObjectMapper objectMapper
     ) {
         return List.of(
                 configureAlertTool(automationTreeService, objectManager, objectAccessService, tenantScopeService),
                 configureCorrelatorTool(automationTreeService, objectManager, objectAccessService, tenantScopeService),
                 listAutomationTool(automationTreeService, objectAccessService, tenantScopeService),
-                getAutomationSchemaTool(),
+                getAutomationSchemaTool(recipeCatalog),
+                searchPlatformRecipesTool(recipeCatalog),
                 createVariableTool(objectManager, objectAccessService, tenantScopeService, objectMapper),
                 createBindingRuleTool(
                         objectManager,
@@ -330,7 +332,34 @@ final class AgentAutomationTools {
         };
     }
 
-    private static PlatformAgentTool getAutomationSchemaTool() {
+    private static PlatformAgentTool searchPlatformRecipesTool(AgentRecipeCatalog recipeCatalog) {
+        return new PlatformAgentTool() {
+            @Override
+            public String name() {
+                return "search_platform_recipes";
+            }
+
+            @Override
+            public String description() {
+                return "Search generated platform recipes. Args: optional query, category, industry, archetype, "
+                        + "limit (default 25), offset (default 0).";
+            }
+
+            @Override
+            public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
+                return recipeCatalog.search(
+                        optionalString(arguments, "query"),
+                        optionalString(arguments, "category"),
+                        optionalString(arguments, "industry"),
+                        optionalString(arguments, "archetype"),
+                        intArg(arguments, "limit", 25),
+                        intArg(arguments, "offset", 0)
+                );
+            }
+        };
+    }
+
+    private static PlatformAgentTool getAutomationSchemaTool(AgentRecipeCatalog recipeCatalog) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -342,7 +371,8 @@ final class AgentAutomationTools {
                 return "Reference for ALERT/CORRELATOR variables, dashboard templates, widgets, object tree, bindings, "
                         + "operator UI, reports, workflows, SCADA, application lifecycle, schedules, platform rules. "
                         + "Optional arg: topic (alert|correlator|dashboard|widget|object|binding|operator|report|"
-                        + "workflow|scada|lifecycle|schedule|platform-rule|all).";
+                        + "workflow|scada|lifecycle|schedule|platform-rule|projectBlueprint|groundTruth|instanceTypes|"
+                        + "objectTypes|relativeModels|recipes|projects|recipe/{id}|all).";
             }
 
             @Override
@@ -351,15 +381,52 @@ final class AgentAutomationTools {
                 if (topic.isBlank()) {
                     topic = "all";
                 }
+                final String resolvedTopic = topic;
+                String topicLower = topic.toLowerCase(Locale.ROOT);
+                int offset = intArg(arguments, "offset", 0);
+                int limit = intArg(arguments, "limit", 50);
+                if (topicLower.startsWith("recipe/")) {
+                    String recipeId = topic.substring("recipe/".length()).trim();
+                    if (recipeId.isBlank()) {
+                        return Map.of(
+                                "status", "ERROR",
+                                "topic", topic,
+                                "error", "recipe/{id} requires non-empty id"
+                        );
+                    }
+                    return recipeCatalog.findById(recipeId)
+                            .<Map<String, Object>>map(recipe -> Map.of(
+                                    "status", "OK",
+                                    "topic", resolvedTopic,
+                                    "recipe", AgentRecipeCatalog.toDetailRow(recipe)
+                            ))
+                            .orElseGet(() -> Map.of(
+                                    "status", "ERROR",
+                                    "topic", resolvedTopic,
+                                    "error", "Recipe not found: " + recipeId
+                            ));
+                }
                 Map<String, Object> schema = new LinkedHashMap<>();
                 schema.put("status", "OK");
-                schema.put("topic", topic);
-                switch (topic.toLowerCase(Locale.ROOT)) {
+                schema.put("topic", resolvedTopic);
+                switch (topicLower) {
                     case "alert" -> schema.put("alert", alertSchema());
                     case "correlator" -> schema.put("correlator", correlatorSchema());
                     case "dashboard" -> schema.put("dashboard", dashboardSchema());
                     case "widget", "widgets" -> schema.put("widgets", AgentWidgetCatalog.catalogResponse("", ""));
                     case "object", "objects" -> schema.put("objects", AgentObjectTreeGuide.summary());
+                    case "projectblueprint", "project-blueprint", "blueprint" ->
+                            schema.put("projectBlueprint", AgentPlaybooks.projectBlueprintGuide());
+                    case "groundtruth", "ground-truth", "discovery" ->
+                            schema.put("groundTruth", AgentPlaybooks.groundTruthGuide());
+                    case "instancetypes", "instance-types", "instance-type", "instance" ->
+                            schema.put("instanceTypes", AgentPlaybooks.instanceTypesGuide());
+                    case "objecttypes", "object-types", "objecttype", "object-type" -> {
+                        schema.put("objectTypes", AgentPlaybooks.objectTypesMatrixGuide());
+                        schema.put("objectTypeTable", objectTypeGuide());
+                    }
+                    case "relativemodels", "relative-models", "relative-model" ->
+                            schema.put("relativeModels", AgentPlaybooks.relativeModelsGuide());
                     case "binding" -> schema.put("binding", bindingSchema());
                     case "operator" -> schema.put("operator", operatorSchema());
                     case "report", "reports" -> schema.put("reports", AgentPlaybooks.reportsGuide());
@@ -369,6 +436,16 @@ final class AgentAutomationTools {
                     case "schedule", "schedules" -> schema.put("schedules", AgentPlaybooks.scheduleGuide());
                     case "function", "functions" -> schema.put("functions", AgentPlaybooks.functionsGuide());
                     case "platform-rule", "platform-rules", "context" -> schema.put("platformRules", AgentPlaybooks.platformRuleGuide());
+                    case "recipes" -> schema.put("recipes", recipeCatalog.indexSummary(offset, limit));
+                    case "projects" -> schema.put(
+                            "projects",
+                            recipeCatalog.listProjects(
+                                    optionalString(arguments, "industry"),
+                                    optionalString(arguments, "archetype"),
+                                    offset,
+                                    limit
+                            )
+                    );
                     default -> {
                         schema.put("alert", alertSchema());
                         schema.put("correlator", correlatorSchema());
@@ -385,7 +462,22 @@ final class AgentAutomationTools {
                         schema.put("functions", AgentPlaybooks.functionsGuide());
                         schema.put("platformRules", AgentPlaybooks.platformRuleGuide());
                         schema.put("platformMaster", AgentPlaybooks.platformMasterGuide());
-                        schema.put("objectTypes", objectTypeGuide());
+                        schema.put("projectBlueprint", AgentPlaybooks.projectBlueprintGuide());
+                        schema.put("groundTruth", AgentPlaybooks.groundTruthGuide());
+                        schema.put("instanceTypes", AgentPlaybooks.instanceTypesGuide());
+                        schema.put("relativeModels", AgentPlaybooks.relativeModelsGuide());
+                        schema.put("objectTypes", AgentPlaybooks.objectTypesMatrixGuide());
+                        schema.put("objectTypeTable", objectTypeGuide());
+                        schema.put("recipes", recipeCatalog.indexSummary(offset, limit));
+                        schema.put(
+                                "projects",
+                                recipeCatalog.listProjects(
+                                        optionalString(arguments, "industry"),
+                                        optionalString(arguments, "archetype"),
+                                        offset,
+                                        limit
+                                )
+                        );
                     }
                 }
                 return schema;

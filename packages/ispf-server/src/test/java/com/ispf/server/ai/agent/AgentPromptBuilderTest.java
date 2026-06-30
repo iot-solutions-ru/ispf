@@ -21,6 +21,20 @@ class AgentPromptBuilderTest {
         assertTrue(prompt.contains("Platform knowledge"));
         assertTrue(prompt.contains("object-table"));
         assertTrue(prompt.contains("snmp"));
+        assertTrue(prompt.contains("GROUND TRUTH"));
+        assertTrue(prompt.contains("Ground truth"));
         assertFalse(prompt.contains("%s"));
+    }
+
+    @Test
+    void includesGroundTruthPlaybookFirst() {
+        String prompt = AgentPromptBuilder.build("root", List.of(), "");
+        int groundIdx = prompt.indexOf("Ground truth");
+        int playbooksIdx = prompt.indexOf("Playbooks:");
+        int snmpIdx = prompt.indexOf("set_dashboard_layout template=");
+        assertTrue(groundIdx >= 0);
+        assertTrue(playbooksIdx >= 0);
+        assertTrue(groundIdx > playbooksIdx);
+        assertTrue(snmpIdx > groundIdx, "Ground truth guide should precede scenario playbooks");
     }
 }

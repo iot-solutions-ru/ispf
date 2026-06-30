@@ -329,6 +329,7 @@ def build_doc_chunks() -> list[dict]:
     slices = [
         ("application-principles", "Application creation principles P1-P10", "application-principles", DOCS / "APPLICATION_PRINCIPLES.md", 8000),
         ("agent-knowledge", "Agent application approaches", "agent-knowledge", DOCS / "AGENT_KNOWLEDGE.md", 16000),
+        ("agent-recipes", "Agent recipe catalog index", "agent-recipes", DOCS / "AGENT_RECIPES.md", 24000),
         ("solution-developer", "Solution developer lifecycle", "solution", DOCS / "SOLUTION_DEVELOPER_GUIDE.md", 9000),
         ("public-api", "Public API", "all", DOCS / "SOLUTION_DEVELOPER_PUBLIC_API.md", 6000),
         ("applications", "Applications deploy", "applications", DOCS / "APPLICATIONS.md", 9000),
@@ -417,7 +418,9 @@ def build_doc_catalog() -> list[dict]:
 def build_pack() -> dict:
     version = platform_version()
     examples = load_examples()
-    drivers_doc = read_text(DOCS / "DRIVERS.md", 12000)
+    drivers_path = DOCS / "DRIVERS.md"
+    drivers_doc_full = drivers_path.read_text(encoding="utf-8") if drivers_path.exists() else ""
+    drivers_doc = drivers_doc_full[:12000]
     pack = {
         "contextPackVersion": f"ispf-{version}",
         "generatedAt": datetime.now(timezone.utc).isoformat(),
@@ -434,7 +437,7 @@ def build_pack() -> dict:
         "scriptSteps": SCRIPT_STEPS,
         "widgetTypes": WIDGET_TYPES,
         "featureIndex": FEATURE_INDEX,
-        "driverCatalog": parse_driver_catalog(drivers_doc),
+        "driverCatalog": parse_driver_catalog(drivers_doc_full),
         "exampleSummaries": build_example_summaries(examples),
         "docChunks": build_doc_chunks(),
         "docCatalog": build_doc_catalog(),

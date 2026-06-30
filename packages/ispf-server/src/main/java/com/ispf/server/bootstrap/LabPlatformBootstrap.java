@@ -63,10 +63,11 @@ public class LabPlatformBootstrap {
     @Order(Ordered.HIGHEST_PRECEDENCE + 21)
     @Transactional
     public void onReady() {
+        // Virtual driver RELATIVE models — required for agent create_virtual_device on prod (not demo fixtures).
+        labModelBootstrap.ensureLabModels();
         if (!bootstrapProperties.isFixturesEnabled()) {
             return;
         }
-        labModelBootstrap.ensureLabModels();
         haystackModelBootstrap.ensureHaystackModel();
         brickModelBootstrap.ensureBrickModel();
         ensureLabDevice(

@@ -30,6 +30,12 @@ class BootstrapCleanInstallTest {
     private OperatorAppUiStore operatorAppUiStore;
 
     @Test
+    void registersVirtualLabModelsWithoutFixtures() {
+        assertThat(modelRegistry.findByName(LabModelBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
+        assertThat(modelRegistry.findByName(LabModelBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
+    }
+
+    @Test
     void doesNotSeedFixtureModels() {
         for (String name : FixtureModelBootstrap.FIXTURE_MODEL_NAMES) {
             assertThat(modelRegistry.findByName(name)).isEmpty();

@@ -110,6 +110,19 @@ public class ModelApplicationService {
         modelEngine.restoreAttachmentsFromObjects();
     }
 
+    @Transactional
+    public PlatformObject ensureAbsoluteInstanceWithRules(String modelId) {
+        try {
+            ModelDefinition model = modelRegistry.requireById(modelId);
+            PlatformObject instance = modelEngine.ensureAbsoluteInstance(model);
+            bindingRulesMerger.mergeModelRules(instance.path(), model, model.parameters());
+            objectManager.persistNodeTree(instance.path());
+            return objectManager.require(instance.path());
+        } catch (ModelException e) {
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
+    }
+
     private static ModelApplyResult aggregateResults(ModelApplyResult primary, List<ModelApplyResult> additional) {
         List<ModelMergeWarning> warnings = new ArrayList<>(primary.warnings());
         for (ModelApplyResult result : additional) {

@@ -37,6 +37,13 @@ public final class AgentStepHumanizer {
             case "list_variables" -> "Читаю переменные «" + arg(arguments, "path") + "»";
             case "set_variable" -> "Обновляю «" + arg(arguments, "name") + "» на «" + arg(arguments, "path") + "»";
             case "configure_driver" -> "Настраиваю драйвер на «" + arg(arguments, "devicePath") + "»";
+            case "apply_relative_model" -> "Подключаю модель «" + orDefault(arg(arguments, "modelName"), arg(arguments, "modelId"))
+                    + "» к «" + orDefault(arg(arguments, "objectPath"), arg(arguments, "path")) + "»";
+            case "list_relative_models" -> "Смотрю RELATIVE-модели"
+                    + (arg(arguments, "query").isBlank() ? "" : ": «" + arg(arguments, "query") + "»");
+            case "get_object_model" -> "Схема модели «" + orDefault(arg(arguments, "modelName"), arg(arguments, "modelId")) + "»";
+            case "create_virtual_device" -> "Создаю виртуальное устройство «" + arg(arguments, "name") + "» ("
+                    + arg(arguments, "profile") + ")";
             case "driver_control" -> driverControlLabel(arguments, result);
             case "save_mimic_diagram" -> "Сохраняю элементы mimic «" + arg(arguments, "path") + "»";
             case "add_mimic_elements" -> "Добавляю символы на mimic «" + arg(arguments, "path") + "»";

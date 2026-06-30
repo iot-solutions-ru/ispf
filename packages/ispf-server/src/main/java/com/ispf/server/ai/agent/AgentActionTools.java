@@ -300,7 +300,8 @@ final class AgentActionTools {
             @Override
             public String description() {
                 return "List platform object model templates (templateId for create_object). "
-                        + "Catalogs: relative-models, instance-types, absolute-models. Optional query filter.";
+                        + "Includes RELATIVE mixins (apply_relative_model), INSTANCE, ABSOLUTE. "
+                        + "Optional query filter; rows include modelType.";
             }
 
             @Override
@@ -316,6 +317,7 @@ final class AgentActionTools {
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("templateId", model.name());
                     row.put("modelId", model.id());
+                    row.put("modelType", model.type().name());
                     row.put("description", model.description());
                     row.put("targetObjectType", model.targetObjectType().name());
                     row.put("variableCount", model.variables().size());

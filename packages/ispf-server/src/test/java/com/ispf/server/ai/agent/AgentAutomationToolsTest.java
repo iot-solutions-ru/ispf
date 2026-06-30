@@ -49,6 +49,8 @@ class AgentAutomationToolsTest {
     private BindingDependencyIndex bindingDependencyIndex;
     @Mock
     private BindingRuleEngine bindingRuleEngine;
+    @Mock
+    private AgentRecipeCatalog recipeCatalog;
 
     private List<PlatformAgentTool> tools;
     private AgentContext context;
@@ -64,6 +66,7 @@ class AgentAutomationToolsTest {
                 bindingRulesService,
                 bindingDependencyIndex,
                 bindingRuleEngine,
+                recipeCatalog,
                 new ObjectMapper()
         );
         context = new AgentContext("admin", null, new AgentRunState());
@@ -94,6 +97,57 @@ class AgentAutomationToolsTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> widgets = (Map<String, Object>) result.get("widgets");
         assertEquals(AgentWidgetCatalog.all().size(), widgets.get("count"));
+    }
+
+    @Test
+    void getAutomationSchemaRecipesTopicUsesCatalogPagination() throws Exception {
+        when(recipeCatalog.indexSummary(5, 25)).thenReturn(Map.of(
+                "status", "OK",
+                "total", 1,
+                "offset", 5,
+                "limit", 25,
+                "count", 1,
+                "recipes", List.of(Map.of("id", "r-1"))
+        ));
+
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of(
+                "topic", "recipes",
+                "offset", 5,
+                "limit", 25
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> recipes = (Map<String, Object>) result.get("recipes");
+        assertEquals(1, recipes.get("count"));
+        verify(recipeCatalog).indexSummary(5, 25);
+    }
+
+    @Test
+    void searchPlatformRecipesDelegatesToCatalog() throws Exception {
+        when(recipeCatalog.search("pump", "project", "energy", "scada", 20, 3)).thenReturn(Map.of(
+                "status", "OK",
+                "total", 0,
+                "offset", 3,
+                "limit", 20,
+                "count", 0,
+                "recipes", List.of()
+        ));
+
+        PlatformAgentTool tool = requireTool("search_platform_recipes");
+        Map<String, Object> result = tool.execute(Map.of(
+                "query", "pump",
+                "category", "project",
+                "industry", "energy",
+                "archetype", "scada",
+                "limit", 20,
+                "offset", 3
+        ), context);
+
+        assertEquals("OK", result.get("status"));
+        verify(recipeCatalog).search("pump", "project", "energy", "scada", 20, 3);
     }
 
     @Test
@@ -224,6 +278,24 @@ class AgentAutomationToolsTest {
 
         assertEquals("OK", result.get("status"));
         verify(objectManager).updateVariableHistory(path, "sineWave", true, null);
+    }
+
+    @Test
+    void getAutomationSchemaReturnsGroundTruthGuide() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "groundTruth"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("groundTruth")).contains("list_objects"));
+    }
+
+    @Test
+    void getAutomationSchemaReturnsProjectBlueprintWithLayerZero() throws Exception {
+        PlatformAgentTool tool = requireTool("get_automation_schema");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> result = tool.execute(Map.of("topic", "projectBlueprint"), context);
+        assertEquals("OK", result.get("status"));
+        assertTrue(String.valueOf(result.get("projectBlueprint")).contains("Ground truth"));
     }
 
     private PlatformAgentTool requireTool(String name) {

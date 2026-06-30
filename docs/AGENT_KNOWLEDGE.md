@@ -72,6 +72,27 @@
 
 **Playbooks в system prompt:** SNMP, virtual cluster, Modbus, MES, reports, widgets, SCADA mimic — см. `AgentPlaybooks.*`.
 
+### Project blueprint (8 слоёв)
+
+Полноценный проект на tree-first = **8 слоёв** (см. `get_automation_schema topic=projectBlueprint`):
+
+| # | Слой | Путь | Tools |
+|---|------|------|-------|
+| 1 | Hub (ABSOLUTE) | `root.platform.instances.{project}` | `ensure_absolute_instance`, binding rules, `refAt` |
+| 2 | Устройства | `root.platform.devices.{project}/*` | `instantiate_instance_type`, `apply_relative_model`, `create_virtual_device` |
+| 3 | Dashboard | `root.platform.dashboards.{project}-*` | `set_dashboard_layout`, `add_dashboard_widget` |
+| 4 | SCADA | `root.platform.mimics.{project}-*` | `save_mimic_diagram`, `get_mimic_diagram` |
+| 5 | Alerts | `root.platform.alert-rules.{project}-*` | `configure_alert` |
+| 6 | Correlators | `root.platform.correlators.{project}-*` | `configure_correlator` |
+| 7 | Workflows | `root.platform.workflows.{project}-*` | `save_workflow_bpmn` |
+| 8 | Reports | `root.platform.reports.{project}-*` | `configure_report` |
+
+**Три вида моделей:** `get_automation_schema topic=instanceTypes` — RELATIVE (mixin на существующий объект), INSTANCE (новый объект), ABSOLUTE (singleton hub).
+
+**Каталог рецептов (1410):** `search_platform_recipes`, `get_automation_schema topic=recipes|projects|recipe/{id}`. **500** готовых отраслевых проектов (`project-{industry}-{archetype}`). Полный индекс: [AGENT_RECIPES.md](AGENT_RECIPES.md).
+
+**Finish guard:** агент не может `finish` без `list_variables` на DEVICE, `configure_alert` при monitoring intent, `get_mimic_diagram elementCount>0` при SCADA.
+
 **Не использовать:** `set_variable name=widgets` на dashboard; layout только в variable `layout`.
 **SCADA:** `save_mimic_diagram` / `add_mimic_elements` — не `set_variable name=diagram`.
 
@@ -94,7 +115,8 @@
 | Tree functions | `get_function_template`, `deploy_tree_function` (script **or java**), `invoke_tree_function`; app BFF: `deploy_app_function` (script) |
 | Operator HMI | `configure_operator_ui` |
 | Platform | `list_platform_schedules`, `configure_platform_schedule`, `resolve_timezone`, `export_haystack` |
-| Reference | `get_automation_schema topic=platformMaster` — индекс всех областей |
+| Models | `list_relative_models`, `list_instance_types`, `list_absolute_models`, `get_object_model`, `apply_relative_model`, `instantiate_instance_type`, `ensure_absolute_instance`, `create_virtual_device` |
+| Recipes | `search_platform_recipes`, `get_automation_schema topic=recipes|projects|recipe/{id}|projectBlueprint|instanceTypes` |
 
 Документы: [DASHBOARDS.md](DASHBOARDS.md), [DRIVERS.md](DRIVERS.md), [BINDINGS.md](BINDINGS.md), [PLATFORM_LOGIC.md](PLATFORM_LOGIC.md), [AUTOMATION.md](AUTOMATION.md).
 

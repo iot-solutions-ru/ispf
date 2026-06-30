@@ -1,0 +1,200 @@
+{
+  "targets": {
+    "atomic": 910,
+    "project": 500,
+    "catalog": 1410
+  },
+  "widgetSource": {
+    "path": "apps/web-console/src/types/dashboard.ts",
+    "expectedCount": 42,
+    "excludeTypes": ["scada-mimic"],
+    "bindingModes": ["objectPath", "selectionKey", "contextPathKey", "paramKey"]
+  },
+  "atomicRules": [
+    {
+      "slug": "model",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Model recipe: {actionLabel} {domainLabel} for {scopeLabel}",
+      "oneLinerTemplate": "Build a stable {domainLabel} model for {scopeLabel} contexts with {actionLabel}.",
+      "dimensions": [
+        { "name": "action", "values": ["define-schema", "compose-model", "map-enum", "shape-record", "extend-namespace", "stabilize-version"] },
+        { "name": "domain", "values": ["telemetry", "assets", "workflow", "quality"] },
+        { "name": "scope", "values": ["core", "edge", "federation"] }
+      ],
+      "layersPool": ["model", "logic", "driver", "integration"],
+      "toolChainPool": ["schema.diff", "model.bind", "catalog.validate", "bundle.patch"],
+      "verifyPool": ["schema.contract", "type.roundtrip", "bundle.lint", "api.smoke"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "logic",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Logic recipe: {actionLabel} {domainLabel} for {scopeLabel}",
+      "oneLinerTemplate": "Compose decision logic for {domainLabel} in {scopeLabel} environments via {actionLabel}.",
+      "dimensions": [
+        { "name": "action", "values": ["derive-rule", "guard-threshold", "normalize-input", "enrich-state", "debounce-signal", "aggregate-window"] },
+        { "name": "domain", "values": ["alarms", "quality", "dispatch", "energy"] },
+        { "name": "scope", "values": ["edge", "site", "fleet"] }
+      ],
+      "layersPool": ["logic", "automation", "dashboard", "report"],
+      "toolChainPool": ["rule.compose", "expr.test", "flow.preview", "state.inspect"],
+      "verifyPool": ["logic.unit", "drift.check", "event.trace", "operator.preview"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "auto",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Automation recipe: {actionLabel} {domainLabel} on {scopeLabel}",
+      "oneLinerTemplate": "Automate {domainLabel} outcomes on {scopeLabel} using {actionLabel}.",
+      "dimensions": [
+        { "name": "action", "values": ["trigger-workflow", "schedule-cycle", "escalate-alert", "close-loop", "fanout-command", "checkpoint-run"] },
+        { "name": "domain", "values": ["maintenance", "quality", "safety", "inventory"] },
+        { "name": "scope", "values": ["line", "plant", "fleet"] }
+      ],
+      "layersPool": ["automation", "logic", "dashboard", "integration"],
+      "toolChainPool": ["workflow.compose", "event.route", "task.assign", "audit.persist"],
+      "verifyPool": ["workflow.smoke", "retry.behavior", "ack.path", "rollback.path"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "widget",
+      "targetCount": 168,
+      "mode": "widget-binding",
+      "titleTemplate": "Widget recipe: {widgetTypeLabel} with {bindingModeLabel}",
+      "oneLinerTemplate": "Configure {widgetTypeLabel} widget using {bindingModeLabel} binding mode.",
+      "layersPool": ["dashboard", "logic", "model", "report"],
+      "toolChainPool": ["widget.compose", "binding.preview", "layout.tune", "style.apply"],
+      "verifyPool": ["widget.render", "binding.resolve", "interaction.smoke", "refresh.interval"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "scada",
+      "targetCount": 70,
+      "mode": "generic",
+      "titleTemplate": "SCADA recipe: {motifLabel} {patternLabel} in {modeLabel}",
+      "oneLinerTemplate": "Build a {motifLabel} mimic for {patternLabel} operations in {modeLabel}.",
+      "dimensions": [
+        { "name": "motif", "values": ["tank-farm", "pump-line", "compressor-hall", "water-train", "substation", "boiler-room", "loading-bay"] },
+        { "name": "pattern", "values": ["single-line", "multi-unit", "redundant-loop", "handover-zone", "alarm-overlay"] },
+        { "name": "mode", "values": ["operator", "engineering"] }
+      ],
+      "layersPool": ["scada", "dashboard", "driver", "automation"],
+      "toolChainPool": ["mimic.compose", "symbol.bind", "alarm.overlay", "zoom.profile"],
+      "verifyPool": ["mimic.render", "bind.resolve", "alarm.visibility", "navigation.path"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "dash",
+      "targetCount": 56,
+      "mode": "generic",
+      "titleTemplate": "Dashboard recipe: {layoutLabel} {focusLabel} for {modeLabel}",
+      "oneLinerTemplate": "Assemble a {layoutLabel} dashboard focused on {focusLabel} in {modeLabel}.",
+      "dimensions": [
+        { "name": "layout", "values": ["operator-board", "line-overview", "kpi-wall", "maintenance-deck", "dispatch-center", "asset-drilldown", "alarm-console"] },
+        { "name": "focus", "values": ["availability", "quality", "energy", "throughput"] },
+        { "name": "mode", "values": ["live", "historical"] }
+      ],
+      "layersPool": ["dashboard", "logic", "report", "model"],
+      "toolChainPool": ["layout.compose", "widget.pack", "context.bind", "theme.apply"],
+      "verifyPool": ["dashboard.open", "widget.data", "selection.flow", "cross-nav"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "report",
+      "targetCount": 54,
+      "mode": "generic",
+      "titleTemplate": "Report recipe: {reportTypeLabel} for {domainLabel} in {cadenceLabel}",
+      "oneLinerTemplate": "Generate {reportTypeLabel} reporting for {domainLabel} at {cadenceLabel} cadence.",
+      "dimensions": [
+        { "name": "reportType", "values": ["kpi-pack", "shift-summary", "exception-log", "energy-balance", "batch-ledger", "maintenance-sheet"] },
+        { "name": "domain", "values": ["operations", "quality", "compliance"] },
+        { "name": "cadence", "values": ["daily", "weekly", "monthly"] }
+      ],
+      "layersPool": ["report", "dashboard", "integration", "logic"],
+      "toolChainPool": ["sql.compose", "report.preview", "export.profile", "schedule.bind"],
+      "verifyPool": ["query.plan", "row.count", "export.smoke", "permission.check"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "fix",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Fix recipe: {issueLabel} on {surfaceLabel} for {scopeLabel}",
+      "oneLinerTemplate": "Mitigate {issueLabel} on {surfaceLabel} in {scopeLabel} deployments.",
+      "dimensions": [
+        { "name": "issue", "values": ["stale-binding", "drifted-model", "missing-index", "slow-refresh", "event-duplication", "workflow-timeout"] },
+        { "name": "surface", "values": ["dashboard", "driver", "report", "automation"] },
+        { "name": "scope", "values": ["lab", "pilot", "production"] }
+      ],
+      "layersPool": ["logic", "automation", "dashboard", "report"],
+      "toolChainPool": ["incident.trace", "patch.apply", "rollback.plan", "audit.note"],
+      "verifyPool": ["regression.smoke", "latency.check", "error.rate", "operator.signoff"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "life",
+      "targetCount": 40,
+      "mode": "generic",
+      "titleTemplate": "Lifecycle recipe: {phaseLabel} {focusLabel} in {scopeLabel}",
+      "oneLinerTemplate": "Drive {phaseLabel} lifecycle tasks for {focusLabel} at {scopeLabel} level.",
+      "dimensions": [
+        { "name": "phase", "values": ["bootstrap", "commission", "operate", "upgrade", "retire"] },
+        { "name": "focus", "values": ["asset", "bundle", "operator-ui", "driver-pack"] },
+        { "name": "scope", "values": ["site", "fleet"] }
+      ],
+      "layersPool": ["lifecycle", "model", "dashboard", "integration"],
+      "toolChainPool": ["life.plan", "change.window", "backup.snapshot", "handover.note"],
+      "verifyPool": ["readiness.check", "rollback.proof", "audit.trail", "ops.acceptance"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "otype",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Object-type recipe: {otypeLabel} with {focusLabel} for {scopeLabel}",
+      "oneLinerTemplate": "Template object type {otypeLabel} for {focusLabel} in {scopeLabel} structures.",
+      "dimensions": [
+        { "name": "otype", "values": ["pump", "tank", "compressor", "line", "meter", "gateway"] },
+        { "name": "focus", "values": ["telemetry", "commands", "alerts", "maintenance"] },
+        { "name": "scope", "values": ["edge", "site", "fleet"] }
+      ],
+      "layersPool": ["object-model", "driver", "dashboard", "automation"],
+      "toolChainPool": ["otype.template", "binding.apply", "alarm.profile", "doc.snapshot"],
+      "verifyPool": ["type.instantiate", "field.coverage", "state.sync", "ui.preview"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "driver",
+      "targetCount": 90,
+      "mode": "driver-scan",
+      "titleTemplate": "Driver recipe: {driverIdLabel} {operationLabel} for {scenarioLabel} ({cadenceLabel})",
+      "oneLinerTemplate": "Apply {operationLabel} workflow for {driverIdLabel} in {scenarioLabel} with {cadenceLabel} cadence.",
+      "cadences": ["cold-start", "steady-state", "burst-load", "failover", "maintenance", "recovery"],
+      "operations": ["bind-points", "normalize-payload", "tune-polling", "route-events", "guard-commands"],
+      "scenarios": ["lab", "pilot", "production"],
+      "layersPool": ["driver", "model", "logic", "integration"],
+      "toolChainPool": ["driver.scan", "mapping.compose", "point.validate", "health.probe"],
+      "verifyPool": ["poll.health", "command.roundtrip", "event.integrity", "timeout.bounds"],
+      "tierCycle": ["core", "advanced", "expert"]
+    },
+    {
+      "slug": "int",
+      "targetCount": 72,
+      "mode": "generic",
+      "titleTemplate": "Integration recipe: {connectorLabel} {actionLabel} for {scopeLabel}",
+      "oneLinerTemplate": "Implement {actionLabel} with {connectorLabel} integration for {scopeLabel} flow.",
+      "dimensions": [
+        { "name": "connector", "values": ["mqtt", "nats", "rest", "sql", "opcua", "snmp"] },
+        { "name": "action", "values": ["ingest", "enrich", "fanout", "sync", "archive", "replay"] },
+        { "name": "scope", "values": ["edge", "site", "enterprise"] }
+      ],
+      "layersPool": ["integration", "logic", "report", "automation"],
+      "toolChainPool": ["connector.bind", "payload.validate", "route.template", "delivery.audit"],
+      "verifyPool": ["contract.check", "throughput.test", "replay.smoke", "error.recovery"],
+      "tierCycle": ["core", "advanced", "expert"]
+    }
+  ]
+}

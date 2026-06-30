@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class TreeFirstAgentService {
@@ -161,6 +162,29 @@ public class TreeFirstAgentService {
 
                 AgentJsonProtocol.AgentAction agentAction = parsed.action();
                 if ("finish".equals(agentAction.type())) {
+                    if (profile != AgentProfile.OPERATOR) {
+                        var block = AgentPlatformTurnGuard.checkBeforeFinish(steps, userMessage);
+                        if (block.isPresent()) {
+                            AgentPlatformTurnGuard.BlockDecision decision = block.get();
+                            Map<String, Object> guardStep = Map.of(
+                                    "step", stepNumber,
+                                    "type", "guard",
+                                    "label", "Проверка перед завершением",
+                                    "error", decision.error(),
+                                    "hint", decision.hint() != null ? decision.hint() : ""
+                            );
+                            steps.add(guardStep);
+                            publishStep(session.sessionId(), guardStep);
+                            messages.add(new LlmMessage("assistant", response.content()));
+                            messages.add(new LlmMessage(
+                                    "user",
+                                    "Finish blocked:\n" + decision.error()
+                                            + (decision.hint() != null ? "\n\n" + decision.hint() : "")
+                                            + "\n\nContinue with tools until devices have telemetry, then finish."
+                            ));
+                            continue;
+                        }
+                    }
                     finishSummary = agentAction.summary();
                     finishResult = agentAction.result() != null ? agentAction.result() : Map.of();
                     finalStatus = AgentTurnStatus.OK;
@@ -244,13 +268,27 @@ public class TreeFirstAgentService {
                         executedTool = toolName;
                     }
                 } else {
-                    try {
-                        toolResult = toolRegistry.execute(toolName, toolArgs, context);
-                    } catch (Exception ex) {
-                        toolResult = Map.of("status", "ERROR", "error", ex.getMessage());
-                    }
-                    if ("list_reports".equals(toolName)) {
-                        toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
+                    Optional<AgentGroundTruthGuard.BlockDecision> groundBlock =
+                            AgentGroundTruthGuard.checkBeforeTool(toolName, toolArgs, steps);
+                    if (groundBlock.isPresent() && groundBlock.get().blocked()) {
+                        AgentGroundTruthGuard.BlockDecision decision = groundBlock.get();
+                        toolResult = new LinkedHashMap<>();
+                        toolResult.put("status", "ERROR");
+                        toolResult.put("error", decision.error());
+                        if (decision.hint() != null) {
+                            toolResult.put("hint", decision.hint());
+                        }
+                        executedTool = toolName;
+                    } else {
+                        try {
+                            toolResult = toolRegistry.execute(toolName, toolArgs, context);
+                        } catch (Exception ex) {
+                            toolResult = Map.of("status", "ERROR", "error", ex.getMessage());
+                        }
+                        if ("list_reports".equals(toolName)) {
+                            toolResult = OperatorAgentTurnGuard.enrichListReportsResult(toolResult, userMessage);
+                        }
+                        executedTool = toolName;
                     }
                 }
 

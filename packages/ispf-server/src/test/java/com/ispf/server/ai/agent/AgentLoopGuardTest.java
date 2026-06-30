@@ -1,12 +1,11 @@
 package com.ispf.server.ai.agent;
 
 import org.junit.jupiter.api.Test;
-import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AgentLoopGuardTest {
@@ -43,6 +42,35 @@ class AgentLoopGuardTest {
         );
         String hint = AgentLoopGuard.continuationHint("add_dashboard_widget", steps, 18);
         assertTrue(hint.contains("finish"));
+    }
+
+    @Test
+    void hintsListObjectsAfterGroundTruthBlock() {
+        List<Map<String, Object>> steps = new ArrayList<>();
+        steps.add(Map.of(
+                "type", "tool",
+                "tool", "create_object",
+                "arguments", Map.of("parentPath", "root.platform.mimics", "name", "hmi"),
+                "result", Map.of(
+                        "status", "ERROR",
+                        "error", "Cannot create under hmi: parent path was not discovered in this turn: root.platform.mimics"
+                )
+        ));
+        String hint = AgentLoopGuard.continuationHint("create_object", steps, 96);
+        assertTrue(hint.contains("list_objects parent=root.platform.mimics"));
+    }
+
+    @Test
+    void hintsDiscoveryAfterRecipeSearch() {
+        String hint = AgentLoopGuard.continuationHint("search_platform_recipes", List.of(step("search_platform_recipes")), 96);
+        assertTrue(hint.contains("list_objects"));
+        assertTrue(hint.contains("not live tree"));
+    }
+
+    @Test
+    void hintsDiscoveryAfterAutomationSchema() {
+        String hint = AgentLoopGuard.continuationHint("get_automation_schema", List.of(step("get_automation_schema")), 96);
+        assertTrue(hint.contains("list_relative_models"));
     }
 
     private static Map<String, Object> step(String tool) {

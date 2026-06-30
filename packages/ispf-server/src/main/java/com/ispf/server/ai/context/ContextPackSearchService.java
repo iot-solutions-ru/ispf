@@ -122,7 +122,8 @@ public class ContextPackSearchService {
         if (appId == null || appId.isBlank()) {
             return Map.of("status", "ERROR", "error", "appId is required");
         }
-        String needle = appId.trim().toLowerCase(Locale.ROOT);
+        String resolvedAppId = resolveExampleAppId(appId);
+        String needle = resolvedAppId.trim().toLowerCase(Locale.ROOT);
         Map<String, Object> pack = contextPackService.loadPack();
         Object examples = pack.get("examples");
         if (!(examples instanceof List<?> list)) {
@@ -145,6 +146,9 @@ public class ContextPackSearchService {
             }
             Map<String, Object> subset = new LinkedHashMap<>();
             subset.put("appId", appId);
+            if (!resolvedAppId.equals(appId.trim())) {
+                subset.put("resolvedAppId", resolvedAppId);
+            }
             if (sections == null || sections.isEmpty()) {
                 subset.put("manifest", castMap(manifestMap));
             } else {
@@ -338,5 +342,13 @@ public class ContextPackSearchService {
             target.put(String.valueOf(entry.getKey()), entry.getValue());
         }
         return target;
+    }
+
+    private static String resolveExampleAppId(String appId) {
+        String normalized = appId.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "virtual", "virtual-driver", "virtual-lab", "lab" -> "lab-training";
+            default -> appId.trim();
+        };
     }
 }

@@ -5,6 +5,7 @@ import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.bootstrap.MiniTecPaths;
 import com.ispf.server.bootstrap.PipelineScadaPaths;
 import com.ispf.server.bootstrap.TankFarmPaths;
+import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.dashboard.DashboardLayouts;
 
 /**
@@ -163,13 +164,72 @@ public final class AgentPlaybooks {
                 
                 Цель: симулятор налива без железа.
                 
-                Шаги:
+                Предпочтительно: create_virtual_device profile=meter (один вызов — модель, конфиг, старт драйвера).
+                
+                Или вручную:
                 1. create_object parentPath=root.platform.devices name=virtual-meter type=DEVICE
-                   displayName=Virtual meter, templateId=device-v1, driverId=virtual, autoStartDriver=false
-                2. set_variable name=driverConfigJson value={"profile":"meter","litersPerSecond":"120","filling":"true"}
-                3. configure_driver driverId=virtual autoStart=true
-                4. list_variables — meterLiters, flowRate, filling
-                5. finish
+                   displayName=Virtual meter, templateId="""
+                + LabModelBootstrap.VIRTUAL_UNIFIED_MODEL
+                + """
+                , driverId=virtual, autoStartDriver=false
+                2. set_variable path=... name=driverConfigJson value="""
+                + VirtualDeviceProfileCatalog.METER_DRIVER_CONFIG
+                + """
+                
+                3. set_variable path=... name=driverPointMappingsJson value="""
+                + VirtualDeviceProfileCatalog.METER_POINT_MAPPINGS
+                + """
+                
+                4. configure_driver devicePath=... driverId=virtual autoStart=true
+                   (после set_variable configure_driver подхватывает driverConfigJson с устройства)
+                5. list_variables — meterLiters, flowRate, filling (count>0 обязательно перед finish)
+                6. finish только после list_variables
+                """;
+    }
+
+    public static String virtualPumpStation() {
+        return """
+                ## Virtual pump station — насосная станция (SCADA + мониторинг)
+                
+                Цель: виртуальные устройства с телеметрией (вибрация, температура, расход, давление),
+                SCADA mimic с bindings, дашборд мониторинга.
+                
+                **RELATIVE модели:** mixin вливает variables/events/functions в существующий объект.
+                
+                0. list_objects parentPath=root.platform.devices — найти или выбрать родительскую папку (имя из ответа, не выдумывать)
+                1. list_relative_models targetObjectType=DEVICE + list_virtual_profiles — modelName/profile только из ответа
+                2. Если нужна новая папка проекта: create_object parentPath=<из list_objects> name=<уникальное из контекста> type=CUSTOM
+                3. Устройства — **вариант A:** create_object parentPath=<существующий parent> … → apply_relative_model modelName=<из list_relative_models>
+                   **вариант B:** create_virtual_device parentPath=<существующий> profile=<из list_virtual_profiles>
+                4. list_variables на КАЖДОМ устройстве — variableName для SCADA/dashboard только из этого списка
+                5. SCADA: save_mimic_diagram bindings с objectPath/variableName из list_variables
+                6. Dashboard: add_dashboard_widget — те же paths и variableName
+                """;
+    }
+
+    public static String relativeModelsGuide() {
+        return """
+                ## RELATIVE models — mixins для variables / events / functions
+                
+                Каталог: root.platform.relative-models. Тип ModelType.RELATIVE.
+                
+                | Инструмент | Назначение |
+                |------------|------------|
+                | list_relative_models | Каталог mixin-моделей (virtual-lab-v1, snmp-agent-v1, …) |
+                | get_object_model | Схема: variables[], events[], functions[] |
+                | apply_relative_model | Прикрепить mixin к существующему objectPath |
+                
+                Workflow:
+                1. create_object DEVICE (можно без templateId — только driver schema от provisionDriver)
+                2. apply_relative_model modelName=virtual-lab-v1 objectPath=...
+                   — добавляет sineWave, driverConfigJson, events, functions на тот же path
+                3. configure_driver + driver_control start
+                4. list_variables — проверка
+                
+                Альтернатива: create_object с templateId=virtual-lab-v1 (тот же apply при создании).
+                Несколько mixin можно наслаивать, если модели не конфликтуют.
+                
+                Не путать с create_variable — mixin даёт целую схему + binding rules разом.
                 """;
     }
 
@@ -312,6 +372,91 @@ public final class AgentPlaybooks {
                 11. driver_control poll each device; list_variables on hub (clusterError)
                 12. finish: summary + paths (folder, devices, hub, dashboards, alert, operator default)
                 """;
+    }
+
+    public static String groundTruthGuide() {
+        return """
+                ## Ground truth — опирайся на дерево, не на выдуманные имена
+                
+                Документация (playbooks, recipes, briefing) ≠ состояние платформы. Каждый шаг создания/изменения
+                должен ссылаться на объекты, уже возвращённые инструментами в этом ходе.
+                
+                **Порядок (не «проверил и забыл», а план из фактов):**
+                1. list_objects parentPath=<родитель> — увидеть существующие папки и устройства
+                2. search_objects / get_object — если пользователь назвал объект или путь неочевиден
+                3. list_relative_models + list_virtual_profiles — выбрать modelName/profile из ответа
+                4. list_variables path=<существующий DEVICE> — имена переменных для виджетов и SCADA bindings
+                5. Только после этого — create_object, create_virtual_device, apply_relative_model, add_dashboard_widget
+                
+                **Переиспользование:** если list_objects показал папку/устройство — работай с этим path.
+                Если create_object вернул «Object exists» — get_object + list_variables, не дублируй.
+                
+                **Recipes:** search_platform_recipes даёт последовательность; подставляй пути из list_objects,
+                не копируй примерные имена из catalog буквально.
+                """;
+    }
+
+    public static String projectBlueprintGuide() {
+        return "## Project blueprint (8 layers, end-to-end)\n\n"
+                + "Используй как каркас для новых решений. Не перескакивай через слои.\n\n"
+                + "0. **Ground truth**: list_objects / search_objects / list_relative_models — зафиксируй реальные paths "
+                + "и modelName из ответов tools (см. groundTruthGuide). Playbook-пути — только примеры.\n"
+                + "1. **Intent + scope**: зафиксируй цель, бизнес-события, naming/path policy на основе существующего дерева.\n"
+                + "2. **Model strategy**: выбери INSTANCE vs RELATIVE vs ABSOLUTE "
+                + "(см. get_automation_schema topic=instanceTypes).\n"
+                + "3. **Source layer**: устройства/драйверы/телеметрия (DEVICE, configure_driver, list_variables).\n"
+                + "4. **Aggregation layer**: CUSTOM hub + create_variable + create_binding_rule (refAt/CEL).\n"
+                + "5. **Alert layer**: configure_alert на hub/device переменных.\n"
+                + "6. **Correlation layer**: configure_correlator для pattern/action цепочек.\n"
+                + "7. **Operator layer**: DASHBOARD + MIMIC + REPORT + configure_operator_ui.\n"
+                + "8. **Validation layer**: poll/list_variables/get_mimic_diagram/list_automation и только потом finish.\n\n"
+                + "Alert + correlator chain (референсный паттерн):\n"
+                + "telemetry -> hub computed variable -> configure_alert emits event -> configure_correlator consumes pattern\n"
+                + "-> FIRE_EVENT / RUN_WORKFLOW / OPEN_OPERATOR_REPORT.\n\n"
+                + "Полный пример проекта: см. playbook virtualClusterMonitoring() и "
+                + "get_automation_schema topic=platformMaster.\n";
+    }
+
+    public static String instanceTypesGuide() {
+        return """
+                ## INSTANCE vs RELATIVE vs ABSOLUTE (decision tree)
+
+                1) Нужен готовый шаблон "создать экземпляр из каталога"?
+                   -> **INSTANCE**
+                   tools: list_instance_types -> instantiate_instance_type
+
+                2) Нужно обогатить уже существующий objectPath (добавить variables/events/functions)?
+                   -> **RELATIVE**
+                   tools: list_relative_models -> apply_relative_model
+
+                3) Нужна строгая каноническая структура по абсолютной модели (без mixin-слоёв)?
+                   -> **ABSOLUTE**
+                   tools: list_absolute_models -> ensure_absolute_instance
+
+                Quick flow:
+                - Сначала покажи каталоги: list_instance_types, list_relative_models, list_absolute_models.
+                - Затем выбери один путь и НЕ смешивай INSTANCE/ABSOLUTE вслепую на одном объекте.
+                - После инстанцирования/применения модели: configure_driver + list_variables (verification).
+                """;
+    }
+
+    public static String objectTypesMatrixGuide() {
+        return "## ObjectType creation matrix\n\n"
+                + "| ObjectType | Parent path | Typical template/model | Primary tools |\n"
+                + "|------------|-------------|------------------------|---------------|\n"
+                + "| DEVICE | root.platform.devices | snmp-agent-v1 / virtual-lab-v1 / absolute model | "
+                + "create_object, create_virtual_device, configure_driver |\n"
+                + "| CUSTOM | root.platform.devices.* or root.platform.instances | (custom hub / instance type) | "
+                + "create_object, create_variable, create_binding_rule |\n"
+                + "| DASHBOARD | root.platform.dashboards | dashboard-v1 | "
+                + "create_object, set_dashboard_layout, add_dashboard_widget |\n"
+                + "| MIMIC | root.platform.mimics | mimic-v1 | "
+                + "create_object, save_mimic_diagram, get_mimic_diagram |\n"
+                + "| ALERT | " + AutomationTreeService.ALERT_RULES_ROOT + " | alert-rule-v1 | configure_alert |\n"
+                + "| CORRELATOR | " + AutomationTreeService.CORRELATORS_ROOT + " | correlator-v1 | configure_correlator |\n"
+                + "| WORKFLOW | root.platform.workflows | workflow-v1 | "
+                + "create_object, save_workflow_bpmn, run_workflow |\n"
+                + "| REPORT | root.platform.reports | report-v1 / tree-variables-report-v1 | configure_report, run_report |\n";
     }
 
     public static String platformObjectTypesGuide() {
@@ -521,10 +666,13 @@ public final class AgentPlaybooks {
                 
                 **Discovery:** search_context, list_drivers, get_driver_help, list_examples, get_example_bundle, list_object_models
                 
+                **Models (RELATIVE mixins):** list_relative_models, get_object_model, apply_relative_model
+                — enrich DEVICE/CUSTOM with variables, events, functions (virtual-lab-v1, virtual-unified-v1, …)
+                
                 **Object tree:** list_objects, get_object, create_object, delete_object, search_objects, search_by_haystack_tags
                 list_variables, describe_variables, set_variable, create_variable
                 
-                **Devices/drivers:** configure_driver, driver_control, configure_variable_history
+                **Devices/drivers:** configure_driver, driver_control, configure_variable_history, create_virtual_device
                 
                 **Bindings/rules:** create_binding_rule, list_binding_rules, configure_platform_context_rule, create_binding_rule refAt/CEL
                 
