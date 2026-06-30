@@ -11,6 +11,7 @@ import {
   rollbackFunction,
   updateBundleObjects,
 } from "../api/applications";
+import ApplicationBundlePanel from "./ApplicationBundlePanel";
 
 interface ApplicationDeployPanelProps {
   appId: string;
@@ -116,6 +117,8 @@ export default function ApplicationDeployPanel({ appId, canManage }: Application
 
   return (
     <div className="application-deploy-panel">
+      <ApplicationBundlePanel appId={appId} canManage={canManage} />
+      <hr />
       <h3>{t("deploy.title")}</h3>
       <p className="op-muted">{t("deploy.subtitle", { appId })}</p>
 

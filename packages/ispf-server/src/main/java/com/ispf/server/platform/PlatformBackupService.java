@@ -44,18 +44,39 @@ public class PlatformBackupService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> exportSubtree() {
+        return exportSubtree(ROOT_PATH);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> exportSubtree(String rootPath) {
+        String normalizedRoot = normalizeExportRoot(rootPath);
         List<Map<String, Object>> nodes = objectManager.tree().all().stream()
-                .filter(node -> node.path().equals(ROOT_PATH) || node.path().startsWith(ROOT_PATH + "."))
+                .filter(node -> node.path().equals(normalizedRoot)
+                        || node.path().startsWith(normalizedRoot + "."))
                 .sorted(Comparator.comparing(PlatformObject::path))
                 .map(this::serializeNode)
                 .toList();
+        if (nodes.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No nodes under export root: " + normalizedRoot);
+        }
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("formatVersion", FORMAT_VERSION);
         payload.put("exportedAt", Instant.now().toString());
-        payload.put("rootPath", ROOT_PATH);
+        payload.put("rootPath", normalizedRoot);
         payload.put("nodeCount", nodes.size());
         payload.put("nodes", nodes);
         return payload;
+    }
+
+    static String normalizeExportRoot(String rootPath) {
+        String candidate = rootPath == null || rootPath.isBlank() ? ROOT_PATH : rootPath.trim();
+        if (!candidate.equals(ROOT_PATH) && !candidate.startsWith(ROOT_PATH + ".")) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Export root must be " + ROOT_PATH + " or a descendant path"
+            );
+        }
+        return candidate;
     }
 
     @Transactional(readOnly = true)

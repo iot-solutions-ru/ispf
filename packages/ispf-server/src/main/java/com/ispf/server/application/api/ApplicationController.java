@@ -12,6 +12,8 @@ import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
+import com.ispf.server.ai.validation.BundleManifestValidator;
+import com.ispf.server.ai.validation.BundleValidationResult;
 import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +44,7 @@ public class ApplicationController {
     private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationEventCatalogService eventCatalogService;
+    private final BundleManifestValidator bundleManifestValidator;
     private final ObjectMapper objectMapper;
 
     public ApplicationController(
@@ -52,6 +55,7 @@ public class ApplicationController {
             ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
             ApplicationEventCatalogService eventCatalogService,
+            BundleManifestValidator bundleManifestValidator,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
@@ -61,6 +65,7 @@ public class ApplicationController {
         this.reportService = reportService;
         this.objectTreeService = objectTreeService;
         this.eventCatalogService = eventCatalogService;
+        this.bundleManifestValidator = bundleManifestValidator;
         this.objectMapper = objectMapper;
     }
 
@@ -86,6 +91,32 @@ public class ApplicationController {
     @GetMapping("/{appId}/deploy/history")
     public List<Map<String, Object>> deployHistory(@PathVariable String appId) {
         return bundleDeployService.deployHistory(appId);
+    }
+
+    @GetMapping("/{appId}/export")
+    public Map<String, Object> exportBundle(
+            @PathVariable String appId,
+            @RequestParam(required = false) String version
+    ) {
+        try {
+            return bundleDeployService.exportActiveBundle(appId, version);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/{appId}/bundle/validate")
+    public Map<String, Object> validateBundle(
+            @PathVariable String appId,
+            @RequestBody ApplicationBundleDeployService.BundleManifest manifest,
+            @RequestParam(defaultValue = "false") boolean dryRun
+    ) {
+        BundleValidationResult result = dryRun
+                ? bundleManifestValidator.dryRun(appId, manifest)
+                : bundleManifestValidator.validate(appId, manifest);
+        return result.toMap();
     }
 
     @PostMapping("/{appId}/deploy/rollback")

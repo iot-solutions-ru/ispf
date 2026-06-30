@@ -2,6 +2,7 @@
   "tab.general": "Properties",
   "tab.federation": "Federation",
   "tab.deploy": "Deploy",
+  "tab.export": "JSON export",
   "tab.access": "Access",
   "tab.driver": "Driver",
   "tab.haystack": "Haystack",

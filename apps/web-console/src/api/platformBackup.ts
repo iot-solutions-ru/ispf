@@ -16,8 +16,9 @@ export interface PlatformBackupImportResult {
   dryRun: boolean;
 }
 
-export async function exportPlatformBackup(): Promise<Record<string, unknown>> {
-  const response = await fetch("/api/v1/platform/backup/export", {
+export async function exportPlatformBackup(rootPath?: string): Promise<Record<string, unknown>> {
+  const params = rootPath ? `?rootPath=${encodeURIComponent(rootPath)}` : "";
+  const response = await fetch(`/api/v1/platform/backup/export${params}`, {
     headers: getAuthHeaders(),
   });
   if (!response.ok) {
