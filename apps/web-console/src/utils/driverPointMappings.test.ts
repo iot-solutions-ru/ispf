@@ -13,6 +13,30 @@ describe("parseDriverPointMappings", () => {
     expect(parseDriverPointMappings("{bad")).toEqual({});
     expect(parseDriverPointMappings("")).toEqual({});
   });
+
+  it("extracts protocol address from extended haystack mapping objects", () => {
+    expect(
+      parseDriverPointMappings(
+        JSON.stringify({
+          sineWave: {
+            point: "sim",
+            haystackTags: ["point", "sensor", "temp"],
+            unit: "°C",
+            dis: "Sine wave",
+          },
+          presentValue: {
+            address: "analog-value:1:present-value",
+            tags: ["point", "cur"],
+          },
+          status: "sim",
+        }),
+      ),
+    ).toEqual({
+      sineWave: "sim",
+      presentValue: "analog-value:1:present-value",
+      status: "sim",
+    });
+  });
 });
 
 describe("parseDriverWriteValue", () => {

@@ -69,6 +69,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
     private int bindPort = -1;
     private final Map<String, BacnetPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
+    private volatile boolean testAttached;
 
     @Override
     public DriverMetadata metadata() {
@@ -87,16 +88,30 @@ public class BacnetDeviceDriver implements DeviceDriver {
         readConfig("bindPort", value -> bindPort = Integer.parseInt(value));
     }
 
+    /**
+     * Package-private hook for in-memory {@link com.serotonin.bacnet4j.npdu.test.TestNetwork} tests (BL-30).
+     */
+    void attachTestDevices(LocalDevice localDevice, RemoteDevice remoteDevice) {
+        this.localDevice = localDevice;
+        this.remoteDevice = remoteDevice;
+        this.connected = localDevice != null && remoteDevice != null;
+        this.testAttached = true;
+    }
+
     @Override
     public void connect() throws DriverException {
         try {
             int networkPort = bindPort >= 0 ? bindPort : port;
-            IpNetwork network = new IpNetworkBuilder()
+            IpNetworkBuilder networkBuilder = new IpNetworkBuilder()
                     .withLocalBindAddress(bindAddress)
-                    .withBroadcast("255.255.255.255", 24)
                     .withPort(networkPort)
-                    .withReuseAddress(true)
-                    .build();
+                    .withReuseAddress(true);
+            if (isLoopbackHost(host) || isLoopbackHost(bindAddress)) {
+                networkBuilder.withSubnet("127.0.0.0", 8).withBroadcast("127.0.0.255", 8);
+            } else {
+                networkBuilder.withBroadcast("255.255.255.255", 24);
+            }
+            IpNetwork network = networkBuilder.build();
             localDevice = new LocalDevice(localDeviceId, new DefaultTransport(network));
             localDevice.initialize();
             Address remoteAddress = toIpAddress(host, port);
@@ -128,6 +143,11 @@ public class BacnetDeviceDriver implements DeviceDriver {
     public void disconnect() {
         connected = false;
         remoteDevice = null;
+        if (testAttached) {
+            testAttached = false;
+            localDevice = null;
+            return;
+        }
         terminateLocalDevice();
     }
 
@@ -239,6 +259,16 @@ public class BacnetDeviceDriver implements DeviceDriver {
         } catch (BACnetException e) {
             throw new DriverException("BACnet read failed for " + point, e);
         }
+    }
+
+    private static boolean isLoopbackHost(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        String trimmed = value.trim();
+        return "127.0.0.1".equals(trimmed)
+                || "localhost".equalsIgnoreCase(trimmed)
+                || trimmed.startsWith("127.");
     }
 
     private static Address toIpAddress(String host, int port) throws Exception {

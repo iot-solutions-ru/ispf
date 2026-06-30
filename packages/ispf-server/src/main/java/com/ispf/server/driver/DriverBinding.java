@@ -96,7 +96,9 @@ public record DriverBinding(
         Map<String, String> config = new LinkedHashMap<>(parseMap(configJson, objectMapper));
         TelemetryPublishMode mode = TelemetryPublishMode.parse(config.remove(KEY_PUBLISH_MODE));
         int coalesceOverride = parsePositiveInt(config.remove(KEY_COALESCE_MS));
-        Map<String, String> mappings = parseMap(pointMappingsJson, objectMapper);
+        Map<String, String> mappings = DriverPointMappingParser.toPointIds(
+                DriverPointMappingParser.parse(pointMappingsJson, objectMapper)
+        );
         return of(resolvedDriverId, interval, Map.copyOf(config), mappings, mode, coalesceOverride);
     }
 

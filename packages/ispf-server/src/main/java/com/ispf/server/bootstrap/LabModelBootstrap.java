@@ -34,8 +34,27 @@ public class LabModelBootstrap {
             "{\"profile\":\"lab\",\"sineAmplitude\":\"10.0\",\"sawtoothAmplitude\":\"5.0\","
                     + "\"triangleAmplitude\":\"5.0\",\"periodSec\":\"60\"}";
 
-    public static final String LAB_POINT_MAPPINGS =
-            "{\"sineWave\":\"sim\",\"sawtoothWave\":\"sim\",\"triangleWave\":\"sim\",\"status\":\"sim\"}";
+    public static final String LAB_POINT_MAPPINGS = """
+            {
+              "sineWave": {
+                "point": "sim",
+                "haystackTags": ["point", "sensor", "temp"],
+                "unit": "°C",
+                "dis": "Sine wave"
+              },
+              "sawtoothWave": {
+                "point": "sim",
+                "haystackTags": ["point", "sensor"],
+                "dis": "Sawtooth wave"
+              },
+              "triangleWave": {
+                "point": "sim",
+                "haystackTags": ["point", "sensor"],
+                "dis": "Triangle wave"
+              },
+              "status": "sim"
+            }
+            """.trim();
 
     public static final String UNIFIED_DRIVER_CONFIG =
             "{\"profile\":\"unified\",\"baseTemperature\":\"22.0\",\"amplitude\":\"15.0\",\"periodSec\":\"60\","

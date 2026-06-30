@@ -27,6 +27,7 @@ public class HaystackModelBootstrap {
     public static final String DEMO_DEVICE_PATH = "root.platform.devices.lab-userA-01";
     public static final String DEMO_HAYSTACK_REF = "@demo.lab.equip1";
     public static final String DEMO_HAYSTACK_TAGS = "[\"equip\",\"lab\",\"site\"]";
+    public static final String DEMO_POINT_MAPPINGS = LabModelBootstrap.LAB_POINT_MAPPINGS;
 
     private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)

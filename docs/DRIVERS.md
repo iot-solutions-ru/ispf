@@ -45,7 +45,71 @@ Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) —
 | `driverStatus` | `STOPPED` / `RUNNING` / `ERROR` |
 | `driverPollIntervalMs` | Интервал опроса |
 | `driverConfigJson` | JSON конфигурации |
-| `driverPointMappingsJson` | JSON: `variableName → pointId` |
+| `driverPointMappingsJson` | JSON: `variableName → pointId` (legacy string) или extended object с Haystack metadata (BL-59) |
+
+### Extended point mappings (BL-59)
+
+Legacy формат — строка с protocol address на переменную:
+
+```json
+{
+  "temperature": "HOLDING:1:40001",
+  "status": "COIL:1:0"
+}
+```
+
+Extended object добавляет Haystack tags для export (`GET /api/v1/platform/haystack/export`) без отдельных переменных на каждую точку:
+
+```json
+{
+  "sineWave": {
+    "point": "sim",
+    "haystackTags": ["point", "sensor", "temp"],
+    "unit": "°C",
+    "dis": "Sine wave"
+  },
+  "status": "sim"
+}
+```
+
+| Поле | Алиасы | Назначение |
+|------|--------|------------|
+| `point` | `address`, `pointId` | Protocol address (как в legacy string) |
+| `haystackTags` | `tags` | Marker tags для Haystack export |
+| `unit` | — | Единица измерения (`°C`, `kW`, …) |
+| `dis` | — | Display name точки в export |
+
+Runtime poll/write использует только protocol address; Haystack поля игнорируются драйвером, но попадают в semantic export. Переменные с `historyEnabled` экспортируются всегда; без history — только если в mapping есть Haystack metadata.
+
+**BACnet example** (`analog-value:1:present-value`):
+
+```json
+{
+  "supplyTemp": {
+    "address": "analog-value:1:present-value",
+    "haystackTags": ["point", "sensor", "temp", "supply"],
+    "unit": "°C",
+    "dis": "Supply air temperature"
+  }
+}
+```
+
+**OPC UA example** (`ns=2;s=TagName`):
+
+```json
+{
+  "chillerKw": {
+    "point": "ns=2;s=Chiller/ElectricPower",
+    "tags": ["point", "sensor", "power"],
+    "unit": "kW",
+    "dis": "Chiller electric power"
+  }
+}
+```
+
+Demo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).
+
+Brick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on device → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` from the same point mappings.
 
 ## REST Runtime API
 
@@ -198,6 +262,39 @@ Point mapping: `path`, `GET:path`, `HEAD:path`, полный URL, суффикс
 
 Пример mappings: `{"platformVersion": "GET:/api/v1/info:json"}`
 
+### haystack (`ispf-driver-haystack`)
+
+Project Haystack HTTP JSON client (SkySpark, FIN, Haxall). Poll-only v0.1: batch `read` by ref, connect probe via `about`.
+
+Point mapping: Haystack ref id (`site.equip.supplyTemp` или `@site.equip.supplyTemp`).
+
+```json
+{
+  "baseUrl": "https://skyspark.example.com",
+  "project": "demo",
+  "username": "su",
+  "password": "secret",
+  "timeoutMs": "5000"
+}
+```
+
+Альтернатива: `authToken` (Bearer) вместо username/password.
+
+Пример mappings:
+
+```json
+{
+  "supplyTemp": "site.mainAhu.supplyTemp",
+  "runStatus": "@site.mainAhu.run"
+}
+```
+
+Переменная: `value` (число), `valueText` (bool/string), `ref`, `unit`, `dis`. Read-only (v0.1).
+
+Loopback test: `HaystackDeviceDriverTest` (embedded `HttpServer` + JSON grid).
+
+Maturity: **beta**. Out of scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
+
 ### icmp (`ispf-driver-icmp`)
 
 Доступность хоста (ICMP / `InetAddress.isReachable`).
@@ -285,6 +382,7 @@ Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 | `modbus-udp` | `ispf-driver-modbus-udp` | Modbus UDP |
 | `snmp` | `ispf-driver-snmp` | SNMP v1/v2c/v3 |
 | `http` | `ispf-driver-http` | HTTP/HTTPS client |
+| `haystack` | `ispf-driver-haystack` | Project Haystack HTTP JSON client |
 | `http-server` | `ispf-driver-http-server` | Встроенный HTTP server |
 | `icmp` | `ispf-driver-icmp` | Ping |
 | `ssh` | `ispf-driver-ssh` | SSH command |
@@ -398,7 +496,7 @@ Point mapping: `objectType:instance:property` (например `analog-output:1
 
 **Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
 
-Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Полный UDP/IP property exchange — на hardware/BACnet simulator (в CI нестабилен).
+Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetDeviceDriverNetworkTest` + `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe, exercises driver `readPoints`/`writePoint`). Loopback subnet (`127.0.0.0/8`) auto-selected for `127.0.0.1`. Полный UDP/IP property exchange на hardware/BACnet simulator — опционально (в CI нестабилен).
 
 ### dnp3 (`ispf-driver-dnp3`)
 

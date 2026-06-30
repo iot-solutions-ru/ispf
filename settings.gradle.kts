@@ -16,6 +16,7 @@ include(
     "packages:ispf-driver-snmp",
     "packages:ispf-driver-virtual",
     "packages:ispf-driver-http",
+    "packages:ispf-driver-haystack",
     "packages:ispf-driver-icmp",
     "packages:ispf-driver-ssh",
     "packages:ispf-driver-coap",

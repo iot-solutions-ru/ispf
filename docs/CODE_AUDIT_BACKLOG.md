@@ -70,7 +70,7 @@
 | **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Done | Driver catalog |
 | **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
 | **BL-29** | CWMP `SetParameterValues` write | P3 | Done | Driver |
-| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Partial | Driver QA |
+| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Done | Driver QA |
 
 ### Wave D — Scale, ops, federation
 
@@ -106,10 +106,10 @@
 | **BL-56** | ADR/spike: Haystack tags как metadata overlay (object tree = source of truth) | P3 | Done | Architecture |
 | **BL-57** | RELATIVE model `haystack-metadata-v1`: `haystackTags`, `haystackRef`, `kind` на DEVICE/variables | P3 | Done | Models |
 | **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Done | API |
-| **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Planned | Drivers |
-| **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Planned | Semantic |
-| **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Planned | Driver |
-| **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Planned | Dashboard |
+| **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Done | Drivers |
+| **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Done | Semantic |
+| **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Done | Driver |
+| **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Done | Dashboard |
 
 ### Wave H — Time & timezones
 
@@ -362,7 +362,9 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
 
-**Статус (2026-06-30):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap/**mqtt**/**snmp**; BACnet — `BacnetLoopbackServer` IP connect smoke + `BacnetTestNetworkExchangeTest` (in-memory TestNetwork read/write); UDP property exchange в CI нестабилен. Новые тесты: `MqttDeviceDriverTest` (moquette), `SnmpDeviceDriverTest` (`SnmpLoopbackAgent`).
+**Статус (2026-06-30):** BL-30 Done — loopback/mock tests для promoted drivers (modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap/mqtt/snmp/**haystack**); BACnet — IP connect smoke + `BacnetDeviceDriverNetworkTest` (driver read/write via TestNetwork) + `BacnetPointTest`; UDP property exchange на hardware/simulator (CI optional).
+
+**Статус (2026-06-30, ранее):** BL-30 Partial — … `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest`.
 
 **Статус (2026-06-28):** BL-24 Done — `io.stepfunc:dnp3` master TCP, Class 0/1/2/3 integrity poll; loopback `Dnp3DeviceDriverTest` + `Dnp3LoopbackOutstation`; config `localAddress`/`outstationAddress`; docs в DRIVERS.md.
 
@@ -496,22 +498,26 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 **BL-59 — Driver conventions**
 
-- [ ] Документ + пример в `driverPointMappingsJson`: protocol address + haystack tags
-- [ ] BACnet/OPC UA mapping profile (spike)
+- [x] Документ + пример в `driverPointMappingsJson`: protocol address + haystack tags
+- [x] BACnet/OPC UA mapping profile (spike)
+- [x] `DriverPointMappingParser` + Haystack export integration; demo на `lab-userA-01`
 
 **BL-60 — Brick (demand-only)**
 
-- [ ] `brickClass` URI на object; export Turtle/JSON-LD subset
-- [ ] Связи `hasPoint` через `refAt` bindings или explicit refs
+- [x] `brickClass` URI на object (`brick-metadata-v1` mixin)
+- [x] Export: `GET /api/v1/platform/brick/export?format=jsonld|turtle`
+- [x] `hasPoint` через driver point mappings + demo на `lab-userA-01`
 
 **BL-61 — External Haystack driver**
 
-- [ ] `ispf-driver-haystack`: HTTP Zinc/JSON client, subscribe/poll remote refs
+- [x] `ispf-driver-haystack`: HTTP JSON client, batch `read` + `about` probe
+- [x] Loopback test `HaystackDeviceDriverTest`; docs in DRIVERS.md
 
 **BL-62 — Semantic HMI**
 
-- [ ] Dashboard builder: «bind all points where tags match `equip and temp`»
-- [ ] AI agent tool: `search_by_haystack_tags`
+- [x] Dashboard builder: «bind all points where tags match `equip and temp`»
+- [x] AI agent tool: `search_by_haystack_tags`
+- [x] `GET /api/v1/platform/haystack/search?tags=...`
 
 **Acceptance (минимум для закрытия волны):** BL-56 ADR принят + BL-57 пример equip/point на demo device + BL-58 JSON export одного subtree.
 
@@ -655,6 +661,8 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-60 Done: `brick-metadata-v1` + `GET /platform/brick/export` (JSON-LD/Turtle) |
+| 2026-06-30 | BL-30 Done: `BacnetDeviceDriverNetworkTest`, `BacnetPointTest`; loopback subnet for 127.0.0.1 |
 | 2026-06-30 | BL-57 Done: `HaystackMetadataPanel` inspector tab + marker multiselect |
 | 2026-06-30 | BL-56/58 Done: ADR-0021 + `haystack-metadata-v1` demo + `GET /platform/haystack/export`; BL-57 Partial (inspector tag editor) |
 | 2026-06-30 | BL-30: `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest` |

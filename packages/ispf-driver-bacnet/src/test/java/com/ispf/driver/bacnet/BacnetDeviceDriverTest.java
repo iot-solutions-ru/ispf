@@ -101,10 +101,10 @@ class BacnetDeviceDriverTest {
             .field("raw", FieldType.STRING)
             .build();
 
-    private static final class StubDriverObject implements DeviceDriver.DriverObject {
+    static final class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
-        private final Map<String, DataRecord> variables = new HashMap<>();
+        final Map<String, DataRecord> variables = new HashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
