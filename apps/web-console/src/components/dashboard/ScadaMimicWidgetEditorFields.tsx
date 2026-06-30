@@ -5,7 +5,11 @@ import { fetchMimic, saveMimicDiagram } from "../../api";
 import type { ScadaMimicWidget } from "../../types/dashboard";
 import ScadaMimicEditor from "../scada/ScadaMimicEditor";
 import { MINI_TEC_SLD_DOCUMENT_JSON } from "../../scada/templates/miniTecSld";
-import { TRANSNEFT_OMSK_DOCUMENT_JSON, TRANSNEFT_OMSK_MIMIC_PATH } from "../../scada/templates/transneftOmskMimic";
+import {
+  PIPELINE_RP_DOCUMENT_JSON,
+  PIPELINE_RP_MIMIC_PATH,
+} from "../../scada/templates/pipelineScadaMimic";
+import { TANK_FARM_DOCUMENT_JSON, TANK_FARM_MIMIC_PATH } from "../../scada/templates/tankFarmMimic";
 
 interface ScadaMimicWidgetEditorFieldsProps {
   widget: ScadaMimicWidget;
@@ -102,12 +106,23 @@ export default function ScadaMimicWidgetEditorFields({
           type="button"
           onClick={() =>
             update({
-              diagramJson: TRANSNEFT_OMSK_DOCUMENT_JSON,
-              mimicPath: TRANSNEFT_OMSK_MIMIC_PATH,
+              diagramJson: PIPELINE_RP_DOCUMENT_JSON,
+              mimicPath: PIPELINE_RP_MIMIC_PATH,
             })
           }
         >
-          {t("editor.scadaMimic.insertTransneftTemplate")}
+          {t("editor.scadaMimic.insertPipelineScadaTemplate")}
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            update({
+              diagramJson: TANK_FARM_DOCUMENT_JSON,
+              mimicPath: TANK_FARM_MIMIC_PATH,
+            })
+          }
+        >
+          {t("editor.scadaMimic.insertTankFarmTemplate")}
         </button>
       </div>
       {saveMimicMutation.isError && (

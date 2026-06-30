@@ -43,7 +43,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             .withZone(ZoneOffset.UTC);
 
     private static final String SELECT_COLUMNS = """
-            sampled_at, value_double, value_text
+            coalesce(observed_at, sampled_at) AS effective_ts, sampled_at, value_double, value_text
             """;
 
     private final VariableHistoryProperties properties;
@@ -72,6 +72,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                     variable_name String,
                     field_name String,
                     sampled_at DateTime64(3, 'UTC'),
+                    observed_at DateTime64(3, 'UTC'),
                     value_double Nullable(Float64),
                     value_text Nullable(String)
                 ) ENGINE = MergeTree()
@@ -79,6 +80,11 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 ORDER BY (object_path, variable_name, field_name, sampled_at)%s
                 SETTINGS index_granularity = 8192
                 """, config.getDatabase(), config.getTable(), ttlClause));
+        executeStatement(String.format(
+                "ALTER TABLE %s.%s ADD COLUMN IF NOT EXISTS observed_at DateTime64(3, 'UTC') DEFAULT sampled_at",
+                config.getDatabase(),
+                config.getTable()
+        ));
         log.info(
                 "ClickHouse variable history ready (database={}, table={}, retentionDays={})",
                 config.getDatabase(),
@@ -130,9 +136,9 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                     WHERE object_path = {objectPath:String}
                       AND variable_name = {variableName:String}
                       AND field_name = {fieldName:String}
-                      AND sampled_at >= {fromTs:DateTime64(3, 'UTC')}
-                      AND sampled_at <= {toTs:DateTime64(3, 'UTC')}
-                    ORDER BY sampled_at ASC
+                      AND coalesce(observed_at, sampled_at) >= {fromTs:DateTime64(3, 'UTC')}
+                      AND coalesce(observed_at, sampled_at) <= {toTs:DateTime64(3, 'UTC')}
+                    ORDER BY effective_ts ASC
                     FORMAT JSONEachRow
                     """.formatted(SELECT_COLUMNS, qualifiedTable());
             List<VariableHistoryService.VariableHistorySample> rows = parseSamples(postQuery(sql, params));
@@ -147,7 +153,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 WHERE object_path = {objectPath:String}
                   AND variable_name = {variableName:String}
                   AND field_name = {fieldName:String}
-                ORDER BY sampled_at DESC
+                ORDER BY effective_ts DESC
                 LIMIT {limit:UInt32}
                 FORMAT JSONEachRow
                 """.formatted(SELECT_COLUMNS, qualifiedTable());
@@ -179,7 +185,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
 
         String sql = """
                 SELECT
-                    toStartOfInterval(sampled_at, toIntervalSecond({bucketSeconds:UInt32})) AS bucket_start,
+                    toStartOfInterval(coalesce(observed_at, sampled_at), toIntervalSecond({bucketSeconds:UInt32})) AS bucket_start,
                     avg(value_double) AS avg_val,
                     min(value_double) AS min_val,
                     max(value_double) AS max_val,
@@ -188,8 +194,8 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 WHERE object_path = {objectPath:String}
                   AND variable_name = {variableName:String}
                   AND field_name = {fieldName:String}
-                  AND sampled_at >= {fromTs:DateTime64(3, 'UTC')}
-                  AND sampled_at <= {toTs:DateTime64(3, 'UTC')}
+                  AND coalesce(observed_at, sampled_at) >= {fromTs:DateTime64(3, 'UTC')}
+                  AND coalesce(observed_at, sampled_at) <= {toTs:DateTime64(3, 'UTC')}
                   AND value_double IS NOT NULL
                 GROUP BY bucket_start
                 ORDER BY bucket_start ASC
@@ -219,9 +225,10 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 Double value = node.path("value_double").isNull() ? null : node.path("value_double").asDouble();
                 String text = node.path("value_text").isNull() ? null : node.path("value_text").asText(null);
                 samples.add(new VariableHistoryService.VariableHistorySample(
-                        parseInstant(node.path("sampled_at").asText()),
+                        parseInstant(node.path("effective_ts").asText()),
                         value,
-                        text
+                        text,
+                        parseInstantOrNull(node.path("sampled_at").asText(null))
                 ));
             } catch (IOException ex) {
                 throw new IllegalStateException("Failed to parse ClickHouse JSONEachRow line: " + line, ex);
@@ -265,6 +272,13 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
         return CH_DATETIME.parse(value, Instant::from);
     }
 
+    private static Instant parseInstantOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return parseInstant(value);
+    }
+
     private String toJsonLine(VariableHistoryWriteRecord record) {
         try {
             Map<String, Object> row = new LinkedHashMap<>();
@@ -272,6 +286,7 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
             row.put("variable_name", record.variableName());
             row.put("field_name", record.fieldName());
             row.put("sampled_at", CH_DATETIME.format(record.sampledAt()));
+            row.put("observed_at", CH_DATETIME.format(record.observedAt()));
             row.put("value_double", record.valueDouble());
             row.put("value_text", record.valueText());
             return objectMapper.writeValueAsString(row);

@@ -54,7 +54,7 @@ class ClickHouseVariableHistoryStoreTest {
 
     @Test
     void appendBatchPostsJsonEachRowPayload() {
-        VariableHistoryWriteRecord record = new VariableHistoryWriteRecord(
+        VariableHistoryWriteRecord record = VariableHistoryWriteRecord.ingested(
                 "root.platform.devices.sensor",
                 "temperature",
                 "value",

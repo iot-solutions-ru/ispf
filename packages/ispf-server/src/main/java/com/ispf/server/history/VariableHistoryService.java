@@ -66,7 +66,11 @@ public class VariableHistoryService {
     }
 
     public void recordVariableUpdate(String objectPath, String variableName) {
-        List<VariableSampleEntity> samples = collectSamples(objectPath, variableName);
+        recordVariableUpdate(objectPath, variableName, null);
+    }
+
+    public void recordVariableUpdate(String objectPath, String variableName, Instant observedAt) {
+        List<VariableSampleEntity> samples = collectSamples(objectPath, variableName, observedAt);
         if (samples.isEmpty()) {
             return;
         }
@@ -77,7 +81,7 @@ public class VariableHistoryService {
         }
     }
 
-    private List<VariableSampleEntity> collectSamples(String objectPath, String variableName) {
+    private List<VariableSampleEntity> collectSamples(String objectPath, String variableName, Instant observedAt) {
         if (!properties.isEnabled()) {
             return List.of();
         }
@@ -123,11 +127,44 @@ public class VariableHistoryService {
             sample.setVariableName(variableName);
             sample.setFieldName(fieldName);
             sample.setSampledAt(now);
+            sample.setObservedAt(observedAt != null ? observedAt : now);
             sample.setValueDouble(numeric.get());
             samples.add(sample);
             lastSampleMs.put(debounceKey, nowMs);
         }
         return samples;
+    }
+
+    /**
+     * Records a historian sample with an explicit device measurement time (ADR-0020 observedAt).
+     */
+    public void recordObservedSample(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            double value,
+            Instant observedAt
+    ) {
+        if (!properties.isEnabled()) {
+            return;
+        }
+        if (!isHistorizedVariable(objectPath, variableName)) {
+            return;
+        }
+        Instant ingestedAt = Instant.now();
+        Instant effectiveObserved = observedAt != null ? observedAt : ingestedAt;
+        VariableSampleEntity sample = new VariableSampleEntity();
+        sample.setObjectPath(objectPath);
+        sample.setVariableName(variableName);
+        sample.setFieldName(fieldName == null || fieldName.isBlank() ? "value" : fieldName);
+        sample.setSampledAt(ingestedAt);
+        sample.setObservedAt(effectiveObserved);
+        sample.setValueDouble(value);
+        if (asyncWriter.isAsyncEnabled()) {
+            asyncWriter.enqueue(List.of(sample));
+        } else {
+            batchPersister.persistOne(sample);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -365,7 +402,10 @@ public class VariableHistoryService {
         return Optional.empty();
     }
 
-    public record VariableHistorySample(Instant ts, Double value, String text) {
+    public record VariableHistorySample(Instant ts, Double value, String text, Instant ingestedAt) {
+        public VariableHistorySample(Instant ts, Double value, String text) {
+            this(ts, value, text, null);
+        }
     }
 
     public record VariableHistoryResponse(

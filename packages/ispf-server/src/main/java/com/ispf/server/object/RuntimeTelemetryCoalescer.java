@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,15 +53,19 @@ public class RuntimeTelemetryCoalescer {
     }
 
     public void recordUpdate(String path, String variableName, DataRecord value) {
+        recordUpdate(path, variableName, value, null);
+    }
+
+    public void recordUpdate(String path, String variableName, DataRecord value, Instant observedAt) {
         String coalesceKey = resolveCoalesceKey(path, variableName, value);
         if (valuesEqual(lastPublished.get(coalesceKey), value)) {
             return;
         }
         if (!properties.isEnabled()) {
-            publishIfChanged(path, variableName, value, coalesceKey);
+            publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;
         }
-        pending.put(coalesceKey, new PendingUpdate(path, variableName, value));
+        pending.put(coalesceKey, new PendingUpdate(path, variableName, value, observedAt));
         scheduleFlushForLane(coalesceKey, path);
     }
 
@@ -102,7 +107,8 @@ public class RuntimeTelemetryCoalescer {
                     update.path(),
                     update.variableName(),
                     update.value(),
-                    entry.getKey()
+                    entry.getKey(),
+                    update.observedAt()
             );
         }
     }
@@ -110,14 +116,20 @@ public class RuntimeTelemetryCoalescer {
     private void flushLane(String coalesceKey, String devicePath) {
         PendingUpdate update = pending.remove(coalesceKey);
         if (update != null) {
-            publishIfChanged(update.path(), update.variableName(), update.value(), coalesceKey);
+            publishIfChanged(update.path(), update.variableName(), update.value(), coalesceKey, update.observedAt());
         }
         if (pending.containsKey(coalesceKey)) {
             scheduleFlushForLane(coalesceKey, devicePath);
         }
     }
 
-    private void publishIfChanged(String path, String variableName, DataRecord value, String coalesceKey) {
+    private void publishIfChanged(
+            String path,
+            String variableName,
+            DataRecord value,
+            String coalesceKey,
+            Instant observedAt
+    ) {
         DataRecord last = lastPublished.get(coalesceKey);
         if (valuesEqual(last, value)) {
             return;
@@ -127,7 +139,9 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         boolean automationEligible = policyService.automationEligible(path);
-        eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(path, variableName, true, automationEligible));
+        eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
+                path, variableName, true, automationEligible, observedAt
+        ));
     }
 
     private String resolveCoalesceKey(String path, String variableName, DataRecord value) {
@@ -190,5 +204,5 @@ public class RuntimeTelemetryCoalescer {
         return true;
     }
 
-    private record PendingUpdate(String path, String variableName, DataRecord value) {}
+    private record PendingUpdate(String path, String variableName, DataRecord value, Instant observedAt) {}
 }

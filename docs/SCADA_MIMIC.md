@@ -1,28 +1,33 @@
-# SCADA mimic diagrams
+# SCADA mimic — справочник diagramJson и API
 
-Configurable SCADA / P&ID / single-line diagrams with a symbol library, live variable bindings, and a visual editor.
+Технический справочник формата документа и REST API. Обзор возможностей, workflow и архитектуры: **[SCADA.md](SCADA.md)**.
 
-See also: [WIDGETS.md § scada-mimic](WIDGETS.md#scada-mimic--scada-мнемосхема).
+---
 
 ## Concepts
 
 | Concept | Description |
 |---------|-------------|
 | `scada-mimic` widget | Dashboard widget that renders a mimic document |
-| `MIMIC` object | Reusable diagram stored at `root.platform.mimics.*` (`mimic-v1` model) |
-| `diagramJson` | JSON document: symbols, connections, bindings, format rules |
-| `grid.snap` | When `true`, placement snaps to `grid.size` (default **off** — pixel coordinates) |
-| `grid.visible` | Show editor grid overlay (default **off**) |
-| Symbol registry | ~50 inline SVG symbols (process, electrical, common) |
+| `MIMIC` object | Reusable diagram at `root.platform.mimics.*` (`mimic-v1` model) |
+| `diagramJson` | JSON document: elements, connections, bindings, customSymbols |
+| `grid.snap` | When `true`, placement and drag snap to `grid.size` (default **off**; toggle in editor toolbar) |
+| `grid.visible` | Show editor grid overlay (default **off**; toggle in editor toolbar) |
+| Symbol registry | Built-in SVG symbols + per-document `customSymbols` |
 
-## Document schema (v1)
+---
+
+## Document schema (v2)
+
+Only **version 2** is supported. Legacy v1 documents are normalized to v2 on load (empty v1 → default empty document).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "width": 1600,
   "height": 900,
-  "grid": { "size": 20, "snap": false, "visible": false },
+  "background": "var(--bg)",
+  "grid": { "size": 1, "snap": false, "visible": false },
   "layers": [{ "id": "layer-default", "name": "Main", "visible": true }],
   "elements": [{
     "id": "t1",
@@ -30,6 +35,7 @@ See also: [WIDGETS.md § scada-mimic](WIDGETS.md#scada-mimic--scada-мнемос
     "layerId": "layer-default",
     "x": 100,
     "y": 80,
+    "rotation": 0,
     "bindings": {
       "fillLevel": {
         "objectPath": "root.platform.devices.demo-sensor-01",
@@ -37,19 +43,99 @@ See also: [WIDGETS.md § scada-mimic](WIDGETS.md#scada-mimic--scada-мнемос
         "valueField": "value",
         "transform": "number"
       }
+    },
+    "actions": [{
+      "id": "act1",
+      "type": "toggleVariable",
+      "objectPath": "root.platform.devices.demo-valve-01",
+      "variableName": "open",
+      "valueField": "value"
+    }]
+  }],
+  "connections": [{
+    "id": "c1",
+    "layerId": "layer-default",
+    "from": { "elementId": "t1", "port": "e" },
+    "to": { "elementId": "v1", "port": "n" },
+    "points": [
+      { "x": 180, "y": 140 },
+      { "x": 249, "y": 140 },
+      { "x": 249, "y": 120 },
+      { "x": 318, "y": 120 }
+    ],
+    "bindings": {
+      "flowing": {
+        "objectPath": "root.platform.devices.demo-pump-01",
+        "variableName": "running",
+        "valueField": "value",
+        "transform": "bool"
+      }
     }
   }],
-  "connections": []
+  "customSymbols": []
 }
 ```
 
-## Editor
+### Element fields
+
+| Field | Description |
+|-------|-------------|
+| `symbolId` | Built-in id (`tank.vertical`) or `custom:{id}` / `custom.svg` |
+| `x`, `y` | Top-left position on artboard (px) |
+| `rotation` | `0` \| `90` \| `180` \| `270` |
+| `scale` | Optional multiplier; editor resize writes `props.width/height` and sets `scale` to `1` |
+| `bindings` | Map binding key → `MimicBinding` |
+| `formatRules` | Conditional styling by binding value |
+| `labels` | Text labels on symbol |
+| `actions` | Operator click handlers |
+| `props` | Symbol-specific props (see below) |
+
+**Common `props` keys (editor):**
+
+| Key | Description |
+|-----|-------------|
+| `width`, `height` | Explicit symbol size in px (overrides registry default when set) |
+| `flipX`, `flipY` | Boolean mirror flags (toolbar Flip H/V) |
+| `svg`, `viewBox`, … | Custom SVG inner markup (`custom.svg` / `custom:{id}`) |
+
+Effective render size: `symbolSize()` in `registry.ts` — `(props.width \|\| defaultWidth) * (scale ?? 1)`.
+
+### Connection routing
+
+Stored `points` are updated when endpoints move. Runtime display and reroute always recompute an **orthogonal** path from port positions (`routeOrthogonal` in `connectionRouting.ts`).
+
+---
+
+## Editor entry points
 
 - **Dashboard Builder:** widget `scada-mimic` → «Open mimic editor»
-- **Explorer:** open any `MIMIC` object → full-screen editor
-- Tools: select, place symbol, connect (orthogonal), undo/redo, import/export JSON
+- **Explorer:** `root.platform.mimics` → create mimic → open `MIMIC` object
 
-## API
+### Tools (toolbar + keyboard)
+
+| Tool | Keys | Notes |
+|------|------|-------|
+| Select | `V` | Click, Shift+multi-select, drag, resize handles (single selection) |
+| Place | `P` | Palette → canvas click |
+| Connect | `C` | Port-to-port orthogonal line |
+| Flip H / V | toolbar | Toggles `props.flipX` / `props.flipY` |
+| Rotate ±90° | toolbar | Cycles `rotation` |
+| Align L/C/R/T/M/B | toolbar | Requires ≥ 2 selected elements |
+| Distribute H/V | toolbar | Requires ≥ 3 selected elements |
+| Grid visible / snap | toolbar | Toggles `grid.visible` / `grid.snap` |
+| Undo / Redo | `Ctrl+Z` / `Ctrl+Y` | Document history |
+| Delete | `Del`, `Backspace` | Selected elements or connection |
+| Import / Export JSON | panel | Raw `diagramJson` edit |
+
+Smart-snap during drag: element edges/centers/ports align to other elements within ~10 px (`elementSnap.ts`). Group drag moves all selected elements together.
+
+Implementation: `ScadaMimicEditor.tsx`, `ScadaMimicCanvas.tsx`, `layoutOps.ts`, `elementSnap.ts`.
+
+Overview (RU): [SCADA.md § Редактор](SCADA.md#редактор-мнемосхемы).
+
+---
+
+## REST API
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -57,27 +143,26 @@ See also: [WIDGETS.md § scada-mimic](WIDGETS.md#scada-mimic--scada-мнемос
 | PUT | `/api/v1/mimics/by-path/diagram?path=` | Save `diagramJson` |
 | PUT | `/api/v1/mimics/by-path/title?path=` | Save title |
 
-## mini-TEC migration
+---
 
-Demo plant single-line diagram:
+## Bootstrap demos
 
-- Object: `root.platform.mimics.mini-tec-single-line`
-- Dashboard `mini-tec-single-line` uses `scada-mimic` with `mimicPath` (legacy `mini-tec-sld` widget remains for compatibility)
+| Object | Dashboard |
+|--------|-----------|
+| `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` |
+| `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` |
 
-## Transneft Omsk demo
-
-Industrial tank-farm mimic inspired by a classic oil-trunk pipeline HMI (static showcase values):
-
-- Object: `root.platform.mimics.transneft-omsk-rdp`
-- Dashboard: `root.platform.dashboards.transneft-omsk-rdp`
-- Template source: `apps/web-console/src/scada/templates/transneftOmskMimic.ts`
-- Widget editor: **Insert Transneft Omsk template** (or set `mimicPath` above)
-
-Re-export server JSON after template edits:
+Re-export server JSON after editing TypeScript templates:
 
 ```bash
-cd apps/web-console && npx tsx -e "import { TRANSNEFT_OMSK_DOCUMENT_JSON } from './src/scada/templates/transneftOmskMimic.ts'; import fs from 'fs'; fs.writeFileSync('../../packages/ispf-server/src/main/resources/bootstrap/transneft-omsk-mimic.json', TRANSNEFT_OMSK_DOCUMENT_JSON)"
+cd apps/web-console && npx tsx -e "import { MINI_TEC_SLD_DOCUMENT_JSON } from './src/scada/templates/miniTecSld.ts'; import fs from 'fs'; fs.writeFileSync('../../packages/ispf-server/src/main/resources/bootstrap/mini-tec-mimic.json', MINI_TEC_SLD_DOCUMENT_JSON)"
 ```
+
+```bash
+cd apps/web-console && npx tsx src/scada/templates/exportTankFarmMimic.ts
+```
+
+---
 
 ## Symbol categories
 

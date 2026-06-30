@@ -60,7 +60,8 @@ public class SecurityUserController {
                     request.roles(),
                     request.enabled(),
                     request.autoStartEnabled(),
-                    request.autoStartApp()
+                    request.autoStartApp(),
+                    request.timeZone()
             );
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
@@ -116,7 +117,8 @@ public class SecurityUserController {
             List<String> roles,
             Boolean enabled,
             Boolean autoStartEnabled,
-            String autoStartApp
+            String autoStartApp,
+            String timeZone
     ) {
     }
 

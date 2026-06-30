@@ -113,6 +113,9 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.PATCH, "/api/v1/objects/by-path/variables/**")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/auth/me/timezone")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
         auth.requestMatchers("/api/v1/**").hasRole(IspfRoles.ADMIN);
     }
 }

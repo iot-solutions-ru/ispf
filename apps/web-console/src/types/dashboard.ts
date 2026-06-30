@@ -50,13 +50,15 @@ export type ChartStyle = "line" | "area";
 export type ChartType = "line" | "area" | "bar" | "candlestick" | "bubble" | "radar" | "range";
 
 /** How chart/sparkline loads historian data. `live` = sliding window + live tail (default). */
-export type WidgetHistoryRange = "live" | "1h" | "6h" | "24h" | "7d" | "all";
+export type WidgetHistoryRange = "live" | "1h" | "6h" | "24h" | "7d" | "today" | "yesterday" | "all";
 
 export const WIDGET_HISTORY_RANGE_IDS: WidgetHistoryRange[] = [
   "live",
   "1h",
   "6h",
   "24h",
+  "today",
+  "yesterday",
   "7d",
   "all",
 ];
@@ -78,7 +80,16 @@ export function widgetHistoryRangeLabel(
 /** History table widget range (default 5m for backward compatibility). */
 export type HistoryTableRange = "5m" | Exclude<WidgetHistoryRange, "live">;
 
-export const HISTORY_TABLE_RANGE_IDS: HistoryTableRange[] = ["5m", "1h", "6h", "24h", "7d", "all"];
+export const HISTORY_TABLE_RANGE_IDS: HistoryTableRange[] = [
+  "5m",
+  "1h",
+  "6h",
+  "24h",
+  "today",
+  "yesterday",
+  "7d",
+  "all",
+];
 
 export function historyTableRangeLabel(
   range: HistoryTableRange | undefined,

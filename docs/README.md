@@ -35,6 +35,7 @@
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
 | [Драйверы](DRIVERS.md) | 58 встроенных драйверов — полный каталог REQ-PF-14 |
 | [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, layout JSON, `objectPath` / `selectionKey` |
+| **[SCADA — мнемосхемы](SCADA.md)** | Mimic editor (align, resize, snap), символы, bindings, объект `MIMIC`, виджет `scada-mimic` |
 | **[Справочник виджетов](WIDGETS.md)** | Все типы: настройки, использование на HMI, примеры JSON |
 | [Spreadsheet widget](SPREADSHEET_WIDGET.md) | Формулы, функции `SUM`/`ISPREF`, binding-ячейки, сохранение таблиц |
 | [Lab Training (18 заданий)](LAB_TRAINING.md) | Virtual lab device, bundle import, упражнения Phase 15 |

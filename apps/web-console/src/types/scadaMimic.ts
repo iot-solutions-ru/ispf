@@ -20,6 +20,8 @@ export interface MimicBinding {
   selectionKey?: string;
   variableName: string;
   valueField?: string;
+  /** Optional quality / reliability field (e.g. OPC quality). */
+  qualityField?: string;
   transform?: "bool" | "number" | "string";
 }
 
@@ -42,11 +44,26 @@ export interface MimicLabel {
   fontSize?: number;
 }
 
-export type MimicActionType = "setVariable" | "toggleVariable" | "invokeFunction";
+export type MimicActionType =
+  | "setVariable"
+  | "toggleVariable"
+  | "invokeFunction"
+  | "navigate"
+  | "toggleLayer"
+  | "cycleUnit"
+  | "toggleExpand";
+
+export type MimicActionTrigger = "primary" | "context";
 
 export interface MimicAction {
   id: string;
   type: MimicActionType;
+  /** primary = LMB (default); context = RMB menu item. */
+  trigger?: MimicActionTrigger;
+  /** Menu label for context actions. */
+  label?: string;
+  /** Sort order in context menu (higher = more important, listed first). */
+  order?: number;
   objectPath?: string;
   selectionKey?: string;
   variableName?: string;
@@ -54,6 +71,23 @@ export interface MimicAction {
   value?: string | number | boolean;
   functionName?: string;
   confirmMessage?: string;
+  /** navigate: operator dashboard path or mimic object path. */
+  dashboardPath?: string;
+  mimicPath?: string;
+  url?: string;
+  /** toggleLayer: layer id in document.layers. */
+  layerId?: string;
+  /** cycleUnit: ordered unit keys stored in element.props.unitMode. */
+  unitModes?: string[];
+  /** toggleExpand: props key toggled between compact/full (default tableExpand). */
+  expandProp?: string;
+}
+
+export interface MimicElementTooltip {
+  /** Static template; `{key}` replaced from binding values. */
+  template?: string;
+  /** Binding keys included in tooltip (full names from props/binding labels). */
+  bindingKeys?: string[];
 }
 
 export interface MimicElement {
@@ -64,10 +98,13 @@ export interface MimicElement {
   y: number;
   rotation?: MimicRotation;
   scale?: number;
+  /** When true, editor resize keeps width/height ratio (RD pipeline symbols). */
+  lockAspectRatio?: boolean;
   bindings: Record<string, MimicBinding>;
   formatRules?: MimicFormatRule[];
   labels?: MimicLabel[];
   actions?: MimicAction[];
+  tooltip?: MimicElementTooltip;
   props?: Record<string, unknown>;
 }
 
@@ -97,7 +134,18 @@ export interface MimicConnection {
 export type MimicSymbolBehavior =
   | { bind: string; type: "visibility"; target: string; when?: "truthy" | "falsy" }
   | { bind: string; type: "hidden"; target: string; when?: "truthy" | "falsy" }
-  | { bind: string; type: "text"; target: string; format?: "string" | "number"; suffix?: string; decimals?: number }
+  | {
+      bind: string;
+      type: "text";
+      target: string;
+      format?: "string" | "number";
+      suffix?: string;
+      decimals?: number;
+      /** Fixed-width numeric pattern e.g. "00000" (RD table 71). */
+      formatPattern?: string;
+      qualityBind?: string;
+    }
+  | { bind: string; type: "blink"; target: string; when?: "truthy" | "falsy" }
   | { bind: string; type: "fillLevel"; target: string; maxBind?: string; inset?: number }
   | { bind: string; type: "fill"; target: string; trueColor?: string; falseColor?: string }
   | { bind: string; type: "stroke"; target: string; trueColor?: string; falseColor?: string };
@@ -116,12 +164,18 @@ export interface MimicCustomSymbol {
   sourceSymbolId?: string;
 }
 
+export interface MimicTypography {
+  fontFamily?: string;
+  fontSize?: number;
+}
+
 export interface ScadaMimicDocument {
   version: 2;
   width: number;
   height: number;
   background?: string;
   grid?: MimicGrid;
+  typography?: MimicTypography;
   layers: MimicLayer[];
   elements: MimicElement[];
   connections: MimicConnection[];

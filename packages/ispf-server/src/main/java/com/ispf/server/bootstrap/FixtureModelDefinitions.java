@@ -264,6 +264,14 @@ public final class FixtureModelDefinitions {
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
+                        ),
+                        ModelVariableDefinition.of(
+                                "timeZone",
+                                "IANA timezone for device-local timestamps (empty = inherit from parent or UTC)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         )
                 ),
                 List.of(),

@@ -14,6 +14,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -166,18 +167,19 @@ public class MqttDeviceDriver implements DeviceDriver {
     }
 
     private void handleMessage(String topic, byte[] payloadBytes) {
+        Instant observed = Instant.now();
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
         String variableName = resolveVariableForTopic(topic);
         if (usesIngressSchema(variableName)) {
             driverObject.updateVariable(variableName, DataRecord.single(
                     INGRESS_SCHEMA,
                     Map.of("topic", topic, "raw", payload)
-            ));
+            ), observed);
         } else {
             driverObject.updateVariable(variableName, DataRecord.single(
                     PAYLOAD_SCHEMA,
                     Map.of("raw", payload)
-            ));
+            ), observed);
         }
     }
 

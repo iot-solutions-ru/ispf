@@ -1,0 +1,1438 @@
+{
+  "version": 2,
+  "width": 1360,
+  "height": 480,
+  "background": "#c0c0c0",
+  "typography": {
+    "fontFamily": "Arial, sans-serif",
+    "fontSize": 12
+  },
+  "grid": {
+    "size": 1,
+    "snap": false,
+    "visible": false
+  },
+  "layers": [
+    {
+      "id": "layer-default",
+      "name": "Основной",
+      "visible": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "hdr-title",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 6,
+      "bindings": {},
+      "props": {
+        "text": "СДКУ — Панель управления НПС",
+        "fontSize": 13,
+        "width": 420,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-section",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 26,
+      "bindings": {},
+      "props": {
+        "text": "РД-029 §6.15",
+        "fontSize": 11,
+        "width": 120,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-org",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 6,
+      "bindings": {},
+      "props": {
+        "text": "Магистральный нефтепровод",
+        "fontSize": 13,
+        "width": 260,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-rdp",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 900,
+      "y": 6,
+      "bindings": {},
+      "props": {
+        "text": "РДП «Центральный»",
+        "width": 140,
+        "height": 14
+      }
+    },
+    {
+      "id": "panel-bg",
+      "symbolId": "custom:ps-panel",
+      "layerId": "layer-default",
+      "x": 40,
+      "y": 56,
+      "bindings": {},
+      "props": {
+        "width": 1280,
+        "height": 200
+      }
+    },
+    {
+      "id": "panel-title",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 48,
+      "y": 64,
+      "bindings": {},
+      "props": {
+        "text": "НПС технологического участка МТ — Магистральный нефтепровод",
+        "width": 500,
+        "height": 14
+      }
+    },
+    {
+      "id": "ctrl-0",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 60,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. МНС-1",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-0",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 105,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-0",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 80,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "МНС-1",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "ctrl-1",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 260,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. МНС-2",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-1",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 305,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-1",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 280,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "МНС-2",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "ctrl-2",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 460,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. МНС-3",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-2",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 505,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-2",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "МНС-3",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "ctrl-3",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 660,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. ПНС-1",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-3",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 705,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-3",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 680,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "ПНС-1",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "ctrl-4",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 860,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. ПНС-2",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-4",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 905,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-4",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 880,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "ПНС-2",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "ctrl-5",
+      "symbolId": "custom:ps-ctrl-btn",
+      "layerId": "layer-default",
+      "x": 1060,
+      "y": 100,
+      "bindings": {},
+      "props": {
+        "text": "Упр. ПНС-3",
+        "width": 110,
+        "height": 24
+      }
+    },
+    {
+      "id": "pump-5",
+      "symbolId": "custom:ps-pump",
+      "layerId": "layer-default",
+      "x": 1105,
+      "y": 140,
+      "bindings": {},
+      "props": {
+        "width": 20,
+        "height": 20
+      }
+    },
+    {
+      "id": "lbl-5",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 1080,
+      "y": 168,
+      "bindings": {},
+      "props": {
+        "text": "ПНС-3",
+        "width": 70,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "goto-nps",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 1100,
+      "y": 64,
+      "bindings": {},
+      "props": {
+        "text": "→ ЭФ НПС",
+        "width": 90,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-9sga0",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма НПС",
+          "dashboardPath": "root.platform.dashboards.pipeline-nps",
+          "mimicPath": "root.platform.mimics.pipeline-nps"
+        }
+      ]
+    },
+    {
+      "id": "nav-mtTerritorial",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 408,
+      "bindings": {},
+      "props": {
+        "text": "Территориальная схема МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-oqgax",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Территориальная схема МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-mt-territorial",
+          "mimicPath": "root.platform.mimics.pipeline-mt-territorial"
+        }
+      ]
+    },
+    {
+      "id": "nav-mtScheme",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 180,
+      "y": 408,
+      "bindings": {},
+      "props": {
+        "text": "Схема МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-uq8vg",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Схема МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-mt-scheme",
+          "mimicPath": "root.platform.mimics.pipeline-mt-scheme"
+        }
+      ]
+    },
+    {
+      "id": "nav-rpOilPlacement",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 336,
+      "y": 408,
+      "bindings": {},
+      "props": {
+        "text": "Размещение нефти в РП",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-c2b62",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Размещение нефти в РП",
+          "dashboardPath": "root.platform.dashboards.pipeline-rp-oil-placement",
+          "mimicPath": "root.platform.mimics.pipeline-rp-oil-placement"
+        }
+      ]
+    },
+    {
+      "id": "nav-rp",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 492,
+      "y": 408,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма РП",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-p4pja",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма РП",
+          "dashboardPath": "root.platform.dashboards.pipeline-scada-hmi",
+          "mimicPath": "root.platform.mimics.pipeline-rp"
+        }
+      ]
+    },
+    {
+      "id": "nav-sikn",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 436,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма СИКН",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-jmog4",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма СИКН",
+          "dashboardPath": "root.platform.dashboards.pipeline-sikn",
+          "mimicPath": "root.platform.mimics.pipeline-sikn"
+        }
+      ]
+    },
+    {
+      "id": "nav-nps",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 180,
+      "y": 436,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма НПС",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-zkjhk",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма НПС",
+          "dashboardPath": "root.platform.dashboards.pipeline-nps",
+          "mimicPath": "root.platform.mimics.pipeline-nps"
+        }
+      ]
+    },
+    {
+      "id": "nav-luMt",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 336,
+      "y": 436,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма ЛУ МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-hk5tu",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма ЛУ МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-lu-mt",
+          "mimicPath": "root.platform.mimics.pipeline-lu-mt"
+        }
+      ]
+    },
+    {
+      "id": "nav-seaTerminal",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 492,
+      "y": 436,
+      "bindings": {},
+      "props": {
+        "text": "Морской терминал",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvop-kcft1",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Морской терминал",
+          "dashboardPath": "root.platform.dashboards.pipeline-sea-terminal",
+          "mimicPath": "root.platform.mimics.pipeline-sea-terminal"
+        }
+      ]
+    },
+    {
+      "id": "nav-current",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 376,
+      "bindings": {},
+      "props": {
+        "text": "▶ Панель управления НПС",
+        "width": 190,
+        "height": 22
+      }
+    }
+  ],
+  "connections": [],
+  "customSymbols": [
+    {
+      "id": "ps-label",
+      "name": "Pipeline label",
+      "width": 200,
+      "height": 16,
+      "viewBox": "0 0 200 16",
+      "svg": "<text id=\"ispf-text\" x=\"0\" y=\"12\" fill=\"#000000\" font-family=\"Arial, sans-serif\" font-size=\"12\">Label</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-nav-btn",
+      "name": "Nav button",
+      "width": 140,
+      "height": 24,
+      "viewBox": "0 0 140 24",
+      "svg": "<rect width=\"140\" height=\"24\" rx=\"2\" fill=\"#d0d0d0\" stroke=\"#606060\" stroke-width=\"1\"/><text id=\"ispf-text\" x=\"70\" y=\"15\" text-anchor=\"middle\" fill=\"#000\" font-family=\"Arial, sans-serif\" font-size=\"9\">Nav</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-panel",
+      "name": "Panel",
+      "width": 100,
+      "height": 48,
+      "viewBox": "0 0 100 48",
+      "svg": "<rect width=\"100\" height=\"48\" fill=\"#a8a8a8\" stroke=\"#606060\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "rect"
+    },
+    {
+      "id": "ps-tank",
+      "name": "Резервуар (обобщённый символ)",
+      "width": 76,
+      "height": 108,
+      "viewBox": "0 0 76 108",
+      "svg": "<rect x=\"18\" y=\"22\" width=\"40\" height=\"72\" fill=\"#a8a8a8\" stroke=\"#404040\" stroke-width=\"1\"/><ellipse cx=\"38\" cy=\"22\" rx=\"22\" ry=\"8\" fill=\"#e8c840\" stroke=\"#404040\" stroke-width=\"1\"/><rect id=\"ispf-liquid\" data-ispf-full-y=\"30\" data-ispf-full-height=\"58\" x=\"20\" y=\"88\" width=\"36\" height=\"0\" fill=\"#404040\" opacity=\"0.9\"/><text id=\"ispf-label\" x=\"38\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"11\" font-weight=\"bold\" font-family=\"Arial, sans-serif\">11</text><text x=\"38\" y=\"104\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Arial, sans-serif\">Hнал, мм</text><text id=\"ispf-rate\" x=\"4\" y=\"76\" fill=\"#008000\" font-size=\"8\" font-family=\"monospace\"></text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 38,
+          "y": 14
+        },
+        {
+          "id": "s",
+          "x": 38,
+          "y": 108
+        },
+        {
+          "id": "e",
+          "x": 76,
+          "y": 58
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 58
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "fillLevel",
+          "labelKey": "bindings.fillLevel",
+          "type": "number"
+        },
+        {
+          "key": "maxLevel",
+          "labelKey": "bindings.maxLevel",
+          "type": "number",
+          "optional": true
+        },
+        {
+          "key": "rate",
+          "labelKey": "bindings.rate",
+          "type": "number",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "fillLevel",
+          "type": "fillLevel",
+          "target": "#ispf-liquid",
+          "maxBind": "maxLevel",
+          "inset": 0
+        },
+        {
+          "bind": "label",
+          "type": "text",
+          "target": "#ispf-label",
+          "format": "string"
+        },
+        {
+          "bind": "rate",
+          "type": "text",
+          "target": "#ispf-rate",
+          "format": "number",
+          "suffix": " мм/ч",
+          "formatPattern": "0000"
+        }
+      ],
+      "sourceSymbolId": "tank.vertical"
+    },
+    {
+      "id": "ps-valve",
+      "name": "Запорная арматура",
+      "width": 24,
+      "height": 24,
+      "viewBox": "0 0 24 24",
+      "svg": "<line x1=\"12\" y1=\"0\" x2=\"12\" y2=\"6\" stroke=\"#fff\" stroke-width=\"2\"/><line x1=\"12\" y1=\"18\" x2=\"12\" y2=\"24\" stroke=\"#fff\" stroke-width=\"2\"/><polygon id=\"ispf-accent\" points=\"4,12 12,6 20,12 12,18\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><text id=\"ispf-valve-id\" x=\"26\" y=\"14\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">000</text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 12,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 12,
+          "y": 24
+        },
+        {
+          "id": "e",
+          "x": 24,
+          "y": 12
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 12
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "open",
+          "labelKey": "bindings.open",
+          "type": "boolean"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "open",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#4080c0"
+        },
+        {
+          "bind": "valveId",
+          "type": "text",
+          "target": "#ispf-valve-id",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "valve.butterfly"
+    },
+    {
+      "id": "ps-pipe",
+      "name": "ТТ",
+      "width": 100,
+      "height": 8,
+      "viewBox": "0 0 100 8",
+      "svg": "<line x1=\"0\" y1=\"4\" x2=\"100\" y2=\"4\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 4
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 4
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "ps-pipe-v",
+      "name": "ТТ vertical",
+      "width": 8,
+      "height": 100,
+      "viewBox": "0 0 8 100",
+      "svg": "<line x1=\"4\" y1=\"0\" x2=\"4\" y2=\"100\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 4,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 4,
+          "y": 100
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "ps-lamp",
+      "name": "Индикатор",
+      "width": 16,
+      "height": 16,
+      "viewBox": "0 0 16 16",
+      "svg": "<circle id=\"ispf-accent\" cx=\"8\" cy=\"8\" r=\"7\" fill=\"#00c000\" stroke=\"#004000\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "active",
+          "labelKey": "bindings.active",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "active",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#808080"
+        }
+      ],
+      "sourceSymbolId": "sensor.indicator"
+    },
+    {
+      "id": "ps-row-yellow",
+      "name": "Row yellow",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#ffff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">11</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-row-blue",
+      "name": "Row blue",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ccff\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">16</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-row-green",
+      "name": "Row green",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">21</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-station",
+      "name": "НПС/КНС",
+      "width": 120,
+      "height": 22,
+      "viewBox": "0 0 120 22",
+      "svg": "<rect width=\"120\" height=\"22\" fill=\"#d0d0d0\" stroke=\"#606060\" stroke-width=\"1\"/><text id=\"ispf-text\" x=\"60\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">НПС</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-summary",
+      "name": "Сводные данные о состоянии РП",
+      "width": 280,
+      "height": 120,
+      "viewBox": "0 0 280 120",
+      "svg": "<rect width=\"280\" height=\"120\" fill=\"#d8d8d8\" stroke=\"#404040\" stroke-width=\"1\"/><rect x=\"0\" y=\"0\" width=\"93\" height=\"18\" fill=\"#66ff66\" stroke=\"#404040\"/><text x=\"46\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Тип A</text><rect x=\"93\" y=\"0\" width=\"94\" height=\"18\" fill=\"#ffcc66\" stroke=\"#404040\"/><text x=\"140\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Тип B</text><rect x=\"187\" y=\"0\" width=\"93\" height=\"18\" fill=\"#c0c0c0\" stroke=\"#404040\"/><text x=\"233\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Всего</text><text x=\"4\" y=\"34\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Наличие (тыс.т)</text><text x=\"4\" y=\"52\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Товар (тыс.т)</text><text x=\"4\" y=\"70\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Свободная (тыс.т)</text><rect x=\"4\" y=\"82\" width=\"272\" height=\"18\" fill=\"#b0b0b0\" stroke=\"#606060\"/><text x=\"140\" y=\"94\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Arial, sans-serif\">Развернуть таблицу</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-pump",
+      "name": "Насосный агрегат",
+      "width": 20,
+      "height": 20,
+      "viewBox": "0 0 20 20",
+      "svg": "<circle cx=\"10\" cy=\"10\" r=\"9\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><line x1=\"3\" y1=\"3\" x2=\"17\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><line x1=\"17\" y1=\"3\" x2=\"3\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><circle cx=\"10\" cy=\"10\" r=\"3\" fill=\"#00c000\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "pump.centrifugal"
+    },
+    {
+      "id": "ps-block-nps",
+      "name": "Обобщённый НПС",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#d0d0d0\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">НПС</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-rp",
+      "name": "Обобщённый РП",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#ffff66\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">РП</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-sikn",
+      "name": "Обобщённый СИКН",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#66ccff\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">СИКН</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-lu",
+      "name": "ЛУ МТ",
+      "width": 72,
+      "height": 24,
+      "viewBox": "0 0 72 24",
+      "svg": "<rect width=\"72\" height=\"24\" fill=\"#c0c0c0\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"36\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">ЛУ</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 12
+        },
+        {
+          "id": "e",
+          "x": 72,
+          "y": 12
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-psp",
+      "name": "ПСП",
+      "width": 80,
+      "height": 28,
+      "viewBox": "0 0 80 28",
+      "svg": "<rect width=\"80\" height=\"28\" fill=\"#d8d8d8\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"40\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">ПСП</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-sea",
+      "name": "Морской терминал",
+      "width": 120,
+      "height": 32,
+      "viewBox": "0 0 120 32",
+      "svg": "<rect width=\"120\" height=\"32\" fill=\"#a8c8e8\" stroke=\"#204060\"/><text id=\"ispf-text\" x=\"60\" y=\"19\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">Морской терминал</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 16
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-km",
+      "name": "Километровая отметка",
+      "width": 48,
+      "height": 14,
+      "viewBox": "0 0 48 14",
+      "svg": "<text id=\"ispf-text\" x=\"24\" y=\"11\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"9\" fill=\"#000\">0 км</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-flow-badge",
+      "name": "Расход",
+      "width": 160,
+      "height": 36,
+      "viewBox": "0 0 160 36",
+      "svg": "<rect width=\"160\" height=\"36\" fill=\"#e8e8e8\" stroke=\"#606060\"/><text x=\"4\" y=\"12\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Qмгн, м³/ч</text><text id=\"ispf-value\" x=\"4\" y=\"28\" font-family=\"monospace\" font-size=\"11\" font-weight=\"bold\" fill=\"#000\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "decimals": 1
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-pressure",
+      "name": "Датчик давления",
+      "width": 100,
+      "height": 24,
+      "viewBox": "0 0 100 24",
+      "svg": "<circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"#c0c0c0\" stroke=\"#000\"/><text id=\"ispf-text\" x=\"28\" y=\"15\" font-family=\"monospace\" font-size=\"9\" fill=\"#000\">P=0.0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "number",
+          "suffix": " МПа",
+          "decimals": 2
+        }
+      ],
+      "sourceSymbolId": "sensor.pressure"
+    },
+    {
+      "id": "ps-stop-btn",
+      "name": "Стоп МНС/ПНС",
+      "width": 90,
+      "height": 28,
+      "viewBox": "0 0 90 28",
+      "svg": "<rect width=\"90\" height=\"28\" rx=\"2\" fill=\"#cc0000\" stroke=\"#600000\"/><text id=\"ispf-text\" x=\"45\" y=\"17\" text-anchor=\"middle\" fill=\"#fff\" font-family=\"Arial, sans-serif\" font-size=\"9\">СТОП</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-ctrl-btn",
+      "name": "Кнопка управления",
+      "width": 110,
+      "height": 24,
+      "viewBox": "0 0 110 24",
+      "svg": "<rect width=\"110\" height=\"24\" rx=\"2\" fill=\"#d0d0d0\" stroke=\"#606060\"/><text id=\"ispf-text\" x=\"55\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Управление</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-alarm",
+      "name": "Индикатор аварии",
+      "width": 140,
+      "height": 18,
+      "viewBox": "0 0 140 18",
+      "svg": "<rect id=\"ispf-accent\" width=\"140\" height=\"18\" fill=\"#00c000\" stroke=\"#004000\"/><text id=\"ispf-text\" x=\"4\" y=\"13\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Авария</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "active",
+          "labelKey": "bindings.active",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "active",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#ff0000",
+          "falseColor": "#00c000"
+        },
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "sensor.indicator"
+    },
+    {
+      "id": "ps-pier",
+      "name": "Причал",
+      "width": 80,
+      "height": 48,
+      "viewBox": "0 0 80 48",
+      "svg": "<rect x=\"0\" y=\"28\" width=\"80\" height=\"12\" fill=\"#808080\" stroke=\"#404040\"/><rect x=\"10\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><rect x=\"34\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><rect x=\"58\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><text id=\"ispf-text\" x=\"40\" y=\"46\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\">Причал</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 34
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-placement-table",
+      "name": "Размещение нефти в РП",
+      "width": 900,
+      "height": 320,
+      "viewBox": "0 0 900 320",
+      "svg": "<rect width=\"900\" height=\"320\" fill=\"#d8d8d8\" stroke=\"#404040\"/><rect x=\"0\" y=\"0\" width=\"900\" height=\"22\" fill=\"#808080\"/><text x=\"450\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"10\" fill=\"#000\">Размещение нефти в РП</text><text x=\"8\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">МТ / коридор</text><text x=\"200\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Наличие, тыс.т</text><text x=\"340\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Товар, тыс.т</text><text x=\"480\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Своб., тыс.т</text><text x=\"620\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">dQ, тыс.т/ч</text><text x=\"760\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Приём/откачка</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-equip-table",
+      "name": "Таблица параметров НПС",
+      "width": 420,
+      "height": 140,
+      "viewBox": "0 0 420 140",
+      "svg": "<rect width=\"420\" height=\"140\" fill=\"#e0e0e0\" stroke=\"#404040\"/><text x=\"8\" y=\"16\" font-family=\"Arial, sans-serif\" font-size=\"9\">МНА/ПНА — типоразмер и параметры</text><text x=\"8\" y=\"36\" font-family=\"monospace\" font-size=\"8\">МНА-1  630-80  Pвх=0.2  P вых=6.5</text><text x=\"8\" y=\"52\" font-family=\"monospace\" font-size=\"8\">МНА-2  630-80  Pвх=0.2  P вых=6.5</text><text x=\"8\" y=\"68\" font-family=\"monospace\" font-size=\"8\">ПНА-1  500-80  Pвх=6.5  P вых=6.3</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-lu-nav-strip",
+      "name": "Панель навигации ЛУ",
+      "width": 1200,
+      "height": 48,
+      "viewBox": "0 0 1200 48",
+      "svg": "<rect width=\"1200\" height=\"48\" fill=\"#b0b0b0\" stroke=\"#404040\"/><text x=\"8\" y=\"14\" font-family=\"Arial, sans-serif\" font-size=\"8\">Навигация по ЛУ МТ</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-status-panel",
+      "name": "Состояние участка МТ",
+      "width": 400,
+      "height": 80,
+      "viewBox": "0 0 400 80",
+      "svg": "<rect width=\"400\" height=\"80\" fill=\"#d0d0d0\" stroke=\"#404040\"/><text id=\"ispf-title\" x=\"8\" y=\"18\" font-family=\"Arial, sans-serif\" font-size=\"9\">Участок МТ</text><text id=\"ispf-text\" x=\"8\" y=\"36\" font-family=\"Arial, sans-serif\" font-size=\"9\">Состояние: норма</text><text x=\"8\" y=\"54\" font-family=\"Arial, sans-serif\" font-size=\"8\">МТ: Магистральный нефтепровод</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "title",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "title",
+          "type": "text",
+          "target": "#ispf-title",
+          "format": "string"
+        },
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    }
+  ]
+}

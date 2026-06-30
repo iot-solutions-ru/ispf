@@ -1,5 +1,13 @@
 import { useTranslation } from "react-i18next";
-import type { MimicAction, MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
+import type {
+  MimicAction,
+  MimicConnection,
+  MimicCustomSymbol,
+  MimicElement,
+  MimicFormatRule,
+  MimicFormatOperator,
+  ScadaMimicDocument,
+} from "../../types/scadaMimic";
 import { createMimicId } from "../../scada/document";
 import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
 import CustomSvgEditor, { isCustomSvgElement } from "./CustomSvgEditor";
@@ -13,6 +21,216 @@ interface MimicPropertiesPanelProps {
   onUpdateCanvasSize: (width: number, height: number) => void;
   onDeleteSelected: () => void;
   onAddCustomSymbol: (def: MimicCustomSymbol) => void;
+}
+
+const ACTION_TYPES: MimicAction["type"][] = [
+  "invokeFunction",
+  "setVariable",
+  "toggleVariable",
+  "navigate",
+  "toggleLayer",
+  "cycleUnit",
+  "toggleExpand",
+];
+
+const FORMAT_OPS: MimicFormatOperator[] = [">", ">=", "<", "<=", "==", "!="];
+
+function MimicActionFields({
+  action,
+  document,
+  onChange,
+}: {
+  action: MimicAction;
+  document: ScadaMimicDocument;
+  onChange: (patch: Partial<MimicAction>) => void;
+}) {
+  const { t } = useTranslation("scada");
+
+  return (
+    <>
+      <label className="scada-form-field">
+        <span className="scada-form-label">{t("props.actionType")}</span>
+        <select
+          className="scada-form-input"
+          value={action.type}
+          onChange={(e) => onChange({ type: e.target.value as MimicAction["type"] })}
+        >
+          {ACTION_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="scada-form-field">
+        <span className="scada-form-label">{t("props.actionTrigger")}</span>
+        <select
+          className="scada-form-input"
+          value={action.trigger ?? "primary"}
+          onChange={(e) => onChange({ trigger: e.target.value as MimicAction["trigger"] })}
+        >
+          <option value="primary">{t("props.triggerPrimary")}</option>
+          <option value="context">{t("props.triggerContext")}</option>
+        </select>
+      </label>
+      {action.trigger === "context" && (
+        <>
+          <label className="scada-form-field">
+            <span className="scada-form-label">{t("props.actionLabel")}</span>
+            <input
+              type="text"
+              className="scada-form-input"
+              value={action.label ?? ""}
+              onChange={(e) => onChange({ label: e.target.value })}
+            />
+          </label>
+          <label className="scada-form-field">
+            <span className="scada-form-label">{t("props.actionOrder")}</span>
+            <input
+              type="number"
+              className="scada-form-input"
+              value={action.order ?? 0}
+              onChange={(e) => onChange({ order: Number(e.target.value) })}
+            />
+          </label>
+        </>
+      )}
+      {(action.type === "setVariable" ||
+        action.type === "toggleVariable" ||
+        action.type === "invokeFunction") && (
+        <>
+          <label className="scada-form-field">
+            <span className="scada-form-label">objectPath</span>
+            <input
+              type="text"
+              className="scada-form-input mono"
+              spellCheck={false}
+              value={action.objectPath ?? ""}
+              onChange={(e) => onChange({ objectPath: e.target.value })}
+            />
+          </label>
+          {action.type === "invokeFunction" ? (
+            <label className="scada-form-field">
+              <span className="scada-form-label">functionName</span>
+              <input
+                type="text"
+                className="scada-form-input mono"
+                spellCheck={false}
+                value={action.functionName ?? ""}
+                onChange={(e) => onChange({ functionName: e.target.value })}
+              />
+            </label>
+          ) : (
+            <>
+              <label className="scada-form-field">
+                <span className="scada-form-label">variableName</span>
+                <input
+                  type="text"
+                  className="scada-form-input mono"
+                  spellCheck={false}
+                  value={action.variableName ?? ""}
+                  onChange={(e) => onChange({ variableName: e.target.value })}
+                />
+              </label>
+              {action.type === "setVariable" && (
+                <label className="scada-form-field">
+                  <span className="scada-form-label">value</span>
+                  <input
+                    type="text"
+                    className="scada-form-input mono"
+                    value={action.value == null ? "" : String(action.value)}
+                    onChange={(e) => onChange({ value: e.target.value })}
+                  />
+                </label>
+              )}
+            </>
+          )}
+        </>
+      )}
+      {action.type === "navigate" && (
+        <>
+          <label className="scada-form-field">
+            <span className="scada-form-label">dashboardPath</span>
+            <input
+              type="text"
+              className="scada-form-input mono"
+              spellCheck={false}
+              value={action.dashboardPath ?? ""}
+              onChange={(e) => onChange({ dashboardPath: e.target.value })}
+            />
+          </label>
+          <label className="scada-form-field">
+            <span className="scada-form-label">mimicPath</span>
+            <input
+              type="text"
+              className="scada-form-input mono"
+              spellCheck={false}
+              value={action.mimicPath ?? ""}
+              onChange={(e) => onChange({ mimicPath: e.target.value })}
+            />
+          </label>
+          <label className="scada-form-field">
+            <span className="scada-form-label">url</span>
+            <input
+              type="text"
+              className="scada-form-input mono"
+              spellCheck={false}
+              value={action.url ?? ""}
+              onChange={(e) => onChange({ url: e.target.value })}
+            />
+          </label>
+        </>
+      )}
+      {action.type === "toggleLayer" && (
+        <label className="scada-form-field">
+          <span className="scada-form-label">{t("props.layer")}</span>
+          <select
+            className="scada-form-input"
+            value={action.layerId ?? ""}
+            onChange={(e) => onChange({ layerId: e.target.value })}
+          >
+            <option value="">—</option>
+            {document.layers.map((layer) => (
+              <option key={layer.id} value={layer.id}>
+                {layer.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {action.type === "cycleUnit" && (
+        <label className="scada-form-field">
+          <span className="scada-form-label">{t("props.unitModes")}</span>
+          <input
+            type="text"
+            className="scada-form-input mono"
+            placeholder="mm, m3, t"
+            value={(action.unitModes ?? []).join(", ")}
+            onChange={(e) =>
+              onChange({
+                unitModes: e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              })
+            }
+          />
+        </label>
+      )}
+      {action.type === "toggleExpand" && (
+        <label className="scada-form-field">
+          <span className="scada-form-label">{t("props.expandProp")}</span>
+          <input
+            type="text"
+            className="scada-form-input mono"
+            placeholder="tableExpand"
+            value={action.expandProp ?? ""}
+            onChange={(e) => onChange({ expandProp: e.target.value })}
+          />
+        </label>
+      )}
+    </>
+  );
 }
 
 export default function MimicPropertiesPanel({
@@ -115,11 +333,13 @@ export default function MimicPropertiesPanel({
 
   if (!selectedElement) return null;
   const symbol = resolveElementSymbol(selectedElement, document.customSymbols);
-  const action = selectedElement.actions?.[0];
+  const actions = selectedElement.actions ?? [];
+  const formatRules = selectedElement.formatRules ?? [];
+  const bindingKeys = Object.keys(selectedElement.bindings);
 
   const updateBinding = (
     key: string,
-    field: "objectPath" | "variableName" | "valueField" | "transform",
+    field: "objectPath" | "variableName" | "valueField" | "qualityField" | "transform",
     value: string
   ) => {
     const bindings = { ...selectedElement.bindings };
@@ -135,22 +355,53 @@ export default function MimicPropertiesPanel({
     onUpdateElement({ ...selectedElement, bindings });
   };
 
-  const updateAction = (patch: Partial<MimicAction>) => {
-    const actions = [...(selectedElement.actions ?? [])];
-    if (actions.length === 0) {
-      actions.push({
-        id: createMimicId("act"),
-        type: "invokeFunction",
-        ...patch,
-      });
-    } else {
-      actions[0] = { ...actions[0], ...patch };
-    }
-    onUpdateElement({ ...selectedElement, actions });
+  const updateAction = (index: number, patch: Partial<MimicAction>) => {
+    const next = [...actions];
+    next[index] = { ...next[index], ...patch };
+    onUpdateElement({ ...selectedElement, actions: next });
   };
 
-  const removeAction = () => {
-    onUpdateElement({ ...selectedElement, actions: undefined });
+  const addAction = () => {
+    onUpdateElement({
+      ...selectedElement,
+      actions: [
+        ...actions,
+        { id: createMimicId("act"), type: "invokeFunction", trigger: "primary", functionName: "" },
+      ],
+    });
+  };
+
+  const removeAction = (index: number) => {
+    const next = actions.filter((_, i) => i !== index);
+    onUpdateElement({ ...selectedElement, actions: next.length ? next : undefined });
+  };
+
+  const updateFormatRule = (index: number, patch: Partial<MimicFormatRule>) => {
+    const next = [...formatRules];
+    next[index] = { ...next[index], ...patch };
+    onUpdateElement({ ...selectedElement, formatRules: next });
+  };
+
+  const addFormatRule = () => {
+    const key = bindingKeys[0] ?? "value";
+    onUpdateElement({
+      ...selectedElement,
+      formatRules: [
+        ...formatRules,
+        {
+          id: createMimicId("fmt"),
+          bindingKey: key,
+          operator: ">",
+          value: 0,
+          style: { fill: "#ff0000" },
+        },
+      ],
+    });
+  };
+
+  const removeFormatRule = (index: number) => {
+    const next = formatRules.filter((_, i) => i !== index);
+    onUpdateElement({ ...selectedElement, formatRules: next.length ? next : undefined });
   };
 
   return (
@@ -165,10 +416,10 @@ export default function MimicPropertiesPanel({
 
       {isCustomSvgElement(selectedElement) && (
         <CustomSvgEditor
-        element={selectedElement}
-        customSymbols={document.customSymbols}
-        onUpdateElement={onUpdateElement}
-        onAddCustomSymbol={onAddCustomSymbol}
+          element={selectedElement}
+          customSymbols={document.customSymbols}
+          onUpdateElement={onUpdateElement}
+          onAddCustomSymbol={onAddCustomSymbol}
         />
       )}
 
@@ -234,6 +485,16 @@ export default function MimicPropertiesPanel({
             />
           </label>
         </div>
+        <label className="scada-form-field scada-form-field-checkbox">
+          <input
+            type="checkbox"
+            checked={Boolean(selectedElement.lockAspectRatio)}
+            onChange={(e) =>
+              onUpdateElement({ ...selectedElement, lockAspectRatio: e.target.checked || undefined })
+            }
+          />
+          <span className="scada-form-label">{t("props.lockAspectRatio")}</span>
+        </label>
         <label className="scada-form-field">
           <span className="scada-form-label">{t("props.rotation")}</span>
           <select
@@ -247,7 +508,9 @@ export default function MimicPropertiesPanel({
             }
           >
             {[0, 90, 180, 270].map((r) => (
-              <option key={r} value={r}>{r}°</option>
+              <option key={r} value={r}>
+                {r}°
+              </option>
             ))}
           </select>
         </label>
@@ -259,9 +522,32 @@ export default function MimicPropertiesPanel({
             onChange={(e) => onUpdateElement({ ...selectedElement, layerId: e.target.value })}
           >
             {document.layers.map((layer) => (
-              <option key={layer.id} value={layer.id}>{layer.name}</option>
+              <option key={layer.id} value={layer.id}>
+                {layer.name}
+              </option>
             ))}
           </select>
+        </label>
+      </div>
+
+      <div className="scada-props-section">
+        <h3 className="scada-props-section-title">{t("props.tooltip")}</h3>
+        <label className="scada-form-field">
+          <span className="scada-form-label">{t("props.tooltipTemplate")}</span>
+          <input
+            type="text"
+            className="scada-form-input mono"
+            placeholder="{label}: {value}"
+            value={selectedElement.tooltip?.template ?? ""}
+            onChange={(e) =>
+              onUpdateElement({
+                ...selectedElement,
+                tooltip: e.target.value.trim()
+                  ? { ...selectedElement.tooltip, template: e.target.value }
+                  : undefined,
+              })
+            }
+          />
         </label>
       </div>
 
@@ -292,6 +578,17 @@ export default function MimicPropertiesPanel({
                 />
               </label>
               <label className="scada-form-field">
+                <span className="scada-form-label">qualityField</span>
+                <input
+                  type="text"
+                  className="scada-form-input mono"
+                  spellCheck={false}
+                  placeholder="quality"
+                  value={selectedElement.bindings[slot.key]?.qualityField ?? ""}
+                  onChange={(e) => updateBinding(slot.key, "qualityField", e.target.value)}
+                />
+              </label>
+              <label className="scada-form-field">
                 <span className="scada-form-label">transform</span>
                 <select
                   className="scada-form-input"
@@ -310,79 +607,102 @@ export default function MimicPropertiesPanel({
       )}
 
       <div className="scada-props-section">
-        <h3 className="scada-props-section-title">{t("props.actions")}</h3>
-        {!action ? (
-          <button
-            type="button"
-            className="scada-btn-ghost scada-btn-block"
-            onClick={() => updateAction({ type: "invokeFunction", functionName: "" })}
-          >
-            {t("props.addAction")}
-          </button>
+        <h3 className="scada-props-section-title">{t("props.formatRules")}</h3>
+        {formatRules.length === 0 ? (
+          <p className="scada-props-hint scada-props-hint-compact">{t("props.formatRulesEmpty")}</p>
         ) : (
-          <div className="scada-binding-slot">
-            <label className="scada-form-field">
-              <span className="scada-form-label">{t("props.actionType")}</span>
-              <select
-                className="scada-form-input"
-                value={action.type}
-                onChange={(e) => updateAction({ type: e.target.value as MimicAction["type"] })}
-              >
-                <option value="invokeFunction">invokeFunction</option>
-                <option value="setVariable">setVariable</option>
-                <option value="toggleVariable">toggleVariable</option>
-              </select>
-            </label>
-            <label className="scada-form-field">
-              <span className="scada-form-label">objectPath</span>
-              <input
-                type="text"
-                className="scada-form-input mono"
-                spellCheck={false}
-                value={action.objectPath ?? ""}
-                onChange={(e) => updateAction({ objectPath: e.target.value })}
-              />
-            </label>
-            {action.type === "invokeFunction" ? (
+          formatRules.map((rule, index) => (
+            <div key={rule.id} className="scada-binding-slot">
               <label className="scada-form-field">
-                <span className="scada-form-label">functionName</span>
+                <span className="scada-form-label">{t("props.formatBindingKey")}</span>
                 <input
                   type="text"
                   className="scada-form-input mono"
-                  spellCheck={false}
-                  value={action.functionName ?? ""}
-                  onChange={(e) => updateAction({ functionName: e.target.value })}
+                  value={rule.bindingKey}
+                  onChange={(e) => updateFormatRule(index, { bindingKey: e.target.value })}
                 />
               </label>
-            ) : (
-              <>
-                <label className="scada-form-field">
-                  <span className="scada-form-label">variableName</span>
+              <div className="scada-form-row">
+                <label className="scada-form-field scada-form-field-half">
+                  <span className="scada-form-label">{t("props.formatOperator")}</span>
+                  <select
+                    className="scada-form-input"
+                    value={rule.operator}
+                    onChange={(e) =>
+                      updateFormatRule(index, { operator: e.target.value as MimicFormatOperator })
+                    }
+                  >
+                    {FORMAT_OPS.map((op) => (
+                      <option key={op} value={op}>
+                        {op}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="scada-form-field scada-form-field-half">
+                  <span className="scada-form-label">{t("props.formatValue")}</span>
                   <input
                     type="text"
                     className="scada-form-input mono"
-                    spellCheck={false}
-                    value={action.variableName ?? ""}
-                    onChange={(e) => updateAction({ variableName: e.target.value })}
+                    value={String(rule.value)}
+                    onChange={(e) => updateFormatRule(index, { value: e.target.value })}
                   />
                 </label>
-                {action.type === "setVariable" && (
-                  <label className="scada-form-field">
-                    <span className="scada-form-label">value</span>
-                    <input
-                      type="text"
-                      className="scada-form-input mono"
-                      value={action.value == null ? "" : String(action.value)}
-                      onChange={(e) => updateAction({ value: e.target.value })}
-                    />
-                  </label>
-                )}
-              </>
-            )}
-            <button type="button" className="scada-btn-ghost scada-btn-block" onClick={removeAction}>
-              {t("props.removeAction")}
-            </button>
-          </div>
+              </div>
+              <label className="scada-form-field">
+                <span className="scada-form-label">{t("props.formatFill")}</span>
+                <input
+                  type="text"
+                  className="scada-form-input mono"
+                  value={rule.style.fill ?? ""}
+                  onChange={(e) =>
+                    updateFormatRule(index, { style: { ...rule.style, fill: e.target.value } })
+                  }
+                />
+              </label>
+              <button
+                type="button"
+                className="scada-btn-ghost scada-btn-block"
+                onClick={() => removeFormatRule(index)}
+              >
+                {t("props.removeFormatRule")}
+              </button>
+            </div>
+          ))
+        )}
+        <button type="button" className="scada-btn-ghost scada-btn-block" onClick={addFormatRule}>
+          {t("props.addFormatRule")}
+        </button>
+      </div>
+
+      <div className="scada-props-section">
+        <h3 className="scada-props-section-title">{t("props.actions")}</h3>
+        {actions.length === 0 ? (
+          <button type="button" className="scada-btn-ghost scada-btn-block" onClick={addAction}>
+            {t("props.addAction")}
+          </button>
+        ) : (
+          actions.map((action, index) => (
+            <div key={action.id} className="scada-binding-slot">
+              <MimicActionFields
+                action={action}
+                document={document}
+                onChange={(patch) => updateAction(index, patch)}
+              />
+              <button
+                type="button"
+                className="scada-btn-ghost scada-btn-block"
+                onClick={() => removeAction(index)}
+              >
+                {t("props.removeAction")}
+              </button>
+            </div>
+          ))
+        )}
+        {actions.length > 0 && (
+          <button type="button" className="scada-btn-ghost scada-btn-block" onClick={addAction}>
+            {t("props.addAction")}
+          </button>
         )}
       </div>
 

@@ -171,7 +171,9 @@ public class DriverRuntimeService {
                     if (update.system()) {
                         objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
                     } else {
-                        objectManager.setDriverTelemetryValue(update.path(), update.variableName(), update.value());
+                        objectManager.setDriverTelemetryValue(
+                                update.path(), update.variableName(), update.value(), update.observedAt()
+                        );
                     }
                 },
                 entry -> log.info("[driver:{}] {} {}", devicePath, entry.level(), entry.message())

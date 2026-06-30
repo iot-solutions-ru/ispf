@@ -86,6 +86,27 @@ export function resolveBindingValue(
   return transformBindingValue(raw, binding.transform);
 }
 
+export function resolveBindingQuality(
+  binding: MimicBinding | undefined,
+  session: Pick<DashboardSession, "selection" | "params">,
+  variablesByPath: Record<string, VariableDto[] | undefined>
+): unknown {
+  if (!binding?.variableName || !binding.qualityField?.trim()) return undefined;
+  const objectPath = resolveWidgetPath(
+    binding.objectPath,
+    binding.selectionKey,
+    session.selection,
+    undefined,
+    session.params
+  );
+  if (!objectPath) return undefined;
+  const variables = variablesByPath[objectPath];
+  const variable = variables?.find((v) => v.name === binding.variableName);
+  const row = variable?.value?.rows?.[0];
+  if (!row) return undefined;
+  return readFieldValue(row, binding.qualityField.trim());
+}
+
 function transformBindingValue(raw: unknown, transform?: MimicBinding["transform"]): unknown {
   if (!transform) return raw;
   switch (transform) {
@@ -111,6 +132,9 @@ export function resolveDocumentBindings(
     const values: Record<string, unknown> = {};
     for (const [key, binding] of Object.entries(el.bindings)) {
       values[key] = resolveBindingValue(binding, session, variablesByPath);
+      if (binding.qualityField?.trim()) {
+        values[`${key}Quality`] = resolveBindingQuality(binding, session, variablesByPath);
+      }
     }
     byElementId[el.id] = values;
   }

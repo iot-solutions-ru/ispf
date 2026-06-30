@@ -159,6 +159,7 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
           authenticated: true,
           principal: session.username,
           roles: session.roles,
+          timeZone: "UTC",
         });
       case "/api/v1/auth/login":
         return json(route, {

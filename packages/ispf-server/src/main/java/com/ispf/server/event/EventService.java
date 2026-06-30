@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +36,7 @@ public class EventService {
     private final EventJournalAsyncWriter eventJournalAsyncWriter;
     private final RecentEventCache recentEventCache;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final EventTimestampValidator eventTimestampValidator;
 
     public EventService(
             ObjectManager objectManager,
@@ -44,7 +46,8 @@ public class EventService {
             EventCatalogPayloadValidator catalogPayloadValidator,
             EventJournalAsyncWriter eventJournalAsyncWriter,
             RecentEventCache recentEventCache,
-            AutomationMetricsRecorder automationMetricsRecorder
+            AutomationMetricsRecorder automationMetricsRecorder,
+            EventTimestampValidator eventTimestampValidator
     ) {
         this.objectManager = objectManager;
         this.eventJournalStore = eventJournalStore;
@@ -54,6 +57,7 @@ public class EventService {
         this.eventJournalAsyncWriter = eventJournalAsyncWriter;
         this.recentEventCache = recentEventCache;
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.eventTimestampValidator = eventTimestampValidator;
     }
 
     /**
@@ -65,18 +69,37 @@ public class EventService {
                 eventName,
                 DataRecordPayloadResolver.fromRecord(payload),
                 null,
-                AutomationMetricsRecorder.EventFireSource.ALERT
+                AutomationMetricsRecorder.EventFireSource.ALERT,
+                null
         );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
-        return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API);
+        return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API, null);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload, String appId) {
-        return fireInternal(objectPath, eventName, payload, appId, AutomationMetricsRecorder.EventFireSource.API);
+        return fire(objectPath, eventName, payload, appId, null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public ObjectEvent fire(
+            String objectPath,
+            String eventName,
+            DataRecordPayloadRequest payload,
+            String appId,
+            Instant occurredAt
+    ) {
+        return fireInternal(
+                objectPath,
+                eventName,
+                payload,
+                appId,
+                AutomationMetricsRecorder.EventFireSource.API,
+                occurredAt
+        );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -86,7 +109,8 @@ public class EventService {
                 eventName,
                 DataRecordPayloadResolver.fromRecord(payload),
                 null,
-                AutomationMetricsRecorder.EventFireSource.API
+                AutomationMetricsRecorder.EventFireSource.API,
+                null
         );
     }
 
@@ -97,7 +121,14 @@ public class EventService {
             DataRecord payload,
             AutomationMetricsRecorder.EventFireSource source
     ) {
-        return fireInternal(objectPath, eventName, DataRecordPayloadResolver.fromRecord(payload), null, source);
+        return fireInternal(
+                objectPath,
+                eventName,
+                DataRecordPayloadResolver.fromRecord(payload),
+                null,
+                source,
+                null
+        );
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -107,7 +138,7 @@ public class EventService {
             DataRecordPayloadRequest payload,
             AutomationMetricsRecorder.EventFireSource source
     ) {
-        return fireInternal(objectPath, eventName, payload, null, source);
+        return fireInternal(objectPath, eventName, payload, null, source, null);
     }
 
     @Transactional(readOnly = true)
@@ -143,7 +174,8 @@ public class EventService {
             String eventName,
             DataRecordPayloadRequest payload,
             String appId,
-            AutomationMetricsRecorder.EventFireSource source
+            AutomationMetricsRecorder.EventFireSource source,
+            Instant occurredAt
     ) {
         if (appId != null && !appId.isBlank()) {
             catalogPayloadValidator.validateAtFire(appId, eventName, payload);
@@ -153,7 +185,14 @@ public class EventService {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event: " + eventName));
 
         DataRecord resolvedPayload = DataRecordPayloadResolver.resolve(descriptor.payloadSchema(), payload);
-        ObjectEvent event = ObjectEvent.of(objectPath, eventName, descriptor.level(), resolvedPayload);
+        Instant resolvedOccurredAt = eventTimestampValidator.validateOccurredAt(occurredAt);
+        ObjectEvent event = ObjectEvent.of(
+                objectPath,
+                eventName,
+                descriptor.level(),
+                resolvedPayload,
+                resolvedOccurredAt
+        );
         eventJournalAsyncWriter.enqueue(event, mapper.writeDataRecord(event.payload()));
         automationMetricsRecorder.recordEventFired(source);
         eventPublisher.publishEvent(ObjectChangeEvent.eventFired(objectPath, eventName));

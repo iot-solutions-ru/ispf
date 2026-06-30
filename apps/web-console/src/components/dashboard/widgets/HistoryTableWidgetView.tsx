@@ -6,7 +6,8 @@ import type { HistoryTableRange } from "../../../types/dashboard";
 import { historyTableRangeLabel } from "../../../types/dashboard";
 import type { HistoryTableWidget } from "../../../types/dashboard";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
-import { historyRangeFrom, type HistoryRange } from "../../../hooks/useVariableHistory";
+import { historyRangeFrom, isCalendarHistoryRange, type HistoryRange } from "../../../hooks/useVariableHistory";
+import { useOptionalUserTimeZone } from "../../../context/UserTimeZoneContext";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
 
@@ -16,7 +17,7 @@ function historyTableFrom(range: HistoryTableRange): string | undefined {
   if (range === "5m") {
     return new Date(Date.now() - FIVE_MINUTES_MS).toISOString();
   }
-  if (range === "all") {
+  if (range === "all" || isCalendarHistoryRange(range as HistoryRange)) {
     return undefined;
   }
   return historyRangeFrom(range as HistoryRange);
@@ -40,16 +41,23 @@ export default function HistoryTableWidgetView({
   const decimals = widget.decimals ?? 2;
   const variableName = widget.variableName ?? "";
   const historyRange = widget.historyRange ?? "5m";
+  const tz = useOptionalUserTimeZone();
 
   const history = useQuery({
-    queryKey: ["variable-history-table", objectPath, variableName, field, historyRange],
+    queryKey: ["variable-history-table", objectPath, variableName, field, historyRange, tz?.timeZone],
     queryFn: () => {
+      const calendarRange = isCalendarHistoryRange(historyRange as HistoryRange)
+        ? (historyRange as "today" | "yesterday")
+        : undefined;
       const from = historyTableFrom(historyRange);
-      const to = new Date().toISOString();
+      const to =
+        calendarRange || historyRange === "all" ? undefined : new Date().toISOString();
       return fetchVariableHistory(objectPath, variableName, {
         field,
         from,
         to,
+        calendarRange,
+        timeZone: calendarRange ? tz?.timeZone ?? "UTC" : undefined,
         limit: 500,
       });
     },

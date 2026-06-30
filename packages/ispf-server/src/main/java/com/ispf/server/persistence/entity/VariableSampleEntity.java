@@ -38,6 +38,9 @@ public class VariableSampleEntity {
     @Column(name = "sampled_at", nullable = false)
     private Instant sampledAt;
 
+    @Column(name = "observed_at", nullable = false)
+    private Instant observedAt;
+
     @Column(name = "value_double")
     private Double valueDouble;
 
@@ -82,6 +85,19 @@ public class VariableSampleEntity {
 
     public void setSampledAt(Instant sampledAt) {
         this.sampledAt = sampledAt;
+    }
+
+    public Instant getObservedAt() {
+        return observedAt;
+    }
+
+    public void setObservedAt(Instant observedAt) {
+        this.observedAt = observedAt;
+    }
+
+    /** Chart/query timestamp: device measurement when present, else ingest time. */
+    public Instant effectiveTimestamp() {
+        return observedAt != null ? observedAt : sampledAt;
     }
 
     public Double getValueDouble() {

@@ -4,6 +4,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DeviceDriver;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -18,7 +19,10 @@ public class ServerDriverObject implements DeviceDriver.DriverObject {
     private final Consumer<VariableUpdate> variableUpdater;
     private final Consumer<LogEntry> logger;
 
-    public record VariableUpdate(String path, String variableName, DataRecord value, boolean system) {
+    public record VariableUpdate(String path, String variableName, DataRecord value, boolean system, Instant observedAt) {
+        public VariableUpdate(String path, String variableName, DataRecord value, boolean system) {
+            this(path, variableName, value, system, null);
+        }
     }
 
     public record LogEntry(DeviceDriver.DriverLogLevel level, String message) {
@@ -43,7 +47,12 @@ public class ServerDriverObject implements DeviceDriver.DriverObject {
 
     @Override
     public void updateVariable(String name, DataRecord value) {
-        variableUpdater.accept(new VariableUpdate(deviceObject.path(), name, value, false));
+        updateVariable(name, value, null);
+    }
+
+    @Override
+    public void updateVariable(String name, DataRecord value, Instant observedAt) {
+        variableUpdater.accept(new VariableUpdate(deviceObject.path(), name, value, false, observedAt));
     }
 
     @Override

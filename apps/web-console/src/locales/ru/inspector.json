@@ -253,6 +253,8 @@
   "variables.historyPanel.notEnoughPoints": "Недостаточно точек для графика",
   "variables.historyPanel.range1h": "1 ч",
   "variables.historyPanel.range24h": "24 ч",
+  "variables.historyPanel.rangeToday": "Сегодня",
+  "variables.historyPanel.rangeYesterday": "Вчера",
   "variables.historyPanel.range6h": "6 ч",
   "variables.historyPanel.range7d": "7 д",
   "variables.historyPanel.rangeAll": "Всё",

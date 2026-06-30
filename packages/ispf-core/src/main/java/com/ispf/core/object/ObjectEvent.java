@@ -17,13 +17,23 @@ public record ObjectEvent(
         Instant timestamp
 ) {
     public static ObjectEvent of(String objectPath, String eventName, EventLevel level, DataRecord payload) {
+        return of(objectPath, eventName, level, payload, Instant.now());
+    }
+
+    public static ObjectEvent of(
+            String objectPath,
+            String eventName,
+            EventLevel level,
+            DataRecord payload,
+            Instant timestamp
+    ) {
         return new ObjectEvent(
                 UUID.randomUUID().toString(),
                 objectPath,
                 eventName,
                 level,
                 payload,
-                Instant.now()
+                timestamp != null ? timestamp : Instant.now()
         );
     }
 }

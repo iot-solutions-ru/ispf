@@ -13,7 +13,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:install": "playwright install chromium",
     "i18n:check": "node scripts/i18n-check-keys.mjs",
-    "i18n:translate": "python ../../tools/i18n/generate-locales.py"
+    "i18n:translate": "python ../../tools/i18n/generate-locales.py",
+    "import:pid-symbols": "npm run import:pid --prefix ../../tools/symbol-import"
   },
   "dependencies": {
     "@codemirror/lang-java": "^6.0.2",

@@ -23,35 +23,35 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Seeds the Transneft Omsk RDP SCADA mimic demo (devices, mimic, dashboard).
+ * Seeds the anonymized tank-farm SCADA mimic demo (devices, mimic, dashboard).
  */
 @Component
-public class TransneftOmskPlatformBootstrap {
+public class TankFarmPlatformBootstrap {
 
     private record TankSeed(int number, double initialLevelMm, double rateBiasMmPerHour) {
     }
 
-    private static final TankSeed[] YELLOW_TANKS = {
-            new TankSeed(11, 7850, -430),
-            new TankSeed(12, 6210, 85),
-            new TankSeed(13, 5480, -120),
-            new TankSeed(14, 9020, 40),
-            new TankSeed(15, 3100, -210),
-            new TankSeed(16, 6740, 15),
-            new TankSeed(17, 4890, -55),
+    private static final TankSeed[] TYPE_A_TANKS = {
+            new TankSeed(11, 1662, -430),
+            new TankSeed(12, 1667, 85),
+            new TankSeed(13, 1481, -120),
+            new TankSeed(14, 1597, 40),
+            new TankSeed(15, 1620, -210),
+            new TankSeed(16, 6352, 15),
+            new TankSeed(17, 1762, -55),
     };
 
-    private static final TankSeed[] BLUE_TANKS = {
-            new TankSeed(18, 8120, 220),
-            new TankSeed(19, 4550, -180),
-            new TankSeed(20, 7360, 95),
-            new TankSeed(21, 5920, -60),
-            new TankSeed(22, 2680, 130),
-            new TankSeed(23, 8410, -90),
-            new TankSeed(24, 5030, 45),
+    private static final TankSeed[] TYPE_B_TANKS = {
+            new TankSeed(18, 11726, 220),
+            new TankSeed(19, 1702, -180),
+            new TankSeed(20, 5858, 95),
+            new TankSeed(21, 4393, -60),
+            new TankSeed(22, 1712, 130),
+            new TankSeed(23, 1280, -90),
+            new TankSeed(24, 1230, 45),
     };
 
-    private final TransneftOmskModelBootstrap modelBootstrap;
+    private final TankFarmModelBootstrap modelBootstrap;
     private final ObjectTemplateService templateService;
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
@@ -60,8 +60,8 @@ public class TransneftOmskPlatformBootstrap {
     private final ApplicationDataService applicationDataService;
     private final BootstrapProperties bootstrapProperties;
 
-    public TransneftOmskPlatformBootstrap(
-            TransneftOmskModelBootstrap modelBootstrap,
+    public TankFarmPlatformBootstrap(
+            TankFarmModelBootstrap modelBootstrap,
             ObjectTemplateService templateService,
             ObjectManager objectManager,
             DashboardService dashboardService,
@@ -86,18 +86,18 @@ public class TransneftOmskPlatformBootstrap {
         if (!bootstrapProperties.isFixturesEnabled()) {
             return;
         }
-        modelBootstrap.ensureTransneftModels();
+        modelBootstrap.ensureTankFarmModels();
         registerApplication();
         ensureFolder();
         for (TankSeed tank : allTanks()) {
             ensureTank(tank);
         }
         ensureHub();
-        ensureMimic(TransneftOmskPaths.MIMIC_RDP, "РДП Омск — резервуарный парк", TransneftOmskMimicDocument.DIAGRAM_JSON);
+        ensureMimic(TankFarmPaths.MIMIC, "Резервуарный парк (демо)", TankFarmMimicDocument.DIAGRAM_JSON);
         ensureDashboard(
-                TransneftOmskPaths.DASHBOARD_RDP,
-                "РДП Омск — мнемосхема",
-                TransneftOmskDashboardLayouts.RDP_MIMIC
+                TankFarmPaths.DASHBOARD,
+                "Мнемосхема резервуарного парка",
+                TankFarmDashboardLayouts.HMI_LAYOUT
         );
     }
 
@@ -112,10 +112,10 @@ public class TransneftOmskPlatformBootstrap {
 
     private List<TankSeed> allTanks() {
         List<TankSeed> tanks = new ArrayList<>();
-        for (TankSeed tank : YELLOW_TANKS) {
+        for (TankSeed tank : TYPE_A_TANKS) {
             tanks.add(tank);
         }
-        for (TankSeed tank : BLUE_TANKS) {
+        for (TankSeed tank : TYPE_B_TANKS) {
             tanks.add(tank);
         }
         return tanks;
@@ -124,10 +124,10 @@ public class TransneftOmskPlatformBootstrap {
     private void registerApplication() {
         try {
             applicationDataService.register(
-                    TransneftOmskPaths.APP_ID,
-                    TransneftOmskPaths.DISPLAY_NAME,
+                    TankFarmPaths.APP_ID,
+                    TankFarmPaths.DISPLAY_NAME,
                     "",
-                    "app_transneft_omsk"
+                    "app_tank_farm_demo"
             );
         } catch (Exception ignored) {
             // already registered
@@ -135,13 +135,13 @@ public class TransneftOmskPlatformBootstrap {
     }
 
     private void ensureFolder() {
-        if (objectManager.tree().findByPath(TransneftOmskPaths.FOLDER).isEmpty()) {
+        if (objectManager.tree().findByPath(TankFarmPaths.FOLDER).isEmpty()) {
             objectManager.create(
                     "root.platform.devices",
-                    TransneftOmskPaths.PLANT_FOLDER_NAME,
+                    TankFarmPaths.PLANT_FOLDER_NAME,
                     ObjectType.CUSTOM,
-                    TransneftOmskPaths.DISPLAY_NAME,
-                    "Transneft Omsk RDP tank farm SCADA demo",
+                    TankFarmPaths.DISPLAY_NAME,
+                    "Anonymized tank farm SCADA demo",
                     null
             );
         }
@@ -149,39 +149,39 @@ public class TransneftOmskPlatformBootstrap {
 
     private void ensureTank(TankSeed tank) {
         String name = "tank-" + tank.number();
-        String path = TransneftOmskPaths.tank(tank.number());
+        String path = TankFarmPaths.tank(tank.number());
         if (objectManager.tree().findByPath(path).isEmpty()) {
             objectManager.create(
-                    TransneftOmskPaths.FOLDER,
+                    TankFarmPaths.FOLDER,
                     name,
                     ObjectType.DEVICE,
                     "Резервуар №" + tank.number(),
                     "",
-                    TransneftOmskModelBootstrap.TANK_MODEL
+                    TankFarmModelBootstrap.TANK_MODEL
             );
         }
-        templateService.applyTemplate(path, TransneftOmskModelBootstrap.TANK_MODEL);
+        templateService.applyTemplate(path, TankFarmModelBootstrap.TANK_MODEL);
         setStringVar(
                 path,
                 "driverConfigJson",
-                TransneftOmskModelBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
+                TankFarmModelBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
         );
     }
 
     private void ensureHub() {
-        String path = TransneftOmskPaths.RDP_HUB;
+        String path = TankFarmPaths.MANIFOLD_HUB;
         if (objectManager.tree().findByPath(path).isEmpty()) {
             objectManager.create(
-                    TransneftOmskPaths.FOLDER,
-                    "rdp-hub",
+                    TankFarmPaths.FOLDER,
+                    "manifold-hub",
                     ObjectType.CUSTOM,
-                    "РДП — коллектор",
+                    "Коллектор магистрали",
                     "",
-                    TransneftOmskModelBootstrap.RDP_HUB_MODEL
+                    TankFarmModelBootstrap.MANIFOLD_HUB_MODEL
             );
         }
-        templateService.applyTemplate(path, TransneftOmskModelBootstrap.RDP_HUB_MODEL);
-        setStringVar(path, "driverConfigJson", TransneftOmskModelBootstrap.RDP_HUB_DRIVER_CONFIG);
+        templateService.applyTemplate(path, TankFarmModelBootstrap.MANIFOLD_HUB_MODEL);
+        setStringVar(path, "driverConfigJson", TankFarmModelBootstrap.MANIFOLD_HUB_DRIVER_CONFIG);
     }
 
     private void setStringVar(String path, String name, String value) {
@@ -217,9 +217,9 @@ public class TransneftOmskPlatformBootstrap {
 
     private void startDrivers() {
         List<String> paths = new ArrayList<>();
-        paths.add(TransneftOmskPaths.RDP_HUB);
+        paths.add(TankFarmPaths.MANIFOLD_HUB);
         for (TankSeed tank : allTanks()) {
-            paths.add(TransneftOmskPaths.tank(tank.number()));
+            paths.add(TankFarmPaths.tank(tank.number()));
         }
         for (String path : paths) {
             try {

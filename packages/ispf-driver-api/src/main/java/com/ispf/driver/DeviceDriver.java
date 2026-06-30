@@ -3,6 +3,7 @@ package com.ispf.driver;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,6 +31,11 @@ public interface DeviceDriver {
         PlatformObject deviceObject();
 
         void updateVariable(String name, DataRecord value);
+
+        /** Optional device measurement time (UTC); defaults to ingest time when omitted. */
+        default void updateVariable(String name, DataRecord value, Instant observedAt) {
+            updateVariable(name, value);
+        }
 
         Optional<DataRecord> getVariable(String name);
 

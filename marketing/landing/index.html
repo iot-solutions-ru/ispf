@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ISPF — IoT Solutions Platform Framework · IoT · SCADA · MES</title>
-  <meta name="description" content="IoT Solutions Platform Framework (ISPF) — единая платформа IoT, SCADA и MES: 58 драйверов, HMI, historian, BPMN, bundle deploy. Энергетика, нефтегаз, производство." />
+  <meta name="description" content="IoT Solutions Platform Framework (ISPF) — единая платформа IoT, SCADA и MES: 58 драйверов, мнемосхемы P&ID, HMI, historian, BPMN, bundle deploy. Энергетика, нефтегаз, производство." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -43,7 +43,11 @@
       color: var(--text);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
       overflow-x: hidden;
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
     }
 
     .grid-bg {
@@ -77,6 +81,22 @@
       background: linear-gradient(180deg, rgba(59,130,246,0.07) 0%, transparent 55%);
       border-bottom: 1px solid var(--border);
     }
+    .scada-section {
+      padding: 100px 0;
+      background: linear-gradient(180deg, rgba(6,182,212,0.07) 0%, transparent 50%);
+      border-bottom: 1px solid var(--border);
+    }
+    .scada-highlights {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px;
+    }
+    .scada-highlight {
+      padding: 20px; border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .scada-highlight strong {
+      display: block; font-size: 0.95rem; margin-bottom: 6px; color: var(--text);
+    }
+    .scada-highlight span { font-size: 0.82rem; color: var(--text-muted); }
     .platform-triad {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 48px;
     }
@@ -154,6 +174,11 @@
 
     a { color: var(--accent); text-decoration: none; transition: color 0.2s var(--ease); }
     a:hover { color: #60a5fa; }
+    code {
+      font-family: ui-monospace, monospace; font-size: 0.88em;
+      padding: 0.12em 0.4em; border-radius: 4px;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    }
     .wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
 
     nav {
@@ -172,7 +197,16 @@
     .nav-links { display: flex; gap: 28px; list-style: none; }
     .nav-links a { color: var(--text-muted); font-size: 0.9rem; font-weight: 500; }
     .nav-links a:hover { color: var(--text); }
-    .nav-cta { display: flex; gap: 10px; align-items: center; }
+    .nav-cta { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+    .nav-toggle {
+      display: none;
+      align-items: center; justify-content: center;
+      width: 40px; height: 40px; padding: 0;
+      border-radius: 8px; border: 1px solid var(--border-strong);
+      background: var(--surface); color: var(--text);
+      font-size: 1.25rem; line-height: 1; cursor: pointer;
+    }
+    .nav-toggle[aria-expanded="true"] { background: rgba(255,255,255,0.08); }
 
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -330,8 +364,15 @@
       text-align: center; color: var(--text-muted); font-size: 0.82rem;
     }
 
-    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
+    /* Content is visible by default — mobile in-app browsers may not run reveal JS reliably */
+    .reveal { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: no-preference) {
+      html.reveal-ready .reveal {
+        opacity: 0; transform: translateY(24px);
+        transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+      }
+      html.reveal-ready .reveal.visible { opacity: 1; transform: translateY(0); }
+    }
 
     @media (max-width: 960px) {
       .hero-grid, .feature-row, .compare, .gallery, .ai-dual, .platform-triad { grid-template-columns: 1fr; }
@@ -341,12 +382,30 @@
       .feature-row.reverse { direction: ltr; }
       .stats-grid { grid-template-columns: repeat(3, 1fr); }
       .cards-grid { grid-template-columns: 1fr; }
-      .nav-links { display: none; }
+      .scada-highlights { grid-template-columns: repeat(2, 1fr); }
+      .nav-toggle { display: inline-flex; }
+      .nav-links {
+        display: none; position: absolute; top: 64px; left: 0; right: 0;
+        flex-direction: column; gap: 0; padding: 8px 24px 16px;
+        background: rgba(10, 14, 20, 0.96); border-bottom: 1px solid var(--border);
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { display: block; padding: 12px 0; font-size: 1rem; }
+      nav { position: sticky; }
+      .nav-inner { position: relative; }
+      .glow { display: none; }
     }
     @media (max-width: 600px) {
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .hero { padding: 48px 0 40px; }
       section { padding: 64px 0; }
+      .wrap { padding: 0 16px; }
+      .nav-cta .btn-ghost { display: none; }
+      .nav-cta .btn { padding: 8px 14px; font-size: 0.85rem; }
+      .hero-actions .btn { flex: 1 1 auto; justify-content: center; min-width: 0; }
+      .hero-stats { gap: 20px; }
+      .scada-highlights { grid-template-columns: 1fr; }
+      .cta-box { padding: 40px 20px; }
     }
   </style>
 </head>
@@ -359,8 +418,10 @@
   <nav>
     <div class="wrap nav-inner">
       <div class="logo"><div class="logo-mark">IS</div>ISPF</div>
-      <ul class="nav-links">
+      <button type="button" class="nav-toggle" aria-label="Меню" aria-expanded="false" aria-controls="nav-menu">☰</button>
+      <ul class="nav-links" id="nav-menu">
         <li><a href="#platform">IoT · SCADA · MES</a></li>
+        <li><a href="#scada">Мнемосхемы</a></li>
         <li><a href="#features">Возможности</a></li>
         <li><a href="#screenshots">Интерфейс</a></li>
         <li><a href="#ai">ИИ</a></li>
@@ -379,9 +440,9 @@
         <div class="badge"><span class="badge-dot"></span> IoT · SCADA · MES · Production v0.9.41</div>
         <h1>Единая платформа<br><em>IoT, SCADA и MES</em></h1>
         <p class="hero-lead">
-          Сбор данных с поля, operator HMI, historian, алерты и производственные процессы —
+          Сбор данных с поля, operator HMI, мнемосхемы P&ID, historian, алерты и производственные процессы —
           вокруг одного дерева объектов. Энергетика, нефтегаз, дискретное производство:
-          от датчика Modbus до MES-отчёта без зоопарка OPC, historian и отдельного MES.
+          от датчика Modbus до мнемосхемы и MES-отчёта без зоопарка OPC, historian и отдельного MES.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://ispf.iot-solutions.ru" target="_blank" rel="noopener">Открыть демо-стенд →</a>
@@ -411,7 +472,7 @@
     <div class="wrap">
       <div class="stats-grid reveal">
         <div><div class="num">IoT</div><div class="lbl">58 драйверов · MQTT · OPC UA</div></div>
-        <div><div class="num">SCADA</div><div class="lbl">HMI · historian · алерты</div></div>
+        <div><div class="num">SCADA</div><div class="lbl">Мнемосхемы · HMI · historian</div></div>
         <div><div class="num">MES</div><div class="lbl">Bundle · отчёты · workflow</div></div>
         <div><div class="num">58</div><div class="lbl">Device drivers</div></div>
         <div><div class="num">40+</div><div class="lbl">HMI-виджетов</div></div>
@@ -444,12 +505,12 @@
         </div>
         <div class="platform-card">
           <span class="tag">SCADA · оперативный контур</span>
-          <h3>Мониторинг, HMI и управление</h3>
-          <p>Dashboard builder, operator shell, alarm rules, correlators, SLD, map, network graph, historian.</p>
+          <h3>Мониторинг, HMI и мнемосхемы</h3>
+          <p>Dashboard builder, виджет scada-mimic, редактор P&ID, alarm rules, correlators, historian.</p>
           <ul>
-            <li>Мини-ТЭЦ: ГПУ, ГРПБ, РУМБ, ДГУ</li>
-            <li>SNMP / IT + промышленные объекты</li>
-            <li>Work queue · журнал событий · alarm bar</li>
+            <li>~50 SVG-символов: танки, клапаны, насосы, РП</li>
+            <li>Live bindings и управление с мнемосхемы</li>
+            <li>Демо: mini-TEC, pipeline-scada (РД-029)</li>
           </ul>
         </div>
         <div class="platform-card">
@@ -466,6 +527,92 @@
     </div>
   </section>
 
+  <section id="scada" class="scada-section">
+    <div class="wrap">
+      <div class="reveal">
+        <div class="section-label industrial">SCADA · мнемосхемы</div>
+        <h2 class="section-title">P&ID и однолинейные схемы — не отдельный SCADA-runtime</h2>
+        <p class="section-desc">
+          Мнемосхемы живут в object tree как объекты <code>MIMIC</code>: редактор символов, live-привязки
+          к переменным устройств, ортогональные соединения и управление с operator HMI.
+          Логика остаётся в дереве — схема только отображает и отправляет команды.
+        </p>
+      </div>
+
+      <div class="scada-highlights reveal">
+        <div class="scada-highlight">
+          <strong>Каталог символов</strong>
+          <span>Танки, клапаны, насосы, трубопроводы, электрооборудование, датчики — ~50 SVG + custom SVG</span>
+        </div>
+        <div class="scada-highlight">
+          <strong>Live bindings</strong>
+          <span>Уровни, состояния, тревоги, качество OPC — привязка к objectPath и selectionKey</span>
+        </div>
+        <div class="scada-highlight">
+          <strong>Управление с HMI</strong>
+          <span>setVariable, toggle, invokeFunction, navigate — клик и контекстное меню на символе</span>
+        </div>
+        <div class="scada-highlight">
+          <strong>Редактор Visio-class</strong>
+          <span>Палитра · Place · Connect · слои · snap · align · свойства · import/export JSON</span>
+        </div>
+      </div>
+
+      <div class="feature-row reveal" style="margin-top:72px">
+        <div>
+          <div class="section-label">Редактор мнемосхем</div>
+          <h2 class="section-title">Visio-class редактор прямо в браузере</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Полноэкранный редактор: палитра символов, слои, свойства, bindings и actions —
+            без десктопного SCADA-пакета. Схема сохраняется в object tree и сразу работает на operator HMI.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Библиотека символов</strong><span>Танки, задвижки, насосы, трубы, крестовины, сигнальные лампы — процесс и электрика</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Select · Place · Connect</strong><span>Размещение, ортогональные соединения по портам, smart-snap и сетка</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Align · Distribute · Transform</strong><span>Выравнивание, flip, поворот ±90°, undo/redo</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Панель свойств</strong><span>Bindings, format rules, actions, слои — import/export JSON diagram</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">SCADA Mimic Editor · pipeline-rp · РД-029</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/scada-mimic-editor.png" alt="Редактор мнемосхемы: магистральный нефтепровод, библиотека символов, слои и свойства" loading="lazy" width="1920" height="1080" />
+          </div>
+          <figcaption class="screenshot-caption">СДКУ РП · 49 символов · слои · bindings · import/export JSON</figcaption>
+        </figure>
+      </div>
+
+      <div class="feature-row reverse reveal" style="margin-top:72px">
+        <div>
+          <div class="section-label">Operator HMI</div>
+          <h2 class="section-title">От редактора — на дашборд и в смену оператора</h2>
+          <p class="section-desc" style="margin-bottom:24px">
+            Виджет <code>scada-mimic</code> на layout дашборда загружает схему с сервера.
+            Live-уровни, давление, таблицы резервуаров и управление — без дублирования тегов.
+          </p>
+          <ul class="feature-list">
+            <li><span class="feature-check">✓</span><div><strong>Объекты MIMIC в дереве</strong><span><code>root.platform.mimics.*</code> — одна схема на нескольких экранах</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Live bindings</strong><span>Уровни, состояния клапанов, анимация потока на линиях</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Управление с HMI</strong><span>setVariable, toggle, invokeFunction, navigate с мнемосхемы</span></div></li>
+            <li><span class="feature-check">✓</span><div><strong>Отраслевые шаблоны</strong><span>mini-TEC, СДКУ РП и 15 форм магистрального нефтепровода (РД-029)</span></div></li>
+          </ul>
+        </div>
+        <figure class="screenshot-frame">
+          <div class="screenshot-chrome">
+            <span class="chrome-dot r"></span><span class="chrome-dot y"></span><span class="chrome-dot g"></span>
+            <span class="chrome-url">Operator HMI · mini-tec · scada-mimic</span>
+          </div>
+          <div class="screenshot-body">
+            <img src="assets/screenshots/operator-hmi.png" alt="Operator HMI Мини-ТЭЦ с мнемосхемой и live-данными" loading="lazy" />
+          </div>
+          <figcaption class="screenshot-caption">Operator shell · мнемосхема · live variables · alarm bar</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
 
   <section id="features">
     <div class="wrap">
@@ -509,8 +656,8 @@
         </div>
         <div class="card">
           <div class="card-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">◈</div>
-          <h3>SCADA · HMI + historian</h3>
-          <p>40+ виджетов, operator shell, CEL alert rules, correlators, TimescaleDB historian.</p>
+          <h3>SCADA · HMI + мнемосхемы</h3>
+          <p>40+ виджетов, scada-mimic, редактор P&ID, CEL alert rules, TimescaleDB historian.</p>
         </div>
         <div class="card">
           <div class="card-icon" style="background:rgba(34,197,94,0.15);color:#4ade80">▣</div>
@@ -728,7 +875,7 @@
       <div class="ai-flow reveal">
         <div class="ai-flow-step"><strong>IoT</strong><span>Драйвер · device · variables</span></div>
         <div class="ai-flow-arrow">→</div>
-        <div class="ai-flow-step"><strong>SCADA</strong><span>Dashboard · alerts · historian</span></div>
+        <div class="ai-flow-step"><strong>SCADA</strong><span>Mimic · dashboard · alerts</span></div>
         <div class="ai-flow-arrow">→</div>
         <div class="ai-flow-step"><strong>MES</strong><span>Reports · BPMN · functions</span></div>
         <div class="ai-flow-arrow">→</div>
@@ -893,11 +1040,43 @@
   </footer>
 
   <script>
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); }),
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
+    (function () {
+      const menu = document.getElementById("nav-menu");
+      const toggle = document.querySelector(".nav-toggle");
+      if (menu && toggle) {
+        toggle.addEventListener("click", () => {
+          const open = menu.classList.toggle("open");
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        menu.querySelectorAll("a").forEach((link) => {
+          link.addEventListener("click", () => {
+            menu.classList.remove("open");
+            toggle.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
+      const reveals = document.querySelectorAll(".reveal");
+      const markVisible = (el) => el.classList.add("visible");
+
+      if (!("IntersectionObserver" in window)) {
+        reveals.forEach(markVisible);
+        return;
+      }
+
+      reveals.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight && rect.bottom > 0) markVisible(el);
+      });
+
+      document.documentElement.classList.add("reveal-ready");
+
+      const observer = new IntersectionObserver(
+        (entries) => entries.forEach((e) => { if (e.isIntersecting) markVisible(e.target); }),
+        { threshold: 0.08, rootMargin: "0px" }
+      );
+      reveals.forEach((el) => observer.observe(el));
+    })();
   </script>
 </body>
 </html>

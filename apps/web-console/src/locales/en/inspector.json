@@ -249,6 +249,8 @@
   "variables.historyPanel.range1h": "1 h",
   "variables.historyPanel.range6h": "6 h",
   "variables.historyPanel.range24h": "24 h",
+  "variables.historyPanel.rangeToday": "Today",
+  "variables.historyPanel.rangeYesterday": "Yesterday",
   "variables.historyPanel.range7d": "7 d",
   "variables.historyPanel.rangeAll": "All",
   "descriptor.newFunction": "New function",

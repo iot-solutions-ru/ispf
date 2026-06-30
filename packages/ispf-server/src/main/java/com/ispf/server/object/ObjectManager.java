@@ -362,8 +362,12 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value) {
+        return setDriverTelemetryValue(path, name, value, null);
+    }
+
+    public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
         Variable variable = setDriverTelemetryValueInMemory(path, name, value);
-        telemetryCoalescer.recordUpdate(path, name, value);
+        telemetryCoalescer.recordUpdate(path, name, value, observedAt);
         return variable;
     }
 
@@ -911,7 +915,8 @@ public class ObjectManager {
                 node.revision(),
                 node.lastChangedBy(),
                 false,
-                true
+                true,
+                null
         ));
     }
 

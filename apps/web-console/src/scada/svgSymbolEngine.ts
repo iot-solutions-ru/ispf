@@ -1,6 +1,6 @@
 import type { MimicSymbolBehavior } from "../types/scadaMimic";
 import { replaceCssVars, sanitizeSvgMarkup } from "./customSvg";
-import { asBool, asNum, clamp01, fmtNum, fmtText } from "./utils";
+import { asBool, asNum, clamp01, fmtNumWithQuality, fmtText, isBadQuality } from "./utils";
 
 export interface ApplySvgBehaviorsOptions {
   svg: string;
@@ -67,11 +67,22 @@ export function applySvgBehaviors({
       }
       case "text": {
         const rawVal = values[behavior.bind] ?? props[behavior.bind];
+        const quality = behavior.qualityBind
+          ? values[behavior.qualityBind] ?? props[behavior.qualityBind]
+          : undefined;
+        const gray = isBadQuality(quality) ? "#808080" : undefined;
         const text =
           behavior.format === "number"
-            ? fmtNum(rawVal, behavior.decimals ?? 0, behavior.suffix ?? "")
+            ? fmtNumWithQuality(
+                rawVal,
+                quality,
+                behavior.decimals ?? 0,
+                behavior.suffix ?? "",
+                behavior.formatPattern
+              )
             : fmtText(rawVal, "");
         el.textContent = text;
+        if (gray) setAttr(el, "fill", gray);
         break;
       }
       case "fillLevel": {
@@ -99,6 +110,17 @@ export function applySvgBehaviors({
       case "stroke": {
         const on = resolveBool(values, props, behavior.bind);
         setAttr(el, "stroke", on ? (behavior.trueColor ?? "#3fb950") : (behavior.falseColor ?? "#484f58"));
+        break;
+      }
+      case "blink": {
+        const on = resolveBool(values, props, behavior.bind);
+        const show = behavior.when === "falsy" ? !on : on;
+        if (show) {
+          setAttr(el, "class", `${el.getAttribute("class") ?? ""} ispf-mimic-blink`.trim());
+          setAttr(el, "data-ispf-blink", "1");
+        } else {
+          el.removeAttribute("data-ispf-blink");
+        }
         break;
       }
     }

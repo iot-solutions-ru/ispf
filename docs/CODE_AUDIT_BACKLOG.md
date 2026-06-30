@@ -111,6 +111,19 @@
 | **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Planned | Driver |
 | **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Planned | Dashboard |
 
+### Wave H — Time & timezones
+
+Контракт store-UTC / display-local ([ADR-0020](decisions/0020-time-and-timezones.md)). Зависимости: BL-66 → BL-67, BL-68; BL-68 → BL-69; BL-67 → BL-70.
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-66** | ADR-0020 + spike: inventory `toLocaleString` / `Instant.now()` hot paths | P2 | Done | Architecture |
+| **BL-67** | User `timeZone` (IANA) в profile + `TimezoneSwitcher` + `formatDateTime` в UI | P2 | Done | Security / UI |
+| **BL-68** | Device `timeZone` metadata + inheritance от folder/site | P2 | Done | Models / Drivers |
+| **BL-69** | Historian `observedAt` + driver SPI source timestamps | P3 | Done | History / Drivers |
+| **BL-70** | Calendar-boundary history queries + reports (`timeZone` param) | P3 | Done | History / Reports |
+| **BL-71** | Event fire optional `occurredAt` override + skew guard | P3 | Done | Events / API |
+
 ### Wave F — Уже сделано / не требует BL (reference)
 
 | Тема | Статус | Где в коде |
@@ -525,6 +538,84 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 ---
 
+### BL-66 — ADR time & timezones + spike
+
+**Проблема:** UTC в storage, но нет контракта user/device TZ; UI = browser default; historian = ingestion time.
+
+**Задачи:**
+
+- [ ] Принять [ADR-0020](decisions/0020-time-and-timezones.md) (Proposed → Accepted)
+- [ ] Inventory hot paths: журналы, charts, reports, drivers, schedules (appendix в ADR)
+- [ ] Политика DST / ambiguous local time при парсинге device-local строк
+
+**Acceptance:** ADR merged; список затронутых файлов в ADR appendix.
+
+---
+
+### BL-67 — User timezone preference
+
+**Задачи:**
+
+- [ ] Flyway: `platform_users.time_zone VARCHAR(64)` default `'UTC'`
+- [ ] Переменная `timeZone` на user object + sync в `PlatformUserService`
+- [ ] Profile API → `{ timeZone: "Europe/Moscow" }`
+- [ ] `TimezoneSwitcher` в `ShellPreferences.tsx`; `localStorage` `ispf.ui.timeZone`
+- [ ] Утилита `formatDateTime(iso, { timeZone, locale })` — журналы, charts, metrics, AI chat
+
+**Acceptance:** два пользователя с разными TZ видят одни события в своём локальном времени; API отдаёт UTC.
+
+---
+
+### BL-68 — Device timezone metadata
+
+**Задачи:**
+
+- [ ] RELATIVE model `device-timezone-v1` или расширение device-driver blueprint: `timeZone` (IANA, optional)
+- [ ] Наследование: device → parent folder/site → `UTC`
+- [ ] Helper `resolveTimeZone(objectPath)`; Inspector UI
+- [ ] Документация: [DRIVERS.md](DRIVERS.md), [OBJECT_MODEL.md](OBJECT_MODEL.md)
+
+**Acceptance:** устройство с `Asia/Yekaterinburg` видно в inspector; helper готов для CEL (фаза 2+).
+
+---
+
+### BL-69 — Source timestamps (driver SPI + historian)
+
+**Задачи:**
+
+- [x] `VariableHistoryWriteRecord`: `observedAt` + `ingestedAt` (`sampled_at`); V56 migration
+- [x] JDBC/CH write+query: chart/filter по `COALESCE(observed_at, sampled_at)`; API `ingestedAt` в sample
+- [x] `VariableHistoryService.recordObservedSample(...)` для явного device timestamp
+- [x] Driver poll SPI: `DriverObject.updateVariable(..., observedAt)`; virtual + MQTT pilot
+
+**Acceptance:** historian query по `observedAt`; lag = `ingestedAt - observedAt` — **Done** (poll SPI — follow-up).
+
+---
+
+### BL-70 — Calendar-boundary queries & reports
+
+**Задачи:**
+
+- [x] History API: `calendarRange=today|yesterday` + optional `timeZone` → UTC `from`/`to`
+- [x] Widget / inspector `historyRange`: «today» / «yesterday» в **user TZ**
+- [x] Report Builder: `calendarRange` + `reportTimeZone`/`timeZone` → `from`/`to`/`fromTs`/`toTs` в `ReportService.run`
+
+**Acceptance:** график «за сегодня» у оператора в MSK совпадает с полуночью MSK — **Done** (reports — follow-up).
+
+---
+
+### BL-71 — Event fire `occurredAt` override
+
+**Задачи:**
+
+- [ ] `POST /events/fire` body: optional `occurredAt` (ISO-8601)
+- [ ] `ObjectEvent` factory с explicit timestamp; skew guard
+- [ ] Тесты + public API docs
+
+**Acceptance:** edge gateway шлёт событие с device time; journal хранит переданный `occurredAt`.
+
+---
+
 ## Sprint planning (рекомендация)
 
 ```text
@@ -550,9 +641,13 @@ Backlog P3 (квартал)
 
 Backlog P3 — semantic (по запросу, после ADR)
   BL-56…62 — Haystack/Brick ([§ BL-56…62](CODE_AUDIT_BACKLOG.md#bl-5662--haystack--brick-schema-semantic-layer))
+
+Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones.md), [ROADMAP Phase 21](ROADMAP.md#phase-21--time--timezones))
+  BL-66…68 — user + device TZ (после ADR)
+  BL-69…71 — historian observedAt, calendar queries, event occurredAt
 ```
 
-Параллельно: [ROADMAP Phase 18](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers) (18.1 = BL-50, 18.2 = BL-26 по запросу).
+Параллельно: [ROADMAP Phase 18](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers) (18.1 = BL-50, 18.2 = BL-26 по запросу); [Phase 21](ROADMAP.md#phase-21--time--timezones) (BL-66…71).
 
 ---
 
@@ -560,6 +655,7 @@ Backlog P3 — semantic (по запросу, после ADR)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | Wave H: time & timezones → BL-66…71, [ADR-0020](decisions/0020-time-and-timezones.md), [ROADMAP Phase 21](ROADMAP.md#phase-21--time--timezones) |
 | 2026-06-28 | BL-44…47 Done: notifications (webhook/email), federation catalog preview + dashboard write proxy, platform backup export/import |
 | 2026-06-28 | BL-23, BL-27 Done; BL-30 Partial; BL-43, BL-48 Done (YARG/MCP health cards) |
 | 2026-06-28 | BL-40 Done: ClickHouse variable history write/query, `VariableHistoryQueryStore`, verify script |

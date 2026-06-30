@@ -12,6 +12,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -181,5 +182,37 @@ class VariableHistoryApiTest {
                         .param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.samples").isEmpty());
+    }
+
+    @Test
+    void observedAtUsedAsChartTimestamp() {
+        Instant observed = Instant.now().minusSeconds(7200).truncatedTo(ChronoUnit.MILLIS);
+        double reading = 17.3;
+        variableHistoryService.recordObservedSample(DEVICE, "temperature", "value", reading, observed);
+
+        var response = variableHistoryService.query(DEVICE, "temperature", "value", null, null, 50);
+        assertThat(response.samples()).isNotEmpty();
+        var sample = response.samples().stream()
+                .filter(item -> reading == item.value())
+                .findFirst()
+                .orElseThrow();
+        assertThat(sample.ts()).isEqualTo(observed);
+        assertThat(sample.ingestedAt()).isAfter(observed);
+    }
+
+    @Test
+    void calendarRangeTodayReturnsSamples() throws Exception {
+        double reading = 55.0 + (System.nanoTime() % 10) / 10.0;
+        variableHistoryService.recordObservedSample(DEVICE, "temperature", "value", reading, Instant.now());
+
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/history")
+                        .param("path", DEVICE)
+                        .param("name", "temperature")
+                        .param("field", "value")
+                        .param("calendarRange", "today")
+                        .param("timeZone", "UTC")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.samples[0].value").exists());
     }
 }

@@ -2,15 +2,12 @@ package com.ispf.driver.virtual;
 
 import com.ispf.driver.DeviceDriver;
 
-import java.time.Instant;
-import java.util.Map;
-
 /**
- * Synthetic telemetry for Transneft Omsk RDP tank farm demo (virtual driver profiles).
+ * Synthetic telemetry for the anonymized tank-farm SCADA demo (virtual driver profiles).
  */
-final class VirtualTransneftPoll {
+final class VirtualTankFarmPoll {
 
-    private VirtualTransneftPoll() {
+    private VirtualTankFarmPoll() {
     }
 
     static final class TankState {
@@ -20,7 +17,7 @@ final class VirtualTransneftPoll {
         final long startedAt = System.currentTimeMillis();
     }
 
-    static final class RdpHubState {
+    static final class ManifoldHubState {
         final long startedAt = System.currentTimeMillis();
     }
 
@@ -52,7 +49,7 @@ final class VirtualTransneftPoll {
         VirtualTecPoll.updateStatus(driver);
     }
 
-    static void pollRdpHub(DeviceDriver.DriverObject driver, RdpHubState state) {
+    static void pollManifoldHub(DeviceDriver.DriverObject driver, ManifoldHubState state) {
         long elapsedSec = (System.currentTimeMillis() - state.startedAt) / 1000;
         double flowBase = 1180 + Math.sin(elapsedSec / 50.0) * 80;
         double pressure = 0.78 + Math.sin(elapsedSec / 70.0 + 1) * 0.06;

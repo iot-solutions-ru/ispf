@@ -256,6 +256,23 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 
+## Phase 21 — Time & timezones
+
+Контракт store-UTC / display-local: per-user TZ для UI, per-device TZ для нормализации edge-данных, опционально `observedAt` в historian и `occurredAt` в events. ADR — [0020](decisions/0020-time-and-timezones.md). Полный реестр — [CODE_AUDIT_BACKLOG.md § Wave H](CODE_AUDIT_BACKLOG.md#wave-h--time--timezones).
+
+| # | Тема | BL | P | Статус |
+|---|------|----|---|--------|
+| 21.1 | ADR time & timezones + spike | BL-66 | P2 | Done |
+| 21.2 | User timezone preference + UI formatting | BL-67 | P2 | Done |
+| 21.3 | Device timezone metadata + inheritance | BL-68 | P2 | Done |
+| 21.4 | Historian observedAt / driver SPI | BL-69 | P3 | Done |
+| 21.5 | Calendar-boundary history & reports | BL-70 | P3 | Done |
+| 21.6 | Event fire occurredAt override | BL-71 | P3 | Done |
+
+**Зависимости:** 21.1 → 21.2, 21.3; 21.3 → 21.4; 21.2 → 21.5.
+
+Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет хранение с UTC на local.
+
 ## Platform baseline
 
 | # | Тема | Статус |
@@ -267,7 +284,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 ## Связанные документы
 
 - [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF + REQ-FW (§12)
-- [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) — BL-01…65, code audit 2026-06-28
+- [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) — BL-01…71, code audit 2026-06-28 + Wave H timezones
 - [GAP_REGISTRY.md](GAP_REGISTRY.md) — sprint planning, живой срез пробелов
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [DEPLOYMENT.md](DEPLOYMENT.md) — prod topology

@@ -773,7 +773,7 @@ export function buildSampleWidget(type: WidgetType, index: number): DashboardWid
         objectPath: "",
         panEnabled: true,
         defaultZoom: 0.95,
-        mimicPath: "root.platform.mimics.transneft-omsk-rdp",
+        mimicPath: "root.platform.mimics.tank-farm-demo",
       };
     default:
       return { ...base, type: "value", title: "Значение", variableName: "temperature", decimals: 1 };

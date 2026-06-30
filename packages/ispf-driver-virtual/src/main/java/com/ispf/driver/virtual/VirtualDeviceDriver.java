@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * Simulated device driver for demos and integration tests.
- * Profiles: demo, meter, weighbridge, rack-signals, lab, unified, tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load, ogp-print-line, transneft-tank, transneft-rdp.
+ * Profiles: demo, meter, weighbridge, rack-signals, lab, unified, tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load, ogp-print-line, tank-farm-tank, tank-farm-hub.
  */
 public class VirtualDeviceDriver implements DeviceDriver {
 
@@ -113,8 +113,8 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private final VirtualTecPoll.DguState tecDguState = new VirtualTecPoll.DguState();
     private final VirtualTecPoll.LoadState tecLoadState = new VirtualTecPoll.LoadState();
     private final VirtualOgpPoll.OgpState ogpState = new VirtualOgpPoll.OgpState();
-    private final VirtualTransneftPoll.TankState transneftTankState = new VirtualTransneftPoll.TankState();
-    private final VirtualTransneftPoll.RdpHubState transneftHubState = new VirtualTransneftPoll.RdpHubState();
+    private final VirtualTankFarmPoll.TankState tankFarmTankState = new VirtualTankFarmPoll.TankState();
+    private final VirtualTankFarmPoll.ManifoldHubState tankFarmHubState = new VirtualTankFarmPoll.ManifoldHubState();
     private double ratedPowerKw = 1480.0;
     private int unitIndex = 1;
     private int tankIndex = 11;
@@ -215,9 +215,9 @@ public class VirtualDeviceDriver implements DeviceDriver {
             case "tec-dgu" -> VirtualTecPoll.pollDgu(driverObject, tecDguState);
             case "tec-load" -> VirtualTecPoll.pollLoad(driverObject, tecLoadState);
             case "ogp-print-line" -> VirtualOgpPoll.poll(driverObject, ogpState);
-            case "transneft-tank" -> VirtualTransneftPoll.pollTank(
-                    driverObject, transneftTankState, tankIndex, initialLevelMm, rateBiasMmPerHour, maxLevelMm);
-            case "transneft-rdp" -> VirtualTransneftPoll.pollRdpHub(driverObject, transneftHubState);
+            case "tank-farm-tank" -> VirtualTankFarmPoll.pollTank(
+                    driverObject, tankFarmTankState, tankIndex, initialLevelMm, rateBiasMmPerHour, maxLevelMm);
+            case "tank-farm-hub" -> VirtualTankFarmPoll.pollManifoldHub(driverObject, tankFarmHubState);
             default -> readDemoProfile();
         }
     }
@@ -231,18 +231,21 @@ public class VirtualDeviceDriver implements DeviceDriver {
     }
 
     private void readDemoProfile() {
+        Instant observed = Instant.now();
         double elapsedSec = (System.currentTimeMillis() - startedAt) / 1000.0;
         double temperature = baseTemperature + amplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
         driverObject.updateVariable(
                 "temperature",
-                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", temperature, "unit", "C"))
+                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", temperature, "unit", "C")),
+                observed
         );
         driverObject.updateVariable(
                 "status",
                 DataRecord.single(STATUS_SCHEMA, Map.of(
                         "online", true,
-                        "lastSeen", Instant.now().toString()
-                ))
+                        "lastSeen", observed.toString()
+                )),
+                observed
         );
     }
 

@@ -211,6 +211,7 @@ Signed manifest + `license` block. Deploy через тот же import с пр�
 | SQL → variable poll | sqlBinding / bindings[] | [APPLICATIONS.md](APPLICATIONS.md) |
 | Телеметрия устройства | Driver + point mappings | [DRIVERS.md](DRIVERS.md) |
 | Таблица на HMI | Dashboard widget `object-table` + `selectionKey` | [DASHBOARDS.md](DASHBOARDS.md), [WIDGETS.md](WIDGETS.md) |
+| Мнемосхема / P&ID | Объект `MIMIC` + виджет `scada-mimic` | [SCADA.md](SCADA.md) |
 | Legacy mini-DSL на виджете | **Deprecated** → Platform rules | [PLATFORM_LOGIC.md](PLATFORM_LOGIC.md) § legacy |
 
 ---
@@ -258,6 +259,8 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 | Документ | topic | Содержание |
 |----------|-------|------------|
 | [DASHBOARDS.md](DASHBOARDS.md) | dashboards | Layout, selectionKey, rules tab |
+| [SCADA.md](SCADA.md) | scada, mimic | Мнемосхемы, MIMIC, bindings, editor (align, resize, snap) |
+| [SCADA_MIMIC.md](SCADA_MIMIC.md) | scada-mimic | diagramJson v2, mimic REST API |
 | [WIDGETS.md](WIDGETS.md) | widgets | Каталог виджетов, JSON fields |
 | [SPREADSHEET_WIDGET.md](SPREADSHEET_WIDGET.md) | spreadsheet | ISPF(), sheet config |
 | [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) | operator | HMI, work queue |
@@ -329,6 +332,7 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 | `public-api` | Контракт manifest |
 | `solution` | Жизненный цикл solution developer |
 | `dashboards` | Widgets, layout, platform rules |
+| `scada` | Mimic diagrams, MIMIC objects, scada-mimic widget |
 | `platform-logic` | Context, visibility, CEL rules |
 | `bindings` | CEL, counterRate, refAt |
 | `drivers` | SNMP, Modbus, virtual, MQTT |

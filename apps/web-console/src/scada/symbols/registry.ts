@@ -108,6 +108,14 @@ import {
   WindTurbineSymbol,
 } from "./industrial";
 import { DOMAIN_CATEGORY_IDS, DOMAIN_SYMBOLS } from "./domainCatalog";
+import {
+  PACK_CATEGORY_IDS,
+  ensurePackLoaded,
+  getPackSymbol,
+  listPackSymbols,
+  listPackSymbolsByCategory,
+  loadPackManifest,
+} from "./symbolPackLoader";
 
 export interface RegisteredSymbol extends SymbolDefinition {
   render: ComponentType<SymbolRenderProps>;
@@ -1132,7 +1140,7 @@ const byId = new Map(SYMBOLS.map((s) => [s.id, s]));
 export const SYMBOL_CATALOG: SymbolDefinition[] = SYMBOLS;
 
 export function getSymbol(id: string): RegisteredSymbol | undefined {
-  return byId.get(id);
+  return byId.get(id) ?? getPackSymbol(id);
 }
 
 export function customSymbolToRegistered(def: MimicCustomSymbol): RegisteredSymbol {
@@ -1213,18 +1221,30 @@ export function getSymbolRender(
   id: string,
   customSymbols?: MimicCustomSymbol[]
 ): ComponentType<SymbolRenderProps> | undefined {
-  return resolvePlacementSymbol(id, customSymbols)?.render ?? byId.get(id)?.render;
+  return resolvePlacementSymbol(id, customSymbols)?.render ?? getSymbol(id)?.render;
 }
 
 export function listSymbolsByCategory(category: string): RegisteredSymbol[] {
-  return SYMBOLS.filter((s) => s.category === category);
+  const base = SYMBOLS.filter((s) => s.category === category);
+  if ((PACK_CATEGORY_IDS as readonly string[]).includes(category)) {
+    return [...base, ...listPackSymbolsByCategory(category)];
+  }
+  return base;
 }
 
 export function listAllSymbols(): RegisteredSymbol[] {
-  return SYMBOLS;
+  return [...SYMBOLS, ...listPackSymbols()];
 }
 
-export const SYMBOL_CATEGORIES = ["process", "electrical", "common", ...DOMAIN_CATEGORY_IDS] as const;
+export const SYMBOL_CATEGORIES = [
+  "process",
+  "electrical",
+  "common",
+  ...DOMAIN_CATEGORY_IDS,
+  ...PACK_CATEGORY_IDS,
+] as const;
+
+export { ensurePackLoaded, loadPackManifest };
 
 export function symbolSize(
   element: Pick<MimicElement, "symbolId" | "scale" | "props">,

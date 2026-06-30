@@ -30,6 +30,6 @@ public class VariableHistoryListener implements ObjectChangeAsyncHandler {
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }
-        variableHistoryService.recordVariableUpdate(event.path(), event.variableName());
+        variableHistoryService.recordVariableUpdate(event.path(), event.variableName(), event.observedAt());
     }
 }

@@ -116,6 +116,12 @@ public class PlatformUserObjectTreeService {
         setBooleanVariable(path, "enabled", user.enabled(), true);
         setBooleanVariable(path, "autoStartEnabled", user.autoStartEnabled(), true);
         setStringVariable(path, "autoStartApp", user.autoStartApp() != null ? user.autoStartApp() : "", true);
+        setStringVariable(
+                path,
+                "timeZone",
+                com.ispf.server.platform.time.PlatformTimeZones.normalizeOrDefault(user.timeZone()),
+                true
+        );
     }
 
     private void ensureSecurityRoot() {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import type { MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
+import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload } from "../../scada/customSvg";
 import {
   createMimicId,
@@ -24,12 +24,13 @@ import {
   type ResizeHandle,
 } from "../../scada/layoutOps";
 import { collectBindingPaths, resolveDocumentBindings } from "../../scada/bindingResolver";
-import { resolvePlacementSymbol } from "../../scada/symbols/registry";
+import { ensurePackLoaded, resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
 import { useDashboardContext } from "../dashboard/DashboardContext";
 import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
+import MimicLayerPanel from "./MimicLayerPanel";
 import {
   IconAlignBottom,
   IconAlignCenterH,
@@ -82,10 +83,15 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [importText, setImportText] = useState("");
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
+  const [activeLayerId, setActiveLayerId] = useState(DEFAULT_LAYER_ID);
   const documentRef = useRef(document);
   const dragOriginsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const resizeOriginRef = useRef<MimicElement | null>(null);
   documentRef.current = document;
+
+  useEffect(() => {
+    void ensurePackLoaded();
+  }, []);
 
   useEffect(() => {
     if (tool !== "connect") {
@@ -155,7 +161,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       const points = routeOrthogonal(fromPos.x, fromPos.y, hit.x, hit.y);
       const conn: MimicConnection = {
         id: createMimicId("conn"),
-        layerId: DEFAULT_LAYER_ID,
+        layerId: activeLayerId,
         from: connectFrom,
         to: { elementId: hit.element.id, port: hit.port.id },
         points,
@@ -334,6 +340,27 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     [t, updateDocument]
   );
 
+  const handleUpdateLayers = useCallback(
+    (layers: MimicLayer[]) => {
+      updateDocument((doc) => {
+        const nextIds = new Set(layers.map((l) => l.id));
+        const removed = doc.layers.filter((l) => !nextIds.has(l.id)).map((l) => l.id);
+        let elements = doc.elements;
+        let connections = doc.connections;
+        for (const layerId of removed) {
+          elements = elements.map((el) =>
+            el.layerId === layerId ? { ...el, layerId: DEFAULT_LAYER_ID } : el
+          );
+          connections = connections.map((c) =>
+            c.layerId === layerId ? { ...c, layerId: DEFAULT_LAYER_ID } : c
+          );
+        }
+        return { ...doc, layers, elements, connections };
+      });
+    },
+    [updateDocument]
+  );
+
   const handleCanvasClick = (x: number, y: number) => {
     const sx = snapCanvasCoordinate(x, document.grid);
     const sy = snapCanvasCoordinate(y, document.grid);
@@ -365,7 +392,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       const el: MimicElement = {
         id: createMimicId("el"),
         symbolId: placeSymbolId,
-        layerId: DEFAULT_LAYER_ID,
+        layerId: activeLayerId,
         x: sx,
         y: sy,
         bindings: {},
@@ -683,6 +710,12 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                 setPlaceSymbolId(id);
                 setTool("place");
               }}
+            />
+            <MimicLayerPanel
+              layers={document.layers}
+              activeLayerId={activeLayerId}
+              onActiveLayerChange={setActiveLayerId}
+              onUpdateLayers={handleUpdateLayers}
             />
           </aside>
           <main className="scada-mimic-editor-canvas-wrap">

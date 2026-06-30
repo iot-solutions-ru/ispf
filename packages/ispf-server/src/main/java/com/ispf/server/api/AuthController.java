@@ -5,6 +5,7 @@ import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.core.env.Environment;
@@ -13,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -90,7 +92,24 @@ public class AuthController {
         response.put("authenticated", true);
         response.put("principal", authentication.getName());
         response.put("roles", roles);
+        userService.findTimeZone(authentication.getName())
+                .ifPresent(timeZone -> response.put("timeZone", timeZone));
         return response;
+    }
+
+    @PutMapping("/me/timezone")
+    public Map<String, Object> updateMyTimeZone(
+            Authentication authentication,
+            @Valid @RequestBody UpdateTimeZoneRequest request
+    ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        try {
+            return userService.updateTimeZone(authentication.getName(), request.timeZone());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 
     private static String extractBearerToken(HttpServletRequest request) {
@@ -102,5 +121,8 @@ public class AuthController {
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password) {
+    }
+
+    public record UpdateTimeZoneRequest(@NotBlank String timeZone) {
     }
 }

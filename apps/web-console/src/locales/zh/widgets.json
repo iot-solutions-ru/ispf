@@ -170,6 +170,8 @@
   "history.1h": "1小时",
   "history.24h": "24小时",
   "history.6h": "6小时",
+  "history.today": "今天",
+  "history.yesterday": "昨天",
   "history.7d": "7 天（平均/1 小时）",
   "history.all": "完全保留（平均/6小时）",
   "history.label": "历史",

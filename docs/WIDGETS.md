@@ -353,11 +353,9 @@
 
 ---
 
-### mini-tec-sld — Однолинейная схема mini-TEC
+### mini-tec-sld — Однолинейная схема mini-TEC *(removed)*
 
-**Назначение:** live SCADA mimic для demo mini-TEC (optional bootstrap). Без доп. полей — данные с объекта по `objectPath` / `selectionKey`.
-
-**См.:** [REFERENCE_MINI_TEC_WALKTHROUGH.md](REFERENCE_MINI_TEC_WALKTHROUGH.md). **Предпочтительно:** виджет [`scada-mimic`](#scada-mimic--scada-мнемосхема) + объект `MIMIC` или `diagramJson`.
+**Статус:** виджет удалён. Используйте [`scada-mimic`](#scada-mimic--scada-мнемосхема) + объект `MIMIC` или inline `diagramJson`. См. [SCADA.md](SCADA.md).
 
 ---
 
@@ -375,9 +373,11 @@
 | `panEnabled` | Масштабирование колёсиком (default `true`) |
 | `showGrid` | Сетка в preview (reserved) |
 
-**Редактор:** Dashboard Builder → «Открыть редактор мнемосхемы»; Explorer → объект `MIMIC`.
+**Создание MIMIC:** Explorer → `root.platform.mimics` → «Создать мнемосхему».
 
-**См.:** [SCADA_MIMIC.md](SCADA_MIMIC.md).
+**Редактор:** Dashboard Builder → «Открыть редактор мнемосхемы»; Explorer → объект `MIMIC`. Инструменты: select/place/connect, **выравнивание и распределение**, flip/rotate, **resize handles**, smart-snap, grid toggle, multi-select (Shift), Del для удаления. Подробно — [SCADA.md § Редактор](SCADA.md#редактор-мнемосхемы).
+
+**См.:** [SCADA.md](SCADA.md), [SCADA_MIMIC.md](SCADA_MIMIC.md).
 
 ---
 

@@ -30,7 +30,7 @@ public class PlatformUserStore {
             jdbcTemplate.update("""
                     UPDATE %s
                     SET password_hash = ?, display_name = ?, roles_json = ?, object_path = ?,
-                        enabled = ?, auto_start_enabled = ?, auto_start_app = ?, updated_at = ?
+                        enabled = ?, auto_start_enabled = ?, auto_start_app = ?, time_zone = ?, updated_at = ?
                     WHERE username = ?
                     """.formatted(usersTable),
                     user.passwordHash(),
@@ -40,6 +40,7 @@ public class PlatformUserStore {
                     user.enabled(),
                     user.autoStartEnabled(),
                     user.autoStartApp(),
+                    user.timeZone(),
                     Timestamp.from(Instant.now()),
                     user.username()
             );
@@ -48,8 +49,8 @@ public class PlatformUserStore {
         jdbcTemplate.update("""
                 INSERT INTO %s (
                     username, password_hash, display_name, roles_json, object_path,
-                    enabled, auto_start_enabled, auto_start_app, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    enabled, auto_start_enabled, auto_start_app, time_zone, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.formatted(usersTable),
                 user.username(),
                 user.passwordHash(),
@@ -59,8 +60,21 @@ public class PlatformUserStore {
                 user.enabled(),
                 user.autoStartEnabled(),
                 user.autoStartApp(),
+                user.timeZone(),
                 Timestamp.from(user.createdAt()),
                 Timestamp.from(Instant.now())
+        );
+    }
+
+    public void updateTimeZone(String username, String timeZone) {
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET time_zone = ?, updated_at = ?
+                WHERE username = ?
+                """.formatted(usersTable),
+                timeZone,
+                Timestamp.from(Instant.now()),
+                username
         );
     }
 
@@ -104,7 +118,7 @@ public class PlatformUserStore {
         List<PlatformUser> rows = jdbcTemplate.query(
                 """
                         SELECT username, password_hash, display_name, roles_json, object_path,
-                               enabled, auto_start_enabled, auto_start_app, created_at, updated_at
+                               enabled, auto_start_enabled, auto_start_app, time_zone, created_at, updated_at
                         FROM %s WHERE username = ?
                         """.formatted(usersTable),
                 this::mapRow,
@@ -117,7 +131,7 @@ public class PlatformUserStore {
         return jdbcTemplate.query(
                 """
                         SELECT username, password_hash, display_name, roles_json, object_path,
-                               enabled, auto_start_enabled, auto_start_app, created_at, updated_at
+                               enabled, auto_start_enabled, auto_start_app, time_zone, created_at, updated_at
                         FROM %s ORDER BY username
                         """.formatted(usersTable),
                 this::mapRow
@@ -146,6 +160,7 @@ public class PlatformUserStore {
                 rs.getBoolean("enabled"),
                 rs.getBoolean("auto_start_enabled"),
                 rs.getString("auto_start_app"),
+                rs.getString("time_zone"),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant()
         );
@@ -160,6 +175,7 @@ public class PlatformUserStore {
             boolean enabled,
             boolean autoStartEnabled,
             String autoStartApp,
+            String timeZone,
             Instant createdAt,
             Instant updatedAt
     ) {

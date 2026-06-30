@@ -10,14 +10,15 @@ public record ObjectChangeEvent(
         Long revision,
         String changedBy,
         boolean telemetry,
-        boolean automationEligible
+        boolean automationEligible,
+        Instant observedAt
 ) {
     public static ObjectChangeEvent of(ObjectChangeType type, String path) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true, null);
     }
 
     public static ObjectChangeEvent of(ObjectChangeType type, String path, long revision, String changedBy) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true, null);
     }
 
     public static ObjectChangeEvent variableUpdated(String path, String variableName) {
@@ -34,6 +35,16 @@ public record ObjectChangeEvent(
             boolean telemetry,
             boolean automationEligible
     ) {
+        return variableUpdated(path, variableName, telemetry, automationEligible, null);
+    }
+
+    public static ObjectChangeEvent variableUpdated(
+            String path,
+            String variableName,
+            boolean telemetry,
+            boolean automationEligible,
+            Instant observedAt
+    ) {
         return new ObjectChangeEvent(
                 ObjectChangeType.VARIABLE_UPDATED,
                 path,
@@ -42,7 +53,8 @@ public record ObjectChangeEvent(
                 null,
                 null,
                 telemetry,
-                automationEligible
+                automationEligible,
+                observedAt
         );
     }
 
@@ -76,11 +88,14 @@ public record ObjectChangeEvent(
                 revision,
                 changedBy,
                 telemetry,
-                automationEligible
+                automationEligible,
+                null
         );
     }
 
     public static ObjectChangeEvent eventFired(String path, String eventName) {
-        return new ObjectChangeEvent(ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true);
+        return new ObjectChangeEvent(
+                ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null
+        );
     }
 }

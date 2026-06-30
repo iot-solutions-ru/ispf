@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "id": "ispf-pid-v1",
+  "generatedAt": "2026-06-30T08:20:11.021Z",
+  "totalSymbols": 1377,
+  "categories": [
+    {
+      "id": "pack-valves",
+      "file": "valves.json",
+      "count": 67
+    },
+    {
+      "id": "pack-pumps",
+      "file": "pumps.json",
+      "count": 98
+    },
+    {
+      "id": "pack-tanks",
+      "file": "tanks.json",
+      "count": 236
+    },
+    {
+      "id": "pack-pipes",
+      "file": "pipes.json",
+      "count": 184
+    },
+    {
+      "id": "pack-sensors",
+      "file": "sensors.json",
+      "count": 104
+    },
+    {
+      "id": "pack-electrical",
+      "file": "electrical.json",
+      "count": 118
+    },
+    {
+      "id": "pack-isa",
+      "file": "isa.json",
+      "count": 138
+    },
+    {
+      "id": "pack-misc",
+      "file": "misc.json",
+      "count": 432
+    }
+  ]
+}

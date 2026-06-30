@@ -38,6 +38,8 @@
 | **P3** | Federation polish | catalog sync preview + dashboard write proxy | BL-45,46 Done |
 | **P3** | Notifications | webhook/email alert + correlator | BL-44 Done |
 | **P3** | Semantic (Haystack/Brick) | Нет overlay тегов / export; tree-only semantics | BL-56…62, 20.22 |
+| **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
+| **P3** | Time & TZ (deep) | Historian `observedAt` — **Done** (BL-69); reports `reportTimeZone` — follow-up | BL-69 poll SPI, reports |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 | **Низкий** | CWMP write | `SetParameterValues` — read-only | BL-29 |
 
@@ -80,12 +82,14 @@
 | Spreadsheet widget | ~98% | — | BL-54 done |
 | Frontend component tests | ~40% | RTL widgets/inspector dialogs | BL-55 Partial |
 | Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |
+| Time & timezones | ~100% | — | [0020](decisions/0020-time-and-timezones.md) |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |
 
 ## История
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-30 | Wave H / Phase 21: time & timezones → BL-66…71, ADR-0020, REQ-FW-60 |
 | 2026-06-28 | BL-44…47 Done: notifications, federation catalog conflicts + dashboard write proxy, platform backup API/UI |
 | 2026-06-28 | BL-40 Done: ClickHouse variable history write/query; BL-50 e2e Variables + Dashboard builder |
 | 2026-06-28 | ROADMAP Phase 20 sync с CODE_AUDIT: BL-20…22/28/41/42 Done; Partial на 20.15–17,19–21; журналы 0.9.33 |

@@ -21,7 +21,7 @@ const repoRoot = path.resolve(import.meta.dirname, "..");
 for (const rel of [
   "packages/ispf-server/src/main/java/com/ispf/server/dashboard/DashboardLayouts.java",
   "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/MiniTecDashboardLayouts.java",
-  "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/TransneftOmskDashboardLayouts.java",
+  "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/TankFarmDashboardLayouts.java",
   "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/LabTrainingBundleLayouts.java",
 ]) {
   const filePath = path.join(repoRoot, rel);

@@ -12,6 +12,55 @@ import java.util.List;
 
 public interface VariableSampleRepository extends JpaRepository<VariableSampleEntity, Long> {
 
+    @Query("""
+            SELECT s FROM VariableSampleEntity s
+            WHERE s.objectPath = :objectPath
+              AND s.variableName = :variableName
+              AND s.fieldName = :fieldName
+              AND COALESCE(s.observedAt, s.sampledAt) >= :from
+              AND COALESCE(s.observedAt, s.sampledAt) <= :to
+            ORDER BY COALESCE(s.observedAt, s.sampledAt) ASC
+            """)
+    List<VariableSampleEntity> findByEffectiveTimestampBetweenOrderByEffectiveTimestampAsc(
+            @Param("objectPath") String objectPath,
+            @Param("variableName") String variableName,
+            @Param("fieldName") String fieldName,
+            @Param("from") Instant from,
+            @Param("to") Instant to
+    );
+
+    @Query("""
+            SELECT s FROM VariableSampleEntity s
+            WHERE s.objectPath = :objectPath
+              AND s.variableName = :variableName
+              AND s.fieldName = :fieldName
+              AND COALESCE(s.observedAt, s.sampledAt) >= :from
+              AND COALESCE(s.observedAt, s.sampledAt) <= :to
+            ORDER BY COALESCE(s.observedAt, s.sampledAt) ASC
+            """)
+    List<VariableSampleEntity> findByEffectiveTimestampBetweenOrderByEffectiveTimestampAsc(
+            @Param("objectPath") String objectPath,
+            @Param("variableName") String variableName,
+            @Param("fieldName") String fieldName,
+            @Param("from") Instant from,
+            @Param("to") Instant to,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT s FROM VariableSampleEntity s
+            WHERE s.objectPath = :objectPath
+              AND s.variableName = :variableName
+              AND s.fieldName = :fieldName
+            ORDER BY COALESCE(s.observedAt, s.sampledAt) DESC
+            """)
+    List<VariableSampleEntity> findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Pageable pageable
+    );
+
     List<VariableSampleEntity> findByObjectPathAndVariableNameAndFieldNameOrderBySampledAtDesc(
             String objectPath,
             String variableName,
@@ -57,7 +106,7 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
             SELECT *
             FROM (
                 SELECT
-                    to_timestamp(floor(extract(epoch from sampled_at) / :bucketSeconds) * :bucketSeconds)
+                    to_timestamp(floor(extract(epoch from COALESCE(observed_at, sampled_at)) / :bucketSeconds) * :bucketSeconds)
                         AS bucket_start,
                     AVG(value_double) AS avg_val,
                     MIN(value_double) AS min_val,
@@ -67,8 +116,8 @@ public interface VariableSampleRepository extends JpaRepository<VariableSampleEn
                 WHERE object_path = :objectPath
                   AND variable_name = :variableName
                   AND field_name = :fieldName
-                  AND sampled_at >= :fromTs
-                  AND sampled_at <= :toTs
+                  AND COALESCE(observed_at, sampled_at) >= :fromTs
+                  AND COALESCE(observed_at, sampled_at) <= :toTs
                   AND value_double IS NOT NULL
                 GROUP BY 1
                 ORDER BY 1 DESC

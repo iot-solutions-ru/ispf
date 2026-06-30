@@ -7,8 +7,11 @@ import {
   type VariableHistoryResponse,
 } from "../api";
 import type { TrendPoint } from "./useTrendSeries";
+import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 
-export type HistoryRange = "1h" | "6h" | "24h" | "7d" | "all";
+export type HistoryRange = "1h" | "6h" | "24h" | "7d" | "today" | "yesterday" | "all";
+
+export type CalendarHistoryRange = "today" | "yesterday";
 
 type VariableHistoryQueryData = VariableHistoryResponse | VariableHistoryAggregateResponse;
 
@@ -18,7 +21,11 @@ function isAggregateResponse(
   return "buckets" in data;
 }
 
-const RANGE_MS: Record<Exclude<HistoryRange, "all">, number> = {
+export function isCalendarHistoryRange(range: HistoryRange): range is CalendarHistoryRange {
+  return range === "today" || range === "yesterday";
+}
+
+const RANGE_MS: Record<Exclude<HistoryRange, "all" | CalendarHistoryRange>, number> = {
   "1h": 60 * 60 * 1000,
   "6h": 6 * 60 * 60 * 1000,
   "24h": 24 * 60 * 60 * 1000,
@@ -26,7 +33,7 @@ const RANGE_MS: Record<Exclude<HistoryRange, "all">, number> = {
 };
 
 export function historyRangeFrom(range: HistoryRange): string | undefined {
-  if (range === "all") {
+  if (range === "all" || isCalendarHistoryRange(range)) {
     return undefined;
   }
   return new Date(Date.now() - RANGE_MS[range]).toISOString();
@@ -34,8 +41,11 @@ export function historyRangeFrom(range: HistoryRange): string | undefined {
 
 /** Server-side bucket for long ranges (avg/min/max per interval). */
 export function historyBucketForRange(range: HistoryRange): string | null {
-  if (range === "7d") {
+  if (range === "7d" || range === "yesterday") {
     return "1h";
+  }
+  if (range === "today") {
+    return "15m";
   }
   if (range === "all") {
     return "6h";
@@ -52,6 +62,10 @@ export function historyBucketForRangeChart(range: HistoryRange): string {
       return "15m";
     case "24h":
       return "30m";
+    case "today":
+      return "15m";
+    case "yesterday":
+      return "1h";
     case "7d":
       return "1h";
     case "all":
@@ -59,11 +73,12 @@ export function historyBucketForRangeChart(range: HistoryRange): string {
   }
 }
 
-function sampleToPoint(ts: string, value: number): TrendPoint {
+function sampleToPoint(ts: string, value: number, formatDate?: (v: string) => string): TrendPoint {
   const t = Date.parse(ts);
+  const date = new Date(Number.isFinite(t) ? t : Date.now());
   return {
-    t: Number.isFinite(t) ? t : Date.now(),
-    time: new Date(Number.isFinite(t) ? t : Date.now()).toLocaleString(),
+    t: date.getTime(),
+    time: formatDate ? formatDate(ts) : date.toLocaleString(),
     value,
   };
 }
@@ -83,14 +98,29 @@ export function useVariableHistory(
   const range = options?.range ?? "24h";
   const limit = options?.limit ?? 500;
   const enabled = options?.enabled !== false && Boolean(objectPath && variableName);
-  const from = historyRangeFrom(range);
-  const to = new Date().toISOString();
+  const tz = useOptionalUserTimeZone();
+  const formatDate = tz?.formatDate;
+  const calendarRange = isCalendarHistoryRange(range) ? range : undefined;
+  const from = calendarRange ? undefined : historyRangeFrom(range);
+  const to = calendarRange || range === "all" ? undefined : new Date().toISOString();
   const bucket = historyBucketForRange(range);
   const aggregated = bucket != null;
 
   const query = useQuery<VariableHistoryQueryData>({
-    queryKey: ["variable-history", objectPath, variableName, field, range, limit, bucket],
+    queryKey: [
+      "variable-history",
+      objectPath,
+      variableName,
+      field,
+      range,
+      limit,
+      bucket,
+      tz?.timeZone,
+    ],
     queryFn: (): Promise<VariableHistoryQueryData> => {
+      const calendarOpts = calendarRange
+        ? { calendarRange, timeZone: tz?.timeZone ?? "UTC" }
+        : {};
       if (aggregated && bucket) {
         return fetchVariableHistoryAggregate(objectPath, variableName, {
           field,
@@ -98,6 +128,7 @@ export function useVariableHistory(
           from,
           to,
           limit,
+          ...calendarOpts,
         });
       }
       return fetchVariableHistory(objectPath, variableName, {
@@ -105,6 +136,7 @@ export function useVariableHistory(
         from,
         to,
         limit,
+        ...calendarOpts,
       });
     },
     enabled,
@@ -119,15 +151,15 @@ export function useVariableHistory(
     if (isAggregateResponse(query.data) && query.data.buckets.length > 0) {
       return query.data.buckets
         .filter((item) => item.avg != null && Number.isFinite(item.avg))
-        .map((item) => sampleToPoint(item.ts, item.avg as number));
+        .map((item) => sampleToPoint(item.ts, item.avg as number, formatDate));
     }
     if (!isAggregateResponse(query.data) && query.data.samples.length > 0) {
       return query.data.samples
         .filter((sample) => sample.value != null && Number.isFinite(sample.value))
-        .map((sample) => sampleToPoint(sample.ts, sample.value as number));
+        .map((sample) => sampleToPoint(sample.ts, sample.value as number, formatDate));
     }
     return [] as TrendPoint[];
-  }, [query.data]);
+  }, [query.data, formatDate]);
 
   const stats = useMemo(() => {
     if (!query.data) {

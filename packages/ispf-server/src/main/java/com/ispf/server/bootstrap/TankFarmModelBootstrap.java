@@ -19,24 +19,24 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * INSTANCE models for the Transneft Omsk RDP tank farm SCADA demo.
+ * INSTANCE models for the anonymized tank-farm SCADA demo.
  */
 @Component
-public class TransneftOmskModelBootstrap {
+public class TankFarmModelBootstrap {
 
-    public static final String TANK_MODEL = "transneft-tank-v1";
-    public static final String RDP_HUB_MODEL = "transneft-rdp-hub-v1";
+    public static final String TANK_MODEL = "tank-farm-tank-v1";
+    public static final String MANIFOLD_HUB_MODEL = "tank-farm-hub-v1";
 
     public static String tankDriverConfig(int tankIndex, double initialLevelMm, double rateBiasMmPerHour) {
         return String.format(
-                "{\"profile\":\"transneft-tank\",\"tankIndex\":\"%d\",\"initialLevelMm\":\"%.0f\",\"rateBiasMmPerHour\":\"%.0f\",\"maxLevelMm\":\"10000\"}",
+                "{\"profile\":\"tank-farm-tank\",\"tankIndex\":\"%d\",\"initialLevelMm\":\"%.0f\",\"rateBiasMmPerHour\":\"%.0f\",\"maxLevelMm\":\"10000\"}",
                 tankIndex,
                 initialLevelMm,
                 rateBiasMmPerHour
         );
     }
 
-    public static final String RDP_HUB_DRIVER_CONFIG = "{\"profile\":\"transneft-rdp\"}";
+    public static final String MANIFOLD_HUB_DRIVER_CONFIG = "{\"profile\":\"tank-farm-hub\"}";
 
     private static final DataSchema MEAS = DataSchema.builder("measurement")
             .field("value", FieldType.DOUBLE)
@@ -52,12 +52,12 @@ public class TransneftOmskModelBootstrap {
     private final ModelEngine modelEngine;
     private final ModelRegistry modelRegistry;
 
-    public TransneftOmskModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
+    public TankFarmModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
         this.modelEngine = modelEngine;
         this.modelRegistry = modelRegistry;
     }
 
-    public void ensureTransneftModels() {
+    public void ensureTankFarmModels() {
         ensure(buildTankModel());
         ensure(buildHubModel());
     }
@@ -95,8 +95,8 @@ public class TransneftOmskModelBootstrap {
         vars.add(meas("rateMmPerHour", "Level change rate", "telemetry", "mm/h", 0));
         vars.add(meas("maxLevelMm", "Max level", "config", "mm", 10000));
         vars.add(boolVar("valveOpen", "Outlet valve open", "status", false, false));
-        vars.addAll(driverVars("{\"profile\":\"transneft-tank\"}"));
-        return model(TANK_MODEL, "Transneft storage tank", ObjectType.DEVICE, vars, List.of());
+        vars.addAll(driverVars("{\"profile\":\"tank-farm-tank\"}"));
+        return model(TANK_MODEL, "Storage tank (demo)", ObjectType.DEVICE, vars, List.of());
     }
 
     private ModelDefinition buildHubModel() {
@@ -106,8 +106,8 @@ public class TransneftOmskModelBootstrap {
         vars.add(meas("lineTempC", "Line temperature", "telemetry", "°C", 12));
         vars.add(meas("deltaPressureMpa", "Differential pressure", "telemetry", "MPa", 0.04));
         vars.add(meas("totalVolumeM3", "Total stored volume", "telemetry", "m³", 81000));
-        vars.addAll(driverVars(RDP_HUB_DRIVER_CONFIG));
-        return model(RDP_HUB_MODEL, "Transneft RDP manifold hub", ObjectType.CUSTOM, vars, List.of());
+        vars.addAll(driverVars(MANIFOLD_HUB_DRIVER_CONFIG));
+        return model(MANIFOLD_HUB_MODEL, "Pipeline manifold hub (demo)", ObjectType.CUSTOM, vars, List.of());
     }
 
     private static List<ModelVariableDefinition> driverVars(String configJson) {

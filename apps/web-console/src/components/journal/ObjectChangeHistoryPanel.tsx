@@ -10,6 +10,7 @@ import {
 import { mapObjectAuditExportRow } from "../../utils/journalExport";
 import { sortByNewestFirst } from "../../utils/journalSort";
 import JournalViewShell, { type JournalViewMode } from "./JournalViewShell";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -166,6 +167,7 @@ export default function ObjectChangeHistoryPanel({
 
 function AuditRow({ entry }: { entry: ObjectConfigAuditEntry }) {
   const { t } = useTranslation(["journal", "common"]);
+  const { formatDate } = useUserTimeZone();
   const [expanded, setExpanded] = useState(false);
   const diff = useMemo(() => parseObjectAuditSummary(entry.summaryJson), [entry.summaryJson]);
   const showDiff = hasObjectAuditDiff(diff);
@@ -173,7 +175,7 @@ function AuditRow({ entry }: { entry: ObjectConfigAuditEntry }) {
   return (
     <>
       <tr className={showDiff ? "journal-audit-row-expandable" : undefined}>
-        <td className="mono small">{new Date(entry.occurredAt).toLocaleString()}</td>
+        <td className="mono small">{formatDate(entry.occurredAt)}</td>
         <td>{entry.changeType}</td>
         <td>{entry.field || t("common:empty.dash")}</td>
         <td>{entry.actor || t("common:empty.dash")}</td>

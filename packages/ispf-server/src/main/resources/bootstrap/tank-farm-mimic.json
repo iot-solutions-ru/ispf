@@ -1,0 +1,2492 @@
+{
+  "version": 2,
+  "width": 1360,
+  "height": 880,
+  "background": "#c0c0c0",
+  "grid": {
+    "size": 1,
+    "snap": false,
+    "visible": false
+  },
+  "layers": [
+    {
+      "id": "layer-default",
+      "name": "Main",
+      "visible": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "hdr-time",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 6,
+      "props": {
+        "text": "СКАДА / HMI",
+        "fontSize": 12,
+        "width": 120,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-unit",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 140,
+      "y": 6,
+      "props": {
+        "text": "МПа",
+        "width": 40,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-company",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 6,
+      "props": {
+        "text": "Демо — нефтеперекачивающий узел",
+        "fontSize": 13,
+        "width": 260,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-rdp",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 900,
+      "y": 6,
+      "props": {
+        "text": "Узел А-1",
+        "width": 80,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-rp",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 6,
+      "props": {
+        "text": "Площадка Б",
+        "width": 100,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-col1",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 34,
+      "props": {
+        "text": "№ рез-ра",
+        "width": 60,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hdr-col2",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 52,
+      "y": 34,
+      "props": {
+        "text": "Уровень нефти, мм",
+        "width": 120,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "level-row-11",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 52,
+      "props": {
+        "tankNum": "11",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-12",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 72,
+      "props": {
+        "tankNum": "12",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-13",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 92,
+      "props": {
+        "tankNum": "13",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-14",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 112,
+      "props": {
+        "tankNum": "14",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-15",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 132,
+      "props": {
+        "tankNum": "15",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-16",
+      "symbolId": "custom:tn-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 152,
+      "props": {
+        "tankNum": "16",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-17",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 172,
+      "props": {
+        "tankNum": "17",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-18",
+      "symbolId": "custom:tn-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 192,
+      "props": {
+        "tankNum": "18",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-19",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 212,
+      "props": {
+        "tankNum": "19",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-20",
+      "symbolId": "custom:tn-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 232,
+      "props": {
+        "tankNum": "20",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-20",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-21",
+      "symbolId": "custom:tn-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 252,
+      "props": {
+        "tankNum": "21",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-21",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-22",
+      "symbolId": "custom:tn-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 272,
+      "props": {
+        "tankNum": "22",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-22",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-23",
+      "symbolId": "custom:tn-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 292,
+      "props": {
+        "tankNum": "23",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-23",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "level-row-24",
+      "symbolId": "custom:tn-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 312,
+      "props": {
+        "tankNum": "24",
+        "width": 108,
+        "height": 18
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-24",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-11",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 294,
+      "props": {
+        "label": "11",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-12",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 410,
+      "props": {
+        "label": "12",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-13",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 526,
+      "props": {
+        "label": "13",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-14",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 526,
+      "props": {
+        "label": "14",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-15",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 430,
+      "y": 62,
+      "props": {
+        "label": "15",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-16",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 548,
+      "y": 62,
+      "props": {
+        "label": "16",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-17",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 62,
+      "props": {
+        "label": "17",
+        "tankStroke": "#e8c840",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-18",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 178,
+      "props": {
+        "label": "18",
+        "tankStroke": "#4080c0",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-19",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 62,
+      "props": {
+        "label": "19",
+        "tankStroke": "#4080c0",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-20",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 178,
+      "props": {
+        "label": "20",
+        "tankStroke": "#4080c0",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-20",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-20",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-20",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-21",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 294,
+      "props": {
+        "label": "21",
+        "tankStroke": "#00a000",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-21",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-21",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-21",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-22",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 410,
+      "props": {
+        "label": "22",
+        "tankStroke": "#4080c0",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-22",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-22",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-22",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-23",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 128,
+      "y": 526,
+      "props": {
+        "label": "23",
+        "tankStroke": "#00a000",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-23",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-23",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-23",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "tank-24",
+      "symbolId": "custom:tn-tank",
+      "layerId": "layer-default",
+      "x": 128,
+      "y": 642,
+      "props": {
+        "label": "24",
+        "tankStroke": "#00a000",
+        "liquidColor": "#303030",
+        "width": 76,
+        "height": 108
+      },
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-24",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-24",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-24",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "v-222",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 148,
+      "props": {
+        "valveId": "222",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-11",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-214",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 264,
+      "props": {
+        "valveId": "214",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-12",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-459",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 380,
+      "props": {
+        "valveId": "459",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-13",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-180",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 496,
+      "props": {
+        "valveId": "180",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-14",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-301",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 500,
+      "y": 148,
+      "props": {
+        "valveId": "301",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-15",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-412",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 618,
+      "y": 148,
+      "props": {
+        "valveId": "412",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-16",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-527",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 264,
+      "props": {
+        "valveId": "527",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-17",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-638",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 380,
+      "props": {
+        "valveId": "638",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-18",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-749",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 496,
+      "props": {
+        "valveId": "749",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-19",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-851",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 500,
+      "y": 380,
+      "props": {
+        "valveId": "851",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-20",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-963",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 380,
+      "y": 612,
+      "props": {
+        "valveId": "963",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-21",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "v-104",
+      "symbolId": "custom:tn-valve",
+      "layerId": "layer-default",
+      "x": 236,
+      "y": 612,
+      "props": {
+        "valveId": "104",
+        "width": 24,
+        "height": 24
+      },
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.tank-farm-demo.tank-22",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      }
+    },
+    {
+      "id": "pipe-h-top",
+      "symbolId": "custom:tn-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 116,
+      "props": {
+        "width": 500,
+        "height": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-h-mid",
+      "symbolId": "custom:tn-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 348,
+      "props": {
+        "width": 420,
+        "height": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-h-bot",
+      "symbolId": "custom:tn-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 580,
+      "props": {
+        "width": 500,
+        "height": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-l-116",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 116,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-l-232",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 232,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-l-348",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 348,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-l-464",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 464,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-l-580",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 248,
+      "y": 580,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-r-116",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 806,
+      "y": 116,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-r-232",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 806,
+      "y": 232,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-r-348",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 806,
+      "y": 348,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-r-464",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 806,
+      "y": 464,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-r-580",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 806,
+      "y": 580,
+      "props": {
+        "width": 8,
+        "height": 116
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-v-23-24",
+      "symbolId": "custom:tn-pipe-v",
+      "layerId": "layer-default",
+      "x": 166,
+      "y": 580,
+      "props": {
+        "width": 8,
+        "height": 80
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-h-23",
+      "symbolId": "custom:tn-pipe",
+      "layerId": "layer-default",
+      "x": 166,
+      "y": 580,
+      "props": {
+        "width": 90,
+        "height": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "station-НПС-1",
+      "symbolId": "custom:tn-station",
+      "layerId": "layer-default",
+      "x": 340,
+      "y": 200,
+      "props": {
+        "text": "НПС-1",
+        "width": 120,
+        "height": 22
+      },
+      "bindings": {}
+    },
+    {
+      "id": "station-КНС-2",
+      "symbolId": "custom:tn-station",
+      "layerId": "layer-default",
+      "x": 520,
+      "y": 260,
+      "props": {
+        "text": "КНС-2",
+        "width": 120,
+        "height": 22
+      },
+      "bindings": {}
+    },
+    {
+      "id": "station-НПС-3",
+      "symbolId": "custom:tn-station",
+      "layerId": "layer-default",
+      "x": 620,
+      "y": 340,
+      "props": {
+        "text": "НПС-3",
+        "width": 120,
+        "height": 22
+      },
+      "bindings": {}
+    },
+    {
+      "id": "station-Узел-4",
+      "symbolId": "custom:tn-station",
+      "layerId": "layer-default",
+      "x": 860,
+      "y": 200,
+      "props": {
+        "text": "Узел-4",
+        "width": 120,
+        "height": 22
+      },
+      "bindings": {}
+    },
+    {
+      "id": "lamp-1",
+      "symbolId": "custom:tn-lamp",
+      "layerId": "layer-default",
+      "x": 490,
+      "y": 108,
+      "props": {
+        "width": 16,
+        "height": 16
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "lamp-2",
+      "symbolId": "custom:tn-lamp",
+      "layerId": "layer-default",
+      "x": 660,
+      "y": 168,
+      "props": {
+        "width": 16,
+        "height": 16
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "lamp-3",
+      "symbolId": "custom:tn-lamp",
+      "layerId": "layer-default",
+      "x": 740,
+      "y": 332,
+      "props": {
+        "width": 16,
+        "height": 16
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "lamp-4",
+      "symbolId": "custom:tn-lamp",
+      "layerId": "layer-default",
+      "x": 580,
+      "y": 448,
+      "props": {
+        "width": 16,
+        "height": 16
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "lamp-5",
+      "symbolId": "custom:tn-lamp",
+      "layerId": "layer-default",
+      "x": 840,
+      "y": 108,
+      "props": {
+        "width": 16,
+        "height": 16
+      },
+      "bindings": {
+        "active": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "summary-table",
+      "symbolId": "custom:tn-summary",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 380,
+      "props": {
+        "width": 280,
+        "height": 120
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hub-p-label",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 520,
+      "props": {
+        "text": "P линии:",
+        "width": 60,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hub-p-val",
+      "symbolId": "value-badge",
+      "layerId": "layer-default",
+      "x": 1100,
+      "y": 516,
+      "props": {
+        "width": 80,
+        "height": 20,
+        "unit": " МПа",
+        "decimals": 2
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "hub-q-label",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 544,
+      "props": {
+        "text": "Q:",
+        "width": 30,
+        "height": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "hub-q-val",
+      "symbolId": "value-badge",
+      "layerId": "layer-default",
+      "x": 1070,
+      "y": 540,
+      "props": {
+        "width": 90,
+        "height": 20,
+        "unit": " м³/ч",
+        "decimals": 0
+      },
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "lineFlowM3h",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "pipe-strip-bg",
+      "symbolId": "custom:tn-panel",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 700,
+      "props": {
+        "width": 1310,
+        "height": 48
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-strip-track",
+      "symbolId": "pipeline-track",
+      "layerId": "layer-default",
+      "x": 60,
+      "y": 714,
+      "props": {
+        "segments": 48,
+        "width": 1240,
+        "height": 20
+      },
+      "bindings": {
+        "seg0": {
+          "objectPath": "root.platform.devices.tank-farm-demo.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      }
+    },
+    {
+      "id": "pipe-station-0",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 30,
+      "y": 738,
+      "props": {
+        "text": "СТ-1",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-station-1",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 278,
+      "y": 738,
+      "props": {
+        "text": "СТ-2",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-pump-1",
+      "symbolId": "custom:tn-pump",
+      "layerId": "layer-default",
+      "x": 298,
+      "y": 702,
+      "props": {
+        "width": 20,
+        "height": 20
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-station-2",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 526,
+      "y": 738,
+      "props": {
+        "text": "СТ-3",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-pump-2",
+      "symbolId": "custom:tn-pump",
+      "layerId": "layer-default",
+      "x": 546,
+      "y": 702,
+      "props": {
+        "width": 20,
+        "height": 20
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-station-3",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 774,
+      "y": 738,
+      "props": {
+        "text": "СТ-4",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-pump-3",
+      "symbolId": "custom:tn-pump",
+      "layerId": "layer-default",
+      "x": 794,
+      "y": 702,
+      "props": {
+        "width": 20,
+        "height": 20
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-station-4",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1022,
+      "y": 738,
+      "props": {
+        "text": "СТ-5",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-pump-4",
+      "symbolId": "custom:tn-pump",
+      "layerId": "layer-default",
+      "x": 1042,
+      "y": 702,
+      "props": {
+        "width": 20,
+        "height": 20
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-station-5",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1270,
+      "y": 738,
+      "props": {
+        "text": "СТ-6",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-pump-5",
+      "symbolId": "custom:tn-pump",
+      "layerId": "layer-default",
+      "x": 1290,
+      "y": 702,
+      "props": {
+        "width": 20,
+        "height": 20
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-nav-l",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 4,
+      "y": 718,
+      "props": {
+        "text": "◀",
+        "width": 16,
+        "height": 16,
+        "fontSize": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "pipe-nav-r",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1336,
+      "y": 718,
+      "props": {
+        "text": "▶",
+        "width": 16,
+        "height": 16,
+        "fontSize": 14
+      },
+      "bindings": {}
+    },
+    {
+      "id": "sikn-0",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 200,
+      "y": 686,
+      "props": {
+        "text": "УЗР-01",
+        "width": 70,
+        "height": 12,
+        "fontSize": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "sikn-1",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 686,
+      "props": {
+        "text": "УЗР-02",
+        "width": 70,
+        "height": 12,
+        "fontSize": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "sikn-2",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 760,
+      "y": 686,
+      "props": {
+        "text": "УЗР-03",
+        "width": 70,
+        "height": 12,
+        "fontSize": 8
+      },
+      "bindings": {}
+    },
+    {
+      "id": "sikn-3",
+      "symbolId": "custom:tn-label",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 686,
+      "props": {
+        "text": "УЗР-04",
+        "width": 70,
+        "height": 12,
+        "fontSize": 8
+      },
+      "bindings": {}
+    }
+  ],
+  "connections": [
+    {
+      "id": "drop-11",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-11",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 402
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-12",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-12",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 518
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-13",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-13",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 634
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-14",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-14",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 634
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-15",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-15",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 468,
+          "y": 170
+        },
+        {
+          "x": 468,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-16",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-16",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 586,
+          "y": 170
+        },
+        {
+          "x": 586,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-17",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-17",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 170
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-18",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-18",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 286
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-19",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-19",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 170
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-20",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-20",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 286
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-21",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-21",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 402
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-22",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-22",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 518
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-23",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-23",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 166,
+          "y": 634
+        },
+        {
+          "x": 166,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    }
+  ],
+  "customSymbols": [
+    {
+      "id": "tn-label",
+      "name": "TN label",
+      "width": 200,
+      "height": 16,
+      "viewBox": "0 0 200 16",
+      "svg": "<text id=\"ispf-text\" x=\"0\" y=\"12\" fill=\"#000000\" font-family=\"Tahoma,Arial,sans-serif\" font-size=\"12\">Label</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "tn-tank",
+      "name": "TN tank",
+      "width": 76,
+      "height": 108,
+      "viewBox": "0 0 76 108",
+      "svg": "<rect x=\"18\" y=\"22\" width=\"40\" height=\"72\" fill=\"#a8a8a8\" stroke=\"#404040\" stroke-width=\"1\"/><ellipse cx=\"38\" cy=\"22\" rx=\"22\" ry=\"8\" fill=\"#e8c840\" stroke=\"#404040\" stroke-width=\"1\"/><rect id=\"ispf-liquid\" data-ispf-full-y=\"30\" data-ispf-full-height=\"58\" x=\"20\" y=\"88\" width=\"36\" height=\"0\" fill=\"#404040\" opacity=\"0.9\"/><rect x=\"58\" y=\"30\" width=\"8\" height=\"58\" fill=\"#d8d8d8\" stroke=\"#404040\" stroke-width=\"0.5\"/><text id=\"ispf-label\" x=\"38\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"11\" font-weight=\"bold\">11</text><text x=\"38\" y=\"104\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\">H мм</text><text id=\"ispf-rate\" x=\"4\" y=\"76\" fill=\"#008000\" font-size=\"8\" font-family=\"monospace\"></text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 38,
+          "y": 14
+        },
+        {
+          "id": "s",
+          "x": 38,
+          "y": 108
+        },
+        {
+          "id": "e",
+          "x": 76,
+          "y": 58
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 58
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "fillLevel",
+          "labelKey": "bindings.fillLevel",
+          "type": "number"
+        },
+        {
+          "key": "maxLevel",
+          "labelKey": "bindings.maxLevel",
+          "type": "number",
+          "optional": true
+        },
+        {
+          "key": "rate",
+          "labelKey": "bindings.rate",
+          "type": "number",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "fillLevel",
+          "type": "fillLevel",
+          "target": "#ispf-liquid",
+          "maxBind": "maxLevel",
+          "inset": 0
+        },
+        {
+          "bind": "label",
+          "type": "text",
+          "target": "#ispf-label",
+          "format": "string"
+        },
+        {
+          "bind": "rate",
+          "type": "text",
+          "target": "#ispf-rate",
+          "format": "number",
+          "suffix": " мм/ч"
+        }
+      ],
+      "sourceSymbolId": "tank.vertical"
+    },
+    {
+      "id": "tn-valve",
+      "name": "TN valve",
+      "width": 24,
+      "height": 24,
+      "viewBox": "0 0 24 24",
+      "svg": "<line x1=\"12\" y1=\"0\" x2=\"12\" y2=\"6\" stroke=\"#fff\" stroke-width=\"2\"/><line x1=\"12\" y1=\"18\" x2=\"12\" y2=\"24\" stroke=\"#fff\" stroke-width=\"2\"/><polygon id=\"ispf-accent\" points=\"4,12 12,6 20,12 12,18\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><text id=\"ispf-valve-id\" x=\"26\" y=\"14\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">000</text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 12,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 12,
+          "y": 24
+        },
+        {
+          "id": "e",
+          "x": 24,
+          "y": 12
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 12
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "open",
+          "labelKey": "bindings.open",
+          "type": "boolean"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "open",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#4080c0"
+        },
+        {
+          "bind": "valveId",
+          "type": "text",
+          "target": "#ispf-valve-id",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "valve.butterfly"
+    },
+    {
+      "id": "tn-pipe",
+      "name": "TN pipe",
+      "width": 100,
+      "height": 8,
+      "viewBox": "0 0 100 8",
+      "svg": "<line x1=\"0\" y1=\"4\" x2=\"100\" y2=\"4\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 4
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 4
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "tn-pipe-v",
+      "name": "TN pipe vertical",
+      "width": 8,
+      "height": 100,
+      "viewBox": "0 0 8 100",
+      "svg": "<line x1=\"4\" y1=\"0\" x2=\"4\" y2=\"100\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 4,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 4,
+          "y": 100
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "tn-lamp",
+      "name": "TN status lamp",
+      "width": 16,
+      "height": 16,
+      "viewBox": "0 0 16 16",
+      "svg": "<circle id=\"ispf-accent\" cx=\"8\" cy=\"8\" r=\"7\" fill=\"#00c000\" stroke=\"#004000\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "active",
+          "labelKey": "bindings.active",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "active",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#808080"
+        }
+      ],
+      "sourceSymbolId": "sensor.indicator"
+    },
+    {
+      "id": "tn-row-yellow",
+      "name": "TN row yellow",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#ffff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Tahoma\">11</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "tn-row-blue",
+      "name": "TN row blue",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ccff\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Tahoma\">16</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "tn-row-green",
+      "name": "TN row green",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Tahoma\">21</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "tn-station",
+      "name": "TN station box",
+      "width": 120,
+      "height": 22,
+      "viewBox": "0 0 120 22",
+      "svg": "<rect width=\"120\" height=\"22\" fill=\"#d0d0d0\" stroke=\"#606060\" stroke-width=\"1\"/><text id=\"ispf-text\" x=\"60\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Tahoma\">Station</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "tn-summary",
+      "name": "TN summary table",
+      "width": 280,
+      "height": 120,
+      "viewBox": "0 0 280 120",
+      "svg": "<rect width=\"280\" height=\"120\" fill=\"#d8d8d8\" stroke=\"#404040\" stroke-width=\"1\"/><rect x=\"0\" y=\"0\" width=\"93\" height=\"18\" fill=\"#66ff66\" stroke=\"#404040\"/><text x=\"46\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\">Тип A</text><rect x=\"93\" y=\"0\" width=\"94\" height=\"18\" fill=\"#ffcc66\" stroke=\"#404040\"/><text x=\"140\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\">Тип B</text><rect x=\"187\" y=\"0\" width=\"93\" height=\"18\" fill=\"#c0c0c0\" stroke=\"#404040\"/><text x=\"233\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\">Всего</text><text x=\"4\" y=\"34\" fill=\"#000\" font-size=\"9\">Наличие (тыс.т)</text><text x=\"80\" y=\"34\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">59.0</text><text x=\"173\" y=\"34\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">33.6</text><text x=\"276\" y=\"34\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">92.6</text><text x=\"4\" y=\"52\" fill=\"#000\" font-size=\"9\">Товар (тыс.т)</text><text x=\"80\" y=\"52\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">42.2</text><text x=\"173\" y=\"52\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">11.3</text><text x=\"276\" y=\"52\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">53.5</text><text x=\"4\" y=\"70\" fill=\"#000\" font-size=\"9\">Свободная (тыс.т)</text><text x=\"80\" y=\"70\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">110.6</text><text x=\"173\" y=\"70\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">200.3</text><text x=\"276\" y=\"70\" text-anchor=\"end\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">310.8</text><rect x=\"4\" y=\"82\" width=\"272\" height=\"18\" fill=\"#b0b0b0\" stroke=\"#606060\"/><text x=\"140\" y=\"94\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\">Показать/скрыть доп. панель</text><text x=\"4\" y=\"112\" fill=\"#404040\" font-size=\"8\">Класс S (11–14) | Класс M (15–22) | Класс L (23–24)</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "tn-panel",
+      "name": "TN panel",
+      "width": 100,
+      "height": 48,
+      "viewBox": "0 0 100 48",
+      "svg": "<rect width=\"100\" height=\"48\" fill=\"#a8a8a8\" stroke=\"#606060\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "rect"
+    },
+    {
+      "id": "tn-pump",
+      "name": "TN pump",
+      "width": 20,
+      "height": 20,
+      "viewBox": "0 0 20 20",
+      "svg": "<circle cx=\"10\" cy=\"10\" r=\"9\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><line x1=\"3\" y1=\"3\" x2=\"17\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><line x1=\"17\" y1=\"3\" x2=\"3\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><circle cx=\"10\" cy=\"10\" r=\"3\" fill=\"#00c000\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "pump.centrifugal"
+    }
+  ]
+}

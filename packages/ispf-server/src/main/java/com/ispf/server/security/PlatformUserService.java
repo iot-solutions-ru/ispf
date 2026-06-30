@@ -9,6 +9,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.time.PlatformTimeZones;
 import com.ispf.server.tenant.TenantStore;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -103,6 +104,7 @@ public class PlatformUserService {
         response.put("username", user.username());
         response.put("displayName", user.displayName());
         response.put("roles", deserializeRoles(user.rolesJson()));
+        response.put("timeZone", PlatformTimeZones.normalizeOrDefault(user.timeZone()));
         response.put("autoStartEnabled", user.autoStartEnabled());
         if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
             response.put("autoStartApp", user.autoStartApp());
@@ -184,6 +186,7 @@ public class PlatformUserService {
                 true,
                 false,
                 null,
+                PlatformTimeZones.DEFAULT,
                 Instant.now(),
                 Instant.now()
         );
@@ -199,7 +202,8 @@ public class PlatformUserService {
             List<String> roles,
             Boolean enabled,
             Boolean autoStartEnabled,
-            String autoStartApp
+            String autoStartApp,
+            String timeZone
     ) {
         PlatformUserStore.PlatformUser existing = userStore.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
@@ -220,12 +224,30 @@ public class PlatformUserService {
         }
         userStore.updateProfile(username, resolvedDisplayName, serializeRoles(resolvedRoles), resolvedEnabled);
         userStore.updateAutoStart(username, resolvedAutoStartEnabled, resolvedAutoStartApp);
+        if (timeZone != null && !timeZone.isBlank()) {
+            userStore.updateTimeZone(username, PlatformTimeZones.normalize(timeZone));
+        }
         PlatformUserStore.PlatformUser updated = userStore.findByUsername(username).orElseThrow();
         objectTreeService.syncUser(updated);
         if (objectManager.tree().findByPath(existing.objectPath()).isPresent()) {
             objectManager.updateInfo(existing.objectPath(), resolvedDisplayName, "username=" + username);
         }
         return toSummary(updated);
+    }
+
+    @Transactional
+    public Map<String, Object> updateTimeZone(String username, String timeZone) {
+        String normalized = PlatformTimeZones.normalize(timeZone);
+        PlatformUserStore.PlatformUser user = userStore.findByUsername(normalizeUsername(username))
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        userStore.updateTimeZone(user.username(), normalized);
+        objectTreeService.syncUser(userStore.findByUsername(user.username()).orElseThrow());
+        return Map.of("username", user.username(), "timeZone", normalized);
+    }
+
+    public Optional<String> findTimeZone(String username) {
+        return userStore.findByUsername(normalizeUsername(username))
+                .map(user -> PlatformTimeZones.normalizeOrDefault(user.timeZone()));
     }
 
     @Transactional
@@ -302,6 +324,10 @@ public class PlatformUserService {
                 String app = normalizeAutoStartApp(fieldValue, user.autoStartEnabled());
                 userStore.updateAutoStart(user.username(), user.autoStartEnabled(), app);
             }
+            case "timeZone" -> userStore.updateTimeZone(
+                    user.username(),
+                    PlatformTimeZones.normalize(fieldValue)
+            );
             default -> {
                 return;
             }
@@ -327,6 +353,7 @@ public class PlatformUserService {
         summary.put("displayName", user.displayName());
         summary.put("roles", deserializeRoles(user.rolesJson()));
         summary.put("enabled", user.enabled());
+        summary.put("timeZone", PlatformTimeZones.normalizeOrDefault(user.timeZone()));
         summary.put("autoStartEnabled", user.autoStartEnabled());
         if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
             summary.put("autoStartApp", user.autoStartApp());

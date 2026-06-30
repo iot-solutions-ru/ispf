@@ -11,10 +11,37 @@ export function asNum(raw: unknown): number | null {
   return null;
 }
 
-export function fmtNum(raw: unknown, decimals = 0, suffix = ""): string {
+export function fmtNum(raw: unknown, decimals = 0, suffix = "", pattern?: string): string {
   const n = asNum(raw);
   if (n == null) return "—";
+  if (pattern && /^0+$/.test(pattern)) {
+    const width = pattern.length;
+    const rounded = decimals > 0 ? n.toFixed(decimals) : String(Math.round(n));
+    const padded = rounded.padStart(width, "0");
+    return `${padded}${suffix}`;
+  }
   return `${decimals > 0 ? n.toFixed(decimals) : Math.round(n)}${suffix}`;
+}
+
+/** RD: unreliable analog values display as gray asterisks. */
+export function fmtNumWithQuality(
+  raw: unknown,
+  quality: unknown,
+  decimals = 0,
+  suffix = "",
+  pattern?: string
+): string {
+  if (quality === "bad" || quality === "unreliable" || quality === false) {
+    return pattern ? "*".repeat(pattern.length) : "*****";
+  }
+  if (quality === "uncertain") {
+    return fmtNum(raw, decimals, suffix, pattern);
+  }
+  return fmtNum(raw, decimals, suffix, pattern);
+}
+
+export function isBadQuality(quality: unknown): boolean {
+  return quality === "bad" || quality === "unreliable" || quality === false;
 }
 
 export function fmtText(raw: unknown, fallback = "—"): string {

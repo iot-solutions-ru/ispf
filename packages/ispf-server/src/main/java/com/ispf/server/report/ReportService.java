@@ -17,6 +17,7 @@ import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
 import com.ispf.server.plugin.model.SystemObjectStructureService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -72,6 +73,7 @@ public class ReportService {
     private final DataSourceObjectService dataSourceObjectService;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final PlatformCalendarParameterEnricher calendarParameterEnricher;
 
     public ReportService(
             ObjectManager objectManager,
@@ -84,7 +86,8 @@ public class ReportService {
             DataSourcePathResolver dataSourcePathResolver,
             DataSourceObjectService dataSourceObjectService,
             JdbcTemplate jdbcTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            PlatformCalendarParameterEnricher calendarParameterEnricher
     ) {
         this.objectManager = objectManager;
         this.modelRegistry = modelRegistry;
@@ -97,6 +100,7 @@ public class ReportService {
         this.dataSourceObjectService = dataSourceObjectService;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.calendarParameterEnricher = calendarParameterEnricher;
     }
 
     public static String reportPath(String reportId) {
@@ -423,7 +427,7 @@ public class ReportService {
         Map<String, Object> effective = effectiveParameters(
                 report.parameters(),
                 report.defaultParameters(),
-                parameters
+                calendarParameterEnricher.enrich(parameters)
         );
         List<Object> paramValues = bindQueryParameters(report.query(), report.parameters(), effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(
@@ -457,7 +461,11 @@ public class ReportService {
         ApplicationReportStore.DeployedReport report = reportStore.find(appId, reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + reportId));
         List<String> paramNames = deserializeStringList(report.parametersJson());
-        Map<String, Object> effective = effectiveParameters(paramNames, Map.of(), parameters);
+        Map<String, Object> effective = effectiveParameters(
+                paramNames,
+                Map.of(),
+                calendarParameterEnricher.enrich(parameters)
+        );
         List<Object> paramValues = bindQueryParameters(report.querySql(), paramNames, effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(null, appId);
 

@@ -18,8 +18,8 @@ import java.util.List;
 public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore {
 
     private static final String INSERT_SQL = """
-            INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, value_double, value_text)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -51,6 +51,7 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
                 record.variableName(),
                 record.fieldName(),
                 Timestamp.from(record.sampledAt()),
+                Timestamp.from(record.observedAt()),
                 record.valueDouble(),
                 record.valueText()
         );
@@ -62,15 +63,16 @@ public class JdbcVariableHistoryWriteStore implements VariableHistoryWriteStore 
         statement.setString(2, record.variableName());
         statement.setString(3, record.fieldName());
         statement.setTimestamp(4, Timestamp.from(record.sampledAt()));
+        statement.setTimestamp(5, Timestamp.from(record.observedAt()));
         if (record.valueDouble() != null) {
-            statement.setDouble(5, record.valueDouble());
+            statement.setDouble(6, record.valueDouble());
         } else {
-            statement.setNull(5, Types.DOUBLE);
+            statement.setNull(6, Types.DOUBLE);
         }
         if (record.valueText() != null) {
-            statement.setString(6, record.valueText());
+            statement.setString(7, record.valueText());
         } else {
-            statement.setNull(6, Types.VARCHAR);
+            statement.setNull(7, Types.VARCHAR);
         }
     }
 }

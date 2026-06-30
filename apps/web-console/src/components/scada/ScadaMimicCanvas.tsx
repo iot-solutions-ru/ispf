@@ -35,6 +35,8 @@ export interface ScadaMimicCanvasProps {
   onSelectElement?: (id: string, additive?: boolean) => void;
   onSelectConnection?: (id: string | null) => void;
   onElementClick?: (element: MimicElement) => void;
+  onElementContextMenu?: (element: MimicElement, clientX: number, clientY: number) => void;
+  elementTooltips?: Record<string, string | undefined>;
   onCanvasClick?: (x: number, y: number) => void;
   onConnectAtPoint?: (x: number, y: number) => void;
   onElementConnectClick?: (element: MimicElement, x: number, y: number) => void;
@@ -124,6 +126,8 @@ export default function ScadaMimicCanvas({
   onSelectElement,
   onSelectConnection,
   onElementClick,
+  onElementContextMenu,
+  elementTooltips,
   onCanvasClick,
   onConnectAtPoint,
   onElementConnectClick,
@@ -306,6 +310,12 @@ export default function ScadaMimicCanvas({
                   onElementClick(el);
                 }
               }}
+              onContextMenu={(e) => {
+                if (editMode || !onElementContextMenu) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onElementContextMenu(el, e.clientX, e.clientY);
+              }}
               onMouseDown={(e) => {
                 if (!editMode || connectMode || e.button !== 0) return;
                 if ((e.target as Element).closest(".scada-resize-handle")) return;
@@ -379,7 +389,7 @@ export default function ScadaMimicCanvas({
                           const delta = svgPointerDelta(svg, startX, startY, ev.clientX, ev.clientY);
                           if (!delta) return;
                           if (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5) resized = true;
-                          onElementResize(el.id, handle.id, delta.dx, delta.dy, ev.shiftKey);
+                          onElementResize(el.id, handle.id, delta.dx, delta.dy, ev.shiftKey || el.lockAspectRatio === true);
                         };
                         const up = () => {
                           window.removeEventListener("mousemove", move);
@@ -393,6 +403,9 @@ export default function ScadaMimicCanvas({
                   );
                 })}
               <g transform={flipTransform}>
+                {elementTooltips?.[el.id] && (
+                  <title>{elementTooltips[el.id]}</title>
+                )}
                 <Render
                   width={width}
                   height={height}

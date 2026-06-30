@@ -115,11 +115,12 @@ Dashboard Builder (админ) и Operator HMI (read-only) используют 
 | Значения | `value`, `indicator`, `sparkline`, `chart`, `gauge` |
 | Таблицы | `object-table`, `card-grid`, `work-queue` |
 | Навигация | `dashboard-link` (переход между экранами) |
+| SCADA | `scada-mimic` (мнемосхемы P&ID / однолинейные) |
 | Прочее | `text`, `iframe`, `image`, `event-log`, `function-button` |
 
 Связь виджетов с данными — через `objectPath` (статический) или `selectionKey` (динамический выбор строки таблицы).
 
-Подробнее: [DASHBOARDS.md](DASHBOARDS.md), справочник виджетов: [WIDGETS.md](WIDGETS.md).
+Подробнее: [DASHBOARDS.md](DASHBOARDS.md), [SCADA.md](SCADA.md), справочник виджетов: [WIDGETS.md](WIDGETS.md).
 
 ### 5. Workflow (BPMN)
 
@@ -312,6 +313,7 @@ Web Console (React)  ←→  REST / WebSocket  ←→  ispf-server (Spring Boot)
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Установка и первый запуск |
 | [OBJECT_MODEL.md](OBJECT_MODEL.md) | Дерево, переменные, CEL |
 | [DASHBOARDS.md](DASHBOARDS.md) | Layout, selectionKey, builder |
+| [SCADA.md](SCADA.md) | Мнемосхемы, MIMIC objects, mimic editor (align, distribute, flip, resize, smart-snap) |
 | [WIDGETS.md](WIDGETS.md) | Справочник всех виджетов |
 | [WORKFLOWS.md](WORKFLOWS.md) | BPMN-движок |
 | [APPLICATIONS.md](APPLICATIONS.md) | REQ-PF deploy API |

@@ -1,6 +1,10 @@
 package com.ispf.server.plugin.model;
 
 import com.ispf.core.object.PlatformObject;
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.core.object.Variable;
 import com.ispf.plugin.model.ModelDefinition;
 import com.ispf.plugin.model.ModelEngine;
 import com.ispf.plugin.model.ModelRegistry;
@@ -113,10 +117,23 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureDeviceDriverStructure(String path) {
-        if (objectManager.require(path).getVariable("driverId").isPresent()) {
+        PlatformObject node = objectManager.require(path);
+        if (node.getVariable("driverId").isEmpty()) {
+            modelEngine.applyIntrinsicStructure(FixtureModelDefinitions.buildDeviceDriverModel(), path);
+            objectManager.persistNodeTree(path);
             return;
         }
-        modelEngine.applyIntrinsicStructure(FixtureModelDefinitions.buildDeviceDriverModel(), path);
+        ensureDeviceTimeZoneVariable(path);
+    }
+
+    private void ensureDeviceTimeZoneVariable(String path) {
+        if (objectManager.require(path).getVariable("timeZone").isPresent()) {
+            return;
+        }
+        DataSchema schema = DataSchema.builder("timeZone").field("value", FieldType.STRING).build();
+        DataRecord record = DataRecord.single(schema, java.util.Map.of("value", ""));
+        PlatformObject node = objectManager.require(path);
+        node.addVariable(new Variable("timeZone", schema, true, true, record));
         objectManager.persistNodeTree(path);
     }
 

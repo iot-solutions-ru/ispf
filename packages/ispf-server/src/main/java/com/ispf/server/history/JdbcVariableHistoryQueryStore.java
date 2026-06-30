@@ -44,7 +44,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
 
         List<VariableSampleEntity> rows;
         if (from != null && to != null) {
-            rows = sampleRepository.findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
+            rows = sampleRepository.findByEffectiveTimestampBetweenOrderByEffectiveTimestampAsc(
                     objectPath,
                     variableName,
                     fieldName,
@@ -55,7 +55,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
                 rows = rows.subList(rows.size() - cappedLimit, rows.size());
             }
         } else {
-            rows = new ArrayList<>(sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderBySampledAtDesc(
+            rows = new ArrayList<>(sampleRepository.findByObjectPathAndVariableNameAndFieldNameOrderByEffectiveTimestampDesc(
                     objectPath,
                     variableName,
                     fieldName,
@@ -66,9 +66,10 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
 
         return rows.stream()
                 .map(row -> new VariableHistoryService.VariableHistorySample(
-                        row.getSampledAt(),
+                        row.effectiveTimestamp(),
                         row.getValueDouble(),
-                        row.getValueText()
+                        row.getValueText(),
+                        row.getSampledAt()
                 ))
                 .toList();
     }
@@ -133,7 +134,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
             int maxBuckets
     ) {
         List<VariableSampleEntity> rows = sampleRepository
-                .findByObjectPathAndVariableNameAndFieldNameAndSampledAtBetweenOrderBySampledAtAsc(
+                .findByEffectiveTimestampBetweenOrderByEffectiveTimestampAsc(
                         objectPath,
                         variableName,
                         fieldName,
@@ -148,7 +149,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
             if (value == null || !Double.isFinite(value)) {
                 continue;
             }
-            Instant bucketStart = truncateToBucket(row.getSampledAt(), bucket);
+            Instant bucketStart = truncateToBucket(row.effectiveTimestamp(), bucket);
             buckets.computeIfAbsent(bucketStart, ignored -> new BucketAccumulator()).add(value);
         }
 

@@ -10,9 +10,35 @@ public record VariableHistoryWriteRecord(
         String variableName,
         String fieldName,
         Instant sampledAt,
+        Instant observedAt,
         Double valueDouble,
         String valueText
 ) {
+
+    public VariableHistoryWriteRecord {
+        if (observedAt == null) {
+            observedAt = sampledAt;
+        }
+    }
+
+    public static VariableHistoryWriteRecord ingested(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant ingestedAt,
+            Double valueDouble,
+            String valueText
+    ) {
+        return new VariableHistoryWriteRecord(
+                objectPath,
+                variableName,
+                fieldName,
+                ingestedAt,
+                ingestedAt,
+                valueDouble,
+                valueText
+        );
+    }
 
     public static VariableHistoryWriteRecord fromEntity(VariableSampleEntity entity) {
         return new VariableHistoryWriteRecord(
@@ -20,6 +46,7 @@ public record VariableHistoryWriteRecord(
                 entity.getVariableName(),
                 entity.getFieldName(),
                 entity.getSampledAt(),
+                entity.getObservedAt(),
                 entity.getValueDouble(),
                 entity.getValueText()
         );

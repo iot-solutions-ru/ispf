@@ -41,6 +41,7 @@ public class JpaVariableHistoryWriteStore implements VariableHistoryWriteStore {
         entity.setVariableName(record.variableName());
         entity.setFieldName(record.fieldName());
         entity.setSampledAt(record.sampledAt());
+        entity.setObservedAt(record.observedAt());
         entity.setValueDouble(record.valueDouble());
         entity.setValueText(record.valueText());
         return entity;

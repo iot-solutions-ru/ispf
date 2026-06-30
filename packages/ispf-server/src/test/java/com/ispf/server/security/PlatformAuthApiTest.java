@@ -102,6 +102,35 @@ class PlatformAuthApiTest {
     }
 
     @Test
+    void loginReturnsTimeZone() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "admin", "password": "admin" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeZone").value("UTC"));
+    }
+
+    @Test
+    void operatorUpdatesOwnTimeZone() throws Exception {
+        String token = adminToken();
+        mockMvc.perform(put("/api/v1/auth/me/timezone")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "timeZone": "Europe/Moscow" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeZone").value("Europe/Moscow"));
+
+        mockMvc.perform(get("/api/v1/auth/me")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.timeZone").value("Europe/Moscow"));
+    }
+
+    @Test
     void loginReturnsAutoStartPreferences() throws Exception {
         mockMvc.perform(put("/api/v1/security/users/operator")
                         .header("Authorization", "Bearer " + adminToken())

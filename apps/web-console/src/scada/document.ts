@@ -54,6 +54,7 @@ export function normalizeMimicDocument(
     height: positiveNumber(input.height, base.height),
     background: typeof input.background === "string" ? input.background : base.background,
     grid: normalizeGrid(input.grid, base.grid),
+    typography: input.typography && typeof input.typography === "object" ? input.typography : undefined,
     layers,
     elements: Array.isArray(input.elements) ? input.elements.map(normalizeElement) : [],
     connections: Array.isArray(input.connections)
@@ -110,10 +111,12 @@ function normalizeElement(el: MimicElement): MimicElement {
     y: numberOrZero(el.y),
     rotation: el.rotation,
     scale: el.scale,
+    lockAspectRatio: el.lockAspectRatio === true,
     bindings: el.bindings && typeof el.bindings === "object" ? el.bindings : {},
     formatRules: Array.isArray(el.formatRules) ? el.formatRules : undefined,
     labels: Array.isArray(el.labels) ? el.labels : undefined,
     actions: Array.isArray(el.actions) ? el.actions : undefined,
+    tooltip: el.tooltip && typeof el.tooltip === "object" ? el.tooltip : undefined,
     props: el.props && typeof el.props === "object" ? el.props : undefined,
   };
 }

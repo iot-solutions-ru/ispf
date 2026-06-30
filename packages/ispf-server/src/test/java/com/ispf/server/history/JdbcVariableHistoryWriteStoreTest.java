@@ -14,7 +14,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -34,8 +33,10 @@ class JdbcVariableHistoryWriteStoreTest {
     @Test
     void appendBatchUsesJdbcBatchUpdate() {
         List<VariableHistoryWriteRecord> records = List.of(
-                new VariableHistoryWriteRecord("root.a", "temperature", "value", Instant.parse("2026-01-01T00:00:00Z"), 1.5, null),
-                new VariableHistoryWriteRecord("root.b", "temperature", "value", Instant.parse("2026-01-01T00:00:01Z"), 2.5, null)
+                VariableHistoryWriteRecord.ingested(
+                        "root.a", "temperature", "value", Instant.parse("2026-01-01T00:00:00Z"), 1.5, null),
+                VariableHistoryWriteRecord.ingested(
+                        "root.b", "temperature", "value", Instant.parse("2026-01-01T00:00:01Z"), 2.5, null)
         );
 
         store.appendBatch(records);
@@ -43,8 +44,8 @@ class JdbcVariableHistoryWriteStoreTest {
         ArgumentCaptor<Integer> batchSizeCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(jdbcTemplate).batchUpdate(
                 eq("""
-                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, value_double, value_text)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         """),
                 eq(records),
                 batchSizeCaptor.capture(),
@@ -55,7 +56,7 @@ class JdbcVariableHistoryWriteStoreTest {
 
     @Test
     void appendOneUsesSingleUpdate() {
-        VariableHistoryWriteRecord record = new VariableHistoryWriteRecord(
+        VariableHistoryWriteRecord record = VariableHistoryWriteRecord.ingested(
                 "root.a", "pressure", "value", Instant.parse("2026-01-01T00:00:00Z"), 3.0, "bar"
         );
 
@@ -63,12 +64,13 @@ class JdbcVariableHistoryWriteStoreTest {
 
         verify(jdbcTemplate).update(
                 eq("""
-                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, value_double, value_text)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO variable_samples (object_path, variable_name, field_name, sampled_at, observed_at, value_double, value_text)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         """),
                 eq("root.a"),
                 eq("pressure"),
                 eq("value"),
+                any(),
                 any(),
                 eq(3.0),
                 eq("bar")

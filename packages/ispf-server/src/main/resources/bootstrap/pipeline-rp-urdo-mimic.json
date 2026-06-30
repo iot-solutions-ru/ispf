@@ -1,0 +1,3236 @@
+{
+  "version": 2,
+  "width": 1360,
+  "height": 880,
+  "background": "#c0c0c0",
+  "typography": {
+    "fontFamily": "Arial, sans-serif",
+    "fontSize": 12
+  },
+  "grid": {
+    "size": 1,
+    "snap": false,
+    "visible": false
+  },
+  "layers": [
+    {
+      "id": "layer-default",
+      "name": "Основной",
+      "visible": true
+    },
+    {
+      "id": "layer-urdo",
+      "name": "УРДО",
+      "visible": true
+    }
+  ],
+  "elements": [
+    {
+      "id": "hdr-title",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 6,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "СДКУ — Экранная форма РП",
+        "fontSize": 13,
+        "width": 220,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-org",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 480,
+      "y": 6,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "Магистральный нефтепровод",
+        "fontSize": 13,
+        "width": 240,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-rdp",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 900,
+      "y": 6,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "РДП «Центральный»",
+        "width": 120,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-rp",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 6,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "РП-1",
+        "width": 80,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-col1",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 34,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "№ рез-ра",
+        "width": 60,
+        "height": 14
+      }
+    },
+    {
+      "id": "hdr-col2",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 52,
+      "y": 34,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "Уровень нефти, мм",
+        "width": 120,
+        "height": 14
+      }
+    },
+    {
+      "id": "level-row-11",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 52,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-11",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "11",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-da19m",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-12",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 72,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-12",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "12",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-sk7k5",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-13",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 92,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-13",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "13",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-d8riu",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-14",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 112,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-14",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "14",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-padsk",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-15",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 132,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-15",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "15",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-xtmh9",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-16",
+      "symbolId": "custom:ps-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 152,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-16",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "16",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-gnso6",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-17",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 172,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-17",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "17",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-63rkr",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-18",
+      "symbolId": "custom:ps-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 192,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-18",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "18",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-i9jxj",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-19",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 212,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-19",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "19",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-2a131",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-20",
+      "symbolId": "custom:ps-row-blue",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 232,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-20",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "20",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-xgtl7",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-21",
+      "symbolId": "custom:ps-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 252,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-21",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "21",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-35x7i",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-22",
+      "symbolId": "custom:ps-row-yellow",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 272,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-22",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "22",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-6tcw7",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-23",
+      "symbolId": "custom:ps-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 292,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-23",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "23",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-f3v88",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "level-row-24",
+      "symbolId": "custom:ps-row-green",
+      "layerId": "layer-default",
+      "x": 8,
+      "y": 312,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-24",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "tankNum": "24",
+        "width": 108,
+        "height": 18,
+        "tableExpand": "compact"
+      },
+      "actions": [
+        {
+          "id": "exp-mr0djvon-waouh",
+          "type": "toggleExpand",
+          "trigger": "primary",
+          "expandProp": "tableExpand"
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар {tankNum}, Hнал мм"
+      }
+    },
+    {
+      "id": "tank-11",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 294,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-11",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-11",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-11",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "11",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-jzzzu",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-12",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 410,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-12",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-12",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-12",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "12",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-fiata",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-13",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 526,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-13",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-13",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-13",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "13",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-l9af4",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-14",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 526,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-14",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-14",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-14",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "14",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-jrhbv",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-15",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 430,
+      "y": 62,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-15",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-15",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-15",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "15",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-ywbxe",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-16",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 548,
+      "y": 62,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-16",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-16",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-16",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "16",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-9zxy6",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-17",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 62,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-17",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-17",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-17",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "17",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-6nq7q",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-18",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 768,
+      "y": 178,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-18",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-18",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-18",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "18",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-ne78f",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-19",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 62,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-19",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-19",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-19",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "19",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-vrap9",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-20",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 178,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-20",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-20",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-20",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "20",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-bhtv4",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-21",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 294,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-21",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-21",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-21",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "21",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-n7tpk",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-22",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 210,
+      "y": 410,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-22",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-22",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-22",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "22",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-lskux",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-23",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 128,
+      "y": 526,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-23",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-23",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-23",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "23",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-4s74b",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "tank-24",
+      "symbolId": "custom:ps-tank",
+      "layerId": "layer-default",
+      "x": 128,
+      "y": 642,
+      "bindings": {
+        "fillLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-24",
+          "variableName": "fillLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "maxLevel": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-24",
+          "variableName": "maxLevelMm",
+          "valueField": "value",
+          "transform": "number"
+        },
+        "rate": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-24",
+          "variableName": "rateMmPerHour",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "label": "24",
+        "width": 76,
+        "height": 108,
+        "unitMode": "mm"
+      },
+      "actions": [
+        {
+          "id": "unit-mr0djvon-nigbi",
+          "type": "cycleUnit",
+          "trigger": "context",
+          "label": "Переключить единицы",
+          "order": 10,
+          "unitModes": [
+            "mm",
+            "m3",
+            "t"
+          ]
+        }
+      ],
+      "tooltip": {
+        "template": "Резервуар №{label}"
+      }
+    },
+    {
+      "id": "v-222",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 148,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-11",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "222",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-214",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 264,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-12",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "214",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-459",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 380,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-13",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "459",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-180",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 318,
+      "y": 496,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-14",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "180",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-301",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 500,
+      "y": 148,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-15",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "301",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-412",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 618,
+      "y": 148,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-16",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "412",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-527",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 264,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-17",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "527",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-638",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 380,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-18",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "638",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-749",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 700,
+      "y": 496,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-19",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "749",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-851",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 500,
+      "y": 380,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-20",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "851",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-963",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 380,
+      "y": 612,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-21",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "963",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "v-104",
+      "symbolId": "custom:ps-valve",
+      "layerId": "layer-default",
+      "x": 236,
+      "y": 612,
+      "bindings": {
+        "open": {
+          "objectPath": "root.platform.devices.pipeline-scada.tank-22",
+          "variableName": "valveOpen",
+          "valueField": "value",
+          "transform": "bool"
+        }
+      },
+      "lockAspectRatio": true,
+      "props": {
+        "valveId": "104",
+        "width": 24,
+        "height": 24
+      }
+    },
+    {
+      "id": "pipe-h-top",
+      "symbolId": "custom:ps-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 116,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "width": 500,
+        "height": 8
+      }
+    },
+    {
+      "id": "pipe-h-mid",
+      "symbolId": "custom:ps-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 348,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "width": 420,
+        "height": 8
+      }
+    },
+    {
+      "id": "pipe-h-bot",
+      "symbolId": "custom:ps-pipe",
+      "layerId": "layer-default",
+      "x": 290,
+      "y": 580,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "width": 500,
+        "height": 8
+      }
+    },
+    {
+      "id": "station-НПС-1",
+      "symbolId": "custom:ps-station",
+      "layerId": "layer-default",
+      "x": 340,
+      "y": 200,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "НПС-1",
+        "width": 120,
+        "height": 22
+      }
+    },
+    {
+      "id": "station-КНС-2",
+      "symbolId": "custom:ps-station",
+      "layerId": "layer-default",
+      "x": 520,
+      "y": 260,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "КНС-2",
+        "width": 120,
+        "height": 22
+      }
+    },
+    {
+      "id": "station-НПС-3",
+      "symbolId": "custom:ps-station",
+      "layerId": "layer-default",
+      "x": 620,
+      "y": 340,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "НПС-3",
+        "width": 120,
+        "height": 22
+      }
+    },
+    {
+      "id": "station-РП-1",
+      "symbolId": "custom:ps-station",
+      "layerId": "layer-default",
+      "x": 860,
+      "y": 200,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "РП-1",
+        "width": 120,
+        "height": 22
+      }
+    },
+    {
+      "id": "summary-table",
+      "symbolId": "custom:ps-summary",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 380,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "width": 280,
+        "height": 120
+      }
+    },
+    {
+      "id": "hub-p-val",
+      "symbolId": "value-badge",
+      "layerId": "layer-default",
+      "x": 1100,
+      "y": 516,
+      "bindings": {
+        "value": {
+          "objectPath": "root.platform.devices.pipeline-scada.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "width": 80,
+        "height": 20,
+        "unit": " МПа",
+        "decimals": 2
+      }
+    },
+    {
+      "id": "toggle-urdo",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 1040,
+      "y": 560,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "Слой УРДО",
+        "width": 100,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "urdo-mr0djvon-dcy4l",
+          "type": "toggleLayer",
+          "trigger": "primary",
+          "layerId": "layer-urdo"
+        }
+      ]
+    },
+    {
+      "id": "urdo-marker",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-urdo",
+      "x": 400,
+      "y": 640,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "УРДО (слой справочной информации)",
+        "width": 260,
+        "height": 14
+      }
+    },
+    {
+      "id": "pipe-strip-bg",
+      "symbolId": "custom:ps-panel",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 700,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "width": 1310,
+        "height": 48
+      }
+    },
+    {
+      "id": "pipe-strip-track",
+      "symbolId": "pipeline-track",
+      "layerId": "layer-default",
+      "x": 60,
+      "y": 714,
+      "bindings": {
+        "seg0": {
+          "objectPath": "root.platform.devices.pipeline-scada.manifold-hub",
+          "variableName": "linePressureMpa",
+          "valueField": "value",
+          "transform": "number"
+        }
+      },
+      "lockAspectRatio": false,
+      "props": {
+        "segments": 48,
+        "width": 1240,
+        "height": 20
+      }
+    },
+    {
+      "id": "pipe-station-0",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 30,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-1",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "pipe-station-1",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 278,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-2",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "pipe-station-2",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 526,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-3",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "pipe-station-3",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 774,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-4",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "pipe-station-4",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 1022,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-5",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "pipe-station-5",
+      "symbolId": "custom:ps-label",
+      "layerId": "layer-default",
+      "x": 1270,
+      "y": 738,
+      "bindings": {},
+      "lockAspectRatio": false,
+      "props": {
+        "text": "ЛУ-6",
+        "width": 80,
+        "height": 12,
+        "fontSize": 9
+      }
+    },
+    {
+      "id": "nav-mtTerritorial",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 808,
+      "bindings": {},
+      "props": {
+        "text": "Территориальная схема МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-669kn",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Территориальная схема МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-mt-territorial",
+          "mimicPath": "root.platform.mimics.pipeline-mt-territorial"
+        }
+      ]
+    },
+    {
+      "id": "nav-mtScheme",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 180,
+      "y": 808,
+      "bindings": {},
+      "props": {
+        "text": "Схема МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-vfjkc",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Схема МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-mt-scheme",
+          "mimicPath": "root.platform.mimics.pipeline-mt-scheme"
+        }
+      ]
+    },
+    {
+      "id": "nav-rpOilPlacement",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 336,
+      "y": 808,
+      "bindings": {},
+      "props": {
+        "text": "Размещение нефти в РП",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-wmasq",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Размещение нефти в РП",
+          "dashboardPath": "root.platform.dashboards.pipeline-rp-oil-placement",
+          "mimicPath": "root.platform.mimics.pipeline-rp-oil-placement"
+        }
+      ]
+    },
+    {
+      "id": "nav-rp",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 492,
+      "y": 808,
+      "bindings": {},
+      "props": {
+        "text": "▶ Экранная форма РП",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-7gwlh",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма РП",
+          "dashboardPath": "root.platform.dashboards.pipeline-scada-hmi",
+          "mimicPath": "root.platform.mimics.pipeline-rp"
+        }
+      ]
+    },
+    {
+      "id": "nav-sikn",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 24,
+      "y": 836,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма СИКН",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-zlorp",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма СИКН",
+          "dashboardPath": "root.platform.dashboards.pipeline-sikn",
+          "mimicPath": "root.platform.mimics.pipeline-sikn"
+        }
+      ]
+    },
+    {
+      "id": "nav-nps",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 180,
+      "y": 836,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма НПС",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-z8v8k",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма НПС",
+          "dashboardPath": "root.platform.dashboards.pipeline-nps",
+          "mimicPath": "root.platform.mimics.pipeline-nps"
+        }
+      ]
+    },
+    {
+      "id": "nav-luMt",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 336,
+      "y": 836,
+      "bindings": {},
+      "props": {
+        "text": "Экранная форма ЛУ МТ",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-phg3z",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Экранная форма ЛУ МТ",
+          "dashboardPath": "root.platform.dashboards.pipeline-lu-mt",
+          "mimicPath": "root.platform.mimics.pipeline-lu-mt"
+        }
+      ]
+    },
+    {
+      "id": "nav-seaTerminal",
+      "symbolId": "custom:ps-nav-btn",
+      "layerId": "layer-default",
+      "x": 492,
+      "y": 836,
+      "bindings": {},
+      "props": {
+        "text": "Морской терминал",
+        "width": 150,
+        "height": 22
+      },
+      "actions": [
+        {
+          "id": "nav-mr0djvon-722d9",
+          "type": "navigate",
+          "trigger": "primary",
+          "label": "Морской терминал",
+          "dashboardPath": "root.platform.dashboards.pipeline-sea-terminal",
+          "mimicPath": "root.platform.mimics.pipeline-sea-terminal"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "drop-11",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-11",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 402
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-12",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-12",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 518
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-13",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-13",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 634
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-14",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-14",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 634
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-15",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-15",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 468,
+          "y": 170
+        },
+        {
+          "x": 468,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-16",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-16",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 586,
+          "y": 170
+        },
+        {
+          "x": 586,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-17",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-17",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 170
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-18",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-18",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 806,
+          "y": 286
+        },
+        {
+          "x": 806,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-19",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-19",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 170
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-20",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-20",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 286
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-21",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-21",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 402
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-22",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-22",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 248,
+          "y": 518
+        },
+        {
+          "x": 248,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    },
+    {
+      "id": "drop-23",
+      "layerId": "layer-default",
+      "from": {
+        "elementId": "tank-23",
+        "port": "s"
+      },
+      "to": {
+        "elementId": "pipe-h-top",
+        "port": "w"
+      },
+      "points": [
+        {
+          "x": 166,
+          "y": 634
+        },
+        {
+          "x": 166,
+          "y": 116
+        },
+        {
+          "x": 290,
+          "y": 116
+        }
+      ]
+    }
+  ],
+  "customSymbols": [
+    {
+      "id": "ps-label",
+      "name": "Pipeline label",
+      "width": 200,
+      "height": 16,
+      "viewBox": "0 0 200 16",
+      "svg": "<text id=\"ispf-text\" x=\"0\" y=\"12\" fill=\"#000000\" font-family=\"Arial, sans-serif\" font-size=\"12\">Label</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-nav-btn",
+      "name": "Nav button",
+      "width": 140,
+      "height": 24,
+      "viewBox": "0 0 140 24",
+      "svg": "<rect width=\"140\" height=\"24\" rx=\"2\" fill=\"#d0d0d0\" stroke=\"#606060\" stroke-width=\"1\"/><text id=\"ispf-text\" x=\"70\" y=\"15\" text-anchor=\"middle\" fill=\"#000\" font-family=\"Arial, sans-serif\" font-size=\"9\">Nav</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-panel",
+      "name": "Panel",
+      "width": 100,
+      "height": 48,
+      "viewBox": "0 0 100 48",
+      "svg": "<rect width=\"100\" height=\"48\" fill=\"#a8a8a8\" stroke=\"#606060\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "rect"
+    },
+    {
+      "id": "ps-tank",
+      "name": "Резервуар (обобщённый символ)",
+      "width": 76,
+      "height": 108,
+      "viewBox": "0 0 76 108",
+      "svg": "<rect x=\"18\" y=\"22\" width=\"40\" height=\"72\" fill=\"#a8a8a8\" stroke=\"#404040\" stroke-width=\"1\"/><ellipse cx=\"38\" cy=\"22\" rx=\"22\" ry=\"8\" fill=\"#e8c840\" stroke=\"#404040\" stroke-width=\"1\"/><rect id=\"ispf-liquid\" data-ispf-full-y=\"30\" data-ispf-full-height=\"58\" x=\"20\" y=\"88\" width=\"36\" height=\"0\" fill=\"#404040\" opacity=\"0.9\"/><text id=\"ispf-label\" x=\"38\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"11\" font-weight=\"bold\" font-family=\"Arial, sans-serif\">11</text><text x=\"38\" y=\"104\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Arial, sans-serif\">Hнал, мм</text><text id=\"ispf-rate\" x=\"4\" y=\"76\" fill=\"#008000\" font-size=\"8\" font-family=\"monospace\"></text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 38,
+          "y": 14
+        },
+        {
+          "id": "s",
+          "x": 38,
+          "y": 108
+        },
+        {
+          "id": "e",
+          "x": 76,
+          "y": 58
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 58
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "fillLevel",
+          "labelKey": "bindings.fillLevel",
+          "type": "number"
+        },
+        {
+          "key": "maxLevel",
+          "labelKey": "bindings.maxLevel",
+          "type": "number",
+          "optional": true
+        },
+        {
+          "key": "rate",
+          "labelKey": "bindings.rate",
+          "type": "number",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "fillLevel",
+          "type": "fillLevel",
+          "target": "#ispf-liquid",
+          "maxBind": "maxLevel",
+          "inset": 0
+        },
+        {
+          "bind": "label",
+          "type": "text",
+          "target": "#ispf-label",
+          "format": "string"
+        },
+        {
+          "bind": "rate",
+          "type": "text",
+          "target": "#ispf-rate",
+          "format": "number",
+          "suffix": " мм/ч",
+          "formatPattern": "0000"
+        }
+      ],
+      "sourceSymbolId": "tank.vertical"
+    },
+    {
+      "id": "ps-valve",
+      "name": "Запорная арматура",
+      "width": 24,
+      "height": 24,
+      "viewBox": "0 0 24 24",
+      "svg": "<line x1=\"12\" y1=\"0\" x2=\"12\" y2=\"6\" stroke=\"#fff\" stroke-width=\"2\"/><line x1=\"12\" y1=\"18\" x2=\"12\" y2=\"24\" stroke=\"#fff\" stroke-width=\"2\"/><polygon id=\"ispf-accent\" points=\"4,12 12,6 20,12 12,18\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><text id=\"ispf-valve-id\" x=\"26\" y=\"14\" fill=\"#000\" font-size=\"9\" font-family=\"monospace\">000</text>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 12,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 12,
+          "y": 24
+        },
+        {
+          "id": "e",
+          "x": 24,
+          "y": 12
+        },
+        {
+          "id": "w",
+          "x": 0,
+          "y": 12
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "open",
+          "labelKey": "bindings.open",
+          "type": "boolean"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "open",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#4080c0"
+        },
+        {
+          "bind": "valveId",
+          "type": "text",
+          "target": "#ispf-valve-id",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "valve.butterfly"
+    },
+    {
+      "id": "ps-pipe",
+      "name": "ТТ",
+      "width": 100,
+      "height": 8,
+      "viewBox": "0 0 100 8",
+      "svg": "<line x1=\"0\" y1=\"4\" x2=\"100\" y2=\"4\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 4
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 4
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "ps-pipe-v",
+      "name": "ТТ vertical",
+      "width": 8,
+      "height": 100,
+      "viewBox": "0 0 8 100",
+      "svg": "<line x1=\"4\" y1=\"0\" x2=\"4\" y2=\"100\" stroke=\"#ffffff\" stroke-width=\"4\"/>",
+      "ports": [
+        {
+          "id": "n",
+          "x": 4,
+          "y": 0
+        },
+        {
+          "id": "s",
+          "x": 4,
+          "y": 100
+        }
+      ],
+      "bindingSchema": [],
+      "sourceSymbolId": "pipe.segment"
+    },
+    {
+      "id": "ps-lamp",
+      "name": "Индикатор",
+      "width": 16,
+      "height": 16,
+      "viewBox": "0 0 16 16",
+      "svg": "<circle id=\"ispf-accent\" cx=\"8\" cy=\"8\" r=\"7\" fill=\"#00c000\" stroke=\"#004000\" stroke-width=\"1\"/>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "active",
+          "labelKey": "bindings.active",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "active",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#00c000",
+          "falseColor": "#808080"
+        }
+      ],
+      "sourceSymbolId": "sensor.indicator"
+    },
+    {
+      "id": "ps-row-yellow",
+      "name": "Row yellow",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#ffff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">11</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-row-blue",
+      "name": "Row blue",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ccff\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">16</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-row-green",
+      "name": "Row green",
+      "width": 108,
+      "height": 18,
+      "viewBox": "0 0 108 18",
+      "svg": "<rect width=\"108\" height=\"18\" fill=\"#66ff66\" stroke=\"#808080\" stroke-width=\"0.5\"/><text id=\"ispf-tank-num\" x=\"4\" y=\"13\" fill=\"#000\" font-size=\"10\" font-family=\"Arial, sans-serif\">21</text><text id=\"ispf-value\" x=\"104\" y=\"13\" text-anchor=\"end\" fill=\"#000\" font-size=\"10\" font-family=\"monospace\" font-weight=\"bold\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "tankNum",
+          "type": "text",
+          "target": "#ispf-tank-num",
+          "format": "string"
+        },
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "formatPattern": "00000"
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-station",
+      "name": "НПС/КНС",
+      "width": 120,
+      "height": 22,
+      "viewBox": "0 0 120 22",
+      "svg": "<rect width=\"120\" height=\"22\" fill=\"#d0d0d0\" stroke=\"#606060\" stroke-width=\"1\"/><text id=\"ispf-text\" x=\"60\" y=\"14\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">НПС</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-summary",
+      "name": "Сводные данные о состоянии РП",
+      "width": 280,
+      "height": 120,
+      "viewBox": "0 0 280 120",
+      "svg": "<rect width=\"280\" height=\"120\" fill=\"#d8d8d8\" stroke=\"#404040\" stroke-width=\"1\"/><rect x=\"0\" y=\"0\" width=\"93\" height=\"18\" fill=\"#66ff66\" stroke=\"#404040\"/><text x=\"46\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Тип A</text><rect x=\"93\" y=\"0\" width=\"94\" height=\"18\" fill=\"#ffcc66\" stroke=\"#404040\"/><text x=\"140\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Тип B</text><rect x=\"187\" y=\"0\" width=\"93\" height=\"18\" fill=\"#c0c0c0\" stroke=\"#404040\"/><text x=\"233\" y=\"13\" text-anchor=\"middle\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Всего</text><text x=\"4\" y=\"34\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Наличие (тыс.т)</text><text x=\"4\" y=\"52\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Товар (тыс.т)</text><text x=\"4\" y=\"70\" fill=\"#000\" font-size=\"9\" font-family=\"Arial, sans-serif\">Свободная (тыс.т)</text><rect x=\"4\" y=\"82\" width=\"272\" height=\"18\" fill=\"#b0b0b0\" stroke=\"#606060\"/><text x=\"140\" y=\"94\" text-anchor=\"middle\" fill=\"#000\" font-size=\"8\" font-family=\"Arial, sans-serif\">Развернуть таблицу</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-pump",
+      "name": "Насосный агрегат",
+      "width": 20,
+      "height": 20,
+      "viewBox": "0 0 20 20",
+      "svg": "<circle cx=\"10\" cy=\"10\" r=\"9\" fill=\"#c0c0c0\" stroke=\"#000\" stroke-width=\"1\"/><line x1=\"3\" y1=\"3\" x2=\"17\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><line x1=\"17\" y1=\"3\" x2=\"3\" y2=\"17\" stroke=\"#000\" stroke-width=\"1.5\"/><circle cx=\"10\" cy=\"10\" r=\"3\" fill=\"#00c000\"/>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "pump.centrifugal"
+    },
+    {
+      "id": "ps-block-nps",
+      "name": "Обобщённый НПС",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#d0d0d0\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">НПС</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-rp",
+      "name": "Обобщённый РП",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#ffff66\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">РП</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-sikn",
+      "name": "Обобщённый СИКН",
+      "width": 100,
+      "height": 28,
+      "viewBox": "0 0 100 28",
+      "svg": "<rect width=\"100\" height=\"28\" fill=\"#66ccff\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"50\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">СИКН</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 14
+        },
+        {
+          "id": "e",
+          "x": 100,
+          "y": 14
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-lu",
+      "name": "ЛУ МТ",
+      "width": 72,
+      "height": 24,
+      "viewBox": "0 0 72 24",
+      "svg": "<rect width=\"72\" height=\"24\" fill=\"#c0c0c0\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"36\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">ЛУ</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 12
+        },
+        {
+          "id": "e",
+          "x": 72,
+          "y": 12
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-psp",
+      "name": "ПСП",
+      "width": 80,
+      "height": 28,
+      "viewBox": "0 0 80 28",
+      "svg": "<rect width=\"80\" height=\"28\" fill=\"#d8d8d8\" stroke=\"#404040\"/><text id=\"ispf-text\" x=\"40\" y=\"17\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">ПСП</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-block-sea",
+      "name": "Морской терминал",
+      "width": 120,
+      "height": 32,
+      "viewBox": "0 0 120 32",
+      "svg": "<rect width=\"120\" height=\"32\" fill=\"#a8c8e8\" stroke=\"#204060\"/><text id=\"ispf-text\" x=\"60\" y=\"19\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"9\" fill=\"#000\">Морской терминал</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 16
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-km",
+      "name": "Километровая отметка",
+      "width": 48,
+      "height": 14,
+      "viewBox": "0 0 48 14",
+      "svg": "<text id=\"ispf-text\" x=\"24\" y=\"11\" text-anchor=\"middle\" font-family=\"monospace\" font-size=\"9\" fill=\"#000\">0 км</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-flow-badge",
+      "name": "Расход",
+      "width": 160,
+      "height": 36,
+      "viewBox": "0 0 160 36",
+      "svg": "<rect width=\"160\" height=\"36\" fill=\"#e8e8e8\" stroke=\"#606060\"/><text x=\"4\" y=\"12\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Qмгн, м³/ч</text><text id=\"ispf-value\" x=\"4\" y=\"28\" font-family=\"monospace\" font-size=\"11\" font-weight=\"bold\" fill=\"#000\">0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-value",
+          "format": "number",
+          "decimals": 1
+        }
+      ],
+      "sourceSymbolId": "value-badge"
+    },
+    {
+      "id": "ps-pressure",
+      "name": "Датчик давления",
+      "width": 100,
+      "height": 24,
+      "viewBox": "0 0 100 24",
+      "svg": "<circle cx=\"12\" cy=\"12\" r=\"10\" fill=\"#c0c0c0\" stroke=\"#000\"/><text id=\"ispf-text\" x=\"28\" y=\"15\" font-family=\"monospace\" font-size=\"9\" fill=\"#000\">P=0.0</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "value",
+          "labelKey": "bindings.value",
+          "type": "number"
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "value",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "number",
+          "suffix": " МПа",
+          "decimals": 2
+        }
+      ],
+      "sourceSymbolId": "sensor.pressure"
+    },
+    {
+      "id": "ps-stop-btn",
+      "name": "Стоп МНС/ПНС",
+      "width": 90,
+      "height": 28,
+      "viewBox": "0 0 90 28",
+      "svg": "<rect width=\"90\" height=\"28\" rx=\"2\" fill=\"#cc0000\" stroke=\"#600000\"/><text id=\"ispf-text\" x=\"45\" y=\"17\" text-anchor=\"middle\" fill=\"#fff\" font-family=\"Arial, sans-serif\" font-size=\"9\">СТОП</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-ctrl-btn",
+      "name": "Кнопка управления",
+      "width": 110,
+      "height": 24,
+      "viewBox": "0 0 110 24",
+      "svg": "<rect width=\"110\" height=\"24\" rx=\"2\" fill=\"#d0d0d0\" stroke=\"#606060\"/><text id=\"ispf-text\" x=\"55\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Управление</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-alarm",
+      "name": "Индикатор аварии",
+      "width": 140,
+      "height": 18,
+      "viewBox": "0 0 140 18",
+      "svg": "<rect id=\"ispf-accent\" width=\"140\" height=\"18\" fill=\"#00c000\" stroke=\"#004000\"/><text id=\"ispf-text\" x=\"4\" y=\"13\" font-family=\"Arial, sans-serif\" font-size=\"8\" fill=\"#000\">Авария</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "active",
+          "labelKey": "bindings.active",
+          "type": "boolean",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "active",
+          "type": "stroke",
+          "target": "#ispf-accent",
+          "trueColor": "#ff0000",
+          "falseColor": "#00c000"
+        },
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "sensor.indicator"
+    },
+    {
+      "id": "ps-pier",
+      "name": "Причал",
+      "width": 80,
+      "height": 48,
+      "viewBox": "0 0 80 48",
+      "svg": "<rect x=\"0\" y=\"28\" width=\"80\" height=\"12\" fill=\"#808080\" stroke=\"#404040\"/><rect x=\"10\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><rect x=\"34\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><rect x=\"58\" y=\"8\" width=\"12\" height=\"20\" fill=\"#606060\"/><text id=\"ispf-text\" x=\"40\" y=\"46\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"8\">Причал</text>",
+      "ports": [
+        {
+          "id": "w",
+          "x": 0,
+          "y": 34
+        }
+      ],
+      "bindingSchema": [
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-placement-table",
+      "name": "Размещение нефти в РП",
+      "width": 900,
+      "height": 320,
+      "viewBox": "0 0 900 320",
+      "svg": "<rect width=\"900\" height=\"320\" fill=\"#d8d8d8\" stroke=\"#404040\"/><rect x=\"0\" y=\"0\" width=\"900\" height=\"22\" fill=\"#808080\"/><text x=\"450\" y=\"15\" text-anchor=\"middle\" font-family=\"Arial, sans-serif\" font-size=\"10\" fill=\"#000\">Размещение нефти в РП</text><text x=\"8\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">МТ / коридор</text><text x=\"200\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Наличие, тыс.т</text><text x=\"340\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Товар, тыс.т</text><text x=\"480\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Своб., тыс.т</text><text x=\"620\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">dQ, тыс.т/ч</text><text x=\"760\" y=\"40\" font-family=\"Arial, sans-serif\" font-size=\"9\">Приём/откачка</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-equip-table",
+      "name": "Таблица параметров НПС",
+      "width": 420,
+      "height": 140,
+      "viewBox": "0 0 420 140",
+      "svg": "<rect width=\"420\" height=\"140\" fill=\"#e0e0e0\" stroke=\"#404040\"/><text x=\"8\" y=\"16\" font-family=\"Arial, sans-serif\" font-size=\"9\">МНА/ПНА — типоразмер и параметры</text><text x=\"8\" y=\"36\" font-family=\"monospace\" font-size=\"8\">МНА-1  630-80  Pвх=0.2  P вых=6.5</text><text x=\"8\" y=\"52\" font-family=\"monospace\" font-size=\"8\">МНА-2  630-80  Pвх=0.2  P вых=6.5</text><text x=\"8\" y=\"68\" font-family=\"monospace\" font-size=\"8\">ПНА-1  500-80  Pвх=6.5  P вых=6.3</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "table.embedded"
+    },
+    {
+      "id": "ps-lu-nav-strip",
+      "name": "Панель навигации ЛУ",
+      "width": 1200,
+      "height": 48,
+      "viewBox": "0 0 1200 48",
+      "svg": "<rect width=\"1200\" height=\"48\" fill=\"#b0b0b0\" stroke=\"#404040\"/><text x=\"8\" y=\"14\" font-family=\"Arial, sans-serif\" font-size=\"8\">Навигация по ЛУ МТ</text>",
+      "ports": [],
+      "bindingSchema": [],
+      "sourceSymbolId": "label"
+    },
+    {
+      "id": "ps-status-panel",
+      "name": "Состояние участка МТ",
+      "width": 400,
+      "height": 80,
+      "viewBox": "0 0 400 80",
+      "svg": "<rect width=\"400\" height=\"80\" fill=\"#d0d0d0\" stroke=\"#404040\"/><text id=\"ispf-title\" x=\"8\" y=\"18\" font-family=\"Arial, sans-serif\" font-size=\"9\">Участок МТ</text><text id=\"ispf-text\" x=\"8\" y=\"36\" font-family=\"Arial, sans-serif\" font-size=\"9\">Состояние: норма</text><text x=\"8\" y=\"54\" font-family=\"Arial, sans-serif\" font-size=\"8\">МТ: Магистральный нефтепровод</text>",
+      "ports": [],
+      "bindingSchema": [
+        {
+          "key": "title",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        },
+        {
+          "key": "text",
+          "labelKey": "bindings.text",
+          "type": "string",
+          "optional": true
+        }
+      ],
+      "behaviors": [
+        {
+          "bind": "title",
+          "type": "text",
+          "target": "#ispf-title",
+          "format": "string"
+        },
+        {
+          "bind": "text",
+          "type": "text",
+          "target": "#ispf-text",
+          "format": "string"
+        }
+      ],
+      "sourceSymbolId": "label"
+    }
+  ]
+}

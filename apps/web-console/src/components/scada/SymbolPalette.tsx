@@ -1,17 +1,21 @@
-import { useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { MimicCustomSymbol } from "../../types/scadaMimic";
 import {
   SYMBOL_CATEGORIES,
+  ensurePackLoaded,
   listAllSymbols,
   listDocumentCustomSymbols,
   listSymbolsByCategory,
   type RegisteredSymbol,
 } from "../../scada/symbols/registry";
+import { packSymbolLabel, packSymbolMatchesSearch } from "../../scada/symbols/symbolPackLoader";
 import { IconSearch } from "./ScadaEditorIcons";
 import SymbolPreview from "./SymbolPreview";
 
 const PALETTE_CATEGORIES = [...SYMBOL_CATEGORIES, "custom"] as const;
+const ITEM_HEIGHT = 52;
 
 interface SymbolPaletteProps {
   selectedSymbolId: string | null;
@@ -20,8 +24,19 @@ interface SymbolPaletteProps {
   onUploadCustomSymbol?: (file: File) => void;
 }
 
-function symbolLabel(sym: RegisteredSymbol, t: (key: string) => string): string {
+function symbolLabel(sym: RegisteredSymbol, t: (key: string) => string, locale: string): string {
+  if (sym.id.startsWith("pack.ispf-pid.")) {
+    return packSymbolLabel(sym, locale);
+  }
   return sym.displayName ?? t(sym.nameKey);
+}
+
+function symbolMatchesSearch(sym: RegisteredSymbol, q: string, t: (key: string) => string, locale: string): boolean {
+  if (sym.id.startsWith("pack.ispf-pid.")) {
+    return packSymbolMatchesSearch(sym, q);
+  }
+  const label = symbolLabel(sym, t, locale).toLowerCase();
+  return label.includes(q) || sym.id.toLowerCase().includes(q);
 }
 
 export default function SymbolPalette({
@@ -30,10 +45,23 @@ export default function SymbolPalette({
   onSelectSymbol,
   onUploadCustomSymbol,
 }: SymbolPaletteProps) {
-  const { t } = useTranslation("scada");
+  const { t, i18n } = useTranslation("scada");
+  const locale = i18n.language;
   const fileRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("process");
+  const [packReady, setPackReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    ensurePackLoaded().then(() => {
+      if (!cancelled) setPackReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const documentCustom = useMemo(() => listDocumentCustomSymbols(customSymbols), [customSymbols]);
 
@@ -41,16 +69,12 @@ export default function SymbolPalette({
     const q = search.trim().toLowerCase();
     if (category === "custom") {
       if (!q) return documentCustom;
-      return documentCustom.filter(
-        (s) => symbolLabel(s, t).toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
-      );
+      return documentCustom.filter((s) => symbolMatchesSearch(s, q, t, locale));
     }
     const base = q ? listAllSymbols() : listSymbolsByCategory(category);
     if (!q) return base;
-    return base.filter(
-      (s) => symbolLabel(s, t).toLowerCase().includes(q) || s.id.toLowerCase().includes(q)
-    );
-  }, [category, search, t, documentCustom]);
+    return base.filter((s) => symbolMatchesSearch(s, q, t, locale));
+  }, [category, search, t, locale, documentCustom, packReady]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { custom: documentCustom.length };
@@ -58,9 +82,16 @@ export default function SymbolPalette({
       counts[cat] = listSymbolsByCategory(cat).length;
     }
     return counts;
-  }, [documentCustom.length]);
+  }, [documentCustom.length, packReady]);
 
   const totalCount = listAllSymbols().length + documentCustom.length;
+
+  const virtualizer = useVirtualizer({
+    count: symbols.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 10,
+  });
 
   return (
     <div className="scada-palette">
@@ -128,29 +159,45 @@ export default function SymbolPalette({
             : t("palette.categoryCount", { count: symbols.length })}
         </div>
 
-        <div className="scada-palette-list">
+        <div ref={listRef} className="scada-palette-list">
           {symbols.length === 0 ? (
             <p className="scada-palette-empty">
               {category === "custom" ? t("palette.customEmpty") : t("palette.empty")}
             </p>
           ) : (
-            symbols.map((sym) => (
-              <button
-                key={sym.id}
-                type="button"
-                className={`scada-palette-item${selectedSymbolId === sym.id ? " active" : ""}`}
-                onClick={() => onSelectSymbol(sym.id)}
-                title={sym.id}
-              >
-                <SymbolPreview symbol={sym} />
-                <span className="scada-palette-item-text">
-                  <span className="scada-palette-item-id">{symbolLabel(sym, t)}</span>
-                  <span className="scada-palette-item-meta">
-                    {sym.defaultWidth}×{sym.defaultHeight}
-                  </span>
-                </span>
-              </button>
-            ))
+            <div
+              className="scada-palette-virtual-inner"
+              style={{ height: virtualizer.getTotalSize(), position: "relative" }}
+            >
+              {virtualizer.getVirtualItems().map((item) => {
+                const sym = symbols[item.index]!;
+                return (
+                  <button
+                    key={sym.id}
+                    type="button"
+                    className={`scada-palette-item${selectedSymbolId === sym.id ? " active" : ""}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: `${item.size}px`,
+                      transform: `translateY(${item.start}px)`,
+                    }}
+                    onClick={() => onSelectSymbol(sym.id)}
+                    title={sym.id}
+                  >
+                    <SymbolPreview symbol={sym} />
+                    <span className="scada-palette-item-text">
+                      <span className="scada-palette-item-id">{symbolLabel(sym, t, locale)}</span>
+                      <span className="scada-palette-item-meta">
+                        {sym.defaultWidth}×{sym.defaultHeight}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

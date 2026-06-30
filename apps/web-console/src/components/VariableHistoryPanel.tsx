@@ -36,6 +36,8 @@ export default function VariableHistoryPanel({
     { id: "1h", labelKey: "variables.historyPanel.range1h" },
     { id: "6h", labelKey: "variables.historyPanel.range6h" },
     { id: "24h", labelKey: "variables.historyPanel.range24h" },
+    { id: "today", labelKey: "variables.historyPanel.rangeToday" },
+    { id: "yesterday", labelKey: "variables.historyPanel.rangeYesterday" },
     { id: "7d", labelKey: "variables.historyPanel.range7d" },
     { id: "all", labelKey: "variables.historyPanel.rangeAll" },
   ];

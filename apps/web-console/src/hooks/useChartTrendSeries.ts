@@ -11,8 +11,10 @@ import {
 import {
   historyBucketForRangeChart,
   historyRangeFrom,
+  isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
+import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
 
 export type ChartSeriesMode = "line" | "range" | "candlestick";
@@ -102,6 +104,7 @@ export function useChartTrendSeries(
   const isRangeMode = mode === "range";
   const isCandlestickMode = mode === "candlestick";
   const isBucketMode = isRangeMode || isCandlestickMode;
+  const tz = useOptionalUserTimeZone();
   const trend = useTrendSeries(
     objectPath,
     variableName,
@@ -116,10 +119,16 @@ export function useChartTrendSeries(
     isBucketMode && historyRange !== "live" && isHistoryRange(historyRange)
       ? historyBucketForRangeChart(historyRange)
       : null;
-  const from = aggregateBucket && isHistoryRange(historyRange)
-    ? historyRangeFrom(historyRange)
-    : undefined;
-  const to = new Date().toISOString();
+  const calendarRange =
+    isHistoryRange(historyRange) && isCalendarHistoryRange(historyRange) ? historyRange : undefined;
+  const from =
+    aggregateBucket && isHistoryRange(historyRange) && !calendarRange
+      ? historyRangeFrom(historyRange)
+      : undefined;
+  const to =
+    calendarRange || (isHistoryRange(historyRange) && historyRange === "all")
+      ? undefined
+      : new Date().toISOString();
 
   const aggregateQuery = useQuery({
     queryKey: [
@@ -130,6 +139,7 @@ export function useChartTrendSeries(
       historyRange,
       maxPoints,
       aggregateBucket,
+      tz?.timeZone,
     ],
     queryFn: () =>
       fetchVariableHistoryAggregate(objectPath, variableName, {
@@ -137,6 +147,8 @@ export function useChartTrendSeries(
         bucket: aggregateBucket as string,
         from,
         to,
+        calendarRange,
+        timeZone: calendarRange ? tz?.timeZone ?? "UTC" : undefined,
         limit: maxPoints,
       }),
     enabled:

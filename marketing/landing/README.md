@@ -26,6 +26,7 @@ python build.py
 |------|------------|
 | `hero-dashboard.png` | Hero · SNMP SCADA |
 | `operator-hmi.png` | Мини-ТЭЦ · operator HMI |
+| `scada-mimic-editor.png` | Редактор мнемосхем · pipeline SCADA (РД-029) |
 | `explorer-object-tree.png` | Object tree |
 | `dashboard-builder.png` | HMI builder |
 | `bpmn-workflow.png` | BPMN / MES |

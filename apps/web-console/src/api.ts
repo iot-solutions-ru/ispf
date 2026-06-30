@@ -115,10 +115,18 @@ export interface AuthMe {
   authenticated: boolean;
   principal?: string;
   roles: string[];
+  timeZone?: string;
 }
 
 export function fetchAuthMe(): Promise<AuthMe> {
   return request("/api/v1/auth/me");
+}
+
+export function updateAuthTimeZone(timeZone: string): Promise<{ username: string; timeZone: string }> {
+  return request("/api/v1/auth/me/timezone", {
+    method: "PUT",
+    body: JSON.stringify({ timeZone }),
+  });
 }
 
 export function validateExpression(expression: string): Promise<{ valid: boolean; expression: string; error: string | null }> {
@@ -210,12 +218,24 @@ export interface VariableHistoryAggregateResponse {
 export function fetchVariableHistory(
   path: string,
   name: string,
-  options?: { field?: string; from?: string; to?: string; limit?: number }
+  options?: {
+    field?: string;
+    from?: string;
+    to?: string;
+    calendarRange?: string;
+    timeZone?: string;
+    limit?: number;
+  }
 ): Promise<VariableHistoryResponse> {
   const params = new URLSearchParams({ path, name });
   if (options?.field) params.set("field", options.field);
-  if (options?.from) params.set("from", options.from);
-  if (options?.to) params.set("to", options.to);
+  if (options?.calendarRange) {
+    params.set("calendarRange", options.calendarRange);
+    if (options.timeZone) params.set("timeZone", options.timeZone);
+  } else {
+    if (options?.from) params.set("from", options.from);
+    if (options?.to) params.set("to", options.to);
+  }
   if (options?.limit != null) params.set("limit", String(options.limit));
   return request(`/api/v1/objects/by-path/variables/history?${params}`);
 }
@@ -228,13 +248,20 @@ export function fetchVariableHistoryAggregate(
     field?: string;
     from?: string;
     to?: string;
+    calendarRange?: string;
+    timeZone?: string;
     limit?: number;
   }
 ): Promise<VariableHistoryAggregateResponse> {
   const params = new URLSearchParams({ path, name, bucket: options.bucket });
   if (options.field) params.set("field", options.field);
-  if (options.from) params.set("from", options.from);
-  if (options.to) params.set("to", options.to);
+  if (options.calendarRange) {
+    params.set("calendarRange", options.calendarRange);
+    if (options.timeZone) params.set("timeZone", options.timeZone);
+  } else {
+    if (options.from) params.set("from", options.from);
+    if (options.to) params.set("to", options.to);
+  }
   if (options.limit != null) params.set("limit", String(options.limit));
   return request(`/api/v1/objects/by-path/variables/history/aggregate?${params}`);
 }

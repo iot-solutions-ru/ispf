@@ -2550,6 +2550,90 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   min-height: 240px;
 }
 
+.scada-mimic-context-menu {
+  position: fixed;
+  z-index: 10000;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  min-width: 160px;
+  background: var(--surface-elevated, #2d333b);
+  border: 1px solid var(--border, #444c56);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.scada-mimic-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.scada-mimic-context-menu button:hover {
+  background: var(--hover, rgba(255, 255, 255, 0.08));
+}
+
+@keyframes ispf-mimic-blink-keyframes {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+.ispf-mimic-blink,
+[data-ispf-blink="1"] {
+  animation: ispf-mimic-blink-keyframes 1s ease-in-out infinite;
+}
+
+.scada-layer-panel {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border, #444c56);
+}
+
+.scada-layer-panel-list {
+  list-style: none;
+  margin: 0.35rem 0 0;
+  padding: 0;
+}
+
+.scada-layer-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  padding: 0.15rem 0;
+}
+
+.scada-layer-name-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.85rem;
+}
+
+.scada-panel-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+}
+
+.scada-btn-sm {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+.scada-form-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 body.scada-mimic-editor-open {
   overflow: hidden;
 }

@@ -3,13 +3,21 @@ import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMimic, invokeFunction, setVariable } from "../../../api";
 import type { ScadaMimicWidget } from "../../../types/dashboard";
-import type { MimicAction, MimicElement } from "../../../types/scadaMimic";
+import type { MimicAction, MimicElement, ScadaMimicDocument } from "../../../types/scadaMimic";
 import { parseMimicDocument } from "../../../scada/document";
 import {
   collectBindingPaths,
   resolveBindingValue,
   resolveDocumentBindings,
 } from "../../../scada/bindingResolver";
+import {
+  applyCycleUnit,
+  applyToggleExpand,
+  applyToggleLayer,
+  buildElementTooltip,
+  contextActions,
+  primaryAction,
+} from "../../../scada/mimicActions";
 import { useVariablesBatchQuery } from "../../../hooks/useVariablesQuery";
 import { useDashboardContext } from "../DashboardContext";
 import { resolveWidgetPath } from "../dashboardUtils";
@@ -50,6 +58,12 @@ function isViewChanged(
   );
 }
 
+interface ContextMenuState {
+  element: MimicElement;
+  x: number;
+  y: number;
+}
+
 export default function ScadaMimicWidgetView({
   widget,
   refreshIntervalMs,
@@ -61,6 +75,9 @@ export default function ScadaMimicWidgetView({
   const [message, setMessage] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState(() => defaultViewState(widget.defaultZoom));
+  const [runtimeDoc, setRuntimeDoc] = useState<ScadaMimicDocument | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [localElements, setLocalElements] = useState<Record<string, MimicElement>>({});
 
   const panEnabled = widget.panEnabled !== false;
   const documentKey = `${widget.mimicPath ?? ""}:${widget.diagramJson ?? ""}`;
@@ -71,6 +88,8 @@ export default function ScadaMimicWidgetView({
 
   useEffect(() => {
     setView(defaultViewState(widget.defaultZoom));
+    setRuntimeDoc(null);
+    setLocalElements({});
   }, [documentKey, widget.defaultZoom]);
 
   const mimicQuery = useQuery({
@@ -79,12 +98,21 @@ export default function ScadaMimicWidgetView({
     enabled: Boolean(widget.mimicPath?.trim()),
   });
 
-  const document = useMemo(() => {
+  const baseDocument = useMemo(() => {
     if (widget.mimicPath?.trim() && mimicQuery.data?.diagramJson) {
       return parseMimicDocument(mimicQuery.data.diagramJson);
     }
     return parseMimicDocument(widget.diagramJson);
   }, [widget.diagramJson, widget.mimicPath, mimicQuery.data?.diagramJson]);
+
+  const document = useMemo(() => {
+    const doc = runtimeDoc ?? baseDocument;
+    if (Object.keys(localElements).length === 0) return doc;
+    return {
+      ...doc,
+      elements: doc.elements.map((el) => localElements[el.id] ?? el),
+    };
+  }, [baseDocument, runtimeDoc, localElements]);
 
   const bindingPaths = useMemo(
     () => collectBindingPaths(document.elements, document.connections, session),
@@ -92,7 +120,6 @@ export default function ScadaMimicWidgetView({
   );
 
   const variablesBatch = useVariablesBatchQuery(bindingPaths, refreshIntervalMs, bindingPaths.length > 0);
-
   const variablesByPath = variablesBatch.data ?? {};
 
   const resolved = useMemo(
@@ -100,7 +127,15 @@ export default function ScadaMimicWidgetView({
     [document, session, variablesByPath]
   );
 
-  const actionMutation = useMutation({
+  const elementTooltips = useMemo(() => {
+    const out: Record<string, string | undefined> = {};
+    for (const el of document.elements) {
+      out[el.id] = buildElementTooltip(el, resolved.byElementId[el.id] ?? {});
+    }
+    return out;
+  }, [document.elements, resolved.byElementId]);
+
+  const runServerAction = useMutation({
     mutationFn: async (action: MimicAction) => {
       const objectPath = resolveWidgetPath(
         action.objectPath,
@@ -113,29 +148,32 @@ export default function ScadaMimicWidgetView({
         if (!objectPath || !action.functionName) throw new Error(t("error.objectAndFunctionRequired"));
         return invokeFunction(objectPath, action.functionName);
       }
-      if (!objectPath || !action.variableName) throw new Error(t("scadaMimic.error.bindingRequired"));
-      const variables = variablesByPath[objectPath];
-      const variable = variables?.find((v) => v.name === action.variableName);
-      if (!variable?.value) throw new Error(t("scadaMimic.error.variableNotLoaded"));
-      const field = action.valueField ?? "value";
-      if (action.type === "toggleVariable") {
-        const active = asBool(
-          resolveBindingValue(
-            {
-              variableName: action.variableName,
-              objectPath: action.objectPath,
-              selectionKey: action.selectionKey,
-              valueField: field,
-            },
-            session,
-            variablesByPath
-          )
-        );
-        const record = setFieldValue(cloneRecord(variable.value), field, !active);
+      if (action.type === "setVariable" || action.type === "toggleVariable") {
+        if (!objectPath || !action.variableName) throw new Error(t("scadaMimic.error.bindingRequired"));
+        const variables = variablesByPath[objectPath];
+        const variable = variables?.find((v) => v.name === action.variableName);
+        if (!variable?.value) throw new Error(t("scadaMimic.error.variableNotLoaded"));
+        const field = action.valueField ?? "value";
+        if (action.type === "toggleVariable") {
+          const active = asBool(
+            resolveBindingValue(
+              {
+                variableName: action.variableName,
+                objectPath: action.objectPath,
+                selectionKey: action.selectionKey,
+                valueField: field,
+              },
+              session,
+              variablesByPath
+            )
+          );
+          const record = setFieldValue(cloneRecord(variable.value), field, !active);
+          return setVariable(objectPath, action.variableName, record);
+        }
+        const record = setFieldValue(cloneRecord(variable.value), field, action.value);
         return setVariable(objectPath, action.variableName, record);
       }
-      const record = setFieldValue(cloneRecord(variable.value), field, action.value);
-      return setVariable(objectPath, action.variableName, record);
+      return null;
     },
     onSuccess: () => {
       setMessage(t("view.done"));
@@ -144,17 +182,72 @@ export default function ScadaMimicWidgetView({
     },
   });
 
-  const handleElementClick = useCallback(
-    (element: MimicElement) => {
-      const action = element.actions?.[0];
-      if (!action) return;
+  const executeAction = useCallback(
+    async (element: MimicElement, action: MimicAction) => {
       if (action.confirmMessage && !window.confirm(action.confirmMessage)) return;
-      actionMutation.mutate(action);
+
+      switch (action.type) {
+        case "navigate": {
+          if (action.dashboardPath?.trim()) {
+            session.navigateToDashboard(action.dashboardPath.trim());
+          } else if (action.url?.trim()) {
+            window.open(action.url.trim(), "_blank", "noopener,noreferrer");
+          }
+          break;
+        }
+        case "toggleLayer": {
+          if (!action.layerId) break;
+          setRuntimeDoc((prev) => applyToggleLayer(prev ?? baseDocument, action.layerId!));
+          break;
+        }
+        case "cycleUnit": {
+          setLocalElements((prev) => ({
+            ...prev,
+            [element.id]: applyCycleUnit(prev[element.id] ?? element, action),
+          }));
+          break;
+        }
+        case "toggleExpand": {
+          setLocalElements((prev) => ({
+            ...prev,
+            [element.id]: applyToggleExpand(prev[element.id] ?? element, action),
+          }));
+          break;
+        }
+        case "setVariable":
+        case "toggleVariable":
+        case "invokeFunction":
+          await runServerAction.mutateAsync(action);
+          break;
+        default:
+          break;
+      }
     },
-    [actionMutation]
+    [baseDocument, runServerAction, session]
   );
 
-  const hasActions = document.elements.some((el) => (el.actions?.length ?? 0) > 0);
+  const handleElementClick = useCallback(
+    (element: MimicElement) => {
+      setContextMenu(null);
+      const action = primaryAction(element);
+      if (!action) return;
+      void executeAction(element, action);
+    },
+    [executeAction]
+  );
+
+  const handleElementContextMenu = useCallback(
+    (element: MimicElement, clientX: number, clientY: number) => {
+      const items = contextActions(element);
+      if (items.length === 0) return;
+      setContextMenu({ element, x: clientX, y: clientY });
+    },
+    []
+  );
+
+  const hasInteractions = document.elements.some(
+    (el) => (el.actions?.length ?? 0) > 0 || el.tooltip
+  );
   const viewChanged = panEnabled && isViewChanged(view, baselineView);
 
   const resetView = useCallback(() => {
@@ -189,6 +282,13 @@ export default function ScadaMimicWidgetView({
     return () => node.removeEventListener("wheel", onWheel);
   }, [panEnabled]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [contextMenu]);
+
   return (
     <DashWidgetShell
       title={widget.title}
@@ -219,17 +319,40 @@ export default function ScadaMimicWidgetView({
           valuesByConnectionId={resolved.byConnectionId}
           editable={editable}
           customSymbols={document.customSymbols}
-          onElementClick={hasActions ? handleElementClick : undefined}
+          onElementClick={hasInteractions ? handleElementClick : undefined}
+          onElementContextMenu={handleElementContextMenu}
+          elementTooltips={elementTooltips}
           viewTransform={
             panEnabled
               ? { panX: view.panX, panY: view.panY, zoom: view.zoom }
               : baselineView
           }
         />
+        {contextMenu && (
+          <ul
+            className="scada-mimic-context-menu"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {contextActions(contextMenu.element).map((action) => (
+              <li key={action.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void executeAction(contextMenu.element, action);
+                    setContextMenu(null);
+                  }}
+                >
+                  {action.label ?? action.type}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       {message && <p className="widget-message success">{message}</p>}
-      {actionMutation.isError && (
-        <p className="widget-message error">{(actionMutation.error as Error).message}</p>
+      {runServerAction.isError && (
+        <p className="widget-message error">{(runServerAction.error as Error).message}</p>
       )}
     </DashWidgetShell>
   );

@@ -13,6 +13,7 @@ import { mapEventJournalExportRow } from "../../utils/journalExport";
 import JournalViewShell, { type JournalViewMode } from "../journal/JournalViewShell";
 import JournalVirtualList from "../journal/JournalVirtualList";
 import JournalExpandableItem from "../journal/JournalExpandableItem";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -252,6 +253,7 @@ function EventRow({
   event: ObjectEvent;
 }) {
   const { t } = useTranslation(["operator", "journal"]);
+  const { formatDate } = useUserTimeZone();
   const payload = event.payload?.rows?.[0];
   const detail =
     payload && typeof payload.value !== "undefined"
@@ -279,8 +281,8 @@ function EventRow({
       </div>
       <p className="hint">{event.objectPath}</p>
       {detail && <p className="event-journal-detail">{detail}</p>}
-      <time className="hint event-journal-time">
-        {new Date(event.timestamp).toLocaleString()}
+      <time className="hint event-journal-time" dateTime={event.timestamp}>
+        {formatDate(event.timestamp)}
       </time>
     </JournalExpandableItem>
   );

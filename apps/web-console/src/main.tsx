@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { ObjectWebSocketCacheBridge } from "./hooks/ObjectWebSocketCacheBridge";
+import { UserTimeZoneProvider } from "./context/UserTimeZoneContext";
 import { i18nReady } from "./i18n";
 import { initThemeOnDocument } from "./themeInit";
 import "./styles.css";
@@ -28,8 +29,10 @@ void i18nReady
       <StrictMode>
         <BrowserRouter>
           <QueryClientProvider client={queryClient}>
-            <ObjectWebSocketCacheBridge />
-            <App />
+            <UserTimeZoneProvider>
+              <ObjectWebSocketCacheBridge />
+              <App />
+            </UserTimeZoneProvider>
           </QueryClientProvider>
         </BrowserRouter>
       </StrictMode>
