@@ -95,7 +95,7 @@
 | **BL-52** | Operator shell: responsive / mobile layout breakpoints | P3 | Done | Operator |
 | **BL-53** | Spreadsheet: расширение Excel function set + warning UX при import | P2 | Done | Spreadsheet |
 | **BL-54** | Spreadsheet: binding ячеек к variable history | P3 | Done | Spreadsheet |
-| **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL PlatformLicenseCard, CreateVariableDialog | P2 | Partial | QA |
+| **BL-55** | Frontend vitest: binding activators, journal export, chart/gantt utils; RTL dashboard widgets + inspector | P2 | Partial | QA |
 
 ### Wave G — Semantic interoperability (Haystack / Brick)
 
@@ -362,7 +362,7 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
 
-**Статус (2026-06-28):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms; BACnet guard-only (нет simulator).
+**Статус (2026-06-30):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http; BACnet guard-only (нет simulator).
 
 **Статус (2026-06-28):** BL-24 Done — `io.stepfunc:dnp3` master TCP, Class 0/1/2/3 integrity poll; loopback `Dnp3DeviceDriverTest` + `Dnp3LoopbackOutstation`; config `localAddress`/`outstationAddress`; docs в DRIVERS.md.
 
@@ -532,7 +532,8 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 - [x] RTL: `BindingActivatorsEditor`, `PlatformBindingComposer`
 - [x] RTL: `PlatformLicenseCard`, `CreateVariableDialog`
-- [ ] RTL/component tests: dashboard widget views (remaining)
+- [x] RTL: `LabelWidgetView`, `ValueWidgetView`, `WidgetEditorPanel`
+- [ ] RTL/component tests: remaining dashboard widget views (optional tail)
 - [ ] Playwright overlap — см. BL-50 (Done)
 
 **Acceptance (полное закрытие):** smoke RTL на ключевые inspector panels + 2–3 widget editors без регрессий в CI.
@@ -656,6 +657,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-55: RTL `LabelWidgetView`, `ValueWidgetView`, `WidgetEditorPanel`; BL-30: `HttpDeviceDriverTest` loopback |
 | 2026-06-30 | BL-29 Done: CWMP `SetParameterValues` write + runtime API test; BL-55: RTL `PlatformLicenseCard`, `CreateVariableDialog` |
 | 2026-06-30 | Wave H: time & timezones → BL-66…71, [ADR-0020](decisions/0020-time-and-timezones.md), [ROADMAP Phase 21](ROADMAP.md#phase-21--time--timezones) |
 | 2026-06-28 | BL-44…47 Done: notifications (webhook/email), federation catalog preview + dashboard write proxy, platform backup export/import |
