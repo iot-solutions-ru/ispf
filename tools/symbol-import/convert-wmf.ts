@@ -32,7 +32,7 @@ function zipPathForSource(source: "wincc" | "tia"): string {
 
 function convertOne(inkscape: string, inputPath: string, outputPath: string): boolean {
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-  const r = spawnSync(inkscape, [inputPath, "--export-type=svg", `--export-filename=${outputPath}`], {
+  const r = spawnSync(inkscape, [inputPath, "--export-type=svg", `--export-filename=${outputPath}`, "--export-area-drawing"], {
     encoding: "utf8",
     timeout: 60_000,
     stdio: "pipe",

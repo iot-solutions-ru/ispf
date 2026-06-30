@@ -147,10 +147,14 @@ Overview (RU): [SCADA.md § Редактор](SCADA.md#редактор-мнем
 
 ## Bootstrap demos
 
-| Object | Dashboard |
-|--------|-----------|
-| `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` |
-| `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` |
+| Demo | Mimic | Dashboard | appId |
+|------|-------|-----------|-------|
+| Tank farm | `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` | `tank-farm-demo` |
+| Pipeline SCADA (РП) | `root.platform.mimics.pipeline-rp` | `root.platform.dashboards.pipeline-scada-hmi` | `pipeline-scada` |
+| Mini-TEC SLD | `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` | — |
+
+Devices (tank farm): `root.platform.devices.tank-farm-demo.tank-11` … `tank-24`, `manifold-hub`.
+Virtual driver profiles: `tank-farm-tank`, `tank-farm-hub`.
 
 Re-export server JSON after editing TypeScript templates:
 
@@ -160,6 +164,10 @@ cd apps/web-console && npx tsx -e "import { MINI_TEC_SLD_DOCUMENT_JSON } from '.
 
 ```bash
 cd apps/web-console && npx tsx src/scada/templates/exportTankFarmMimic.ts
+```
+
+```bash
+cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
 ```
 
 ---

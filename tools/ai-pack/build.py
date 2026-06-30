@@ -340,6 +340,8 @@ def build_doc_chunks() -> list[dict]:
         ("workflows", "Workflows BPMN", "workflows", DOCS / "WORKFLOWS.md", 6000),
         ("automation", "Automation correlators", "automation", DOCS / "AUTOMATION.md", 5000),
         ("dashboards", "Dashboards widgets", "dashboards", DOCS / "DASHBOARDS.md", 8000),
+        ("scada", "SCADA mimic diagrams", "scada", DOCS / "SCADA.md", 10000),
+        ("scada-mimic", "SCADA diagramJson API", "scada", DOCS / "SCADA_MIMIC.md", 8000),
         ("widgets", "Widget catalog", "widgets", DOCS / "WIDGETS.md", 8000),
         ("messaging", "Messaging events NATS", "features", DOCS / "MESSAGING.md", 5000),
         ("object-model", "Object tree model", "object-model", DOCS / "OBJECT_MODEL.md", 6000),

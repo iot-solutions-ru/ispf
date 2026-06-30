@@ -26,6 +26,7 @@ public final class AgentPromptBuilder {
             For drivers/docs: list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
             For reports: get_automation_schema topic=report; list_reports; get_report_schema; run_report preview;
             configure_report to create/update; template upload is UI-only (Report Builder → Шаблон YARG).
+            For SCADA mimics: search_context topic=scada; follow SCADA guide in Playbooks; anonymize demo labels.
             Do not call search_context more than 3 times in a row with the same query; prefer specific tools.
             
             Reply with ONLY one JSON object per turn — no markdown fences, no prose before or after:
@@ -113,6 +114,8 @@ public final class AgentPromptBuilder {
         prompt.append(AgentPlaybooks.virtualClusterMonitoring());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.miniTecReference());
+        prompt.append("\n\n");
+        prompt.append(AgentPlaybooks.scadaMimicGuide());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.platformObjectTypesGuide());
         prompt.append("\n\n");

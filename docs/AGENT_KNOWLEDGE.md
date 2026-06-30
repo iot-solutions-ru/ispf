@@ -70,7 +70,7 @@
 8. `configure_operator_ui` — default dashboard + menu
 9. `list_variables` → `finish` с путями для UI
 
-**Playbooks в system prompt:** SNMP, virtual cluster, Modbus, MES, reports, widgets — см. `AgentPlaybooks.*`.
+**Playbooks в system prompt:** SNMP, virtual cluster, Modbus, MES, reports, widgets, SCADA mimic — см. `AgentPlaybooks.*`.
 
 **Не использовать:** `set_variable name=widgets` на dashboard; layout только в variable `layout`.
 
@@ -171,10 +171,35 @@
 | `examples/demo-app/` | demo-app | Minimal bundle |
 | `examples/warehouse-app/` | warehouse-app | Warehouse pattern |
 | `examples/mini-tec/` | — | Bootstrap demo (fixtures) |
+| Bootstrap `tank-farm-demo` | tank-farm-demo | Anonymized tank-farm SCADA mimic (fixtures) |
+| Bootstrap `pipeline-scada` | pipeline-scada | РД-029 screen forms (15 mimics, fixtures) |
 
 Agent tools: `list_examples`, `get_example_bundle(appId)`.
 
 Walkthroughs: [REFERENCE_MES_WALKTHROUGH.md](REFERENCE_MES_WALKTHROUGH.md), [LAB_TRAINING.md](LAB_TRAINING.md), [REFERENCE_MINI_TEC_WALKTHROUGH.md](REFERENCE_MINI_TEC_WALKTHROUGH.md).
+
+### Bootstrap SCADA demos (fixtures, подход G)
+
+При `ispf.bootstrap.fixtures-enabled=true` сервер создаёт готовые мнемосхемы и HMI. **Не использовать реальные названия компаний** в демо-текстах и путях.
+
+| Demo | appId | Устройства | Mimic | Dashboard |
+|------|-------|------------|-------|-----------|
+| Резервуарный парк | `tank-farm-demo` | `root.platform.devices.tank-farm-demo.*` | `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` |
+| СДКУ РД-029 | `pipeline-scada` | `root.platform.devices.pipeline-scada.*` | `root.platform.mimics.pipeline-rp` (+ 14 форм `pipeline-*`) | `root.platform.dashboards.pipeline-scada-hmi` |
+| Mini-TEC SLD | — | mini-tec devices | `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` |
+
+**Код и re-export:**
+
+| Demo | TypeScript | Export |
+|------|------------|--------|
+| tank-farm | `apps/web-console/src/scada/templates/buildTankFarmMimic.ts` | `npx tsx src/scada/templates/exportTankFarmMimic.ts` |
+| pipeline-scada | `apps/web-console/src/scada/templates/pipeline-scada/` | `npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts` |
+
+Java bootstrap: `TankFarmPlatformBootstrap`, `PipelineScadaPlatformBootstrap`. Playbook: `AgentPlaybooks.scadaMimicGuide()`.
+
+Operator URL: `?mode=operator&app=tank-farm-demo&dashboard=root.platform.dashboards.tank-farm-hmi`.
+
+**Примечание:** путь `root.platform.mimics.tank-farm-demo` при одновременном bootstrap `pipeline-scada` может быть перезаписан диаграммой РП (deprecated alias). Для полного СДКУ используйте `pipeline-rp` + `pipeline-scada-hmi`.
 
 ---
 
@@ -368,6 +393,16 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 2. Hub CUSTOM + `create_variable` или alert на DEVICE
 3. `configure_alert` / `configure_correlator`
 4. Optional: WORKFLOW + `operatorAppId`
+
+### «Создай / обнови мнемосхему» (SCADA)
+
+1. `search_context topic=scada` — diagramJson v2, bindings, REST API
+2. Если нужен эталон: bootstrap demo `tank-farm-demo` или `pipeline-scada` (fixtures)
+3. `create_object` type=MIMIC под `root.platform.mimics` → отредактировать diagramJson (UI или API)
+4. `list_variables` на устройствах → привязки symbol binding keys
+5. DASHBOARD + `add_dashboard_widget type=scada-mimic mimicPath=...`
+6. Re-export после правок TS-шаблонов: `exportTankFarmMimic.ts` / `exportPipelineScadaMimics.ts`
+7. **Анонимизация:** без реальных компаний, ФИО, гео-меток в демо
 
 ### «Не ломай platform» (см. [APPLICATION_PRINCIPLES.md](APPLICATION_PRINCIPLES.md) P2, P10)
 

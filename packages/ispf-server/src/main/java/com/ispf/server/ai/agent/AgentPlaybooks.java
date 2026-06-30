@@ -3,6 +3,8 @@ package com.ispf.server.ai.agent;
 import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.bootstrap.LabModelBootstrap;
 import com.ispf.server.bootstrap.MiniTecPaths;
+import com.ispf.server.bootstrap.PipelineScadaPaths;
+import com.ispf.server.bootstrap.TankFarmPaths;
 import com.ispf.server.dashboard.DashboardLayouts;
 
 /**
@@ -344,6 +346,81 @@ public final class AgentPlaybooks {
                 - Модели: mini-tec-gpu-v1, mini-tec-grpb-v1, mini-tec-rumb-v1, mini-tec-dgu-v1, mini-tec-load-module-v1
                 - Virtual driver profiles: tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load
                 - Bundle redeploy: POST /api/v1/applications/mini-tec/deploy with examples/mini-tec/bundle.json
+                """;
+    }
+
+    public static String scadaMimicGuide() {
+        return """
+                ## SCADA mimic (MIMIC objects + scada-mimic widget)
+                
+                search_context topic=scada for diagramJson v2, editor tools, REST API.
+                
+                ### Concepts
+                - Object type MIMIC at root.platform.mimics.* (template mimic-v1)
+                - Dashboard widget scada-mimic: mimicPath OR inline diagramJson; prefer reusable MIMIC object
+                - Bindings: objectPath + variableName + valueField + transform (number|bool|string)
+                - diagramJson version 2 only; symbols in apps/web-console/src/scada/symbols/
+                
+                ### Anonymization policy (demos)
+                Demo diagrams must NOT contain real company names, personal data, or geo-specific labels.
+                Use generic titles (Резервуар No11, Коллектор, ST-1...). Never use transneft-* paths or filenames.
+                
+                ### Bootstrap demos (ispf.bootstrap.fixtures-enabled=true)
+                
+                **tank-farm-demo** (appId=tank-farm-demo):
+                - Devices: """
+                + TankFarmPaths.FOLDER
+                + """
+                 (tank-11..24, manifold-hub)
+                - Mimic: """
+                + TankFarmPaths.MIMIC
+                + """
+                - Dashboard: """
+                + TankFarmPaths.DASHBOARD
+                + """
+                - Models: tank-farm-tank-v1, tank-farm-hub-v1; virtual profiles: tank-farm-tank, tank-farm-hub
+                - Java bootstrap: TankFarmPlatformBootstrap, TankFarmMimicDocument
+                - Re-export JSON: cd apps/web-console && npx tsx src/scada/templates/exportTankFarmMimic.ts
+                - TS builder: apps/web-console/src/scada/templates/buildTankFarmMimic.ts
+                
+                **pipeline-scada** (appId=pipeline-scada, РД-029 screen forms):
+                - Devices: """
+                + PipelineScadaPaths.FOLDER
+                + """
+                - Main HMI: """
+                + PipelineScadaPaths.DASHBOARD
+                + """
+                 -> mimic """
+                + PipelineScadaPaths.MIMIC_RP
+                + """
+                - 15 mimics pipeline-* (MT, RP, SIKN, PSP, NPS, LU, sea terminal, pier, panels...)
+                - """
+                + PipelineScadaPaths.MIMIC_TANK_FARM_DEMO
+                + """
+                 deprecated alias to RP diagram when pipeline-scada bootstrap runs after tank-farm
+                - Re-export: cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
+                
+                **mini-tec-single-line**:
+                - Mimic: root.platform.mimics.mini-tec-single-line
+                - Dashboard: root.platform.dashboards.mini-tec-single-line
+                
+                ### Smoke-check (tank-farm)
+                1. list_variables path="""
+                + TankFarmPaths.tank(11)
+                + """
+                 levelMm, rateMmPerHour
+                2. driver_control action=poll path="""
+                + TankFarmPaths.tank(11)
+                + """
+                3. Operator: ?mode=operator&app=tank-farm-demo&dashboard="""
+                + TankFarmPaths.DASHBOARD
+                + """
+                
+                ### Agent workflow: new mimic on tree
+                1. create_object parentPath=root.platform.mimics type=MIMIC templateId=mimic-v1
+                2. Edit diagramJson via Explorer mimic editor or PUT /api/v1/mimics/by-path/diagram
+                3. create_object DASHBOARD → add_dashboard_widget type=scada-mimic mimicPath=<path>
+                4. Bind symbols to device variables (list_variables first)
                 """;
     }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeContentBbox,
   defaultEdgePorts,
   mapColorToIspf,
   sanitizeSvgMarkup,
@@ -47,5 +48,24 @@ describe("stylize-svg", () => {
     const result = stylizeSvgRaw(raw);
     expect(result).not.toBeNull();
     expect(result!.svg).not.toContain("sodipodi");
+  });
+
+  it("normalizes viewBox when declared size mismatches path coordinates", () => {
+    const raw = `<svg xmlns="http://www.w3.org/2000/svg" width="13.7mm" height="36.5mm">
+      <path d="M24.48 55.99 L27.34 55.99 L27.34 75.26 L24.48 75.26 z"/>
+      <path d="M16.4 96.1 L35.4 96.1 L35.4 97.1 L16.4 97.1 z"/>
+    </svg>`;
+    const bbox = computeContentBbox(raw);
+    expect(bbox).not.toBeNull();
+    expect(bbox!.minX).toBeLessThan(20);
+    expect(bbox!.maxY).toBeGreaterThan(70);
+
+    const result = stylizeSvgRaw(raw);
+    expect(result).not.toBeNull();
+    expect(result!.viewBox).toMatch(/^0 0 /);
+    const vbParts = result!.viewBox.split(/\s+/).map(Number);
+    expect(vbParts[2]).toBeGreaterThan(15);
+    expect(vbParts[3]).toBeGreaterThan(40);
+    expect(result!.svg).toContain('transform="translate(');
   });
 });

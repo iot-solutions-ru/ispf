@@ -37,6 +37,7 @@ class AgentPromptStartupValidator {
                 AgentPlaybooks.dashboardLayoutEditing(),
                 AgentPlaybooks.snmpIfMibExtension(),
                 AgentPlaybooks.virtualClusterMonitoring(),
+                AgentPlaybooks.scadaMimicGuide(),
                 AgentPlaybooks.platformObjectTypesGuide()
         )) {
             if (playbook.contains("%s")) {

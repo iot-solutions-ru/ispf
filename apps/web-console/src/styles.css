@@ -516,10 +516,24 @@ code,
 
 .login-card-head {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
+  min-width: 0;
+}
+
+.login-card-head .locale-switcher,
+.login-card-head .theme-switcher {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.login-card-head .locale-switcher-select,
+.login-card-head .theme-switcher-select {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.35rem;
+  font-size: 0.8rem;
 }
 
 .sr-only {
