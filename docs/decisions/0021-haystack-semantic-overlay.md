@@ -62,7 +62,7 @@ This is an **ISPF interchange format** inspired by Haystack JSON grids, not a fu
 
 - Replacing `root.platform.devices.*` paths with Haystack refs in runtime.
 - Full Brick reasoner or RDF inference in the platform core.
-- Auto-discovery of tags from BACnet/OPC UA without explicit mapping (BL-59 spike).
+- Auto-discovery of tags from BACnet/OPC UA without explicit mapping — out of scope; use extended `driverPointMappingsJson` (BL-59 Done).
 - External Haystack poll driver (BL-61) and semantic HMI auto-bind (BL-62).
 
 ### 5. Brick Schema (BL-60)
@@ -79,19 +79,22 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 
 **Negative / follow-ups**
 
-- Point-level tags are not first-class on each variable yet — use driver mapping JSON (BL-59) or per-variable naming until variable annotations exist.
+- Point-level tags are not first-class on each variable yet — use driver mapping JSON (BL-59 Done) or per-variable naming until variable annotations exist.
 - Export format may need Zinc compatibility layer if external FIN/SkySpark ingestion is required.
 
 **Update (2026-06-30):** BL-57 Done — dedicated **Haystack** inspector tab with marker multiselect (`HaystackMetadataPanel`).
 
-## Implementation map (BL-56…58)
+**Update (2026-06-30):** BL-59 Done — extended `driverPointMappingsJson` with protocol address + Haystack tags; export reads mapping metadata on demo device.
+
+## Implementation map (BL-56…62)
 
 | BL | Deliverable | Status |
 | -- | ----------- | ------ |
 | BL-56 | This ADR | Done |
 | BL-57 | `haystack-metadata-v1` + lab demo + inspector tag editor | Done |
 | BL-58 | `GET /api/v1/platform/haystack/export` | Done |
-| BL-59…62 | Driver conventions, Brick, external driver, semantic HMI | Planned |
+| BL-59 | Extended driver point mappings → Haystack export | Done |
+| BL-60…62 | Brick, external driver, semantic HMI | Planned |
 
 ## Related materials
 

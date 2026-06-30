@@ -106,7 +106,7 @@
 | **BL-56** | ADR/spike: Haystack tags как metadata overlay (object tree = source of truth) | P3 | Done | Architecture |
 | **BL-57** | RELATIVE model `haystack-metadata-v1`: `haystackTags`, `haystackRef`, `kind` на DEVICE/variables | P3 | Done | Models |
 | **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Done | API |
-| **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Planned | Drivers |
+| **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Done | Drivers |
 | **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Planned | Semantic |
 | **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Planned | Driver |
 | **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Planned | Dashboard |
@@ -496,8 +496,9 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 **BL-59 — Driver conventions**
 
-- [ ] Документ + пример в `driverPointMappingsJson`: protocol address + haystack tags
-- [ ] BACnet/OPC UA mapping profile (spike)
+- [x] Документ + пример в `driverPointMappingsJson`: protocol address + haystack tags
+- [x] BACnet/OPC UA mapping profile (spike)
+- [x] `DriverPointMappingParser` + Haystack export integration; demo на `lab-userA-01`
 
 **BL-60 — Brick (demand-only)**
 

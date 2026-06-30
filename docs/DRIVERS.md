@@ -45,7 +45,69 @@ Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) —
 | `driverStatus` | `STOPPED` / `RUNNING` / `ERROR` |
 | `driverPollIntervalMs` | Интервал опроса |
 | `driverConfigJson` | JSON конфигурации |
-| `driverPointMappingsJson` | JSON: `variableName → pointId` |
+| `driverPointMappingsJson` | JSON: `variableName → pointId` (legacy string) или extended object с Haystack metadata (BL-59) |
+
+### Extended point mappings (BL-59)
+
+Legacy формат — строка с protocol address на переменную:
+
+```json
+{
+  "temperature": "HOLDING:1:40001",
+  "status": "COIL:1:0"
+}
+```
+
+Extended object добавляет Haystack tags для export (`GET /api/v1/platform/haystack/export`) без отдельных переменных на каждую точку:
+
+```json
+{
+  "sineWave": {
+    "point": "sim",
+    "haystackTags": ["point", "sensor", "temp"],
+    "unit": "°C",
+    "dis": "Sine wave"
+  },
+  "status": "sim"
+}
+```
+
+| Поле | Алиасы | Назначение |
+|------|--------|------------|
+| `point` | `address`, `pointId` | Protocol address (как в legacy string) |
+| `haystackTags` | `tags` | Marker tags для Haystack export |
+| `unit` | — | Единица измерения (`°C`, `kW`, …) |
+| `dis` | — | Display name точки в export |
+
+Runtime poll/write использует только protocol address; Haystack поля игнорируются драйвером, но попадают в semantic export. Переменные с `historyEnabled` экспортируются всегда; без history — только если в mapping есть Haystack metadata.
+
+**BACnet example** (`analog-value:1:present-value`):
+
+```json
+{
+  "supplyTemp": {
+    "address": "analog-value:1:present-value",
+    "haystackTags": ["point", "sensor", "temp", "supply"],
+    "unit": "°C",
+    "dis": "Supply air temperature"
+  }
+}
+```
+
+**OPC UA example** (`ns=2;s=TagName`):
+
+```json
+{
+  "chillerKw": {
+    "point": "ns=2;s=Chiller/ElectricPower",
+    "tags": ["point", "sensor", "power"],
+    "unit": "kW",
+    "dis": "Chiller electric power"
+  }
+}
+```
+
+Demo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).
 
 ## REST Runtime API
 

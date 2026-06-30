@@ -6,6 +6,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.driver.DriverPointMappingParser;
+import com.ispf.server.driver.DriverPointMappingParser.Entry;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,8 +17,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class HaystackExportService {
@@ -48,10 +52,11 @@ public class HaystackExportService {
             }
             rows.add(buildEquipRow(node));
             if (includePoints) {
-                for (Variable variable : node.variables().values()) {
-                    if (variable.historyEnabled()) {
-                        rows.add(buildPointRow(node, variable));
-                    }
+                Map<String, Entry> pointMappings = parsePointMappings(node);
+                for (String variableName : pointVariableNames(node, pointMappings)) {
+                    node.getVariable(variableName).ifPresent(variable ->
+                            rows.add(buildPointRow(node, variable, pointMappings.get(variableName)))
+                    );
                 }
             }
         }
@@ -72,19 +77,43 @@ public class HaystackExportService {
         return row;
     }
 
-    private Map<String, Object> buildPointRow(PlatformObject node, Variable variable) {
+    private Map<String, Object> buildPointRow(PlatformObject node, Variable variable, Entry mapping) {
         Map<String, Object> row = baseRow(node);
         row.put("entityKind", "point");
         row.put("variableName", variable.name());
         row.put("id", node.path() + "." + variable.name());
-        mergeHaystackVariables(row, node);
-        row.put("tags", mergeTags(
-                parseTags(readString(node, "haystackTags")),
-                List.of("point", "sensor", "his")
-        ));
+        if (mapping != null && !mapping.dis().isBlank()) {
+            row.put("dis", mapping.dis());
+        }
+        List<String> pointTags = mapping != null && !mapping.haystackTags().isEmpty()
+                ? mapping.haystackTags()
+                : List.of("point", "sensor", "his");
+        row.put("tags", mergeTags(Map.of(), pointTags));
         row.put("curVal", readNumeric(variable));
-        row.put("unit", readUnit(variable));
+        String unit = mapping != null && !mapping.unit().isBlank() ? mapping.unit() : readUnit(variable);
+        if (!unit.isBlank()) {
+            row.put("unit", unit);
+        }
         return row;
+    }
+
+    private Map<String, Entry> parsePointMappings(PlatformObject node) {
+        return DriverPointMappingParser.parse(readString(node, "driverPointMappingsJson"), objectMapper);
+    }
+
+    private static Set<String> pointVariableNames(PlatformObject node, Map<String, Entry> pointMappings) {
+        Set<String> names = new LinkedHashSet<>();
+        for (Variable variable : node.variables().values()) {
+            if (variable.historyEnabled()) {
+                names.add(variable.name());
+            }
+        }
+        for (Map.Entry<String, Entry> mapping : pointMappings.entrySet()) {
+            if (mapping.getValue().hasHaystackMetadata()) {
+                names.add(mapping.getKey());
+            }
+        }
+        return names;
     }
 
     private static Map<String, Object> baseRow(PlatformObject node) {

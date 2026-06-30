@@ -33,6 +33,14 @@ class HaystackExportApiTest {
                         .value(HaystackModelBootstrap.DEMO_HAYSTACK_REF))
                 .andExpect(jsonPath("$.rows[?(@.entityKind == 'equip')].tags.equip").value(true))
                 .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].entityKind")
-                        .value("point"));
+                        .value("point"))
+                .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].tags.temp")
+                        .value(true))
+                .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].tags.sensor")
+                        .value(true))
+                .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].unit")
+                        .value("°C"))
+                .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].dis")
+                        .value("Sine wave"));
     }
 }
