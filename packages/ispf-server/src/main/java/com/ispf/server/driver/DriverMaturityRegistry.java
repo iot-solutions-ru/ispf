@@ -35,7 +35,8 @@ final class DriverMaturityRegistry {
             Map.entry("odbc", DriverMaturity.BETA),
             Map.entry("graph-db", DriverMaturity.BETA),
             Map.entry("flexible", DriverMaturity.PRODUCTION),
-            Map.entry("gps-tracker", DriverMaturity.PRODUCTION)
+            Map.entry("gps-tracker", DriverMaturity.PRODUCTION),
+            Map.entry("haystack", DriverMaturity.BETA)
     );
 
     private DriverMaturityRegistry() {

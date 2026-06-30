@@ -108,7 +108,7 @@
 | **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Done | API |
 | **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Done | Drivers |
 | **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Planned | Semantic |
-| **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Planned | Driver |
+| **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Done | Driver |
 | **BL-62** | Auto-bind dashboard widgets по tag query (`equip` + `point` + `temp`) | P3 | Done | Dashboard |
 
 ### Wave H — Time & timezones
@@ -507,7 +507,8 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 **BL-61 — External Haystack driver**
 
-- [ ] `ispf-driver-haystack`: HTTP Zinc/JSON client, subscribe/poll remote refs
+- [x] `ispf-driver-haystack`: HTTP JSON client, batch `read` + `about` probe
+- [x] Loopback test `HaystackDeviceDriverTest`; docs in DRIVERS.md
 
 **BL-62 — Semantic HMI**
 

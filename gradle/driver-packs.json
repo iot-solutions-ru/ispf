@@ -104,6 +104,13 @@
     "licenseType": "Apache-2.0",
     "packId": "ispf-driver-graph-db"
   },
+  "ispf-driver-haystack": {
+    "driverClass": "com.ispf.driver.haystack.HaystackDeviceDriver",
+    "driverId": "haystack",
+    "jarFile": "ispf-driver-haystack.jar",
+    "licenseType": "Apache-2.0",
+    "packId": "ispf-driver-haystack"
+  },
   "ispf-driver-http": {
     "driverClass": "com.ispf.driver.http.HttpDeviceDriver",
     "driverId": "http",

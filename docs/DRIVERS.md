@@ -260,6 +260,39 @@ Point mapping: `path`, `GET:path`, `HEAD:path`, полный URL, суффикс
 
 Пример mappings: `{"platformVersion": "GET:/api/v1/info:json"}`
 
+### haystack (`ispf-driver-haystack`)
+
+Project Haystack HTTP JSON client (SkySpark, FIN, Haxall). Poll-only v0.1: batch `read` by ref, connect probe via `about`.
+
+Point mapping: Haystack ref id (`site.equip.supplyTemp` или `@site.equip.supplyTemp`).
+
+```json
+{
+  "baseUrl": "https://skyspark.example.com",
+  "project": "demo",
+  "username": "su",
+  "password": "secret",
+  "timeoutMs": "5000"
+}
+```
+
+Альтернатива: `authToken` (Bearer) вместо username/password.
+
+Пример mappings:
+
+```json
+{
+  "supplyTemp": "site.mainAhu.supplyTemp",
+  "runStatus": "@site.mainAhu.run"
+}
+```
+
+Переменная: `value` (число), `valueText` (bool/string), `ref`, `unit`, `dis`. Read-only (v0.1).
+
+Loopback test: `HaystackDeviceDriverTest` (embedded `HttpServer` + JSON grid).
+
+Maturity: **beta**. Out of scope v0.1: `watch`/subscribe, `pointWrite`, `hisRead`, Zinc codec.
+
 ### icmp (`ispf-driver-icmp`)
 
 Доступность хоста (ICMP / `InetAddress.isReachable`).
@@ -347,6 +380,7 @@ Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 | `modbus-udp` | `ispf-driver-modbus-udp` | Modbus UDP |
 | `snmp` | `ispf-driver-snmp` | SNMP v1/v2c/v3 |
 | `http` | `ispf-driver-http` | HTTP/HTTPS client |
+| `haystack` | `ispf-driver-haystack` | Project Haystack HTTP JSON client |
 | `http-server` | `ispf-driver-http-server` | Встроенный HTTP server |
 | `icmp` | `ispf-driver-icmp` | Ping |
 | `ssh` | `ispf-driver-ssh` | SSH command |

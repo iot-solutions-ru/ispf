@@ -63,7 +63,7 @@ This is an **ISPF interchange format** inspired by Haystack JSON grids, not a fu
 - Replacing `root.platform.devices.*` paths with Haystack refs in runtime.
 - Full Brick reasoner or RDF inference in the platform core.
 - Auto-discovery of tags from BACnet/OPC UA without explicit mapping — out of scope; use extended `driverPointMappingsJson` (BL-59 Done).
-- External Haystack poll driver (BL-61) — semantic HMI auto-bind (BL-62 Done).
+- External Haystack poll driver (BL-61 Done).
 
 ### 5. Brick Schema (BL-60)
 
@@ -84,7 +84,7 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 
 **Update (2026-06-30):** BL-57 Done — dedicated **Haystack** inspector tab with marker multiselect (`HaystackMetadataPanel`).
 
-**Update (2026-06-30):** BL-62 Done — `GET /platform/haystack/search`, agent tool `search_by_haystack_tags`, dashboard «Bind by Haystack tags».
+**Update (2026-06-30):** BL-61 Done — `ispf-driver-haystack` polls external Haystack servers via HTTP JSON `read`.
 
 ## Implementation map (BL-56…62)
 
@@ -95,7 +95,8 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 | BL-58 | `GET /api/v1/platform/haystack/export` | Done |
 | BL-59 | Extended driver point mappings → Haystack export | Done |
 | BL-62 | Tag search + dashboard auto-bind + agent tool | Done |
-| BL-60…61 | Brick, external Haystack driver | Planned |
+| BL-61 | External Haystack poll driver pack | Done |
+| BL-60 | Brick Schema overlay | Planned |
 
 ## Related materials
 
