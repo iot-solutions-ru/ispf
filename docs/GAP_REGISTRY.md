@@ -37,7 +37,7 @@
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
 | **P3** | Federation polish | catalog sync preview + dashboard write proxy | BL-45,46 Done |
 | **P3** | Notifications | webhook/email alert + correlator | BL-44 Done |
-| **P3** | Semantic (Haystack/Brick) | Нет overlay тегов / export; tree-only semantics | BL-56…62, 20.22 |
+| **P3** | Semantic (Haystack/Brick) | ADR-0021 + export API + demo mixin; inspector tag editor tail | BL-56…62, 20.22 |
 | **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
 | **P3** | Time & TZ (deep) | Historian `observedAt` — **Done** (BL-69); reports `reportTimeZone` — follow-up | BL-69 poll SPI, reports |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
@@ -79,7 +79,7 @@
 | Operator manifest | ~98% | spreadsheet history (BL-54) | BL-54 |
 | Spreadsheet widget | ~98% | — | BL-54 done |
 | Frontend component tests | ~90% | — | BL-55 Done |
-| Semantic interoperability | ~0% | Haystack tags, Brick export — deferred | BL-56…62, Phase 20.22 |
+| Semantic interoperability | ~25% | Inspector Haystack tag editor; Brick export (BL-60+) | BL-56…62, Phase 20.22 |
 | Time & timezones | ~100% | — | [0020](decisions/0020-time-and-timezones.md) |
 | Scale (load test) | ~100% | — | `ListDevicesLoadTest`, `ISPF_LOAD_P99_CEILING_MS` |
 
@@ -87,7 +87,7 @@
 
 | Дата | Изменение |
 |------|-----------|
-| 2026-06-30 | BL-30: MQTT/SNMP loopback + BACnet TestNetwork exchange; BL-50 live staging needs secrets |
+| 2026-06-30 | BL-56/58: ADR-0021 Haystack overlay + `GET /platform/haystack/export`; BL-57 demo mixin on lab-userA-01 |
 | 2026-06-30 | BL-30: `CoapDeviceDriverTest` loopback; BL-50: System/license mocked + live smoke |
 | 2026-06-28 | BL-44…47 Done: notifications, federation catalog conflicts + dashboard write proxy, platform backup API/UI |
 | 2026-06-28 | BL-40 Done: ClickHouse variable history write/query; BL-50 e2e Variables + Dashboard builder |

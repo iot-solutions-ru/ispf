@@ -103,9 +103,9 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-56** | ADR/spike: Haystack tags как metadata overlay (object tree = source of truth) | P3 | Planned | Architecture |
-| **BL-57** | RELATIVE model `haystack-metadata-v1`: `haystackTags`, `haystackRef`, `kind` на DEVICE/variables | P3 | Planned | Models |
-| **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Planned | API |
+| **BL-56** | ADR/spike: Haystack tags как metadata overlay (object tree = source of truth) | P3 | Done | Architecture |
+| **BL-57** | RELATIVE model `haystack-metadata-v1`: `haystackTags`, `haystackRef`, `kind` на DEVICE/variables | P3 | Partial | Models |
+| **BL-58** | Haystack export: JSON read по subtree + опциональный `GET /api/v1/.../haystack` | P3 | Done | API |
 | **BL-59** | Driver point mappings → нормализация Haystack tags (`point`, `sensor`, `unit`) | P3 | Planned | Drivers |
 | **BL-60** | Brick Schema overlay: `brickClass`, RDF/Turtle export (demand-driven, BIM/digital twin) | P3 | Planned | Semantic |
 | **BL-61** | `ispf-driver-haystack`: poll external Haystack server (SkySpark/FIN) → variables | P3 | Planned | Driver |
@@ -480,19 +480,19 @@ Brick Schema         — optional formal graph export (P3, по заказчик
 
 **BL-56 — ADR**
 
-- [ ] `docs/decisions/00xx-haystack-semantic-overlay.md`: scope, mapping tree↔tags, out of scope (не менять пути)
-- [ ] Сравнение с OPC UA semantic model, ASHRAE 223P
+- [x] `docs/decisions/0021-haystack-semantic-overlay.md`: scope, mapping tree↔tags, out of scope (не менять пути)
+- [x] Сравнение с OPC UA semantic model, ASHRAE 223P
 
 **BL-57 — Haystack mixin model**
 
-- [ ] `haystack-metadata-v1` RELATIVE model: variables `haystackTags` (MARKER list), `haystackRef`, `haystackKind`
+- [x] `haystack-metadata-v1` RELATIVE model: variables `haystackTags` (JSON string array), `haystackRef`, `haystackKind`
 - [ ] Inspector: tag editor (multiselect common markers: `equip`, `point`, `sensor`, `temp`, `his`)
-- [ ] Пример на virtual-lab / Mini-TEC chiller
+- [x] Пример на virtual-lab / Mini-TEC chiller — `root.platform.devices.lab-userA-01` (equip tags + export points)
 
 **BL-58 — Export**
 
-- [ ] Bundle script или REST: export subtree as Haystack JSON grid
-- [ ] Mapping: ISPF variable → `{tags, cur, unit, dis}`
+- [x] REST: `GET /api/v1/platform/haystack/export?rootPath=&includePoints=`
+- [x] Mapping: ISPF variable → `{tags, curVal, unit, dis}`
 
 **BL-59 — Driver conventions**
 
@@ -655,6 +655,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-56/58 Done: ADR-0021 + `haystack-metadata-v1` demo + `GET /platform/haystack/export`; BL-57 Partial (inspector tag editor) |
 | 2026-06-30 | BL-30: `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest` |
 | 2026-06-30 | BL-30: `CoapDeviceDriverTest` loopback; BL-50: System/license Playwright mocked + live smoke |
 | 2026-06-30 | BL-55 Done: RTL `GaugeWidgetView`, `TimerWidgetView`; inspector + dashboard widget smoke complete |

@@ -1,9 +1,14 @@
 package com.ispf.server.bootstrap;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
+import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
+import com.ispf.server.plugin.model.ModelApplicationService;
 import com.ispf.server.report.ReportService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -11,6 +16,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 /**
  * Phase 15: lab models and demo devices for multi-user collaboration exercises.
@@ -21,6 +28,9 @@ public class LabPlatformBootstrap {
     private static final String DEVICES_ROOT = "root.platform.devices";
 
     private final LabModelBootstrap labModelBootstrap;
+    private final HaystackModelBootstrap haystackModelBootstrap;
+    private final ModelRegistry modelRegistry;
+    private final ModelApplicationService modelApplicationService;
     private final ObjectTemplateService objectTemplateService;
     private final ObjectManager objectManager;
     private final ReportService reportService;
@@ -28,12 +38,18 @@ public class LabPlatformBootstrap {
 
     public LabPlatformBootstrap(
             LabModelBootstrap labModelBootstrap,
+            HaystackModelBootstrap haystackModelBootstrap,
+            ModelRegistry modelRegistry,
+            ModelApplicationService modelApplicationService,
             ObjectTemplateService objectTemplateService,
             ObjectManager objectManager,
             ReportService reportService,
             BootstrapProperties bootstrapProperties
     ) {
         this.labModelBootstrap = labModelBootstrap;
+        this.haystackModelBootstrap = haystackModelBootstrap;
+        this.modelRegistry = modelRegistry;
+        this.modelApplicationService = modelApplicationService;
         this.objectTemplateService = objectTemplateService;
         this.objectManager = objectManager;
         this.reportService = reportService;
@@ -48,6 +64,7 @@ public class LabPlatformBootstrap {
             return;
         }
         labModelBootstrap.ensureLabModels();
+        haystackModelBootstrap.ensureHaystackModel();
         ensureLabDevice(
                 "lab-userA-01",
                 "Lab User A Device 01",
@@ -58,6 +75,7 @@ public class LabPlatformBootstrap {
                 "Lab User B Device 01",
                 "Collaboration lab device for user B"
         );
+        seedHaystackDemo(HaystackModelBootstrap.DEMO_DEVICE_PATH);
         LabVirtualReports.deployAll(reportService);
     }
 
@@ -77,5 +95,35 @@ public class LabPlatformBootstrap {
         }
 
         objectTemplateService.applyTemplate(path, LabModelBootstrap.VIRTUAL_LAB_MODEL);
+    }
+
+    private void seedHaystackDemo(String path) {
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            return;
+        }
+        modelRegistry.findByName(HaystackModelBootstrap.HAYSTACK_METADATA_MODEL).ifPresent(model -> {
+            if (!objectManager.require(path).appliedModelIds().contains(model.id())) {
+                modelApplicationService.applyModelWithRules(model, path, model.parameters());
+            }
+            DataSchema stringSchema = DataSchema.builder("stringValue")
+                    .field("value", FieldType.STRING)
+                    .build();
+            objectManager.setVariableValue(
+                    path,
+                    "haystackKind",
+                    DataRecord.single(stringSchema, Map.of("value", "equip"))
+            );
+            objectManager.setVariableValue(
+                    path,
+                    "haystackTags",
+                    DataRecord.single(stringSchema, Map.of("value", HaystackModelBootstrap.DEMO_HAYSTACK_TAGS))
+            );
+            objectManager.setVariableValue(
+                    path,
+                    "haystackRef",
+                    DataRecord.single(stringSchema, Map.of("value", HaystackModelBootstrap.DEMO_HAYSTACK_REF))
+            );
+            objectManager.persistNodeTree(path);
+        });
     }
 }

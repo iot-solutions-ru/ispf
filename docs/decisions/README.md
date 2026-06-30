@@ -34,6 +34,7 @@
 | [0018](0018-fixture-models-and-cel-applicability.md) | Fixture-модели + CEL applicability для RELATIVE | Accepted |
 | [0019](0019-platform-rule-unification.md) | Единая Platform Rule (dashboard context + bindings) | Proposed |
 | [0020](0020-time-and-timezones.md) | Time & timezones (store UTC, display local) | Accepted |
+| [0021](0021-haystack-semantic-overlay.md) | Haystack semantic overlay (tree-first, optional tags) | Accepted |
 
 ## Шаблон нового ADR
 
