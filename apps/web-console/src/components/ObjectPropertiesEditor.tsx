@@ -44,6 +44,7 @@ import InvokeFunctionDialog from "./runtime/InvokeFunctionDialog";
 import FireEventDialog from "./runtime/FireEventDialog";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
 import DeviceDriverPanel from "./DeviceDriverPanel";
+import HaystackMetadataPanel from "./HaystackMetadataPanel";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
 import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
@@ -70,6 +71,7 @@ type Tab =
   | "general"
   | "federation"
   | "driver"
+  | "haystack"
   | "deploy"
   | "access"
   | "variables"
@@ -433,6 +435,9 @@ export default function ObjectPropertiesEditor({
   const ctxPreview = editorData?.object;
   const isRootPath = path === "root";
   const isDevicePreview = ctxPreview?.type === "DEVICE";
+  const hasHaystackMetadata = Boolean(
+    editorQuery.data?.variables?.some((variable) => variable.name === "haystackTags")
+  );
   const isApplicationPreview = ctxPreview?.type === "APPLICATION";
   const showFederationTab = canManage && path !== "root" && !isRootPath;
   const showAccessTab = canManage && !isDevicePreview && !isApplicationPreview;
@@ -444,6 +449,9 @@ export default function ObjectPropertiesEditor({
     }
     if (isDevicePreview) {
       list.push("driver");
+      if (hasHaystackMetadata) {
+        list.push("haystack");
+      }
     }
     if (isApplicationPreview) {
       list.push("deploy");
@@ -453,7 +461,7 @@ export default function ObjectPropertiesEditor({
     }
     list.push("variables", "bindings", "events", "functions", "history");
     return list;
-  }, [isApplicationPreview, isDevicePreview, showAccessTab, showFederationTab]);
+  }, [hasHaystackMetadata, isApplicationPreview, isDevicePreview, showAccessTab, showFederationTab]);
 
   useEffect(() => {
     if (!tabs.includes(tab)) {
@@ -493,6 +501,8 @@ export default function ObjectPropertiesEditor({
         return t("tab.federation");
       case "driver":
         return t("tab.driver");
+      case "haystack":
+        return t("tab.haystack");
       case "deploy":
         return t("tab.deploy");
       case "access":
@@ -709,6 +719,12 @@ export default function ObjectPropertiesEditor({
       {tab === "driver" && isDevice && (
         <section className="panel">
           <DeviceDriverPanel devicePath={path} canManage={canManage} />
+        </section>
+      )}
+
+      {tab === "haystack" && isDevice && (
+        <section className="panel">
+          <HaystackMetadataPanel devicePath={path} canManage={canManage} />
         </section>
       )}
 

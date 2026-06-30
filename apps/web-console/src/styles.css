@@ -6038,6 +6038,54 @@ body.scada-mimic-editor-open {
   font-weight: 500;
 }
 
+.haystack-metadata-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.haystack-metadata-intro {
+  margin: 0;
+}
+
+.haystack-marker-fieldset {
+  margin: 0;
+}
+
+.haystack-custom-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.haystack-custom-tags-label {
+  font-size: 0.85rem;
+  color: var(--text-muted, #666);
+}
+
+.haystack-custom-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.haystack-custom-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.haystack-custom-tag-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.haystack-custom-tag-row input {
+  flex: 1;
+}
+
 .dash-widget-title .badge {
   margin-left: 0.5rem;
   font-size: 0.72rem;

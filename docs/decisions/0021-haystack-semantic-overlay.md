@@ -80,15 +80,16 @@ Deferred demand-driven overlay: `brickClass` URI on objects, Turtle/JSON-LD expo
 **Negative / follow-ups**
 
 - Point-level tags are not first-class on each variable yet — use driver mapping JSON (BL-59) or per-variable naming until variable annotations exist.
-- Inspector lacks a dedicated Haystack tag multiselect (BL-57 UI tail); variables are editable via generic inspector fields.
 - Export format may need Zinc compatibility layer if external FIN/SkySpark ingestion is required.
+
+**Update (2026-06-30):** BL-57 Done — dedicated **Haystack** inspector tab with marker multiselect (`HaystackMetadataPanel`).
 
 ## Implementation map (BL-56…58)
 
 | BL | Deliverable | Status |
 | -- | ----------- | ------ |
 | BL-56 | This ADR | Done |
-| BL-57 | `haystack-metadata-v1` + lab demo device | Done |
+| BL-57 | `haystack-metadata-v1` + lab demo + inspector tag editor | Done |
 | BL-58 | `GET /api/v1/platform/haystack/export` | Done |
 | BL-59…62 | Driver conventions, Brick, external driver, semantic HMI | Planned |
 
