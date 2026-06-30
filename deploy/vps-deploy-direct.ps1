@@ -11,6 +11,8 @@ param(
     [switch]$SkipBuild,
     [switch]$SkipTests,
     [switch]$SkipDriverPacks,
+    [ValidateSet('permissive', 'all')]
+    [string]$DriverPackProfile = 'permissive',
     [switch]$KeepServiceRunning,
     [switch]$VerifyClickHouse
 )
@@ -20,12 +22,79 @@ $ErrorActionPreference = "Stop"
 $staging = "/opt/ispf/staging/$Version"
 $jarOut = Join-Path $RepoRoot "packages\ispf-server\build\libs\ispf-server-$Version.jar"
 $packsDir = Join-Path $RepoRoot "build\driver-packs"
+$packsFilteredDir = Join-Path $RepoRoot "build\driver-packs-deploy"
 $packsTar = Join-Path $RepoRoot "build\driver-packs.tar.gz"
 $webRoot = Join-Path $RepoRoot "apps\web-console"
 $distDir = Join-Path $webRoot "dist"
 $zipPath = Join-Path $webRoot "web-console.zip"
 $serviceName = "ispf-server"
 $progressPollMs = 500
+
+function Test-DriverPackIncludedInProfile {
+    param(
+        [string]$LicenseType,
+        [string]$Profile
+    )
+    if ($Profile -eq 'all') { return $true }
+    $patterns = @('^GPL', '^LGPL', '^MPL', '^LicenseRef-StepFunc')
+    foreach ($pattern in $patterns) {
+        if ($LicenseType -match $pattern) { return $false }
+    }
+    return $true
+}
+
+function New-FilteredDriverPacksDir {
+    param(
+        [string]$SourceDir,
+        [string]$TargetDir,
+        [string]$Profile
+    )
+
+    if (Test-Path $TargetDir) {
+        Remove-Item -LiteralPath $TargetDir -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+
+    $catalogPath = Join-Path $RepoRoot "gradle\driver-packs.json"
+    $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
+    $included = 0
+    $skipped = 0
+
+    Get-ChildItem -LiteralPath $SourceDir -Directory | ForEach-Object {
+        $packId = $_.Name
+        $entry = $catalog.$packId
+        $licenseType = if ($entry -and $entry.licenseType) { [string]$entry.licenseType } else { 'Apache-2.0' }
+        if (-not (Test-DriverPackIncludedInProfile -LicenseType $licenseType -Profile $Profile)) {
+            Write-Host "    skip pack $packId ($licenseType)"
+            $skipped++
+            return
+        }
+        Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $TargetDir $packId) -Recurse -Force
+        $included++
+    }
+
+    if ($included -eq 0) {
+        throw "No driver packs selected for profile '$Profile' (skipped $skipped)"
+    }
+
+    Write-Host "    profile '$Profile': $included pack(s), skipped $skipped copyleft/restricted"
+    return $TargetDir
+}
+
+function Assert-WebConsoleLegalBundle {
+    param([string]$DistDir)
+
+    $required = @(
+        (Join-Path $DistDir "legal\LICENSE"),
+        (Join-Path $DistDir "legal\NOTICE"),
+        (Join-Path $DistDir "legal\THIRD_PARTY_NOTICES.md")
+    )
+    foreach ($path in $required) {
+        if (-not (Test-Path -LiteralPath $path)) {
+            throw "Missing legal file in web-console dist: $path (run npm run build)"
+        }
+    }
+}
 
 function Invoke-Remote([string]$Command) {
     # Remote command must be one ssh argument (Windows OpenSSH splits unquoted args on spaces).
@@ -275,13 +344,21 @@ if (-not $SkipBuild) {
         throw "Missing dist: $distDir"
     }
 
+    if (-not (Test-Path $distDir)) {
+        throw "Missing dist: $distDir"
+    }
+    Assert-WebConsoleLegalBundle -DistDir $distDir
+
     if (-not (Test-Path $packsDir)) {
         throw "Missing driver packs: $packsDir (run syncAllDriverPacks)"
     }
 
+    Write-Host "==> Filtering driver packs (profile: $DriverPackProfile)"
+    $packsForDeploy = New-FilteredDriverPacksDir -SourceDir $packsDir -TargetDir $packsFilteredDir -Profile $DriverPackProfile
+
     Write-Host "==> Packaging driver-packs.tar.gz"
     if (Test-Path $packsTar) { Remove-Item $packsTar -Force }
-    Push-Location $packsDir
+    Push-Location $packsForDeploy
     try {
         tar -c -z -f $packsTar *
         if ($LASTEXITCODE -ne 0) { throw "tar driver-packs failed" }

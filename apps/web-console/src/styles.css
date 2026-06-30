@@ -4159,6 +4159,22 @@ body.scada-mimic-editor-open {
   background: #f8f9fb !important;
 }
 
+/* bpmn-js license: watermark must remain visible (see node_modules/bpmn-js/LICENSE) */
+.bpmn-editor-canvas .bjs-powered-by,
+.bpmn-viewer-canvas .bjs-powered-by,
+.bpmn-editor-canvas .bjs-powered-by-link,
+.bpmn-viewer-canvas .bjs-powered-by-link,
+.bpmn-editor-canvas a[href="http://bpmn.io"],
+.bpmn-viewer-canvas a[href="http://bpmn.io"],
+.bpmn-editor-canvas a[href="https://bpmn.io"],
+.bpmn-viewer-canvas a[href="https://bpmn.io"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  z-index: 20 !important;
+  pointer-events: auto !important;
+}
+
 .bpmn-viewer-fallback .workflow-bpmn-view {
   flex: 1;
   min-height: 200px;

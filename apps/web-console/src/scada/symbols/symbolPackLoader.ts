@@ -1,5 +1,5 @@
 /**
- * Lazy-loaded P&ID symbol pack (ispf-pid-v1).
+ * Lazy-loaded P&ID symbol pack (ispf-pid-v1) — original ISA/ISO artwork from tools/symbol-pack-isa.
  */
 import type { MimicPort } from "../../types/scadaMimic";
 import { CustomSvgSymbol } from "./customSvg";

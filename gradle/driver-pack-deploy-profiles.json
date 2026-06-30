@@ -1,0 +1,15 @@
+{
+  "permissive": {
+    "description": "Apache-2.0 and public-domain driver packs only. Excludes copyleft (GPL/LGPL/MPL) and StepFunc-restricted DNP3.",
+    "excludeLicensePatterns": [
+      "^GPL",
+      "^LGPL",
+      "^MPL",
+      "^LicenseRef-StepFunc"
+    ]
+  },
+  "all": {
+    "description": "All built driver packs. Recipient must comply with each pack licenseType and bundled notices.",
+    "excludeLicensePatterns": []
+  }
+}

@@ -39,7 +39,8 @@ ispf:
 |-------|----------|-------------|
 | `packId` | yes | Unique pack identifier |
 | `driverId` | yes | Runtime driver id (e.g. `modbus-tcp`) |
-| `licenseType` | yes | SPDX id: `Apache-2.0`, `GPL-3.0-only`, `LGPL-3.0-or-later`, `MPL-2.0`, `Commercial`, … |
+| `licenseType` | yes | SPDX id: `Apache-2.0`, `GPL-3.0-only`, `LGPL-3.0-or-later`, `MPL-2.0`, `LicenseRef-StepFunc-NonCommercial`, … |
+| `externalDependencies` | when third-party JAR is not bundled | e.g. StepFunc DNP3 — see `NOTICE-EXTERNAL-DEPS.txt` |
 | `minPlatformVersion` | yes | Semver gate (e.g. `0.9.32`) |
 | `jarFile` | yes | JAR filename relative to pack directory |
 | `drivers[]` | yes | `driverId` + `driverClass` |
@@ -83,6 +84,10 @@ License signing payload fields (sorted JSON): `packId`, `minPlatformVersion`, `i
 - JAR must implement `com.ispf.driver.DeviceDriver`.
 - Prefer explicit `drivers[]` with `driverClass` for predictable `driverId`.
 - Promotion path for in-tree stubs: [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).
+
+## Deploy profiles
+
+Production VPS deploy uses **`permissive`** profile by default (excludes copyleft and StepFunc-restricted packs). See [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md).
 
 ## Related
 

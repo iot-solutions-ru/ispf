@@ -33,7 +33,7 @@ cd apps/web-console && npx tsx src/scada/templates/exportTankFarmMimic.ts
 cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
 ```
 
-TypeScript sources: `apps/web-console/src/scada/templates/`. Symbols: `apps/web-console/src/scada/symbols/`.
+TypeScript sources: `apps/web-console/src/scada/templates/`. P&ID palette symbols: regenerate with `cd tools/symbol-pack-isa && npm run build` (original ISA/ISO artwork — do not use deprecated `tools/symbol-import`).
 
 ## Anonymization
 

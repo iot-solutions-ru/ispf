@@ -59,7 +59,7 @@
     "driverClass": "com.ispf.driver.dnp3.Dnp3DeviceDriver",
     "driverId": "dnp3",
     "jarFile": "ispf-driver-dnp3.jar",
-    "licenseType": "Apache-2.0",
+    "licenseType": "LicenseRef-StepFunc-NonCommercial",
     "packId": "ispf-driver-dnp3"
   },
   "ispf-driver-ethernet-ip": {
@@ -157,7 +157,7 @@
     "driverClass": "com.ispf.driver.ipmi.IpmiDeviceDriver",
     "driverId": "ipmi",
     "jarFile": "ispf-driver-ipmi.jar",
-    "licenseType": "Apache-2.0",
+    "licenseType": "GPL-3.0-or-later",
     "packId": "ispf-driver-ipmi"
   },
   "ispf-driver-jdbc": {
@@ -318,7 +318,7 @@
     "driverClass": "com.ispf.driver.sip.SipDeviceDriver",
     "driverId": "sip",
     "jarFile": "ispf-driver-sip.jar",
-    "licenseType": "Apache-2.0",
+    "licenseType": "LicenseRef-NIST-PublicDomain",
     "packId": "ispf-driver-sip"
   },
   "ispf-driver-smb": {

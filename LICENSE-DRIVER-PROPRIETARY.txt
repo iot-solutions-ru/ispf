@@ -1,0 +1,13 @@
+ISPF Driver Pack — proprietary third-party components
+
+This driver pack may depend on third-party libraries that are NOT open source
+and are NOT redistributed inside the pack JAR.
+
+See driver-pack.json "externalDependencies" and NOTICE-EXTERNAL-DEPS.txt in this
+directory. Production or commercial use requires a separate license from the
+respective vendor (e.g. Step Function I/O for io.stepfunc:dnp3).
+
+The ISPF driver wrapper source in the monorepo is under GNU AGPL v3 unless you
+hold a separate commercial platform license from the copyright holder.
+
+See docs/THIRD_PARTY_NOTICES.md in the ISPF repository.

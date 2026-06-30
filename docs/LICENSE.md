@@ -59,13 +59,14 @@ Declarative bundle JSON **не является** исходным кодом pl
 ## Обязательства при распространении
 
 1. Сохраните [LICENSE](../LICENSE) и [NOTICE](../NOTICE).
-2. Приложите [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+2. Приложите [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) и следуйте [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md).
 3. Для driver packs — LICENSE и notices каждого pack.
 4. Соблюдайте AGPL / GPL / LGPL / MPL зависимостей в packs.
 
 ## Связанные документы
 
 - [LICENSE-COMMERCIAL.md](../LICENSE-COMMERCIAL.md)
+- [LICENSE_COMPLIANCE.md](LICENSE_COMPLIANCE.md)
+- [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md)
 - [CLA.md](../CLA.md)
 - [PLUGINS.md](PLUGINS.md)
-- [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md)

@@ -18,8 +18,12 @@ alwaysApply: true
 From repo root, use [`deploy/vps-deploy-direct.ps1`](deploy/vps-deploy-direct.ps1):
 
 ```powershell
-.\deploy\vps-deploy-direct.ps1 -Version 0.9.32 -SkipTests -VerifyClickHouse
+.\deploy\vps-deploy-direct.ps1 -Version 0.9.32 -SkipTests -VerifyClickHouse -DriverPackProfile permissive
 ```
+
+`-DriverPackProfile permissive` (default) — only Apache-2.0 / public-domain driver packs; excludes GPL/LGPL/MPL and StepFunc-restricted DNP3. Use `-DriverPackProfile all` only after legal review.
+
+Web console build copies `LICENSE`, `NOTICE`, `THIRD_PARTY_NOTICES.md` into `dist/legal/` automatically.
 
 `-VerifyClickHouse` — после rollout: `vps-clickhouse-verify.sh` (ping, `store=clickhouse`, smoke `POST /events/fire`).
 

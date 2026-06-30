@@ -1,0 +1,9 @@
+ISPF Driver Pack — public domain / permissive third-party components
+
+This driver pack bundles third-party libraries released into the public domain
+or under permissive terms (see THIRD_PARTY-NOTICE.txt).
+
+The ISPF driver wrapper source in the monorepo is under GNU AGPL v3 unless you
+hold a separate commercial platform license from the copyright holder.
+
+See docs/THIRD_PARTY_NOTICES.md in the ISPF repository.

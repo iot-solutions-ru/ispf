@@ -30,10 +30,13 @@ OVERRIDES = {
 LICENSE_TYPES = {
     "ispf-driver-bacnet": "GPL-3.0-only",
     "ispf-driver-dlms": "GPL-2.0-only",
+    "ispf-driver-dnp3": "LicenseRef-StepFunc-NonCommercial",
     "ispf-driver-iec104": "GPL-3.0-or-later",
     "ispf-driver-iec104-server": "GPL-3.0-or-later",
+    "ispf-driver-ipmi": "GPL-3.0-or-later",
     "ispf-driver-radius": "LGPL-3.0-or-later",
     "ispf-driver-mbus": "MPL-2.0",
+    "ispf-driver-sip": "LicenseRef-NIST-PublicDomain",
 }
 
 

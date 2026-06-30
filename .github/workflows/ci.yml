@@ -19,6 +19,9 @@ jobs:
       - name: Build AI context pack
         run: ISPF_VERSION=0.9.2 python tools/ai-pack/build.py
 
+      - name: License compliance audit
+        run: node tools/license-audit/check-all.mjs
+
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
@@ -57,6 +60,16 @@ jobs:
           cache: npm
           cache-dependency-path: apps/web-console/package-lock.json
 
+      - name: License compliance audit
+        run: node tools/license-audit/check-all.mjs
+
+      - name: Build ISA P&ID symbol pack
+        run: |
+          cd tools/symbol-pack-isa
+          npm ci
+          npm test
+          npm run build
+
       - name: Install, test, and build
         working-directory: apps/web-console
         run: |
@@ -65,3 +78,5 @@ jobs:
           npx playwright install chromium --with-deps
           npm run test:e2e
           npm run build
+          test -f dist/legal/LICENSE
+          test -f dist/legal/THIRD_PARTY_NOTICES.md

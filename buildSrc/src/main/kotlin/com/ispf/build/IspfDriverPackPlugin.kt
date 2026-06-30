@@ -29,6 +29,31 @@ data class DriverPackMeta(
     val jarFile: String,
 ) : java.io.Serializable
 
+data class ExternalDependency(
+    val groupId: String,
+    val artifactId: String,
+    val version: String,
+    val licenseType: String,
+    val notice: String,
+)
+
+private val FAT_JAR_EXCLUDED_GROUPS = mapOf(
+    "ispf-driver-dnp3" to setOf("io.stepfunc"),
+)
+
+private val EXTERNAL_DEPENDENCIES = mapOf(
+    "ispf-driver-dnp3" to listOf(
+        ExternalDependency(
+            groupId = "io.stepfunc",
+            artifactId = "dnp3",
+            version = "1.6.0",
+            licenseType = "LicenseRef-StepFunc-NonCommercial",
+            notice = "Not bundled in this pack. Non-production evaluation only under Step Function I/O terms; " +
+                "production/commercial use requires a separate license from https://stepfunc.io/contact",
+        ),
+    ),
+)
+
 class IspfDriverPackPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         if (project.name == "ispf-driver-api" || !project.name.startsWith("ispf-driver-")) {
@@ -49,6 +74,7 @@ class IspfDriverPackPlugin : Plugin<Project> {
 
         project.afterEvaluate {
             val main = project.extensions.getByType<SourceSetContainer>().named(SourceSet.MAIN_SOURCE_SET_NAME)
+            val excludedGroups = FAT_JAR_EXCLUDED_GROUPS[meta.packId].orEmpty()
             val driverPackJar = project.tasks.register<Jar>("driverPackJar") {
                 group = "driver packs"
                 description = "Build driver pack JAR for ${meta.packId}"
@@ -61,7 +87,8 @@ class IspfDriverPackPlugin : Plugin<Project> {
                     project.configurations.getByName("runtimeClasspath").filter { file ->
                         file.isFile &&
                             !file.name.startsWith("ispf-core") &&
-                            !file.name.startsWith("ispf-driver-api")
+                            !file.name.startsWith("ispf-driver-api") &&
+                            excludedGroups.none { prefix -> file.name.startsWith(prefix) }
                     }.map { file -> project.zipTree(file) }
                 })
             }
@@ -74,6 +101,7 @@ class IspfDriverPackPlugin : Plugin<Project> {
                 packJar.set(driverPackJar.flatMap { it.archiveFile })
                 outputDir.set(project.layout.buildDirectory.dir("driver-pack/${meta.packId}"))
                 platformVersion.set(project.version.toString())
+                projectName.set(project.name)
             }
         }
     }
@@ -82,6 +110,9 @@ class IspfDriverPackPlugin : Plugin<Project> {
 abstract class AssembleDriverPackTask : DefaultTask() {
     @get:Input
     abstract val packMeta: Property<DriverPackMeta>
+
+    @get:Input
+    abstract val projectName: Property<String>
 
     @get:Input
     abstract val platformVersion: Property<String>
@@ -95,6 +126,7 @@ abstract class AssembleDriverPackTask : DefaultTask() {
     @TaskAction
     fun assemble() {
         val meta = packMeta.get()
+        val module = projectName.get()
         val out = outputDir.get().asFile
         out.mkdirs()
 
@@ -104,7 +136,7 @@ abstract class AssembleDriverPackTask : DefaultTask() {
             StandardCopyOption.REPLACE_EXISTING,
         )
 
-        val manifest = linkedMapOf(
+        val manifest = linkedMapOf<String, Any>(
             "packId" to meta.packId,
             "driverId" to meta.driverId,
             "minPlatformVersion" to platformVersion.get(),
@@ -117,16 +149,74 @@ abstract class AssembleDriverPackTask : DefaultTask() {
                 ),
             ),
         )
+
+        val external = EXTERNAL_DEPENDENCIES[module]
+        if (!external.isNullOrEmpty()) {
+            manifest["externalDependencies"] = external.map {
+                mapOf(
+                    "groupId" to it.groupId,
+                    "artifactId" to it.artifactId,
+                    "version" to it.version,
+                    "licenseType" to it.licenseType,
+                    "notice" to it.notice,
+                )
+            }
+        }
+
         out.resolve("driver-pack.json").writeText(JsonOutput.prettyPrint(JsonOutput.toJson(manifest)))
 
         val root = project.rootProject.projectDir
-        val licenseFile = when {
-            meta.licenseType.startsWith("GPL") || meta.licenseType.startsWith("LGPL") || meta.licenseType == "MPL-2.0" ->
-                root.resolve("LICENSE-DRIVER-COPYLEFT.txt")
-            else -> root.resolve("LICENSE-DRIVER-APACHE-2.0.txt")
-        }
+        val licenseFile = resolveLicenseFile(root, meta.licenseType)
         if (licenseFile.isFile) {
             Files.copy(licenseFile.toPath(), out.resolve("LICENSE").toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
+
+        writeThirdPartyNotice(out, meta, external)
+        if (!external.isNullOrEmpty()) {
+            writeExternalDepsNotice(out, external)
+        }
+    }
+
+    private fun resolveLicenseFile(root: java.io.File, licenseType: String): java.io.File = when {
+        licenseType.startsWith("GPL") || licenseType.startsWith("LGPL") || licenseType == "MPL-2.0" ->
+            root.resolve("LICENSE-DRIVER-COPYLEFT.txt")
+        licenseType.startsWith("LicenseRef-StepFunc") ->
+            root.resolve("LICENSE-DRIVER-PROPRIETARY.txt")
+        licenseType.startsWith("LicenseRef-NIST") || licenseType.contains("PublicDomain", ignoreCase = true) ->
+            root.resolve("LICENSE-DRIVER-PUBLIC-DOMAIN.txt")
+        else -> root.resolve("LICENSE-DRIVER-APACHE-2.0.txt")
+    }
+
+    private fun writeThirdPartyNotice(out: java.io.File, meta: DriverPackMeta, external: List<ExternalDependency>?) {
+        val lines = buildList {
+            add("ISPF Driver Pack: ${meta.packId}")
+            add("licenseType: ${meta.licenseType}")
+            add("")
+            add("Bundled JAR: ${meta.jarFile}")
+            add("See docs/THIRD_PARTY_NOTICES.md in the ISPF repository for dependency inventory.")
+            if (!external.isNullOrEmpty()) {
+                add("")
+                add("External dependencies (NOT bundled in ${meta.jarFile}):")
+                external.forEach { dep ->
+                    add("- ${dep.groupId}:${dep.artifactId}:${dep.version} (${dep.licenseType})")
+                    add("  ${dep.notice}")
+                }
+            }
+        }
+        out.resolve("THIRD_PARTY-NOTICE.txt").writeText(lines.joinToString("\n") + "\n")
+    }
+
+    private fun writeExternalDepsNotice(out: java.io.File, external: List<ExternalDependency>) {
+        val lines = buildList {
+            add("External dependencies required at runtime (not redistributed in this pack):")
+            add("")
+            external.forEach { dep ->
+                add("${dep.groupId}:${dep.artifactId}:${dep.version}")
+                add("License: ${dep.licenseType}")
+                add(dep.notice)
+                add("")
+            }
+        }
+        out.resolve("NOTICE-EXTERNAL-DEPS.txt").writeText(lines.joinToString("\n") + "\n")
     }
 }
