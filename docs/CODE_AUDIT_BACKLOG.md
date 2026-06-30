@@ -362,7 +362,7 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
 
-**Статус (2026-06-30):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap; BACnet — `BacnetLoopbackServer` + connect smoke.
+**Статус (2026-06-30):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap/**mqtt**/**snmp**; BACnet — `BacnetLoopbackServer` IP connect smoke + `BacnetTestNetworkExchangeTest` (in-memory TestNetwork read/write); UDP property exchange в CI нестабилен. Новые тесты: `MqttDeviceDriverTest` (moquette), `SnmpDeviceDriverTest` (`SnmpLoopbackAgent`).
 
 **Статус (2026-06-28):** BL-24 Done — `io.stepfunc:dnp3` master TCP, Class 0/1/2/3 integrity poll; loopback `Dnp3DeviceDriverTest` + `Dnp3LoopbackOutstation`; config `localAddress`/`outstationAddress`; docs в DRIVERS.md.
 
@@ -655,6 +655,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-30: `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest` |
 | 2026-06-30 | BL-30: `CoapDeviceDriverTest` loopback; BL-50: System/license Playwright mocked + live smoke |
 | 2026-06-30 | BL-55 Done: RTL `GaugeWidgetView`, `TimerWidgetView`; inspector + dashboard widget smoke complete |
 | 2026-06-30 | BL-55: RTL `LabelWidgetView`, `ValueWidgetView`, `WidgetEditorPanel`; BL-30: `HttpDeviceDriverTest` loopback |

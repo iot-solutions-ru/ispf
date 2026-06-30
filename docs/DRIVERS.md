@@ -104,6 +104,8 @@ Eclipse Paho, подписка на топики.
 
 Point mapping: `variableName → mqttTopicSuffix`.
 
+Loopback test: `MqttDeviceDriverTest` (embedded moquette broker, subscribe + publish write).
+
 ### modbus-tcp (`ispf-driver-modbus`)
 
 j2mod, Modbus TCP. Poll/read/write через `readPoints` / `writePoint`.
@@ -135,6 +137,8 @@ Write: `HOLDING` (FC6), `COIL` (FC5); `INPUT`/`DISCRETE` read-only.
 SNMP4J, v1/v2c/v3 GET/SET (v3: USM MD5/SHA + DES/AES128).
 
 Формат точки: `oid`, `oid:VALUE_KIND` (`STRING`, `INTEGER`, …), или `oid:VALUE_KIND:optional` — последний вариант не прерывает poll при отсутствии OID (например `hrProcessorLoad` на Windows SNMP agent).
+
+Loopback test: `SnmpDeviceDriverTest` + in-process `SnmpLoopbackAgent` (GET/SET v2c).
 
 Демо `snmp-localhost`: MIB-II + HOST-RESOURCES-MIB + IF-MIB (см. модель `snmp-agent-v1` и дашборд `snmp-host-monitoring`):
 
@@ -394,7 +398,7 @@ Point mapping: `objectType:instance:property` (например `analog-output:1
 
 **Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
 
-Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` simulator + connect smoke (`BacnetDeviceDriverTest`); полный property exchange — на hardware/BACnet simulator.
+Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Полный UDP/IP property exchange — на hardware/BACnet simulator (в CI нестабилен).
 
 ### dnp3 (`ispf-driver-dnp3`)
 

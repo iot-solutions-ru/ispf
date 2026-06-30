@@ -87,6 +87,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-30 | BL-30: MQTT/SNMP loopback + BACnet TestNetwork exchange; BL-50 live staging needs secrets |
 | 2026-06-30 | BL-30: `CoapDeviceDriverTest` loopback; BL-50: System/license mocked + live smoke |
 | 2026-06-28 | BL-44…47 Done: notifications, federation catalog conflicts + dashboard write proxy, platform backup API/UI |
 | 2026-06-28 | BL-40 Done: ClickHouse variable history write/query; BL-50 e2e Variables + Dashboard builder |

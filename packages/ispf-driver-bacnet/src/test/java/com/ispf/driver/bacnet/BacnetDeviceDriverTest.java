@@ -71,7 +71,7 @@ class BacnetDeviceDriverTest {
     }
 
     private BacnetDeviceDriver connectClient(int serverPort, int clientBindPort) throws DriverException {
-        StubDriverObject driverObject = new StubDriverObject(Map.of(
+        return connectClient(serverPort, clientBindPort, new StubDriverObject(Map.of(
                 "bindAddress", LOOPBACK_HOST,
                 "host", LOOPBACK_HOST,
                 "port", String.valueOf(serverPort),
@@ -79,7 +79,11 @@ class BacnetDeviceDriverTest {
                 "localDeviceId", String.valueOf(LOCAL_DEVICE_ID),
                 "remoteDeviceId", String.valueOf(REMOTE_DEVICE_ID),
                 "timeoutMs", "5000"
-        ));
+        )));
+    }
+
+    private BacnetDeviceDriver connectClient(int serverPort, int clientBindPort, StubDriverObject driverObject)
+            throws DriverException {
         BacnetDeviceDriver driver = new BacnetDeviceDriver();
         driver.initialize(driverObject);
         driver.connect();
