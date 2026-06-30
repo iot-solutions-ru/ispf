@@ -333,6 +333,7 @@
   "tab.access": "Доступ",
   "tab.bindings": "Привязки",
   "tab.deploy": "Развертывание",
+  "tab.export": "JSON экспорт",
   "tab.driver": "Драйвер",
   "tab.haystack": "Haystack",
   "haystack.loading": "Загрузка Haystack-метаданных…",

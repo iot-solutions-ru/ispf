@@ -190,3 +190,114 @@ export async function rollbackDeploy(
   }
   return response.json() as Promise<DeployRollbackResult>;
 }
+
+export interface ApplicationBundleExport {
+  appId: string;
+  version: string;
+  deployedAt: string;
+  active: boolean;
+  manifest: Record<string, unknown>;
+}
+
+export interface BundleValidationResult {
+  status: string;
+  errors?: string[];
+  warnings?: string[];
+  wouldApply?: string[];
+}
+
+export async function exportApplicationBundle(
+  appId: string,
+  version?: string
+): Promise<ApplicationBundleExport> {
+  const params = version ? `?version=${encodeURIComponent(version)}` : "";
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/export${params}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle export failed: ${response.status}`);
+  }
+  return response.json() as Promise<ApplicationBundleExport>;
+}
+
+export async function validateApplicationBundle(
+  appId: string,
+  manifest: unknown,
+  dryRun = false
+): Promise<BundleValidationResult> {
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/bundle/validate?dryRun=${dryRun ? "true" : "false"}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(manifest),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle validate failed: ${response.status}`);
+  }
+  return response.json() as Promise<BundleValidationResult>;
+}
+
+export async function deployApplicationBundle(
+  appId: string,
+  manifest: unknown
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/deploy`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(manifest),
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle deploy failed: ${response.status}`);
+  }
+  return response.json() as Promise<Record<string, unknown>>;
+}
+
+export interface PullFromTreeResult {
+  appId: string;
+  baseVersion?: string;
+  manifest: Record<string, unknown>;
+  discoveredPaths?: string[];
+  pulled?: Record<string, number>;
+  warnings?: string[];
+}
+
+export async function pullApplicationBundleFromTree(
+  appId: string,
+  options?: {
+    sections?: string[];
+    paths?: string[];
+    mergeActive?: boolean;
+  }
+): Promise<PullFromTreeResult> {
+  const response = await fetch(
+    `/api/v1/applications/${encodeURIComponent(appId)}/bundle/pull-from-tree`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        sections: options?.sections,
+        paths: options?.paths,
+        mergeActive: options?.mergeActive ?? true,
+      }),
+    }
+  );
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `Bundle pull-from-tree failed: ${response.status}`);
+  }
+  return response.json() as Promise<PullFromTreeResult>;
+}

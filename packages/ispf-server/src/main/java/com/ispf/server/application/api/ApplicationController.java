@@ -4,6 +4,8 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.application.binding.ApplicationSqlBindingService;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
+import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
+import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService.PullFromTreeOptions;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
@@ -12,6 +14,8 @@ import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.application.tree.ApplicationObjectTreeService;
 import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
+import com.ispf.server.ai.validation.BundleManifestValidator;
+import com.ispf.server.ai.validation.BundleValidationResult;
 import com.ispf.server.license.CommercialLicenseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -38,29 +42,35 @@ public class ApplicationController {
     private final ApplicationDataService dataService;
     private final ApplicationFunctionStore functionStore;
     private final ApplicationBundleDeployService bundleDeployService;
+    private final ApplicationBundlePullFromTreeService bundlePullFromTreeService;
     private final ApplicationSqlBindingService sqlBindingService;
     private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationEventCatalogService eventCatalogService;
+    private final BundleManifestValidator bundleManifestValidator;
     private final ObjectMapper objectMapper;
 
     public ApplicationController(
             ApplicationDataService dataService,
             ApplicationFunctionStore functionStore,
             ApplicationBundleDeployService bundleDeployService,
+            ApplicationBundlePullFromTreeService bundlePullFromTreeService,
             ApplicationSqlBindingService sqlBindingService,
             ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
             ApplicationEventCatalogService eventCatalogService,
+            BundleManifestValidator bundleManifestValidator,
             ObjectMapper objectMapper
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
         this.bundleDeployService = bundleDeployService;
+        this.bundlePullFromTreeService = bundlePullFromTreeService;
         this.sqlBindingService = sqlBindingService;
         this.reportService = reportService;
         this.objectTreeService = objectTreeService;
         this.eventCatalogService = eventCatalogService;
+        this.bundleManifestValidator = bundleManifestValidator;
         this.objectMapper = objectMapper;
     }
 
@@ -86,6 +96,50 @@ public class ApplicationController {
     @GetMapping("/{appId}/deploy/history")
     public List<Map<String, Object>> deployHistory(@PathVariable String appId) {
         return bundleDeployService.deployHistory(appId);
+    }
+
+    @GetMapping("/{appId}/export")
+    public Map<String, Object> exportBundle(
+            @PathVariable String appId,
+            @RequestParam(required = false) String version
+    ) {
+        try {
+            return bundleDeployService.exportActiveBundle(appId, version);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex);
+        }
+    }
+
+    @PostMapping("/{appId}/bundle/validate")
+    public Map<String, Object> validateBundle(
+            @PathVariable String appId,
+            @RequestBody ApplicationBundleDeployService.BundleManifest manifest,
+            @RequestParam(defaultValue = "false") boolean dryRun
+    ) {
+        BundleValidationResult result = dryRun
+                ? bundleManifestValidator.dryRun(appId, manifest)
+                : bundleManifestValidator.validate(appId, manifest);
+        return result.toMap();
+    }
+
+    @PostMapping("/{appId}/bundle/pull-from-tree")
+    public Map<String, Object> pullBundleFromTree(
+            @PathVariable String appId,
+            @RequestBody(required = false) PullFromTreeRequest request
+    ) {
+        try {
+            PullFromTreeOptions options = request != null
+                    ? new PullFromTreeOptions(
+                            request.sections(),
+                            request.paths(),
+                            request.mergeActive() == null || request.mergeActive())
+                    : PullFromTreeOptions.defaults();
+            return bundlePullFromTreeService.pullFromTree(appId, options);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
     }
 
     @PostMapping("/{appId}/deploy/rollback")
@@ -417,6 +471,13 @@ public class ApplicationController {
     }
 
     public record RollbackBundleRequest(String version) {
+    }
+
+    public record PullFromTreeRequest(
+            List<String> sections,
+            List<String> paths,
+            Boolean mergeActive
+    ) {
     }
 
     public record ReportColumnDto(String field, String label) {

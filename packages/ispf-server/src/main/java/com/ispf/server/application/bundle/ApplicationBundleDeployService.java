@@ -672,6 +672,32 @@ public class ApplicationBundleDeployService {
         return snapshotStore.listHistory(appId);
     }
 
+    public Map<String, Object> exportActiveBundle(String appId, String bundleVersion) throws Exception {
+        ApplicationBundleSnapshotStore.BundleSnapshot snapshot = resolveExportSnapshot(appId, bundleVersion);
+        Object manifest = objectMapper.readValue(snapshot.manifestJson(), Object.class);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("appId", appId);
+        response.put("version", snapshot.bundleVersion());
+        response.put("deployedAt", snapshot.deployedAt().toString());
+        response.put("active", snapshot.active());
+        response.put("manifest", manifest);
+        return response;
+    }
+
+    private ApplicationBundleSnapshotStore.BundleSnapshot resolveExportSnapshot(
+            String appId,
+            String bundleVersion
+    ) {
+        if (bundleVersion != null && !bundleVersion.isBlank()) {
+            return snapshotStore.findByVersion(appId, bundleVersion.trim())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Bundle version not found for app " + appId + ": " + bundleVersion
+                    ));
+        }
+        return snapshotStore.findActive(appId)
+                .orElseThrow(() -> new IllegalArgumentException("No active bundle deployment for app: " + appId));
+    }
+
     public Map<String, Object> operatorManifest(String appId) throws Exception {
         ApplicationBundleSnapshotStore.BundleSnapshot snapshot = snapshotStore.findActive(appId)
                 .orElseThrow(() -> new IllegalArgumentException("No active bundle deployment for app: " + appId));

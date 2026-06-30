@@ -326,6 +326,29 @@ POST /api/v1/applications/{appId}/deploy/rollback
 
 Rollback повторно применяет сохранённый manifest (migrations skip, functions re-apply).
 
+## Bundle export & validate (round-trip)
+
+```http
+GET  /api/v1/applications/{appId}/export
+GET  /api/v1/applications/{appId}/export?version=1.0.0
+POST /api/v1/applications/{appId}/bundle/validate?dryRun=true|false
+```
+
+`export` возвращает активный (или указанный) snapshot manifest из `application_bundle_deployments`. Web Console: вкладка **Deploy** на узле `APPLICATION` — редактор JSON, validate, deploy, таблица ресурсов (add/remove в manifest).
+
+```http
+POST /api/v1/applications/{appId}/bundle/pull-from-tree
+{
+  "sections": ["dashboards", "workflows"],
+  "paths": ["root.platform.dashboards.demo"],
+  "mergeActive": true
+}
+```
+
+Собирает manifest из **live object tree** (visual groups + app stores). `paths` — опционально, только указанные узлы; без `paths` — все members bundle visual groups. `models[]` не reverse-engineer'ится (остаётся из base manifest).
+
+Поддерево object tree (JSON, `formatVersion: 1`): `GET /api/v1/platform/backup/export?rootPath=root.platform.devices.demo-sensor-01` — вкладка **JSON export** в Inspector.
+
 ## Отчёты (REQ-PF-12)
 
 SQL-отчёты в app schema: deploy через bundle `reports[]` или `POST .../reports/deploy`, выполнение `POST .../reports/{id}/run`, экспорт CSV `GET .../reports/{id}/export`.

@@ -22,8 +22,14 @@ public class PlatformBackupController {
     }
 
     @GetMapping("/export")
-    public Map<String, Object> export(Authentication authentication) {
-        return platformBackupService.exportSubtree();
+    public Map<String, Object> export(
+            Authentication authentication,
+            @RequestParam(required = false) String rootPath
+    ) {
+        if (rootPath == null || rootPath.isBlank()) {
+            return platformBackupService.exportSubtree();
+        }
+        return platformBackupService.exportSubtree(rootPath);
     }
 
     @PostMapping("/import")

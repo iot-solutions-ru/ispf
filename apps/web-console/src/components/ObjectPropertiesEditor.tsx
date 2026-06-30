@@ -46,6 +46,7 @@ import ObjectFederationBindSection from "./ObjectFederationBindSection";
 import DeviceDriverPanel from "./DeviceDriverPanel";
 import HaystackMetadataPanel from "./HaystackMetadataPanel";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
+import TreeSubtreeExportPanel from "./TreeSubtreeExportPanel";
 import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
 import BindingRulesPanel from "./BindingRulesPanel";
@@ -73,6 +74,7 @@ type Tab =
   | "driver"
   | "haystack"
   | "deploy"
+  | "export"
   | "access"
   | "variables"
   | "bindings"
@@ -456,12 +458,15 @@ export default function ObjectPropertiesEditor({
     if (isApplicationPreview) {
       list.push("deploy");
     }
+    if (canManage && ctxPreview && path.startsWith("root.platform")) {
+      list.push("export");
+    }
     if (showAccessTab) {
       list.push("access");
     }
     list.push("variables", "bindings", "events", "functions", "history");
     return list;
-  }, [hasHaystackMetadata, isApplicationPreview, isDevicePreview, showAccessTab, showFederationTab]);
+  }, [canManage, ctxPreview, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
 
   useEffect(() => {
     if (!tabs.includes(tab)) {
@@ -505,6 +510,8 @@ export default function ObjectPropertiesEditor({
         return t("tab.haystack");
       case "deploy":
         return t("tab.deploy");
+      case "export":
+        return t("tab.export");
       case "access":
         return t("tab.access");
       case "variables":
@@ -735,6 +742,12 @@ export default function ObjectPropertiesEditor({
           ) : (
             <p className="hint">{t("deploy.appIdMissing")}</p>
           )}
+        </section>
+      )}
+
+      {tab === "export" && canManage && path.startsWith("root.platform") && (
+        <section className="panel">
+          <TreeSubtreeExportPanel rootPath={path} canManage={canManage} />
         </section>
       )}
 
