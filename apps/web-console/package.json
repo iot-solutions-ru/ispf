@@ -15,7 +15,7 @@
     "i18n:check": "node scripts/i18n-check-keys.mjs",
     "i18n:translate": "python ../../tools/i18n/generate-locales.py",
     "import:pid-symbols": "npm run build --prefix ../../tools/symbol-pack-isa",
-    "build:pid-symbols": "npm run build --prefix ../../tools/symbol-pack-isa",
+    "build:pid-symbols": "npm run build --prefix ../../tools/symbol-pack-isa"
   },
   "dependencies": {
     "@codemirror/lang-java": "^6.0.2",

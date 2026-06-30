@@ -1,8 +1,9 @@
 package com.ispf.server.api;
 
+import com.ispf.server.config.CommercialLicenseProperties;
 import com.ispf.server.license.InstallationIdService;
+import com.ispf.server.license.PlatformLicenseInfo;
 import com.ispf.server.license.PlatformLicenseService;
-import com.ispf.server.license.PlatformLicenseStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,13 +16,16 @@ public class PlatformInstallationController {
 
     private final InstallationIdService installationIdService;
     private final PlatformLicenseService platformLicenseService;
+    private final CommercialLicenseProperties licenseProperties;
 
     public PlatformInstallationController(
             InstallationIdService installationIdService,
-            PlatformLicenseService platformLicenseService
+            PlatformLicenseService platformLicenseService,
+            CommercialLicenseProperties licenseProperties
     ) {
         this.installationIdService = installationIdService;
         this.platformLicenseService = platformLicenseService;
+        this.licenseProperties = licenseProperties;
     }
 
     @GetMapping("/installation-id")
@@ -30,7 +34,11 @@ public class PlatformInstallationController {
     }
 
     @GetMapping("/license")
-    public PlatformLicenseStatus license() {
-        return platformLicenseService.currentStatus();
+    public PlatformLicenseInfo license() {
+        return PlatformLicenseInfo.from(
+                installationIdService,
+                licenseProperties,
+                platformLicenseService.currentStatus()
+        );
     }
 }

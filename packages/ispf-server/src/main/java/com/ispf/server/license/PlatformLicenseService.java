@@ -10,15 +10,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 
@@ -47,7 +41,7 @@ public class PlatformLicenseService {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void logStatusOnStartup() {
+    public void enforceOnStartup() {
         PlatformLicenseStatus status = currentStatus();
         if ("community".equals(status.mode())) {
             log.info("Platform license mode: community (AGPL)");
@@ -59,9 +53,9 @@ public class PlatformLicenseService {
         }
         if (properties.isEnforce()) {
             log.error("Platform license invalid: {}", status.message());
-        } else {
-            log.warn("Platform license invalid (enforce=false): {}", status.message());
+            throw new IllegalStateException("ISPF license enforcement failed: " + status.message());
         }
+        log.warn("Platform license invalid (enforce=false): {}", status.message());
     }
 
     public PlatformLicenseStatus currentStatus() {
@@ -131,39 +125,13 @@ public class PlatformLicenseService {
             throw new CommercialLicenseException("ispf.license.public-key-pem is not configured");
         }
 
-        verifySignature(claims, publicKeyPem);
+        String payload = BundleManifestCanonicalizer.canonicalJson(claims.signingPayload());
+        LicensePublicKeySupport.verifyRsaSha256(payload, claims.signature(), publicKeyPem);
     }
 
     private static void requireField(String value, String name) {
         if (value == null || value.isBlank()) {
             throw new CommercialLicenseException("Platform license field missing: " + name);
         }
-    }
-
-    private void verifySignature(PlatformLicenseClaims claims, String publicKeyPem) {
-        try {
-            String payload = BundleManifestCanonicalizer.canonicalJson(claims.signingPayload());
-            PublicKey publicKey = loadPublicKey(publicKeyPem);
-            Signature signature = Signature.getInstance("SHA256withRSA");
-            signature.initVerify(publicKey);
-            signature.update(payload.getBytes(StandardCharsets.UTF_8));
-            byte[] signatureBytes = Base64.getDecoder().decode(claims.signature());
-            if (!signature.verify(signatureBytes)) {
-                throw new CommercialLicenseException("Platform license signature invalid");
-            }
-        } catch (CommercialLicenseException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new CommercialLicenseException("Platform license signature verify error: " + ex.getMessage());
-        }
-    }
-
-    private static PublicKey loadPublicKey(String pem) throws Exception {
-        String normalized = pem
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
-        byte[] decoded = Base64.getDecoder().decode(normalized);
-        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(decoded));
     }
 }

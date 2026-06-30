@@ -6,6 +6,7 @@ import RedisHealthCard from "./RedisHealthCard";
 import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
 import YargHealthCard from "./YargHealthCard";
 import McpHealthCard from "./McpHealthCard";
+import PlatformLicenseCard from "./PlatformLicenseCard";
 import PlatformBackupPanel from "./platform/PlatformBackupPanel";
 
 const METRIC_KEYS = [
@@ -129,6 +130,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             <NatsJetStreamHealthCard />
             <YargHealthCard />
             <McpHealthCard />
+            <PlatformLicenseCard />
           </div>
           <PlatformBackupPanel />
           <div className="system-metrics-grid">

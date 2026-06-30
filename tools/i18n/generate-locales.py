@@ -93,7 +93,7 @@ def translate_namespace(source: dict[str, str], target: str, existing: dict[str,
         time.sleep(0.3)
     for key in source:
         out.setdefault(key, source[key])
-    return dict(sorted(out.items()))
+    return dict(sorted((key, out[key]) for key in source))
 
 
 def main() -> int:
