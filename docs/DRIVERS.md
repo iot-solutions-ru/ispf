@@ -494,7 +494,7 @@ Point mapping: `objectType:instance:property` (например `analog-output:1
 
 **Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
 
-Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Полный UDP/IP property exchange — на hardware/BACnet simulator (в CI нестабилен).
+Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetDeviceDriverNetworkTest` + `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe, exercises driver `readPoints`/`writePoint`). Loopback subnet (`127.0.0.0/8`) auto-selected for `127.0.0.1`. Полный UDP/IP property exchange на hardware/BACnet simulator — опционально (в CI нестабилен).
 
 ### dnp3 (`ispf-driver-dnp3`)
 

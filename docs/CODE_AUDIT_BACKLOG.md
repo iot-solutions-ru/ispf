@@ -70,7 +70,7 @@
 | **BL-27** | `DriverMaturityRegistry` ↔ реальные capabilities (auto или manual matrix) | P2 | Done | Driver catalog |
 | **BL-28** | Device driver panel: write/command UI поверх runtime API | P2 | Done | Driver UI |
 | **BL-29** | CWMP `SetParameterValues` write | P3 | Done | Driver |
-| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Partial | Driver QA |
+| **BL-30** | Unit/integration tests для promoted drivers (loopback/mock) | P2 | Done | Driver QA |
 
 ### Wave D — Scale, ops, federation
 
@@ -362,7 +362,9 @@ RUN_WORKFLOW, FIRE_EVENT, SET_VARIABLE, OPEN_OPERATOR_REPORT
 
 **Статус (2026-06-28):** BL-27 Done — `DriverMetadata.capabilities`, `DriverCapabilityRegistry`, merge в `DriverCatalog`; default maturity **beta** (whitelist PRODUCTION/STUB); UI gating `DriverWriteForm` по `capabilities.includes("write")`; `DriverCatalogConsistencyTest`.
 
-**Статус (2026-06-30):** BL-30 Partial — loopback tests для modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap/**mqtt**/**snmp**; BACnet — `BacnetLoopbackServer` IP connect smoke + `BacnetTestNetworkExchangeTest` (in-memory TestNetwork read/write); UDP property exchange в CI нестабилен. Новые тесты: `MqttDeviceDriverTest` (moquette), `SnmpDeviceDriverTest` (`SnmpLoopbackAgent`).
+**Статус (2026-06-30):** BL-30 Done — loopback/mock tests для promoted drivers (modbus/opcua/s7/iec104/dnp3/dlms/cwmp/http/coap/mqtt/snmp/**haystack**); BACnet — IP connect smoke + `BacnetDeviceDriverNetworkTest` (driver read/write via TestNetwork) + `BacnetPointTest`; UDP property exchange на hardware/simulator (CI optional).
+
+**Статус (2026-06-30, ранее):** BL-30 Partial — … `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest`.
 
 **Статус (2026-06-28):** BL-24 Done — `io.stepfunc:dnp3` master TCP, Class 0/1/2/3 integrity poll; loopback `Dnp3DeviceDriverTest` + `Dnp3LoopbackOutstation`; config `localAddress`/`outstationAddress`; docs в DRIVERS.md.
 
@@ -658,6 +660,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | BL-30 Done: `BacnetDeviceDriverNetworkTest`, `BacnetPointTest`; loopback subnet for 127.0.0.1 |
 | 2026-06-30 | BL-57 Done: `HaystackMetadataPanel` inspector tab + marker multiselect |
 | 2026-06-30 | BL-56/58 Done: ADR-0021 + `haystack-metadata-v1` demo + `GET /platform/haystack/export`; BL-57 Partial (inspector tag editor) |
 | 2026-06-30 | BL-30: `MqttDeviceDriverTest`, `SnmpDeviceDriverTest`, `BacnetTestNetworkExchangeTest` |
