@@ -26,6 +26,7 @@ import WidgetEditorPanel from "./WidgetEditorPanel";
 import HaystackBindDialog from "./HaystackBindDialog";
 import { nextWidgetZIndex } from "./widgetLayerUtils";
 import { useDashboardContextSync } from "../../hooks/useDashboardContextSync";
+import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { getStoredSession } from "../../auth/session";
 
 interface DashboardBuilderProps {
@@ -88,6 +89,8 @@ export default function DashboardBuilder({
   const [editorSidePanel, setEditorSidePanel] = useState<EditorSidePanel>("widget");
   const [showJson, setShowJson] = useState(false);
   const [showHaystackBind, setShowHaystackBind] = useState(false);
+  const [mobilePaletteOpen, setMobilePaletteOpen] = useState(false);
+  const isMobileLayout = useMobileLayout();
   const [modalDashboard, setModalDashboard] = useState<ModalState | null>(null);
   const layoutRef = useRef<DashboardLayout>(resolveDashboardLayout(undefined));
   const selectedWidgetIdRef = useRef<string | null>(null);
@@ -110,6 +113,12 @@ export default function DashboardBuilder({
     onSessionChange: onSessionChange ?? (() => {}),
     updatedBy: getStoredSession()?.username,
   });
+
+  useEffect(() => {
+    if (!isMobileLayout || mode !== "edit") {
+      setMobilePaletteOpen(false);
+    }
+  }, [isMobileLayout, mode]);
 
   const applySession = (patch?: OpenDashboardOptions): DashboardSession => {
     const next = mergeSession(currentSession, patch);
@@ -405,6 +414,15 @@ export default function DashboardBuilder({
             </button>
             {mode === "edit" && (
               <>
+                {isMobileLayout && (
+                  <button
+                    type="button"
+                    className={`btn ${mobilePaletteOpen ? "primary" : ""}`}
+                    onClick={() => setMobilePaletteOpen((open) => !open)}
+                  >
+                    {t("palette.title")}
+                  </button>
+                )}
                 <button type="button" className="btn" onClick={() => setShowHaystackBind(true)}>
                   {t("haystackBind.open")}
                 </button>
@@ -459,10 +477,20 @@ export default function DashboardBuilder({
       )}
 
       {!operatorMode && mode === "edit" && (
-        <div className="dashboard-editor-workspace">
-          <aside className="dashboard-palette-sidebar">
-            <WidgetPalette layout="sidebar" onAdd={addWidget} />
-          </aside>
+        <div
+          className={`dashboard-editor-workspace${isMobileLayout ? " dashboard-editor-workspace--stacked" : ""}`}
+        >
+          {!isMobileLayout && (
+            <aside className="dashboard-palette-sidebar">
+              <WidgetPalette layout="sidebar" onAdd={addWidget} />
+            </aside>
+          )}
+
+          {isMobileLayout && mobilePaletteOpen && (
+            <div className="dashboard-palette-mobile-strip">
+              <WidgetPalette onAdd={addWidget} />
+            </div>
+          )}
 
           <DashboardProvider
             session={editorSession}
