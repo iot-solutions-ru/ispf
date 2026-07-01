@@ -561,7 +561,7 @@ function AppShell() {
 
   return (
     <AgentChatProvider enabled={isAdmin}>
-    <div className="admin-shell">
+    <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
