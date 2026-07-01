@@ -7068,6 +7068,76 @@ body.scada-mimic-editor-open {
   font-size: 0.85rem;
 }
 
+.table-control,
+.model-inline-input,
+.model-retention-input {
+  width: 100%;
+  min-width: 0;
+  height: 2.15rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.table-control:focus-visible,
+.model-inline-input:focus-visible,
+.model-retention-input:focus-visible,
+.table-checkbox:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.table-control:disabled,
+.model-inline-input:disabled,
+.model-retention-input:disabled,
+.table-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.table-checkbox {
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.125rem;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  color: var(--accent-fg);
+  cursor: pointer;
+}
+
+.table-checkbox::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.3rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.05rem) rotate(45deg) scale(0);
+  transition: transform 0.1s ease;
+}
+
+.table-checkbox:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.table-checkbox:checked::before {
+  transform: translateY(-0.05rem) rotate(45deg) scale(1);
+}
+
+.model-retention-input {
+  width: 5rem;
+}
+
 .binding-expression-field {
   display: flex;
   flex-direction: column;
@@ -9137,20 +9207,73 @@ body.scada-mimic-editor-open {
   gap: 0.75rem;
 }
 
-.data-schema-fields-table input,
+.data-schema-fields-table input:not(.table-checkbox),
 .data-schema-fields-table select {
   width: 100%;
   min-width: 0;
 }
 
+.data-schema-fields-table .table-checkbox {
+  width: 1.125rem;
+  min-width: 1.125rem;
+}
+
+.data-schema-fields-table {
+  min-width: 46rem;
+}
+
+.data-schema-fields-table .schema-col-name {
+  width: 9rem;
+}
+
+.data-schema-fields-table .schema-col-type {
+  width: 9rem;
+}
+
+.data-schema-fields-table .schema-col-nullable {
+  width: 7.5rem;
+}
+
+.data-schema-fields-table .schema-col-actions {
+  width: 6.5rem;
+}
+
+.data-schema-fields-table th {
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.data-schema-fields-table th:nth-child(4),
+.data-schema-fields-table th:last-child {
+  text-align: center;
+}
+
+.data-schema-fields-table td {
+  vertical-align: middle;
+}
+
 .schema-null-cell {
   text-align: center;
-  width: 4rem;
 }
 
 .schema-actions-cell {
   white-space: nowrap;
+}
+
+.acl-editor-table {
+  min-width: 38rem;
+}
+
+.acl-editor-table th:last-child,
+.acl-editor-table td:last-child {
   width: 7rem;
+  white-space: nowrap;
+}
+
+.federation-conflicts-table {
+  min-width: 36rem;
 }
 
 .schema-field-actions {

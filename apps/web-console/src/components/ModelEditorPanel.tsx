@@ -420,6 +420,7 @@ function ModelDetail({
                     {canManage && !isBuiltin ? (
                       <label className="checkbox-label inline">
                         <input
+                          className="table-checkbox"
                           type="checkbox"
                           checked={v.historyEnabled ?? false}
                           onChange={(e) =>
