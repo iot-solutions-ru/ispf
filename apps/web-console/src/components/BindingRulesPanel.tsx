@@ -5,6 +5,7 @@ import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
 import type { BindingRule, BindingTargetKind } from "../types";
 import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
+import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import {
   emptyBindingRule,
   emptyDashboardContextRule,
@@ -190,7 +191,11 @@ export default function BindingRulesPanel({
                   onChange={(e) => setEditing({ ...editing, id: e.target.value })}
                   pattern="[A-Za-z0-9_-]+"
                   required
+                  aria-invalid={Boolean(editing.id) && !isTechnicalIdentifier(editing.id, "pathSegment")}
                 />
+                {editing.id && !isTechnicalIdentifier(editing.id, "pathSegment") && (
+                  <span className="hint error">{t("common:error.invalidPathSegment")}</span>
+                )}
               </label>
               {(dashboardMode || editingKind !== "variable") && (
                 <label className="full">

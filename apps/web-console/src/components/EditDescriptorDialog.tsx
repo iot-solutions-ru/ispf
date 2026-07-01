@@ -7,6 +7,7 @@ import DataSchemaEditor from "./schema/DataSchemaEditor";
 import { cloneSchema, emptySchema, normalizeFunctionDescriptor } from "../utils/dataSchema";
 import { DEFAULT_JAVA_FUNCTION_TEMPLATE } from "../utils/javaFunctionTemplate";
 import { defaultScriptBody } from "../utils/functionScriptSteps";
+import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import FunctionScriptStepsEditor from "./functionScript/FunctionScriptStepsEditor";
 
 const JavaFunctionEditor = lazy(() => import("./functionScript/JavaFunctionEditor"));
@@ -74,6 +75,7 @@ export default function EditDescriptorDialog({
   const [showAdvancedJson, setShowAdvancedJson] = useState(false);
   const [schemaJson, setSchemaJson] = useState("{}");
   const [parseError, setParseError] = useState<string | null>(null);
+  const nameValid = isTechnicalIdentifier(name, "code");
   const sourceDrafts = useRef<Record<string, string>>({ handler: "", script: "", java: "" });
   const initializedRef = useRef(false);
 
@@ -221,6 +223,7 @@ export default function EditDescriptorDialog({
   });
 
   function handleSave() {
+    if (!nameValid) return;
     try {
       if (showAdvancedJson) {
         JSON.parse(schemaJson);
@@ -265,7 +268,11 @@ export default function EditDescriptorDialog({
               readOnly={Boolean(initial)}
               pattern="[A-Za-z_][A-Za-z0-9_]*"
               required
+              aria-invalid={Boolean(name) && !nameValid}
             />
+            {name && !nameValid && (
+              <span className="hint error">{t("common:error.invalidCodeIdentifier")}</span>
+            )}
           </label>
           {!isFunction && (
             <label>
@@ -420,7 +427,7 @@ export default function EditDescriptorDialog({
           <button
             type="button"
             className="btn primary"
-            disabled={!name.trim() || mutation.isPending}
+            disabled={!nameValid || mutation.isPending}
             onClick={handleSave}
           >
             {t("common:action.save")}
