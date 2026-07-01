@@ -80,6 +80,7 @@ interface TreeDraft {
 
 type ReportTab = "data" | "template";
 const REPORT_TABS: readonly ReportTab[] = ["data", "template"];
+const OPERATOR_REPORT_TABS: readonly ReportTab[] = ["data"];
 
 function ColumnsEditor({
   columns,
@@ -210,9 +211,9 @@ export default function ReportBuilder({
   const { t } = useTranslation(["report", "common", "platform"]);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = usePersistentTab<ReportTab>(
-    `report:${path}`,
+    `report:${operatorMode ? "operator" : "admin"}:${path}`,
     "data",
-    REPORT_TABS
+    operatorMode ? OPERATOR_REPORT_TABS : REPORT_TABS
   );
   const [mode, setMode] = useState<"view" | "edit">(operatorMode ? "view" : "view");
   const [sqlDraft, setSqlDraft] = useState<SqlDraft | null>(null);
