@@ -8,6 +8,7 @@ import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -48,25 +49,29 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ObjectPresenceService presenceService;
     private final ObjectManager objectManager;
     private final ApplicationEventCatalogService eventCatalogService;
+    private final ObjectWebSocketPathInterestRegistry pathInterestRegistry;
 
     public ObjectWebSocketHandler(
             ObjectMapper objectMapper,
             FederationSubscribePollService federationSubscribePollService,
             ObjectPresenceService presenceService,
             ObjectManager objectManager,
-            ApplicationEventCatalogService eventCatalogService
+            ApplicationEventCatalogService eventCatalogService,
+            ObjectWebSocketPathInterestRegistry pathInterestRegistry
     ) {
         this.objectMapper = objectMapper;
         this.federationSubscribePollService = federationSubscribePollService;
         this.presenceService = presenceService;
         this.objectManager = objectManager;
         this.eventCatalogService = eventCatalogService;
+        this.pathInterestRegistry = pathInterestRegistry;
     }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         sessions.add(session);
         broadcastSessions.add(session);
+        pathInterestRegistry.onBroadcastSessionAdded();
     }
 
     @Override
@@ -162,8 +167,10 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 }
             });
         }
+        @SuppressWarnings("unchecked")
+        Set<String> previous = (Set<String>) session.getAttributes().get(SUBSCRIBE_ATTR);
         session.getAttributes().put(SUBSCRIBE_ATTR, paths);
-        updateSubscriptionIndex(session, paths);
+        updateSubscriptionIndex(session, previous, paths);
         refreshFederationPollSubscriptions();
     }
 
@@ -270,20 +277,45 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         return targets;
     }
 
-    private void updateSubscriptionIndex(WebSocketSession session, Set<String> paths) {
-        removeSessionFromIndex(session);
+    private void updateSubscriptionIndex(WebSocketSession session, Set<String> previousPaths, Set<String> paths) {
+        if (broadcastSessions.remove(session)) {
+            pathInterestRegistry.onBroadcastSessionRemoved();
+        }
+        if (previousPaths != null) {
+            for (String path : previousPaths) {
+                Set<WebSocketSession> subs = pathSubscriptions.get(path);
+                if (subs != null) {
+                    subs.remove(session);
+                    if (subs.isEmpty()) {
+                        pathSubscriptions.remove(path);
+                    }
+                }
+                pathInterestRegistry.unsubscribePath(path);
+            }
+        }
         if (paths.isEmpty()) {
             broadcastSessions.add(session);
+            pathInterestRegistry.onBroadcastSessionAdded();
             return;
         }
-        broadcastSessions.remove(session);
         for (String path : paths) {
             pathSubscriptions.computeIfAbsent(path, ignored -> ConcurrentHashMap.newKeySet()).add(session);
+            pathInterestRegistry.subscribePath(path);
         }
     }
 
     private void removeSessionFromIndex(WebSocketSession session) {
-        broadcastSessions.remove(session);
+        if (broadcastSessions.remove(session)) {
+            pathInterestRegistry.onBroadcastSessionRemoved();
+        }
+        Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
+        if (raw instanceof Set<?> subscribed) {
+            for (Object entry : subscribed) {
+                if (entry instanceof String path) {
+                    pathInterestRegistry.unsubscribePath(path);
+                }
+            }
+        }
         for (Set<WebSocketSession> subs : pathSubscriptions.values()) {
             subs.remove(session);
         }

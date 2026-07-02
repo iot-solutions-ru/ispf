@@ -37,6 +37,7 @@ public class ApplicationSqlBindingService {
     private final AlertRuleService alertRuleService;
     private final BindingInvokeAuditService bindingAuditService;
     private final ObjectEntityMapper entityMapper;
+    private final ApplicationSqlBindingEventIndex sqlBindingEventIndex;
 
     public ApplicationSqlBindingService(
             ApplicationSqlBindingStore store,
@@ -45,7 +46,8 @@ public class ApplicationSqlBindingService {
             ObjectManager objectManager,
             @Lazy AlertRuleService alertRuleService,
             BindingInvokeAuditService bindingAuditService,
-            ObjectEntityMapper entityMapper
+            ObjectEntityMapper entityMapper,
+            ApplicationSqlBindingEventIndex sqlBindingEventIndex
     ) {
         this.store = store;
         this.schemaSession = schemaSession;
@@ -54,6 +56,7 @@ public class ApplicationSqlBindingService {
         this.alertRuleService = alertRuleService;
         this.bindingAuditService = bindingAuditService;
         this.entityMapper = entityMapper;
+        this.sqlBindingEventIndex = sqlBindingEventIndex;
     }
 
     public void deploy(String appId, DeploySqlBindingRequest request) {
@@ -79,6 +82,7 @@ public class ApplicationSqlBindingService {
                 request.enabled() == null || request.enabled(),
                 null
         ));
+        sqlBindingEventIndex.onBindingChanged();
         ensureVariable(request.objectPath(), request.variable());
         store.listByApp(appId).stream()
                 .filter(binding -> binding.objectPath().equals(request.objectPath())

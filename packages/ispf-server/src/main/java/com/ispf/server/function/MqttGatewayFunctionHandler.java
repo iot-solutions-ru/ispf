@@ -8,10 +8,8 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.bootstrap.FixtureModelBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
-import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.object.bus.ObjectChangeEventBus;
-import org.springframework.context.annotation.Lazy;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -50,17 +48,16 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
 
     private final ObjectManager objectManager;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
-    private final ObjectChangeEventBus objectChangeEventBus;
+    private final ObjectChangePublicationService publicationService;
 
     public MqttGatewayFunctionHandler(
             ObjectManager objectManager,
             DeviceTelemetryPolicyService telemetryPolicyService,
-            @Lazy
-            ObjectChangeEventBus objectChangeEventBus
+            ObjectChangePublicationService publicationService
     ) {
         this.objectManager = objectManager;
         this.telemetryPolicyService = telemetryPolicyService;
-        this.objectChangeEventBus = objectChangeEventBus;
+        this.publicationService = publicationService;
     }
 
     @Override
@@ -133,7 +130,7 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         boolean automationEligible = telemetryPolicyService.automationEligible(childPath);
         if (bypassChildCoalesce && !automationEligible) {
             objectManager.setDriverTelemetryValueDirect(childPath, "temperature", temperature);
-            objectChangeEventBus.submit(ObjectChangeEvent.variableUpdated(childPath, "temperature", true, false));
+            publicationService.publishVariableChange(childPath, "temperature", null);
             return;
         }
         objectManager.setDriverTelemetryValue(childPath, "temperature", temperature);

@@ -52,7 +52,7 @@
 | **P1** | AI production | Approval mode for mutate tools, scenario catalog | BL-106, 108 — Phase 23 |
 | **P1** | Ops / deploy | One-click prod deploy, CH history playbook | BL-114, 127 — Phase 23 |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
-| **P2** | Scale | Ingress tier ADR, MQTT worker, CI load gate | BL-111…113 — Phase 23 |
+| **P2** | Scale | Demand-driven pub/sub, CI load gate | BL-111 Done; BL-112 cancelled; BL-113 — Phase 23 |
 | **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
 | **P2** | QA live | Playwright operator + alarming on staging | BL-129 — Done (EX-2) |
 | **P3** | Multi-tenant SaaS | Tenant isolation hardening, quotas | BL-125, 126 — Phase 23 |
@@ -83,7 +83,7 @@
 | App marketplace | ~95% | bundle signing (BL-100) | BL-96…98 Done |
 | Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
 | AI agent production | ~85% | approval mode, audit export, SLO dashboard | BL-106…110 |
-| Telemetry ingress scale | ~50% | monolith poll OK; burst ingress tier — ADR | BL-111…113 |
+| Telemetry ingress scale | ~65% | demand-driven pub/sub (ADR-0024); CI load gate pending | BL-111 Done; BL-113 |
 | Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |
 | Production deploy UX | ~70% | one-click stack, air-gap guide | BL-127, 128 |
 | Web Console i18n | ~98% | tails | BL-07 Done |

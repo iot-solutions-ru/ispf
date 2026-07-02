@@ -6,19 +6,20 @@ import com.ispf.core.model.FieldType;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 class RuntimeTelemetryCoalescerTest {
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private ObjectChangePublicationService publicationService;
 
     @Mock
     private MqttGatewayIngressDispatchService gatewayIngressDispatch;
@@ -52,17 +53,11 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 2.0));
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 3.0));
 
-        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(publicationService);
 
         coalescer.flushNow();
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(captor.capture());
-        ObjectChangeEvent event = captor.getValue();
-        assertThat(event.path()).isEqualTo("root.dev.sensor");
-        assertThat(event.variableName()).isEqualTo("temperature");
-        assertThat(event.telemetry()).isTrue();
-        assertThat(event.automationEligible()).isTrue();
+        verify(publicationService, times(1)).publishVariableChange("root.dev.sensor", "temperature", null);
     }
 
     @Test
@@ -71,14 +66,12 @@ class RuntimeTelemetryCoalescerTest {
         properties.setEnabled(false);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
-        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher, gatewayIngressDispatch);
+        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, publicationService, gatewayIngressDispatch);
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertThat(captor.getValue().automationEligible()).isFalse();
+        verify(publicationService).publishVariableChange("root.dev.sensor", "temperature", null);
     }
 
     @Test
@@ -89,12 +82,12 @@ class RuntimeTelemetryCoalescerTest {
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", value);
         coalescer.flushNow();
-        clearInvocations(eventPublisher);
+        clearInvocations(publicationService);
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", value);
         coalescer.flushNow();
 
-        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(publicationService);
     }
 
     @Test
@@ -106,11 +99,7 @@ class RuntimeTelemetryCoalescerTest {
         coalescer.recordUpdate("root.dev.sensor", "humidity", record(schema, 55.0));
         coalescer.flushNow();
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(captor.capture());
-        assertThat(captor.getAllValues())
-                .extracting(ObjectChangeEvent::variableName)
-                .containsExactlyInAnyOrder("temperature", "humidity");
+        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.sensor"), any(), any());
     }
 
     @Test
@@ -145,11 +134,7 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(captor.capture());
-        assertThat(captor.getAllValues())
-                .extracting(ObjectChangeEvent::variableName)
-                .containsOnly("lastIngress");
+        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.gateway"), eq("lastIngress"), any());
     }
 
     @Test
@@ -172,16 +157,12 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(captor.capture());
-        assertThat(captor.getAllValues())
-                .extracting(ObjectChangeEvent::variableName)
-                .containsOnly("lastIngress");
+        verify(publicationService, times(2)).publishVariableChange(eq("root.dev.gateway"), eq("lastIngress"), any());
     }
 
     @Test
     void coalescesSameTopicWithoutPayloadLanesIntoOneLane() {
-        clearInvocations(eventPublisher);
+        clearInvocations(publicationService);
         coalescer = newCoalescer(true, 1_000, false, false);
         DataSchema ingress = DataSchema.builder("mqttIngress")
                 .field("topic", FieldType.STRING)
@@ -200,9 +181,7 @@ class RuntimeTelemetryCoalescerTest {
         );
         coalescer.flushNow();
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(captor.capture());
-        assertThat(captor.getValue().variableName()).isEqualTo("lastIngress");
+        verify(publicationService, times(1)).publishVariableChange("root.dev.gateway", "lastIngress", null);
     }
 
     @Test
@@ -223,7 +202,7 @@ class RuntimeTelemetryCoalescerTest {
                 DataRecord.single(ingress, Map.of("topic", "ispf/loadtest/00001/temperature", "raw", "3.0"))
         );
         coalescer.flushNow();
-        verifyNoInteractions(eventPublisher);
+        verifyNoInteractions(publicationService);
     }
 
     private RuntimeTelemetryCoalescer newCoalescer(boolean enabled, long coalesceMs) {
@@ -248,7 +227,7 @@ class RuntimeTelemetryCoalescerTest {
                 .thenReturn(ingressPayloadLanes);
         org.mockito.Mockito.when(policyService.parallelIngressDispatch(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(ingressTopicLanes || ingressPayloadLanes);
-        return new RuntimeTelemetryCoalescer(properties, policyService, eventPublisher, gatewayIngressDispatch);
+        return new RuntimeTelemetryCoalescer(properties, policyService, publicationService, gatewayIngressDispatch);
     }
 
     private static DataRecord record(DataSchema schema, double value) {

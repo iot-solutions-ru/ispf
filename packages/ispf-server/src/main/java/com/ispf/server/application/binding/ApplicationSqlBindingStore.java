@@ -119,6 +119,18 @@ public class ApplicationSqlBindingStore {
         );
     }
 
+    public List<SqlBinding> listAllOnEvent() {
+        return jdbcTemplate.query("""
+                SELECT id, app_id, object_path, variable_name, query_sql, refresh_mode,
+                       refresh_interval_ms, value_field, trigger_object_path, trigger_function_name,
+                       enabled, last_refreshed_at
+                FROM %s
+                WHERE enabled = TRUE AND refresh_mode = 'on_event'
+                """.formatted(bindingsTable),
+                this::mapRow
+        );
+    }
+
     public List<SqlBinding> listForFunctionSuccess(String appId, String objectPath, String functionName) {
         return jdbcTemplate.query("""
                 SELECT id, app_id, object_path, variable_name, query_sql, refresh_mode,

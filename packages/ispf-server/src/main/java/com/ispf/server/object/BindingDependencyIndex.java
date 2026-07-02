@@ -19,6 +19,7 @@ public class BindingDependencyIndex {
 
     private final BindingRulesService bindingRulesService;
     private final Map<String, Set<String>> consumersByKey = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> eventConsumersByKey = new ConcurrentHashMap<>();
 
     public BindingDependencyIndex(BindingRulesService bindingRulesService) {
         this.bindingRulesService = bindingRulesService;
@@ -36,6 +37,7 @@ public class BindingDependencyIndex {
 
     public synchronized void rebuildAll(Iterable<String> objectPaths) {
         consumersByKey.clear();
+        eventConsumersByKey.clear();
         for (String objectPath : objectPaths) {
             rebuild(objectPath);
         }
@@ -43,6 +45,11 @@ public class BindingDependencyIndex {
 
     public synchronized void removeObject(String objectPath) {
         consumersByKey.entrySet().removeIf(entry -> entry.getValue().remove(objectPath));
+        eventConsumersByKey.entrySet().removeIf(entry -> entry.getValue().remove(objectPath));
+    }
+
+    public Set<String> eventConsumers(String objectPath, String eventName) {
+        return eventConsumersByKey.getOrDefault(eventKey(objectPath, eventName), Set.of());
     }
 
     public Set<String> consumers(String changedObjectPath, String changedVariable) {
@@ -67,6 +74,11 @@ public class BindingDependencyIndex {
             consumersByKey.computeIfAbsent(key(ref.objectPath(), ref.variableName()), ignored -> ConcurrentHashMap.newKeySet())
                     .add(ruleObjectPath);
         }
+        String onEvent = activators.onEvent();
+        if (onEvent != null && !onEvent.isBlank()) {
+            eventConsumersByKey.computeIfAbsent(eventKey(ruleObjectPath, onEvent.trim()), ignored -> ConcurrentHashMap.newKeySet())
+                    .add(ruleObjectPath);
+        }
     }
 
     private static String resolveActivatorPath(String ruleObjectPath, String activatorPath) {
@@ -80,5 +92,9 @@ public class BindingDependencyIndex {
 
     private static String key(String objectPath, String variableName) {
         return objectPath + "|" + variableName;
+    }
+
+    private static String eventKey(String objectPath, String eventName) {
+        return objectPath + "|" + eventName;
     }
 }

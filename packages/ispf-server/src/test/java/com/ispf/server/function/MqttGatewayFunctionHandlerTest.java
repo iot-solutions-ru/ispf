@@ -5,12 +5,10 @@ import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
-import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.object.bus.ObjectChangeEventBus;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,7 +35,7 @@ class MqttGatewayFunctionHandlerTest {
     private DeviceTelemetryPolicyService telemetryPolicyService;
 
     @Mock
-    private ObjectChangeEventBus objectChangeEventBus;
+    private ObjectChangePublicationService publicationService;
 
     @Test
     void extractIndexFromLoadtestTopic() {
@@ -74,14 +72,7 @@ class MqttGatewayFunctionHandlerTest {
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
         verify(objectManager).setDriverTelemetryValueDirect(eq(CHILD), eq("temperature"), any(DataRecord.class));
         verify(objectManager, never()).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
-
-        ArgumentCaptor<ObjectChangeEvent> eventCaptor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(objectChangeEventBus).submit(eventCaptor.capture());
-        ObjectChangeEvent event = eventCaptor.getValue();
-        assertThat(event.path()).isEqualTo(CHILD);
-        assertThat(event.variableName()).isEqualTo("temperature");
-        assertThat(event.telemetry()).isTrue();
-        assertThat(event.automationEligible()).isFalse();
+        verify(publicationService).publishVariableChange(CHILD, "temperature", null);
     }
 
     @Test
@@ -94,7 +85,7 @@ class MqttGatewayFunctionHandlerTest {
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
         verify(objectManager).setDriverTelemetryValue(eq(CHILD), eq("temperature"), any(DataRecord.class));
         verify(objectManager, never()).setDriverTelemetryValueDirect(eq(CHILD), eq("temperature"), any(DataRecord.class));
-        verify(objectChangeEventBus, never()).submit(any(ObjectChangeEvent.class));
+        verify(publicationService, never()).publishVariableChange(any(), any(), any());
     }
 
     private MqttGatewayFunctionHandler newHandlerWithTree() {
@@ -105,6 +96,6 @@ class MqttGatewayFunctionHandlerTest {
         tree.register(child);
         when(objectManager.require(GATEWAY)).thenReturn(gateway);
         when(objectManager.tree()).thenReturn(tree);
-        return new MqttGatewayFunctionHandler(objectManager, telemetryPolicyService, objectChangeEventBus);
+        return new MqttGatewayFunctionHandler(objectManager, telemetryPolicyService, publicationService);
     }
 }

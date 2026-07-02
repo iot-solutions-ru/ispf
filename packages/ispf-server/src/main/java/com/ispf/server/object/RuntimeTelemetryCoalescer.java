@@ -5,7 +5,7 @@ import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import jakarta.annotation.PreDestroy;
-import org.springframework.context.ApplicationEventPublisher;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
@@ -26,7 +26,7 @@ public class RuntimeTelemetryCoalescer {
 
     private final RuntimeTelemetryProperties properties;
     private final DeviceTelemetryPolicyService policyService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ObjectChangePublicationService publicationService;
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
     private final ScheduledExecutorService scheduler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
@@ -36,12 +36,12 @@ public class RuntimeTelemetryCoalescer {
     public RuntimeTelemetryCoalescer(
             RuntimeTelemetryProperties properties,
             DeviceTelemetryPolicyService policyService,
-            ApplicationEventPublisher eventPublisher,
+            ObjectChangePublicationService publicationService,
             @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch
     ) {
         this.properties = properties;
         this.policyService = policyService;
-        this.eventPublisher = eventPublisher;
+        this.publicationService = publicationService;
         this.gatewayIngressDispatch = gatewayIngressDispatch;
         int schedulerThreads = Math.max(1, properties.getCoalesceSchedulerThreads());
         AtomicInteger threadIndex = new AtomicInteger();
@@ -138,10 +138,7 @@ public class RuntimeTelemetryCoalescer {
         if (gatewayIngressDispatch.tryScheduleDispatch(path, variableName, value)) {
             return;
         }
-        boolean automationEligible = policyService.automationEligible(path);
-        eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
-                path, variableName, true, automationEligible, observedAt
-        ));
+        publicationService.publishVariableChange(path, variableName, observedAt);
     }
 
     private String resolveCoalesceKey(String path, String variableName, DataRecord value) {

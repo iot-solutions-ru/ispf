@@ -8,12 +8,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
-import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
-import org.springframework.context.ApplicationEventPublisher;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +30,7 @@ public class EventService {
     private final ObjectManager objectManager;
     private final EventJournalStore eventJournalStore;
     private final ObjectEntityMapper mapper;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ObjectChangePublicationService publicationService;
     private final EventCatalogPayloadValidator catalogPayloadValidator;
     private final EventJournalAsyncWriter eventJournalAsyncWriter;
     private final RecentEventCache recentEventCache;
@@ -42,7 +41,7 @@ public class EventService {
             ObjectManager objectManager,
             EventJournalStore eventJournalStore,
             ObjectEntityMapper mapper,
-            ApplicationEventPublisher eventPublisher,
+            ObjectChangePublicationService publicationService,
             EventCatalogPayloadValidator catalogPayloadValidator,
             EventJournalAsyncWriter eventJournalAsyncWriter,
             RecentEventCache recentEventCache,
@@ -52,7 +51,7 @@ public class EventService {
         this.objectManager = objectManager;
         this.eventJournalStore = eventJournalStore;
         this.mapper = mapper;
-        this.eventPublisher = eventPublisher;
+        this.publicationService = publicationService;
         this.catalogPayloadValidator = catalogPayloadValidator;
         this.eventJournalAsyncWriter = eventJournalAsyncWriter;
         this.recentEventCache = recentEventCache;
@@ -195,7 +194,7 @@ public class EventService {
         );
         eventJournalAsyncWriter.enqueue(event, mapper.writeDataRecord(event.payload()));
         automationMetricsRecorder.recordEventFired(source);
-        eventPublisher.publishEvent(ObjectChangeEvent.eventFired(objectPath, eventName));
+        publicationService.publishEventFired(objectPath, eventName);
         return event;
     }
 

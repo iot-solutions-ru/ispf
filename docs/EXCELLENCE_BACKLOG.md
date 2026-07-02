@@ -761,42 +761,43 @@
 
 **Цель:** путь к 50k+ events/s и prod historian без стыда перед ThingsBoard/AWS.
 
-### BL-111 — ADR: telemetry ingress tier
+### BL-111 — ADR: demand-driven variable change pub/sub
 
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | — |
 
 **Scope:**
 
-- ADR-0024: отдельный ingest path (MQTT/Kafka) → normalize → historian/event bus.
-- Monolith остаёт для SCADA poll; burst — через ingress.
+- ADR-0024: single JVM, no sidecar; `VariableChangeSubscriptionRegistry` + gated publish.
+- MQTT → in-memory update always; platform event only when historian/bindings/alerts/workflows subscribe.
+- Async binding chain on automation lane (`BindingPropagationAsyncHandler` order 5).
 
 **Acceptance:**
 
-- [ ] Diagram в ADR; comparison with current meter-bus path
+- [x] ADR-0024 accepted; `ispf.object-change.demand-driven-publication` (default true)
+- [x] `ObjectChangePublicationService`, registry, async binding handler
+- [x] Unit tests for publication gate and registry
 
 ---
 
-### BL-112 — MQTT ingress worker (stateless)
+### BL-112 — MQTT ingress worker (stateless) — superseded
 
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Cancelled (superseded by ADR-0024) |
 | **Зависимости** | BL-111 |
 
 **Scope:**
 
-- Optional module or sidecar: subscribe topics → map to device paths → coalesce → POST internal API or direct CH insert.
-- Reuse `mqtt-ingress-load-test` patterns.
+- ~~Optional sidecar for MQTT fan-in~~ — rejected; dedicated single JVM with plugin JARs.
 
 **Acceptance:**
 
-- [ ] docker-compose profile `ingress` in repo
-- [ ] Load test report committed (≥ 10k msg/s single node baseline)
+- N/A — use demand-driven pub/sub in-process (BL-111)
 
 ---
 
@@ -1229,7 +1230,9 @@ Sprint EX-5 (Semantic)
   BL-101, BL-102, BL-103
 
 Sprint EX-6 (Scale spike)
-  BL-111, BL-112, BL-113
+  BL-111 Done (ADR-0024 demand-driven pub/sub)
+  BL-112 Cancelled (sidecar superseded)
+  BL-113
 
 Backlog по demand
   BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
@@ -1241,6 +1244,6 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-02 | Sprint EX-5: BL-101…103 Done — Haystack filter query runtime, API, dashboard bind wizard |
+| 2026-07-02 | Sprint EX-6 start: BL-111 Done — ADR-0024 demand-driven pub/sub; BL-112 cancelled (no sidecar) |
 | 2026-07-02 | Sprint EX-4: BL-96…99 Done — solution catalog, semver, CI template, building-hvac reference |
 | 2026-06-30 | Первая версия REQ-EX: BL-78…132, Phase 23 в ROADMAP |

@@ -37,6 +37,7 @@
 | [0021](0021-haystack-semantic-overlay.md) | Haystack semantic overlay (tree-first, optional tags) | Accepted |
 | [0022](0022-driver-production-matrix.md) | Driver production matrix + CI loopback gate | Accepted |
 | [0023](0023-haystack-query-runtime.md) | Haystack filter query runtime (subset, tree-first) | Accepted |
+| [0024](0024-demand-driven-variable-change-pubsub.md) | Demand-driven object change pub/sub (single JVM) | Accepted |
 
 ## Шаблон нового ADR
 

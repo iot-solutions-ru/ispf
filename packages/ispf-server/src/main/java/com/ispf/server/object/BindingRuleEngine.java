@@ -19,7 +19,7 @@ import com.ispf.server.dashboard.DashboardContextSupport;
 import com.ispf.server.event.EventService;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import tools.jackson.databind.ObjectMapper;
-import org.springframework.context.ApplicationEventPublisher;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class BindingRuleEngine {
     private final BindingExpressionEvaluator expressionEvaluator;
     private final ExpressionEngine expressionEngine;
     private final BindingEvaluationContext evaluationContext;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ObjectChangePublicationService publicationService;
     private final BindingRuleAsyncExecutor asyncExecutor;
     private final BindingInvokeAuditService bindingAuditService;
     private final ObjectEntityMapper entityMapper;
@@ -60,7 +60,7 @@ public class BindingRuleEngine {
             BindingExpressionEvaluator expressionEvaluator,
             ExpressionEngine expressionEngine,
             BindingEvaluationContext evaluationContext,
-            ApplicationEventPublisher eventPublisher,
+            ObjectChangePublicationService publicationService,
             BindingRuleAsyncExecutor asyncExecutor,
             BindingInvokeAuditService bindingAuditService,
             ObjectEntityMapper entityMapper,
@@ -72,7 +72,7 @@ public class BindingRuleEngine {
         this.expressionEvaluator = expressionEvaluator;
         this.expressionEngine = expressionEngine;
         this.evaluationContext = evaluationContext;
-        this.eventPublisher = eventPublisher;
+        this.publicationService = publicationService;
         this.asyncExecutor = asyncExecutor;
         this.bindingAuditService = bindingAuditService;
         this.entityMapper = entityMapper;
@@ -134,7 +134,7 @@ public class BindingRuleEngine {
             }
             for (String variableName : changedVariables) {
                 if (shouldPublishVariableUpdate(variableName)) {
-                    eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(objectPath, variableName));
+                    publicationService.publishVariableChange(objectPath, variableName, null);
                 }
             }
         } finally {
@@ -184,7 +184,7 @@ public class BindingRuleEngine {
         if (evaluateRule(object, rule, changedVariables, trigger)) {
             for (String variableName : changedVariables) {
                 if (shouldPublishVariableUpdate(variableName)) {
-                    eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(objectPath, variableName));
+                    publicationService.publishVariableChange(objectPath, variableName, null);
                 }
             }
         }

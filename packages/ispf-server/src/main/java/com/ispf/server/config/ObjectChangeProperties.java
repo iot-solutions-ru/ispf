@@ -19,6 +19,10 @@ public class ObjectChangeProperties {
      * When false, all handlers share {@link #queueCapacity} and {@link #workerThreads}.
      */
     private boolean splitLanesEnabled = true;
+    /**
+     * ADR-0024: publish variable change events only when historian/bindings/alerts/workflows subscribe.
+     */
+    private boolean demandDrivenPublication = true;
     private int telemetryQueueCapacity = 10_000;
     private int automationQueueCapacity = 10_000;
     private int telemetryWorkerThreads = 2;
@@ -216,6 +220,14 @@ public class ObjectChangeProperties {
 
     public void setSplitLanesEnabled(boolean splitLanesEnabled) {
         this.splitLanesEnabled = splitLanesEnabled;
+    }
+
+    public boolean isDemandDrivenPublication() {
+        return demandDrivenPublication;
+    }
+
+    public void setDemandDrivenPublication(boolean demandDrivenPublication) {
+        this.demandDrivenPublication = demandDrivenPublication;
     }
 
     public int getTelemetryQueueCapacity() {

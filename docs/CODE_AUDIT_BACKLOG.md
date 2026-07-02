@@ -211,8 +211,8 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-111** | ADR telemetry ingress tier | P2 | Planned | Architecture |
-| **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Planned | Scale |
+| **BL-111** | ADR demand-driven variable change pub/sub | P2 | Done | Architecture |
+| **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Cancelled | Scale |
 | **BL-113** | CI load test gate (events-internal) | P2 | Planned | QA / Scale |
 | **BL-114** | ClickHouse variable history prod playbook | P1 | Planned (ops) | Ops |
 | **BL-115** | Horizontal scale documentation | P3 | Planned | Ops |
@@ -814,7 +814,7 @@ Sprint EX-5 (Semantic)
   BL-101, BL-102, BL-103
 
 Sprint EX-6 (Scale spike)
-  BL-111, BL-112, BL-113
+  BL-111 Done, BL-112 Cancelled, BL-113
 
 Backlog по demand
   BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132

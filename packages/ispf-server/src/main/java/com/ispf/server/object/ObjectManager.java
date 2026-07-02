@@ -26,9 +26,9 @@ import com.ispf.server.plugin.model.ModelApplicationRunner;
 import com.ispf.server.plugin.model.ModelBootstrap;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import com.ispf.server.plugin.model.SystemIntrinsicModelMigration;
+import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -66,7 +66,7 @@ public class ObjectManager {
     private final ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration;
     private final ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ObjectChangePublicationService publicationService;
     private final ObjectConfigAuditService configAuditService;
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
@@ -85,9 +85,9 @@ public class ObjectManager {
             ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration,
             ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
-            ApplicationEventPublisher eventPublisher,
+            @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
             ObjectConfigAuditService configAuditService,
-            RuntimeTelemetryCoalescer telemetryCoalescer,
+            @org.springframework.context.annotation.Lazy RuntimeTelemetryCoalescer telemetryCoalescer,
             JavaFunctionRuntimeService javaFunctionRuntimeService
     ) {
         this.nodeRepository = nodeRepository;
@@ -102,7 +102,7 @@ public class ObjectManager {
         this.intrinsicModelMigration = intrinsicModelMigration;
         this.fixtureModelBootstrap = fixtureModelBootstrap;
         this.visualGroupService = visualGroupService;
-        this.eventPublisher = eventPublisher;
+        this.publicationService = publicationService;
         this.configAuditService = configAuditService;
         this.telemetryCoalescer = telemetryCoalescer;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
@@ -835,7 +835,17 @@ public class ObjectManager {
     }
 
     private void publish(ObjectChangeEvent event) {
-        eventPublisher.publishEvent(event);
+        switch (event.type()) {
+            case VARIABLE_UPDATED -> {
+                if (event.revision() != null || event.changedBy() != null) {
+                    publicationService.publishConfigVariableChange(event);
+                } else {
+                    publicationService.publishVariableChange(event.path(), event.variableName(), event.observedAt());
+                }
+            }
+            case EVENT_FIRED -> publicationService.publishEventFired(event.path(), event.variableName());
+            case CREATED, UPDATED, DELETED -> publicationService.publishStructureChange(event);
+        }
     }
 
     /** Publishes an UPDATED event so tree clients refresh lazy children (e.g. visual group members). */
