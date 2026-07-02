@@ -2,7 +2,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { COMMON_HAYSTACK_MARKERS } from "../../constants/haystackMarkers";
-import { searchHaystackTags, type HaystackTagSearchMatch } from "../../api/haystackSearch";
+import {
+  queryHaystackFilter,
+  searchHaystackTags,
+  type HaystackTagSearchMatch,
+} from "../../api/haystackSearch";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
 import { newWidget } from "../../types/dashboard";
 import { nextWidgetZIndex } from "./widgetLayerUtils";
@@ -13,8 +17,11 @@ interface HaystackBindDialogProps {
   onClose: () => void;
 }
 
+type BindMode = "tags" | "filter";
+
 const DEFAULT_ROOT_PATH = "root.platform";
 const BIND_TAGS = ["equip", "point", "temp"] as const;
+const DEFAULT_FILTER = "equip and point and temp";
 
 function appendValueWidgets(
   layout: DashboardLayout,
@@ -56,20 +63,37 @@ function appendValueWidgets(
 
 export default function HaystackBindDialog({ layout, onApply, onClose }: HaystackBindDialogProps) {
   const { t } = useTranslation(["dashboard", "inspector"]);
+  const [mode, setMode] = useState<BindMode>("filter");
   const [selectedTags, setSelectedTags] = useState<string[]>([...BIND_TAGS]);
+  const [filterQuery, setFilterQuery] = useState(DEFAULT_FILTER);
   const [rootPath, setRootPath] = useState(DEFAULT_ROOT_PATH);
   const [matches, setMatches] = useState<HaystackTagSearchMatch[]>([]);
 
   const searchMutation = useMutation({
-    mutationFn: () =>
-      searchHaystackTags({
+    mutationFn: async () => {
+      if (mode === "filter") {
+        const trimmed = filterQuery.trim();
+        if (!trimmed) {
+          throw new Error("empty filter");
+        }
+        const result = await queryHaystackFilter({
+          filter: trimmed,
+          rootPath,
+          entityKind: "point",
+          limit: 50,
+        });
+        return result.matches;
+      }
+      const result = await searchHaystackTags({
         tags: selectedTags,
         rootPath,
         entityKind: "point",
         limit: 50,
-      }),
+      });
+      return result.matches;
+    },
     onSuccess: (result) => {
-      setMatches(result.matches);
+      setMatches(result);
     },
   });
 
@@ -84,8 +108,11 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
     );
   };
 
+  const canSearch =
+    mode === "filter" ? filterQuery.trim().length > 0 : selectedTags.length > 0;
+
   const handleSearch = () => {
-    if (selectedTags.length === 0) {
+    if (!canSearch) {
       return;
     }
     searchMutation.mutate();
@@ -114,19 +141,54 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
 
         <p className="hint">{t("haystackBind.intro")}</p>
 
-        <fieldset className="function-form-multiselect haystack-marker-fieldset">
-          <legend>{t("inspector:haystack.tags")}</legend>
-          {COMMON_HAYSTACK_MARKERS.map((tag) => (
-            <label key={tag} className="checkbox-inline">
-              <input
-                type="checkbox"
-                checked={selectedTags.includes(tag)}
-                onChange={() => toggleTag(tag)}
-              />
-              {t(`inspector:haystack.marker.${tag}`, tag)}
-            </label>
-          ))}
-        </fieldset>
+        <div className="haystack-bind-mode" role="radiogroup" aria-label={t("haystackBind.modeLabel")}>
+          <label className="radio-inline">
+            <input
+              type="radio"
+              name="haystack-bind-mode"
+              checked={mode === "filter"}
+              onChange={() => setMode("filter")}
+            />
+            {t("haystackBind.modeFilter")}
+          </label>
+          <label className="radio-inline">
+            <input
+              type="radio"
+              name="haystack-bind-mode"
+              checked={mode === "tags"}
+              onChange={() => setMode("tags")}
+            />
+            {t("haystackBind.modeTags")}
+          </label>
+        </div>
+
+        {mode === "filter" ? (
+          <label className="property-field">
+            {t("haystackBind.filterQuery")}
+            <input
+              type="text"
+              value={filterQuery}
+              onChange={(event) => setFilterQuery(event.target.value)}
+              placeholder={DEFAULT_FILTER}
+              spellCheck={false}
+            />
+            <span className="hint">{t("haystackBind.filterHint")}</span>
+          </label>
+        ) : (
+          <fieldset className="function-form-multiselect haystack-marker-fieldset">
+            <legend>{t("inspector:haystack.tags")}</legend>
+            {COMMON_HAYSTACK_MARKERS.map((tag) => (
+              <label key={tag} className="checkbox-inline">
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag)}
+                  onChange={() => toggleTag(tag)}
+                />
+                {t(`inspector:haystack.marker.${tag}`, tag)}
+              </label>
+            ))}
+          </fieldset>
+        )}
 
         <label className="property-field">
           {t("haystackBind.rootPath")}
@@ -142,7 +204,7 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
           <button
             type="button"
             className="btn primary"
-            disabled={selectedTags.length === 0 || searchMutation.isPending}
+            disabled={!canSearch || searchMutation.isPending}
             onClick={handleSearch}
           >
             {searchMutation.isPending ? t("haystackBind.searching") : t("haystackBind.search")}

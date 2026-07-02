@@ -50,3 +50,41 @@ export function searchHaystackTags(params: {
     headers: getAuthHeaders(),
   }).then((response) => parseJson<HaystackTagSearchResult>(response));
 }
+
+export interface HaystackFilterQueryResult {
+  formatVersion: number;
+  filter: string;
+  rootPath: string;
+  entityKind: string;
+  offset: number;
+  limit: number;
+  count: number;
+  totalVisible?: number;
+  matches: HaystackTagSearchMatch[];
+}
+
+export function queryHaystackFilter(params: {
+  filter: string;
+  rootPath?: string;
+  entityKind?: "equip" | "point" | "all";
+  offset?: number;
+  limit?: number;
+}): Promise<HaystackFilterQueryResult> {
+  const query = new URLSearchParams();
+  query.set("filter", params.filter.trim());
+  if (params.rootPath?.trim()) {
+    query.set("rootPath", params.rootPath.trim());
+  }
+  if (params.entityKind) {
+    query.set("entityKind", params.entityKind);
+  }
+  if (params.offset != null) {
+    query.set("offset", String(params.offset));
+  }
+  if (params.limit != null) {
+    query.set("limit", String(params.limit));
+  }
+  return fetch(`/api/v1/platform/haystack/query?${query.toString()}`, {
+    headers: getAuthHeaders(),
+  }).then((response) => parseJson<HaystackFilterQueryResult>(response));
+}

@@ -28,8 +28,8 @@ public class HaystackExportService {
 
     public static final String DEFAULT_ROOT_PATH = "root.platform";
     private static final int FORMAT_VERSION = 1;
-    private static final int SEARCH_DEFAULT_LIMIT = 50;
-    private static final int SEARCH_MAX_LIMIT = 200;
+    public static final int SEARCH_DEFAULT_LIMIT = 50;
+    public static final int SEARCH_MAX_LIMIT = 200;
 
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
@@ -169,6 +169,10 @@ public class HaystackExportService {
         Object haystackRef = row.get("haystackRef");
         if (haystackRef != null && !haystackRef.toString().isBlank()) {
             match.put("haystackRef", haystackRef);
+        }
+        Object curVal = row.get("curVal");
+        if (curVal != null) {
+            match.put("curVal", curVal);
         }
         return match;
     }
