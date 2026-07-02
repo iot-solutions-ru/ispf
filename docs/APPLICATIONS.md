@@ -128,6 +128,19 @@ Content-Type: application/json
 
 ## Bundle deploy (REQ-PF-03)
 
+### Semver contract (BL-97)
+
+`manifest.version` is **required** and must be strict semver `MAJOR.MINOR.PATCH` (e.g. `1.0.0`). Invalid values are rejected at parse, validate, and deploy.
+
+Optional fields:
+
+- `changelog` — top-level string shown in the solution catalog
+- `metadata.changelog` — alternative location for the same text
+
+When upgrading an installed app, `POST …/bundle/validate` warns on **major** version bumps (`1.x.x` → `2.0.0`) so integrators review migrations and operator UI breaks.
+
+API: `GET /api/v1/solutions/catalog`, `POST /api/v1/solutions/reference/{exampleId}/install`.
+
 Один запрос — регистрация, metadata, миграции, функции, расписания:
 
 ```http

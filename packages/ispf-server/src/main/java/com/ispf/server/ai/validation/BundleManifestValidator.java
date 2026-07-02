@@ -3,6 +3,8 @@ package com.ispf.server.ai.validation;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.BundleDependencyException;
 import com.ispf.server.application.bundle.BundleDependencyVerifier;
+import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
+import com.ispf.server.application.bundle.BundleSemverSupport;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.application.script.FunctionScriptValidator;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
@@ -32,17 +34,20 @@ public class BundleManifestValidator {
     private final FunctionScriptValidator scriptValidator;
     private final BundleDependencyVerifier dependencyVerifier;
     private final CommercialBundleLicenseVerifier licenseVerifier;
+    private final ApplicationBundleSnapshotStore snapshotStore;
     private final ObjectMapper objectMapper;
 
     public BundleManifestValidator(
             FunctionScriptValidator scriptValidator,
             BundleDependencyVerifier dependencyVerifier,
             CommercialBundleLicenseVerifier licenseVerifier,
+            ApplicationBundleSnapshotStore snapshotStore,
             ObjectMapper objectMapper
     ) {
         this.scriptValidator = scriptValidator;
         this.dependencyVerifier = dependencyVerifier;
         this.licenseVerifier = licenseVerifier;
+        this.snapshotStore = snapshotStore;
         this.objectMapper = objectMapper;
     }
 
@@ -66,7 +71,13 @@ public class BundleManifestValidator {
         }
         if (manifest.version() == null || manifest.version().isBlank()) {
             builder.addError("manifest.version is required");
+        } else if (!BundleSemverSupport.isValid(manifest.version())) {
+            builder.addError("manifest.version must be semver MAJOR.MINOR.PATCH (e.g. \"1.0.0\")");
         }
+        snapshotStore.findActive(appId).ifPresent(active ->
+                BundleSemverSupport.majorBumpWarning(active.bundleVersion(), manifest.version())
+                        .ifPresent(builder::addWarning)
+        );
         if (manifest.displayName() == null || manifest.displayName().isBlank()) {
             builder.addError("manifest.displayName is required");
         }

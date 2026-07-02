@@ -455,7 +455,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-4) |
 | **Зависимости** | bundle export (merged) |
 
 **Scope:**
@@ -465,8 +465,8 @@
 
 **Acceptance:**
 
-- [ ] Admin видит список apps + versions из platform DB
-- [ ] One-click «install demo bundle» для reference apps
+- [x] Admin видит список apps + versions из platform DB
+- [x] One-click «install demo bundle» для reference apps
 
 ---
 
@@ -475,7 +475,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-4) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -486,9 +486,9 @@
 
 **Acceptance:**
 
-- [ ] `ApplicationBundleDeployService` validates semver
-- [ ] Test: deploy 1.0.0 then 1.1.0 upgrade path
-- [ ] Document in `APPLICATIONS.md`
+- [x] `ApplicationBundleDeployService` validates semver
+- [x] Test: deploy 1.0.0 then 1.1.0 upgrade path
+- [x] Document in `APPLICATIONS.md`
 
 ---
 
@@ -497,7 +497,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-4) |
 | **Зависимости** | BL-96, BL-97 |
 
 **Scope:**
@@ -507,8 +507,8 @@
 
 **Acceptance:**
 
-- [ ] README: integrator copies template, runs against local ISPF
-- [ ] Used in at least one `examples/*` workflow
+- [x] README: integrator copies template, runs against local ISPF
+- [x] Used in at least one `examples/*` workflow
 
 ---
 
@@ -517,7 +517,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-4) |
 | **Зависимости** | [0002](decisions/0002-dogfooding-gate.md) |
 
 **Scope:**
@@ -527,9 +527,9 @@
 
 **Acceptance:**
 
-- [ ] Bundle deploy smoke in CI
-- [ ] Walkthrough doc like `REFERENCE_MES_WALKTHROUGH.md`
-- [ ] Operator `?mode=operator&app=...` demo path
+- [x] Bundle deploy smoke in CI
+- [x] Walkthrough doc like `REFERENCE_MES_WALKTHROUGH.md`
+- [x] Operator `?mode=operator&app=...` demo path
 
 ---
 
@@ -1241,4 +1241,5 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-02 | Sprint EX-4: BL-96…99 Done — solution catalog, semver, CI template, building-hvac reference |
 | 2026-06-30 | Первая версия REQ-EX: BL-78…132, Phase 23 в ROADMAP |

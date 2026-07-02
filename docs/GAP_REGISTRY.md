@@ -48,7 +48,7 @@
 | **P1** | Driver excellence | Production matrix, observedAt rollout, top-10 gate | BL-78, 79, 85 — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86, 87 — Phase 23 |
 | **P1** | Operator HMI | Industrial trends, PWA shell | BL-89, 90 — Done (EX-2) |
-| **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96, 97, 99 — Phase 23 |
+| **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96, 97, 99 — Done (EX-4) |
 | **P1** | AI production | Approval mode for mutate tools, scenario catalog | BL-106, 108 — Phase 23 |
 | **P1** | Ops / deploy | One-click prod deploy, CH history playbook | BL-114, 127 — Phase 23 |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Phase 23 |
@@ -80,7 +80,7 @@
 | Frontend e2e (Playwright) | ~85% | live operator + alarming; visual regression | BL-129…131 |
 | Operator alarming UX | ~60% | shelving, priority, ack — Ignition-class | BL-86…88 |
 | Operator trends / PWA | ~85% | offline cache (BL-91) | BL-89…91 |
-| App marketplace | ~75% | catalog UI, semver contract, CI template | BL-96…98 |
+| App marketplace | ~95% | bundle signing (BL-100) | BL-96…98 Done |
 | Haystack query runtime | ~40% | export/search Done; filter query runtime — Phase 23 | BL-101…103 |
 | AI agent production | ~85% | approval mode, audit export, SLO dashboard | BL-106…110 |
 | Telemetry ingress scale | ~50% | monolith poll OK; burst ingress tier — ADR | BL-111…113 |

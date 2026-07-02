@@ -1,0 +1,33 @@
+name: Warehouse bundle CI
+
+on:
+  push:
+    paths:
+      - "examples/warehouse-app/**"
+      - "tools/bundle-validate-cli/**"
+      - ".github/workflows/bundle-ci.yml"
+  pull_request:
+    paths:
+      - "examples/warehouse-app/**"
+  workflow_dispatch:
+
+jobs:
+  validate-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate bundle against ISPF API
+        env:
+          ISPF_BASE_URL: ${{ secrets.ISPF_BASE_URL }}
+          ISPF_API_TOKEN: ${{ secrets.ISPF_API_TOKEN }}
+        run: |
+          if [ -z "$ISPF_BASE_URL" ]; then
+            echo "ISPF_BASE_URL not configured — skip remote validate (see examples/ci-template/README.md)"
+            exit 0
+          fi
+          node tools/bundle-validate-cli/validate.mjs examples/warehouse-app/bundle.json warehouse
