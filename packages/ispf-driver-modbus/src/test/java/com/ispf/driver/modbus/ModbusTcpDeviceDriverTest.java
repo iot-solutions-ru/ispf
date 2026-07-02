@@ -18,11 +18,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.ServerSocket;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,6 +62,32 @@ class ModbusTcpDeviceDriverTest {
         DataRecord record = driverObject.variables.get("setpoint");
         assertEquals(42L, record.firstRow().get("raw"));
         assertEquals(42.0, record.firstRow().get("value"));
+        assertNotNull(driverObject.observedAt.get("setpoint"));
+        driver.disconnect();
+    }
+
+    @Test
+    void readPointsUsesSharedObservedAtPerTick() throws Exception {
+        int port = freePort();
+        startTcpSlave(port, holdingImageWithTwoRegisters(10, 20));
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "host", "127.0.0.1",
+                "port", String.valueOf(port),
+                "timeoutMs", "3000"
+        ));
+        ModbusTcpDeviceDriver driver = new ModbusTcpDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of(
+                "a", "1:HOLDING:0",
+                "b", "1:HOLDING:1"
+        ));
+
+        Instant a = driverObject.observedAt.get("a");
+        Instant b = driverObject.observedAt.get("b");
+        assertNotNull(a);
+        assertEquals(a, b);
         driver.disconnect();
     }
 
@@ -166,6 +194,13 @@ class ModbusTcpDeviceDriverTest {
         slave.open();
     }
 
+    private static SimpleProcessImage holdingImageWithTwoRegisters(int first, int second) {
+        SimpleProcessImage image = new SimpleProcessImage();
+        image.addRegister(new SimpleRegister(first));
+        image.addRegister(new SimpleRegister(second));
+        return image;
+    }
+
     private static SimpleProcessImage holdingImage(int initialValue) {
         SimpleProcessImage image = new SimpleProcessImage();
         image.addRegister(new SimpleRegister(initialValue));
@@ -196,6 +231,7 @@ class ModbusTcpDeviceDriverTest {
 
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new HashMap<>();
+        private final Map<String, Instant> observedAt = new HashMap<>();
 
         StubDriverObject(Map<String, String> configuration) {
             this.configuration = configuration;
@@ -216,6 +252,14 @@ class ModbusTcpDeviceDriverTest {
         @Override
         public void updateVariable(String name, DataRecord value) {
             variables.put(name, value);
+        }
+
+        @Override
+        public void updateVariable(String name, DataRecord value, Instant observedAt) {
+            variables.put(name, value);
+            if (observedAt != null) {
+                this.observedAt.put(name, observedAt);
+            }
         }
 
         @Override

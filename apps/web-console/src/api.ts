@@ -777,6 +777,41 @@ export function deleteAlertRule(path: string): Promise<void> {
   return request(`/api/v1/alert-rules/by-path?path=${encodeURIComponent(path)}`, { method: "DELETE" });
 }
 
+export interface AlarmShelf {
+  id: string;
+  objectPath: string;
+  eventName: string;
+  alertRulePath: string | null;
+  shelvedBy: string;
+  shelvedAt: string;
+  expiresAt: string | null;
+  comment: string | null;
+  active: boolean;
+}
+
+export function fetchAlarmShelves(): Promise<AlarmShelf[]> {
+  return request("/api/v1/alarm-shelves");
+}
+
+export function shelveAlarm(payload: {
+  objectPath: string;
+  eventName: string;
+  alertRulePath?: string;
+  durationMinutes?: number;
+  comment?: string;
+}): Promise<AlarmShelf> {
+  return request("/api/v1/alarm-shelves", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function unshelveAlarm(id: string): Promise<void> {
+  return request(`/api/v1/alarm-shelves/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+}
+
 export function fetchCorrelators(): Promise<import("./types/event").EventCorrelator[]> {
   return request("/api/v1/correlators");
 }

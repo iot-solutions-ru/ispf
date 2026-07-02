@@ -226,6 +226,22 @@ public class ModelBootstrap {
                                 )
                         ),
                         ModelVariableDefinition.of(
+                                "priority",
+                                "Alarm priority (CRITICAL, HIGH, MEDIUM, LOW)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "HIGH"))
+                        ),
+                        ModelVariableDefinition.of(
+                                "ackRequired",
+                                "Operator must acknowledge before alarm clears",
+                                "config",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                        ),
+                        ModelVariableDefinition.of(
                                 "lastConditionMet",
                                 "Runtime: last evaluated condition result",
                                 "runtime",

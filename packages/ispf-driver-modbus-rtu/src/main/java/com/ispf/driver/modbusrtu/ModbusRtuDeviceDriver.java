@@ -13,7 +13,9 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPollTimestamps;
 
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -138,10 +140,11 @@ public class ModbusRtuDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        Instant observedAt = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             ModbusPoint point = ModbusPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            driverObject.updateVariable(entry.getKey(), readPoint(point), observedAt);
         }
     }
 
@@ -166,7 +169,7 @@ public class ModbusRtuDeviceDriver implements DeviceDriver {
                 }
                 case INPUT, DISCRETE -> throw new DriverException("Register type is read-only: " + point.type());
             }
-            driverObject.updateVariable(pointId, readPoint(point));
+            driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {

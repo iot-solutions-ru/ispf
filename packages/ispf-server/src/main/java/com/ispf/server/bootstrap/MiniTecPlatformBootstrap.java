@@ -278,7 +278,7 @@ public class MiniTecPlatformBootstrap {
         if (objectManager.tree().findByPath(path).isPresent()) {
             return;
         }
-        automationTreeService.createAlertRule(name, objectPath, watch, condition, event, payload, true, true, 0, false, null, null);
+        automationTreeService.createAlertRule(name, objectPath, watch, condition, event, payload, true, true, 0, false, "HIGH", false, null, null);
     }
 
     private void ensureCorrelator(String name, String objectPath, String event, CorrelatorActionType action, String target) {

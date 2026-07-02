@@ -31,6 +31,7 @@
   "alarmBar.unmute": "Enable sound",
   "alarmBar.mute": "Mute",
   "alarmBar.acknowledge": "Acknowledge",
+  "alarmBar.shelve": "Shelve 1h",
   "alarmBarEditor.title": "Alarm bar",
   "alarmBarEditor.hint": "Popup bar with sound in operator mode when events fire.",
   "alarmBarEditor.enable": "Enable alarm bar",

@@ -7,12 +7,49 @@ import type {
 } from "../types/operatorAlarmBar";
 import type { OperatorUi } from "../types/operatorUi";
 
+const PRIORITY_RANK: Record<string, number> = {
+  LOW: 1,
+  MEDIUM: 2,
+  HIGH: 3,
+  CRITICAL: 4,
+};
+
 const LEVEL_RANK: Record<EventLevel, number> = {
   INFO: 1,
   WARNING: 2,
   ERROR: 3,
   CRITICAL: 4,
 };
+
+export function resolveEventPriority(
+  event: ObjectEvent,
+  alertRules?: import("../types/event").AlertRule[]
+): number {
+  const fromPayload = payloadValue(event, "alertPriority");
+  if (typeof fromPayload === "string" && PRIORITY_RANK[fromPayload]) {
+    return PRIORITY_RANK[fromPayload];
+  }
+  const match = alertRules?.find(
+    (rule) => rule.objectPath === event.objectPath && rule.eventName === event.eventName
+  );
+  if (match?.priority && PRIORITY_RANK[match.priority]) {
+    return PRIORITY_RANK[match.priority];
+  }
+  return LEVEL_RANK[event.level];
+}
+
+export function isAlarmShelved(
+  event: ObjectEvent,
+  shelves: import("../api").AlarmShelf[]
+): boolean {
+  return shelves.some(
+    (shelf) =>
+      shelf.active &&
+      shelf.objectPath === event.objectPath &&
+      shelf.eventName === event.eventName &&
+      (!shelf.expiresAt || new Date(shelf.expiresAt).getTime() > Date.now())
+  );
+}
 
 const DEFAULT_SOUND_URL = "/sounds/alarm.wav";
 const DEFAULT_REPEAT_MS = 3000;
@@ -235,7 +272,16 @@ export function buildActiveAlarm(
   };
 }
 
-export function compareAlarmPriority(a: ActiveOperatorAlarm, b: ActiveOperatorAlarm): number {
+export function compareAlarmPriority(
+  a: ActiveOperatorAlarm,
+  b: ActiveOperatorAlarm,
+  alertRules?: import("../types/event").AlertRule[]
+): number {
+  const priorityDiff =
+    resolveEventPriority(b.event, alertRules) - resolveEventPriority(a.event, alertRules);
+  if (priorityDiff !== 0) {
+    return priorityDiff;
+  }
   const levelDiff = LEVEL_RANK[b.event.level] - LEVEL_RANK[a.event.level];
   if (levelDiff !== 0) {
     return levelDiff;

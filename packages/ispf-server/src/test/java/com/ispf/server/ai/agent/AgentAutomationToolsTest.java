@@ -169,6 +169,8 @@ class AgentAutomationToolsTest {
                 eq(0),
                 eq(false),
                 isNull(),
+                isNull(),
+                isNull(),
                 isNull()
         )).thenReturn(new AlertRule(
                 path,
@@ -183,6 +185,8 @@ class AgentAutomationToolsTest {
                 0,
                 false,
                 0,
+                "HIGH",
+                false,
                 false,
                 null,
                 null,

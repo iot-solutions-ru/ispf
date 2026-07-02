@@ -163,6 +163,8 @@ class AutomationRuleIndexTest {
                 0,
                 false,
                 0,
+                "HIGH",
+                false,
                 null,
                 null,
                 null,

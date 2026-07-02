@@ -13,6 +13,22 @@
 
 Многие записи каталога REQ-PF-14 помечены как stub в [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap).
 
+Матрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`.
+
+### observedAt (source timestamps, BL-79)
+
+Poll-драйверы передают `updateVariable(name, value, observedAt)` в historian ([0020](decisions/0020-time-and-timezones.md)):
+
+| Driver id | observedAt | Источник |
+| --------- | ---------- | -------- |
+| virtual | yes | unified poll tick |
+| mqtt | yes | JSON `observedAt` / `timestamp` / epoch |
+| modbus-tcp/rtu/udp | yes | общий instant на poll tick |
+| opcua | yes | OPC UA SourceTime / ServerTime |
+| s7 | yes | poll tick |
+| snmp | yes | poll tick |
+| bacnet | yes | poll tick |
+
 ## Архитектура
 
 Драйверы реализуют SPI `DeviceDriver` (`packages/ispf-driver-api`):

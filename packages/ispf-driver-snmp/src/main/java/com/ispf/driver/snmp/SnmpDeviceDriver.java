@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPollTimestamps;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
@@ -32,6 +33,7 @@ import org.snmp4j.UserTarget;
 import org.snmp4j.security.SecurityProtocols;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -225,12 +227,13 @@ public class SnmpDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        Instant observedAt = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             SnmpPoint point = SnmpPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
             try {
                 DataRecord record = getOid(point);
-                driverObject.updateVariable(entry.getKey(), record);
+                driverObject.updateVariable(entry.getKey(), record, observedAt);
             } catch (DriverException e) {
                 if (point.optional()) {
                     if (optionalOidWarnings.add(entry.getKey())) {
@@ -256,7 +259,7 @@ public class SnmpDeviceDriver implements DeviceDriver {
             throw new DriverException("Unknown SNMP point: " + pointId);
         }
         setOid(point, SnmpValueMapper.fromRecord(value, point.valueKind()));
-        driverObject.updateVariable(pointId, getOid(point));
+        driverObject.updateVariable(pointId, getOid(point), DriverPollTimestamps.pollTick());
     }
 
     private DataRecord getOid(SnmpPoint point) throws DriverException {

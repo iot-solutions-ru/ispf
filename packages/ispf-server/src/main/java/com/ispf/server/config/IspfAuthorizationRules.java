@@ -75,6 +75,9 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/operator-apps/**")
                 .hasRole(IspfRoles.ADMIN);
 
+        auth.requestMatchers("/api/v1/alarm-shelves/**")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
         auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 

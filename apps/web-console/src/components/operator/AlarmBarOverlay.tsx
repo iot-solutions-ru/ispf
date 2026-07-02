@@ -8,6 +8,7 @@ export interface AlarmBarOverlayProps {
   muted: boolean;
   toggleMute: () => void;
   onDismiss: (alarmId: string) => void;
+  onShelve: (alarmId: string, durationMinutes?: number) => void;
   onOpenDashboard: (alarm: ActiveOperatorAlarm) => void;
   onOpenReport: (alarm: ActiveOperatorAlarm) => void;
   onOpenObject: (alarm: ActiveOperatorAlarm) => void;
@@ -20,6 +21,7 @@ function AlarmBarItem({
   muted,
   toggleMute,
   onDismiss,
+  onShelve,
   onOpenDashboard,
   onOpenReport,
   onOpenObject,
@@ -30,6 +32,7 @@ function AlarmBarItem({
   muted: boolean;
   toggleMute: () => void;
   onDismiss: () => void;
+  onShelve: () => void;
   onOpenDashboard: () => void;
   onOpenReport: () => void;
   onOpenObject: () => void;
@@ -103,6 +106,9 @@ function AlarmBarItem({
             {t("alarmBar.acknowledge")}
           </button>
         )}
+        <button type="button" className="btn operator-alarm-bar-btn" onClick={onShelve}>
+          {t("alarmBar.shelve")}
+        </button>
       </div>
     </div>
   );
@@ -115,6 +121,7 @@ export default function AlarmBarOverlay({
   muted,
   toggleMute,
   onDismiss,
+  onShelve,
   onOpenDashboard,
   onOpenReport,
   onOpenObject,
@@ -134,6 +141,7 @@ export default function AlarmBarOverlay({
           muted={muted}
           toggleMute={toggleMute}
           onDismiss={() => onDismiss(alarm.id)}
+          onShelve={() => onShelve(alarm.id, 60)}
           onOpenDashboard={() => onOpenDashboard(alarm)}
           onOpenReport={() => onOpenReport(alarm)}
           onOpenObject={() => onOpenObject(alarm)}
