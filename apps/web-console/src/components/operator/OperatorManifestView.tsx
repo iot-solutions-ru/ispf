@@ -75,7 +75,10 @@ export default function OperatorManifestView({
   }
 
   return (
-    <div className={`operator-shell${sidebarDrawer.open ? " operator-shell--sidebar-open" : ""}`}>
+    <div
+      className={`operator-shell${sidebarDrawer.open ? " operator-shell--sidebar-open" : ""}`}
+      data-testid="operator-shell"
+    >
       <header className="operator-topbar">
         <div>
           <strong>{manifest.title}</strong>
@@ -99,7 +102,7 @@ export default function OperatorManifestView({
         )}
         </div>
       </header>
-      <nav className="op-nav">
+      <nav className="op-nav" data-testid="operator-nav">
         {manifest.screens.map((screen) => (
           <button
             key={screen.id}

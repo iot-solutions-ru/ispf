@@ -132,7 +132,10 @@ export default function AlarmBarOverlay({
   }
 
   return (
-    <div className={`operator-alarm-bar-stack operator-alarm-bar-stack--${position}`}>
+    <div
+      className={`operator-alarm-bar-stack operator-alarm-bar-stack--${position}`}
+      data-testid="operator-alarm-bar"
+    >
       {alarms.map((alarm, index) => (
         <AlarmBarItem
           key={alarm.id}

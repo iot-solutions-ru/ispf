@@ -263,6 +263,7 @@ export default function OperatorDashboardApp({
       className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
         sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
       }`}
+      data-testid="operator-shell"
     >
       <OperatorDashboardChrome
         ui={ui}
@@ -365,7 +366,7 @@ function OperatorDashboardChrome({
           )}
         </div>
       </header>
-      <nav className="op-nav">
+      <nav className="op-nav" data-testid="operator-nav">
         {ui.dashboards.map((dashboard) => (
           <button
             key={dashboard.path}

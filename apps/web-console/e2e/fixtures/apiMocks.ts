@@ -17,6 +17,7 @@ export const MOCK_ADMIN_SESSION: MockAuthSession = {
 
 export const MOCK_DEVICE_PATH = "root.platform.devices.lab-sensor";
 export const MOCK_DASHBOARD_PATH = "root.platform.dashboards.ops-board";
+export const MOCK_DEMO_SENSOR_DASHBOARD_PATH = "root.platform.dashboards.demo-sensor";
 
 const NOW = "2026-06-28T00:00:00.000Z";
 
@@ -122,6 +123,31 @@ const MOCK_DASHBOARD_LAYOUT = {
   ],
 };
 
+const MOCK_DEMO_SENSOR_LAYOUT = {
+  columns: 12,
+  rowHeight: 72,
+  widgets: [
+    {
+      id: "w-demo-sensor",
+      type: "label",
+      title: "Temperature",
+      text: "21.0 °C",
+      x: 0,
+      y: 0,
+      w: 4,
+      h: 2,
+    },
+  ],
+};
+
+const MOCK_DEMO_SENSOR_DASHBOARD_VIEW = {
+  path: MOCK_DEMO_SENSOR_DASHBOARD_PATH,
+  title: "Demo sensor",
+  refreshIntervalMs: 5000,
+  layoutJson: JSON.stringify(MOCK_DEMO_SENSOR_LAYOUT),
+  layout: MOCK_DEMO_SENSOR_LAYOUT,
+};
+
 const MOCK_DASHBOARD_VIEW = {
   path: MOCK_DASHBOARD_PATH,
   title: "Ops board",
@@ -129,6 +155,26 @@ const MOCK_DASHBOARD_VIEW = {
   layoutJson: JSON.stringify(MOCK_DASHBOARD_LAYOUT),
   layout: MOCK_DASHBOARD_LAYOUT,
 };
+
+export const MOCK_E2E_OPERATOR_UI = {
+  appId: "e2e-operator",
+  title: "E2E Operator",
+  defaultDashboard: MOCK_DASHBOARD_PATH,
+  dashboards: [{ path: MOCK_DASHBOARD_PATH, title: "Ops board" }],
+  alarmBar: {
+    enabled: true,
+    position: "top",
+    minLevel: "WARNING",
+    rules: [
+      {
+        id: "e2e-high-temp",
+        eventNames: ["high-temp"],
+        title: "High temperature",
+        minLevel: "WARNING",
+      },
+    ],
+  },
+} as const;
 
 export async function mockAuthConfig(page: Page, mode: "local" | "oidc" = "local") {
   await page.route("**/api/v1/auth/config", (route) =>
@@ -247,6 +293,12 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
         });
       case "/api/v1/operator-apps":
         return json(route, []);
+      case "/api/v1/events":
+        return json(route, []);
+      case "/api/v1/alert-rules":
+        return json(route, []);
+      case "/api/v1/alarm-shelves":
+        return json(route, []);
       case "/api/v1/objects/by-path/binding-rules": {
         const objectPath = searchParams.get("path");
         if (objectPath === MOCK_DEVICE_PATH || objectPath) {
@@ -298,6 +350,9 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
         if (dashboardPath === MOCK_DASHBOARD_PATH) {
           return json(route, MOCK_DASHBOARD_VIEW);
         }
+        if (dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH) {
+          return json(route, MOCK_DEMO_SENSOR_DASHBOARD_VIEW);
+        }
         return json(route, { message: "not found" }, 404);
       }
       case "/api/v1/objects": {
@@ -347,6 +402,10 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
 
     if (pathname.startsWith("/api/v1/objects/leases")) {
       return json(route, []);
+    }
+
+    if (pathname === "/api/v1/operator-apps/e2e-operator/ui") {
+      return json(route, MOCK_E2E_OPERATOR_UI);
     }
 
     if (/^\/api\/v1\/operator-apps\/[^/]+\/ui$/.test(pathname)) {

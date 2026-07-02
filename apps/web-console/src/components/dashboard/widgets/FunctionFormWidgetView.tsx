@@ -577,6 +577,7 @@ function FunctionFormFieldInput({
   filterValues?: Record<string, string>;
   onChange: (value: string) => void;
 }) {
+  const { t } = useTranslation("widgets");
   const options = useFunctionFormFieldOptions(field, filterValues);
   const loadingReport = field.type === "select" && Boolean(field.optionsFromReport) && options === undefined;
 

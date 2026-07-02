@@ -334,6 +334,20 @@ View-компоненты: `apps/web-console/src/components/dashboard/widgets/`
 
 Для привязки таблицы к детализирующим виджетам задайте `selectionKey` (см. § «Привязка к объектам»).
 
+### Multi-pen trend (BL-89)
+
+В runtime-режиме (не в редакторе) правый клик по строке `object-table` с колонками `variable` открывает контекстное меню **«Тренд: …»**. Открывается `MultiPenTrendModal`:
+
+| Возможность | Описание |
+|-------------|----------|
+| До 4 перьев | Добавление других переменных той же строки из выпадающего списка |
+| Диапазоны | 1h, 6h, 24h, today, 7d (календарные диапазоны с user TZ — BL-70) |
+| Pan/zoom | Recharts `Brush` под графиком; двойной клик — сброс |
+| Export | CSV всех перьев |
+| Лимит точек | 1000 на перо (historian API) |
+
+Компоненты: `MultiPenTrendModal.tsx`, `useMultiPenTrendData.ts`, `types/trendPen.ts`.
+
 ## spreadsheet sheetConfigJson
 
 Виджет **электронная таблица** — фиксированная сетка `rows × cols` с адресацией A1. Пересчёт на клиенте (встроенный `ispfSheetEval`).

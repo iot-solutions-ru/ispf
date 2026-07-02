@@ -47,14 +47,14 @@
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 | **P1** | Driver excellence | Production matrix, observedAt rollout, top-10 gate | BL-78, 79, 85 — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86, 87 — Phase 23 |
-| **P1** | Operator HMI | Industrial trends, PWA shell | BL-89, 90 — Phase 23 |
+| **P1** | Operator HMI | Industrial trends, PWA shell | BL-89, 90 — Done (EX-2) |
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96, 97, 99 — Phase 23 |
 | **P1** | AI production | Approval mode for mutate tools, scenario catalog | BL-106, 108 — Phase 23 |
 | **P1** | Ops / deploy | One-click prod deploy, CH history playbook | BL-114, 127 — Phase 23 |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Phase 23 |
 | **P2** | Scale | Ingress tier ADR, MQTT worker, CI load gate | BL-111…113 — Phase 23 |
 | **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
-| **P2** | QA live | Playwright operator + alarming on staging | BL-129 — Phase 23 |
+| **P2** | QA live | Playwright operator + alarming on staging | BL-129 — Done (EX-2) |
 | **P3** | Multi-tenant SaaS | Tenant isolation hardening, quotas | BL-125, 126 — Phase 23 |
 ## Таблица подсистем
 
@@ -79,7 +79,7 @@
 | Driver maturity labels | ~98% | — | — |
 | Frontend e2e (Playwright) | ~85% | live operator + alarming; visual regression | BL-129…131 |
 | Operator alarming UX | ~60% | shelving, priority, ack — Ignition-class | BL-86…88 |
-| Operator trends / PWA | ~70% | multi-pen trends, installable PWA, offline | BL-89…91 |
+| Operator trends / PWA | ~85% | offline cache (BL-91) | BL-89…91 |
 | App marketplace | ~75% | catalog UI, semver contract, CI template | BL-96…98 |
 | Haystack query runtime | ~40% | export/search Done; filter query runtime — Phase 23 | BL-101…103 |
 | AI agent production | ~85% | approval mode, audit export, SLO dashboard | BL-106…110 |

@@ -11,7 +11,11 @@ async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
   if (!contentType.includes("json")) {
     return null;
   }
-  return response.json() as Promise<OperatorUi>;
+  try {
+    return (await response.json()) as OperatorUi;
+  } catch {
+    return null;
+  }
 }
 
 async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {

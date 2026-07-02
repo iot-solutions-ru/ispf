@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -11,6 +11,8 @@ import { useDashboardContext, triggerDashboardOpen } from "../DashboardContext";
 import { parseJsonObject, parseWidgetJsonArray, matchesNamePattern, objectTableValueField, formatObjectTableCell } from "../dashboardUtils";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import MultiPenTrendModal from "../../MultiPenTrendModal";
+import { createTrendPen, type TrendPen } from "../../../types/trendPen";
 
 const VIRTUALIZE_ROW_THRESHOLD = 50;
 const TABLE_ROW_ESTIMATE_PX = 36;
@@ -95,6 +97,60 @@ export default function ObjectTableWidgetView({
       .filter((path): path is string => Boolean(path));
   }, [rows, selectedPath, shouldVirtualize, virtualRows]);
   const variablesBatch = useVariablesBatchQuery(rowPaths, refreshIntervalMs, Boolean(widget.parentPath));
+  const [trendModal, setTrendModal] = useState<{
+    pens: TrendPen[];
+    availablePens: TrendPen[];
+  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    path: string;
+    displayName: string;
+    variables?: VariableDto[];
+  } | null>(null);
+
+  const trendColumns = useMemo(
+    () => parsedColumns.filter((column) => Boolean(column.variable)),
+    [parsedColumns]
+  );
+
+  useEffect(() => {
+    if (!contextMenu) {
+      return;
+    }
+    const close = () => setContextMenu(null);
+    window.addEventListener("click", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [contextMenu]);
+
+  const openTrendForRow = (
+    path: string,
+    displayName: string,
+    columnIndex: number
+  ) => {
+    const column = trendColumns[columnIndex];
+    if (!column?.variable) {
+      return;
+    }
+    const availablePens = trendColumns.map((col, index) =>
+      createTrendPen(
+        path,
+        col.variable!,
+        `${displayName} · ${col.label}`,
+        objectTableValueField(col),
+        index
+      )
+    );
+    setTrendModal({
+      pens: [availablePens[columnIndex]],
+      availablePens,
+    });
+    setContextMenu(null);
+  };
   const paddingTop = virtualRows.length > 0 ? virtualRows[0].start : 0;
   const paddingBottom =
     virtualRows.length > 0
@@ -109,6 +165,7 @@ export default function ObjectTableWidgetView({
       columns={parsedColumns}
       variables={variablesBatch.data?.[obj.path]}
       selected={selectedPath === obj.path}
+      trendEnabled={!editable && trendColumns.length > 0}
       onSelect={() => {
         if (editable) {
           return;
@@ -129,6 +186,20 @@ export default function ObjectTableWidgetView({
           openOptions
         );
       }}
+      onContextMenu={
+        editable || trendColumns.length === 0
+          ? undefined
+          : (event) => {
+              event.preventDefault();
+              setContextMenu({
+                x: event.clientX,
+                y: event.clientY,
+                path: obj.path,
+                displayName: obj.displayName,
+                variables: variablesBatch.data?.[obj.path],
+              });
+            }
+      }
     />
   );
 
@@ -172,6 +243,37 @@ export default function ObjectTableWidgetView({
           </table>
         </div>
       )}
+      {contextMenu && (
+        <ul
+          className="scada-mimic-context-menu dash-object-table-context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(event) => event.stopPropagation()}
+        >
+          {trendColumns.map((column, index) => (
+            <li key={column.variable ?? column.label}>
+              <button
+                type="button"
+                onClick={() =>
+                  openTrendForRow(
+                    contextMenu.path,
+                    contextMenu.displayName,
+                    index
+                  )
+                }
+              >
+                {t("view.showTrend", { label: column.label })}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {trendModal && (
+        <MultiPenTrendModal
+          pens={trendModal.pens}
+          availablePens={trendModal.availablePens}
+          onClose={() => setTrendModal(null)}
+        />
+      )}
     </DashWidgetShell>
   );
 }
@@ -182,22 +284,28 @@ function ObjectTableRow({
   columns,
   variables,
   selected,
+  trendEnabled,
   onSelect,
+  onContextMenu,
 }: {
   path: string;
   displayName: string;
   columns: ObjectTableColumn[];
   variables?: VariableDto[];
   selected: boolean;
+  trendEnabled?: boolean;
   onSelect: () => void;
+  onContextMenu?: (event: MouseEvent<HTMLTableRowElement>) => void;
 }) {
   return (
     <tr
       className={selected ? "selected" : ""}
       onClick={onSelect}
+      onContextMenu={onContextMenu}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === "Enter" && onSelect()}
+      data-testid={trendEnabled ? `object-table-row-${path.split(".").pop()}` : undefined}
     >
       <td>{displayName}</td>
       {columns.map((col) => {
