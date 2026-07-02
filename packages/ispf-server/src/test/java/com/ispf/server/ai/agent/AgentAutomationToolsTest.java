@@ -171,6 +171,7 @@ class AgentAutomationToolsTest {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()
         )).thenReturn(new AlertRule(
                 path,

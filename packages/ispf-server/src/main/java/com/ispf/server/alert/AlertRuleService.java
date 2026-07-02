@@ -105,6 +105,7 @@ public class AlertRuleService {
                 request.sustainWhileTrue(),
                 request.priority(),
                 request.ackRequired(),
+                request.rateLimitSeconds(),
                 request.notificationWebhookUrl(),
                 request.notificationEmailTarget()
         );
@@ -310,6 +311,7 @@ public class AlertRuleService {
             Boolean sustainWhileTrue,
             String priority,
             Boolean ackRequired,
+            Integer rateLimitSeconds,
             String notificationWebhookUrl,
             String notificationEmailTarget
     ) {

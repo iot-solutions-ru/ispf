@@ -161,6 +161,8 @@ python deploy/events-load-test.py `
 
 JUnit-аналог: `EventFireLoadTest` (150 concurrent HTTP).
 
+**CI gate (BL-113):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, прогон `EventFireLoadTest` + `ListDevicesLoadTest`, порог `ISPF_LOAD_P99_CEILING_MS` (default 3000 ms), артефакты логов Gradle. Шаги Gradle с `set -o pipefail`, чтобы падение тестов не маскировалось `tee`.
+
 ## Internal load test
 
 ```powershell

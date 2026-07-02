@@ -238,7 +238,8 @@ export function buildActiveAlarm(
   event: ObjectEvent,
   rule: OperatorAlarmRule,
   config: ReturnType<typeof resolveAlarmBarConfig>,
-  ui?: OperatorUi
+  ui?: OperatorUi,
+  alertRules?: import("../types/event").AlertRule[]
 ): ActiveOperatorAlarm {
   const fields = rule.fields?.length ? rule.fields : DEFAULT_FIELDS;
   const fieldRows = fields
@@ -251,6 +252,11 @@ export function buildActiveAlarm(
   const ruleSoundEnabled = rule.sound?.enabled !== false;
   const soundEnabled = config.soundEnabled && ruleSoundEnabled;
   const soundUrl = rule.sound?.url ?? config.soundUrl;
+
+  const matchingAlertRule = alertRules?.find(
+    (item) => item.objectPath === event.objectPath && item.eventName === event.eventName
+  );
+  const ackRequired = matchingAlertRule?.ackRequired === true;
 
   return {
     id: event.id,
@@ -267,7 +273,8 @@ export function buildActiveAlarm(
     acknowledgeFunction: rule.actions?.acknowledgeFunction ?? null,
     primaryActionLabel: rule.actions?.primaryActionLabel?.trim() || null,
     hideSecondaryActions: rule.actions?.hideSecondaryActions === true,
-    hideAcknowledge: rule.actions?.hideAcknowledge === true,
+    hideAcknowledge: ackRequired ? false : rule.actions?.hideAcknowledge === true,
+    ackRequired,
     navigateParams: resolveAlarmNavigateParams(event, rule),
   };
 }

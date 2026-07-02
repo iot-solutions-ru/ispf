@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { updateAlertRule, validateExpression } from "../../api";
 import type { CreateAlertRulePayload } from "../../types/automation";
-import { variableBoolean, variableString } from "../../utils/variableFieldValue";
+import { variableBoolean, variableNumber, variableString } from "../../utils/variableFieldValue";
 import { inspectorQueryLoading, useInspectorVariables } from "../../hooks/useInspectorQueries";
 import ObjectFederationBindSection from "../ObjectFederationBindSection";
 
@@ -27,6 +27,9 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
     edgeTrigger: variableBoolean(variables, "edgeTrigger", true),
     notificationWebhookUrl: variableString(variables, "notificationWebhookUrl"),
     notificationEmailTarget: variableString(variables, "notificationEmailTarget"),
+    priority: variableString(variables, "priority") || "HIGH",
+    ackRequired: variableBoolean(variables, "ackRequired", false),
+    rateLimitSeconds: variableNumber(variables, "rateLimitSeconds", 0),
   };
 
   const saveMutation = useMutation({
@@ -79,6 +82,9 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
             edgeTrigger: data.get("edgeTrigger") === "on",
             notificationWebhookUrl: String(data.get("notificationWebhookUrl") ?? "").trim() || undefined,
             notificationEmailTarget: String(data.get("notificationEmailTarget") ?? "").trim() || undefined,
+            priority: String(data.get("priority") ?? "HIGH") as CreateAlertRulePayload["priority"],
+            ackRequired: data.get("ackRequired") === "on",
+            rateLimitSeconds: Number(data.get("rateLimitSeconds") ?? 0),
           });
         }}
       >
@@ -107,6 +113,26 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
         <label className="full">
           {t("automation:alertRule.payloadVariable")}
           <input name="payloadVariable" defaultValue={form.payloadVariable} readOnly={!canManage} />
+        </label>
+        <label>
+          {t("automation:alertRule.priority")}
+          <select name="priority" defaultValue={form.priority} disabled={!canManage}>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="LOW">LOW</option>
+          </select>
+        </label>
+        <label>
+          {t("automation:alertRule.rateLimitSeconds")}
+          <input
+            name="rateLimitSeconds"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={form.rateLimitSeconds}
+            readOnly={!canManage}
+          />
         </label>
         <p className="hint full">{t("automation:alertRule.notificationHint")}</p>
         <label className="full">
@@ -144,6 +170,15 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
             disabled={!canManage}
           />
           {t("automation:alertRule.edgeTrigger")}
+        </label>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            name="ackRequired"
+            defaultChecked={form.ackRequired}
+            disabled={!canManage}
+          />
+          {t("automation:alertRule.ackRequired")}
         </label>
         {canManage && (
           <div className="form-actions full">

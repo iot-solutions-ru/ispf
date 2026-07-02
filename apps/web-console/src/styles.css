@@ -4560,6 +4560,72 @@ body.scada-mimic-editor-open {
   opacity: 0.7;
 }
 
+.operator-alarm-shelf-panel {
+  position: fixed;
+  top: 4.5rem;
+  right: 0.75rem;
+  z-index: 1200;
+  width: min(22rem, calc(100vw - 1.5rem));
+  max-height: min(40vh, 20rem);
+  overflow: auto;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.operator-alarm-shelf-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.operator-alarm-shelf-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.operator-alarm-shelf-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: calc(var(--radius) - 2px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.operator-alarm-shelf-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.operator-alarm-shelf-event {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.operator-alarm-shelf-path,
+.operator-alarm-shelf-comment,
+.operator-alarm-shelf-meta {
+  font-size: 0.75rem;
+  word-break: break-all;
+}
+
+.operator-alarm-shelf-unshelve {
+  flex-shrink: 0;
+}
+
 .operator-alarm-bar-editor {
   margin-top: 1rem;
   padding-top: 1rem;

@@ -28,6 +28,7 @@ export interface AlertRule {
   sustainWhileTrue?: boolean;
   priority?: string;
   ackRequired?: boolean;
+  rateLimitSeconds?: number;
   lastConditionMet: boolean | null;
   notificationWebhookUrl?: string | null;
   notificationEmailTarget?: string | null;

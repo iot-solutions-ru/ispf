@@ -65,7 +65,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-1) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -76,9 +76,9 @@
 
 **Acceptance:**
 
-- [ ] ADR Accepted в `docs/decisions/`
-- [ ] Таблица top-10 драйверов с целевыми capability и владельцем
-- [ ] CI job `driver-matrix-check` падает при badge PRODUCTION без loopback test
+- [x] ADR Accepted в `docs/decisions/`
+- [x] Таблица top-10 драйверов с целевыми capability и владельцем
+- [x] CI job `driver-matrix-check` падает при badge PRODUCTION без loopback test
 
 ---
 
@@ -87,7 +87,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-1) |
 | **Зависимости** | BL-78, BL-69 (SPI Done) |
 
 **Scope:**
@@ -97,9 +97,9 @@
 
 **Acceptance:**
 
-- [ ] Каждый из 5 драйверов: loopback/integration test с non-`Instant.now()` timestamp
-- [ ] `DRIVERS.md` — таблица «observedAt support»
-- [ ] Virtual unified + MQTT (BL-74) остаются эталоном
+- [x] Каждый из 5 драйверов: loopback/integration test с non-`Instant.now()` timestamp
+- [x] `DRIVERS.md` — таблица «observedAt support»
+- [x] Virtual unified + MQTT (BL-74) остаются эталоном
 
 ---
 
@@ -238,7 +238,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-7) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -249,9 +249,9 @@
 
 **Acceptance:**
 
-- [ ] Shelved alarm не эскалирует notification (BL-44) в период shelve
-- [ ] Journal entry или dedicated shelve log
-- [ ] Operator UI: list active shelves
+- [x] Shelved alarm не эскалирует notification (BL-44) в период shelve
+- [x] Journal entry или dedicated shelve log
+- [x] Operator UI: list active shelves
 
 ---
 
@@ -260,7 +260,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-7) |
 | **Зависимости** | BL-86 |
 
 **Scope:**
@@ -271,9 +271,9 @@
 
 **Acceptance:**
 
-- [ ] Model fields + inspector UI
-- [ ] Operator alarm bar сортировка по priority
-- [ ] Тест: flood → suppression
+- [x] Model fields + inspector UI
+- [x] Operator alarm bar сортировка по priority
+- [x] Тест: flood → suppression
 
 ---
 
@@ -806,18 +806,20 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-7) |
 | **Зависимости** | [LOAD_TESTING.md](LOAD_TESTING.md) |
 
 **Scope:**
 
-- Nightly or manual workflow: `events-internal-load-test` + threshold from `ISPF_LOAD_P99_CEILING_MS`.
-- Fail workflow on regression.
+- Nightly or manual workflow: JUnit load gate (`EventFireLoadTest`, `ListDevicesLoadTest`) + threshold `ISPF_LOAD_P99_CEILING_MS`.
+- Fail workflow on p99 regression (`set -o pipefail` on Gradle steps).
+- Python `events-internal-load-test.py` on staging — follow-up (optional self-hosted job).
 
 **Acceptance:**
 
-- [ ] `.github/workflows/load-test.yml` workflow_dispatch
-- [ ] Results artifact uploaded
+- [x] `.github/workflows/load-test.yml` workflow_dispatch + schedule
+- [x] Results artifact uploaded
+- [ ] Optional: staging job with `events-internal-load-test.py` throughput floor
 
 ---
 
@@ -826,7 +828,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned (ops) |
+| **Статус** | Done (Sprint EX-1, docs) |
 | **Зависимости** | BL-40 Done |
 
 **Scope:**
@@ -836,7 +838,7 @@
 
 **Acceptance:**
 
-- [ ] Runbook complete; no code required for Done
+- [x] Runbook complete; no code required for Done
 - [ ] Checklist in GAP_REGISTRY marked ops-ready
 
 ---
@@ -1215,7 +1217,7 @@
 
 ```text
 Sprint EX-1 (Trust — drivers + alarm foundation)
-  BL-78, BL-79, BL-86, BL-87, BL-114 (docs)
+  BL-78, BL-79, BL-86, BL-87, BL-114 (docs) — Done
 
 Sprint EX-2 (Operator HMI)
   BL-89, BL-90, BL-88, BL-129
@@ -1232,7 +1234,11 @@ Sprint EX-5 (Semantic)
 Sprint EX-6 (Scale spike)
   BL-111 Done (ADR-0024 demand-driven pub/sub)
   BL-112 Cancelled (sidecar superseded)
-  BL-113
+
+Sprint EX-7 (Trust close-out + CI load gate)
+  BL-78, BL-79, BL-114 — status sync Done
+  BL-86, BL-87 — operator shelve list + alert inspector
+  BL-113 Done — load-test.yml
 
 Backlog по demand
   BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
@@ -1244,6 +1250,8 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-02 | PR #24 review fixes: load-test pipefail, ackRequired enforcement, BL-113 scope sync |
+| 2026-07-02 | Sprint EX-7: BL-113 load-test.yml; BL-86 shelve list UI; BL-87 alert inspector priority/ack/rateLimit; backlog sync BL-78/79/114 Done |
 | 2026-07-02 | Sprint EX-6 start: BL-111 Done — ADR-0024 demand-driven pub/sub; BL-112 cancelled (no sidecar) |
 | 2026-07-02 | Sprint EX-4: BL-96…99 Done — solution catalog, semver, CI template, building-hvac reference |
 | 2026-06-30 | Первая версия REQ-EX: BL-78…132, Phase 23 в ROADMAP |

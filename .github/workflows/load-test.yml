@@ -1,0 +1,58 @@
+name: Load test gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      p99_ceiling_ms:
+        description: "P99 latency ceiling (ms) for EventFireLoadTest / ListDevicesLoadTest"
+        required: false
+        default: "3000"
+  schedule:
+    # Nightly 03:00 UTC — regression gate for automation throughput (BL-113)
+    - cron: "0 3 * * *"
+
+jobs:
+  jvm-load-gate:
+    runs-on: ubuntu-latest
+    env:
+      ISPF_LOAD_P99_CEILING_MS: ${{ inputs.p99_ceiling_ms || '3000' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Scale gate — list_devices p99
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.api.ListDevicesLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee load-test-list-devices.log
+
+      - name: Scale gate — events fire/list p99
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.api.EventFireLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee load-test-event-fire.log
+
+      - name: Upload load test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-jvm-${{ github.run_id }}
+          path: |
+            load-test-list-devices.log
+            load-test-event-fire.log
+          retention-days: 14

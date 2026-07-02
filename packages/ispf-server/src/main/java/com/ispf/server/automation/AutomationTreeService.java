@@ -193,6 +193,7 @@ public class AutomationTreeService {
     public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
             String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
             Integer delaySeconds, Boolean sustainWhileTrue, String priority, Boolean ackRequired,
+            Integer rateLimitSeconds,
             String notificationWebhookUrl, String notificationEmailTarget) {
         AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
@@ -231,6 +232,9 @@ public class AutomationTreeService {
         }
         if (ackRequired != null) {
             setBoolean(path, "ackRequired", ackRequired);
+        }
+        if (rateLimitSeconds != null) {
+            setInteger(path, "rateLimitSeconds", rateLimitSeconds);
         }
         if (notificationWebhookUrl != null) {
             setRuntimeString(path, "notificationWebhookUrl", notificationWebhookUrl);

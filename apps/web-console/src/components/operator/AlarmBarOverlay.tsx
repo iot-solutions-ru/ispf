@@ -44,6 +44,7 @@ function AlarmBarItem({
   const { colors } = alarm;
   const showPrimaryAction = Boolean(alarm.primaryActionLabel && alarm.dashboardPath);
   const showSecondary = !alarm.hideSecondaryActions;
+  const ackBlocked = alarm.ackRequired && !alarm.acknowledgeFunction;
 
   return (
     <div
@@ -103,7 +104,13 @@ function AlarmBarItem({
           </button>
         )}
         {!alarm.hideAcknowledge && (
-          <button type="button" className="btn primary operator-alarm-bar-btn" onClick={onDismiss}>
+          <button
+            type="button"
+            className="btn primary operator-alarm-bar-btn"
+            onClick={onDismiss}
+            disabled={ackBlocked}
+            title={ackBlocked ? t("alarmBar.ackRequiredMissingFunction") : undefined}
+          >
             {t("alarmBar.acknowledge")}
           </button>
         )}

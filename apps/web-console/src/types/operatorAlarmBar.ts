@@ -65,5 +65,6 @@ export interface ActiveOperatorAlarm {
   primaryActionLabel: string | null;
   hideSecondaryActions: boolean;
   hideAcknowledge: boolean;
+  ackRequired: boolean;
   navigateParams: Record<string, unknown>;
 }

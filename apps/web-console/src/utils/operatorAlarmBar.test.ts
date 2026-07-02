@@ -65,4 +65,37 @@ describe("buildActiveAlarm", () => {
     expect(active.hideAcknowledge).toBe(true);
     expect(active.navigateParams).toEqual({ activeTab: "registration" });
   });
+
+  it("forces acknowledge visible when alert rule requires ack", () => {
+    const rule: OperatorAlarmRule = {
+      id: "demo",
+      actions: { hideAcknowledge: true },
+    };
+    const evt = event({ eventName: "thresholdExceeded", level: "HIGH" });
+    const active = buildActiveAlarm(
+      evt,
+      rule,
+      resolveAlarmBarConfig({ enabled: true, rules: [rule] }),
+      undefined,
+      [
+        {
+          id: "rule-1",
+          name: "demo",
+          objectPath: evt.objectPath,
+          watchVariable: "temperature",
+          conditionExpr: "true",
+          eventName: "thresholdExceeded",
+          payloadVariable: null,
+          enabled: true,
+          edgeTrigger: true,
+          ackRequired: true,
+          lastConditionMet: false,
+          createdAt: "",
+          updatedAt: "",
+        },
+      ]
+    );
+    expect(active.ackRequired).toBe(true);
+    expect(active.hideAcknowledge).toBe(false);
+  });
 });

@@ -143,8 +143,8 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-78** | ADR Driver Production Matrix + `DriverMaturityRegistry` sync | P1 | Planned | Drivers |
-| **BL-79** | observedAt rollout: modbus, opc-ua, bacnet, s7, snmp | P1 | Planned | Drivers / History |
+| **BL-78** | ADR Driver Production Matrix + `DriverMaturityRegistry` sync | P1 | Done (EX-1) | Drivers |
+| **BL-79** | observedAt rollout: modbus, opc-ua, bacnet, s7, snmp | P1 | Done (EX-1) | Drivers / History |
 | **BL-80** | OPC UA: discovery + subscriptions | P1 | Planned | Driver |
 | **BL-81** | BACnet: device discovery + readProperty | P2 | Planned | Driver |
 | **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Planned | Telemetry |
@@ -158,8 +158,8 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-86** | Alarm shelving (duration / until resume) | P1 | Planned | Operator / Automation |
-| **BL-87** | Priority classes + ack workflow + flood control | P1 | Planned | Operator / Automation |
+| **BL-86** | Alarm shelving (duration / until resume) | P1 | Done (EX-7) | Operator / Automation |
+| **BL-87** | Priority classes + ack workflow + flood control | P1 | Done (EX-7) | Operator / Automation |
 | **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Done | Operator HMI |
 | **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Done | Operator HMI |
 | **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Done | Operator HMI |
@@ -213,8 +213,8 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-111** | ADR demand-driven variable change pub/sub | P2 | Done | Architecture |
 | **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Cancelled | Scale |
-| **BL-113** | CI load test gate (events-internal) | P2 | Planned | QA / Scale |
-| **BL-114** | ClickHouse variable history prod playbook | P1 | Planned (ops) | Ops |
+| **BL-113** | CI load test gate (events-internal) | P2 | Done (EX-7) | QA / Scale |
+| **BL-114** | ClickHouse variable history prod playbook | P1 | Done (EX-1 docs) | Ops |
 | **BL-115** | Horizontal scale documentation | P3 | Planned | Ops |
 | **BL-116** | Historian dual-write migration tooling | P3 | Planned | History |
 

@@ -820,6 +820,7 @@ public class ApplicationBundleDeployService {
                     "HIGH",
                     false,
                     null,
+                    null,
                     null
             );
             automationTreeService.resetAlertRuleRuntimeState(path);

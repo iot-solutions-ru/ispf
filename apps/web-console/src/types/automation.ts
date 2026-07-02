@@ -21,6 +21,7 @@ export interface CreateAlertRulePayload {
   sustainWhileTrue?: boolean;
   priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   ackRequired?: boolean;
+  rateLimitSeconds?: number;
   notificationWebhookUrl?: string;
   notificationEmailTarget?: string;
 }

@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchAlertRules, fetchAlarmShelves, fetchEvents, invokeFunction, shelveAlarm } from "../api";
+import {
+  fetchAlertRules,
+  fetchAlarmShelves,
+  fetchEvents,
+  invokeFunction,
+  shelveAlarm,
+  unshelveAlarm,
+} from "../api";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./useObjectWebSocket";
 import type { ObjectEvent } from "../types/event";
 import type { OperatorAlarmBarConfig, OperatorAlarmRule } from "../types/operatorAlarmBar";
@@ -140,13 +147,19 @@ export function useOperatorAlarmBar(
     return () => window.removeEventListener(OPERATOR_PREFERENCES_CHANGED_EVENT, syncPreferences);
   }, []);
 
+  const refreshShelves = useCallback(() => {
+    void fetchAlarmShelves().then(setShelves).catch(() => setShelves([]));
+  }, []);
+
   useEffect(() => {
     if (!enabled) {
       return;
     }
-    void fetchAlarmShelves().then(setShelves).catch(() => setShelves([]));
+    refreshShelves();
     void fetchAlertRules().then(setAlertRules).catch(() => setAlertRules([]));
-  }, [enabled]);
+    const timer = window.setInterval(refreshShelves, 60_000);
+    return () => window.clearInterval(timer);
+  }, [enabled, refreshShelves]);
 
   const activateEvent = useCallback(
     async (event: ObjectEvent) => {
@@ -159,7 +172,7 @@ export function useOperatorAlarmBar(
       }
       seenIds.current.add(event.id);
       const enrichedEvent = await enrichEventFromFunction(event, rule);
-      const active = buildActiveAlarm(enrichedEvent, rule, resolved, options.ui);
+      const active = buildActiveAlarm(enrichedEvent, rule, resolved, options.ui, alertRules);
       if (rule.actions?.enrichFromFunction) {
         active.navigateParams = resolveAlarmNavigateParams(enrichedEvent, rule);
       }
@@ -170,7 +183,7 @@ export function useOperatorAlarmBar(
         return [...without, active];
       });
     },
-    [options.ui, resolved]
+    [alertRules, options.ui, resolved]
   );
 
   useEffect(() => {
@@ -199,6 +212,18 @@ export function useOperatorAlarmBar(
     return () => window.removeEventListener(OBJECT_WS_EVENT, handler);
   }, [activateEvent, enabled]);
 
+  const unshelveShelf = useCallback(
+    async (shelfId: string) => {
+      try {
+        await unshelveAlarm(shelfId);
+        setShelves((current) => current.filter((item) => item.id !== shelfId));
+      } catch {
+        refreshShelves();
+      }
+    },
+    [refreshShelves]
+  );
+
   const shelveAlarmFor = useCallback(
     async (alarmId: string, durationMinutes?: number, comment?: string) => {
       const alarm = alarms.find((item) => item.id === alarmId);
@@ -224,11 +249,23 @@ export function useOperatorAlarmBar(
   const dismissAlarm = useCallback(
     async (alarmId: string) => {
       const alarm = alarms.find((item) => item.id === alarmId);
-      if (alarm?.acknowledgeFunction) {
+      if (!alarm) {
+        return;
+      }
+      if (alarm.ackRequired) {
+        if (!alarm.acknowledgeFunction) {
+          return;
+        }
         try {
           await invokeFunction(alarm.event.objectPath, alarm.acknowledgeFunction);
         } catch {
-          // still dismiss UI
+          return;
+        }
+      } else if (alarm.acknowledgeFunction) {
+        try {
+          await invokeFunction(alarm.event.objectPath, alarm.acknowledgeFunction);
+        } catch {
+          // optional ack when not required — still dismiss UI
         }
       }
       setAlarms((current) => current.filter((item) => item.id !== alarmId));
@@ -302,10 +339,12 @@ export function useOperatorAlarmBar(
     enabled,
     position: resolved.position,
     alarms: sortedAlarms,
+    shelves,
     muted,
     toggleMute,
     onDismiss: dismissAlarm,
     onShelve: shelveAlarmFor,
+    onUnshelveShelf: unshelveShelf,
     onOpenDashboard: openDashboardFor,
     onOpenReport: openReportFor,
     onOpenObject: openObjectFor,

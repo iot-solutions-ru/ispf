@@ -122,6 +122,31 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
             />
             {t("automation:alertRule.edgeTriggerHint")}
           </label>
+          <label>
+            {t("automation:alertRule.priority")}
+            <select
+              value={form.priority ?? "HIGH"}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  priority: e.target.value as CreateAlertRulePayload["priority"],
+                }))
+              }
+            >
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={form.ackRequired ?? false}
+              onChange={(e) => setForm((f) => ({ ...f, ackRequired: e.target.checked }))}
+            />
+            {t("automation:alertRule.ackRequired")}
+          </label>
           {mutation.error && (
             <p className="hint error full">{(mutation.error as Error).message}</p>
           )}

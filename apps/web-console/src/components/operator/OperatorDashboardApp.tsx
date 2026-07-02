@@ -15,6 +15,7 @@ import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
+import AlarmShelfPanel from "./AlarmShelfPanel";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
@@ -301,6 +302,9 @@ export default function OperatorDashboardApp({
         sidebar={<OperatorSidebar appId={appId} operatorId={operatorId} ui={ui} />}
       />
       {alarmBar.position === "bottom" && <AlarmBarOverlay {...alarmBar} />}
+      {alarmBar.enabled && (
+        <AlarmShelfPanel shelves={alarmBar.shelves} onUnshelve={alarmBar.onUnshelveShelf} />
+      )}
       <OperatorAgentFab
         appId={appId}
         onOpenDashboard={navigateDashboard}
