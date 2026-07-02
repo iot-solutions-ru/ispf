@@ -7,6 +7,8 @@
 | Документ | Роль |
 | -------- | ---- |
 | [ROADMAP.md § Phase 20](ROADMAP.md#phase-20--code-audit-backlog-ui-drivers-scale) | Волны и статусы |
+| [ROADMAP.md § Phase 23](ROADMAP.md#phase-23--platform-excellence-req-ex) | REQ-EX excellence waves |
+| [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) | Детальный беклог BL-78…132 (acceptance, scope) |
 | [GAP_REGISTRY.md](GAP_REGISTRY.md) | Сводка пробелов для sprint planning |
 | [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) | REQ-PF/FW baseline (закрыт) |
 
@@ -134,6 +136,131 @@
 | **BL-75** | AI agent: per-user concurrent/hourly rate limits + Prometheus counters | P2 | Done | AI |
 | **BL-76** | i18n tails: function-form wizard, model merge/diff labels | P3 | Done | i18n |
 | **BL-77** | Playwright live: `data-testid` + README/secrets documentation | P2 | Done | QA |
+
+### Wave J — EX-DRIVER: production depth (BL-78…85)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave J](EXCELLENCE_BACKLOG.md#wave-j--ex-driver-production-depth).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-78** | ADR Driver Production Matrix + `DriverMaturityRegistry` sync | P1 | Planned | Drivers |
+| **BL-79** | observedAt rollout: modbus, opc-ua, bacnet, s7, snmp | P1 | Planned | Drivers / History |
+| **BL-80** | OPC UA: discovery + subscriptions | P1 | Planned | Driver |
+| **BL-81** | BACnet: device discovery + readProperty | P2 | Planned | Driver |
+| **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Planned | Telemetry |
+| **BL-83** | Driver interop CI matrix (GitHub Actions) | P2 | Planned | Driver QA |
+| **BL-84** | Point mapping validation UI + test read | P2 | Planned | Driver UI |
+| **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Planned | Driver catalog |
+
+### Wave K — EX-HMI & alarming (BL-86…95)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave K](EXCELLENCE_BACKLOG.md#wave-k--ex-hmi--alarming-bl-8695).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-86** | Alarm shelving (duration / until resume) | P1 | Planned | Operator / Automation |
+| **BL-87** | Priority classes + ack workflow + flood control | P1 | Planned | Operator / Automation |
+| **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Planned | Operator HMI |
+| **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Planned | Operator HMI |
+| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Planned | Operator HMI |
+| **BL-91** | Offline cache for critical screens | P2 | Planned | Operator HMI |
+| **BL-92** | SCADA mimic performance budget (60fps) | P2 | Planned | SCADA |
+| **BL-93** | Accessibility baseline WCAG 2.1 AA partial | P2 | Planned | a11y |
+| **BL-94** | SCADA symbol library expansion | P3 | Planned | SCADA |
+| **BL-95** | Operator performance CI gate (Lighthouse) | P2 | Planned | QA |
+
+### Wave L — EX-APP: marketplace & velocity (BL-96…100)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave L](EXCELLENCE_BACKLOG.md#wave-l--ex-app-marketplace--velocity-bl-96100).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-96** | Solution catalog UI (published bundles) | P1 | Planned | Applications |
+| **BL-97** | Bundle semver contract on deploy | P1 | Planned | Applications |
+| **BL-98** | Integrator CI template (`examples/ci-template/`) | P2 | Planned | Applications / QA |
+| **BL-99** | Third reference app (building or energy) | P1 | Planned | Reference |
+| **BL-100** | Bundle trust: optional RSA signing | P3 | Planned | Security |
+
+### Wave M — EX-SEM: semantic runtime (BL-101…105)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave M](EXCELLENCE_BACKLOG.md#wave-m--ex-sem-semantic-runtime-bl-101105).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-101** | ADR Haystack query runtime (subset filter syntax) | P2 | Planned | Semantic |
+| **BL-102** | API `GET /platform/haystack/query` | P2 | Planned | API |
+| **BL-103** | Dashboard auto-bind by haystack query wizard | P2 | Planned | Dashboard |
+| **BL-104** | Brick class inference from haystack markers | P3 | Planned | Semantic |
+| **BL-105** | Semantic roundtrip test (export → import → query) | P3 | Planned | Semantic / QA |
+
+### Wave N — EX-AI: production agent (BL-106…110)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave N](EXCELLENCE_BACKLOG.md#wave-n--ex-ai-production-agent-bl-106110).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-106** | Mutating tools: explicit approval mode (prod default) | P1 | Planned | AI |
+| **BL-107** | Agent audit export (JSON/CSV) | P2 | Planned | AI |
+| **BL-108** | Reference scenario catalog (10 spec→deploy paths) | P1 | Planned | AI / QA |
+| **BL-109** | Operator agent hard allowlist + fuzz tests | P2 | Planned | AI / Security |
+| **BL-110** | Agent SLO dashboard (metrics cards) | P2 | Planned | AI / Ops |
+
+### Wave O — EX-SCALE: telemetry & historian (BL-111…116)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave O](EXCELLENCE_BACKLOG.md#wave-o--ex-scale-telemetry--historian-bl-111116).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-111** | ADR telemetry ingress tier | P2 | Planned | Architecture |
+| **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Planned | Scale |
+| **BL-113** | CI load test gate (events-internal) | P2 | Planned | QA / Scale |
+| **BL-114** | ClickHouse variable history prod playbook | P1 | Planned (ops) | Ops |
+| **BL-115** | Horizontal scale documentation | P3 | Planned | Ops |
+| **BL-116** | Historian dual-write migration tooling | P3 | Planned | History |
+
+### Wave P — EX-FED: edge excellence (BL-117…120)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave P](EXCELLENCE_BACKLOG.md#wave-p--ex-fed-edge-excellence-bl-117120).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-117** | Edge store-and-forward (tunnel buffer + replay) | P2 | Planned | Federation |
+| **BL-118** | Federation peer health SLO + UI cards | P2 | Planned | Federation |
+| **BL-119** | Selective subtree sync (config export/import) | P3 | Planned | Federation |
+| **BL-120** | Federation chaos tests | P3 | Planned | Federation / QA |
+
+### Wave Q — EX-MES: workflow patterns (BL-121…124)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave Q](EXCELLENCE_BACKLOG.md#wave-q--ex-mes-workflow-patterns-bl-121124).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-121** | OEE reference pattern (dashboard + script functions) | P2 | Planned | MES |
+| **BL-122** | BPMN timer boundary events | P2 | Planned | Workflow |
+| **BL-123** | Escalation workflow templates | P3 | Planned | Workflow / Automation |
+| **BL-124** | ISA-95 catalog documentation | P3 | Planned | Docs |
+
+### Wave R — EX-OPS & tenant (BL-125…128)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave R](EXCELLENCE_BACKLOG.md#wave-r--ex-ops--tenant-bl-125128).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-125** | Tenant isolation hardening + `TenantIsolationTest` | P3 | Planned | Security |
+| **BL-126** | Per-tenant quotas (optional SaaS) | P3 | Planned | Multi-tenant |
+| **BL-127** | One-click production deploy (Helm or compose stack) | P1 | Planned | Ops |
+| **BL-128** | Air-gap deployment guide | P2 | Planned | Ops |
+
+### Wave S — EX-QA & i18n (BL-129…132)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave S](EXCELLENCE_BACKLOG.md#wave-s--ex-qa--i18n-bl-129132).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-129** | Playwright live: operator + alarming | P1 | Planned | QA |
+| **BL-130** | Scheduled staging e2e (weekly cron) | P2 | Planned | QA |
+| **BL-131** | Visual regression smoke (screenshot compare) | P3 | Planned | QA |
+| **BL-132** | i18n zero hardcoded gate in CI | P2 | Planned | i18n / QA |
 
 ### Wave F — Уже сделано / не требует BL (reference)
 
@@ -664,7 +791,34 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
   BL-69…71 — historian observedAt, calendar queries, event occurredAt
 ```
 
-Параллельно: [ROADMAP Phase 18](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers) (18.1 = BL-50, 18.2 = BL-26 по запросу); [Phase 21](ROADMAP.md#phase-21--time--timezones) (BL-66…71).
+Параллельно: [ROADMAP Phase 18](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers) (18.1 = BL-50, 18.2 = BL-26 по запросу); [Phase 21](ROADMAP.md#phase-21--time--timezones) (BL-66…71); [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) (BL-78…132).
+
+### Sprint EX (REQ-EX, Phase 23)
+
+Рекомендация — [EXCELLENCE_BACKLOG.md § Sprint planning](EXCELLENCE_BACKLOG.md#sprint-planning-рекомендация):
+
+```text
+Sprint EX-1 (Trust — drivers + alarm foundation)
+  BL-78, BL-79, BL-86, BL-87, BL-114 (docs)
+
+Sprint EX-2 (Operator HMI)
+  BL-89, BL-90, BL-88, BL-129
+
+Sprint EX-3 (AI production)
+  BL-106, BL-108, BL-110
+
+Sprint EX-4 (App velocity)
+  BL-96, BL-97, BL-99, BL-98
+
+Sprint EX-5 (Semantic)
+  BL-101, BL-102, BL-103
+
+Sprint EX-6 (Scale spike)
+  BL-111, BL-112, BL-113
+
+Backlog по demand
+  BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
+```
 
 ---
 
@@ -672,6 +826,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
 | 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |
 | 2026-06-30 | BL-26 Done: loopback tests for ethernet-ip/opc-da/opc-bridge/corba/vmware/smi-s; registry → BETA |
 | 2026-06-30 | BL-30 Done: `BacnetDeviceDriverNetworkTest`, `BacnetPointTest`; loopback subnet for 127.0.0.1 |

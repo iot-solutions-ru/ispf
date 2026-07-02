@@ -11,7 +11,7 @@
 1. **Этот файл** — сводка пробелов по подсистемам и приоритетам.
 2. **[PLATFORM_DEVELOPER_BACKLOG.md §3](PLATFORM_DEVELOPER_BACKLOG.md#3-сводная-матрица-req-pf)** — матрица REQ-PF/FW и acceptance-критерии.
 
-Текущая волна — [ROADMAP.md § Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening) (roadmap tail + AI hardening). Phase 20–21 и Wave G/H — **Done**. Детальный реестр — [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
+Текущая волна — [ROADMAP.md § Phase 23](ROADMAP.md#phase-23--platform-excellence-req-ex) (REQ-EX platform excellence). Phase 20–22 и Wave G/H/I — **Done**. Детальный реестр BL-01…77 — [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md); BL-78…132 — [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md).
 
 ## Правило обновления
 
@@ -45,6 +45,17 @@
 | **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
 | **P3** | Time & TZ (deep) | Historian `observedAt` BL-69 Done; reports TZ BL-73 Done | Phase 21–22 |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
+| **P1** | Driver excellence | Production matrix, observedAt rollout, top-10 gate | BL-78, 79, 85 — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
+| **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86, 87 — Phase 23 |
+| **P1** | Operator HMI | Industrial trends, PWA shell | BL-89, 90 — Phase 23 |
+| **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96, 97, 99 — Phase 23 |
+| **P1** | AI production | Approval mode for mutate tools, scenario catalog | BL-106, 108 — Phase 23 |
+| **P1** | Ops / deploy | One-click prod deploy, CH history playbook | BL-114, 127 — Phase 23 |
+| **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Phase 23 |
+| **P2** | Scale | Ingress tier ADR, MQTT worker, CI load gate | BL-111…113 — Phase 23 |
+| **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
+| **P2** | QA live | Playwright operator + alarming on staging | BL-129 — Phase 23 |
+| **P3** | Multi-tenant SaaS | Tenant isolation hardening, quotas | BL-125, 126 — Phase 23 |
 ## Таблица подсистем
 
 | Подсистема | Готовность | Главный пробел | REQ |
@@ -64,9 +75,17 @@
 | MCP adapter (0006) | ~100% | — | ContextPack `resources/list` + `resources/read` |
 | Tree-first agent (FW-44) | ~100% | — | [0005](decisions/0005-tree-first-ai-agent.md), **FW-45** briefing |
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
-| Driver stub catalog | ~98% | native stubs | BL-26, [DRIVERS.md](DRIVERS.md) |
+| Driver stub catalog | ~98% | native stubs; **REQ-EX** production depth (matrix, observedAt, CI) | BL-78…85, [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | Driver maturity labels | ~98% | — | — |
-| Frontend e2e (Playwright) | ~85% | live staging run needs secrets | BL-50 Done (mocked CI + live workflow) |
+| Frontend e2e (Playwright) | ~85% | live operator + alarming; visual regression | BL-129…131 |
+| Operator alarming UX | ~60% | shelving, priority, ack — Ignition-class | BL-86…88 |
+| Operator trends / PWA | ~70% | multi-pen trends, installable PWA, offline | BL-89…91 |
+| App marketplace | ~75% | catalog UI, semver contract, CI template | BL-96…98 |
+| Haystack query runtime | ~40% | export/search Done; filter query runtime — Phase 23 | BL-101…103 |
+| AI agent production | ~85% | approval mode, audit export, SLO dashboard | BL-106…110 |
+| Telemetry ingress scale | ~50% | monolith poll OK; burst ingress tier — ADR | BL-111…113 |
+| Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |
+| Production deploy UX | ~70% | one-click stack, air-gap guide | BL-127, 128 |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~100% | MCP wire, installation-id (ops-only) | BL-01…18 + lifecycle UI 0.9.60 |
 | Dashboard widgets (advanced) | ~98% | — | BL-65 done |
@@ -92,6 +111,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132; текущая волна excellence |
 | 2026-06-30 | Phase 22 tail: BL-72…77 (admin mobile, report TZ, AI rate limits, i18n, playwright live); ROADMAP Phase 22 |
 | 2026-06-30 | UI↔API parity ~100%: Application lifecycle, platform schedules, semantic export, workflow cancel/signal, federation proxy invoke, device TZ; prod 0.9.60; AGENT_KNOWLEDGE + ContextPack |
 | 2026-06-30 | BL-57: Haystack inspector tab (`HaystackMetadataPanel`) |

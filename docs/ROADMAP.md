@@ -252,7 +252,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 
 **Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Done; 20.16 — Done (backend + UI); 20.17 — **BL-41,42,43 Done**; 20.19 = Phase 18.1 smoke baseline; 20.20 — Done.
 
-**Следующие приоритеты:** [Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening) (хвосты + AI quotas); demand-driven driver promotion (Phase 18.2); ops ClickHouse history rollout по запросу.
+**Следующие приоритеты:** [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) (BL-78…132); demand-driven driver promotion (Phase 18.2); ops ClickHouse history rollout по запросу (BL-114).
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 
@@ -290,6 +290,49 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 
 **Partial — расшифровка Phase 20 (устарело, закрыто):** 20.15 BL-27/30 Done; 20.16 backend Done; 20.17 BL-43 Done; 20.20 BL-51/52/54 Done.
 
+## Phase 23 — Platform Excellence (REQ-EX)
+
+Стратегическая волна после закрытия Phase 20–22: **★★★★★ по всем осям** сравнения с Ignition, AWS/Azure IoT, ThingsBoard, SkySpark. North star — open self-hosted industrial application platform; не копировать SaaS IoT, а **догнать** по scale и **обогнать** по app platform и AI-on-tree.
+
+Полный реестр — [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md). Сводные таблицы — [CODE_AUDIT_BACKLOG.md § Wave J…S](CODE_AUDIT_BACKLOG.md#wave-j--ex-driver-production-depth).
+
+| # | Тема | Track | BL | P | Статус |
+|---|------|-------|----|---|--------|
+| 23.1 | Driver production matrix + observedAt rollout | EX-DRIVER | 78–79, 85 | P1 | Planned |
+| 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Planned |
+| 23.3 | Quality flags + driver interop CI matrix | EX-DRIVER | 82–84 | P2 | Planned |
+| 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Planned |
+| 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Planned |
+| 23.6 | Mimic perf + a11y + symbol library + Lighthouse gate | EX-HMI | 92–95 | P2–P3 | Planned |
+| 23.7 | Solution catalog + bundle semver + CI template | EX-APP | 96–98 | P1–P2 | Planned |
+| 23.8 | Third reference app (building/energy) + bundle signing | EX-APP | 99–100 | P1–P3 | Planned |
+| 23.9 | Haystack query runtime + API + auto-bind wizard | EX-SEM | 101–103 | P2 | Planned |
+| 23.10 | Brick inference + semantic roundtrip | EX-SEM | 104–105 | P3 | Planned |
+| 23.11 | AI approval mode + audit export + scenario catalog | EX-AI | 106–108 | P1–P2 | Planned |
+| 23.12 | Operator agent allowlist + agent SLO dashboard | EX-AI | 109–110 | P2 | Planned |
+| 23.13 | Telemetry ingress ADR + MQTT worker + load CI gate | EX-SCALE | 111–113 | P2 | Planned |
+| 23.14 | ClickHouse prod playbook + horizontal scale docs | EX-SCALE | 114–115 | P1–P3 | Planned |
+| 23.15 | Historian dual-write migration tooling | EX-SCALE | 116 | P3 | Planned |
+| 23.16 | Edge store-forward + peer health SLO | EX-FED | 117–118 | P2 | Planned |
+| 23.17 | Selective subtree sync + federation chaos tests | EX-FED | 119–120 | P3 | Planned |
+| 23.18 | OEE pattern + BPMN timers + escalation templates | EX-MES | 121–123 | P2–P3 | Planned |
+| 23.19 | ISA-95 catalog documentation | EX-MES | 124 | P3 | Planned |
+| 23.20 | Tenant isolation + per-tenant quotas | EX-OPS | 125–126 | P3 | Planned |
+| 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Planned |
+| 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Planned |
+| 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Planned |
+
+**Горизонты инвестиций:**
+
+```text
+Горизонт 1 — Trust: Wave J (drivers) + Wave K (alarming, часть) + BL-114
+Горизонт 2 — Velocity: Wave L (app) + Wave M (semantic) + Wave N (AI)
+Горизонт 3 — Scale: Wave O + Wave P + Wave R (ops/tenant)
+Постоянно: Wave S (QA), удержание tree-first north star
+```
+
+**Следующие приоритеты (Sprint EX-1):** BL-78, BL-79, BL-86, BL-87, BL-114. Деплой на VPS — только по запросу.
+
 ## Platform baseline
 
 | # | Тема | Статус |
@@ -301,7 +344,8 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 ## Связанные документы
 
 - [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — REQ-PF + REQ-FW (§12)
-- [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) — BL-01…71, code audit 2026-06-28 + Wave H timezones
+- [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) — BL-01…77, code audit 2026-06-28 + Wave H/I
+- [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) — REQ-EX BL-78…132, Phase 23 platform excellence
 - [GAP_REGISTRY.md](GAP_REGISTRY.md) — sprint planning, живой срез пробелов
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [DEPLOYMENT.md](DEPLOYMENT.md) — prod topology

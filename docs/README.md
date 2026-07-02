@@ -28,6 +28,8 @@
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
 | [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), [gap registry](GAP_REGISTRY.md), sprint roadmap |
+| [Excellence backlog REQ-EX](EXCELLENCE_BACKLOG.md) | Phase 23: BL-78…132 — drivers, HMI, app platform, semantic, AI, scale, federation, ops, QA |
+| [Code audit backlog](CODE_AUDIT_BACKLOG.md) | BL-01…77 закрытые волны + сводка Wave J…S |
 | [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0019 |
 | [Roadmap](ROADMAP.md) | Единый roadmap platform + production ops; **Phase 5** — усиление механизмов |
 | [Эволюция платформы](PLATFORM_EVOLUTION.md) | Ретроспективный чеклист: что сделано по порядку, как ISPF развивалась |
