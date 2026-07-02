@@ -232,7 +232,7 @@ class ApplicationPlatformApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "version": "1.0.2-map",
+                                  "version": "1.0.4",
                                   "migrations": [
                                     {
                                       "id": "map_seed",
@@ -299,7 +299,7 @@ class ApplicationPlatformApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "version": "7.0.0-setvar",
+                                  "version": "7.0.0",
                                   "functions": [
                                     {
                                       "objectPath": "%s",
@@ -357,7 +357,7 @@ class ApplicationPlatformApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "version": "7.0.1-when-%s",
+                                  "version": "7.0.1",
                                   "functions": [
                                     {
                                       "objectPath": "%s",
@@ -384,7 +384,7 @@ class ApplicationPlatformApiTest {
                                     }
                                   ]
                                 }
-                                """.formatted(UUID.randomUUID(), DEMO_DEVICE)))
+                                """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/bff/invoke")
@@ -774,7 +774,7 @@ class ApplicationPlatformApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "version": "3.1.0-labels",
+                                  "version": "3.1.0",
                                   "migrations": [
                                     {
                                       "id": "label_items",

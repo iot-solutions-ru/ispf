@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "displayName": "Building HVAC Reference",
+  "tablePrefix": "",
+  "schemaName": "app_building_hvac",
+  "metadata": {
+    "changelog": "Initial release: floor zones, comfort setpoints, Haystack tag examples",
+    "domain": "building-hvac",
+    "haystackTags": ["site", "equip", "ahu", "zone", "temp"]
+  },
+  "migrations": [
+    {
+      "id": "hvac_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS hvac_zone (id UUID PRIMARY KEY, zone_code VARCHAR(64) NOT NULL, space_temp_c NUMERIC(6,2) NOT NULL, setpoint_c NUMERIC(6,2) NOT NULL, mode VARCHAR(32) NOT NULL); INSERT INTO hvac_zone (id, zone_code, space_temp_c, setpoint_c, mode) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'L1-OPEN-01', 22.4, 22.0, 'cool' WHERE NOT EXISTS (SELECT 1 FROM hvac_zone WHERE zone_code = 'L1-OPEN-01'); INSERT INTO hvac_zone (id, zone_code, space_temp_c, setpoint_c, mode) SELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'L2-MEET-02', 23.1, 21.5, 'heat' WHERE NOT EXISTS (SELECT 1 FROM hvac_zone WHERE zone_code = 'L2-MEET-02');"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "hvac_listZones",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "zone_row",
+                "fields": [
+                  { "name": "zone", "type": "STRING" },
+                  { "name": "spaceTempC", "type": "DOUBLE" },
+                  { "name": "setpointC", "type": "DOUBLE" },
+                  { "name": "mode", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"zones\",\"sql\":\"SELECT zone_code, space_temp_c, setpoint_c, mode FROM hvac_zone ORDER BY zone_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${zones}\",\"fields\":{\"zone\":\"${item.zone_code}\",\"spaceTempC\":\"${item.space_temp_c}\",\"setpointC\":\"${item.setpoint_c}\",\"mode\":\"${item.mode}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "operatorUi": {
+    "appId": "building-hvac",
+    "title": "Building HVAC",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
+  }
+}

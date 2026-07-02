@@ -126,6 +126,7 @@ public class ApplicationBundleDeployService {
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
+        BundleSemverSupport.requireValid(manifest.version());
         licenseVerifier.verifyOrWarn(appId, manifest);
         dependencyVerifier.verify(appId, manifest.requires());
         List<String> applied = new ArrayList<>();

@@ -117,6 +117,7 @@ EXAMPLE_PURPOSES = {
     "mes-reference": "MES dispatch orders, BFF mes_listOrders/startFilling/completeFilling",
     "simulator-profiles": "Virtual driver profile catalog (meter, weighbridge)",
     "warehouse-app": "Warehouse reference solution",
+    "building-hvac-app": "Building HVAC zones reference (BL-99)",
     "licensed-driver-pack-pilot": "FW-50 licensed driver pack pilot",
 }
 

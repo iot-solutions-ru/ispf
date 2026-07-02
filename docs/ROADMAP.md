@@ -304,8 +304,8 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Planned |
 | 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Planned |
 | 23.6 | Mimic perf + a11y + symbol library + Lighthouse gate | EX-HMI | 92–95 | P2–P3 | Planned |
-| 23.7 | Solution catalog + bundle semver + CI template | EX-APP | 96–98 | P1–P2 | Planned |
-| 23.8 | Third reference app (building/energy) + bundle signing | EX-APP | 99–100 | P1–P3 | Planned |
+| 23.7 | Solution catalog + bundle semver + CI template | EX-APP | 96–98 | P1–P2 | Done (EX-4) |
+| 23.8 | Third reference app (building/energy) + bundle signing | EX-APP | 99–100 | P1–P3 | Partial (99 Done EX-4) |
 | 23.9 | Haystack query runtime + API + auto-bind wizard | EX-SEM | 101–103 | P2 | Planned |
 | 23.10 | Brick inference + semantic roundtrip | EX-SEM | 104–105 | P3 | Planned |
 | 23.11 | AI approval mode + audit export + scenario catalog | EX-AI | 106–108 | P1–P2 | Planned |

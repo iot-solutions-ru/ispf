@@ -185,6 +185,7 @@ public final class BundleManifestJsonSupport {
                             + "Generate a complete bundle JSON — do not return null placeholders for schema fields."
             );
         }
+        BundleSemverSupport.requireValid(manifest.version());
     }
 
     @SuppressWarnings("unchecked")

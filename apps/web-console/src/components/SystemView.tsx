@@ -8,11 +8,13 @@ import PlatformBackupPanel from "./platform/PlatformBackupPanel";
 import PlatformChangeSetsPanel from "./platform/PlatformChangeSetsPanel";
 import PlatformSchedulesPanel from "./platform/PlatformSchedulesPanel";
 import SemanticExportPanel from "./platform/SemanticExportPanel";
+import SolutionCatalogPanel from "./platform/SolutionCatalogPanel";
 import { usePersistentTab } from "../hooks/usePersistentTab";
 
 type SystemTab =
   | "metrics"
   | "settings"
+  | "solutions"
   | "events"
   | "functions"
   | "bindings"
@@ -22,7 +24,7 @@ type SystemTab =
   | "backup";
 
 const SYSTEM_TABS: readonly SystemTab[] = [
-  "metrics", "settings", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
+  "metrics", "settings", "solutions", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
 ];
 
 export default function SystemView() {
@@ -32,6 +34,7 @@ export default function SystemView() {
   const tabs: { id: SystemTab; labelKey: string }[] = [
     { id: "metrics", labelKey: "tab.metrics" },
     { id: "settings", labelKey: "tab.settings" },
+    { id: "solutions", labelKey: "tab.solutions" },
     { id: "events", labelKey: "tab.events" },
     { id: "functions", labelKey: "tab.functions" },
     { id: "bindings", labelKey: "tab.bindings" },
@@ -67,6 +70,7 @@ export default function SystemView() {
 
       {tab === "metrics" && <SystemMetricsView embedded />}
       {tab === "settings" && <SystemSettingsView />}
+      {tab === "solutions" && <SolutionCatalogPanel />}
       {tab === "events" && (
         <EventJournalPanel limit={100} showFilters objectPathFilter="" />
       )}
