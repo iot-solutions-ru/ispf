@@ -8,9 +8,11 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPollTimestamps;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -111,10 +113,11 @@ public class S7DeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        Instant observedAt = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             S7Point point = S7Point.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            driverObject.updateVariable(entry.getKey(), readPoint(point), observedAt);
         }
     }
 
@@ -130,7 +133,7 @@ public class S7DeviceDriver implements DeviceDriver {
         try {
             byte[] data = encodeValue(point, value, connector);
             connector.write(point.area(), point.dbNumber(), point.offset(), data);
-            driverObject.updateVariable(pointId, readPoint(point));
+            driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {

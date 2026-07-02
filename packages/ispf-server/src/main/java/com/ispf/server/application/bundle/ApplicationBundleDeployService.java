@@ -816,6 +816,8 @@ public class ApplicationBundleDeployService {
                     rule.edgeTrigger(),
                     rule.delaySeconds(),
                     rule.sustainWhileTrue(),
+                    "HIGH",
+                    false,
                     null,
                     null
             );
@@ -833,6 +835,8 @@ public class ApplicationBundleDeployService {
                 rule.edgeTrigger() == null || rule.edgeTrigger(),
                 rule.delaySeconds() != null ? rule.delaySeconds() : 0,
                 rule.sustainWhileTrue() != null && rule.sustainWhileTrue(),
+                "HIGH",
+                false,
                 null,
                 null
         );

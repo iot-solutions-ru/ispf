@@ -17,6 +17,10 @@ export interface CreateAlertRulePayload {
   payloadVariable?: string;
   enabled: boolean;
   edgeTrigger: boolean;
+  delaySeconds?: number;
+  sustainWhileTrue?: boolean;
+  priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  ackRequired?: boolean;
   notificationWebhookUrl?: string;
   notificationEmailTarget?: string;
 }

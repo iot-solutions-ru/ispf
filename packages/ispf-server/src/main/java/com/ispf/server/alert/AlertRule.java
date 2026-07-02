@@ -15,6 +15,8 @@ public record AlertRule(
         int delaySeconds,
         boolean sustainWhileTrue,
         int rateLimitSeconds,
+        String priority,
+        boolean ackRequired,
         Boolean lastConditionMet,
         Instant conditionTrueSince,
         Instant lastFiredAt,
@@ -23,6 +25,10 @@ public record AlertRule(
         String notificationWebhookUrl,
         String notificationEmailTarget
 ) {
+    public AlertPriority resolvedPriority() {
+        return AlertPriority.parse(priority);
+    }
+
     public boolean hasNotificationChannel() {
         return (notificationWebhookUrl != null && !notificationWebhookUrl.isBlank())
                 || (notificationEmailTarget != null && !notificationEmailTarget.isBlank());

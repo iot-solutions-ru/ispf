@@ -132,6 +132,8 @@ final class AgentAutomationTools {
                     Boolean edgeTrigger = boolArg(arguments, "edgeTrigger", null);
                     Integer delaySeconds = intArg(arguments, "delaySeconds", null);
                     Boolean sustainWhileTrue = boolArg(arguments, "sustainWhileTrue", null);
+                    String priority = optionalString(arguments, "priority");
+                    Boolean ackRequired = boolArg(arguments, "ackRequired", null);
 
                     if (targetObjectPath == null || watchVariable == null || conditionExpr == null || eventName == null) {
                         AlertRule current = automationTreeService.getAlertRule(path);
@@ -158,6 +160,8 @@ final class AgentAutomationTools {
                             edgeTrigger != null ? edgeTrigger : true,
                             delaySeconds != null ? delaySeconds : 0,
                             sustainWhileTrue != null ? sustainWhileTrue : false,
+                            priority,
+                            ackRequired,
                             null,
                             null
                     );

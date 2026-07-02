@@ -35,6 +35,7 @@
 | [0019](0019-platform-rule-unification.md) | Единая Platform Rule (dashboard context + bindings) | Proposed |
 | [0020](0020-time-and-timezones.md) | Time & timezones (store UTC, display local) | Accepted |
 | [0021](0021-haystack-semantic-overlay.md) | Haystack semantic overlay (tree-first, optional tags) | Accepted |
+| [0022](0022-driver-production-matrix.md) | Driver production matrix + CI loopback gate | Accepted |
 
 ## Шаблон нового ADR
 

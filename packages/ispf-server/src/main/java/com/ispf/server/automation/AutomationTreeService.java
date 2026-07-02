@@ -111,8 +111,8 @@ public class AutomationTreeService {
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 createAlertRuleNode(path, entity.getName(), entity.getObjectPath(), entity.getWatchVariable(),
                         entity.getConditionExpr(), entity.getEventName(), entity.getPayloadVariable(),
-                        entity.isEnabled(), entity.isEdgeTrigger(), 0, false, entity.getLastConditionMet(),
-                        null, null);
+                        entity.isEnabled(), entity.isEdgeTrigger(), 0, false, "HIGH", false,
+                        entity.getLastConditionMet(), null, null);
             }
         }
         legacyAlertRuleRepository.deleteAll();
@@ -175,12 +175,14 @@ public class AutomationTreeService {
             boolean edgeTrigger,
             int delaySeconds,
             boolean sustainWhileTrue,
+            String priority,
+            boolean ackRequired,
             String notificationWebhookUrl,
             String notificationEmailTarget
     ) {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
-                payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, null,
+                payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, priority, ackRequired, null,
                 notificationWebhookUrl, notificationEmailTarget);
         AlertRule rule = getAlertRule(path);
         indexRefresh.afterAlertRuleCreated(rule);
@@ -190,8 +192,8 @@ public class AutomationTreeService {
     @Transactional
     public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
             String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
-            Integer delaySeconds, Boolean sustainWhileTrue, String notificationWebhookUrl,
-            String notificationEmailTarget) {
+            Integer delaySeconds, Boolean sustainWhileTrue, String priority, Boolean ackRequired,
+            String notificationWebhookUrl, String notificationEmailTarget) {
         AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
@@ -223,6 +225,12 @@ public class AutomationTreeService {
         }
         if (sustainWhileTrue != null) {
             setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
+        }
+        if (priority != null) {
+            setString(path, "priority", priority);
+        }
+        if (ackRequired != null) {
+            setBoolean(path, "ackRequired", ackRequired);
         }
         if (notificationWebhookUrl != null) {
             setRuntimeString(path, "notificationWebhookUrl", notificationWebhookUrl);
@@ -413,6 +421,8 @@ public class AutomationTreeService {
                 true,
                 0,
                 false,
+                "HIGH",
+                false,
                 null,
                 null
         );
@@ -491,6 +501,8 @@ public class AutomationTreeService {
         boolean edgeTrigger,
         int delaySeconds,
         boolean sustainWhileTrue,
+        String priority,
+        boolean ackRequired,
         Boolean lastConditionMet,
         String notificationWebhookUrl,
         String notificationEmailTarget
@@ -509,6 +521,8 @@ public class AutomationTreeService {
         setBoolean(path, "edgeTrigger", edgeTrigger);
         setInteger(path, "delaySeconds", delaySeconds);
         setBoolean(path, "sustainWhileTrue", sustainWhileTrue);
+        setString(path, "priority", priority != null && !priority.isBlank() ? priority : "HIGH");
+        setBoolean(path, "ackRequired", ackRequired);
         if (notificationWebhookUrl != null) {
             setRuntimeString(path, "notificationWebhookUrl", notificationWebhookUrl);
         }
@@ -578,6 +592,8 @@ public class AutomationTreeService {
                 readInteger(node, "delaySeconds").orElse(0),
                 readBoolean(node, "sustainWhileTrue").orElse(false),
                 readInteger(node, "rateLimitSeconds").orElse(0),
+                readString(node, "priority").orElse("HIGH"),
+                readBoolean(node, "ackRequired").orElse(false),
                 runtime.lastConditionMet(),
                 runtime.conditionTrueSince(),
                 runtime.lastFiredAt(),

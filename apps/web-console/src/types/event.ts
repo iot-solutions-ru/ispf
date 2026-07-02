@@ -24,6 +24,10 @@ export interface AlertRule {
   payloadVariable: string | null;
   enabled: boolean;
   edgeTrigger: boolean;
+  delaySeconds?: number;
+  sustainWhileTrue?: boolean;
+  priority?: string;
+  ackRequired?: boolean;
   lastConditionMet: boolean | null;
   notificationWebhookUrl?: string | null;
   notificationEmailTarget?: string | null;

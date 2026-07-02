@@ -30,13 +30,16 @@ public class AlertRuleService {
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final NotificationDispatchService notificationDispatchService;
 
+    private final AlarmShelfService alarmShelfService;
+
     public AlertRuleService(
             AutomationTreeService automationTreeService,
             ObjectManager objectManager,
             ExpressionEngine expressionEngine,
             EventService eventService,
             AutomationMetricsRecorder automationMetricsRecorder,
-            NotificationDispatchService notificationDispatchService
+            NotificationDispatchService notificationDispatchService,
+            AlarmShelfService alarmShelfService
     ) {
         this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
@@ -44,6 +47,7 @@ public class AlertRuleService {
         this.eventService = eventService;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.notificationDispatchService = notificationDispatchService;
+        this.alarmShelfService = alarmShelfService;
     }
 
     @Transactional(readOnly = true)
@@ -70,6 +74,8 @@ public class AlertRuleService {
                 request.edgeTrigger(),
                 request.resolvedDelaySeconds(),
                 request.resolvedSustainWhileTrue(),
+                request.resolvedPriority(),
+                request.resolvedAckRequired(),
                 request.notificationWebhookUrl(),
                 request.notificationEmailTarget()
         );
@@ -97,6 +103,8 @@ public class AlertRuleService {
                 request.edgeTrigger(),
                 request.delaySeconds(),
                 request.sustainWhileTrue(),
+                request.priority(),
+                request.ackRequired(),
                 request.notificationWebhookUrl(),
                 request.notificationEmailTarget()
         );
@@ -184,6 +192,9 @@ public class AlertRuleService {
     }
 
     private void dispatchNotifications(AlertRule rule, String objectPath) {
+        if (alarmShelfService.isShelved(objectPath, rule.eventName())) {
+            return;
+        }
         if (!rule.hasNotificationChannel()) {
             return;
         }
@@ -264,6 +275,8 @@ public class AlertRuleService {
             boolean edgeTrigger,
             Integer delaySeconds,
             Boolean sustainWhileTrue,
+            String priority,
+            Boolean ackRequired,
             String notificationWebhookUrl,
             String notificationEmailTarget
     ) {
@@ -273,6 +286,14 @@ public class AlertRuleService {
 
         public boolean resolvedSustainWhileTrue() {
             return sustainWhileTrue != null && sustainWhileTrue;
+        }
+
+        public String resolvedPriority() {
+            return priority != null && !priority.isBlank() ? priority : "HIGH";
+        }
+
+        public boolean resolvedAckRequired() {
+            return ackRequired != null && ackRequired;
         }
     }
 
@@ -287,6 +308,8 @@ public class AlertRuleService {
             Boolean edgeTrigger,
             Integer delaySeconds,
             Boolean sustainWhileTrue,
+            String priority,
+            Boolean ackRequired,
             String notificationWebhookUrl,
             String notificationEmailTarget
     ) {

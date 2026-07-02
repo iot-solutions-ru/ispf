@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.DriverPollTimestamps;
 import com.serotonin.bacnet4j.LocalDevice;
 import com.serotonin.bacnet4j.RemoteDevice;
 import com.serotonin.bacnet4j.cache.RemoteEntityCachePolicy;
@@ -26,6 +27,7 @@ import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
 import com.serotonin.bacnet4j.util.RequestUtils;
 
 import java.net.InetAddress;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -162,10 +164,11 @@ public class BacnetDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
+        Instant observedAt = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             BacnetPoint point = BacnetPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), readPoint(point));
+            driverObject.updateVariable(entry.getKey(), readPoint(point), observedAt);
         }
     }
 
@@ -185,7 +188,7 @@ public class BacnetDeviceDriver implements DeviceDriver {
             ObjectIdentifier objectId = new ObjectIdentifier(point.objectType(), point.instance());
             Encodable encoded = encodeWriteValue(point, value);
             RequestUtils.writeProperty(localDevice, remoteDevice, objectId, point.property(), encoded);
-            driverObject.updateVariable(pointId, readPoint(point));
+            driverObject.updateVariable(pointId, readPoint(point), DriverPollTimestamps.pollTick());
         } catch (DriverException e) {
             throw e;
         } catch (Exception e) {

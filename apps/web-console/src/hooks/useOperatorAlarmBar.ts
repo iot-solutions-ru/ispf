@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchEvents, invokeFunction } from "../api";
+import { fetchAlertRules, fetchAlarmShelves, fetchEvents, invokeFunction, shelveAlarm } from "../api";
 import { OBJECT_WS_EVENT, type ObjectWsMessage } from "./useObjectWebSocket";
 import type { ObjectEvent } from "../types/event";
 import type { OperatorAlarmBarConfig, OperatorAlarmRule } from "../types/operatorAlarmBar";
@@ -9,6 +9,7 @@ import {
   ALARM_MUTE_STORAGE_KEY,
   buildActiveAlarm,
   compareAlarmPriority,
+  isAlarmShelved,
   isAlarmBarEnabled,
   matchAlarmRule,
   resolveAlarmBarConfig,
@@ -62,13 +63,15 @@ export function useOperatorAlarmBar(
   const resolved = useMemo(() => resolveAlarmBarConfig(config), [config]);
   const enabled = isAlarmBarEnabled(config);
   const [alarms, setAlarms] = useState<ReturnType<typeof buildActiveAlarm>[]>([]);
+  const [shelves, setShelves] = useState<import("../api").AlarmShelf[]>([]);
+  const [alertRules, setAlertRules] = useState<import("../types/event").AlertRule[]>([]);
   const [muted, setMuted] = useState(() => localStorage.getItem(ALARM_MUTE_STORAGE_KEY) === "1");
   const seenIds = useRef(new Set<string>());
   const soundTimer = useRef<number | undefined>(undefined);
 
   const sortedAlarms = useMemo(
-    () => [...alarms].sort(compareAlarmPriority),
-    [alarms]
+    () => [...alarms].sort((left, right) => compareAlarmPriority(left, right, alertRules)),
+    [alarms, alertRules]
   );
 
   const activeAlarm = sortedAlarms[0] ?? null;
@@ -112,6 +115,14 @@ export function useOperatorAlarmBar(
     if (!enabled) {
       return;
     }
+    void fetchAlarmShelves().then(setShelves).catch(() => setShelves([]));
+    void fetchAlertRules().then(setAlertRules).catch(() => setAlertRules([]));
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
     const handler = async (raw: Event) => {
       const message = (raw as CustomEvent<ObjectWsMessage>).detail;
       if (message.type !== "EVENT_FIRED") {
@@ -126,6 +137,9 @@ export function useOperatorAlarmBar(
               Math.abs(new Date(item.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000
           ) ?? events[0];
         if (!event || seenIds.current.has(event.id)) {
+          return;
+        }
+        if (isAlarmShelved(event, shelves)) {
           return;
         }
         const rule = matchAlarmRule(event, resolved.rules, resolved.minLevel);
@@ -148,7 +162,29 @@ export function useOperatorAlarmBar(
     };
     window.addEventListener(OBJECT_WS_EVENT, handler);
     return () => window.removeEventListener(OBJECT_WS_EVENT, handler);
-  }, [enabled, options.ui, resolved]);
+  }, [enabled, options.ui, resolved, shelves]);
+
+  const shelveAlarmFor = useCallback(
+    async (alarmId: string, durationMinutes?: number, comment?: string) => {
+      const alarm = alarms.find((item) => item.id === alarmId);
+      if (!alarm) {
+        return;
+      }
+      try {
+        const shelf = await shelveAlarm({
+          objectPath: alarm.event.objectPath,
+          eventName: alarm.event.eventName,
+          durationMinutes,
+          comment,
+        });
+        setShelves((current) => [...current.filter((item) => item.id !== shelf.id), shelf]);
+        setAlarms((current) => current.filter((item) => item.id !== alarmId));
+      } catch {
+        // ignore
+      }
+    },
+    [alarms]
+  );
 
   const dismissAlarm = useCallback(
     async (alarmId: string) => {
@@ -234,6 +270,7 @@ export function useOperatorAlarmBar(
     muted,
     toggleMute,
     onDismiss: dismissAlarm,
+    onShelve: shelveAlarmFor,
     onOpenDashboard: openDashboardFor,
     onOpenReport: openReportFor,
     onOpenObject: openObjectFor,
