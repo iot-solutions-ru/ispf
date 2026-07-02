@@ -53,6 +53,8 @@ public class TreeFirstAgentService {
     private final OperatorAppUiService operatorAppUiService;
     private final OperatorAgentResultEnricher operatorResultEnricher;
     private final AgentAttachmentValidator attachmentValidator;
+    private final AgentTurnRateLimiter turnRateLimiter;
+    private final AgentMetricsRecorder agentMetrics;
 
     public TreeFirstAgentService(
             LlmProviderRegistry llmProviderRegistry,
@@ -70,7 +72,9 @@ public class TreeFirstAgentService {
             OperatorAppDocumentService operatorDocumentService,
             OperatorAppUiService operatorAppUiService,
             OperatorAgentResultEnricher operatorResultEnricher,
-            AgentAttachmentValidator attachmentValidator
+            AgentAttachmentValidator attachmentValidator,
+            AgentTurnRateLimiter turnRateLimiter,
+            AgentMetricsRecorder agentMetrics
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -88,6 +92,8 @@ public class TreeFirstAgentService {
         this.operatorAppUiService = operatorAppUiService;
         this.operatorResultEnricher = operatorResultEnricher;
         this.attachmentValidator = attachmentValidator;
+        this.turnRateLimiter = turnRateLimiter;
+        this.agentMetrics = agentMetrics;
         this.agentRunExecutor = new DelegatingSecurityContextExecutorService(
                 Executors.newVirtualThreadPerTaskExecutor()
         );
@@ -111,6 +117,14 @@ public class TreeFirstAgentService {
                 message != null && !message.isBlank() ? message : "(attachment)",
                 session.runState().planStateSummary()
         );
+        try {
+            turnRateLimiter.acquire(actor);
+            agentMetrics.recordTurnStarted();
+        } catch (AgentTurnRateLimiter.AgentRateLimitException ex) {
+            agentMetrics.recordRateLimited();
+            reserved.close();
+            throw ex;
+        }
         agentRunExecutor.execute(() -> {
             try {
                 AgentSession live = sessionStore.require(sessionId, actor)
@@ -120,6 +134,7 @@ public class TreeFirstAgentService {
                 log.warn("Async agent turn failed for session {}: {}", sessionId, ex.getMessage(), ex);
                 persistAsyncTurnFailure(sessionId, actor, message, attachments, ex);
             } finally {
+                turnRateLimiter.release(actor);
                 reserved.close();
             }
         });
@@ -137,6 +152,13 @@ public class TreeFirstAgentService {
         if (cancellationRegistry.isRunning(sessionId)) {
             throw new IllegalStateException("Agent run already in progress for session: " + sessionId);
         }
+        try {
+            turnRateLimiter.acquire(actor);
+            agentMetrics.recordTurnStarted();
+        } catch (AgentTurnRateLimiter.AgentRateLimitException ex) {
+            agentMetrics.recordRateLimited();
+            throw ex;
+        }
         agentRunExecutor.execute(() -> {
             try {
                 AgentSession live = sessionStore.require(sessionId, actor)
@@ -145,6 +167,8 @@ public class TreeFirstAgentService {
             } catch (Exception ex) {
                 log.warn("Async operator agent turn failed for session {}: {}", sessionId, ex.getMessage(), ex);
                 persistAsyncTurnFailure(sessionId, actor, message, List.of(), ex);
+            } finally {
+                turnRateLimiter.release(actor);
             }
         });
     }
@@ -185,17 +209,29 @@ public class TreeFirstAgentService {
         ensureLlmAvailable();
         String sessionId = session.sessionId();
         boolean runPreReserved = cancellationRegistry.isRunning(sessionId);
-        AgentRunCancellationRegistry.RunHandle localHandle = null;
+        boolean acquiredRateLimit = false;
         if (!runPreReserved) {
-            localHandle = cancellationRegistry.start(
-                    sessionId,
-                    message != null && !message.isBlank() ? message : "(attachment)",
-                    session.runState().planStateSummary()
-            );
-        } else {
-            cancellationRegistry.touch(sessionId);
+            try {
+                turnRateLimiter.acquire(actor);
+                acquiredRateLimit = true;
+                agentMetrics.recordTurnStarted();
+            } catch (AgentTurnRateLimiter.AgentRateLimitException ex) {
+                agentMetrics.recordRateLimited();
+                throw ex;
+            }
         }
+        AgentRunCancellationRegistry.RunHandle localHandle = null;
         try {
+            if (!runPreReserved) {
+                localHandle = cancellationRegistry.start(
+                        sessionId,
+                        message != null && !message.isBlank() ? message : "(attachment)",
+                        session.runState().planStateSummary()
+                );
+            } else {
+                cancellationRegistry.touch(sessionId);
+            }
+
             publishStep(sessionId, Map.of(
                     "step", 0,
                     "type", "status",
@@ -756,6 +792,9 @@ public class TreeFirstAgentService {
         } finally {
             if (localHandle != null) {
                 localHandle.close();
+            }
+            if (acquiredRateLimit) {
+                turnRateLimiter.release(actor);
             }
         }
     }

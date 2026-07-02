@@ -561,7 +561,7 @@ function AppShell() {
 
   return (
     <AgentChatProvider enabled={isAdmin}>
-    <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`}>
+    <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`} data-testid="admin-shell">
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
@@ -588,6 +588,7 @@ function AppShell() {
       <nav className="workspace-tabs">
         <button
           type="button"
+          data-testid="workspace-tab-explorer"
           className={workspaceTab === "explorer" ? "active" : ""}
           onClick={() => {
             setWorkspaceTab("explorer");

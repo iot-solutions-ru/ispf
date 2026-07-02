@@ -301,7 +301,11 @@ ispf:
     timeout-seconds: 60
     max-tokens: 16384
     temperature: 0.2
+    agent-max-concurrent-turns-per-user: 2
+    agent-max-turns-per-hour-per-user: 120
 ```
+
+Prometheus (when Micrometer enabled): `ispf.agent.turns.started.total`, `ispf.agent.turns.rate_limited.total`, `ispf.agent.guard.blocks.total`.
 
 | Provider | `base-url` example |
 |----------|-------------------|

@@ -14,6 +14,8 @@ import { useWidgetStyles } from "../widgetStyles";
 import BffDataTable from "../../operator/BffDataTable";
 import ReportExportControls from "../../report/ReportExportControls";
 import { filterReportExportOptions } from "../../report/reportExportOptions";
+import { useOptionalUserTimeZone } from "../../../context/UserTimeZoneContext";
+import { enrichReportRunParameters } from "../../../utils/reportRunParameters";
 
 interface ReportWidgetViewProps {
   widget: ReportWidget;
@@ -71,6 +73,7 @@ export default function ReportWidgetView({
 }: ReportWidgetViewProps) {
   const { t } = useTranslation(["widgets", "common"]);
   const { params: sessionParams, setParams } = useDashboardContext();
+  const userTimeZone = useOptionalUserTimeZone();
   const styles = useWidgetStyles(widget.stylesJson);
   const [exportBusy, setExportBusy] = useState(false);
 
@@ -117,17 +120,21 @@ export default function ReportWidgetView({
 
   const runParameters = useMemo(
     () =>
-      mergeReportRunParameters(
-        widget,
-        sessionParams,
-        reportMetaQuery.data?.defaultParameters,
-        reportMetaQuery.data?.parameters
+      enrichReportRunParameters(
+        mergeReportRunParameters(
+          widget,
+          sessionParams,
+          reportMetaQuery.data?.defaultParameters,
+          reportMetaQuery.data?.parameters
+        ),
+        userTimeZone?.timeZone
       ),
     [
       widget,
       sessionParams,
       reportMetaQuery.data?.defaultParameters,
       reportMetaQuery.data?.parameters,
+      userTimeZone?.timeZone,
     ]
   );
 

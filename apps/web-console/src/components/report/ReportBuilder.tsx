@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useOptionalUserTimeZone } from "../../context/UserTimeZoneContext";
+import { enrichReportRunParameters } from "../../utils/reportRunParameters";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   deleteReportTemplate,
@@ -230,6 +232,7 @@ export default function ReportBuilder({
   const [exportBusy, setExportBusy] = useState(false);
   const [templateBusy, setTemplateBusy] = useState(false);
   const [previewRequested, setPreviewRequested] = useState(false);
+  const userTimeZone = useOptionalUserTimeZone();
 
   const reportQuery = useQuery({
     queryKey: ["report", path],
@@ -293,8 +296,8 @@ export default function ReportBuilder({
         params[key] = value;
       }
     }
-    return params;
-  }, [paramValues]);
+    return enrichReportRunParameters(params, userTimeZone?.timeZone);
+  }, [paramValues, userTimeZone?.timeZone]);
 
   const exportParams = Object.fromEntries(
     Object.entries(paramValues).filter(([, value]) => String(value).trim())

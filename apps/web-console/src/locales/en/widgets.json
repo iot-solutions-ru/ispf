@@ -402,5 +402,8 @@
   "editor.typeHint.objectTable": "Table of parentPath children; columns in columnsJson.",
   "editor.typeHint.eventFeed": "Platform events; filter by objectPathPrefix and eventNamesJson.",
   "editor.typeHint.spreadsheet": "A1 grid; sheetMode free|configured; sheetConfigJson; persistMode session|variable.",
-  "editor.typeHint.timer": "mode=countdown — timer; elapsed — variableName as start/duration."
+  "editor.typeHint.timer": "mode=countdown — timer; elapsed — variableName as start/duration.",
+  "view.wizardBack": "Back",
+  "view.wizardNext": "Next →",
+  "view.loadingReport": "Loading…"
 }

@@ -720,7 +720,7 @@ function ModelDetail({
             )}
             {mergePreviewQuery.data && mergePreviewQuery.data.conflictCount > 0 && (
               <div className="model-diff-preview hint">
-                <strong>Merge conflicts</strong> ({mergePreviewQuery.data.conflictCount})
+                <strong>{t("model.mergeConflictsTitle")}</strong> ({mergePreviewQuery.data.conflictCount})
                 <ul>
                   {mergePreviewQuery.data.variableConflicts.map((c) => (
                     <li key={c.name}>
@@ -732,7 +732,7 @@ function ModelDetail({
             )}
             {applyPath.trim() && diffQuery.data && (
               <div className="model-diff-preview hint">
-                <strong>Diff preview</strong> (v{diffQuery.data.modelVersion} →{" "}
+                <strong>{t("model.diffPreviewTitle")}</strong> (v{diffQuery.data.modelVersion} →{" "}
                 <code>{diffQuery.data.objectPath}</code>)
                 <ul>
                   {diffQuery.data.variablesToAdd.length > 0 && (
@@ -942,7 +942,7 @@ function ModelsCatalog({
           <tr>
             <th>{t("common:table.name")}</th>
             <th>{t("common:table.type")}</th>
-            <th>ObjectType</th>
+            <th>{t("model.columnObjectType")}</th>
             <th>{t("inspector:model.variablesColumn")}</th>
             <th></th>
           </tr>

@@ -402,5 +402,8 @@
   "view.wizardStepTitle": "Schritt {{id}} – {{label}}",
   "view.wizardSteps": "Formschritte",
   "view.workflowStarted": "Workflow gestartet",
-  "view.workflowWaiting": "Workflow wartet auf Bediener – siehe Übersicht"
+  "view.workflowWaiting": "Workflow wartet auf Bediener – siehe Übersicht",
+  "view.wizardBack": "Zurück",
+  "view.wizardNext": "Weiter →",
+  "view.loadingReport": "Laden…"
 }

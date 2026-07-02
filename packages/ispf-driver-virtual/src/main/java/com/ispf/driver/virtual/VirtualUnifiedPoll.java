@@ -107,6 +107,7 @@ final class VirtualUnifiedPoll {
 
         state.pollSequence++;
         state.eventCounter++;
+        Instant observedAt = Instant.now();
 
         double sine = config.sineAmplitude() * Math.sin(2 * Math.PI * elapsedSec / config.periodSec());
         double sawtooth = config.sawtoothAmplitude() * (2.0 * phaseNorm - 1.0);
@@ -140,73 +141,73 @@ final class VirtualUnifiedPoll {
         CRC32 crc = new CRC32();
         crc.update(binaryPayload);
 
-        driverObject.updateVariable("status", DataRecord.single(STATUS_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"status", DataRecord.single(STATUS_SCHEMA, Map.of(
                 "online", true,
-                "lastSeen", Instant.now().toString()
+                "lastSeen", observedAt.toString()
         )));
-        driverObject.updateVariable("temperature", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"temperature", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", temperature, "unit", "C"
         )));
-        driverObject.updateVariable("pressure", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"pressure", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", pressure, "unit", "kPa"
         )));
-        driverObject.updateVariable("humidity", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"humidity", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", humidity, "unit", "%"
         )));
-        driverObject.updateVariable("sineWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", sine)));
-        driverObject.updateVariable("sawtoothWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", sawtooth)));
-        driverObject.updateVariable("triangleWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", triangle)));
-        driverObject.updateVariable("pollSequence", DataRecord.single(INT_SCHEMA, Map.of("value", state.pollSequence)));
-        driverObject.updateVariable("eventCounter", DataRecord.single(LONG_SCHEMA, Map.of("value", state.eventCounter)));
-        driverObject.updateVariable("deviceActive", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
-        driverObject.updateVariable("coordinates", DataRecord.single(COORDINATES_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"sineWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", sine)));
+        updateAt(driverObject, observedAt,"sawtoothWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", sawtooth)));
+        updateAt(driverObject, observedAt,"triangleWave", DataRecord.single(WAVE_SCHEMA, Map.of("value", triangle)));
+        updateAt(driverObject, observedAt,"pollSequence", DataRecord.single(INT_SCHEMA, Map.of("value", state.pollSequence)));
+        updateAt(driverObject, observedAt,"eventCounter", DataRecord.single(LONG_SCHEMA, Map.of("value", state.eventCounter)));
+        updateAt(driverObject, observedAt,"deviceActive", DataRecord.single(BOOL_SCHEMA, Map.of("value", true)));
+        updateAt(driverObject, observedAt,"coordinates", DataRecord.single(COORDINATES_SCHEMA, Map.of(
                 "latitude", lat,
                 "longitude", lon,
                 "altitude", altitude,
                 "accuracy", 3.5
         )));
-        driverObject.updateVariable("locationTag", DataRecord.single(STRING_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"locationTag", DataRecord.single(STRING_SCHEMA, Map.of(
                 "value", "orbit:%.5f,%.5f".formatted(lat, lon)
         )));
-        driverObject.updateVariable("serialNumber", DataRecord.single(STRING_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"serialNumber", DataRecord.single(STRING_SCHEMA, Map.of(
                 "value", config.serialNumber()
         )));
-        driverObject.updateVariable("firmwareVersion", DataRecord.single(STRING_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"firmwareVersion", DataRecord.single(STRING_SCHEMA, Map.of(
                 "value", config.firmwareVersion()
         )));
-        driverObject.updateVariable("lastMaintenance", DataRecord.single(DATETIME_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"lastMaintenance", DataRecord.single(DATETIME_SCHEMA, Map.of(
                 "value", Instant.parse(config.lastMaintenanceIso())
         )));
-        driverObject.updateVariable("meterLiters", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"meterLiters", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", state.meterLiters, "unit", "L"
         )));
-        driverObject.updateVariable("flowRate", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"flowRate", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", config.filling() ? config.litersPerSecond() : 0.0,
                 "unit", "L/s"
         )));
-        driverObject.updateVariable("filling", DataRecord.single(BOOL_SCHEMA, Map.of("value", config.filling())));
-        driverObject.updateVariable("grossWeight", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"filling", DataRecord.single(BOOL_SCHEMA, Map.of("value", config.filling())));
+        updateAt(driverObject, observedAt,"grossWeight", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", config.tareKg() + state.meterLiters * config.density(),
                 "unit", "kg"
         )));
-        driverObject.updateVariable("gasPresent", DataRecord.single(BOOL_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"gasPresent", DataRecord.single(BOOL_SCHEMA, Map.of(
                 "value", config.gasConnected() && !config.rackId().isBlank()
         )));
-        driverObject.updateVariable("groundConnected", DataRecord.single(BOOL_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"groundConnected", DataRecord.single(BOOL_SCHEMA, Map.of(
                 "value", config.groundConnected() && !config.rackId().isBlank()
         )));
-        driverObject.updateVariable("deviceHealth", DataRecord.single(HEALTH_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"deviceHealth", DataRecord.single(HEALTH_SCHEMA, Map.of(
                 "cpuPct", 20.0 + 15.0 * Math.abs(Math.sin(elapsedSec / 17.0)),
                 "memoryPct", 40.0 + 10.0 * Math.abs(Math.cos(elapsedSec / 23.0)),
                 "diskPct", 55.0 + 5.0 * Math.sin(elapsedSec / 41.0)
         )));
-        driverObject.updateVariable("telemetryTable", DataRecord.single(TELEMETRY_TABLE_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"telemetryTable", DataRecord.single(TELEMETRY_TABLE_SCHEMA, Map.of(
                 "rows", List.copyOf(state.telemetryRows)
         )));
-        driverObject.updateVariable("eventLog", DataRecord.single(EVENT_LOG_TABLE_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"eventLog", DataRecord.single(EVENT_LOG_TABLE_SCHEMA, Map.of(
                 "rows", List.copyOf(state.eventLogRows)
         )));
-        driverObject.updateVariable("binarySnapshot", DataRecord.single(BINARY_SNAPSHOT_SCHEMA, Map.of(
+        updateAt(driverObject, observedAt,"binarySnapshot", DataRecord.single(BINARY_SNAPSHOT_SCHEMA, Map.of(
                 "data", binaryPayload,
                 "sizeBytes", binaryPayload.length,
                 "checksum", "CRC32:%08X".formatted(crc.getValue()),
@@ -311,6 +312,15 @@ final class VirtualUnifiedPoll {
             }
             return Boolean.parseBoolean(raw);
         }
+    }
+
+    private static void updateAt(
+            DeviceDriver.DriverObject driverObject,
+            Instant observedAt,
+            String name,
+            DataRecord value
+    ) {
+        driverObject.updateVariable(name, value, observedAt);
     }
 
     static final class UnifiedState {

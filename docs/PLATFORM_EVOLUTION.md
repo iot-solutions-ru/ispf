@@ -284,57 +284,21 @@ North star: **больше declarative в object tree**, меньше custom Jav
 
 ---
 
-## 18. Текущее состояние (baseline 0.9.41)
+## 18. Текущее состояние (baseline 0.9.72)
 
-### Архитектурная эволюция (упрощённо)
+### Ещё в работе / ops
 
-```mermaid
-flowchart LR
-  subgraph v01["v0.1 — Core"]
-    OT[Object Tree]
-    DRV[Drivers]
-    HMI[Dashboards]
-  end
-  subgraph v02["v0.2–0.3 — REQ-PF + Phase 5"]
-    APP[Bundle Deploy]
-    WF[BPMN + Script]
-  end
-  subgraph v05["v0.5–0.6 — Federation"]
-    FED[Federation + Bind]
-    BS[BindingState]
-  end
-  subgraph v07["v0.7 — AI"]
-    AG[Tree-first Agent]
-    MCP[MCP Adapter]
-  end
-  subgraph v09["v0.9 — Scale"]
-    CH[ClickHouse Journal]
-    AP[Automation Pipeline]
-    SS[Spreadsheet HMI]
-  end
-  v01 --> v02 --> v05 --> v07 --> v09
-```
+- [x] **Playwright e2e smoke** — mocked CI baseline (BL-50, BL-77 live testids)
+- [x] **Driver stub promotion BL-26** — six STUB→BETA loopback tests
+- [x] **ClickHouse variable history** — backend write/query (BL-40); prod: `ISPF_VARIABLE_HISTORY_STORE=clickhouse` **по запросу**
+- [x] **Haystack/Brick semantic layer** — BL-56…62 Done
+- [x] **Admin mobile shell** — BL-72
+- [x] **Report calendar TZ** — BL-73
+- [x] **AI agent rate limits** — BL-75
+- [~] **Driver observedAt full matrix** — BL-74 pilots; remaining drivers demand-driven
+- [~] **Playwright live staging** — workflow + secrets; expand coverage on demand
 
-### Что есть сейчас
-
-- [x] **58 device drivers** (optional packs, AGPL platform)
-- [x] **14+ dashboard widget types** + spreadsheet + network-graph + charts
-- [x] **Full admin + operator HMI** — Explorer, System, AI Studio, i18n (4 языка)
-- [x] **Production profiles** — PostgreSQL/TimescaleDB, Redis, NATS, ClickHouse (optional)
-- [x] **Federation** — peers, tunnel, bind overlay, proxy read
-- [x] **Collaboration** — revision, presence, leases, change-sets
-- [x] **AI agent** — platform tools, MCP, operator copilot
-- [x] **Reference solutions** — demo-app, warehouse, MES, lab-training, mini-tec, spreadsheet-demo
-
-### Ещё в работе
-
-- [~] **Playwright e2e smoke** — partial baseline (Phase 18.1, BL-50)
-- [~] **Driver stub promotion** — demand-driven (Phase 18.2)
-- [~] **ClickHouse variable history** — settings UI done, backend query planned (BL-40)
-- [~] **Haystack/Brick semantic layer** — deferred (BL-56…62)
-- [x] **CWMP driver write** — BL-29 (`SetParameterValues` via runtime API)
-
-Подробный актуальный план: [ROADMAP.md](ROADMAP.md), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
+Подробный актуальный план: [ROADMAP.md § Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
 
 ---
 
@@ -363,4 +327,4 @@ flowchart LR
 
 ---
 
-*Документ обновляется при крупных релизах. Последняя синхронизация с `main`: версия **0.9.41**.*
+*Документ обновляется при крупных релизах. Последняя синхронизация с `main`: версия **0.9.72**.*

@@ -25,8 +25,8 @@ test.describe("live backend", () => {
     await page.getByLabel("Password").fill(password!);
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByText("Admin console")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole("button", { name: "Explorer" })).toHaveClass(/active/);
+    await expect(page.getByTestId("admin-shell")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("workspace-tab-explorer")).toHaveClass(/active/);
     await expect(page.locator(".tree-label", { hasText: "Platform" })).toBeVisible({
       timeout: 30_000,
     });
@@ -43,7 +43,7 @@ test.describe("live backend", () => {
     await localLogin.fill(username!);
     await page.getByLabel("Password").fill(password!);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText("Admin console")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-shell")).toBeVisible({ timeout: 30_000 });
 
     const info = await page.evaluate(async () => {
       const response = await fetch("/api/v1/info");
@@ -65,7 +65,7 @@ test.describe("live backend", () => {
     await localLogin.fill(username!);
     await page.getByLabel("Password").fill(password!);
     await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page.getByText("Admin console")).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByTestId("admin-shell")).toBeVisible({ timeout: 30_000 });
 
     await page.getByRole("button", { name: "System" }).click();
     await expect(page.getByRole("heading", { name: "Platform license" })).toBeVisible({

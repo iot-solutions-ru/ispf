@@ -402,5 +402,8 @@
   "view.wizardStepTitle": "步骤 {{id}} – {{label}}",
   "view.wizardSteps": "表格步骤",
   "view.workflowStarted": "工作流程已启动",
-  "view.workflowWaiting": "等待操作员的工作流程 — 请参阅概述"
+  "view.workflowWaiting": "等待操作员的工作流程 — 请参阅概述",
+  "view.wizardBack": "返回",
+  "view.wizardNext": "下一步 →",
+  "view.loadingReport": "加载中…"
 }
