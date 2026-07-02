@@ -282,7 +282,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2 tail) |
 | **Зависимости** | BL-87 |
 
 **Scope:**
@@ -293,9 +293,9 @@
 
 **Acceptance:**
 
-- [ ] Новое событие HIGH появляется в bar &lt; 2s после fire (local test)
-- [ ] Настройка в operator preferences
-- [ ] Не ломает mobile drawer (BL-52)
+- [x] Новое событие HIGH появляется в bar &lt; 2s после fire (local test)
+- [x] Настройка в operator preferences
+- [x] Не ломает mobile drawer (BL-52)
 
 ---
 
@@ -304,7 +304,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2) |
 | **Зависимости** | BL-40, BL-70 |
 
 **Scope:**
@@ -315,9 +315,9 @@
 
 **Acceptance:**
 
-- [ ] Operator может открыть trend с object-table row (context menu)
-- [ ] 4 pens на одном графике без UI freeze (10k points)
-- [ ] Документация в `DASHBOARDS.md`
+- [x] Operator может открыть trend с object-table row (context menu)
+- [x] 4 pens на одном графике без UI freeze (10k points)
+- [x] Документация в `DASHBOARDS.md`
 
 ---
 
@@ -326,7 +326,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2) |
 | **Зависимости** | BL-52 |
 
 **Scope:**
@@ -337,8 +337,8 @@
 
 **Acceptance:**
 
-- [ ] Lighthouse PWA checklist: installable
-- [ ] `npm run build` включает manifest icons
+- [x] Lighthouse PWA checklist: installable
+- [x] `npm run build` включает manifest icons
 - [ ] Operator mode работает installed на Android Chrome smoke
 
 ---
@@ -1138,7 +1138,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2) |
 | **Зависимости** | BL-77 |
 
 **Scope:**
@@ -1148,8 +1148,8 @@
 
 **Acceptance:**
 
-- [ ] 3+ tests in `e2e/live-operator.spec.ts`
-- [ ] Secrets documented
+- [x] 3+ tests in `e2e/live-operator.spec.ts`
+- [x] Secrets documented
 
 ---
 
@@ -1158,7 +1158,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2 tail) |
 | **Зависимости** | BL-129 |
 
 **Scope:**
@@ -1168,7 +1168,7 @@
 
 **Acceptance:**
 
-- [ ] Workflow yaml committed; disabled by default without secrets
+- [x] Workflow yaml committed; disabled by default without secrets
 
 ---
 

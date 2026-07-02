@@ -1,0 +1,24 @@
+{
+  "appId": "e2e-operator",
+  "title": "E2E Operator",
+  "defaultDashboard": "root.platform.dashboards.ops-board",
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.ops-board",
+      "title": "Ops board"
+    }
+  ],
+  "alarmBar": {
+    "enabled": true,
+    "position": "top",
+    "minLevel": "WARNING",
+    "rules": [
+      {
+        "id": "e2e-high-temp",
+        "eventNames": ["high-temp"],
+        "title": "High temperature",
+        "minLevel": "WARNING"
+      }
+    ]
+  }
+}

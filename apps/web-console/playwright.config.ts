@@ -28,14 +28,14 @@ export default defineConfig({
     ? [
         {
           name: "live-chromium",
-          testMatch: /live\.spec\.ts/,
+          testMatch: /live.*\.spec\.ts/,
           use: { ...devices["Desktop Chrome"] },
         },
       ]
     : [
         {
           name: "mocked-chromium",
-          testIgnore: /live\.spec\.ts/,
+          testIgnore: /^.*\/live\.spec\.ts$/,
           use: { ...devices["Desktop Chrome"] },
         },
       ],

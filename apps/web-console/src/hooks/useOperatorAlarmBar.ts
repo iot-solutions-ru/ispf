@@ -16,6 +16,11 @@ import {
   resolveAlarmNavigateParams,
 } from "../utils/operatorAlarmBar";
 import { playAlarmSound, playBeepFallback } from "../utils/alarmSound";
+import {
+  isOperatorAlarmSoundEnabled,
+  OPERATOR_PREFERENCES_CHANGED_EVENT,
+  showOperatorAlarmNotification,
+} from "../utils/operatorPreferences";
 
 interface UseOperatorAlarmBarOptions {
   ui?: OperatorUi;
@@ -56,6 +61,19 @@ async function enrichEventFromFunction(
   }
 }
 
+function pickEventFromMessage(
+  events: ObjectEvent[],
+  message: ObjectWsMessage
+): ObjectEvent | undefined {
+  return (
+    events.find(
+      (item) =>
+        item.eventName === message.variableName &&
+        Math.abs(new Date(item.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000
+    ) ?? events[0]
+  );
+}
+
 export function useOperatorAlarmBar(
   config: OperatorAlarmBarConfig | undefined,
   options: UseOperatorAlarmBarOptions
@@ -66,8 +84,12 @@ export function useOperatorAlarmBar(
   const [shelves, setShelves] = useState<import("../api").AlarmShelf[]>([]);
   const [alertRules, setAlertRules] = useState<import("../types/event").AlertRule[]>([]);
   const [muted, setMuted] = useState(() => localStorage.getItem(ALARM_MUTE_STORAGE_KEY) === "1");
+  const [userSoundEnabled, setUserSoundEnabled] = useState(isOperatorAlarmSoundEnabled);
   const seenIds = useRef(new Set<string>());
+  const shelvesRef = useRef(shelves);
   const soundTimer = useRef<number | undefined>(undefined);
+
+  shelvesRef.current = shelves;
 
   const sortedAlarms = useMemo(
     () => [...alarms].sort((left, right) => compareAlarmPriority(left, right, alertRules)),
@@ -85,7 +107,7 @@ export function useOperatorAlarmBar(
 
   const playSoundForAlarm = useCallback(
     (alarm: NonNullable<typeof activeAlarm>) => {
-      if (muted || !alarm.soundEnabled || !alarm.soundUrl) {
+      if (muted || !userSoundEnabled || !alarm.soundEnabled || !alarm.soundUrl) {
         return;
       }
       stopSound();
@@ -99,7 +121,7 @@ export function useOperatorAlarmBar(
       play();
       soundTimer.current = window.setInterval(play, resolved.soundRepeatMs);
     },
-    [muted, resolved.soundRepeatMs, stopSound]
+    [muted, resolved.soundRepeatMs, stopSound, userSoundEnabled]
   );
 
   useEffect(() => {
@@ -112,6 +134,13 @@ export function useOperatorAlarmBar(
   }, [activeAlarm, playSoundForAlarm, stopSound]);
 
   useEffect(() => {
+    const syncPreferences = () => setUserSoundEnabled(isOperatorAlarmSoundEnabled());
+    syncPreferences();
+    window.addEventListener(OPERATOR_PREFERENCES_CHANGED_EVENT, syncPreferences);
+    return () => window.removeEventListener(OPERATOR_PREFERENCES_CHANGED_EVENT, syncPreferences);
+  }, []);
+
+  useEffect(() => {
     if (!enabled) {
       return;
     }
@@ -119,50 +148,56 @@ export function useOperatorAlarmBar(
     void fetchAlertRules().then(setAlertRules).catch(() => setAlertRules([]));
   }, [enabled]);
 
+  const activateEvent = useCallback(
+    async (event: ObjectEvent) => {
+      if (seenIds.current.has(event.id) || isAlarmShelved(event, shelvesRef.current)) {
+        return;
+      }
+      const rule = matchAlarmRule(event, resolved.rules, resolved.minLevel);
+      if (!rule) {
+        return;
+      }
+      seenIds.current.add(event.id);
+      const enrichedEvent = await enrichEventFromFunction(event, rule);
+      const active = buildActiveAlarm(enrichedEvent, rule, resolved, options.ui);
+      if (rule.actions?.enrichFromFunction) {
+        active.navigateParams = resolveAlarmNavigateParams(enrichedEvent, rule);
+      }
+      const summary = active.fieldRows.map((row) => `${row.label}: ${row.value}`).join(" · ");
+      showOperatorAlarmNotification(active.title, summary, active.id);
+      setAlarms((current) => {
+        const without = current.filter((item) => item.id !== active.id);
+        return [...without, active];
+      });
+    },
+    [options.ui, resolved]
+  );
+
   useEffect(() => {
     if (!enabled) {
       return;
     }
-    const handler = async (raw: Event) => {
+    const handler = (raw: Event) => {
       const message = (raw as CustomEvent<ObjectWsMessage>).detail;
       if (message.type !== "EVENT_FIRED") {
         return;
       }
-      try {
-        const events = await fetchEvents(message.path, 5);
-        const event =
-          events.find(
-            (item) =>
-              item.eventName === message.variableName &&
-              Math.abs(new Date(item.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000
-          ) ?? events[0];
-        if (!event || seenIds.current.has(event.id)) {
-          return;
+      void (async () => {
+        try {
+          const events = await fetchEvents(message.path, 5);
+          const event = pickEventFromMessage(events, message);
+          if (!event) {
+            return;
+          }
+          await activateEvent(event);
+        } catch {
+          // ignore fetch errors
         }
-        if (isAlarmShelved(event, shelves)) {
-          return;
-        }
-        const rule = matchAlarmRule(event, resolved.rules, resolved.minLevel);
-        if (!rule) {
-          return;
-        }
-        seenIds.current.add(event.id);
-        const enrichedEvent = await enrichEventFromFunction(event, rule);
-        const active = buildActiveAlarm(enrichedEvent, rule, resolved, options.ui);
-        if (rule.actions?.enrichFromFunction) {
-          active.navigateParams = resolveAlarmNavigateParams(enrichedEvent, rule);
-        }
-        setAlarms((current) => {
-          const without = current.filter((item) => item.id !== active.id);
-          return [...without, active];
-        });
-      } catch {
-        // ignore fetch errors
-      }
+      })();
     };
     window.addEventListener(OBJECT_WS_EVENT, handler);
     return () => window.removeEventListener(OBJECT_WS_EVENT, handler);
-  }, [enabled, options.ui, resolved, shelves]);
+  }, [activateEvent, enabled]);
 
   const shelveAlarmFor = useCallback(
     async (alarmId: string, durationMinutes?: number, comment?: string) => {

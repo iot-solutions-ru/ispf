@@ -40,13 +40,14 @@ function AlarmBarItem({
 }) {
   const { t } = useTranslation("operator");
   const isCritical = alarm.event.level === "CRITICAL";
+  const levelClass = `operator-alarm-bar--level-${alarm.event.level.toLowerCase()}`;
   const { colors } = alarm;
   const showPrimaryAction = Boolean(alarm.primaryActionLabel && alarm.dashboardPath);
   const showSecondary = !alarm.hideSecondaryActions;
 
   return (
     <div
-      className={`operator-alarm-bar${isCritical ? " operator-alarm-bar--critical" : ""}`}
+      className={`operator-alarm-bar ${levelClass}${isCritical ? " operator-alarm-bar--critical" : ""}`}
       style={{
         background: colors.background,
         color: colors.text,
@@ -132,7 +133,10 @@ export default function AlarmBarOverlay({
   }
 
   return (
-    <div className={`operator-alarm-bar-stack operator-alarm-bar-stack--${position}`}>
+    <div
+      className={`operator-alarm-bar-stack operator-alarm-bar-stack--${position}`}
+      data-testid="operator-alarm-bar"
+    >
       {alarms.map((alarm, index) => (
         <AlarmBarItem
           key={alarm.id}

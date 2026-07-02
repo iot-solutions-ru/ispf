@@ -26,9 +26,12 @@ npm run test:e2e:install
 | Bindings: platform function catalog | `binding expression builder` |
 | Dashboard layout API | `dashboard preview` |
 | Operator `?mode=operator&app=demo` | `operator deep link` |
+| Operator shell + alarm bar + dashboard | `e2e/live-operator.spec.ts` (mocked) |
+| Operator live smoke (staging) | `e2e/live-operator.spec.ts` (`operator live` describe) |
+| PWA manifest | `operator PWA manifest` in `live-operator.spec.ts` |
 | System → Metrics + Platform license | `system metrics` |
 
-**Live staging:** workflow [`.github/workflows/e2e-live.yml`](../../../.github/workflows/e2e-live.yml) — `workflow_dispatch` against `https://ispf.iot-solutions.ru` (override `E2E_BASE_URL`). Set GitHub secrets `E2E_USERNAME` / `E2E_PASSWORD`. Live suite uses `data-testid="admin-shell"` and `workspace-tab-explorer` (OIDC-only servers skip login tests).
+**Live staging:** workflow [`.github/workflows/e2e-live.yml`](../../../.github/workflows/e2e-live.yml) — `workflow_dispatch` or weekly cron (Monday 06:00 UTC) against `https://ispf.iot-solutions.ru` (override `E2E_BASE_URL`). Set GitHub secrets `E2E_USERNAME` / `E2E_PASSWORD`. The job is skipped when secrets are absent. Live suites use `data-testid="admin-shell"`, `workspace-tab-explorer`, `operator-shell`, `operator-nav`, `operator-alarm-bar` (OIDC-only servers skip login tests).
 
 ## Run mocked smoke tests (default)
 

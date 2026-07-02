@@ -11,7 +11,7 @@ import {
 } from "../../types/operatorUi";
 import type { DashboardSession } from "../dashboard/DashboardContext";
 import { emptySession, mergeSession } from "../dashboard/DashboardContext";
-import ShellPreferences from "../ShellPreferences";
+import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
@@ -263,6 +263,7 @@ export default function OperatorDashboardApp({
       className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
         sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
       }`}
+      data-testid="operator-shell"
     >
       <OperatorDashboardChrome
         ui={ui}
@@ -352,7 +353,7 @@ function OperatorDashboardChrome({
         </div>
         <div className="topbar-actions">
           <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
-          <ShellPreferences />
+          <OperatorPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
               {t("common:action.logout")}
@@ -365,7 +366,7 @@ function OperatorDashboardChrome({
           )}
         </div>
       </header>
-      <nav className="op-nav">
+      <nav className="op-nav" data-testid="operator-nav">
         {ui.dashboards.map((dashboard) => (
           <button
             key={dashboard.path}
