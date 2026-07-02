@@ -42,6 +42,13 @@ dependencies {
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
 
+    constraints {
+        implementation("net.sf.jasperreports:jasperreports:7.0.7")
+        implementation("net.sf.jasperreports:jasperreports-fonts:7.0.7")
+        implementation("commons-beanutils:commons-beanutils:1.11.0")
+        implementation("com.lowagie:itext:4.2.2")
+    }
+
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
