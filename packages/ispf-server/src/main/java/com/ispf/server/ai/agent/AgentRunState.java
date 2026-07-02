@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Per-session mutable state: bundle validation gates and in-flight agent continuation.
@@ -23,7 +24,7 @@ public final class AgentRunState {
     private volatile String handoffId;
     private volatile String assignmentType;
     private final Set<String> completedPlanSteps = ConcurrentHashMap.newKeySet();
-    private volatile int reworkRoundCount;
+    private final AtomicInteger reworkRoundCount = new AtomicInteger();
     private volatile String lastUserMessage = "";
     private volatile String planApprovedBy;
 
@@ -66,15 +67,15 @@ public final class AgentRunState {
     }
 
     public int reworkRoundCount() {
-        return reworkRoundCount;
+        return reworkRoundCount.get();
     }
 
     public void incrementReworkRound() {
-        this.reworkRoundCount++;
+        this.reworkRoundCount.incrementAndGet();
     }
 
     public void resetReworkRounds() {
-        this.reworkRoundCount = 0;
+        this.reworkRoundCount.set(0);
     }
 
     public AgentInteractionMode interactionMode() {
@@ -132,7 +133,7 @@ public final class AgentRunState {
         this.assignmentType = null;
         this.planApprovedBy = null;
         this.completedPlanSteps.clear();
-        this.reworkRoundCount = 0;
+        this.reworkRoundCount.set(0);
     }
 
     public Map<String, Object> planStateSummary() {
@@ -224,7 +225,7 @@ public final class AgentRunState {
         if (!completedPlanSteps.isEmpty()) {
             map.put("completedPlanSteps", Set.copyOf(completedPlanSteps));
         }
-        map.put("reworkRoundCount", reworkRoundCount);
+        map.put("reworkRoundCount", reworkRoundCount.get());
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -300,7 +301,7 @@ public final class AgentRunState {
         }
         Object reworkRaw = raw.get("reworkRoundCount");
         if (reworkRaw instanceof Number number) {
-            reworkRoundCount = number.intValue();
+            reworkRoundCount.set(number.intValue());
         }
     }
 

@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -48,7 +49,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
     private ServerSocket serverSocket;
     private ExecutorService acceptExecutor;
     private final AtomicReference<String> lastFeed = new AtomicReference<>("");
-    private volatile int connectedClients;
+    private final AtomicInteger connectedClients = new AtomicInteger();
     private final Map<String, GpsTrackerPoint> points = new ConcurrentHashMap<>();
     private volatile boolean connected;
 
@@ -95,7 +96,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
         while (connected && serverSocket != null && !serverSocket.isClosed()) {
             try {
                 Socket client = serverSocket.accept();
-                connectedClients++;
+                connectedClients.incrementAndGet();
                 acceptExecutor.submit(() -> handleClient(client));
             } catch (IOException e) {
                 if (connected) {
@@ -127,7 +128,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
         } catch (IOException e) {
             driverObject.log(DriverLogLevel.DEBUG, "GPS client disconnected: " + e.getMessage());
         } finally {
-            connectedClients = Math.max(0, connectedClients - 1);
+            connectedClients.updateAndGet(current -> Math.max(0, current - 1));
         }
     }
 
@@ -176,7 +177,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
         return DataRecord.single(FEED_SCHEMA, Map.of(
                 "value", value == null ? "" : value,
                 "bytesRead", value == null ? 0 : value.length(),
-                "connectedClients", connectedClients
+                "connectedClients", connectedClients.get()
         ));
     }
 }
