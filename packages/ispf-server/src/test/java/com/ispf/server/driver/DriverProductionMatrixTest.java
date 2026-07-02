@@ -13,6 +13,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DriverProductionMatrixTest {
 
     @Test
+    void top10IndustrialDriversAreProduction() {
+        for (String driverId : DriverProductionMatrix.TOP_10_INDUSTRIAL) {
+            assertEquals(
+                    DriverMaturity.PRODUCTION,
+                    DriverProductionMatrix.resolveMaturity(driverId),
+                    driverId
+            );
+            DriverProductionMatrix.Entry entry = DriverProductionMatrix.entry(driverId).orElseThrow();
+            assertTrue(
+                    DriverProductionMatrix.loopbackTestSourceExists(entry),
+                    driverId + " missing loopback test"
+            );
+        }
+    }
+
+    @Test
     void productionDriversDeclareLoopbackTestSource() {
         for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
             if (entry.maturity() != DriverMaturity.PRODUCTION) {

@@ -4,6 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverPollTimestamps;
@@ -18,9 +19,15 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedDataItem;
+import org.eclipse.milo.opcua.sdk.client.subscriptions.ManagedSubscription;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +36,9 @@ import java.util.concurrent.TimeUnit;
  * OPC UA client driver — reads node Value attributes via Eclipse Milo.
  * <p>
  * Point mapping: {@code nodeId} e.g. {@code ns=2;s=Temperature} or {@code i=2258}.
+ * Config {@code readMode}: {@code poll} (default) or {@code subscribe} (push updates with poll fallback).
  */
-public class OpcUaDeviceDriver implements DeviceDriver {
+public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "opcua",
@@ -54,7 +62,9 @@ public class OpcUaDeviceDriver implements DeviceDriver {
     private OpcUaClient client;
     private String endpointUrl = "opc.tcp://localhost:4840";
     private int timeoutMs = 5000;
+    private String readMode = "poll";
     private final Map<String, OpcUaPoint> points = new ConcurrentHashMap<>();
+    private ManagedSubscription subscription;
     private volatile boolean connected;
 
     @Override
@@ -65,8 +75,33 @@ public class OpcUaDeviceDriver implements DeviceDriver {
     @Override
     public void initialize(DriverObject driverObject) {
         this.driverObject = driverObject;
+        driverObject.configuration().forEach(this::applyConfig);
         readConfig("endpointUrl", value -> endpointUrl = value);
         readConfig("timeoutMs", value -> timeoutMs = Integer.parseInt(value));
+        readConfig("readMode", value -> readMode = value.trim());
+    }
+
+    private void applyConfig(String key, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        switch (key) {
+            case "endpointUrl" -> endpointUrl = value;
+            case "timeoutMs" -> timeoutMs = Integer.parseInt(value);
+            case "readMode" -> readMode = value.trim();
+            default -> {
+            }
+        }
+    }
+
+    @Override
+    public List<DriverDiscovery.Node> browseChildren(String parentNodeId) throws DriverException {
+        if (isConnected()) {
+            return browseWithClient(parentNodeId);
+        }
+        return OpcUaBrowseSupport.browseChildren(endpointUrl, parentNodeId, timeoutMs).stream()
+                .map(node -> new DriverDiscovery.Node(node.nodeId(), node.displayName(), node.nodeClass()))
+                .toList();
     }
 
     @Override
@@ -95,6 +130,7 @@ public class OpcUaDeviceDriver implements DeviceDriver {
     @Override
     public void disconnect() {
         connected = false;
+        subscription = null;
         if (client != null) {
             try {
                 client.disconnect().get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -116,10 +152,20 @@ public class OpcUaDeviceDriver implements DeviceDriver {
             throw new DriverException("Not connected");
         }
         points.clear();
-        Instant pollTick = DriverPollTimestamps.pollTick();
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             OpcUaPoint point = OpcUaPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
+        }
+        if ("subscribe".equalsIgnoreCase(readMode)) {
+            try {
+                ensureSubscription(pointMappings);
+                return;
+            } catch (Exception e) {
+                driverObject.log(DriverLogLevel.WARNING, "OPC UA subscribe failed, falling back to poll: " + e.getMessage());
+            }
+        }
+        for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
+            OpcUaPoint point = points.get(entry.getKey());
             PointRead read = readPoint(point);
             driverObject.updateVariable(entry.getKey(), read.record(), DriverPollTimestamps.sourceOrPollTick(read.observedAt()));
         }
@@ -158,6 +204,76 @@ public class OpcUaDeviceDriver implements DeviceDriver {
     private record PointRead(DataRecord record, Instant observedAt) {
     }
 
+    private void ensureSubscription(Map<String, String> pointMappings) throws Exception {
+        if (subscription == null) {
+            subscription = ManagedSubscription.create(client);
+            subscription.setDefaultMonitoringMode(MonitoringMode.Reporting);
+        } else if (!subscription.getDataItems().isEmpty()) {
+            subscription.deleteDataItems(subscription.getDataItems());
+        }
+        List<Map.Entry<String, String>> entries = new ArrayList<>(pointMappings.entrySet());
+        List<NodeId> nodeIds = new ArrayList<>();
+        for (Map.Entry<String, String> entry : entries) {
+            nodeIds.add(OpcUaPoint.parse(entry.getValue()).nodeId());
+        }
+        List<ManagedDataItem> items = subscription.createDataItems(nodeIds);
+        for (int i = 0; i < items.size() && i < entries.size(); i++) {
+            ManagedDataItem item = items.get(i);
+            String variableName = entries.get(i).getKey();
+            item.addDataValueListener((dataItem, dataValue) -> {
+                PointRead read = toPointRead(dataValue);
+                driverObject.updateVariable(
+                        variableName,
+                        read.record(),
+                        DriverPollTimestamps.sourceOrPollTick(read.observedAt())
+                );
+            });
+        }
+    }
+
+    private List<DriverDiscovery.Node> browseWithClient(String parentNodeId) throws DriverException {
+        try {
+            org.eclipse.milo.opcua.stack.core.types.builtin.NodeId parent =
+                    parentNodeId == null || parentNodeId.isBlank()
+                            ? org.eclipse.milo.opcua.stack.core.Identifiers.ObjectsFolder
+                            : OpcUaPoint.parse(parentNodeId).nodeId();
+            List<org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription> refs =
+                    client.getAddressSpace().browse(parent);
+            List<DriverDiscovery.Node> nodes = new ArrayList<>();
+            for (var ref : refs) {
+                var nodeId = ref.getNodeId().toNodeId(client.getNamespaceTable()).orElse(null);
+                if (nodeId == null) {
+                    continue;
+                }
+                String displayName = ref.getBrowseName() != null ? ref.getBrowseName().getName() : nodeId.toParseableString();
+                nodes.add(new DriverDiscovery.Node(
+                        nodeId.toParseableString(),
+                        displayName,
+                        ref.getNodeClass() != null ? ref.getNodeClass().name() : "Unknown"
+                ));
+            }
+            return nodes;
+        } catch (Exception e) {
+            throw new DriverException("OPC UA browse failed", e);
+        }
+    }
+
+    private PointRead toPointRead(DataValue dataValue) {
+        Object rawValue = dataValue.getValue() != null ? dataValue.getValue().getValue() : null;
+        String quality = dataValue.getStatusCode() != null ? dataValue.getStatusCode().toString() : "UNKNOWN";
+        Instant observedAt = null;
+        if (dataValue.getSourceTime() != null) {
+            observedAt = dataValue.getSourceTime().getJavaInstant();
+        } else if (dataValue.getServerTime() != null) {
+            observedAt = dataValue.getServerTime().getJavaInstant();
+        }
+        DataRecord record = DataRecord.single(VALUE_SCHEMA, Map.of(
+                "value", rawValue != null ? rawValue.toString() : "",
+                "quality", quality
+        ));
+        return new PointRead(record, observedAt);
+    }
+
     private PointRead readPoint(OpcUaPoint point) throws DriverException {
         try {
             DataValue dataValue = client.readValue(
@@ -165,20 +281,7 @@ public class OpcUaDeviceDriver implements DeviceDriver {
                     TimestampsToReturn.Both,
                     point.nodeId()
             ).get(timeoutMs, TimeUnit.MILLISECONDS);
-
-            Object rawValue = dataValue.getValue() != null ? dataValue.getValue().getValue() : null;
-            String quality = dataValue.getStatusCode() != null ? dataValue.getStatusCode().toString() : "UNKNOWN";
-            Instant observedAt = null;
-            if (dataValue.getSourceTime() != null) {
-                observedAt = dataValue.getSourceTime().getJavaInstant();
-            } else if (dataValue.getServerTime() != null) {
-                observedAt = dataValue.getServerTime().getJavaInstant();
-            }
-            DataRecord record = DataRecord.single(VALUE_SCHEMA, Map.of(
-                    "value", rawValue != null ? rawValue.toString() : "",
-                    "quality", quality
-            ));
-            return new PointRead(record, observedAt);
+            return toPointRead(dataValue);
         } catch (Exception e) {
             throw new DriverException("OPC UA read failed at " + point.nodeId(), e);
         }

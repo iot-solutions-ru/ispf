@@ -5,6 +5,7 @@ import com.ispf.driver.DriverMaturity;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -13,6 +14,20 @@ import java.util.Set;
  * Authoritative production-readiness matrix (ADR-0022, BL-78).
  */
 final class DriverProductionMatrix {
+
+    /** ADR-0022 top-10 industrial driver ids (BL-85). */
+    static final List<String> TOP_10_INDUSTRIAL = List.of(
+            "virtual",
+            "mqtt",
+            "modbus-tcp",
+            "opcua",
+            "snmp",
+            "bacnet",
+            "s7",
+            "http",
+            "flexible",
+            "modbus-rtu"
+    );
 
     enum Capability {
         POLL,
@@ -52,7 +67,9 @@ final class DriverProductionMatrix {
                     testPath("ispf-driver-modbus-rtu", "com.ispf.driver.modbusrtu.ModbusRtuDeviceDriverTest")),
             entry("modbus-udp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest")),
-            entry("opcua", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
+            entry("opcua", DriverMaturity.PRODUCTION, EnumSet.of(
+                    Capability.POLL, Capability.SUBSCRIBE, Capability.WRITE, Capability.DISCOVERY, Capability.OBSERVED_AT
+            ),
                     testPath("ispf-driver-opcua", "com.ispf.driver.opcua.OpcUaDeviceDriverTest")),
             entry("opcua-server", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-opcua-server", "com.ispf.driver.opcuaserver.OpcUaServerPointTest")),
@@ -62,7 +79,7 @@ final class DriverProductionMatrix {
                     testPath("ispf-driver-snmp", "com.ispf.driver.snmp.SnmpDeviceDriverTest")),
             entry("http", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-http", "com.ispf.driver.http.HttpDeviceDriverTest")),
-            entry("bacnet", DriverMaturity.BETA, POLL_WRITE_OBSERVED,
+            entry("bacnet", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-bacnet", "com.ispf.driver.bacnet.BacnetDeviceDriverNetworkTest")),
             entry("iec104", DriverMaturity.BETA, POLL_WRITE,
                     testPath("ispf-driver-iec104", "com.ispf.driver.iec104.Iec104DeviceDriverTest")),

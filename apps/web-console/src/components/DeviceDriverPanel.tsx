@@ -14,6 +14,11 @@ import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBa
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
+import {
+  hasDriverMappingErrors,
+  validateDriverPointMappingsJson,
+} from "../utils/driverPointMappingValidation";
+import { pollDriver, browseDriverNodes } from "../api/drivers";
 
 interface DeviceDriverPanelProps {
   devicePath: string;
@@ -83,11 +88,22 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const [configJson, setConfigJson] = useState("{}");
   const [mappingsJson, setMappingsJson] = useState("{}");
   const [formError, setFormError] = useState<string | null>(null);
+  const [mappingTestMessage, setMappingTestMessage] = useState<string | null>(null);
 
   const variablesQuery = useQuery({
     queryKey: ["variables", devicePath],
     queryFn: () => fetchVariables(devicePath),
   });
+
+  const deviceVariableNames = useMemo(
+    () => (variablesQuery.data ?? []).map((variable) => variable.name),
+    [variablesQuery.data],
+  );
+
+  const mappingValidation = useMemo(
+    () => validateDriverPointMappingsJson(mappingsJson, deviceVariableNames),
+    [mappingsJson, deviceVariableNames],
+  );
 
   const driversQuery = useQuery({
     queryKey: ["drivers"],
@@ -147,6 +163,10 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const saveMutation = useMutation({
     mutationFn: (autoStart: boolean) => {
       setFormError(null);
+      const mappingsLabel = t("inspector:driver.mappingsLabel");
+      if (hasDriverMappingErrors(mappingValidation)) {
+        throw new Error(t("inspector:driver.mappingsValidationFailed"));
+      }
       const configLabel = t("inspector:driver.configLabel");
       const mappingsLabel = t("inspector:driver.mappingsLabel");
       const configuration = parseJsonObject(
@@ -172,6 +192,30 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
     },
     onSuccess: invalidate,
     onError: (error: Error) => setFormError(error.message),
+  });
+
+  const pollMutation = useMutation({
+    mutationFn: () => pollDriver(devicePath),
+    onSuccess: () => {
+      setMappingTestMessage(t("inspector:driver.mappingsTestReadOk"));
+      queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
+    },
+    onError: (error: Error) => setMappingTestMessage(error.message),
+  });
+
+  const browseMutation = useMutation({
+    mutationFn: () => browseDriverNodes(devicePath),
+    onSuccess: (nodes) => {
+      if (nodes.length === 0) {
+        setMappingTestMessage(t("inspector:driver.browseEmpty"));
+        return;
+      }
+      const first = nodes.find((node) => node.nodeClass === "Variable") ?? nodes[0];
+      const next = { ...mappingValidation.mappings, [first.displayName || "point"]: first.nodeId };
+      setMappingsJson(JSON.stringify(next, null, 2));
+      setMappingTestMessage(t("inspector:driver.browseImported", { count: nodes.length }));
+    },
+    onError: (error: Error) => setMappingTestMessage(error.message),
   });
 
   const actionError =
@@ -330,10 +374,48 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                   className="mono"
                   rows={6}
                   value={mappingsJson}
-                  onChange={(e) => setMappingsJson(e.target.value)}
+                  onChange={(e) => {
+                    setMappingsJson(e.target.value);
+                    setMappingTestMessage(null);
+                  }}
                   spellCheck={false}
                 />
               </label>
+              {mappingValidation.issues.length > 0 && (
+                <ul className="driver-mapping-issues full">
+                  {mappingValidation.issues.map((issue) => (
+                    <li
+                      key={`${issue.code}-${issue.key ?? issue.message}`}
+                      className={issue.level === "error" ? "hint error" : "hint warning"}
+                    >
+                      {issue.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="form-actions full">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={isBusy || pollMutation.isPending || !hasBinding}
+                  onClick={() => pollMutation.mutate()}
+                >
+                  {t("inspector:driver.mappingsTestRead")}
+                </button>
+                {driverId === "opcua" && (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={isBusy || browseMutation.isPending || !hasBinding}
+                    onClick={() => browseMutation.mutate()}
+                  >
+                    {t("inspector:driver.browseOpcUa")}
+                  </button>
+                )}
+              </div>
+              {mappingTestMessage && (
+                <p className="hint full">{mappingTestMessage}</p>
+              )}
             </div>
             <div className="form-actions">
               <button type="submit" className="btn" disabled={isBusy}>

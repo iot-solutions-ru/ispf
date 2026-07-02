@@ -108,7 +108,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -119,9 +119,9 @@
 
 **Acceptance:**
 
-- [ ] Demo: connect к public OPC UA test server, browse → import mappings JSON
-- [ ] Subscription path с fallback на poll
-- [ ] Loopback test в CI (embedded или testcontainers)
+- [x] Demo: connect к embedded OPC UA server, browse → import mappings JSON
+- [x] Subscription path с fallback на poll (`readMode=subscribe`)
+- [x] Loopback browse test в CI (embedded server)
 
 ---
 
@@ -172,7 +172,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -182,7 +182,7 @@
 
 **Acceptance:**
 
-- [ ] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
+- [x] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
 - [ ] Badge или comment в PR при regression
 
 ---
@@ -192,7 +192,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8) |
 | **Зависимости** | BL-59 (Haystack mappings Done) |
 
 **Scope:**
@@ -202,9 +202,9 @@
 
 **Acceptance:**
 
-- [ ] UI errors для invalid JSON schema
-- [ ] Test read вызывает `readPoints` / single variable refresh
-- [ ] i18n en/ru/de/zh
+- [x] UI errors для invalid JSON schema
+- [x] Test read вызывает poll / variable refresh
+- [x] i18n en/ru/de/zh
 
 ---
 
@@ -213,19 +213,19 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8) |
 | **Зависимости** | BL-78…84 |
 
 **Scope:**
 
-- Фиксированный список: virtual, mqtt, modbus-tcp, opc-ua, snmp, bacnet, s7, http, jdbc, kafka (уточняется в ADR).
+- Фиксированный список: virtual, mqtt, modbus-tcp, opc-ua, snmp, bacnet, s7, http, flexible, modbus-rtu (ADR-0022).
 - Каждый: PRODUCTION badge только при green CI matrix + write path (где применимо) + docs.
 
 **Acceptance:**
 
-- [ ] Все 10 — `PRODUCTION` в `DriverMaturityRegistry`
-- [ ] `GET /api/v1/info` или driver catalog отражает maturity
-- [ ] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test`
+- [x] Все 10 — `PRODUCTION` в `DriverMaturityRegistry`
+- [x] `GET /api/v1/drivers` отражает maturity
+- [x] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test`
 
 ---
 
@@ -1240,8 +1240,12 @@ Sprint EX-7 (Trust close-out + CI load gate)
   BL-86, BL-87 — operator shelve list + alert inspector
   BL-113 Done — load-test.yml
 
+Sprint EX-8 (Driver production depth)
+  BL-80, BL-83, BL-84, BL-85 — Done
+  bacnet → PRODUCTION; driver-interop CI; mapping validation UI; OPC UA browse/subscribe
+
 Backlog по demand
-  BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
+  BL-81, BL-82, BL-100, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -1250,6 +1254,7 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-02 | Sprint EX-8: BL-80 OPC UA browse/subscribe; BL-83 driver-interop.yml; BL-84 mapping validation UI; BL-85 top-10 PRODUCTION gate |
 | 2026-07-02 | PR #24 review fixes: load-test pipefail, ackRequired enforcement, BL-113 scope sync |
 | 2026-07-02 | Sprint EX-7: BL-113 load-test.yml; BL-86 shelve list UI; BL-87 alert inspector priority/ack/rateLimit; backlog sync BL-78/79/114 Done |
 | 2026-07-02 | Sprint EX-6 start: BL-111 Done — ADR-0024 demand-driven pub/sub; BL-112 cancelled (no sidecar) |

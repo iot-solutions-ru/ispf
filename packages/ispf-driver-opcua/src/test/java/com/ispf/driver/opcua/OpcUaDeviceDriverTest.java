@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.ServerSocket;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,6 +41,21 @@ class OpcUaDeviceDriverTest {
             serverDriver.disconnect();
             serverDriver = null;
         }
+    }
+
+    @Test
+    void browseChildrenFindsTemperatureNode() throws Exception {
+        int port = freePort();
+        serverDriver = startServer(port);
+        String nodeId = serverNodeId(serverDriver, NODE);
+
+        List<OpcUaBrowseSupport.BrowseNode> nodes = OpcUaBrowseSupport.browseChildren(
+                endpointUrl(port),
+                null,
+                10_000
+        );
+
+        assertTrue(nodes.stream().anyMatch(node -> "IspfVariables".equals(node.displayName())));
     }
 
     @Test

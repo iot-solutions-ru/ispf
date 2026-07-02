@@ -1,0 +1,38 @@
+name: Driver interop
+
+on:
+  pull_request:
+    paths:
+      - "packages/ispf-driver-*/**"
+      - "packages/ispf-server/src/main/java/com/ispf/server/driver/**"
+      - ".github/workflows/driver-interop.yml"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - ispf-driver-virtual
+          - ispf-driver-mqtt
+          - ispf-driver-modbus
+          - ispf-driver-opcua
+          - ispf-driver-snmp
+          - ispf-driver-bacnet
+          - ispf-driver-s7
+          - ispf-driver-http
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Run driver tests (${{ matrix.module }})
+        run: ./gradlew :packages:${{ matrix.module }}:test --no-daemon

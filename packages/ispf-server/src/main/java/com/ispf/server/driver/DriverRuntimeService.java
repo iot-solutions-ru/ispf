@@ -7,6 +7,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
 import com.ispf.server.object.ObjectManager;
@@ -326,6 +327,42 @@ public class DriverRuntimeService {
             throw new IllegalStateException("Driver write failed: " + e.getMessage(), e);
         }
         return status(devicePath).orElseThrow();
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public java.util.List<DriverDiscovery.Node> browseDriverChildren(String devicePath, String parentNodeId) {
+        ActiveDriver active = activeDrivers.get(devicePath);
+        if (active != null && active.driver() instanceof DriverDiscovery discovery) {
+            try {
+                return discovery.browseChildren(parentNodeId);
+            } catch (DriverException e) {
+                throw new IllegalStateException("Driver browse failed: " + e.getMessage(), e);
+            }
+        }
+        DriverBinding binding = readBinding(devicePath).orElseThrow(
+                () -> new IllegalArgumentException("No driver binding for: " + devicePath)
+        );
+        DeviceDriver driver = driverFactory.create(binding.driverId());
+        if (!(driver instanceof DriverDiscovery discovery)) {
+            throw new IllegalArgumentException("Driver does not support browse: " + binding.driverId());
+        }
+        PlatformObject device = objectManager.require(devicePath);
+        ServerDriverObject driverObject = new ServerDriverObject(
+                device,
+                binding.configuration(),
+                update -> {
+                },
+                entry -> log.debug("[driver:{}] {} {}", devicePath, entry.level(), entry.message())
+        );
+        driver.initialize(driverObject);
+        try {
+            driver.connect();
+            return discovery.browseChildren(parentNodeId);
+        } catch (DriverException e) {
+            throw new IllegalStateException("Driver browse failed: " + e.getMessage(), e);
+        } finally {
+            driver.disconnect();
+        }
     }
 
     private void poll(String devicePath) {

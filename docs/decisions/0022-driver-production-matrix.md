@@ -27,7 +27,7 @@
 | snmp | PRODUCTION | connectivity | v1/v2c/v3 |
 | s7 | PRODUCTION | connectivity | ISO-on-TCP |
 | http | PRODUCTION | connectivity | REST poll |
-| bacnet | BETA → PRODUCTION | connectivity | BL-81 discovery |
+| bacnet | PRODUCTION | connectivity | network test + observedAt |
 | flexible | PRODUCTION | connectivity | Template driver |
 
 `jdbc` / `kafka` ingress drivers are **out of scope** for driver-pack matrix; telemetry ingress is Wave O (ADR-0024 planned).
