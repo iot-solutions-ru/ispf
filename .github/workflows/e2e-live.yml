@@ -7,10 +7,14 @@ on:
         description: "ISPF base URL (UI + API)"
         required: false
         default: "https://ispf.iot-solutions.ru"
+  schedule:
+    # Monday 06:00 UTC — skipped automatically when secrets are missing
+    - cron: "0 6 * * 1"
 
 jobs:
   live-smoke:
     runs-on: ubuntu-latest
+    if: ${{ secrets.E2E_USERNAME != '' && secrets.E2E_PASSWORD != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -23,7 +27,7 @@ jobs:
       - name: Live Playwright smoke
         working-directory: apps/web-console
         env:
-          E2E_BASE_URL: ${{ inputs.base_url }}
+          E2E_BASE_URL: ${{ inputs.base_url || 'https://ispf.iot-solutions.ru' }}
           E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
           E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
         run: |

@@ -160,7 +160,7 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-86** | Alarm shelving (duration / until resume) | P1 | Planned | Operator / Automation |
 | **BL-87** | Priority classes + ack workflow + flood control | P1 | Planned | Operator / Automation |
-| **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Planned | Operator HMI |
+| **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Done | Operator HMI |
 | **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Done | Operator HMI |
 | **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Done | Operator HMI |
 | **BL-91** | Offline cache for critical screens | P2 | Planned | Operator HMI |
@@ -258,7 +258,7 @@
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
 | **BL-129** | Playwright live: operator + alarming | P1 | Done | QA |
-| **BL-130** | Scheduled staging e2e (weekly cron) | P2 | Planned | QA |
+| **BL-130** | Scheduled staging e2e (weekly cron) | P2 | Done | QA |
 | **BL-131** | Visual regression smoke (screenshot compare) | P3 | Planned | QA |
 | **BL-132** | i18n zero hardcoded gate in CI | P2 | Planned | i18n / QA |
 

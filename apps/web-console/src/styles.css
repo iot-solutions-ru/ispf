@@ -4348,16 +4348,20 @@ body.scada-mimic-editor-open {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  z-index: 120;
+  z-index: 130;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .operator-alarm-bar-stack--top {
   order: -1;
+  position: sticky;
+  top: 0;
 }
 
 .operator-alarm-bar-stack--bottom {
   order: 99;
+  position: sticky;
+  bottom: 0;
 }
 
 .operator-alarm-bar {
@@ -4387,6 +4391,77 @@ body.scada-mimic-editor-open {
 
 .operator-alarm-bar--critical {
   animation: operator-alarm-pulse 1.4s ease-in-out infinite;
+}
+
+.operator-alarm-bar--level-warning {
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);
+}
+
+.operator-alarm-bar--level-error {
+  box-shadow: 0 4px 22px rgba(239, 68, 68, 0.3);
+}
+
+.operator-alarm-bar--level-info {
+  box-shadow: 0 4px 18px rgba(56, 189, 248, 0.2);
+}
+
+.operator-preferences {
+  position: relative;
+}
+
+.operator-preferences-trigger {
+  list-style: none;
+  cursor: pointer;
+}
+
+.operator-preferences-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.operator-preferences-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 200;
+  min-width: 16rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg, 0 12px 32px rgba(0, 0, 0, 0.28));
+}
+
+.operator-preferences-fieldset {
+  border: none;
+  margin: 0 0 0.65rem;
+  padding: 0;
+}
+
+.operator-preferences-fieldset legend {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.operator-preferences-option {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.25rem 0;
+  font-size: 0.88rem;
+}
+
+.operator-preferences-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+}
+
+.operator-preferences-shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
 }
 
 @keyframes operator-alarm-pulse {

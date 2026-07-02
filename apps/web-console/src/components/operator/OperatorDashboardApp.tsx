@@ -11,7 +11,7 @@ import {
 } from "../../types/operatorUi";
 import type { DashboardSession } from "../dashboard/DashboardContext";
 import { emptySession, mergeSession } from "../dashboard/DashboardContext";
-import ShellPreferences from "../ShellPreferences";
+import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
@@ -353,7 +353,7 @@ function OperatorDashboardChrome({
         </div>
         <div className="topbar-actions">
           <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
-          <ShellPreferences />
+          <OperatorPreferences />
           {onLogout && (
             <button type="button" className="btn" onClick={onLogout}>
               {t("common:action.logout")}

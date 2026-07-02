@@ -282,7 +282,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2 tail) |
 | **Зависимости** | BL-87 |
 
 **Scope:**
@@ -293,9 +293,9 @@
 
 **Acceptance:**
 
-- [ ] Новое событие HIGH появляется в bar &lt; 2s после fire (local test)
-- [ ] Настройка в operator preferences
-- [ ] Не ломает mobile drawer (BL-52)
+- [x] Новое событие HIGH появляется в bar &lt; 2s после fire (local test)
+- [x] Настройка в operator preferences
+- [x] Не ломает mobile drawer (BL-52)
 
 ---
 
@@ -1158,7 +1158,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-2 tail) |
 | **Зависимости** | BL-129 |
 
 **Scope:**
@@ -1168,7 +1168,7 @@
 
 **Acceptance:**
 
-- [ ] Workflow yaml committed; disabled by default without secrets
+- [x] Workflow yaml committed; disabled by default without secrets
 
 ---
 
