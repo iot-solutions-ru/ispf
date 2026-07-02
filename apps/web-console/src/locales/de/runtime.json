@@ -34,6 +34,7 @@
   "functionJournal.objectDisabledHint": "Funktions-Audit für dieses Objekt ist aus — Kontrollkästchen oben aktivieren",
   "functionJournal.subtitle": "Funktionsaufrufe (wenn Audit für das Objekt aktiv ist)",
   "functionJournal.title": "Funktionsaufrufjournal",
+  "invokeFunction.federatedHint": "Invocation is forwarded to the federation peer via proxy API.",
   "invokeFunction.input": "Eingabe (JSON DataRecord)",
   "invokeFunction.inputHint": "Leere rows — Plattform füllt inputSchema aus Deskriptor.",
   "invokeFunction.invoke": "Aufrufen",
