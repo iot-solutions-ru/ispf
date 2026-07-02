@@ -1,5 +1,6 @@
 package com.ispf.server.object.pubsub;
 
+import com.ispf.core.dashboard.DashboardContextConstants;
 import com.ispf.server.automation.AutomationRuleIndex;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.ObjectManager;
@@ -65,6 +66,9 @@ public class VariableChangeSubscriptionRegistry {
     }
 
     private boolean hasBindingSubscribers(String objectPath, String variableName) {
+        if (DashboardContextConstants.isReservedVariable(variableName)) {
+            return true;
+        }
         return !bindingDependencyIndex.consumers(objectPath, variableName).isEmpty();
     }
 }

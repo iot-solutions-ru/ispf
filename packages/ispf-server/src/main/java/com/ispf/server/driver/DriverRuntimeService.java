@@ -53,6 +53,7 @@ public class DriverRuntimeService {
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
     private final Environment environment;
+    private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final ScheduledExecutorService scheduler;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
@@ -61,12 +62,14 @@ public class DriverRuntimeService {
             DriverFactory driverFactory,
             ObjectMapper objectMapper,
             Environment environment,
+            DeviceTelemetryPolicyService telemetryPolicyService,
             @Value("${ispf.driver.scheduler-threads:4}") int schedulerThreads
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
         this.environment = environment;
+        this.telemetryPolicyService = telemetryPolicyService;
         int threads = Math.max(1, schedulerThreads);
         this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
             Thread thread = new Thread(r, "ispf-driver-runtime");
@@ -245,6 +248,7 @@ public class DriverRuntimeService {
     }
 
     private void persistDriverBinding(String devicePath, DriverBinding binding) {
+        telemetryPolicyService.invalidateCache(devicePath);
         objectManager.setSystemVariableValue(
                 devicePath,
                 "driverId",
@@ -275,6 +279,7 @@ public class DriverRuntimeService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to persist driver configuration", e);
         }
+        telemetryPolicyService.invalidateCache(devicePath);
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
