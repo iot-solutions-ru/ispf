@@ -298,7 +298,7 @@ North star: **больше declarative в object tree**, меньше custom Jav
 - [~] **Driver observedAt full matrix** — BL-74 pilots; remaining drivers demand-driven
 - [~] **Playwright live staging** — workflow + secrets; expand coverage on demand
 
-Подробный актуальный план: [ROADMAP.md § Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
+Подробный актуальный план: [ROADMAP.md § Phase 23](ROADMAP.md#phase-23--platform-excellence-req-ex), [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
 
 ---
 
