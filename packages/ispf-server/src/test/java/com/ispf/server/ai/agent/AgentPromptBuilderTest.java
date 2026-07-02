@@ -29,10 +29,9 @@ class AgentPromptBuilderTest {
     @Test
     void includesGroundTruthPlaybookFirst() {
         String prompt = AgentPromptBuilder.build("root", List.of(), "");
-        int groundIdx = prompt.indexOf("Ground truth");
-        int playbooksIdx = prompt.indexOf("Playbooks:");
-        int snmpIdx = prompt.indexOf("set_dashboard_layout template=");
-        assertTrue(groundIdx >= 0);
+        int playbooksIdx = prompt.indexOf("Playbooks:\n");
+        int groundIdx = prompt.indexOf("## Ground truth", playbooksIdx);
+        int snmpIdx = prompt.indexOf("## SNMP localhost", playbooksIdx);
         assertTrue(playbooksIdx >= 0);
         assertTrue(groundIdx > playbooksIdx);
         assertTrue(snmpIdx > groundIdx, "Ground truth guide should precede scenario playbooks");
