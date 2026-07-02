@@ -78,43 +78,65 @@ final class AgentPlanGuard {
     }
 
     static void beginTurn(AgentRunState runState, String userMessage, AgentProfile profile) {
+        beginTurn(runState, userMessage, profile, false, null);
+    }
+
+    static boolean beginTurn(
+            AgentRunState runState,
+            String userMessage,
+            AgentProfile profile,
+            boolean requireApprovalForMutate,
+            String approverUsername
+    ) {
         if (runState != null) {
             runState.setLastUserMessage(userMessage);
         }
         if (profile == AgentProfile.OPERATOR || runState == null) {
-            return;
+            return false;
         }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                     || runState.planPhase() == AgentPlanPhase.PLANNING) {
-                runState.approvePlan();
+                runState.approvePlan(approverUsername);
+                return true;
             }
-            return;
+            return false;
         }
         if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL) {
-            return;
+            return false;
         }
         if (runState.planPhase() == AgentPlanPhase.APPROVED) {
-            return;
+            return false;
         }
         AgentInteractionMode mode = runState.interactionMode();
         if (mode == AgentInteractionMode.ASK) {
             runState.setPlanPhase(AgentPlanPhase.NONE);
-            return;
+            return false;
         }
         if (mode == AgentInteractionMode.EXECUTE) {
+            if (requireApprovalForMutate
+                    && !runState.isPlanApproved()
+                    && impliesPlatformMutation(userMessage)) {
+                runState.setPlanPhase(AgentPlanPhase.PLANNING);
+                return false;
+            }
             runState.setPlanPhase(AgentPlanPhase.NONE);
-            return;
+            return false;
         }
         if (mode == AgentInteractionMode.PLAN) {
             if (impliesPlatformMutation(userMessage) || requiresPlanning(userMessage)) {
                 runState.setPlanPhase(AgentPlanPhase.PLANNING);
             }
-            return;
+            return false;
         }
         if (requiresPlanning(userMessage)) {
             runState.setPlanPhase(AgentPlanPhase.PLANNING);
+        } else if (requireApprovalForMutate
+                && !runState.isPlanApproved()
+                && impliesPlatformMutation(userMessage)) {
+            runState.setPlanPhase(AgentPlanPhase.PLANNING);
         }
+        return false;
     }
 
     static Optional<BlockDecision> checkBeforeTool(

@@ -68,6 +68,9 @@
   "agent.plan.gapMatrix": "Матрица GAP",
   "agent.plan.assumptions": "Допущения",
   "agent.plan.completenessGaps": "До утверждения не хватает",
+  "agent.approveBanner": "Мутирующие инструменты заблокированы до утверждения плана.",
+  "agent.approveAction": "Утвердить план",
+  "agent.approveMessage": "Утверждаю план, начинай выполнение",
   "agent.plan.approveFullPlan": "Утвердить полный план",
   "agent.plan.approveMessage": "Утверждаю план, начинай выполнение",
   "agent.plan.refinePlan": "Доработать план",
@@ -137,6 +140,9 @@
   "status.vision": "Vision (изображения)",
   "status.visionYes": "поддерживается",
   "status.visionNo": "не поддерживается",
+  "status.referenceScenarios": "Эталонные сценарии",
+  "status.referenceScenariosIntro": "Пути spec→validate→deploy, покрытые автотестами",
+  "status.scenarioSteps": "шагов плана",
   "prefs.title": "Настройки агента",
   "prefs.subtitle": "Локальные параметры браузера — поведение и список чатов"
 }

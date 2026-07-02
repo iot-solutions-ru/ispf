@@ -26,6 +26,9 @@
   "agent.plan.gapMatrix": "Gap matrix",
   "agent.plan.assumptions": "Assumptions",
   "agent.plan.completenessGaps": "Before approval",
+  "agent.approveBanner": "Mutating tools are blocked until you approve the plan.",
+  "agent.approveAction": "Approve plan",
+  "agent.approveMessage": "Утверждаю план, начинай выполнение",
   "agent.plan.approveFullPlan": "Approve full plan",
   "agent.plan.approveMessage": "I approve the plan, start execution",
   "agent.plan.refinePlan": "Refine plan",
@@ -137,6 +140,9 @@
   "status.vision": "Vision (images)",
   "status.visionYes": "supported",
   "status.visionNo": "not supported",
+  "status.referenceScenarios": "Reference scenarios",
+  "status.referenceScenariosIntro": "Spec→validate→deploy paths covered by automated regression tests",
+  "status.scenarioSteps": "plan steps",
   "prefs.title": "Agent preferences",
   "prefs.subtitle": "Local browser settings — behavior and chat list"
 }

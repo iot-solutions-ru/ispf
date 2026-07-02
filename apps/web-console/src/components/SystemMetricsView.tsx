@@ -21,6 +21,8 @@ const METRIC_KEYS = [
   "workflowInstancesCompleted", "workflowInstancesFailed", "workflowInstancesCancelled",
   "alertRules", "eventCorrelators", "applicationFunctions", "applicationFunctionVersions",
   "platformSchedules", "platformSchedulesEnabled",
+  "turnsStartedTotal", "turnsCompletedTotal", "turnsRateLimitedTotal", "turnsLastHour",
+  "avgStepsPerTurn", "guardBlocksByType",
 ] as const;
 
 function MetricSectionCard({ section }: { section: PlatformMetricSection }) {

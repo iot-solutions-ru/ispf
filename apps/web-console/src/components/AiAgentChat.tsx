@@ -209,6 +209,20 @@ export default function AiAgentChat() {
         )}
       </div>
 
+      {livePlanPhase === "awaiting_approval" && (
+        <div className="ai-agent-approve-banner" role="status">
+          <p>{t("agent.approveBanner")}</p>
+          <button
+            type="button"
+            className="btn primary small"
+            disabled={isPending}
+            onClick={() => void sendMessage(t("agent.approveMessage"))}
+          >
+            {t("agent.approveAction")}
+          </button>
+        </div>
+      )}
+
       <div className="ai-agent-chat-main">
         <div className="ai-agent-chat-log">
           {!hasUserTurns && !isPending && (

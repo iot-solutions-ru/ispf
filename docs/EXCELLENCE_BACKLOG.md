@@ -662,7 +662,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | BL-75, AgentPlanGuard |
 
 **Scope:**
@@ -672,8 +672,8 @@
 
 **Acceptance:**
 
-- [ ] create_object / deploy без approve → blocked
-- [ ] Audit log records approver username
+- [x] create_object / deploy без approve → blocked
+- [x] Audit log records approver username
 
 ---
 
@@ -702,7 +702,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | BL-106 |
 
 **Scope:**
@@ -712,8 +712,8 @@
 
 **Acceptance:**
 
-- [ ] 10 Gradle tests green
-- [ ] Listed in AI Studio help panel
+- [x] 10 Gradle tests green
+- [x] Listed in AI Studio help panel
 
 ---
 
@@ -742,7 +742,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | BL-75 |
 
 **Scope:**
@@ -752,8 +752,8 @@
 
 **Acceptance:**
 
-- [ ] Cards visible when `ispf.ai.enabled=true`
-- [ ] Metrics documented in `AI_DEVELOPMENT.md`
+- [x] Cards visible when `ispf.ai.enabled=true`
+- [x] Metrics documented in `AI_DEVELOPMENT.md`
 
 ---
 

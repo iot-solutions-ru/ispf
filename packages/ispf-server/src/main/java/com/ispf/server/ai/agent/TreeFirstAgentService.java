@@ -253,7 +253,26 @@ public class TreeFirstAgentService {
                 session.runState().setInteractionMode(AgentInteractionMode.fromString(interactionMode));
             }
             AgentProfile profile = session.runState().agentProfile();
-            AgentPlanGuard.beginTurn(session.runState(), llmUserText, profile);
+            boolean planApprovedThisTurn = AgentPlanGuard.beginTurn(
+                    session.runState(),
+                    llmUserText,
+                    profile,
+                    aiProperties.isAgentRequireApprovalForMutate(),
+                    actor
+            );
+            if (planApprovedThisTurn) {
+                auditService.record(
+                        "agent_plan_approved",
+                        session.sessionId(),
+                        actor,
+                        userMessage,
+                        "OK",
+                        llmProviderRegistry.activeProvider().providerId(),
+                        null,
+                        contextPackService.contextPackVersion(),
+                        List.of()
+                );
+            }
             OperatorAgentScope operatorScope = resolveOperatorScope(session, profile);
             AgentContext context = new AgentContext(actor, authentication, session.runState(), profile, operatorScope);
             List<Map<String, Object>> steps = new ArrayList<>();
@@ -638,6 +657,7 @@ public class TreeFirstAgentService {
                             toolResult.put("error", loopBlock.get().error());
                             toolResult.put("hint", loopBlock.get().hint());
                             executedTool = toolName;
+                            agentMetrics.recordGuardBlock("loopGuard");
                         } else if (!toolRegistry.isKnownTool(toolName)) {
                             toolResult = new LinkedHashMap<>(toolRegistry.unknownToolResult(toolName));
                             executedTool = toolName;
@@ -655,6 +675,7 @@ public class TreeFirstAgentService {
                             toolResult.put("error", decision.error());
                             toolResult.put("hint", decision.hint());
                             executedTool = toolName;
+                            agentMetrics.recordGuardBlock("widgetBinding");
                         } else if (groundBlock.isPresent() && groundBlock.get().blocked()) {
                             AgentGroundTruthGuard.BlockDecision decision = groundBlock.get();
                             toolResult = new LinkedHashMap<>();
@@ -670,9 +691,17 @@ public class TreeFirstAgentService {
                                 toolResult.putAll(preflightOverlay.get());
                             }
                             executedTool = toolName;
+                            agentMetrics.recordGuardBlock("groundTruth");
                         } else {
                             Optional<AgentPlanGuard.BlockDecision> planBlock =
                                     AgentPlanGuard.checkBeforeTool(session.runState(), toolName, profile);
+                            Optional<AgentMutateApprovalGuard.BlockDecision> mutateBlock =
+                                    AgentMutateApprovalGuard.checkBeforeTool(
+                                            aiProperties.isAgentRequireApprovalForMutate(),
+                                            session.runState(),
+                                            toolName,
+                                            profile
+                                    );
                             if (planBlock.isPresent() && planBlock.get().blocked()) {
                                 AgentPlanGuard.BlockDecision decision = planBlock.get();
                                 toolResult = new LinkedHashMap<>();
@@ -682,6 +711,17 @@ public class TreeFirstAgentService {
                                     toolResult.put("hint", decision.hint());
                                 }
                                 executedTool = toolName;
+                                agentMetrics.recordGuardBlock("planGuard");
+                            } else if (mutateBlock.isPresent() && mutateBlock.get().blocked()) {
+                                AgentMutateApprovalGuard.BlockDecision decision = mutateBlock.get();
+                                toolResult = new LinkedHashMap<>();
+                                toolResult.put("status", "ERROR");
+                                toolResult.put("error", decision.error());
+                                if (decision.hint() != null) {
+                                    toolResult.put("hint", decision.hint());
+                                }
+                                executedTool = toolName;
+                                agentMetrics.recordGuardBlock("mutateApproval");
                             } else {
                                 try {
                                     toolResult = toolRegistry.execute(toolName, toolArgs, context);
@@ -943,6 +983,7 @@ public class TreeFirstAgentService {
         );
         session.addTurn(turn);
         sessionStore.persistAfterTurn(session, turn);
+        agentMetrics.recordTurnCompleted(steps != null ? steps.size() : 0);
         if (profile == AgentProfile.OPERATOR
                 && session.runState().operatorAppId() != null
                 && AgentTurnStatus.OK.equals(finalStatus)) {
