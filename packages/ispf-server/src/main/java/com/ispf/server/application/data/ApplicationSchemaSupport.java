@@ -31,6 +31,11 @@ public final class ApplicationSchemaSupport {
             "event_correlators"
     );
 
+    private static final Pattern FORBIDDEN_SELECT_SQL = Pattern.compile(
+            "\\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE|MERGE|CALL|EXEC|GRANT|REVOKE)\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
     private ApplicationSchemaSupport() {
     }
 
@@ -64,6 +69,23 @@ public final class ApplicationSchemaSupport {
                         "Table " + tableName + " must start with tablePrefix: " + tablePrefix
                 );
             }
+        }
+    }
+
+    public static void validateSelectQuery(String sql, String label) {
+        if (sql == null || sql.isBlank()) {
+            throw new IllegalArgumentException(label + " is required");
+        }
+        String trimmed = sql.trim();
+        if (!trimmed.regionMatches(true, 0, "SELECT", 0, 6)
+                && !trimmed.regionMatches(true, 0, "WITH", 0, 4)) {
+            throw new IllegalArgumentException(label + " must start with SELECT or WITH");
+        }
+        if (trimmed.indexOf(';') >= 0) {
+            throw new IllegalArgumentException(label + " must not contain statement separators");
+        }
+        if (FORBIDDEN_SELECT_SQL.matcher(trimmed).find()) {
+            throw new IllegalArgumentException(label + " contains forbidden SQL keyword");
         }
     }
 }

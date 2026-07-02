@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -60,11 +61,25 @@ class VariableHistoryAsyncWriterTest {
     }
 
     @Test
-    void enqueueReturnsBeforePersistence() {
-        writer.enqueue(List.of(sample("root.a", "temperature", "value", 1.0)));
+    void enqueueReturnsBeforePersistence() throws InterruptedException {
+        CountDownLatch persistEntered = new CountDownLatch(1);
+        CountDownLatch allowPersist = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            persistEntered.countDown();
+            assertTrue(allowPersist.await(5, TimeUnit.SECONDS));
+            return null;
+        }).when(batchPersister).persistBatch(anyList());
 
-        verify(batchPersister, never()).persistOne(org.mockito.ArgumentMatchers.any());
-        verify(batchPersister, never()).persistBatch(anyList());
+        assertTimeoutPreemptively(java.time.Duration.ofMillis(250), () ->
+                writer.enqueue(List.of(
+                        sample("root.a", "temperature", "value", 1.0),
+                        sample("root.a", "temperature", "value", 2.0)
+                ))
+        );
+
+        assertTrue(persistEntered.await(5, TimeUnit.SECONDS));
+        allowPersist.countDown();
+        verify(batchPersister, timeout(5000).times(1)).persistBatch(anyList());
     }
 
     @Test

@@ -127,6 +127,10 @@ public class ReportService {
 
     @Transactional
     public void ensureReportsCatalog() {
+        ensureReportsCatalogInternal();
+    }
+
+    private void ensureReportsCatalogInternal() {
         if (objectManager.tree().findByPath(REPORTS_ROOT).isEmpty()) {
             objectManager.create(
                     "root.platform",
@@ -179,7 +183,7 @@ public class ReportService {
     ) {
         validateDataSourcePath(dataSourcePath);
         validateSelectQuery(query);
-        ensureReportsCatalog();
+        ensureReportsCatalogInternal();
         String path = reportPath(reportId);
         ensureReportNode(path, title, description, "report-v1");
         ensureReportStructure(path);
@@ -209,7 +213,7 @@ public class ReportService {
             List<ReportColumn> columns,
             Integer maxRows
     ) {
-        ensureReportsCatalog();
+        ensureReportsCatalogInternal();
         String path = reportPath(reportId);
         ensureReportNode(path, title, description, LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL);
         ensureTreeVariablesReportStructure(path);
@@ -403,7 +407,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> listByDataSource(String dataSourcePath) {
         validateDataSourcePath(dataSourcePath);
-        ensureReportsCatalog();
+        ensureReportsCatalogInternal();
         List<Map<String, Object>> summaries = new ArrayList<>();
         if (objectManager.tree().findByPath(REPORTS_ROOT).isPresent()) {
             for (PlatformObject child : objectManager.tree().childrenOf(REPORTS_ROOT)) {
@@ -435,6 +439,7 @@ public class ReportService {
                 report.legacyAppId()
         );
 
+        validateSelectQuery(report.query());
         List<Map<String, Object>>[] result = new List[1];
         schemaSession.runInSchema(schemaName, () ->
                 result[0] = jdbcTemplate.queryForList(report.query(), paramValues.toArray())
@@ -469,6 +474,7 @@ public class ReportService {
         List<Object> paramValues = bindQueryParameters(report.querySql(), paramNames, effective);
         String schemaName = dataSourcePathResolver.resolveSchemaForReport(null, appId);
 
+        validateSelectQuery(report.querySql());
         List<Map<String, Object>>[] result = new List[1];
         schemaSession.runInSchema(schemaName, () ->
                 result[0] = jdbcTemplate.queryForList(report.querySql(), paramValues.toArray())
@@ -589,7 +595,7 @@ public class ReportService {
         String parentPath = path.substring(0, lastDot);
         String name = path.substring(lastDot + 1);
         if (objectManager.tree().findByPath(parentPath).isEmpty()) {
-            ensureReportsCatalog();
+            ensureReportsCatalogInternal();
         }
         objectManager.create(
                 parentPath,

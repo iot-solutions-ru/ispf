@@ -54,6 +54,10 @@ public class DashboardService {
 
     @Transactional
     public void ensureDashboardStructure(String path) {
+        ensureDashboardStructureInternal(path);
+    }
+
+    private void ensureDashboardStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.DASHBOARD) {
             throw new IllegalArgumentException("Not a dashboard object: " + path);
@@ -77,7 +81,7 @@ public class DashboardService {
     }
 
     public DashboardContextView getContext(String path) {
-        ensureDashboardStructure(path);
+        ensureDashboardStructureInternal(path);
         PlatformObject node = objectManager.require(path);
         String json = readContextJson(node);
         Map<String, Object> context = DashboardContextSupport.parseContextJson(json, objectMapper);
@@ -86,7 +90,7 @@ public class DashboardService {
 
     @Transactional
     public DashboardContextView saveContext(String path, Map<String, Object> contextPatch, String updatedBy) {
-        ensureDashboardStructure(path);
+        ensureDashboardStructureInternal(path);
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.DASHBOARD) {
             throw new IllegalArgumentException("Not a dashboard object: " + path);

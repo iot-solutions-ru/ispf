@@ -142,6 +142,17 @@ public class OperatorAppUiService {
             Map<String, Object> alarmBar,
             String agentInstructions
     ) throws Exception {
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, agentInstructions);
+    }
+
+    private Map<String, Object> saveUiInternal(
+            String appId,
+            String title,
+            String defaultDashboard,
+            List<Map<String, String>> dashboards,
+            Map<String, Object> alarmBar,
+            String agentInstructions
+    ) throws Exception {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("title is required");
         }
@@ -176,7 +187,7 @@ public class OperatorAppUiService {
             String defaultDashboard,
             List<Map<String, String>> dashboards
     ) throws Exception {
-        return saveUi(appId, title, defaultDashboard, dashboards, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, null, null);
     }
 
     public Map<String, Object> saveUi(
@@ -186,7 +197,7 @@ public class OperatorAppUiService {
             List<Map<String, String>> dashboards,
             Map<String, Object> alarmBar
     ) throws Exception {
-        return saveUi(appId, title, defaultDashboard, dashboards, alarmBar, null);
+        return saveUiInternal(appId, title, defaultDashboard, dashboards, alarmBar, null);
     }
 
     public String getAgentInstructions(String appId) {

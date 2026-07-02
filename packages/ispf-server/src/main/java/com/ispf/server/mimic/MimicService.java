@@ -36,6 +36,10 @@ public class MimicService {
 
     @Transactional
     public void ensureMimicStructure(String path) {
+        ensureMimicStructureInternal(path);
+    }
+
+    private void ensureMimicStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.MIMIC) {
             throw new IllegalArgumentException("Not a mimic object: " + path);
@@ -44,7 +48,7 @@ public class MimicService {
     }
 
     public MimicView getMimic(String path) {
-        ensureMimicStructure(path);
+        ensureMimicStructureInternal(path);
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.MIMIC) {
             throw new IllegalArgumentException("Not a mimic object: " + path);
@@ -60,7 +64,7 @@ public class MimicService {
         if (diagramJson == null || diagramJson.isBlank()) {
             throw new IllegalArgumentException("diagramJson is required");
         }
-        ensureMimicStructure(path);
+        ensureMimicStructureInternal(path);
         objectManager.setVariableValue(
                 path,
                 "diagram",
@@ -71,7 +75,7 @@ public class MimicService {
 
     @Transactional
     public MimicView updateTitle(String path, String title) {
-        ensureMimicStructure(path);
+        ensureMimicStructureInternal(path);
         objectManager.setVariableValue(
                 path,
                 "title",
