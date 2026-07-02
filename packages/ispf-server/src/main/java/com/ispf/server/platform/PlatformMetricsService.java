@@ -1,9 +1,11 @@
 package com.ispf.server.platform;
 
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.ai.agent.AgentMetricsRecorder;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.schedule.PlatformSchedulerService;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.config.AiProperties;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
@@ -46,6 +48,8 @@ public class PlatformMetricsService {
     private final ApplicationFunctionStore applicationFunctionStore;
     private final PlatformSchedulerService platformSchedulerService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
+    private final AgentMetricsRecorder agentMetricsRecorder;
+    private final AiProperties aiProperties;
 
     public PlatformMetricsService(
             ObjectNodeRepository objectNodeRepository,
@@ -62,7 +66,9 @@ public class PlatformMetricsService {
             PlatformUserStore userStore,
             ApplicationFunctionStore applicationFunctionStore,
             PlatformSchedulerService platformSchedulerService,
-            AutomationMetricsRecorder automationMetricsRecorder
+            AutomationMetricsRecorder automationMetricsRecorder,
+            AgentMetricsRecorder agentMetricsRecorder,
+            AiProperties aiProperties
     ) {
         this.objectNodeRepository = objectNodeRepository;
         this.objectVariableRepository = objectVariableRepository;
@@ -79,6 +85,8 @@ public class PlatformMetricsService {
         this.applicationFunctionStore = applicationFunctionStore;
         this.platformSchedulerService = platformSchedulerService;
         this.automationMetricsRecorder = automationMetricsRecorder;
+        this.agentMetricsRecorder = agentMetricsRecorder;
+        this.aiProperties = aiProperties;
     }
 
     @Transactional(readOnly = true)
@@ -93,6 +101,9 @@ public class PlatformMetricsService {
         metrics.put("security", securityMetrics());
         metrics.put("variableHistory", variableHistoryMetrics());
         metrics.put("automation", automationMetrics());
+        if (aiProperties.isEnabled()) {
+            metrics.put("agent", agentMetricsRecorder.agentSnapshot());
+        }
         return metrics;
     }
 
@@ -207,7 +218,7 @@ public class PlatformMetricsService {
 
     public List<Map<String, Object>> metricSections() {
         Map<String, Object> snapshot = snapshot();
-        return List.of(
+        List<Map<String, Object>> sections = new java.util.ArrayList<>(List.of(
                 section("runtime", "Среда выполнения", snapshot.get("runtime")),
                 section("database", "База данных", snapshot.get("database")),
                 section("objectTree", "Дерево объектов", snapshot.get("objectTree")),
@@ -216,7 +227,11 @@ public class PlatformMetricsService {
                 section("security", "Безопасность", snapshot.get("security")),
                 section("variableHistory", "Historian переменных", snapshot.get("variableHistory")),
                 section("automation", "Автоматизация", snapshot.get("automation"))
-        );
+        ));
+        if (aiProperties.isEnabled() && snapshot.get("agent") != null) {
+            sections.add(section("agent", "AI Agent SLO", snapshot.get("agent")));
+        }
+        return sections;
     }
 
     private static Map<String, Object> section(String id, String title, Object values) {

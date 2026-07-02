@@ -303,9 +303,16 @@ ispf:
     temperature: 0.2
     agent-max-concurrent-turns-per-user: 2
     agent-max-turns-per-hour-per-user: 120
+    agent-require-approval-for-mutate: true   # BL-106; set false in dev profile
 ```
 
-Prometheus (when Micrometer enabled): `ispf.agent.turns.started.total`, `ispf.agent.turns.rate_limited.total`, `ispf.agent.guard.blocks.total`.
+**Mutating tools approval (BL-106):** when `ispf.ai.agent-require-approval-for-mutate` is `true` (default on prod/local VPS), non-read-only agent tools (`create_object`, `deploy_bundle`, …) are blocked until the user approves the plan. Approval is recorded in `ai_tool_audit` as `agent_plan_approved` with the approver username. UI: sticky **Approve plan** banner when `planPhase=awaiting_approval`.
+
+**Reference scenarios (BL-108):** `docs/agent-scenarios/`, classpath `agent-scenarios/catalog.json`, API `GET /api/v1/ai/agent/scenarios`, AI Studio Status tab.
+
+Prometheus (when Micrometer enabled): `ispf.agent.turns.started.total`, `ispf.agent.turns.rate_limited.total`, `ispf.agent.turns.completed.total`, `ispf.agent.guard.blocks.total` (tag `guard`), gauges `ispf.agent.turns.last_hour`, `ispf.agent.turn.steps.avg`.
+
+**Agent SLO dashboard (BL-110):** when `ispf.ai.enabled=true`, System → Metrics includes section **AI Agent SLO** (`turnsLastHour`, `turnsRateLimitedTotal`, `guardBlocksByType`, `avgStepsPerTurn`).
 
 | Provider | `base-url` example |
 |----------|-------------------|

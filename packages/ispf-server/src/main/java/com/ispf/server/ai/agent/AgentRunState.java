@@ -25,6 +25,7 @@ public final class AgentRunState {
     private final Set<String> completedPlanSteps = ConcurrentHashMap.newKeySet();
     private volatile int reworkRoundCount;
     private volatile String lastUserMessage = "";
+    private volatile String planApprovedBy;
 
     public String lastUserMessage() {
         return lastUserMessage == null ? "" : lastUserMessage;
@@ -110,7 +111,18 @@ public final class AgentRunState {
     }
 
     public void approvePlan() {
+        approvePlan(null);
+    }
+
+    public void approvePlan(String approverUsername) {
         this.planPhase = AgentPlanPhase.APPROVED.storageValue();
+        if (approverUsername != null && !approverUsername.isBlank()) {
+            this.planApprovedBy = approverUsername.trim();
+        }
+    }
+
+    public String planApprovedBy() {
+        return planApprovedBy;
     }
 
     public void resetPlan() {
@@ -118,6 +130,7 @@ public final class AgentRunState {
         this.storedPlan = Map.of();
         this.handoffId = null;
         this.assignmentType = null;
+        this.planApprovedBy = null;
         this.completedPlanSteps.clear();
         this.reworkRoundCount = 0;
     }
@@ -127,6 +140,9 @@ public final class AgentRunState {
         summary.put("interactionMode", interactionMode);
         summary.put("planPhase", planPhase);
         summary.put("planApproved", isPlanApproved());
+        if (planApprovedBy != null && !planApprovedBy.isBlank()) {
+            summary.put("planApprovedBy", planApprovedBy);
+        }
         if (storedPlan != null && !storedPlan.isEmpty()) {
             summary.put("plan", Map.copyOf(storedPlan));
         }
@@ -202,6 +218,9 @@ public final class AgentRunState {
         if (assignmentType != null) {
             map.put("assignmentType", assignmentType);
         }
+        if (planApprovedBy != null && !planApprovedBy.isBlank()) {
+            map.put("planApprovedBy", planApprovedBy);
+        }
         if (!completedPlanSteps.isEmpty()) {
             map.put("completedPlanSteps", Set.copyOf(completedPlanSteps));
         }
@@ -263,6 +282,12 @@ public final class AgentRunState {
         Object assignmentRaw = raw.get("assignmentType");
         if (assignmentRaw != null && !String.valueOf(assignmentRaw).isBlank()) {
             assignmentType = String.valueOf(assignmentRaw).trim();
+        }
+        Object approverRaw = raw.get("planApprovedBy");
+        if (approverRaw != null && !String.valueOf(approverRaw).isBlank()) {
+            planApprovedBy = String.valueOf(approverRaw).trim();
+        } else {
+            planApprovedBy = null;
         }
         completedPlanSteps.clear();
         Object completedRaw = raw.get("completedPlanSteps");

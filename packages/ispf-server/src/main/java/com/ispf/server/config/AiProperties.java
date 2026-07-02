@@ -35,6 +35,8 @@ public class AiProperties {
     private int agentMaxConcurrentTurnsPerUser = 2;
     /** Max agent turns started per user per rolling hour. */
     private int agentMaxTurnsPerHourPerUser = 120;
+    /** When true, mutating agent tools require an approved plan (BL-106). */
+    private boolean agentRequireApprovalForMutate = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -218,6 +220,14 @@ public class AiProperties {
 
     public void setAgentMaxTurnsPerHourPerUser(int agentMaxTurnsPerHourPerUser) {
         this.agentMaxTurnsPerHourPerUser = agentMaxTurnsPerHourPerUser;
+    }
+
+    public boolean isAgentRequireApprovalForMutate() {
+        return agentRequireApprovalForMutate;
+    }
+
+    public void setAgentRequireApprovalForMutate(boolean agentRequireApprovalForMutate) {
+        this.agentRequireApprovalForMutate = agentRequireApprovalForMutate;
     }
 
     public Duration timeout() {

@@ -126,6 +126,11 @@ public class AiController {
         return Map.of("tools", agentToolRegistry.toolCatalog());
     }
 
+    @GetMapping("/agent/scenarios")
+    public Map<String, Object> agentScenarios() {
+        return Map.of("scenarios", com.ispf.server.ai.agent.ReferenceScenarioCatalog.helpEntries());
+    }
+
     @PostMapping("/agent/sessions")
     public Map<String, Object> createAgentSession(
             Authentication authentication,

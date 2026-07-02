@@ -6,6 +6,8 @@ spring:
           issuer-uri: http://localhost:8180/realms/ispf
 
 ispf:
+  ai:
+    agent-require-approval-for-mutate: false
   mqtt:
     enabled: true
     broker-url: tcp://localhost:1883

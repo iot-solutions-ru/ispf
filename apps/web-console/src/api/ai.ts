@@ -290,6 +290,25 @@ export function fetchAiAgentTools(): Promise<{ tools: AiAgentTool[] }> {
   });
 }
 
+export interface AiAgentScenario {
+  id: string;
+  title: string;
+  prompt: string;
+  assignmentType: string;
+  planSteps: string[];
+}
+
+export function fetchAiAgentScenarios(): Promise<{ scenarios: AiAgentScenario[] }> {
+  return fetch("/api/v1/ai/agent/scenarios", {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Agent scenarios failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
 export function runAiAgent(goal: string, rootPath?: string): Promise<AiAgentRunResult> {
   return fetch("/api/v1/ai/agent/run", {
     method: "POST",

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   fetchAiAgentTools,
+  fetchAiAgentScenarios,
   fetchAiContextPack,
   fetchAiModels,
   fetchAiProviderStatus,
@@ -24,6 +25,10 @@ export default function AiStudioStatusTab() {
     queryKey: ["ai-agent-tools"],
     queryFn: fetchAiAgentTools,
   });
+  const scenariosQuery = useQuery({
+    queryKey: ["ai-agent-scenarios"],
+    queryFn: fetchAiAgentScenarios,
+  });
   const modelsQuery = useQuery({
     queryKey: ["ai-models"],
     queryFn: fetchAiModels,
@@ -32,6 +37,7 @@ export default function AiStudioStatusTab() {
   const provider = providerQuery.data;
   const contextPack = contextPackQuery.data;
   const tools = toolsQuery.data?.tools ?? [];
+  const scenarios = scenariosQuery.data?.scenarios ?? [];
 
   const filteredTools = useMemo(() => {
     const needle = toolQuery.trim().toLowerCase();
@@ -192,6 +198,31 @@ export default function AiStudioStatusTab() {
           )}
         </section>
       </div>
+
+      {scenarios.length > 0 && (
+        <section className="ai-studio-tools-panel ai-studio-scenarios-panel">
+          <div className="ai-studio-tools-panel-head">
+            <div>
+              <h5>{t("status.referenceScenarios")}</h5>
+              <p className="op-muted">{t("status.referenceScenariosIntro")}</p>
+            </div>
+          </div>
+          <ul className="ai-studio-scenario-list">
+            {scenarios.map((scenario) => (
+              <li key={scenario.id} className="ai-studio-scenario-card">
+                <div className="ai-studio-scenario-head">
+                  <strong>{scenario.title}</strong>
+                  <code className="ai-studio-scenario-id">{scenario.id}</code>
+                </div>
+                <p className="ai-studio-scenario-prompt">{scenario.prompt}</p>
+                <p className="op-muted ai-studio-scenario-meta">
+                  {scenario.assignmentType} · {scenario.planSteps.length} {t("status.scenarioSteps")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="ai-studio-tools-panel">
         <div className="ai-studio-tools-panel-head">

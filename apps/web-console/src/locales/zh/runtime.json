@@ -34,6 +34,7 @@
   "functionJournal.objectDisabledHint": "此对象未启用 audit — 请勾选上方复选框",
   "functionJournal.subtitle": "函数调用（对象启用 audit 时）",
   "functionJournal.title": "函数调用日志",
+  "invokeFunction.federatedHint": "Invocation is forwarded to the federation peer via proxy API.",
   "invokeFunction.input": "输入 (JSON DataRecord)",
   "invokeFunction.inputHint": "空 rows — 平台从描述符填充 inputSchema。",
   "invokeFunction.invoke": "调用",
