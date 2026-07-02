@@ -562,7 +562,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-5) |
 | **Зависимости** | BL-56…62 Done |
 
 **Scope:**
@@ -572,7 +572,7 @@
 
 **Acceptance:**
 
-- [ ] ADR Accepted с примерами filter (`point and temp`, `equip and ahu`)
+- [x] ADR Accepted с примерами filter (`point and temp`, `equip and ahu`)
 
 ---
 
@@ -581,7 +581,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-5) |
 | **Зависимости** | BL-101 |
 
 **Scope:**
@@ -591,8 +591,8 @@
 
 **Acceptance:**
 
-- [ ] Integration test: lab device with haystack tags queryable
-- [ ] OpenAPI snippet in `API.md`
+- [x] Integration test: lab device with haystack tags queryable
+- [x] OpenAPI snippet in `API.md`
 
 ---
 
@@ -601,7 +601,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-5) |
 | **Зависимости** | BL-102 |
 
 **Scope:**
@@ -611,7 +611,7 @@
 
 **Acceptance:**
 
-- [ ] Demo dashboard from `equip and point and temp` за &lt; 5 min admin time
+- [x] Demo dashboard from `equip and point and temp` за < 5 min admin time
 
 ---
 
@@ -1241,5 +1241,6 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-02 | Sprint EX-5: BL-101…103 Done — Haystack filter query runtime, API, dashboard bind wizard |
 | 2026-07-02 | Sprint EX-4: BL-96…99 Done — solution catalog, semver, CI template, building-hvac reference |
 | 2026-06-30 | Первая версия REQ-EX: BL-78…132, Phase 23 в ROADMAP |

@@ -51,7 +51,7 @@
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96, 97, 99 — Done (EX-4) |
 | **P1** | AI production | Approval mode for mutate tools, scenario catalog | BL-106, 108 — Phase 23 |
 | **P1** | Ops / deploy | One-click prod deploy, CH history playbook | BL-114, 127 — Phase 23 |
-| **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Phase 23 |
+| **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
 | **P2** | Scale | Ingress tier ADR, MQTT worker, CI load gate | BL-111…113 — Phase 23 |
 | **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
 | **P2** | QA live | Playwright operator + alarming on staging | BL-129 — Done (EX-2) |
@@ -81,7 +81,7 @@
 | Operator alarming UX | ~60% | shelving, priority, ack — Ignition-class | BL-86…88 |
 | Operator trends / PWA | ~85% | offline cache (BL-91) | BL-89…91 |
 | App marketplace | ~95% | bundle signing (BL-100) | BL-96…98 Done |
-| Haystack query runtime | ~40% | export/search Done; filter query runtime — Phase 23 | BL-101…103 |
+| Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
 | AI agent production | ~85% | approval mode, audit export, SLO dashboard | BL-106…110 |
 | Telemetry ingress scale | ~50% | monolith poll OK; burst ingress tier — ADR | BL-111…113 |
 | Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |

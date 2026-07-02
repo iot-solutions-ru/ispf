@@ -36,6 +36,7 @@
 | [0020](0020-time-and-timezones.md) | Time & timezones (store UTC, display local) | Accepted |
 | [0021](0021-haystack-semantic-overlay.md) | Haystack semantic overlay (tree-first, optional tags) | Accepted |
 | [0022](0022-driver-production-matrix.md) | Driver production matrix + CI loopback gate | Accepted |
+| [0023](0023-haystack-query-runtime.md) | Haystack filter query runtime (subset, tree-first) | Accepted |
 
 ## Шаблон нового ADR
 

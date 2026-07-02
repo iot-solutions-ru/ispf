@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.server.platform.HaystackExportService;
+import com.ispf.server.platform.HaystackQueryService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,9 +16,26 @@ import java.util.Map;
 public class HaystackExportController {
 
     private final HaystackExportService haystackExportService;
+    private final HaystackQueryService haystackQueryService;
 
-    public HaystackExportController(HaystackExportService haystackExportService) {
+    public HaystackExportController(
+            HaystackExportService haystackExportService,
+            HaystackQueryService haystackQueryService
+    ) {
         this.haystackExportService = haystackExportService;
+        this.haystackQueryService = haystackQueryService;
+    }
+
+    @GetMapping("/query")
+    public Map<String, Object> query(
+            Authentication authentication,
+            @RequestParam String filter,
+            @RequestParam(required = false) String rootPath,
+            @RequestParam(defaultValue = "point") String entityKind,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "50") int limit
+    ) {
+        return haystackQueryService.query(authentication, filter, rootPath, entityKind, offset, limit);
     }
 
     @GetMapping("/search")

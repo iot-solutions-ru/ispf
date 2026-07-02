@@ -11,11 +11,40 @@
 |--------|------|------|----------|
 | GET | `/api/v1/info` | public | Имя, версия, `javaVersion`, `springBootVersion`, `capabilities[]` |
 | GET | `/api/v1/platform/metrics` | admin | Сводные метрики платформы (runtime, БД, дерево, драйверы, подключения, безопасность, historian, автоматизация) |
+| GET | `/api/v1/platform/haystack/export` | operator+ | Экспорт Haystack grid для поддерева (`rootPath`, `includePoints`) |
+| GET | `/api/v1/platform/haystack/search` | operator+ | Поиск по тегам AND (`tags`, `rootPath`, `entityKind`, `limit`) |
+| GET | `/api/v1/platform/haystack/query` | operator+ | Haystack filter query (`filter`, `rootPath`, `entityKind`, `offset`, `limit`) — см. [ADR-0023](decisions/0023-haystack-query-runtime.md) |
 | GET | `/api/v1/platform/update/status` | admin | Проверка обновлений с GitHub Releases |
 | POST | `/api/v1/platform/update/check` | admin | Принудительная проверка релиза |
 | POST | `/api/v1/platform/update/apply` | admin | Скачать релиз и перезапустить сервер (VPS, `apply-enabled=true`) |
 | GET | `/api/v1/auth/me` | public | Principal и роли |
 | POST | `/api/v1/expressions/validate` | admin | Валидация CEL |
+
+**Haystack filter query (BL-102):**
+
+```http
+GET /api/v1/platform/haystack/query?filter=point+and+temp&rootPath=root.platform.devices.lab-userA-01&entityKind=point
+```
+
+```json
+{
+  "formatVersion": 1,
+  "filter": "point and temp",
+  "count": 1,
+  "matches": [
+    {
+      "entityKind": "point",
+      "path": "root.platform.devices.lab-userA-01",
+      "variableName": "sineWave",
+      "tags": { "point": true, "temp": true, "sensor": true },
+      "curVal": 0.42,
+      "unit": "°C"
+    }
+  ]
+}
+```
+
+Filter v1: marker conjunction with `and` (e.g. `equip and ahu`). Legacy tag search: `GET /platform/haystack/search?tags=equip&tags=temp`.
 
 ## Объекты
 
