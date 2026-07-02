@@ -11,7 +11,7 @@
 1. **Этот файл** — сводка пробелов по подсистемам и приоритетам.
 2. **[PLATFORM_DEVELOPER_BACKLOG.md §3](PLATFORM_DEVELOPER_BACKLOG.md#3-сводная-матрица-req-pf)** — матрица REQ-PF/FW и acceptance-критерии.
 
-Текущая волна — [ROADMAP.md § Phase 20](ROADMAP.md#phase-20--code-audit-backlog-ui-drivers-scale) (code audit backlog) + [Phase 18.1](ROADMAP.md#phase-18--frontend-e2e--demand-driven-drivers) (Playwright). Детальный реестр — [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md). Phase 19 i18n — **Done** ([0013](decisions/0013-web-console-i18n.md)). Gate обобщения — [0002](decisions/0002-dogfooding-gate.md): каждый PR в platform проходит три вопроса (object tree, deploy REST only, второй сценарий).
+Текущая волна — [ROADMAP.md § Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening) (roadmap tail + AI hardening). Phase 20–21 и Wave G/H — **Done**. Детальный реестр — [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
 
 ## Правило обновления
 
@@ -32,14 +32,18 @@
 | **P1** | Playwright e2e | Admin smoke + System/license; live staging via workflow | BL-50 Done |
 | **P1** | Driver write | Modbus, S7, OPC UA | BL-20…22 Done |
 | **P2** | Driver write (tail) | CWMP write | BL-29 Done |
-| **P2** | Bindings UX | Каталог platform bindings + activators UI | BL-09,18 Done; runtime engine in progress |
-| **P2** | History scale | ClickHouse variable history backend | BL-40 Done |
+| **P2** | Bindings UX | Каталог platform bindings + activators UI + runtime | BL-09,18 Done |
+| **P2** | History scale | ClickHouse variable history backend | BL-40 Done; prod `ISPF_VARIABLE_HISTORY_STORE=clickhouse` — ops |
+| **P2** | Admin mobile | Responsive admin shell (Explorer + editors) | BL-72 Done |
+| **P2** | Reports TZ | `reportTimeZone` + calendar params in UI/agent | BL-73 Done |
+| **P2** | AI hardening | Agent rate limits + Prometheus metrics | BL-75 Done |
+| **P3** | Driver observedAt | Poll SPI pilots (virtual unified, MQTT JSON ts) | BL-74 Done; full driver matrix — demand-driven |
 | **P2** | System ops | Redis/NATS/AI/MCP toggles в UI | BL-13 Done |
 | **P3** | Federation polish | catalog sync preview + dashboard write proxy | BL-45,46 Done |
 | **P3** | Notifications | webhook/email alert + correlator | BL-44 Done |
 | **P3** | Semantic (Haystack/Brick) | Wave G Done (BL-56…62) | BL-56…62, 20.22 |
 | **P2** | Time & TZ | User/device TZ + UI display — **Done** (BL-66…68); calendar queries — **Done** (BL-70) | Phase 21 |
-| **P3** | Time & TZ (deep) | Historian `observedAt` — **Done** (BL-69); reports `reportTimeZone` — follow-up | BL-69 poll SPI, reports |
+| **P3** | Time & TZ (deep) | Historian `observedAt` BL-69 Done; reports TZ BL-73 Done | Phase 21–22 |
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 ## Таблица подсистем
 
@@ -67,7 +71,8 @@
 | UI ↔ API parity | ~100% | MCP wire, installation-id (ops-only) | BL-01…18 + lifecycle UI 0.9.60 |
 | Dashboard widgets (advanced) | ~98% | — | BL-65 done |
 | Variable inline editor | ~95% | — | BL-03 Done |
-| Binding rules UX | ~95% | runtime `onEvent`/`periodicMs` engine | in progress |
+| Binding rules UX | ~100% | — | BL-18 Done |
+| Admin shell mobile | ~95% | polish editor tabs on phone | BL-72 |
 | Journals | ~100% | invoke/binding audit payloads (V51), drill-down UI | BL-15,16 Done |
 | ClickHouse (variables) | ~95% | prod rollout `ISPF_VARIABLE_HISTORY_STORE=clickhouse` | BL-40 Done |
 | Optional backends UI | ~100% | — | BL-41,42 Done |
@@ -87,6 +92,7 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-06-30 | Phase 22 tail: BL-72…77 (admin mobile, report TZ, AI rate limits, i18n, playwright live); ROADMAP Phase 22 |
 | 2026-06-30 | UI↔API parity ~100%: Application lifecycle, platform schedules, semantic export, workflow cancel/signal, federation proxy invoke, device TZ; prod 0.9.60; AGENT_KNOWLEDGE + ContextPack |
 | 2026-06-30 | BL-57: Haystack inspector tab (`HaystackMetadataPanel`) |
 | 2026-06-30 | BL-30: `CoapDeviceDriverTest` loopback; BL-50: System/license mocked + live smoke |

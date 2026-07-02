@@ -124,6 +124,17 @@
 | **BL-70** | Calendar-boundary history queries + reports (`timeZone` param) | P3 | Done | History / Reports |
 | **BL-71** | Event fire optional `occurredAt` override + skew guard | P3 | Done | Events / API |
 
+### Wave I — Roadmap tail & AI hardening (Phase 22)
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-72** | Admin shell responsive / mobile (editors stack, dashboard palette toggle) | P2 | Done | Admin UI |
+| **BL-73** | Reports: auto `reportTimeZone` for `calendarRange` (UI + server enricher) | P2 | Done | Reports / TZ |
+| **BL-74** | Driver `observedAt` pilots: virtual unified poll tick + MQTT JSON timestamp | P3 | Done | Drivers |
+| **BL-75** | AI agent: per-user concurrent/hourly rate limits + Prometheus counters | P2 | Done | AI |
+| **BL-76** | i18n tails: function-form wizard, model merge/diff labels | P3 | Done | i18n |
+| **BL-77** | Playwright live: `data-testid` + README/secrets documentation | P2 | Done | QA |
+
 ### Wave F — Уже сделано / не требует BL (reference)
 
 | Тема | Статус | Где в коде |
@@ -661,6 +672,7 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |
 | 2026-06-30 | BL-26 Done: loopback tests for ethernet-ip/opc-da/opc-bridge/corba/vmware/smi-s; registry → BETA |
 | 2026-06-30 | BL-30 Done: `BacnetDeviceDriverNetworkTest`, `BacnetPointTest`; loopback subnet for 127.0.0.1 |
 | 2026-06-30 | BL-57 Done: `HaystackMetadataPanel` inspector tab + marker multiselect |

@@ -103,7 +103,9 @@ class TreeFirstAgentServiceSessionTest {
                 operatorDocumentService,
                 operatorAppUiService,
                 operatorResultEnricher,
-                attachmentValidator
+                attachmentValidator,
+                new AgentTurnRateLimiter(aiProperties),
+                new AgentMetricsRecorder(java.util.Optional.empty())
         );
 
         lenient().when(attachmentValidator.prepare(anyString(), any())).thenAnswer(invocation -> {

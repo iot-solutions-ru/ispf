@@ -250,9 +250,9 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 | 20.21 | Frontend component tests (widgets, inspector) | BL-55 | P2 | Done |
 | 20.22 | Haystack/Brick semantic layer (ADR, tags mixin, export) | BL-56…62 | P3 | Done |
 
-**Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Planned; 20.16 — settings UI Done, backend write/query Planned; 20.17 — **BL-41,42 Done**, BL-43 Planned; 20.19 = Phase 18.1 smoke baseline; 20.20 — **BL-53 Done**, BL-51/52/54 Planned.
+**Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Done; 20.16 — Done (backend + UI); 20.17 — **BL-41,42,43 Done**; 20.19 = Phase 18.1 smoke baseline; 20.20 — Done.
 
-**Следующие приоритеты:** Wave H/timezones tail (если есть); driver stub promotion (BL-26).
+**Следующие приоритеты:** [Phase 22](ROADMAP.md#phase-22--roadmap-tail--ai-hardening) (хвосты + AI quotas); demand-driven driver promotion (Phase 18.2); ops ClickHouse history rollout по запросу.
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 
@@ -272,6 +272,23 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 **Зависимости:** 21.1 → 21.2, 21.3; 21.3 → 21.4; 21.2 → 21.5.
 
 Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет хранение с UTC на local.
+
+## Phase 22 — Roadmap tail & AI hardening
+
+Закрытие хвостов после Phase 20–21: report TZ, driver `observedAt`, admin mobile, AI quotas, i18n/playwright. Деплой на VPS — **только по запросу** ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
+
+| # | Тема | BL | P | Статус |
+|---|------|----|---|--------|
+| 22.1 | Admin shell responsive (mobile stack, dashboard palette toggle) | BL-72 | P2 | Done |
+| 22.2 | Reports: `reportTimeZone` auto from user TZ + calendar params | BL-73 | P2 | Done |
+| 22.3 | Driver poll SPI: virtual unified + MQTT JSON timestamp | BL-74 | P3 | Done |
+| 22.4 | AI agent: per-user rate limits + Prometheus counters | BL-75 | P2 | Done |
+| 22.5 | i18n tails (function form wizard, model merge/diff) | BL-76 | P3 | Done |
+| 22.6 | Playwright live: testids + README/secrets | BL-77 | P2 | Done |
+| 22.7 | ClickHouse variable history prod rollout | — | P2 | Ops (set `ISPF_VARIABLE_HISTORY_STORE=clickhouse`) |
+| 22.8 | Doc sync (ROADMAP, GAP, evolution) | — | P3 | Done |
+
+**Partial — расшифровка Phase 20 (устарело, закрыто):** 20.15 BL-27/30 Done; 20.16 backend Done; 20.17 BL-43 Done; 20.20 BL-51/52/54 Done.
 
 ## Platform baseline
 

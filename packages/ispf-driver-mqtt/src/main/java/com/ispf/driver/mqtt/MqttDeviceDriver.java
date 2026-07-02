@@ -167,8 +167,8 @@ public class MqttDeviceDriver implements DeviceDriver {
     }
 
     private void handleMessage(String topic, byte[] payloadBytes) {
-        Instant observed = Instant.now();
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
+        Instant observed = resolveObservedInstant(payload);
         String variableName = resolveVariableForTopic(topic);
         if (usesIngressSchema(variableName)) {
             driverObject.updateVariable(variableName, DataRecord.single(
@@ -181,6 +181,34 @@ public class MqttDeviceDriver implements DeviceDriver {
                     Map.of("raw", payload)
             ), observed);
         }
+    }
+
+    private static Instant resolveObservedInstant(String payload) {
+        if (payload == null || payload.isBlank()) {
+            return Instant.now();
+        }
+        java.util.regex.Pattern isoField = java.util.regex.Pattern.compile(
+                "\"(?:observedAt|timestamp|ts|time)\"\\s*:\\s*\"([^\"]+)\"",
+                java.util.regex.Pattern.CASE_INSENSITIVE
+        );
+        java.util.regex.Matcher isoMatch = isoField.matcher(payload);
+        if (isoMatch.find()) {
+            try {
+                return Instant.parse(isoMatch.group(1));
+            } catch (Exception ignored) {
+                // fall through
+            }
+        }
+        java.util.regex.Pattern epochField = java.util.regex.Pattern.compile(
+                "\"(?:observedAt|timestamp|ts|time)\"\\s*:\\s*(\\d+)",
+                java.util.regex.Pattern.CASE_INSENSITIVE
+        );
+        java.util.regex.Matcher epochMatch = epochField.matcher(payload);
+        if (epochMatch.find()) {
+            long raw = Long.parseLong(epochMatch.group(1));
+            return raw > 1_000_000_000_000L ? Instant.ofEpochMilli(raw) : Instant.ofEpochSecond(raw);
+        }
+        return Instant.now();
     }
 
     @Override

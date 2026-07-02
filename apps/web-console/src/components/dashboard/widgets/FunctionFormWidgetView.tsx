@@ -520,7 +520,7 @@ export default function FunctionFormWidgetView({ widget, editable }: FunctionFor
               disabled={editable || mutation.isPending || validating}
               onClick={handleBack}
             >
-              ← Назад
+              ← {t("view.wizardBack")}
             </button>
           )}
           <button
@@ -533,7 +533,7 @@ export default function FunctionFormWidgetView({ widget, editable }: FunctionFor
             {mutation.isPending || validating
               ? "…"
               : isWizard && !isLastStep
-                ? "Далее →"
+                ? t("view.wizardNext")
                 : widget.buttonLabel ?? widget.functionName}
           </button>
         </div>
@@ -660,7 +660,7 @@ function FunctionFormFieldInput({
             </label>
           ))}
         </div>
-        {loadingReport && <span className="function-form-hint">Загрузка…</span>}
+        {loadingReport && <span className="function-form-hint">{t("view.loadingReport")}</span>}
         {field.hint && <span className="function-form-hint">{field.hint}</span>}
       </fieldset>
     );
@@ -683,7 +683,7 @@ function FunctionFormFieldInput({
             </option>
           ))}
         </select>
-        {loadingReport && <span className="function-form-hint">Загрузка…</span>}
+        {loadingReport && <span className="function-form-hint">{t("view.loadingReport")}</span>}
         {field.hint && <span className="function-form-hint">{field.hint}</span>}
       </label>
     );

@@ -28,7 +28,7 @@ npm run test:e2e:install
 | Operator `?mode=operator&app=demo` | `operator deep link` |
 | System → Metrics + Platform license | `system metrics` |
 
-**In progress:** optional live workflow [`.github/workflows/e2e-live.yml`](../../../.github/workflows/e2e-live.yml) — staging default `https://ispf.iot-solutions.ru` (`workflow_dispatch`, secrets `E2E_USERNAME` / `E2E_PASSWORD`). Live suite includes System → Platform license smoke.
+**Live staging:** workflow [`.github/workflows/e2e-live.yml`](../../../.github/workflows/e2e-live.yml) — `workflow_dispatch` against `https://ispf.iot-solutions.ru` (override `E2E_BASE_URL`). Set GitHub secrets `E2E_USERNAME` / `E2E_PASSWORD`. Live suite uses `data-testid="admin-shell"` and `workspace-tab-explorer` (OIDC-only servers skip login tests).
 
 ## Run mocked smoke tests (default)
 

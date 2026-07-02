@@ -31,6 +31,10 @@ public class AiProperties {
     private int agentMaxAttachmentBytes = 32 * 1024 * 1024;
     /** ~512 KB of spec/TZ text inlined into the user message (chars, not tokens). */
     private int agentMaxTextInjectChars = 524_288;
+    /** Max concurrent agent turns per user (excluding pre-reserved session runs). */
+    private int agentMaxConcurrentTurnsPerUser = 2;
+    /** Max agent turns started per user per rolling hour. */
+    private int agentMaxTurnsPerHourPerUser = 120;
 
     public boolean isEnabled() {
         return enabled;
@@ -198,6 +202,22 @@ public class AiProperties {
 
     public void setAgentMaxTextInjectChars(int agentMaxTextInjectChars) {
         this.agentMaxTextInjectChars = agentMaxTextInjectChars;
+    }
+
+    public int getAgentMaxConcurrentTurnsPerUser() {
+        return agentMaxConcurrentTurnsPerUser;
+    }
+
+    public void setAgentMaxConcurrentTurnsPerUser(int agentMaxConcurrentTurnsPerUser) {
+        this.agentMaxConcurrentTurnsPerUser = agentMaxConcurrentTurnsPerUser;
+    }
+
+    public int getAgentMaxTurnsPerHourPerUser() {
+        return agentMaxTurnsPerHourPerUser;
+    }
+
+    public void setAgentMaxTurnsPerHourPerUser(int agentMaxTurnsPerHourPerUser) {
+        this.agentMaxTurnsPerHourPerUser = agentMaxTurnsPerHourPerUser;
     }
 
     public Duration timeout() {
