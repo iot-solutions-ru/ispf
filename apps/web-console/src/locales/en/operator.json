@@ -127,5 +127,8 @@
   "agent.tablePreview": "Report data",
   "agent.tableTruncated": "Showing a preview — full data may be larger.",
   "agent.closeTable": "Close table",
-  "agent.pickOption": "Pick an option or refine your request:"
+  "agent.pickOption": "Pick an option or refine your request:",
+  "offline.staleBanner": "Offline — showing cached data from {{time}}",
+  "offline.reconnecting": "Back online — refreshing…",
+  "offline.unknownTime": "unknown time"
 }

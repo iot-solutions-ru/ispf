@@ -6485,6 +6485,15 @@ body.scada-mimic-editor-open {
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+.operator-offline-banner {
+  margin: 0;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  text-align: center;
+  font-weight: 500;
+}
+
 .op-alert-error {
   background: color-mix(in srgb, #c0392b 12%, transparent);
   border: 1px solid color-mix(in srgb, #c0392b 35%, transparent);

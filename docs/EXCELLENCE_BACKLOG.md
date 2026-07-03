@@ -334,7 +334,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Partial (Sprint EX-2) |
+| **Статус** | Partial (Sprint EX-2, EX-11) |
 | **Зависимости** | BL-52 |
 
 **Scope:**
@@ -347,7 +347,8 @@
 
 - [x] Lighthouse PWA checklist: installable
 - [x] `npm run build` включает manifest icons
-- [ ] Operator mode работает installed на Android Chrome smoke
+- [x] Playwright: offline operator shell + stale banner (`e2e/live-operator.spec.ts`)
+- [ ] Operator mode работает installed на Android Chrome smoke (manual)
 
 ---
 
@@ -356,7 +357,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-11) |
 | **Зависимости** | BL-90 |
 
 **Scope:**
@@ -367,8 +368,8 @@
 
 **Acceptance:**
 
-- [ ] Airplane mode: operator видит cached dashboard с watermark stale
-- [ ] Reconnect → refresh without full reload
+- [x] Airplane mode: operator видит cached dashboard с watermark stale (`OperatorOfflineBanner`, localStorage cache)
+- [x] Reconnect → refresh without full reload (`useOperatorConnectivity` + query invalidation)
 
 ---
 
@@ -1257,8 +1258,12 @@ Sprint EX-9 (BACnet discovery) — Done
 Sprint EX-10 (Telemetry quality) — Done
   BL-82 — ADR-0025, OPC UA + virtual quality, chart BAD gaps
 
+Sprint EX-11 (Operator offline) — Done
+  BL-91 — localStorage cache (manifest/ui/dashboard/variables/screens), stale banner, reconnect invalidate
+  BL-90 — Playwright offline smoke (Android manual tail)
+
 Backlog по demand (следующий приоритет)
-  BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android PWA manual), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -1267,6 +1272,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |
 | 2026-07-03 | Sprint EX-10: BL-82 telemetry quality ADR-0025, OPC UA/virtual drivers, chart BAD gaps |
 | 2026-07-03 | Sprint EX-9: BL-81 BACnet Who-Is + typed read/units; EX-8 tails — capabilities API, interop matrix, subscribe test, single-point poll |
 | 2026-07-03 | REQ-EX audit: BL-80/83–85/90/114 → Partial; sync ROADMAP Phase 23, GAP_REGISTRY, CODE_AUDIT |

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { loadOperatorAppUi } from "./useOperatorAppsRegistry";
 import type { OperatorUi } from "../types/operatorUi";
+import { cacheOperatorUi, readCachedOperatorUi } from "../utils/operatorOfflineCache";
 
 async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
   const response = await fetch(`/operator-apps/${appId}.ui.json`);
@@ -19,11 +20,24 @@ async function loadUiFromPublic(appId: string): Promise<OperatorUi | null> {
 }
 
 async function loadOperatorUi(appId: string): Promise<OperatorUi | null> {
-  const fromRegistry = await loadOperatorAppUi(appId);
-  if (fromRegistry) {
-    return fromRegistry;
+  try {
+    const fromRegistry = await loadOperatorAppUi(appId);
+    if (fromRegistry) {
+      cacheOperatorUi(appId, fromRegistry);
+      return fromRegistry;
+    }
+    const fromPublic = await loadUiFromPublic(appId);
+    if (fromPublic) {
+      cacheOperatorUi(appId, fromPublic);
+    }
+    return fromPublic;
+  } catch (error) {
+    const cached = readCachedOperatorUi(appId);
+    if (cached) {
+      return cached;
+    }
+    throw error;
   }
-  return loadUiFromPublic(appId);
 }
 
 export function useOperatorUi(appId: string | null) {

@@ -138,6 +138,8 @@ export interface OperatorManifestScreen {
   id: string;
   title: string;
   description?: string;
+  /** When false, screen data is not cached for offline operator mode. Default: true for data screens. */
+  offlineCache?: boolean;
   actions?: OperatorManifestAction[];
   table?: OperatorManifestTable;
   report?: OperatorManifestReport;

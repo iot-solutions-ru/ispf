@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
 import { useOperatorManifest } from "../../hooks/useOperatorManifest";
+import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { ANIMA_OPERATOR_WIRE_PROFILE } from "../../types/bff";
 import { resolveOperatorScreen } from "../../types/operatorManifest";
 import OperatorPreferences from "./OperatorPreferences";
@@ -10,7 +12,9 @@ import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
 import OperatorAgentFab from "./OperatorAgentFab";
+import OperatorOfflineBanner from "./OperatorOfflineBanner";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
+import { cachedAtForManifest } from "../../utils/operatorOfflineCache";
 
 import type { AuthSession } from "../../auth/session";
 
@@ -34,8 +38,17 @@ export default function OperatorManifestView({
   onLogout,
 }: OperatorManifestViewProps) {
   const { t } = useTranslation(["operator", "common"]);
+  const queryClient = useQueryClient();
   useObjectWebSocket();
   const manifestQuery = useOperatorManifest(appId);
+  const { showStaleBanner, reconnecting } = useOperatorConnectivity(() => {
+    queryClient.invalidateQueries({ queryKey: ["operator-manifest", appId] });
+    queryClient.invalidateQueries({ queryKey: ["bff-table"] });
+    queryClient.invalidateQueries({ queryKey: ["app-report", appId] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["variables"] });
+  });
+  const cachedAt = cachedAtForManifest(appId);
   const [screenId, setScreenId] = useState<string | null>(resolveScreenFromUrl);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -102,6 +115,11 @@ export default function OperatorManifestView({
         )}
         </div>
       </header>
+      <OperatorOfflineBanner
+        visible={showStaleBanner}
+        cachedAt={cachedAt}
+        reconnecting={reconnecting}
+      />
       <nav className="op-nav" data-testid="operator-nav">
         {manifest.screens.map((screen) => (
           <button

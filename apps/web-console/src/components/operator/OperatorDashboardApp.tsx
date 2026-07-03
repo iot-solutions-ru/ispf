@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import type { AuthSession } from "../../auth/session";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
+import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { useOperatorAlarmBar } from "../../hooks/useOperatorAlarmBar";
 import {
   resolveOperatorDashboard,
@@ -20,7 +22,9 @@ import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
 import OperatorAgentFab from "./OperatorAgentFab";
+import OperatorOfflineBanner from "./OperatorOfflineBanner";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
+import { cachedAtForOperatorUi } from "../../utils/operatorOfflineCache";
 
 interface OperatorDashboardAppProps {
   appId: string;
@@ -115,8 +119,15 @@ export default function OperatorDashboardApp({
   onLogout,
 }: OperatorDashboardAppProps) {
   const { t } = useTranslation(["operator", "common"]);
+  const queryClient = useQueryClient();
   useObjectWebSocket();
   const uiQuery = useOperatorUi(appId);
+  const { showStaleBanner, reconnecting } = useOperatorConnectivity(() => {
+    queryClient.invalidateQueries({ queryKey: ["operator-ui", appId] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["variables"] });
+  });
+  const cachedAt = cachedAtForOperatorUi(appId);
   const [viewKind, setViewKind] = useState<OperatorViewKind>(resolveViewKindFromUrl);
   const [dashboardPath, setDashboardPath] = useState<string | null>(resolveDashboardFromUrl);
   const [reportPath, setReportPath] = useState<string | null>(resolveReportFromUrl);
@@ -278,6 +289,11 @@ export default function OperatorDashboardApp({
         onSelectReport={navigateReport}
         sidebarOpen={sidebarDrawer.open}
         onToggleSidebar={sidebarDrawer.toggle}
+      />
+      <OperatorOfflineBanner
+        visible={showStaleBanner}
+        cachedAt={cachedAt}
+        reconnecting={reconnecting}
       />
       {alarmBar.position === "top" && <AlarmBarOverlay {...alarmBar} />}
       <OperatorShellFrame

@@ -47,7 +47,7 @@
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 | **P1** | Driver excellence | Matrix + observedAt Done; OPC UA browse/subscribe, interop CI, mapping UI, top-10 gate — tails EX-8 | BL-78, 79 Done; BL-80, 83–85 Partial (EX-8) — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86…88 Done (EX-7) — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
-| **P1** | Operator HMI | Industrial trends Done; PWA installable; offline cache | BL-89 Done; BL-90 Partial (EX-2); BL-91 Planned |
+| **P1** | Operator HMI | Industrial trends Done; PWA installable; offline cache | BL-89 Done; BL-90 Partial (EX-11 Playwright); BL-91 Done (EX-11) |
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96…99 Done (EX-4); BL-100 Planned |
 | **P1** | AI production | Approval mode, scenario catalog, SLO dashboard Done | BL-106, 108, 110 Done (EX-3); BL-107, 109 Planned |
 | **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127 Planned |
@@ -79,7 +79,7 @@
 | Driver maturity labels | ~98% | — | — |
 | Frontend e2e (Playwright) | ~90% | visual regression smoke | BL-129…131 |
 | Operator alarming UX | ~95% | mimic perf, a11y (BL-92…93) | BL-86…88 Done |
-| Operator trends / PWA | ~88% | offline cache (BL-91); Android PWA smoke (BL-90) | BL-89…91 |
+| Operator trends / PWA | ~92% | Android PWA manual smoke (BL-90) | BL-89…91 |
 | App marketplace | ~95% | bundle signing (BL-100) | BL-96…98 Done |
 | Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
 | AI agent production | ~90% | audit export (BL-107), operator allowlist (BL-109) | BL-106…110 |

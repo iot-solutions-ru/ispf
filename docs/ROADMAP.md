@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-10):** BL-91 (offline cache), BL-90 (Android PWA), BL-107; tails EX-8 — interop PR badge, Haystack mapping hints. Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-11):** BL-90 (Android PWA manual), BL-107; tails EX-8 — interop PR badge, Haystack mapping hints. Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

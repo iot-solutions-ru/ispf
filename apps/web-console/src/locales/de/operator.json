@@ -127,5 +127,8 @@
   "workQueue.complete": "Komplett",
   "workQueue.empty": "Für diese Operator-App sind keine Aufgaben offen",
   "workQueue.loadError": "Die Warteschlange konnte nicht geladen werden",
-  "workQueue.title": "Aufgabenwarteschlange"
+  "workQueue.title": "Aufgabenwarteschlange",
+  "offline.staleBanner": "Offline — zwischengespeicherte Daten vom {{time}}",
+  "offline.reconnecting": "Wieder online — Aktualisierung…",
+  "offline.unknownTime": "unbekannt"
 }

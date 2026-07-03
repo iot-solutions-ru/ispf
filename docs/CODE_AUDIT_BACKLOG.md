@@ -162,8 +162,8 @@
 | **BL-87** | Priority classes + ack workflow + flood control | P1 | Done (EX-7) | Operator / Automation |
 | **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Done | Operator HMI |
 | **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Done | Operator HMI |
-| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Partial (EX-2) | Operator HMI |
-| **BL-91** | Offline cache for critical screens | P2 | Planned | Operator HMI |
+| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Partial (EX-2, EX-11) | Operator HMI |
+| **BL-91** | Offline cache for critical screens | P2 | Done (EX-11) | Operator HMI |
 | **BL-92** | SCADA mimic performance budget (60fps) | P2 | Planned | SCADA |
 | **BL-93** | Accessibility baseline WCAG 2.1 AA partial | P2 | Planned | a11y |
 | **BL-94** | SCADA symbol library expansion | P3 | Planned | SCADA |
@@ -825,7 +825,7 @@ Sprint EX-8 (Driver production depth) — Partial
   BL-80, BL-83, BL-84, BL-85 — core delivered; tails: subscribe test, interop summary, capabilities API, DRIVERS.md
 
 Backlog по demand (следующий приоритет)
-  BL-81, BL-82, BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android PWA manual), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -834,6 +834,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-11: BL-91 offline cache + stale banner; BL-90 Playwright offline smoke |
 | 2026-07-03 | REQ-EX audit sync: Wave J Partial (BL-80/83–85 EX-8); Wave K BL-90 Partial; Wave L/N Done; Wave O BL-114 Partial; ROADMAP Phase 23 + GAP |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
 | 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |
