@@ -21,14 +21,18 @@ mkdir -p deploy/staging
 JAR="$(ls -1 packages/ispf-server/build/libs/ispf-server-*.jar | grep -v plain | head -1)"
 cp "$JAR" deploy/staging/ispf-server.jar
 
+# shellcheck source=air-gap-images.env
+source "$ROOT/deploy/air-gap-images.env"
+export ISPF_AIRGAP_POSTGRES_IMAGE ISPF_AIRGAP_REDIS_IMAGE ISPF_AIRGAP_JRE_IMAGE ISPF_AIRGAP_NGINX_IMAGE
+
 echo "==> Starting docker compose prod stack"
 docker compose -f deploy/docker-compose.prod-stack.yml up -d
 
 chmod +x deploy/health-check.sh
-deploy/health-check.sh http://localhost:8080
+deploy/health-check.sh http://127.0.0.1:8080
 
 echo
-echo "Production quick start ready:"
-echo "  API:  http://localhost:8080/api/v1/info"
-echo "  UI:   http://localhost:8088/"
+echo "Production quick start ready (lab / localhost only — change defaults before internet-facing prod):"
+echo "  API:  http://127.0.0.1:8080/api/v1/info"
+echo "  UI:   http://127.0.0.1:8088/"
 echo "  Stop: docker compose -f deploy/docker-compose.prod-stack.yml down"

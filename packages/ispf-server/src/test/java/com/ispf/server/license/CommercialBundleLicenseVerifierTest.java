@@ -114,6 +114,13 @@ class CommercialBundleLicenseVerifierTest {
         assertDoesNotThrow(() -> verifier.verifyOrWarn("signed-required", manifest));
     }
 
+    @Test
+    void requireSignedBundlesValidationRejectsUnsignedManifest() {
+        properties.setRequireSignedBundles(true);
+        Map<String, Object> manifest = baseManifest("unsigned-validate");
+        assertThrows(CommercialLicenseException.class, () -> verifier.verifyForValidation("unsigned-validate", manifest));
+    }
+
     private static Map<String, Object> baseManifest(String appId) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("version", "1.0.0");

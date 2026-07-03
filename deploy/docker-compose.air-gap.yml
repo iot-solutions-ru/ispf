@@ -3,13 +3,13 @@
 
 services:
   postgres:
-    image: timescale/timescaledb:latest-pg16
+    image: ${ISPF_AIRGAP_POSTGRES_IMAGE:-timescale/timescaledb:2.17.2-pg16}
     environment:
       POSTGRES_DB: ispf
       POSTGRES_USER: ispf
       POSTGRES_PASSWORD: ispf
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ispf_airgap_pg:/var/lib/postgresql/data
     healthcheck:
@@ -19,12 +19,12 @@ services:
       retries: 12
 
   redis:
-    image: redis:7-alpine
+    image: ${ISPF_AIRGAP_REDIS_IMAGE:-redis:7.4.2-alpine}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
   ispf-server:
-    image: eclipse-temurin:25-jre-jammy
+    image: ${ISPF_AIRGAP_JRE_IMAGE:-eclipse-temurin:25-jre-jammy}
     working_dir: /opt/ispf
     command: ["java", "-jar", "/opt/ispf/ispf-server.jar"]
     environment:
@@ -42,20 +42,34 @@ services:
       - ./artifacts/ispf-server.jar:/opt/ispf/ispf-server.jar:ro
       - ./artifacts/drivers:/opt/ispf/drivers:ro
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
 
   nginx:
-    image: nginx:1.27-alpine
+    image: ${ISPF_AIRGAP_NGINX_IMAGE:-nginx:1.27.4-alpine}
     ports:
-      - "8088:80"
+      - "127.0.0.1:8088:80"
     volumes:
       - ./artifacts/web-console:/usr/share/nginx/html:ro
       - ./deploy/nginx-local-prod.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - ispf-server
 
+  clickhouse:
+    profiles: [clickhouse]
+    image: ${ISPF_AIRGAP_CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:24.8.12.60}
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ispf_airgap_ch:/var/lib/clickhouse
+
 volumes:
   ispf_airgap_pg:
+  ispf_airgap_ch:

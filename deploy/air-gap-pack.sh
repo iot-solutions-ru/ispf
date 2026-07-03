@@ -10,6 +10,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# shellcheck source=air-gap-images.env
+source "$ROOT/deploy/air-gap-images.env"
+
 VERSION="dev"
 SKIP_BUILD=false
 SKIP_DRIVER_PACKS=false
@@ -33,13 +36,13 @@ BUNDLE_DIR="build/air-gap/ispf-airgap-${VERSION}"
 ARCHIVE="build/air-gap/ispf-airgap-${VERSION}.tar.gz"
 
 IMAGES=(
-  timescale/timescaledb:latest-pg16
-  redis:7-alpine
-  eclipse-temurin:25-jre-jammy
-  nginx:1.27-alpine
+  "$ISPF_AIRGAP_POSTGRES_IMAGE"
+  "$ISPF_AIRGAP_REDIS_IMAGE"
+  "$ISPF_AIRGAP_JRE_IMAGE"
+  "$ISPF_AIRGAP_NGINX_IMAGE"
 )
 if [[ "$WITH_CLICKHOUSE" == true ]]; then
-  IMAGES+=(clickhouse/clickhouse-server:24.8)
+  IMAGES+=("$ISPF_AIRGAP_CLICKHOUSE_IMAGE")
 fi
 
 echo "==> Preparing bundle directory: $BUNDLE_DIR"
@@ -98,12 +101,27 @@ cp deploy/docker-compose.air-gap.yml "$BUNDLE_DIR/deploy/"
 cp deploy/nginx-local-prod.conf "$BUNDLE_DIR/deploy/"
 cp deploy/health-check.sh "$BUNDLE_DIR/deploy/"
 cp deploy/air-gap-apply.sh "$BUNDLE_DIR/deploy/"
+cp deploy/air-gap-images.env "$BUNDLE_DIR/deploy/"
 
 echo "==> Pulling and exporting Docker images"
 for image in "${IMAGES[@]}"; do
   docker pull "$image"
 done
 docker save "${IMAGES[@]}" -o "$BUNDLE_DIR/images/prod-stack.tar"
+
+DIGEST_LINES=""
+for image in "${IMAGES[@]}"; do
+  digest="$(docker image inspect --format='{{index .RepoDigests 0}}' "$image" 2>/dev/null || true)"
+  if [[ -n "$digest" ]]; then
+    DIGEST_LINES="${DIGEST_LINES}    \"${digest}\",\n"
+  fi
+done
+DIGEST_LINES="$(printf '%b' "$DIGEST_LINES" | sed '$ s/,$//')"
+
+CLICKHOUSE_JSON="false"
+if [[ "$WITH_CLICKHOUSE" == true ]]; then
+  CLICKHOUSE_JSON="true"
+fi
 
 cat >"$BUNDLE_DIR/MANIFEST.json" <<EOF
 {
@@ -113,6 +131,10 @@ cat >"$BUNDLE_DIR/MANIFEST.json" <<EOF
   "images": [
 $(printf '    "%s",\n' "${IMAGES[@]}" | sed '$ s/,$//')
   ],
+  "imageDigests": [
+${DIGEST_LINES}
+  ],
+  "clickhouseIncluded": ${CLICKHOUSE_JSON},
   "artifacts": {
     "serverJar": "artifacts/ispf-server.jar",
     "webConsoleZip": "artifacts/web-console.zip",

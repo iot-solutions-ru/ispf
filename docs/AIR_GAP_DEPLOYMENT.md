@@ -28,9 +28,10 @@ Bundle contents:
 | `artifacts/ispf-server.jar` | Platform server |
 | `artifacts/web-console/` | Built SPA (also `web-console.zip`) |
 | `artifacts/driver-packs.tar.gz` | Optional; extracted to `artifacts/drivers/` |
-| `images/prod-stack.tar` | `docker save` of postgres, redis, temurin JRE, nginx |
+| `images/prod-stack.tar` | `docker save` of pinned postgres, redis, temurin JRE, nginx (+ optional ClickHouse) |
 | `deploy/docker-compose.air-gap.yml` | Self-contained stack |
-| `MANIFEST.json` / `CHECKSUMS.sha256` | Version + integrity |
+| `deploy/air-gap-images.env` | Pinned image tags used at pack time |
+| `MANIFEST.json` / `CHECKSUMS.sha256` | Version + integrity (corruption check) |
 
 Optional `--with-clickhouse` adds `clickhouse/clickhouse-server:24.8` to the image tar (enable CH env vars separately — see [DEPLOYMENT.md § ClickHouse](DEPLOYMENT.md#clickhouse-variable-history-prod-playbook-bl-114)).
 
@@ -49,7 +50,8 @@ bash deploy/air-gap-pack.sh --version 0.9.32
 
 - [ ] Optional flags: `--skip-build`, `--skip-driver-packs`, `--with-clickhouse`
 - [ ] Verify output: `build/air-gap/ispf-airgap-0.9.32.tar.gz`
-- [ ] Record SHA256 of archive for transfer integrity
+- [ ] Record **out-of-band** SHA256 of archive for transfer integrity (CHECKSUMS inside bundle ≠ anti-tamper)
+- [ ] Optional: `--with-clickhouse` adds ClickHouse image + compose profile
 - [ ] **Commercial apps:** sign bundle manifests on build side before packaging apps (see § Licensing below)
 - [ ] Copy archive to removable media or internal artifact repository
 
@@ -159,7 +161,8 @@ If you cannot run `air-gap-pack.sh` on Linux, assemble the same layout manually:
 
 | Symptom | Check |
 |---------|-------|
-| `docker load` fails | Archive truncated; re-verify SHA256 |
+| `docker load` fails | Archive truncated; re-verify out-of-band SHA256 |
+| `Invalid bundle kind` | Archive is not an ISPF air-gap bundle |
 | Health check timeout | `docker compose logs ispf-server`; DB credentials |
 | 403 on app deploy | License / `require-signed-bundles`; installation ID mismatch |
 | Empty driver list | `artifacts/drivers/` not populated; rebuild with driver packs |

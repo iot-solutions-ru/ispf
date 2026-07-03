@@ -67,11 +67,19 @@ public class CommercialBundleLicenseVerifier {
         Map<String, Object> root = objectMapper.convertValue(manifest, Map.class);
         Object licenseRaw = root.get("license");
         if (licenseRaw == null) {
+            if (properties.isRequireSignedBundles()) {
+                throw new CommercialLicenseException(
+                        "Bundle manifest must include a signed license block (ispf.license.require-signed-bundles=true)"
+                );
+            }
             return;
         }
         @SuppressWarnings("unchecked")
         BundleLicenseClaims claims = BundleLicenseClaims.fromMap((Map<String, Object>) licenseRaw);
         if (claims == null) {
+            if (properties.isRequireSignedBundles()) {
+                throw new CommercialLicenseException("Bundle license block is invalid or incomplete");
+            }
             return;
         }
         verify(appId, manifest, claims);
