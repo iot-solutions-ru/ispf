@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -142,7 +143,11 @@ public class FederationTunnelAgentService {
 
     private void disconnectRuntime(UUID agentId) {
         AgentRuntime runtime = runtimes.remove(agentId);
-        if (runtime != null && runtime.webSocket != null) {
+        if (runtime == null) {
+            return;
+        }
+        runtime.cancelPing();
+        if (runtime.webSocket != null) {
             runtime.webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "shutdown").join();
         }
     }
@@ -239,7 +244,10 @@ public class FederationTunnelAgentService {
                 agent.sessionTokenEnc()
         );
         replayBufferedEvents(agentId);
-        scheduler.scheduleAtFixedRate(() -> sendPing(agentId), 30, 30, TimeUnit.SECONDS);
+        AgentRuntime runtime = runtimes.get(agentId);
+        if (runtime != null) {
+            runtime.schedulePing(() -> sendPing(agentId), scheduler);
+        }
     }
 
     private void onText(UUID agentId, String payload) {
@@ -450,9 +458,22 @@ public class FederationTunnelAgentService {
     private static final class AgentRuntime {
         private final UUID agentId;
         private WebSocket webSocket;
+        private ScheduledFuture<?> pingTask;
 
         private AgentRuntime(UUID agentId) {
             this.agentId = agentId;
+        }
+
+        private void schedulePing(Runnable ping, ScheduledExecutorService scheduler) {
+            cancelPing();
+            pingTask = scheduler.scheduleAtFixedRate(ping, 30, 30, TimeUnit.SECONDS);
+        }
+
+        private void cancelPing() {
+            if (pingTask != null) {
+                pingTask.cancel(false);
+                pingTask = null;
+            }
         }
     }
 }
