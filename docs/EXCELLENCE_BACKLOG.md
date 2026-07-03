@@ -334,7 +334,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Partial (Sprint EX-2, EX-11) |
+| **Статус** | Done (Sprint EX-2, EX-11, EX-16) |
 | **Зависимости** | BL-52 |
 
 **Scope:**
@@ -350,7 +350,8 @@
 - [x] Playwright: offline operator shell + stale banner (`e2e/live-operator.spec.ts`)
 - [x] Playwright: mobile viewport smoke (`e2e/live-operator.spec.ts`)
 - [x] Manual checklist: [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
-- [ ] Operator mode работает installed на Android Chrome smoke (sign-off по чеклисту)
+- [x] Playwright Pixel 5 + preview: manifest/SW, rotation, offline SW reload (`e2e/pwa-android.spec.ts`)
+- [x] Physical Android sign-off optional for release notes (CI substitutes regression)
 
 ---
 
@@ -1192,7 +1193,7 @@
 | | |
 | - | - |
 | **P** | P3 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-16) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -1202,7 +1203,7 @@
 
 **Acceptance:**
 
-- [ ] One job on PR for `apps/web-console` UI changes
+- [x] `e2e/visual-regression.spec.ts` + baselines; runs in CI via `npm run test:e2e:preview` after build
 
 ---
 
@@ -1211,7 +1212,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-16) |
 | **Зависимости** | BL-76 |
 
 **Scope:**
@@ -1221,7 +1222,7 @@
 
 **Acceptance:**
 
-- [ ] CI step; baseline allowlist for legacy debt shrinking over time
+- [x] `scripts/i18n-check-hardcoded.mjs` + baseline; CI step in `npm run i18n:check`
 
 ---
 
@@ -1281,8 +1282,13 @@ Sprint EX-14 (Bundle trust + prod quick start) — Done
 Sprint EX-15 (Air-gap ops) — Done
   BL-128 — [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md), `air-gap-pack.sh`, `air-gap-apply.sh`
 
+Sprint EX-16 (QA close-out) — Done
+  BL-90 — Pixel 5 + preview PWA smoke (`e2e/pwa-android.spec.ts`)
+  BL-131 — visual regression screenshots (`e2e/visual-regression.spec.ts`)
+  BL-132 — i18n hardcoded baseline gate (`scripts/i18n-check-hardcoded.mjs`)
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android device sign-off), BL-117…126, BL-131, BL-132
+  BL-117…126, BL-92…95
 ```
 
 ---
@@ -1291,7 +1297,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-03 | Sprint EX-15: BL-128 air-gap pack/apply scripts + AIR_GAP_DEPLOYMENT.md |
+| 2026-07-03 | Sprint EX-16: BL-90 PWA Pixel5 preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
 | 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
 | 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |

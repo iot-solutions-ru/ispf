@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
@@ -14,6 +15,7 @@ class ObjectChangeEventBusTest {
     @Nested
     @SpringBootTest
     @ActiveProfiles("test")
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     @TestPropertySource(properties = "ispf.object-change.async-enabled=true")
     class WhenAsyncEnabled {
 
@@ -29,6 +31,7 @@ class ObjectChangeEventBusTest {
     @Nested
     @SpringBootTest
     @ActiveProfiles("test")
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
     @TestPropertySource(properties = "ispf.object-change.async-enabled=false")
     class WhenAsyncDisabled {
 

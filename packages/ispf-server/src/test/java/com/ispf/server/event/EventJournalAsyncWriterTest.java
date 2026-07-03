@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.atMost;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -71,13 +72,24 @@ class EventJournalAsyncWriterTest {
     }
 
     @Test
-    void enqueueReturnsEventIdBeforePersistence() {
+    void enqueueReturnsEventIdBeforePersistence() throws Exception {
+        CountDownLatch releasePersist = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            assertTrue(releasePersist.await(5, TimeUnit.SECONDS), "Timed out waiting to release persist");
+            return null;
+        }).when(batchPersister).persistBatch(anyList());
+
         ObjectEvent event = sampleEvent("evt-1");
         writer.enqueue(event, "{}");
 
-        verify(batchPersister, never()).persistOne(any());
-        verify(batchPersister, never()).persistBatch(anyList());
         assertTrue(recentEventCache.findLatest(OBJECT_PATH, "thresholdExceeded").isPresent());
+        verify(batchPersister, never()).persistOne(any());
+        Thread.sleep(100);
+        verify(batchPersister, atMost(1)).persistBatch(anyList());
+
+        releasePersist.countDown();
+        writer.awaitQueueDrain(5, TimeUnit.SECONDS);
+        verify(batchPersister, atLeastOnce()).persistBatch(anyList());
     }
 
     @Test

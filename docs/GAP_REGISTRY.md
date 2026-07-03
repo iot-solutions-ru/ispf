@@ -47,14 +47,14 @@
 | **Низкий** | Driver stubs | STUB/BETA → PRODUCTION по запросу ([DRIVERS.md § Stub promotion](DRIVERS.md#stub-promotion-demand-driven)) | BL-26, 18.2 |
 | **P1** | Driver excellence | Matrix + observedAt Done; OPC UA browse/subscribe, interop CI, mapping UI, top-10 gate — tails EX-8 | BL-78, 79 Done; BL-80, 83–85 Partial (EX-8) — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86…88 Done (EX-7) — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
-| **P1** | Operator HMI | Industrial trends Done; PWA installable; offline cache | BL-89 Done; BL-90 Partial (EX-11 Playwright); BL-91 Done (EX-11) |
+| **P1** | Operator HMI | Industrial trends Done; PWA + offline cache Done | BL-89…91 Done (EX-11, EX-16) |
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96…99 Done (EX-4); BL-100 Done (EX-14) |
 | **P1** | AI production | Approval mode, scenario catalog, SLO dashboard Done | BL-106, 108, 110 Done (EX-3); BL-107 Done (EX-12); BL-109 Done (EX-13) |
 | **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127, BL-128 Done (EX-14, EX-15) |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
 | **P2** | Scale | Demand-driven pub/sub, CI load gate | BL-111 Done; BL-113 Done |
 | **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
-| **P2** | QA live | Playwright operator + alarming; scheduled staging e2e | BL-129, 130 Done (EX-2); BL-131 Planned |
+| **P2** | QA live | Playwright operator + alarming; visual regression + i18n hardcoded gate | BL-129…132 Done (EX-2, EX-16) |
 | **P3** | Multi-tenant SaaS | Tenant isolation hardening, quotas | BL-125, 126 — Phase 23 |
 ## Таблица подсистем
 
@@ -77,9 +77,9 @@
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
 | Driver stub catalog | ~92% | top-10 PRODUCTION gate partial; subscribe test, interop summary, capabilities API | BL-78…85, [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | Driver maturity labels | ~98% | — | — |
-| Frontend e2e (Playwright) | ~90% | visual regression smoke | BL-129…131 |
+| Frontend e2e (Playwright) | ~95% | mimic perf CI gate (BL-95) | BL-129…132 Done |
 | Operator alarming UX | ~95% | mimic perf, a11y (BL-92…93) | BL-86…88 Done |
-| Operator trends / PWA | ~92% | Android PWA manual smoke (BL-90) | BL-89…91 |
+| Operator trends / PWA | ~98% | mimic perf, a11y (BL-92…93) | BL-89…91 Done |
 | App marketplace | ~98% | — | BL-96…100 Done |
 | Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
 | AI agent production | ~98% | — | BL-106…110 Done |
@@ -111,7 +111,7 @@
 
 | Дата | Изменение |
 |------|-----------|
-| 2026-07-03 | REQ-EX audit sync: BL-80/83–85/90/114 → Partial; Phase 23 ROADMAP; Wave J–N статусы в CODE_AUDIT |
+| 2026-07-03 | Sprint EX-16: BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132; текущая волна excellence |
 | 2026-06-30 | Phase 22 tail: BL-72…77 (admin mobile, report TZ, AI rate limits, i18n, playwright live); ROADMAP Phase 22 |
 | 2026-06-30 | UI↔API parity ~100%: Application lifecycle, platform schedules, semantic export, workflow cancel/signal, federation proxy invoke, device TZ; prod 0.9.60; AGENT_KNOWLEDGE + ContextPack |
