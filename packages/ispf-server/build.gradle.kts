@@ -84,6 +84,10 @@ tasks.named<Test>("test") {
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("junit.jupiter.execution.parallel.enabled", "false")
     maxHeapSize = "2g"
+    // Many @SpringBootTest classes in one JVM can pollute shared async shutdown (CI flakes).
+    if (System.getenv("CI") != null) {
+        forkEvery = 1
+    }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
