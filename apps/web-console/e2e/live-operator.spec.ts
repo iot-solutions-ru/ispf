@@ -98,3 +98,47 @@ test.describe("operator PWA manifest", () => {
     expect(manifest.icons?.some((icon: { sizes: string }) => icon.sizes === "512x512")).toBeTruthy();
   });
 });
+
+test.describe("operator offline cache (mocked)", () => {
+  test("shows stale banner and cached shell after going offline", async ({ page, context }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=operator&app=demo");
+
+    await expect(page.getByTestId("operator-shell")).toContainText("Demo Application", {
+      timeout: 15_000,
+    });
+
+    await context.setOffline(true);
+    await page.reload();
+
+    await expect(page.getByTestId("operator-offline-banner")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("operator-shell")).toContainText("Demo Application");
+    await expect(page.getByTestId("operator-nav")).toBeVisible();
+
+    await context.setOffline(false);
+    await expect(page.getByTestId("operator-offline-banner")).toBeHidden({ timeout: 15_000 });
+  });
+});
+
+test.describe("operator PWA mobile viewport (mocked)", () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test("operator shell renders on mobile viewport", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await page.goto("/?mode=operator&app=demo");
+
+    await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("operator-nav")).toBeVisible();
+    const box = await page.getByTestId("operator-shell").boundingBox();
+    expect(box).not.toBeNull();
+    if (box) {
+      expect(box.width).toBeLessThanOrEqual(390);
+    }
+  });
+});

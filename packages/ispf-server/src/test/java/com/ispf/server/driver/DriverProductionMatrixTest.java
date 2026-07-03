@@ -7,10 +7,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * CI gate: PRODUCTION drivers must declare a loopback/integration test (BL-78).
- */
 class DriverProductionMatrixTest {
+
+    @Test
+    void top10IndustrialDriversAreProduction() {
+        for (String driverId : DriverProductionMatrix.TOP_10_INDUSTRIAL) {
+            assertEquals(
+                    DriverMaturity.PRODUCTION,
+                    DriverProductionMatrix.resolveMaturity(driverId),
+                    driverId
+            );
+            DriverProductionMatrix.Entry entry = DriverProductionMatrix.entry(driverId).orElseThrow();
+            assertTrue(
+                    DriverProductionMatrix.loopbackTestSourceExists(entry),
+                    driverId + " missing loopback test"
+            );
+        }
+    }
 
     @Test
     void productionDriversDeclareLoopbackTestSource() {
@@ -42,6 +55,16 @@ class DriverProductionMatrixTest {
         for (String driverId : new String[] { "modbus-tcp", "opcua", "bacnet", "s7", "snmp" }) {
             assertTrue(
                     DriverProductionMatrix.resolveCapabilities(driverId).contains(DriverProductionMatrix.Capability.OBSERVED_AT),
+                    driverId
+            );
+        }
+    }
+
+    @Test
+    void top10IndustrialDriversLinkedToInteropMatrix() {
+        for (String driverId : DriverProductionMatrix.TOP_10_INDUSTRIAL) {
+            assertTrue(
+                    DriverProductionMatrix.resolveInteropGradleModule(driverId).isPresent(),
                     driverId
             );
         }

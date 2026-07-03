@@ -252,7 +252,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 
 **Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Done; 20.16 — Done (backend + UI); 20.17 — **BL-41,42,43 Done**; 20.19 = Phase 18.1 smoke baseline; 20.20 — Done.
 
-**Следующие приоритеты:** [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) (BL-78…132); demand-driven driver promotion (Phase 18.2); ops ClickHouse history rollout по запросу (BL-114).
+**Следующие приоритеты:** [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) — после EX-8: BL-81, BL-82, BL-91; tails BL-80/83–85; ops ClickHouse rollout по запросу (BL-114).
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 
@@ -298,28 +298,28 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 
 | # | Тема | Track | BL | P | Статус |
 |---|------|-------|----|---|--------|
-| 23.1 | Driver production matrix + observedAt rollout | EX-DRIVER | 78–79, 85 | P1 | Planned |
-| 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Planned |
-| 23.3 | Quality flags + driver interop CI matrix | EX-DRIVER | 82–84 | P2 | Planned |
-| 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Planned |
-| 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Planned |
+| 23.1 | Driver production matrix + observedAt rollout | EX-DRIVER | 78–79, 85 | P1 | Partial (78–79 Done EX-1; 85 Partial EX-8) |
+| 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Partial (80 Partial EX-8; 81 Done EX-9) |
+| 23.3 | Quality flags + driver interop CI matrix | EX-DRIVER | 82–84 | P2 | Partial (82 Done EX-10; 83–84 Partial EX-8) |
+| 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Done (EX-7) |
+| 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Partial (89 Done; 90 Partial EX-2; 91 Planned) |
 | 23.6 | Mimic perf + a11y + symbol library + Lighthouse gate | EX-HMI | 92–95 | P2–P3 | Planned |
 | 23.7 | Solution catalog + bundle semver + CI template | EX-APP | 96–98 | P1–P2 | Done (EX-4) |
 | 23.8 | Third reference app (building/energy) + bundle signing | EX-APP | 99–100 | P1–P3 | Partial (99 Done EX-4) |
 | 23.9 | Haystack query runtime + API + auto-bind wizard | EX-SEM | 101–103 | P2 | Done (EX-5) |
 | 23.10 | Brick inference + semantic roundtrip | EX-SEM | 104–105 | P3 | Planned |
-| 23.11 | AI approval mode + audit export + scenario catalog | EX-AI | 106–108 | P1–P2 | Planned |
-| 23.12 | Operator agent allowlist + agent SLO dashboard | EX-AI | 109–110 | P2 | Planned |
-| 23.13 | Telemetry ingress ADR + MQTT worker + load CI gate | EX-SCALE | 111–113 | P2 | Planned |
-| 23.14 | ClickHouse prod playbook + horizontal scale docs | EX-SCALE | 114–115 | P1–P3 | Planned |
+| 23.11 | AI approval mode + audit export + scenario catalog | EX-AI | 106–108 | P1–P2 | Partial (106, 108 Done EX-3; 107 Planned) |
+| 23.12 | Operator agent allowlist + agent SLO dashboard | EX-AI | 109–110 | P2 | Partial (110 Done EX-3; 109 Planned) |
+| 23.13 | Telemetry ingress ADR + MQTT worker + load CI gate | EX-SCALE | 111–113 | P2 | Done (111 EX-6; 112 Cancelled; 113 EX-7) |
+| 23.14 | ClickHouse prod playbook + horizontal scale docs | EX-SCALE | 114–115 | P1–P3 | Partial (114 Partial EX-1; 115 Planned) |
 | 23.15 | Historian dual-write migration tooling | EX-SCALE | 116 | P3 | Planned |
 | 23.16 | Edge store-forward + peer health SLO | EX-FED | 117–118 | P2 | Planned |
 | 23.17 | Selective subtree sync + federation chaos tests | EX-FED | 119–120 | P3 | Planned |
 | 23.18 | OEE pattern + BPMN timers + escalation templates | EX-MES | 121–123 | P2–P3 | Planned |
 | 23.19 | ISA-95 catalog documentation | EX-MES | 124 | P3 | Planned |
 | 23.20 | Tenant isolation + per-tenant quotas | EX-OPS | 125–126 | P3 | Planned |
-| 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Planned |
-| 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Planned |
+| 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Done (EX-14, EX-15) |
+| 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Done (EX-2) |
 | 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Planned |
 
 **Горизонты инвестиций:**
@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (Sprint EX-1):** BL-78, BL-79, BL-86, BL-87, BL-114. Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-15):** BL-90 (Android device sign-off), BL-131 (visual regression). Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

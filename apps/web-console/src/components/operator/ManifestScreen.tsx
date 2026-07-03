@@ -16,6 +16,11 @@ import ManifestActionForm from "./ManifestActionForm";
 import ManifestChartPanel from "./ManifestChartPanel";
 import ManifestEmbeddedDashboard from "./ManifestEmbeddedDashboard";
 import ManifestMapPanel from "./ManifestMapPanel";
+import {
+  cacheManifestScreenSnapshot,
+  readCachedManifestScreenSnapshot,
+  screenSupportsOfflineCache,
+} from "../../utils/operatorOfflineCache";
 
 interface ManifestScreenProps {
   screen: OperatorManifestScreen;
@@ -30,23 +35,42 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
   const [selectedRow, setSelectedRow] = useState<Record<string, unknown> | null>(null);
   const selectedKey = selectedRow ? String(selectedRow[selectionKey] ?? "") : null;
 
+  const offlineCacheEnabled = screenSupportsOfflineCache(screen);
+
   const tableQuery = useQuery({
     queryKey: ["bff-table", screen.id, screen.table?.objectPath, screen.table?.functionName, screen.table?.input],
     enabled: Boolean(screen.table),
     refetchInterval: screen.table?.refreshIntervalMs,
     queryFn: async () => {
-      const table = screen.table!;
-      const wire = await bffInvoke<Array<Record<string, unknown>> | Record<string, unknown>>({
-        objectPath: table.objectPath,
-        functionName: table.functionName,
-        input: toBffInput(table.input),
-        wireProfile,
-      });
-      const result = assertBffOk(wire);
-      if (Array.isArray(result)) {
-        return { rows: result, labels: wire.result_field_labels };
+      try {
+        const table = screen.table!;
+        const wire = await bffInvoke<Array<Record<string, unknown>> | Record<string, unknown>>({
+          objectPath: table.objectPath,
+          functionName: table.functionName,
+          input: toBffInput(table.input),
+          wireProfile,
+        });
+        const result = assertBffOk(wire);
+        const payload = Array.isArray(result)
+          ? { rows: result, labels: wire.result_field_labels }
+          : { rows: [result as Record<string, unknown>], labels: wire.result_field_labels };
+        if (offlineCacheEnabled) {
+          cacheManifestScreenSnapshot(appId, screen.id, {
+            kind: "table",
+            rows: payload.rows,
+            labels: payload.labels,
+          });
+        }
+        return payload;
+      } catch (error) {
+        if (offlineCacheEnabled) {
+          const cached = readCachedManifestScreenSnapshot(appId, screen.id);
+          if (cached?.kind === "table") {
+            return { rows: cached.rows, labels: cached.labels };
+          }
+        }
+        throw error;
       }
-      return { rows: [result as Record<string, unknown>], labels: wire.result_field_labels };
     },
   });
 
@@ -55,10 +79,33 @@ export default function ManifestScreen({ screen, wireProfile, appId, onStatus }:
     enabled: Boolean(screen.report),
     refetchInterval: screen.report?.refreshIntervalMs,
     queryFn: async () => {
-      const report = screen.report!;
-      const result = await runReport(appId, report.reportId, report.parameters);
-      const labels = Object.fromEntries(result.columns.map((col) => [col.field, col.label]));
-      return { rows: result.rows, labels, truncated: result.truncated };
+      try {
+        const report = screen.report!;
+        const result = await runReport(appId, report.reportId, report.parameters);
+        const labels = Object.fromEntries(result.columns.map((col) => [col.field, col.label]));
+        const payload = { rows: result.rows, labels, truncated: result.truncated };
+        if (offlineCacheEnabled) {
+          cacheManifestScreenSnapshot(appId, screen.id, {
+            kind: "report",
+            rows: payload.rows,
+            labels: payload.labels,
+            truncated: payload.truncated,
+          });
+        }
+        return payload;
+      } catch (error) {
+        if (offlineCacheEnabled) {
+          const cached = readCachedManifestScreenSnapshot(appId, screen.id);
+          if (cached?.kind === "report") {
+            return {
+              rows: cached.rows,
+              labels: cached.labels ?? {},
+              truncated: cached.truncated,
+            };
+          }
+        }
+        throw error;
+      }
     },
   });
 

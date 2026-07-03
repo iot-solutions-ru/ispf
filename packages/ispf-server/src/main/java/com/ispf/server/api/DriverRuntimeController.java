@@ -51,8 +51,19 @@ public class DriverRuntimeController {
     }
 
     @PostMapping("/poll")
-    public DriverRuntimeService.DriverRuntimeStatus poll(@RequestParam String devicePath) {
-        return driverRuntimeService.pollNow(devicePath);
+    public DriverRuntimeService.DriverRuntimeStatus poll(
+            @RequestParam String devicePath,
+            @RequestParam(required = false) String pointId
+    ) {
+        return driverRuntimeService.pollNow(devicePath, pointId);
+    }
+
+    @GetMapping("/browse")
+    public java.util.List<com.ispf.driver.DriverDiscovery.Node> browse(
+            @RequestParam String devicePath,
+            @RequestParam(required = false) String nodeId
+    ) {
+        return driverRuntimeService.browseDriverChildren(devicePath, nodeId);
     }
 
     @PostMapping("/write")

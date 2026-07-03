@@ -7,6 +7,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
 import com.ispf.server.object.ObjectManager;
@@ -53,6 +54,7 @@ public class DriverRuntimeService {
     private final DriverFactory driverFactory;
     private final ObjectMapper objectMapper;
     private final Environment environment;
+    private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final ScheduledExecutorService scheduler;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
@@ -61,12 +63,14 @@ public class DriverRuntimeService {
             DriverFactory driverFactory,
             ObjectMapper objectMapper,
             Environment environment,
+            DeviceTelemetryPolicyService telemetryPolicyService,
             @Value("${ispf.driver.scheduler-threads:4}") int schedulerThreads
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
         this.environment = environment;
+        this.telemetryPolicyService = telemetryPolicyService;
         int threads = Math.max(1, schedulerThreads);
         this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
             Thread thread = new Thread(r, "ispf-driver-runtime");
@@ -245,6 +249,7 @@ public class DriverRuntimeService {
     }
 
     private void persistDriverBinding(String devicePath, DriverBinding binding) {
+        telemetryPolicyService.invalidateCache(devicePath);
         objectManager.setSystemVariableValue(
                 devicePath,
                 "driverId",
@@ -275,11 +280,17 @@ public class DriverRuntimeService {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to persist driver configuration", e);
         }
+        telemetryPolicyService.invalidateCache(devicePath);
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus pollNow(String devicePath) {
-        poll(devicePath);
+        return pollNow(devicePath, null);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DriverRuntimeStatus pollNow(String devicePath, String pointId) {
+        poll(devicePath, pointId);
         return status(devicePath).orElseThrow();
     }
 
@@ -323,13 +334,60 @@ public class DriverRuntimeService {
         return status(devicePath).orElseThrow();
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public java.util.List<DriverDiscovery.Node> browseDriverChildren(String devicePath, String parentNodeId) {
+        ActiveDriver active = activeDrivers.get(devicePath);
+        if (active != null && active.driver() instanceof DriverDiscovery discovery) {
+            try {
+                return discovery.browseChildren(parentNodeId);
+            } catch (DriverException e) {
+                throw new IllegalStateException("Driver browse failed: " + e.getMessage(), e);
+            }
+        }
+        DriverBinding binding = readBinding(devicePath).orElseThrow(
+                () -> new IllegalArgumentException("No driver binding for: " + devicePath)
+        );
+        DeviceDriver driver = driverFactory.create(binding.driverId());
+        if (!(driver instanceof DriverDiscovery discovery)) {
+            throw new IllegalArgumentException("Driver does not support browse: " + binding.driverId());
+        }
+        PlatformObject device = objectManager.require(devicePath);
+        ServerDriverObject driverObject = new ServerDriverObject(
+                device,
+                binding.configuration(),
+                update -> {
+                },
+                entry -> log.debug("[driver:{}] {} {}", devicePath, entry.level(), entry.message())
+        );
+        driver.initialize(driverObject);
+        try {
+            driver.connect();
+            return discovery.browseChildren(parentNodeId);
+        } catch (DriverException e) {
+            throw new IllegalStateException("Driver browse failed: " + e.getMessage(), e);
+        } finally {
+            driver.disconnect();
+        }
+    }
+
     private void poll(String devicePath) {
+        poll(devicePath, null);
+    }
+
+    private void poll(String devicePath, String pointId) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
             return;
         }
         try {
-            active.driver().readPoints(active.binding().pointMappings());
+            Map<String, String> mappings = active.binding().pointMappings();
+            if (pointId != null && !pointId.isBlank()) {
+                if (!mappings.containsKey(pointId)) {
+                    throw new IllegalArgumentException("Unknown point mapping: " + pointId);
+                }
+                mappings = Map.of(pointId, mappings.get(pointId));
+            }
+            active.driver().readPoints(mappings);
             boolean connected = active.driver().isConnected();
             ActiveDriver next = new ActiveDriver(
                     active.driver(),

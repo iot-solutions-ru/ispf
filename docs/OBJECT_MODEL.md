@@ -108,6 +108,10 @@ CRUD пользователей — через `POST/PUT/DELETE /api/v1/security
 
 Типы полей (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DATETIME`, `BINARY`, `RECORD`, `RECORD_LIST`.
 
+### Telemetry quality (BL-82)
+
+Optional field `quality` on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([ADR-0025](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets omit `BAD` samples (line gap); historian quality column is follow-up work.
+
 ### DataRecord
 
 Табличная структура со строками данных. Типичный формат одной строки для REST:

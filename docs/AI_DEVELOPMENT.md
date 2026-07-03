@@ -96,6 +96,8 @@ Request body for validate/dry-run:
 
 Audit log: table `ai_tool_audit` (migration `V37__ai_tool_audit.sql`).
 
+**Retention:** rows are append-only; no automatic purge in OSS. Session turns in `agent_sessions` / `agent_turns` follow `ispf.ai.agent-session-ttl-hours` (default 24h). For compliance, export via `GET .../audit?format=csv` before TTL eviction. `app_id` column stores agent `sessionId` for tree-first runs.
+
 ---
 
 ## Tree-first agent (FW-44)
@@ -113,6 +115,7 @@ ReAct loop on the platform with a hard step cap (default 96, `ispf.ai.agent-max-
 | `POST /api/v1/ai/agent/sessions/{id}/messages` | Send message → run until finish/cancel/limit |
 | `POST /api/v1/ai/agent/sessions/{id}/cancel` | Request cooperative cancel of in-flight turn |
 | `DELETE /api/v1/ai/agent/sessions/{id}` | Delete session (clear context) |
+| `GET /api/v1/ai/agent/sessions/{id}/audit` | Admin-only audit export (`format=json` default, `format=csv` for compliance) |
 | `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
 
 Create session:

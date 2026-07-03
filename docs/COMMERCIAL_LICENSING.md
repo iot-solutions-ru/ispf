@@ -72,9 +72,12 @@ CLI: [tools/license-builder/README.md](../tools/license-builder/README.md).
 
 | Условие | Результат |
 |---------|-----------|
-| Нет `license` | Deploy как раньше |
-| `license` + `enforce=false` | WARN при ошибке, deploy продолжается |
-| `license` + `enforce=true` + invalid | HTTP 403 |
+| Нет `license` | Deploy как раньше (если `require-signed-bundles=false`) |
+| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([BL-100](EXCELLENCE_BACKLOG.md#bl-100--bundle-trust-signing-optional)) |
+| `license` + `enforce=false` + invalid | WARN при ошибке, deploy продолжается (кроме `require-signed-bundles=true` → 403) |
+| `license` + (`enforce=true` **или** `require-signed-bundles=true`) + invalid | HTTP 403 |
+
+Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES`. См. [DEPLOYMENT.md § Bundle signing](DEPLOYMENT.md#bundle-signing-bl-100).
 
 ## Production key rotation (ops)
 
@@ -95,3 +98,4 @@ Installation ID (`GET /api/v1/platform/installation-id`) при ротации *
 
 - [PLUGINS.md](PLUGINS.md)
 - [SOLUTION_DEVELOPER_PUBLIC_API.md](SOLUTION_DEVELOPER_PUBLIC_API.md)
+- [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md) — offline install/update (BL-128)

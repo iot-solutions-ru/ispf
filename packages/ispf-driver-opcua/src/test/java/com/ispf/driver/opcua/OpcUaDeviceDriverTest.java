@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.opcuaserver.OpcUaServerDeviceDriver;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.net.ServerSocket;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -39,6 +41,75 @@ class OpcUaDeviceDriverTest {
             serverDriver.disconnect();
             serverDriver = null;
         }
+    }
+
+    @Test
+    void subscribeModeReceivesPushUpdates() throws Exception {
+        int port = freePort();
+        serverDriver = startServer(port);
+        String nodeId = serverNodeId(serverDriver, NODE);
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "endpointUrl", endpointUrl(port),
+                "timeoutMs", "10000",
+                "readMode", "subscribe"
+        ));
+        OpcUaDeviceDriver client = new OpcUaDeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("temp", nodeId));
+
+        waitForVariable(clientObject, "temp", 5000);
+        assertEquals("GOOD", clientObject.variables.get("temp").firstRow().get("quality"));
+
+        client.writePoint("temp", DataRecord.single(VALUE_SCHEMA, Map.of("value", "88.0")));
+        waitForVariableValue(clientObject, "temp", "88", 5000);
+
+        client.disconnect();
+    }
+
+    private static void waitForVariable(StubDriverObject clientObject, String name, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (clientObject.variables.containsKey(name)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Timed out waiting for variable " + name);
+    }
+
+    private static void waitForVariableValue(
+            StubDriverObject clientObject,
+            String name,
+            String expectedFragment,
+            long timeoutMs
+    ) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            DataRecord record = clientObject.variables.get(name);
+            if (record != null && record.firstRow().get("value").toString().contains(expectedFragment)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Timed out waiting for " + name + " to contain " + expectedFragment);
+    }
+
+    @Test
+    void browseChildrenFindsTemperatureNode() throws Exception {
+        int port = freePort();
+        serverDriver = startServer(port);
+        String nodeId = serverNodeId(serverDriver, NODE);
+
+        List<OpcUaBrowseSupport.BrowseNode> nodes = OpcUaBrowseSupport.browseChildren(
+                endpointUrl(port),
+                null,
+                10_000
+        );
+
+        assertTrue(nodes.stream().anyMatch(node -> "IspfVariables".equals(node.displayName())));
     }
 
     @Test

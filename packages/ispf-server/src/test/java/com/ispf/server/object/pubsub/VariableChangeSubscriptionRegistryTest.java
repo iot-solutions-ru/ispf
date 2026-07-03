@@ -1,5 +1,6 @@
 package com.ispf.server.object.pubsub;
 
+import com.ispf.core.dashboard.DashboardContextConstants;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectTree;
@@ -106,6 +107,18 @@ class VariableChangeSubscriptionRegistryTest {
 
         assertThat(interest.workflowIndex()).isTrue();
         assertThat(interest.automation()).isTrue();
+    }
+
+    @Test
+    void detectsDashboardContextBindingInterest() {
+        VariableChangeInterest interest = registry.interest(
+                "root.platform.dashboards.demo-sensor",
+                DashboardContextConstants.VARIABLE
+        );
+
+        assertThat(interest.bindings()).isTrue();
+        assertThat(interest.automation()).isTrue();
+        assertThat(interest.hasAny()).isTrue();
     }
 
     @Test

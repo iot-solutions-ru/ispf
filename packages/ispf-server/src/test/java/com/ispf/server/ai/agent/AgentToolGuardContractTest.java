@@ -94,4 +94,29 @@ class AgentToolGuardContractTest {
     private static Map<String, Object> guardStep(String error) {
         return Map.of("type", "guard", "error", error);
     }
+
+    @Test
+    void operatorAllowlistIncludesReportAndHistoryTools() {
+        assertThat(OperatorAgentToolAllowlist.isAllowed("list_reports")).isTrue();
+        assertThat(OperatorAgentToolAllowlist.isAllowed("run_report")).isTrue();
+        assertThat(OperatorAgentToolAllowlist.isAllowed("get_variable_history")).isTrue();
+    }
+
+    @Test
+    void operatorAllowlistRejectsMutatingTools() {
+        for (String toolName : OperatorAgentToolAllowlist.MUTATING_TOOL_SAMPLES) {
+            assertThat(OperatorAgentToolAllowlist.isAllowed(toolName))
+                    .as("operator must not allow %s", toolName)
+                    .isFalse();
+        }
+    }
+
+    @Test
+    void operatorAllowlistHasNoOverlapWithMutatingSamples() {
+        for (String toolName : OperatorAgentToolAllowlist.MUTATING_TOOL_SAMPLES) {
+            assertThat(OperatorAgentToolAllowlist.ALLOWED_TOOLS)
+                    .as("mutating tool in allowlist: %s", toolName)
+                    .doesNotContain(toolName);
+        }
+    }
 }

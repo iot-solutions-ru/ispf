@@ -28,6 +28,10 @@ import { nextWidgetZIndex } from "./widgetLayerUtils";
 import { useDashboardContextSync } from "../../hooks/useDashboardContextSync";
 import { useMobileLayout } from "../../hooks/useMobileLayout";
 import { getStoredSession } from "../../auth/session";
+import {
+  cacheDashboardView,
+  readCachedDashboardView,
+} from "../../utils/operatorOfflineCache";
 
 interface DashboardBuilderProps {
   path: string;
@@ -170,7 +174,23 @@ export default function DashboardBuilder({
 
   const dashboard = useQuery({
     queryKey: ["dashboard", path],
-    queryFn: () => fetchDashboard(path),
+    queryFn: async () => {
+      try {
+        const data = await fetchDashboard(path);
+        if (operatorMode) {
+          cacheDashboardView(path, data);
+        }
+        return data;
+      } catch (error) {
+        if (operatorMode) {
+          const cached = readCachedDashboardView(path);
+          if (cached) {
+            return cached;
+          }
+        }
+        throw error;
+      }
+    },
   });
 
   const objects = useQuery({

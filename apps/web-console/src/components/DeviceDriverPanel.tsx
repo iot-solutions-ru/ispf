@@ -14,6 +14,15 @@ import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBa
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
+import {
+  hasDriverMappingErrors,
+  validateDriverPointMappingsJson,
+} from "../utils/driverPointMappingValidation";
+import {
+  buildHaystackMappingTemplate,
+  COMMON_HAYSTACK_MARKER_TAGS,
+} from "../utils/haystackMappingHints";
+import { pollDriver, browseDriverNodes } from "../api/drivers";
 
 interface DeviceDriverPanelProps {
   devicePath: string;
@@ -83,11 +92,35 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const [configJson, setConfigJson] = useState("{}");
   const [mappingsJson, setMappingsJson] = useState("{}");
   const [formError, setFormError] = useState<string | null>(null);
+  const [mappingTestMessage, setMappingTestMessage] = useState<string | null>(null);
+  const [testReadPointId, setTestReadPointId] = useState("");
+
+  const mappingKeys = useMemo(() => {
+    try {
+      const parsed = JSON.parse(mappingsJson) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return Object.keys(parsed as Record<string, unknown>).sort();
+      }
+    } catch {
+      // invalid JSON — validation panel shows errors
+    }
+    return [];
+  }, [mappingsJson]);
 
   const variablesQuery = useQuery({
     queryKey: ["variables", devicePath],
     queryFn: () => fetchVariables(devicePath),
   });
+
+  const deviceVariableNames = useMemo(
+    () => (variablesQuery.data ?? []).map((variable) => variable.name),
+    [variablesQuery.data],
+  );
+
+  const mappingValidation = useMemo(
+    () => validateDriverPointMappingsJson(mappingsJson, deviceVariableNames),
+    [mappingsJson, deviceVariableNames],
+  );
 
   const driversQuery = useQuery({
     queryKey: ["drivers"],
@@ -124,6 +157,27 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["driver-status", devicePath] });
     queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
+  };
+
+  const applyHaystackTemplate = (variableKey: string, tags: string[]) => {
+    try {
+      const parsed = JSON.parse(mappingsJson) as Record<string, unknown>;
+      const current = parsed[variableKey];
+      const address =
+        typeof current === "string"
+          ? current
+          : current && typeof current === "object" && !Array.isArray(current)
+            ? String((current as Record<string, unknown>).point
+                ?? (current as Record<string, unknown>).address
+                ?? (current as Record<string, unknown>).nodeId
+                ?? "")
+            : "";
+      parsed[variableKey] = buildHaystackMappingTemplate(variableKey, address || "ADDRESS", tags);
+      setMappingsJson(JSON.stringify(parsed, null, 2));
+      setMappingTestMessage(t("inspector:driver.haystackTemplateApplied", { key: variableKey }));
+    } catch {
+      setMappingTestMessage(t("inspector:driver.haystackTemplateFailed"));
+    }
   };
 
   const startMutation = useMutation({
@@ -172,6 +226,34 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
     },
     onSuccess: invalidate,
     onError: (error: Error) => setFormError(error.message),
+  });
+
+  const pollMutation = useMutation({
+    mutationFn: () => pollDriver(devicePath, testReadPointId || undefined),
+    onSuccess: () => {
+      setMappingTestMessage(
+        testReadPointId
+          ? t("inspector:driver.mappingsTestReadPointOk", { pointId: testReadPointId })
+          : t("inspector:driver.mappingsTestReadOk"),
+      );
+      queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
+    },
+    onError: (error: Error) => setMappingTestMessage(error.message),
+  });
+
+  const browseMutation = useMutation({
+    mutationFn: () => browseDriverNodes(devicePath),
+    onSuccess: (nodes) => {
+      if (nodes.length === 0) {
+        setMappingTestMessage(t("inspector:driver.browseEmpty"));
+        return;
+      }
+      const first = nodes.find((node) => node.nodeClass === "Variable") ?? nodes[0];
+      const next = { ...mappingValidation.mappings, [first.displayName || "point"]: first.nodeId };
+      setMappingsJson(JSON.stringify(next, null, 2));
+      setMappingTestMessage(t("inspector:driver.browseImported", { count: nodes.length }));
+    },
+    onError: (error: Error) => setMappingTestMessage(error.message),
   });
 
   const actionError =
@@ -330,10 +412,99 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                   className="mono"
                   rows={6}
                   value={mappingsJson}
-                  onChange={(e) => setMappingsJson(e.target.value)}
+                  onChange={(e) => {
+                    setMappingsJson(e.target.value);
+                    setMappingTestMessage(null);
+                  }}
                   spellCheck={false}
                 />
               </label>
+              {mappingValidation.issues.length > 0 && (
+                <ul className="driver-mapping-issues full">
+                  {mappingValidation.issues.map((issue) => (
+                    <li
+                      key={`${issue.code}-${issue.key ?? issue.message}`}
+                      className={
+                        issue.level === "error"
+                          ? "hint error"
+                          : issue.level === "hint"
+                            ? "hint driver-mapping-hint"
+                            : "hint warning"
+                      }
+                    >
+                      <span>{issue.message}</span>
+                      {issue.level === "hint" && issue.key && issue.suggestedTags && (
+                        <button
+                          type="button"
+                          className="btn small driver-haystack-apply"
+                          onClick={() => applyHaystackTemplate(issue.key!, issue.suggestedTags!)}
+                        >
+                          {t("inspector:driver.haystackApplyTemplate")}
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="driver-haystack-tag-chips full">
+                <span className="driver-runtime-label">{t("inspector:driver.haystackCommonTags")}</span>
+                {COMMON_HAYSTACK_MARKER_TAGS.slice(0, 10).map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="btn small"
+                    title={t("inspector:driver.haystackTagChipHint")}
+                    onClick={() => {
+                      navigator.clipboard.writeText(`"${tag}"`).catch(() => {});
+                      setMappingTestMessage(t("inspector:driver.haystackTagCopied", { tag }));
+                    }}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="form-actions full">
+                {mappingKeys.length > 0 && (
+                  <label>
+                    {t("inspector:driver.mappingsTestReadPoint")}
+                    <select
+                      value={testReadPointId}
+                      onChange={(e) => {
+                        setTestReadPointId(e.target.value);
+                        setMappingTestMessage(null);
+                      }}
+                    >
+                      <option value="">{t("inspector:driver.mappingsTestReadAll")}</option>
+                      {mappingKeys.map((key) => (
+                        <option key={key} value={key}>
+                          {key}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={isBusy || pollMutation.isPending || !hasBinding}
+                  onClick={() => pollMutation.mutate()}
+                >
+                  {t("inspector:driver.mappingsTestRead")}
+                </button>
+                {driverId === "opcua" && (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={isBusy || browseMutation.isPending || !hasBinding}
+                    onClick={() => browseMutation.mutate()}
+                  >
+                    {t("inspector:driver.browseOpcUa")}
+                  </button>
+                )}
+              </div>
+              {mappingTestMessage && (
+                <p className="hint full">{mappingTestMessage}</p>
+              )}
             </div>
             <div className="form-actions">
               <button type="submit" className="btn" disabled={isBusy}>

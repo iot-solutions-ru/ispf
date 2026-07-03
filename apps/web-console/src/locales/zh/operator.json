@@ -127,5 +127,8 @@
   "workQueue.complete": "完成",
   "workQueue.empty": "此操作员应用程序没有未完成的任务",
   "workQueue.loadError": "加载队列失败",
-  "workQueue.title": "任务队列"
+  "workQueue.title": "任务队列",
+  "offline.staleBanner": "离线 — 显示 {{time}} 的缓存数据",
+  "offline.reconnecting": "已恢复在线 — 正在刷新…",
+  "offline.unknownTime": "未知时间"
 }

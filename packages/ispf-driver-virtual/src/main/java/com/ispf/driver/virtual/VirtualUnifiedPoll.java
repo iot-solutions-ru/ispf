@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
+import com.ispf.driver.TelemetryQuality;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -27,6 +28,7 @@ final class VirtualUnifiedPoll {
     static final DataSchema MEASUREMENT_SCHEMA = DataSchema.builder("measurement")
             .field("value", FieldType.DOUBLE)
             .field("unit", FieldType.STRING)
+            .field("quality", FieldType.STRING)
             .build();
 
     static final DataSchema WAVE_SCHEMA = DataSchema.builder("waveReading")
@@ -146,7 +148,7 @@ final class VirtualUnifiedPoll {
                 "lastSeen", observedAt.toString()
         )));
         updateAt(driverObject, observedAt,"temperature", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
-                "value", temperature, "unit", "C"
+                "value", temperature, "unit", "C", "quality", demoQuality(state.pollSequence)
         )));
         updateAt(driverObject, observedAt,"pressure", DataRecord.single(MEASUREMENT_SCHEMA, Map.of(
                 "value", pressure, "unit", "kPa"
@@ -312,6 +314,14 @@ final class VirtualUnifiedPoll {
             }
             return Boolean.parseBoolean(raw);
         }
+    }
+
+    private static String demoQuality(int pollSequence) {
+        return switch ((pollSequence / 8) % 3) {
+            case 0 -> TelemetryQuality.normalize(TelemetryQuality.Level.GOOD);
+            case 1 -> TelemetryQuality.normalize(TelemetryQuality.Level.UNCERTAIN);
+            default -> TelemetryQuality.normalize(TelemetryQuality.Level.BAD);
+        };
     }
 
     private static void updateAt(

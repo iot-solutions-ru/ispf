@@ -28,6 +28,7 @@ class VirtualUnifiedProfileTest {
         driver.readPoints(Map.of());
 
         assertTrue(updates.containsKey("temperature"));
+        assertEquals("GOOD", updates.get("temperature").firstRow().get("quality"));
         assertTrue(updates.containsKey("coordinates"));
         assertTrue(updates.containsKey("telemetryTable"));
         assertTrue(updates.containsKey("eventLog"));

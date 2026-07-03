@@ -94,6 +94,22 @@ public class AgentSessionRepository {
                 sessionId,
                 actor
         );
+        return hydrateSession(sessionId, sessions);
+    }
+
+    public Optional<AgentSession> findBySessionId(String sessionId) {
+        List<AgentSession> sessions = jdbcTemplate.query("""
+                SELECT session_id, actor, root_path, title, run_state_json, created_at, updated_at
+                FROM %s
+                WHERE session_id = ?
+                """.formatted(sessionsTable),
+                (rs, rowNum) -> mapSessionHeader(rs),
+                sessionId
+        );
+        return hydrateSession(sessionId, sessions);
+    }
+
+    private Optional<AgentSession> hydrateSession(String sessionId, List<AgentSession> sessions) {
         if (sessions.isEmpty()) {
             return Optional.empty();
         }

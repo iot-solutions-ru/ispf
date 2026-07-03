@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { getAuthHeaders } from "../auth/session";
 import type { OperatorManifest } from "../types/operatorManifest";
+import {
+  cacheOperatorManifest,
+  readCachedOperatorManifest,
+} from "../utils/operatorOfflineCache";
 
 async function loadManifestFromApi(appId: string): Promise<OperatorManifest | null> {
   const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/operator-manifest`, {
@@ -24,15 +28,26 @@ async function loadManifestFromPublic(appId: string): Promise<OperatorManifest> 
 }
 
 async function loadManifest(appId: string): Promise<OperatorManifest> {
-  console.warn(
-    "[ISPF] Static operator manifest (operator-apps/*.manifest.json) is deprecated. "
-    + "Use Application bundle operatorUi / wire profile instead."
-  );
-  const fromApi = await loadManifestFromApi(appId);
-  if (fromApi) {
-    return fromApi;
+  try {
+    console.warn(
+      "[ISPF] Static operator manifest (operator-apps/*.manifest.json) is deprecated. "
+      + "Use Application bundle operatorUi / wire profile instead."
+    );
+    const fromApi = await loadManifestFromApi(appId);
+    if (fromApi) {
+      cacheOperatorManifest(appId, fromApi);
+      return fromApi;
+    }
+    const fromPublic = await loadManifestFromPublic(appId);
+    cacheOperatorManifest(appId, fromPublic);
+    return fromPublic;
+  } catch (error) {
+    const cached = readCachedOperatorManifest(appId);
+    if (cached) {
+      return cached;
+    }
+    throw error;
   }
-  return loadManifestFromPublic(appId);
 }
 
 export function useOperatorManifest(appId: string | null) {

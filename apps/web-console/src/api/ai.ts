@@ -359,6 +359,47 @@ export function fetchAgentSession(sessionId: string): Promise<AiAgentSession> {
   });
 }
 
+export interface AiAgentAuditExport {
+  sessionId: string;
+  sessionTitle: string;
+  actor: string;
+  exportedAt: string;
+  auditRows: Record<string, unknown>[];
+  toolInvocations: Record<string, unknown>[];
+  auditRowCount: number;
+  toolInvocationCount: number;
+}
+
+export function fetchAgentAuditExport(sessionId: string): Promise<AiAgentAuditExport> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/audit`, {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Audit export failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export async function downloadAgentAuditCsv(sessionId: string): Promise<void> {
+  const response = await fetch(
+    `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/audit?format=csv`,
+    { headers: getAuthHeaders(), cache: "no-store" },
+  );
+  if (!response.ok) {
+    await throwAiHttpError(response, `Audit CSV export failed: ${response.status}`);
+    return;
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `agent-audit-${sessionId}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export interface AiAgentAcceptedResponse {
   status: "ACCEPTED";
   sessionId: string;

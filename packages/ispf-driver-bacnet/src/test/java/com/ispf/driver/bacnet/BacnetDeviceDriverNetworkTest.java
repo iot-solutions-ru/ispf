@@ -8,14 +8,20 @@ import com.serotonin.bacnet4j.RemoteDevice;
 import com.serotonin.bacnet4j.npdu.test.TestNetwork;
 import com.serotonin.bacnet4j.npdu.test.TestNetworkMap;
 import com.serotonin.bacnet4j.obj.AnalogValueObject;
+import com.serotonin.bacnet4j.obj.BinaryValueObject;
+import com.serotonin.bacnet4j.obj.MultistateValueObject;
 import com.serotonin.bacnet4j.transport.DefaultTransport;
+import com.serotonin.bacnet4j.type.constructed.BACnetArray;
+import com.serotonin.bacnet4j.type.enumerated.BinaryPV;
 import com.serotonin.bacnet4j.type.enumerated.EngineeringUnits;
+import com.serotonin.bacnet4j.type.primitive.CharacterString;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -69,7 +75,15 @@ class BacnetDeviceDriverNetworkTest {
                 1,
                 "setpoint",
                 18.5f,
-                EngineeringUnits.noUnits,
+                EngineeringUnits.degreesCelsius,
+                false
+        ).supportWritable();
+
+        new BinaryValueObject(
+                serverDevice,
+                2,
+                "pump",
+                BinaryPV.inactive,
                 false
         ).supportWritable();
 
@@ -83,10 +97,100 @@ class BacnetDeviceDriverNetworkTest {
         driver.readPoints(Map.of("setpoint", "analog-value:1:present-value"));
         DataRecord initial = driverObject.variables.get("setpoint");
         assertTrue(initial.firstRow().get("value").toString().contains("18.5"));
+        assertEquals("°C", initial.firstRow().get("unit"));
 
         driver.writePoint("setpoint", DataRecord.single(WRITE_SCHEMA, Map.of("value", 27.25)));
         DataRecord updated = driverObject.variables.get("setpoint");
         assertTrue(updated.firstRow().get("value").toString().contains("27.25"));
+
+        driver.disconnect();
+    }
+
+    @Test
+    @Timeout(10)
+    void discoverRemoteDeviceViaWhoIsOverTestNetwork() throws Exception {
+        networkMap = new TestNetworkMap();
+        serverNetwork = new TestNetwork(networkMap, SERVER_NODE, 0);
+        clientNetwork = new TestNetwork(networkMap, CLIENT_NODE, 0);
+
+        serverDevice = new LocalDevice(SERVER_DEVICE_ID, new DefaultTransport(serverNetwork));
+        clientDevice = new LocalDevice(CLIENT_DEVICE_ID, new DefaultTransport(clientNetwork));
+        serverDevice.initialize();
+        clientDevice.initialize();
+
+        new AnalogValueObject(
+                serverDevice,
+                1,
+                "setpoint",
+                12.0f,
+                EngineeringUnits.noUnits,
+                false
+        ).supportWritable();
+
+        BacnetDeviceDriverTest.StubDriverObject driverObject = new BacnetDeviceDriverTest.StubDriverObject(Map.of(
+                "discoveryMode", "whoIs",
+                "remoteDeviceId", String.valueOf(SERVER_DEVICE_ID),
+                "localDeviceId", String.valueOf(CLIENT_DEVICE_ID),
+                "timeoutMs", "5000"
+        ));
+        BacnetDeviceDriver driver = new BacnetDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connectDiscoveredOnLocalDevice(clientDevice);
+
+        assertTrue(driver.isConnected());
+        driver.readPoints(Map.of("setpoint", "analog-value:1:present-value"));
+        assertTrue(driverObject.variables.get("setpoint").firstRow().get("value").toString().contains("12"));
+
+        driver.disconnect();
+    }
+
+    @Test
+    @Timeout(10)
+    void readsBinaryAndMultiStatePresentValues() throws Exception {
+        networkMap = new TestNetworkMap();
+        serverNetwork = new TestNetwork(networkMap, SERVER_NODE, 0);
+        clientNetwork = new TestNetwork(networkMap, CLIENT_NODE, 0);
+
+        serverDevice = new LocalDevice(SERVER_DEVICE_ID, new DefaultTransport(serverNetwork));
+        clientDevice = new LocalDevice(CLIENT_DEVICE_ID, new DefaultTransport(clientNetwork));
+        serverDevice.initialize();
+        clientDevice.initialize();
+
+        new BinaryValueObject(
+                serverDevice,
+                2,
+                "pump",
+                BinaryPV.active,
+                false
+        ).supportWritable();
+
+        new MultistateValueObject(
+                serverDevice,
+                3,
+                "mode",
+                3,
+                new BACnetArray<>(new CharacterString[] {
+                        new CharacterString("off"),
+                        new CharacterString("auto"),
+                        new CharacterString("manual")
+                }),
+                1,
+                false
+        ).supportWritable();
+
+        RemoteDevice remote = clientDevice.getRemoteDeviceBlocking(SERVER_DEVICE_ID, 5000);
+
+        BacnetDeviceDriverTest.StubDriverObject driverObject = new BacnetDeviceDriverTest.StubDriverObject(Map.of());
+        BacnetDeviceDriver driver = new BacnetDeviceDriver();
+        driver.initialize(driverObject);
+        driver.attachTestDevices(clientDevice, remote);
+
+        driver.readPoints(Map.of(
+                "pump", "binary-value:2:present-value",
+                "mode", "multi-state-value:3:present-value"
+        ));
+        assertEquals("active", driverObject.variables.get("pump").firstRow().get("value"));
+        assertEquals("1", driverObject.variables.get("mode").firstRow().get("value"));
 
         driver.disconnect();
     }

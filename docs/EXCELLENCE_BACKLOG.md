@@ -108,7 +108,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Partial (Sprint EX-8) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -119,9 +119,11 @@
 
 **Acceptance:**
 
-- [ ] Demo: connect к public OPC UA test server, browse → import mappings JSON
-- [ ] Subscription path с fallback на poll
-- [ ] Loopback test в CI (embedded или testcontainers)
+- [x] Demo: connect к embedded OPC UA server, browse → import mappings JSON
+- [x] Subscription path с fallback на poll (`readMode=subscribe`) — код в `OpcUaDeviceDriver`
+- [x] Loopback browse test в CI (embedded server)
+- [x] Loopback/integration test для `readMode=subscribe`
+- [x] `DRIVERS.md`: `readMode`, browse API, security modes для prod
 
 ---
 
@@ -130,7 +132,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-9) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -140,8 +142,8 @@
 
 **Acceptance:**
 
-- [ ] `BacnetDeviceDriverNetworkTest` или BACnet loopback расширен discovery smoke
-- [ ] Документация config keys в `DRIVERS.md`
+- [x] `BacnetDeviceDriverNetworkTest` Who-Is smoke + typed read (binary/multi-state, units)
+- [x] `discoveryMode` + read output documented in `DRIVERS.md`
 
 ---
 
@@ -150,7 +152,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-10) |
 | **Зависимости** | BL-79 |
 
 **Scope:**
@@ -161,9 +163,9 @@
 
 **Acceptance:**
 
-- [ ] ADR или раздел в `OBJECT_MODEL.md`
-- [ ] Минимум OPC UA + virtual demo quality transitions
-- [ ] Chart widget respects quality (skip or dashed segment)
+- [x] ADR-0025 + раздел в `OBJECT_MODEL.md`
+- [x] OPC UA + virtual demo quality transitions
+- [x] Chart widget respects quality (BAD → gap via `connectNulls={false}`)
 
 ---
 
@@ -172,7 +174,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Partial (Sprint EX-8) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -182,8 +184,10 @@
 
 **Acceptance:**
 
-- [ ] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
-- [ ] Badge или comment в PR при regression
+- [x] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
+- [x] Badge или comment в PR при regression (sticky PR comment via `github-script`)
+- [x] CI job summary (pass/fail per driver pack)
+- [x] Matrix покрывает top-10: `modbus-rtu`, `flexible`
 
 ---
 
@@ -192,7 +196,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8, EX-12) |
 | **Зависимости** | BL-59 (Haystack mappings Done) |
 
 **Scope:**
@@ -202,9 +206,11 @@
 
 **Acceptance:**
 
-- [ ] UI errors для invalid JSON schema
-- [ ] Test read вызывает `readPoints` / single variable refresh
-- [ ] i18n en/ru/de/zh
+- [x] UI errors для invalid JSON schema
+- [x] Test read вызывает poll / variable refresh (все mapped points)
+- [x] i18n en/ru/de/zh
+- [x] Test read одной точки (`POST …/poll?pointId=`)
+- [x] Haystack tag hints (autocomplete / suggest), не только validation warning
 
 ---
 
@@ -213,19 +219,21 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-8, EX-13) |
 | **Зависимости** | BL-78…84 |
 
 **Scope:**
 
-- Фиксированный список: virtual, mqtt, modbus-tcp, opc-ua, snmp, bacnet, s7, http, jdbc, kafka (уточняется в ADR).
+- Фиксированный список: virtual, mqtt, modbus-tcp, opc-ua, snmp, bacnet, s7, http, flexible, modbus-rtu (ADR-0022).
 - Каждый: PRODUCTION badge только при green CI matrix + write path (где применимо) + docs.
 
 **Acceptance:**
 
-- [ ] Все 10 — `PRODUCTION` в `DriverMaturityRegistry`
-- [ ] `GET /api/v1/info` или driver catalog отражает maturity
-- [ ] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test`
+- [x] Все 10 — `PRODUCTION` в `DriverMaturityRegistry`
+- [x] `GET /api/v1/drivers` отражает maturity
+- [x] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test` (`DriverProductionMatrixTest`)
+- [x] PRODUCTION promotion связан с green `driver-interop` matrix (`DriverInteropWorkflowGateTest` + `production-gate` job)
+- [x] Capabilities matrix (`SUBSCRIBE`, `DISCOVERY`, …) прокинуты в catalog API (`DriverCapabilityRegistry` ← matrix)
 
 ---
 
@@ -326,7 +334,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Done (Sprint EX-2) |
+| **Статус** | Partial (Sprint EX-2, EX-11) |
 | **Зависимости** | BL-52 |
 
 **Scope:**
@@ -339,7 +347,10 @@
 
 - [x] Lighthouse PWA checklist: installable
 - [x] `npm run build` включает manifest icons
-- [ ] Operator mode работает installed на Android Chrome smoke
+- [x] Playwright: offline operator shell + stale banner (`e2e/live-operator.spec.ts`)
+- [x] Playwright: mobile viewport smoke (`e2e/live-operator.spec.ts`)
+- [x] Manual checklist: [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
+- [ ] Operator mode работает installed на Android Chrome smoke (sign-off по чеклисту)
 
 ---
 
@@ -348,7 +359,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-11) |
 | **Зависимости** | BL-90 |
 
 **Scope:**
@@ -359,8 +370,8 @@
 
 **Acceptance:**
 
-- [ ] Airplane mode: operator видит cached dashboard с watermark stale
-- [ ] Reconnect → refresh without full reload
+- [x] Airplane mode: operator видит cached dashboard с watermark stale (`OperatorOfflineBanner`, localStorage cache)
+- [x] Reconnect → refresh without full reload (`useOperatorConnectivity` + query invalidation)
 
 ---
 
@@ -538,7 +549,7 @@
 | | |
 | - | - |
 | **P** | P3 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-14) |
 | **Зависимости** | BL-97 |
 
 **Scope:**
@@ -548,8 +559,8 @@
 
 **Acceptance:**
 
-- [ ] Signed bundle imports; tampered bundle rejected
-- [ ] Document key rotation in `DEPLOYMENT.md`
+- [x] Signed bundle imports; tampered bundle rejected (`CommercialBundleLicenseVerifierTest`, `BundleTrustRequireSignedApiTest`)
+- [x] Document key rotation + `require-signed-bundles` in `DEPLOYMENT.md` / `COMMERCIAL_LICENSING.md`
 
 ---
 
@@ -682,7 +693,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-12) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -692,8 +703,8 @@
 
 **Acceptance:**
 
-- [ ] Admin-only; matches `ai_tool_audit` DB rows
-- [ ] Document retention in `AI_DEVELOPMENT.md`
+- [x] Admin-only; matches `ai_tool_audit` DB rows
+- [x] Document retention in `AI_DEVELOPMENT.md`
 
 ---
 
@@ -722,7 +733,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-13) |
 | **Зависимости** | OperatorAgentTurnGuard |
 
 **Scope:**
@@ -732,8 +743,8 @@
 
 **Acceptance:**
 
-- [ ] `AgentToolGuardContractTest` extended for OPERATOR profile
-- [ ] MCP operator scope documented
+- [x] `AgentToolGuardContractTest` extended for OPERATOR profile
+- [x] MCP operator scope documented
 
 ---
 
@@ -828,7 +839,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Done (Sprint EX-1, docs) |
+| **Статус** | Partial (Sprint EX-1, docs) |
 | **Зависимости** | BL-40 Done |
 
 **Scope:**
@@ -1098,7 +1109,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-14) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -1108,8 +1119,8 @@
 
 **Acceptance:**
 
-- [ ] `DEPLOYMENT.md` «Production quick start» ≤ 30 min on fresh Linux
-- [ ] Health checks pass script
+- [x] `DEPLOYMENT.md` «Production quick start» — `deploy/prod-quickstart.sh`
+- [x] Health checks — `deploy/health-check.sh` (`/actuator/health`, `/api/v1/info`)
 
 ---
 
@@ -1118,7 +1129,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-15) |
 | **Зависимости** | BL-127 |
 
 **Scope:**
@@ -1128,7 +1139,8 @@
 
 **Acceptance:**
 
-- [ ] Checklist doc; matches commercial licensing flow
+- [x] Checklist doc — [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md); matches commercial licensing flow
+- [x] `deploy/air-gap-pack.sh`, `deploy/air-gap-apply.sh`, `deploy/docker-compose.air-gap.yml`
 
 ---
 
@@ -1240,8 +1252,37 @@ Sprint EX-7 (Trust close-out + CI load gate)
   BL-86, BL-87 — operator shelve list + alert inspector
   BL-113 Done — load-test.yml
 
-Backlog по demand
-  BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
+Sprint EX-8 (Driver production depth) — Partial
+  BL-80, BL-83, BL-84, BL-85 — tails: interop PR badge, PRODUCTION↔interop gate, Haystack mapping hints
+
+Sprint EX-9 (BACnet discovery) — Done
+  BL-81 — Who-Is discovery, typed read + units, network tests, DRIVERS.md
+
+Sprint EX-10 (Telemetry quality) — Done
+  BL-82 — ADR-0025, OPC UA + virtual quality, chart BAD gaps
+
+Sprint EX-11 (Operator offline) — Done
+  BL-91 — localStorage cache (manifest/ui/dashboard/variables/screens), stale banner, reconnect invalidate
+  BL-90 — Playwright offline smoke (Android manual tail)
+
+Sprint EX-12 (Audit + driver UX tails) — Done
+  BL-107 — agent audit export JSON/CSV, admin-only
+  EX-8 tails — driver-interop PR comment, Haystack mapping hints in inspector
+
+Sprint EX-13 (Production gates + operator security) — Done
+  BL-85 — PRODUCTION↔driver-interop matrix gate (`DriverInteropWorkflowGateTest`, `production-gate` CI job)
+  BL-109 — `OperatorAgentToolAllowlist` + contract tests
+  BL-90 — mobile viewport e2e + [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
+
+Sprint EX-14 (Bundle trust + prod quick start) — Done
+  BL-100 — `ispf.license.require-signed-bundles`, API 403 on unsigned import
+  BL-127 — `deploy/prod-quickstart.sh`, `docker-compose.prod-stack.yml`, `health-check.sh`
+
+Sprint EX-15 (Air-gap ops) — Done
+  BL-128 — [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md), `air-gap-pack.sh`, `air-gap-apply.sh`
+
+Backlog по demand (следующий приоритет)
+  BL-90 (Android device sign-off), BL-117…126, BL-131, BL-132
 ```
 
 ---
@@ -1250,6 +1291,14 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-15: BL-128 air-gap pack/apply scripts + AIR_GAP_DEPLOYMENT.md |
+| 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
+| 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
+| 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |
+| 2026-07-03 | Sprint EX-10: BL-82 telemetry quality ADR-0025, OPC UA/virtual drivers, chart BAD gaps |
+| 2026-07-03 | Sprint EX-9: BL-81 BACnet Who-Is + typed read/units; EX-8 tails — capabilities API, interop matrix, subscribe test, single-point poll |
+| 2026-07-03 | REQ-EX audit: BL-80/83–85/90/114 → Partial; sync ROADMAP Phase 23, GAP_REGISTRY, CODE_AUDIT |
+| 2026-07-02 | Sprint EX-8: BL-80 OPC UA browse/subscribe; BL-83 driver-interop.yml; BL-84 mapping validation UI; BL-85 top-10 PRODUCTION gate |
 | 2026-07-02 | PR #24 review fixes: load-test pipefail, ackRequired enforcement, BL-113 scope sync |
 | 2026-07-02 | Sprint EX-7: BL-113 load-test.yml; BL-86 shelve list UI; BL-87 alert inspector priority/ack/rateLimit; backlog sync BL-78/79/114 Done |
 | 2026-07-02 | Sprint EX-6 start: BL-111 Done — ADR-0024 demand-driven pub/sub; BL-112 cancelled (no sidecar) |

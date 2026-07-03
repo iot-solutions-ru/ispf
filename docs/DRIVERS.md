@@ -132,11 +132,14 @@ Brick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on d
 ```http
 POST /api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01
 POST /api/v1/drivers/runtime/stop?devicePath=...
-POST /api/v1/drivers/runtime/poll?devicePath=...
+POST /api/v1/drivers/runtime/poll?devicePath=...&pointId=<optional>
 POST /api/v1/drivers/runtime/write?devicePath=...&pointId=<variableName>
 PUT  /api/v1/drivers/runtime/configure?devicePath=...
 GET  /api/v1/drivers/runtime/status?devicePath=...
+GET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>
 ```
+
+`poll` without `pointId` refreshes all mapped points; with `pointId` — single mapping key only (BL-84).
 
 `write` body — `DataRecord` с полем `value` (число, boolean или string). `pointId` — ключ из `driverPointMappingsJson` (имя переменной).
 
@@ -364,6 +367,8 @@ Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 
 Поле `maturity` в `GET /api/v1/drivers`: `PRODUCTION` (по умолчанию), `BETA`, `STUB`. Метки задаются в `DriverMaturityRegistry` на сервере и отображаются в Web Console при выборе драйвера.
 
+Поле `capabilities` — строковый набор из `DriverProductionMatrix` (ADR-0022): `read`, `write`, `subscribe`, `discovery`, `observed_at`, `quality`. Пример: `opcua` → `read`, `write`, `subscribe`, `discovery`, `observed_at`.
+
 ### Stub promotion (demand-driven)
 
 58 `driverId` зарегистрированы; часть — **STUB** или **BETA** (connectivity shell без полного протокола). Продвижение до **PRODUCTION** — **не** по расписанию roadmap, а **по запросу app-команды** через gate [0002](decisions/0002-dogfooding-gate.md):
@@ -470,13 +475,26 @@ Loopback tests (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTest`, `
 
 ### opcua (`ispf-driver-opcua`)
 
-OPC UA client (Eclipse Milo). Poll/read/write через `readPoints` / `writePoint`.
+OPC UA client (Eclipse Milo). Poll/read/write через `readPoints` / `writePoint`; optional push via subscriptions.
 
 Point mapping: `ns=2;s=TagName` (NodeId).
 
 Write (`writePoint`): Milo `writeValue` на Value attribute; тип Variant подбирается по текущему значению узла (boolean, numeric, string, unsigned). Поля `value` или `raw`.
 
-Конфиг: `endpointUrl`, `timeoutMs`, `pollIntervalMs` (SecurityPolicy None).
+Конfig:
+
+| Key | Default | Описание |
+|-----|---------|----------|
+| `endpointUrl` | `opc.tcp://localhost:4840` | OPC UA endpoint |
+| `timeoutMs` | `5000` | Connect/read/write timeout |
+| `pollIntervalMs` | `1000` | Scheduler poll interval |
+| `readMode` | `poll` | `poll` — synchronous read; `subscribe` — ManagedSubscription push with poll fallback on error |
+
+**Browse / discovery:** `GET /api/v1/drivers/runtime/browse?devicePath=…&nodeId=` (optional). Driver implements `DriverDiscovery`; Web Console inspector — «Browse OPC UA» on connected device.
+
+**Security (v0.2):** production deployments should use Sign/SignAndEncrypt with client certificate and trust store. Current driver connects with **SecurityPolicy None** only (lab/loopback).
+
+Maturity: **production**. Loopback tests: `OpcUaDeviceDriverTest` (browse, write, `readMode=subscribe`).
 
 ### s7 (`ispf-driver-s7`)
 
@@ -508,13 +526,26 @@ Loopback test: `Iec104DeviceDriverTest` против `iec104-server`.
 
 ### bacnet (`ispf-driver-bacnet`)
 
-BACnet/IP read/write property (`present-value`). Конфиг: `host`, `port` (47808), `localDeviceId`, `remoteDeviceId`, `timeoutMs`. Опционально: `bindAddress` (UDP bind, default `0.0.0.0`), `bindPort` (если отличается от `port` на том же хосте).
+BACnet/IP read/write property (`present-value`). Конfig:
+
+| Key | Default | Описание |
+|-----|---------|----------|
+| `host` | `127.0.0.1` | Remote device IP (required for `discoveryMode=static`) |
+| `port` | `47808` | Remote BACnet/IP UDP port |
+| `localDeviceId` | `1234` | Local BACnet device instance |
+| `remoteDeviceId` | `1001` | Target remote device instance |
+| `discoveryMode` | `static` | `static` — use `host`/`port`; `whoIs` — discover via Who-Is/I-Am (host optional on loopback) |
+| `timeoutMs` | `5000` | Connect/read timeout |
+| `bindAddress` | `0.0.0.0` | Local UDP bind address |
+| `bindPort` | same as `port` | Local UDP bind port when different from remote |
 
 Point mapping: `objectType:instance:property` (например `analog-output:1:present-value`).
 
+**Read output:** `value` (typed string: analog float, binary `active`/`inactive`, multi-state integer), `property`, optional `unit` (Haystack-friendly, from BACnet `units` on analog present-value).
+
 **Write:** `analog-output`/`analog-value` → `Real`; `binary-output`/`binary-value` → `BinaryPV`; `multi-state-output`/`multi-state-value` → `UnsignedInteger`. Read-only: `analog-input`, `binary-input`, `multi-state-input`.
 
-Maturity: **beta**. Тесты: guard-rails + `BacnetLoopbackServer` IP connect smoke (`BacnetDeviceDriverTest`); property read/write — `BacnetDeviceDriverNetworkTest` + `BacnetTestNetworkExchangeTest` (bacnet4j in-memory `TestNetwork`, CI-safe, exercises driver `readPoints`/`writePoint`). Loopback subnet (`127.0.0.0/8`) auto-selected for `127.0.0.1`. Полный UDP/IP property exchange на hardware/BACnet simulator — опционально (в CI нестабилен).
+Maturity: **production**. Тесты: guard-rails + `BacnetLoopbackServer` Who-Is smoke (`BacnetDeviceDriverTest`); property read/write + discovery — `BacnetDeviceDriverNetworkTest` (bacnet4j in-memory `TestNetwork`, CI-safe). Loopback subnet (`127.0.0.0/8`) auto-selected for `127.0.0.1` / Who-Is mode.
 
 ### dnp3 (`ispf-driver-dnp3`)
 

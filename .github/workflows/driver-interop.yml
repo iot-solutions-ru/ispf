@@ -1,0 +1,126 @@
+name: Driver interop
+
+on:
+  pull_request:
+    paths:
+      - "packages/ispf-driver-*/**"
+      - "packages/ispf-server/src/main/java/com/ispf/server/driver/**"
+      - ".github/workflows/driver-interop.yml"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - ispf-driver-virtual
+          - ispf-driver-mqtt
+          - ispf-driver-modbus
+          - ispf-driver-modbus-rtu
+          - ispf-driver-flexible
+          - ispf-driver-opcua
+          - ispf-driver-snmp
+          - ispf-driver-bacnet
+          - ispf-driver-s7
+          - ispf-driver-http
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Run driver tests (${{ matrix.module }})
+        id: test
+        run: ./gradlew :packages:${{ matrix.module }}:test --no-daemon
+
+      - name: Record interop result
+        if: always()
+        run: |
+          echo "## Driver interop (${{ matrix.module }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.test.outcome }}" = "success" ]; then
+            echo "Result: **pass** ✅" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Result: **fail** ❌" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  summary:
+    needs: matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interop matrix complete
+        run: echo "Driver interop matrix finished (see job summaries per pack)." >> "$GITHUB_STEP_SUMMARY"
+
+  pr-comment:
+    needs: matrix
+    if: github.event_name == 'pull_request' && always()
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post driver interop PR comment
+        uses: actions/github-script@v7
+        env:
+          MATRIX_RESULT: ${{ needs.matrix.result }}
+        with:
+          script: |
+            const marker = '<!-- driver-interop-status -->';
+            const pass = process.env.MATRIX_RESULT === 'success';
+            const body = `${marker}
+            ## Driver interop ${pass ? '✅ pass' : '❌ fail'}
+
+            Matrix result: **${process.env.MATRIX_RESULT}**
+
+            Per-driver summaries: [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((comment) => comment.body && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+  production-gate:
+    needs: matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Verify PRODUCTION↔interop matrix gate (BL-85)
+        run: >
+          ./gradlew
+          :packages:ispf-server:test
+          --tests com.ispf.server.driver.DriverInteropWorkflowGateTest
+          --tests com.ispf.server.driver.DriverProductionMatrixTest
+          --no-daemon

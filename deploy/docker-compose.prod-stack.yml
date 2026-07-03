@@ -1,0 +1,57 @@
+# Local production-like stack (BL-127): PostgreSQL + Redis + ISPF server + nginx UI.
+# Lab / quick start only — not internet-facing prod without hardening (see DEPLOYMENT.md).
+# Usage: bash deploy/prod-quickstart.sh
+
+services:
+  postgres:
+    image: ${ISPF_AIRGAP_POSTGRES_IMAGE:-timescale/timescaledb:2.17.2-pg16}
+    environment:
+      POSTGRES_DB: ispf
+      POSTGRES_USER: ispf
+      POSTGRES_PASSWORD: ispf
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ispf_prod_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ispf -d ispf"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: ${ISPF_AIRGAP_REDIS_IMAGE:-redis:7.4.2-alpine}
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  ispf-server:
+    image: ${ISPF_AIRGAP_JRE_IMAGE:-eclipse-temurin:25-jre-jammy}
+    working_dir: /opt/ispf
+    volumes:
+      - ./staging:/opt/ispf:ro
+    command: ["java", "-jar", "/opt/ispf/ispf-server.jar"]
+    environment:
+      ISPF_DB_URL: jdbc:postgresql://postgres:5432/ispf
+      ISPF_DB_USER: ispf
+      ISPF_DB_PASSWORD: ispf
+      ISPF_SERVER_PORT: "8080"
+      ISPF_BOOTSTRAP_FIXTURES_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: ${ISPF_AIRGAP_NGINX_IMAGE:-nginx:1.27.4-alpine}
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ../apps/web-console/dist:/usr/share/nginx/html:ro
+      - ./nginx-local-prod.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - ispf-server
+
+volumes:
+  ispf_prod_pg:

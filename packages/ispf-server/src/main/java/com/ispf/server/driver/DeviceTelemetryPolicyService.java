@@ -71,6 +71,12 @@ public class DeviceTelemetryPolicyService {
         return readBinding(devicePath);
     }
 
+    public void invalidateCache(String devicePath) {
+        if (devicePath != null && !devicePath.isBlank()) {
+            cache.remove(devicePath);
+        }
+    }
+
     private CachedPolicy policyFor(String devicePath) {
         long now = System.currentTimeMillis();
         CachedPolicy cached = cache.get(devicePath);

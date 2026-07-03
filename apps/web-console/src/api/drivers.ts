@@ -47,9 +47,29 @@ export function configureDriver(
   });
 }
 
-export function pollDriver(devicePath: string): Promise<DriverRuntimeStatus> {
+export function pollDriver(devicePath: string, pointId?: string): Promise<DriverRuntimeStatus> {
   const params = new URLSearchParams({ devicePath });
+  if (pointId) {
+    params.set("pointId", pointId);
+  }
   return request(`/api/v1/drivers/runtime/poll?${params}`, { method: "POST" });
+}
+
+export type DriverBrowseNode = {
+  nodeId: string;
+  displayName: string;
+  nodeClass: string;
+};
+
+export function browseDriverNodes(
+  devicePath: string,
+  nodeId?: string,
+): Promise<DriverBrowseNode[]> {
+  const params = new URLSearchParams({ devicePath });
+  if (nodeId) {
+    params.set("nodeId", nodeId);
+  }
+  return request(`/api/v1/drivers/runtime/browse?${params}`);
 }
 
 export function writeDriverPoint(

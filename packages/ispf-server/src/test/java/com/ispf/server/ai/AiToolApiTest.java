@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 
 import com.jayway.jsonpath.JsonPath;
 
+import org.springframework.security.test.context.support.WithMockUser;
+
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -118,5 +120,29 @@ class AiToolApiTest {
 
         mockMvc.perform(get("/api/v1/ai/agent/sessions/" + sessionId))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "admin")
+    void agentSessionAuditExportReturnsJsonAndCsv() throws Exception {
+        MvcResult createResult = mockMvc.perform(post("/api/v1/ai/agent/sessions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rootPath\":\"root\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String sessionId = JsonPath.read(createResult.getResponse().getContentAsString(), "$.sessionId");
+
+        mockMvc.perform(get("/api/v1/ai/agent/sessions/" + sessionId + "/audit"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionId").value(sessionId))
+                .andExpect(jsonPath("$.auditRows").isArray())
+                .andExpect(jsonPath("$.toolInvocations").isArray());
+
+        mockMvc.perform(get("/api/v1/ai/agent/sessions/" + sessionId + "/audit")
+                        .param("format", "csv"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Content-Disposition", org.hamcrest.Matchers.containsString(".csv")));
     }
 }

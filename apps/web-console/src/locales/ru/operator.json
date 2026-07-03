@@ -127,5 +127,8 @@
   "workQueue.complete": "Завершить",
   "workQueue.empty": "Для этого приложения оператора нет открытых задач.",
   "workQueue.loadError": "Не удалось загрузить очередь",
-  "workQueue.title": "Очередь задач"
+  "workQueue.title": "Очередь задач",
+  "offline.staleBanner": "Нет сети — показаны сохранённые данные от {{time}}",
+  "offline.reconnecting": "Сеть восстановлена — обновление…",
+  "offline.unknownTime": "неизвестно"
 }

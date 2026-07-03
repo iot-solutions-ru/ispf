@@ -5,11 +5,13 @@ import type { WidgetHistoryRange } from "../types/dashboard";
 import { useBoundVariable } from "./useBoundVariable";
 import { useVariableHistory, type HistoryRange } from "./useVariableHistory";
 import { readFieldValue } from "../types/dashboard";
+import { isPlottableTelemetryQuality, readRowQuality } from "../utils/telemetryQuality";
 
 export interface TrendPoint {
   t: number;
   time: string;
-  value: number;
+  value: number | null;
+  quality?: string;
 }
 
 function toNumeric(raw: unknown): number | null {
@@ -26,12 +28,13 @@ function toNumeric(raw: unknown): number | null {
   return null;
 }
 
-function sampleToPoint(ts: string, value: number): TrendPoint {
+function sampleToPoint(ts: string, value: number | null, quality?: string): TrendPoint {
   const t = Date.parse(ts);
   return {
     t: Number.isFinite(t) ? t : Date.now(),
     time: new Date(Number.isFinite(t) ? t : Date.now()).toLocaleTimeString(),
     value,
+    quality,
   };
 }
 
@@ -104,31 +107,37 @@ export function useTrendSeries(
       return;
     }
     const numeric = toNumeric(rawValue);
-    if (numeric === null) {
+    const quality = readRowQuality(row as Record<string, unknown> | undefined);
+    const now = Date.now();
+
+    if (numeric === null && (quality === undefined || isPlottableTelemetryQuality(quality))) {
       return;
     }
 
-    const now = Date.now();
     setLivePoints((prev) => {
       const last = prev[prev.length - 1];
       if (last && now - last.t < Math.max(400, refreshIntervalMs / 2)) {
         return prev;
       }
+      const plottable = numeric !== null && isPlottableTelemetryQuality(quality);
       const next: TrendPoint = {
         t: now,
         time: new Date(now).toLocaleTimeString(),
-        value: numeric,
+        value: plottable ? numeric : null,
+        quality,
       };
       const merged = [...prev, next];
       return merged.length > maxPoints ? merged.slice(-maxPoints) : merged;
     });
-  }, [rawValue, maxPoints, refreshIntervalMs, historyRange]);
+  }, [rawValue, row, maxPoints, refreshIntervalMs, historyRange]);
 
   const liveStats = useMemo(() => {
-    if (livePoints.length === 0) {
+    const values = livePoints
+      .map((point) => point.value)
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    if (values.length === 0) {
       return { min: null, max: null, latest: null };
     }
-    const values = livePoints.map((point) => point.value);
     return {
       min: Math.min(...values),
       max: Math.max(...values),

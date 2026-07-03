@@ -44,6 +44,11 @@ public class AgentSessionStore {
         return get(sessionId, actor);
     }
 
+    public Optional<AgentSession> getForAdmin(String sessionId) {
+        evictExpired();
+        return repository.findBySessionId(sessionId);
+    }
+
     public boolean delete(String sessionId, String actor) {
         return repository.delete(sessionId, actor);
     }

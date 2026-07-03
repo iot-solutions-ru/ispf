@@ -128,11 +128,19 @@ export default function ChartWidgetView({
             min: Math.min(...candlestickPoints.map((point) => point.low)),
             max: Math.max(...candlestickPoints.map((point) => point.high)),
           }
-        : {
-            latest: points[points.length - 1]?.value ?? null,
-            min: Math.min(...points.map((point) => point.value)),
-            max: Math.max(...points.map((point) => point.value)),
-          }
+        : (() => {
+            const numericValues = points
+              .map((point) => point.value)
+              .filter((value): value is number => value != null && Number.isFinite(value));
+            if (numericValues.length === 0) {
+              return { latest: null, min: null, max: null };
+            }
+            return {
+              latest: numericValues[numericValues.length - 1],
+              min: Math.min(...numericValues),
+              max: Math.max(...numericValues),
+            };
+          })()
     : series.stats;
 
   const unitRow = series.variable?.value?.rows[0];
@@ -306,6 +314,7 @@ export default function ChartWidgetView({
                   stroke={color}
                   strokeWidth={2}
                   dot={false}
+                  connectNulls={false}
                   isAnimationActive={false}
                 />
               </LineChart>
@@ -337,6 +346,7 @@ export default function ChartWidgetView({
                   fill={color}
                   fillOpacity={0.18}
                   strokeWidth={2}
+                  connectNulls={false}
                   isAnimationActive={false}
                 />
               </AreaChart>
