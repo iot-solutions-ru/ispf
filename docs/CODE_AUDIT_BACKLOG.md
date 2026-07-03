@@ -145,12 +145,12 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-78** | ADR Driver Production Matrix + `DriverMaturityRegistry` sync | P1 | Done (EX-1) | Drivers |
 | **BL-79** | observedAt rollout: modbus, opc-ua, bacnet, s7, snmp | P1 | Done (EX-1) | Drivers / History |
-| **BL-80** | OPC UA: discovery + subscriptions | P1 | Done (EX-8) | Driver |
+| **BL-80** | OPC UA: discovery + subscriptions | P1 | Partial (EX-8) | Driver |
 | **BL-81** | BACnet: device discovery + readProperty | P2 | Planned | Driver |
 | **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Planned | Telemetry |
-| **BL-83** | Driver interop CI matrix (GitHub Actions) | P2 | Done (EX-8) | Driver QA |
-| **BL-84** | Point mapping validation UI + test read | P2 | Done (EX-8) | Driver UI |
-| **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Done (EX-8) | Driver catalog |
+| **BL-83** | Driver interop CI matrix (GitHub Actions) | P2 | Partial (EX-8) | Driver QA |
+| **BL-84** | Point mapping validation UI + test read | P2 | Partial (EX-8) | Driver UI |
+| **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Partial (EX-8) | Driver catalog |
 
 ### Wave K — EX-HMI & alarming (BL-86…95)
 
@@ -162,7 +162,7 @@
 | **BL-87** | Priority classes + ack workflow + flood control | P1 | Done (EX-7) | Operator / Automation |
 | **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Done | Operator HMI |
 | **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Done | Operator HMI |
-| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Done | Operator HMI |
+| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Partial (EX-2) | Operator HMI |
 | **BL-91** | Offline cache for critical screens | P2 | Planned | Operator HMI |
 | **BL-92** | SCADA mimic performance budget (60fps) | P2 | Planned | SCADA |
 | **BL-93** | Accessibility baseline WCAG 2.1 AA partial | P2 | Planned | a11y |
@@ -175,10 +175,10 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-96** | Solution catalog UI (published bundles) | P1 | Planned | Applications |
-| **BL-97** | Bundle semver contract on deploy | P1 | Planned | Applications |
-| **BL-98** | Integrator CI template (`examples/ci-template/`) | P2 | Planned | Applications / QA |
-| **BL-99** | Third reference app (building or energy) | P1 | Planned | Reference |
+| **BL-96** | Solution catalog UI (published bundles) | P1 | Done (EX-4) | Applications |
+| **BL-97** | Bundle semver contract on deploy | P1 | Done (EX-4) | Applications |
+| **BL-98** | Integrator CI template (`examples/ci-template/`) | P2 | Done (EX-4) | Applications / QA |
+| **BL-99** | Third reference app (building or energy) | P1 | Done (EX-4) | Reference |
 | **BL-100** | Bundle trust: optional RSA signing | P3 | Planned | Security |
 
 ### Wave M — EX-SEM: semantic runtime (BL-101…105)
@@ -187,9 +187,9 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-101** | ADR Haystack query runtime (subset filter syntax) | P2 | Planned | Semantic |
-| **BL-102** | API `GET /platform/haystack/query` | P2 | Planned | API |
-| **BL-103** | Dashboard auto-bind by haystack query wizard | P2 | Planned | Dashboard |
+| **BL-101** | ADR Haystack query runtime (subset filter syntax) | P2 | Done (EX-5) | Semantic |
+| **BL-102** | API `GET /platform/haystack/query` | P2 | Done (EX-5) | API |
+| **BL-103** | Dashboard auto-bind by haystack query wizard | P2 | Done (EX-5) | Dashboard |
 | **BL-104** | Brick class inference from haystack markers | P3 | Planned | Semantic |
 | **BL-105** | Semantic roundtrip test (export → import → query) | P3 | Planned | Semantic / QA |
 
@@ -199,11 +199,11 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-106** | Mutating tools: explicit approval mode (prod default) | P1 | Planned | AI |
+| **BL-106** | Mutating tools: explicit approval mode (prod default) | P1 | Done (EX-3) | AI |
 | **BL-107** | Agent audit export (JSON/CSV) | P2 | Planned | AI |
-| **BL-108** | Reference scenario catalog (10 spec→deploy paths) | P1 | Planned | AI / QA |
+| **BL-108** | Reference scenario catalog (10 spec→deploy paths) | P1 | Done (EX-3) | AI / QA |
 | **BL-109** | Operator agent hard allowlist + fuzz tests | P2 | Planned | AI / Security |
-| **BL-110** | Agent SLO dashboard (metrics cards) | P2 | Planned | AI / Ops |
+| **BL-110** | Agent SLO dashboard (metrics cards) | P2 | Done (EX-3) | AI / Ops |
 
 ### Wave O — EX-SCALE: telemetry & historian (BL-111…116)
 
@@ -214,7 +214,7 @@
 | **BL-111** | ADR demand-driven variable change pub/sub | P2 | Done | Architecture |
 | **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Cancelled | Scale |
 | **BL-113** | CI load test gate (events-internal) | P2 | Done (EX-7) | QA / Scale |
-| **BL-114** | ClickHouse variable history prod playbook | P1 | Done (EX-1 docs) | Ops |
+| **BL-114** | ClickHouse variable history prod playbook | P1 | Partial (EX-1 docs) | Ops |
 | **BL-115** | Horizontal scale documentation | P3 | Planned | Ops |
 | **BL-116** | Historian dual-write migration tooling | P3 | Planned | History |
 
@@ -799,25 +799,33 @@ Backlog P2/P3 — time & timezones ([ADR-0020](decisions/0020-time-and-timezones
 
 ```text
 Sprint EX-1 (Trust — drivers + alarm foundation)
-  BL-78, BL-79, BL-86, BL-87, BL-114 (docs)
+  BL-78, BL-79, BL-86, BL-87, BL-114 (docs) — Done
 
 Sprint EX-2 (Operator HMI)
-  BL-89, BL-90, BL-88, BL-129
+  BL-89, BL-90, BL-88, BL-129, BL-130 — Done (BL-90 Partial: Android smoke)
 
 Sprint EX-3 (AI production)
-  BL-106, BL-108, BL-110
+  BL-106, BL-108, BL-110 — Done
 
 Sprint EX-4 (App velocity)
-  BL-96, BL-97, BL-99, BL-98
+  BL-96, BL-97, BL-99, BL-98 — Done
 
 Sprint EX-5 (Semantic)
-  BL-101, BL-102, BL-103
+  BL-101, BL-102, BL-103 — Done
 
 Sprint EX-6 (Scale spike)
-  BL-111 Done, BL-112 Cancelled, BL-113
+  BL-111 Done (ADR-0024 demand-driven pub/sub)
+  BL-112 Cancelled (sidecar superseded)
 
-Backlog по demand
-  BL-80, BL-81, BL-100, BL-117…128, BL-131, BL-132
+Sprint EX-7 (Trust close-out + CI load gate)
+  BL-86, BL-87 — operator shelve list + alert inspector
+  BL-113 Done — load-test.yml
+
+Sprint EX-8 (Driver production depth) — Partial
+  BL-80, BL-83, BL-84, BL-85 — core delivered; tails: subscribe test, interop summary, capabilities API, DRIVERS.md
+
+Backlog по demand (следующий приоритет)
+  BL-81, BL-82, BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -826,6 +834,7 @@ Backlog по demand
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | REQ-EX audit sync: Wave J Partial (BL-80/83–85 EX-8); Wave K BL-90 Partial; Wave L/N Done; Wave O BL-114 Partial; ROADMAP Phase 23 + GAP |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
 | 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |
 | 2026-06-30 | BL-26 Done: loopback tests for ethernet-ip/opc-da/opc-bridge/corba/vmware/smi-s; registry → BETA |
