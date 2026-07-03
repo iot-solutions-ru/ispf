@@ -187,7 +187,12 @@ export function useVariableHistory(
     if (points.length === 0) {
       return { min: null, max: null, latest: null };
     }
-    const values = points.map((point) => point.value);
+    const values = points
+      .map((point) => point.value)
+      .filter((value): value is number => value != null && Number.isFinite(value));
+    if (values.length === 0) {
+      return { min: null, max: null, latest: null };
+    }
     return {
       min: Math.min(...values),
       max: Math.max(...values),

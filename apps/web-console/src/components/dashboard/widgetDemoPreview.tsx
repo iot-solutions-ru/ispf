@@ -47,14 +47,16 @@ export function buildDemoRangeTrendPoints(
     return [];
   }
   return points.map((point, index) => {
+    const value = point.value as number;
     const wave = Math.sin(index / 2) * 2;
-    const min = point.value - 1.5 - Math.abs(wave) * 0.3;
-    const max = point.value + 1.5 + Math.abs(wave) * 0.3;
+    const min = value - 1.5 - Math.abs(wave) * 0.3;
+    const max = value + 1.5 + Math.abs(wave) * 0.3;
     return {
-      ...point,
+      t: point.t,
+      time: point.time,
       min,
       max,
-      avg: point.value,
+      avg: value,
       band: Math.max(0, max - min),
     };
   });
@@ -69,9 +71,10 @@ export function buildDemoCandlestickPoints(
   }
   let previousClose: number | null = null;
   return points.map((point, index) => {
+    const value = point.value as number;
     const wave = Math.sin(index / 2) * 2;
-    const open = previousClose ?? point.value - 0.4;
-    const close = point.value + (index % 2 === 0 ? 0.3 : -0.3);
+    const open = previousClose ?? value - 0.4;
+    const close = value + (index % 2 === 0 ? 0.3 : -0.3);
     const high = Math.max(open, close) + 1.2 + Math.abs(wave) * 0.2;
     const low = Math.min(open, close) - 1.2 - Math.abs(wave) * 0.2;
     previousClose = close;
