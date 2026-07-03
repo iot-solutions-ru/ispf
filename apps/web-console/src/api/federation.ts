@@ -4,6 +4,7 @@ import { parseApiError } from "../utils/parseApiError";
 export type FederationAuthMode = "STATIC_TOKEN" | "SERVICE_ACCOUNT";
 export type FederationAuthStatus = "OK" | "EXPIRING" | "FAILED";
 export type FederationConnectionMode = "HTTP_PULL" | "TUNNEL_INBOUND";
+export type FederationPeerHealthLevel = "GREEN" | "YELLOW" | "RED";
 
 export interface FederationPeer {
   id: string;
@@ -18,6 +19,19 @@ export interface FederationPeer {
   authStatus?: FederationAuthStatus;
   tokenExpiresAt?: string | null;
   tunnelConnected?: boolean;
+  healthLevel?: FederationPeerHealthLevel;
+  healthSummary?: string;
+}
+
+export interface FederationPeerHealth {
+  peerId: string;
+  level: FederationPeerHealthLevel;
+  tunnelConnected: boolean;
+  lastSuccessfulProxyAt: string | null;
+  lastProxyLatencyMs: number | null;
+  lastProxyError: string | null;
+  pendingBufferedEvents: number;
+  summary: string;
 }
 
 export interface FederationPeerPayload {
@@ -149,6 +163,17 @@ export function fetchPeerAuthStatus(peerId: string): Promise<FederationPeerAuthS
   }).then(async (response) => {
     if (!response.ok) {
       throw new Error(parseApiError(await response.text(), `Auth status failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function fetchPeerHealth(peerId: string): Promise<FederationPeerHealth> {
+  return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/health`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Peer health failed: ${response.status}`));
     }
     return response.json();
   });

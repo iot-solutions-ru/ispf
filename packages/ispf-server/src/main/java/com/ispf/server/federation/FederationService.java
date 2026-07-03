@@ -30,6 +30,7 @@ public class FederationService {
     private final FederationWebSocketFanoutService webSocketFanout;
     private final FederationPeerAuthService authService;
     private final FederationTunnelHubService tunnelHubService;
+    private final FederationPeerHealthService peerHealthService;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
@@ -39,13 +40,15 @@ public class FederationService {
             ObjectMapper objectMapper,
             FederationWebSocketFanoutService webSocketFanout,
             @Lazy FederationPeerAuthService authService,
-            @Lazy FederationTunnelHubService tunnelHubService
+            @Lazy FederationTunnelHubService tunnelHubService,
+            @Lazy FederationPeerHealthService peerHealthService
     ) {
         this.peerStore = peerStore;
         this.objectMapper = objectMapper;
         this.webSocketFanout = webSocketFanout;
         this.authService = authService;
         this.tunnelHubService = tunnelHubService;
+        this.peerHealthService = peerHealthService;
     }
 
     public List<FederationPeer> listPeers() {
@@ -315,6 +318,7 @@ public class FederationService {
     private JsonNode sendJsonHttp(FederationPeer peer, String method, String pathAndQuery, String body, boolean allowRefresh) {
         FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
         String url = current.baseUrl() + pathAndQuery;
+        long startedAt = System.nanoTime();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -328,15 +332,18 @@ public class FederationService {
                 return sendJsonHttp(peerStore.findById(current.id()).orElseThrow(), method, pathAndQuery, body, false);
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                peerHealthService.recordProxyFailure(current.id(), "HTTP " + response.statusCode());
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
                         "Peer " + current.name() + " returned HTTP " + response.statusCode()
                 );
             }
+            peerHealthService.recordProxySuccess(current.id(), (System.nanoTime() - startedAt) / 1_000_000L);
             return objectMapper.readTree(response.body());
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
+            peerHealthService.recordProxyFailure(current.id(), e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Peer request failed: " + e.getMessage(), e);
         }
     }
@@ -344,6 +351,7 @@ public class FederationService {
     private JsonNode sendGetHttp(FederationPeer peer, String pathAndQuery, boolean allowRefresh) {
         FederationPeer current = peerStore.findById(peer.id()).orElse(peer);
         String url = current.baseUrl() + pathAndQuery;
+        long startedAt = System.nanoTime();
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -356,9 +364,11 @@ public class FederationService {
                 return sendGetHttp(peerStore.findById(current.id()).orElseThrow(), pathAndQuery, false);
             }
             if (response.statusCode() == 404) {
+                peerHealthService.recordProxyFailure(current.id(), "HTTP 404");
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Remote resource not found: " + pathAndQuery);
             }
             if (response.statusCode() == 401 || response.statusCode() == 403) {
+                peerHealthService.recordProxyFailure(current.id(), "HTTP " + response.statusCode());
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
                         "Peer " + current.name() + " returned HTTP " + response.statusCode()
@@ -366,15 +376,18 @@ public class FederationService {
                 );
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                peerHealthService.recordProxyFailure(current.id(), "HTTP " + response.statusCode());
                 throw new ResponseStatusException(
                         HttpStatus.BAD_GATEWAY,
                         "Peer " + current.name() + " returned HTTP " + response.statusCode()
                 );
             }
+            peerHealthService.recordProxySuccess(current.id(), (System.nanoTime() - startedAt) / 1_000_000L);
             return objectMapper.readTree(response.body());
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
+            peerHealthService.recordProxyFailure(current.id(), e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Peer request failed: " + e.getMessage(), e);
         }
     }

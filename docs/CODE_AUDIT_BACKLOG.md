@@ -224,8 +224,8 @@
 
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
-| **BL-117** | Edge store-and-forward (tunnel buffer + replay) | P2 | Planned | Federation |
-| **BL-118** | Federation peer health SLO + UI cards | P2 | Planned | Federation |
+| **BL-117** | Edge store-and-forward (tunnel buffer + replay) | P2 | Done | Federation |
+| **BL-118** | Federation peer health SLO + UI cards | P2 | Done | Federation |
 | **BL-119** | Selective subtree sync (config export/import) | P3 | Planned | Federation |
 | **BL-120** | Federation chaos tests | P3 | Planned | Federation / QA |
 

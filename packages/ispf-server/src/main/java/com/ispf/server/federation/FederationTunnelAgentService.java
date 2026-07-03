@@ -37,6 +37,7 @@ public class FederationTunnelAgentService {
     private final FederationOutboundAgentStore agentStore;
     private final IspfSecretCipher secretCipher;
     private final FederationTunnelLocalProxyService localProxyService;
+    private final FederationOutboundEventBufferRegistry eventBufferRegistry;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -58,11 +59,13 @@ public class FederationTunnelAgentService {
             FederationOutboundAgentStore agentStore,
             IspfSecretCipher secretCipher,
             FederationTunnelLocalProxyService localProxyService,
+            FederationOutboundEventBufferRegistry eventBufferRegistry,
             ObjectMapper objectMapper
     ) {
         this.agentStore = agentStore;
         this.secretCipher = secretCipher;
         this.localProxyService = localProxyService;
+        this.eventBufferRegistry = eventBufferRegistry;
         this.objectMapper = objectMapper;
     }
 
@@ -155,23 +158,58 @@ public class FederationTunnelAgentService {
         if (event.type() != ObjectChangeType.UPDATED && event.type() != ObjectChangeType.VARIABLE_UPDATED) {
             return;
         }
-        for (Map.Entry<UUID, AgentRuntime> entry : runtimes.entrySet()) {
-            UUID agentId = entry.getKey();
-            AgentRuntime runtime = entry.getValue();
-            if (runtime.webSocket == null) {
+        for (FederationOutboundAgent agent : agentStore.listEnabled()) {
+            if (!shouldExportPath(agent, event.path())) {
                 continue;
             }
-            FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
-            if (agent == null || !shouldExportPath(agent, event.path())) {
-                continue;
+            deliverOrBuffer(agent.id(), event.path(), event.variableName(), Instant.now());
+        }
+    }
+
+    private void deliverOrBuffer(UUID agentId, String path, String variableName, Instant occurredAt) {
+        AgentRuntime runtime = runtimes.get(agentId);
+        if (runtime != null && runtime.webSocket != null) {
+            if (sendEventNotify(runtime.webSocket, path, variableName, null, occurredAt)) {
+                return;
             }
-            try {
-                runtime.webSocket.sendText(
-                        FederationTunnelProtocol.eventNotify(event.path(), event.variableName(), objectMapper),
-                        true
-                ).join();
-            } catch (Exception e) {
-                log.debug("Failed to push event_notify for agent {}: {}", agentId, e.getMessage());
+        }
+        eventBufferRegistry.enqueue(agentId, path, variableName, occurredAt);
+    }
+
+    private boolean sendEventNotify(
+            WebSocket webSocket,
+            String path,
+            String variableName,
+            Long seq,
+            Instant occurredAt
+    ) {
+        try {
+            webSocket.sendText(
+                    FederationTunnelProtocol.eventNotify(path, variableName, seq, occurredAt, objectMapper),
+                    true
+            ).join();
+            return true;
+        } catch (Exception e) {
+            log.debug("Failed to push event_notify: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void replayBufferedEvents(UUID agentId) {
+        AgentRuntime runtime = runtimes.get(agentId);
+        if (runtime == null || runtime.webSocket == null) {
+            return;
+        }
+        for (FederationOutboundEventBuffer.BufferedEvent event : eventBufferRegistry.drain(agentId)) {
+            if (!sendEventNotify(
+                    runtime.webSocket,
+                    event.path(),
+                    event.variableName(),
+                    event.seq(),
+                    event.occurredAt()
+            )) {
+                eventBufferRegistry.enqueue(agentId, event.path(), event.variableName(), event.occurredAt());
+                break;
             }
         }
     }
@@ -200,6 +238,7 @@ public class FederationTunnelAgentService {
                 Instant.now(),
                 agent.sessionTokenEnc()
         );
+        replayBufferedEvents(agentId);
         scheduler.scheduleAtFixedRate(() -> sendPing(agentId), 30, 30, TimeUnit.SECONDS);
     }
 

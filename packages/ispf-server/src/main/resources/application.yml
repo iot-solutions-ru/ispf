@@ -107,6 +107,12 @@ ispf:
     jet-stream-stream-name: ${ISPF_NATS_JETSTREAM_STREAM:ispf-automation}
     jet-stream-max-age-hours: ${ISPF_NATS_JETSTREAM_MAX_AGE_HOURS:24}
     jet-stream-replica-consumer-prefix: ${ISPF_NATS_JETSTREAM_CONSUMER_PREFIX:ispf-replica-}
+  federation:
+    outbound-buffer:
+      max-bytes: ${ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES:2097152}
+      drop-policy: ${ISPF_FEDERATION_OUTBOUND_BUFFER_DROP_POLICY:DROP_OLDEST}
+    health:
+      stale-minutes: ${ISPF_FEDERATION_HEALTH_STALE_MINUTES:15}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   variable-history:

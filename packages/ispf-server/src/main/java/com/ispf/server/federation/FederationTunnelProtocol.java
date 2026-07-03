@@ -89,11 +89,27 @@ public final class FederationTunnelProtocol {
     }
 
     public static String eventNotify(String path, String variableName, ObjectMapper mapper) throws Exception {
+        return eventNotify(path, variableName, null, null, mapper);
+    }
+
+    public static String eventNotify(
+            String path,
+            String variableName,
+            Long seq,
+            java.time.Instant occurredAt,
+            ObjectMapper mapper
+    ) throws Exception {
         ObjectNode node = mapper.createObjectNode();
         node.put("type", TYPE_EVENT_NOTIFY);
         node.put("path", path);
         if (variableName != null) {
             node.put("variableName", variableName);
+        }
+        if (seq != null) {
+            node.put("seq", seq);
+        }
+        if (occurredAt != null) {
+            node.put("occurredAt", occurredAt.toString());
         }
         return mapper.writeValueAsString(node);
     }

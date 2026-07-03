@@ -16,6 +16,9 @@ import com.ispf.server.federation.FederationOutboundAgentService;
 import com.ispf.server.federation.FederationPeer;
 import com.ispf.server.federation.FederationPeerAuthService;
 import com.ispf.server.federation.FederationPeerDraft;
+import com.ispf.server.federation.FederationPeerHealth;
+import com.ispf.server.federation.FederationPeerHealthLevel;
+import com.ispf.server.federation.FederationPeerHealthService;
 import com.ispf.server.federation.FederationSecretsKeyService;
 import com.ispf.server.federation.FederationService;
 import com.ispf.server.federation.FederationTunnelHubService;
@@ -55,6 +58,7 @@ public class FederationController {
     private final FederationSecretsKeyService secretsKeyService;
     private final FederationTunnelHubService tunnelHubService;
     private final FederationTunnelSessionStore tunnelSessionStore;
+    private final FederationPeerHealthService peerHealthService;
     private final ObjectMapper objectMapper;
 
     public FederationController(
@@ -68,6 +72,7 @@ public class FederationController {
             FederationSecretsKeyService secretsKeyService,
             FederationTunnelHubService tunnelHubService,
             FederationTunnelSessionStore tunnelSessionStore,
+            FederationPeerHealthService peerHealthService,
             ObjectMapper objectMapper
     ) {
         this.federationService = federationService;
@@ -80,6 +85,7 @@ public class FederationController {
         this.secretsKeyService = secretsKeyService;
         this.tunnelHubService = tunnelHubService;
         this.tunnelSessionStore = tunnelSessionStore;
+        this.peerHealthService = peerHealthService;
         this.objectMapper = objectMapper;
     }
 
@@ -87,7 +93,11 @@ public class FederationController {
     public List<FederationPeerDto> listPeers(Authentication authentication) {
         federationAccessService.requireAdmin(authentication);
         return federationService.listPeers().stream()
-                .map(peer -> FederationPeerDto.from(peer, tunnelHubService.isConnected(peer.id())))
+                .map(peer -> FederationPeerDto.from(
+                        peer,
+                        tunnelHubService.isConnected(peer.id()),
+                        peerHealthService.health(peer.id())
+                ))
                 .toList();
     }
 
@@ -97,7 +107,7 @@ public class FederationController {
             @Valid @RequestBody FederationPeerRequest request
     ) {
         federationAccessService.requireAdmin(authentication);
-        return FederationPeerDto.from(federationService.createPeer(request.toDraft(), request.toAuth()), false);
+        return FederationPeerDto.from(federationService.createPeer(request.toDraft(), request.toAuth()), false, null);
     }
 
     @PutMapping("/peers/{id}")
@@ -109,7 +119,8 @@ public class FederationController {
         federationAccessService.requireAdmin(authentication);
         return FederationPeerDto.from(
                 federationService.updatePeer(id, request.toDraft(), request.toAuth()),
-                tunnelHubService.isConnected(id)
+                tunnelHubService.isConnected(id),
+                peerHealthService.health(id)
         );
     }
 
@@ -118,6 +129,12 @@ public class FederationController {
     public void deletePeer(Authentication authentication, @PathVariable UUID id) {
         federationAccessService.requireAdmin(authentication);
         federationService.deletePeer(id);
+    }
+
+    @GetMapping("/peers/{id}/health")
+    public FederationPeerHealthDto peerHealth(Authentication authentication, @PathVariable UUID id) {
+        federationAccessService.requireAdmin(authentication);
+        return FederationPeerHealthDto.from(peerHealthService.health(id));
     }
 
     @GetMapping("/peers/{id}/auth-status")
@@ -442,6 +459,30 @@ public class FederationController {
         }
     }
 
+    public record FederationPeerHealthDto(
+            UUID peerId,
+            FederationPeerHealthLevel level,
+            boolean tunnelConnected,
+            Instant lastSuccessfulProxyAt,
+            Long lastProxyLatencyMs,
+            String lastProxyError,
+            int pendingBufferedEvents,
+            String summary
+    ) {
+        static FederationPeerHealthDto from(FederationPeerHealth health) {
+            return new FederationPeerHealthDto(
+                    health.peerId(),
+                    health.level(),
+                    health.tunnelConnected(),
+                    health.lastSuccessfulProxyAt(),
+                    health.lastProxyLatencyMs(),
+                    health.lastProxyError(),
+                    health.pendingBufferedEvents(),
+                    health.summary()
+            );
+        }
+    }
+
     public record FederationPeerDto(
             UUID id,
             String name,
@@ -454,9 +495,15 @@ public class FederationController {
             FederationAuthMode authMode,
             FederationAuthStatus authStatus,
             Instant tokenExpiresAt,
-            boolean tunnelConnected
+            boolean tunnelConnected,
+            FederationPeerHealthLevel healthLevel,
+            String healthSummary
     ) {
-        static FederationPeerDto from(FederationPeer peer, boolean tunnelConnected) {
+        static FederationPeerDto from(
+                FederationPeer peer,
+                boolean tunnelConnected,
+                FederationPeerHealth health
+        ) {
             return new FederationPeerDto(
                     peer.id(),
                     peer.name(),
@@ -469,7 +516,9 @@ public class FederationController {
                     peer.authMode(),
                     peer.authStatus(),
                     peer.tokenExpiresAt(),
-                    tunnelConnected
+                    tunnelConnected,
+                    health != null ? health.level() : FederationPeerHealthLevel.YELLOW,
+                    health != null ? health.summary() : "Unknown"
             );
         }
     }
