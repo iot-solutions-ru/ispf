@@ -318,7 +318,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.18 | OEE pattern + BPMN timers + escalation templates | EX-MES | 121–123 | P2–P3 | Planned |
 | 23.19 | ISA-95 catalog documentation | EX-MES | 124 | P3 | Planned |
 | 23.20 | Tenant isolation + per-tenant quotas | EX-OPS | 125–126 | P3 | Planned |
-| 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Planned |
+| 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Done (EX-14, EX-15) |
 | 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Done (EX-2) |
 | 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Planned |
 
@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-14):** BL-90 (Android device sign-off), BL-128 (air-gap guide). Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-15):** BL-90 (Android device sign-off), BL-131 (visual regression). Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

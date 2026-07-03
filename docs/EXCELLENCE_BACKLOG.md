@@ -1129,7 +1129,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-15) |
 | **Зависимости** | BL-127 |
 
 **Scope:**
@@ -1139,7 +1139,8 @@
 
 **Acceptance:**
 
-- [ ] Checklist doc; matches commercial licensing flow
+- [x] Checklist doc — [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md); matches commercial licensing flow
+- [x] `deploy/air-gap-pack.sh`, `deploy/air-gap-apply.sh`, `deploy/docker-compose.air-gap.yml`
 
 ---
 
@@ -1277,8 +1278,11 @@ Sprint EX-14 (Bundle trust + prod quick start) — Done
   BL-100 — `ispf.license.require-signed-bundles`, API 403 on unsigned import
   BL-127 — `deploy/prod-quickstart.sh`, `docker-compose.prod-stack.yml`, `health-check.sh`
 
+Sprint EX-15 (Air-gap ops) — Done
+  BL-128 — [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md), `air-gap-pack.sh`, `air-gap-apply.sh`
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android device sign-off), BL-128, BL-117…126, BL-131, BL-132
+  BL-90 (Android device sign-off), BL-117…126, BL-131, BL-132
 ```
 
 ---
@@ -1287,6 +1291,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-15: BL-128 air-gap pack/apply scripts + AIR_GAP_DEPLOYMENT.md |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
 | 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
 | 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |

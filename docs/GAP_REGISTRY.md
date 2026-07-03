@@ -50,7 +50,7 @@
 | **P1** | Operator HMI | Industrial trends Done; PWA installable; offline cache | BL-89 Done; BL-90 Partial (EX-11 Playwright); BL-91 Done (EX-11) |
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96…99 Done (EX-4); BL-100 Done (EX-14) |
 | **P1** | AI production | Approval mode, scenario catalog, SLO dashboard Done | BL-106, 108, 110 Done (EX-3); BL-107 Done (EX-12); BL-109 Done (EX-13) |
-| **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127 Done (EX-14) |
+| **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127, BL-128 Done (EX-14, EX-15) |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
 | **P2** | Scale | Demand-driven pub/sub, CI load gate | BL-111 Done; BL-113 Done |
 | **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
@@ -85,7 +85,7 @@
 | AI agent production | ~98% | — | BL-106…110 Done |
 | Telemetry ingress scale | ~75% | demand-driven pub/sub (ADR-0024); CI load gate Done | BL-111, BL-113 Done |
 | Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |
-| Production deploy UX | ~85% | air-gap guide (BL-128) | BL-127 Done |
+| Production deploy UX | ~95% | — | BL-127, BL-128 Done |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~100% | MCP wire, installation-id (ops-only) | BL-01…18 + lifecycle UI 0.9.60 |
 | Dashboard widgets (advanced) | ~98% | — | BL-65 done |

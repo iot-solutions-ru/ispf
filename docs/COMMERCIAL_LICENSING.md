@@ -98,3 +98,4 @@ Installation ID (`GET /api/v1/platform/installation-id`) при ротации *
 
 - [PLUGINS.md](PLUGINS.md)
 - [SOLUTION_DEVELOPER_PUBLIC_API.md](SOLUTION_DEVELOPER_PUBLIC_API.md)
+- [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md) — offline install/update (BL-128)
