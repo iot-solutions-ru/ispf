@@ -1,0 +1,38 @@
+- text: Color theme
+- combobox "Color theme":
+  - option "System" [selected]
+  - option "Light"
+  - option "Dark"
+- text: Timezone
+- combobox "Timezone":
+  - option "UTC" [selected]
+  - option "Europe/Moscow"
+  - option "Europe/Kaliningrad"
+  - option "Europe/Samara"
+  - option "Asia/Yekaterinburg"
+  - option "Asia/Omsk"
+  - option "Asia/Krasnoyarsk"
+  - option "Asia/Irkutsk"
+  - option "Asia/Yakutsk"
+  - option "Asia/Vladivostok"
+  - option "Asia/Magadan"
+  - option "Asia/Kamchatka"
+  - option "Europe/Berlin"
+  - option "Europe/London"
+  - option "Asia/Shanghai"
+  - option "America/New York"
+  - option "America/Los Angeles"
+- text: Language
+- combobox "Language":
+  - option "English" [selected]
+  - option "Русский"
+  - option "Deutsch"
+  - option "中文"
+- heading "ISPF" [level=1]
+- paragraph: Sign in to the platform
+- text: Username
+- textbox "Username": admin
+- text: Password
+- textbox "Password": admin
+- button "Sign in"
+- paragraph: "Default: admin/admin or operator/operator"

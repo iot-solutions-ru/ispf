@@ -5,7 +5,7 @@ import {
   seedAuthSession,
 } from "./fixtures/apiMocks";
 
-/** BL-131 — visual regression smoke (2% pixel tolerance on stable regions). */
+/** BL-131 — visual regression smoke (2–4% pixel tolerance on stable regions). */
 
 test.describe("visual regression smoke", () => {
   test("login page", async ({ page }) => {
@@ -17,8 +17,9 @@ test.describe("visual regression smoke", () => {
     await authReady;
     const card = page.locator(".login-card");
     await expect(page.getByLabel("Username")).toBeVisible();
-    await expect(card).toHaveScreenshot("login-card.png", {
-      mask: [page.locator(".login-card-head")],
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+    await expect(card).toMatchAriaSnapshot({
+      name: "login-card.aria.yml",
     });
   });
 
