@@ -60,6 +60,7 @@ class OpcUaDeviceDriverTest {
         client.readPoints(Map.of("temp", nodeId));
 
         waitForVariable(clientObject, "temp", 5000);
+        assertEquals("GOOD", clientObject.variables.get("temp").firstRow().get("quality"));
 
         client.writePoint("temp", DataRecord.single(VALUE_SCHEMA, Map.of("value", "88.0")));
         waitForVariableValue(clientObject, "temp", "88", 5000);

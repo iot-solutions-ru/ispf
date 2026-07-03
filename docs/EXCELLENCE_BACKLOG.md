@@ -152,7 +152,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-10) |
 | **Зависимости** | BL-79 |
 
 **Scope:**
@@ -163,9 +163,9 @@
 
 **Acceptance:**
 
-- [ ] ADR или раздел в `OBJECT_MODEL.md`
-- [ ] Минимум OPC UA + virtual demo quality transitions
-- [ ] Chart widget respects quality (skip or dashed segment)
+- [x] ADR-0025 + раздел в `OBJECT_MODEL.md`
+- [x] OPC UA + virtual demo quality transitions
+- [x] Chart widget respects quality (BAD → gap via `connectNulls={false}`)
 
 ---
 
@@ -1254,8 +1254,11 @@ Sprint EX-8 (Driver production depth) — Partial
 Sprint EX-9 (BACnet discovery) — Done
   BL-81 — Who-Is discovery, typed read + units, network tests, DRIVERS.md
 
+Sprint EX-10 (Telemetry quality) — Done
+  BL-82 — ADR-0025, OPC UA + virtual quality, chart BAD gaps
+
 Backlog по demand (следующий приоритет)
-  BL-82, BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -1264,6 +1267,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-10: BL-82 telemetry quality ADR-0025, OPC UA/virtual drivers, chart BAD gaps |
 | 2026-07-03 | Sprint EX-9: BL-81 BACnet Who-Is + typed read/units; EX-8 tails — capabilities API, interop matrix, subscribe test, single-point poll |
 | 2026-07-03 | REQ-EX audit: BL-80/83–85/90/114 → Partial; sync ROADMAP Phase 23, GAP_REGISTRY, CODE_AUDIT |
 | 2026-07-02 | Sprint EX-8: BL-80 OPC UA browse/subscribe; BL-83 driver-interop.yml; BL-84 mapping validation UI; BL-85 top-10 PRODUCTION gate |

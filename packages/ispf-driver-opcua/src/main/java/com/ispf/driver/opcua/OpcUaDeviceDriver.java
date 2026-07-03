@@ -8,6 +8,7 @@ import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverPollTimestamps;
+import com.ispf.driver.TelemetryQuality;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -269,7 +270,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
 
     private PointRead toPointRead(DataValue dataValue) {
         Object rawValue = dataValue.getValue() != null ? dataValue.getValue().getValue() : null;
-        String quality = dataValue.getStatusCode() != null ? dataValue.getStatusCode().toString() : "UNKNOWN";
+        String quality = normalizeQuality(dataValue.getStatusCode());
         Instant observedAt = null;
         if (dataValue.getSourceTime() != null) {
             observedAt = dataValue.getSourceTime().getJavaInstant();
@@ -281,6 +282,19 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                 "quality", quality
         ));
         return new PointRead(record, observedAt);
+    }
+
+    private static String normalizeQuality(StatusCode statusCode) {
+        if (statusCode == null) {
+            return TelemetryQuality.normalize(TelemetryQuality.Level.BAD);
+        }
+        if (statusCode.isGood()) {
+            return TelemetryQuality.normalize(TelemetryQuality.Level.GOOD);
+        }
+        if (statusCode.isUncertain()) {
+            return TelemetryQuality.normalize(TelemetryQuality.Level.UNCERTAIN);
+        }
+        return TelemetryQuality.normalize(TelemetryQuality.Level.BAD);
     }
 
     private PointRead readPoint(OpcUaPoint point) throws DriverException {

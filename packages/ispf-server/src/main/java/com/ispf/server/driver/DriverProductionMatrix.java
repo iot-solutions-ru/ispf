@@ -49,6 +49,9 @@ final class DriverProductionMatrix {
         }
     }
 
+    private static final Set<Capability> POLL_OBSERVED_QUALITY = EnumSet.of(
+            Capability.POLL, Capability.OBSERVED_AT, Capability.QUALITY
+    );
     private static final Set<Capability> POLL_WRITE_OBSERVED = EnumSet.of(
             Capability.POLL, Capability.WRITE, Capability.OBSERVED_AT
     );
@@ -57,7 +60,7 @@ final class DriverProductionMatrix {
     private static final Set<Capability> POLL_ONLY = EnumSet.of(Capability.POLL);
 
     private static final Map<String, Entry> ENTRIES = Map.ofEntries(
-            entry("virtual", DriverMaturity.PRODUCTION, POLL_OBSERVED,
+            entry("virtual", DriverMaturity.PRODUCTION, POLL_OBSERVED_QUALITY,
                     testPath("ispf-driver-virtual", "com.ispf.driver.virtual.VirtualUnifiedProfileTest")),
             entry("mqtt", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-mqtt", "com.ispf.driver.mqtt.MqttDeviceDriverTest")),
@@ -68,7 +71,8 @@ final class DriverProductionMatrix {
             entry("modbus-udp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest")),
             entry("opcua", DriverMaturity.PRODUCTION, EnumSet.of(
-                    Capability.POLL, Capability.SUBSCRIBE, Capability.WRITE, Capability.DISCOVERY, Capability.OBSERVED_AT
+                    Capability.POLL, Capability.SUBSCRIBE, Capability.WRITE, Capability.DISCOVERY,
+                    Capability.OBSERVED_AT, Capability.QUALITY
             ),
                     testPath("ispf-driver-opcua", "com.ispf.driver.opcua.OpcUaDeviceDriverTest")),
             entry("opcua-server", DriverMaturity.PRODUCTION, POLL_WRITE,

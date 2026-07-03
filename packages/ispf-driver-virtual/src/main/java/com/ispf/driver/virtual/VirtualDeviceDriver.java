@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.TelemetryQuality;
 
 import java.time.Instant;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
             .field("value", FieldType.DOUBLE)
             .field("unit", FieldType.STRING)
+            .field("quality", FieldType.STRING)
             .build();
 
     private static final DataSchema STATUS_SCHEMA = DataSchema.builder("deviceStatus")
@@ -115,6 +117,7 @@ public class VirtualDeviceDriver implements DeviceDriver {
     private final VirtualOgpPoll.OgpState ogpState = new VirtualOgpPoll.OgpState();
     private final VirtualTankFarmPoll.TankState tankFarmTankState = new VirtualTankFarmPoll.TankState();
     private final VirtualTankFarmPoll.ManifoldHubState tankFarmHubState = new VirtualTankFarmPoll.ManifoldHubState();
+    private int demoPollSequence;
     private double ratedPowerKw = 1480.0;
     private int unitIndex = 1;
     private int tankIndex = 11;
@@ -234,9 +237,19 @@ public class VirtualDeviceDriver implements DeviceDriver {
         Instant observed = Instant.now();
         double elapsedSec = (System.currentTimeMillis() - startedAt) / 1000.0;
         double temperature = baseTemperature + amplitude * Math.sin(2 * Math.PI * elapsedSec / periodSec);
+        demoPollSequence++;
+        String quality = switch ((demoPollSequence / 8) % 3) {
+            case 0 -> TelemetryQuality.normalize(TelemetryQuality.Level.GOOD);
+            case 1 -> TelemetryQuality.normalize(TelemetryQuality.Level.UNCERTAIN);
+            default -> TelemetryQuality.normalize(TelemetryQuality.Level.BAD);
+        };
         driverObject.updateVariable(
                 "temperature",
-                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", temperature, "unit", "C")),
+                DataRecord.single(TEMPERATURE_SCHEMA, Map.of(
+                        "value", temperature,
+                        "unit", "C",
+                        "quality", quality
+                )),
                 observed
         );
         driverObject.updateVariable(

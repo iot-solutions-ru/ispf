@@ -147,7 +147,7 @@
 | **BL-79** | observedAt rollout: modbus, opc-ua, bacnet, s7, snmp | P1 | Done (EX-1) | Drivers / History |
 | **BL-80** | OPC UA: discovery + subscriptions | P1 | Partial (EX-8) | Driver |
 | **BL-81** | BACnet: device discovery + readProperty | P2 | Done (EX-9) | Driver |
-| **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Planned | Telemetry |
+| **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Done (EX-10) | Telemetry |
 | **BL-83** | Driver interop CI matrix (GitHub Actions) | P2 | Partial (EX-8) | Driver QA |
 | **BL-84** | Point mapping validation UI + test read | P2 | Partial (EX-8) | Driver UI |
 | **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Partial (EX-8) | Driver catalog |

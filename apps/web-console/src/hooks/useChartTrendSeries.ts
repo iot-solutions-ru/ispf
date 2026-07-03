@@ -63,18 +63,19 @@ function bucketsToRangePoints(buckets: VariableHistoryBucket[]): RangeTrendPoint
 }
 
 function livePointsToRangePoints(points: TrendPoint[], targetBuckets = 16): RangeTrendPoint[] {
-  if (points.length === 0) {
+  const plottable = points.filter((point) => point.value != null && Number.isFinite(point.value));
+  if (plottable.length === 0) {
     return [];
   }
-  if (points.length === 1) {
-    const point = points[0];
-    return [{ ...point, min: point.value, max: point.value, avg: point.value, band: 0 }];
+  if (plottable.length === 1) {
+    const point = plottable[0];
+    return [{ ...point, min: point.value as number, max: point.value as number, avg: point.value as number, band: 0 }];
   }
-  const chunkSize = Math.max(1, Math.ceil(points.length / targetBuckets));
+  const chunkSize = Math.max(1, Math.ceil(plottable.length / targetBuckets));
   const result: RangeTrendPoint[] = [];
-  for (let index = 0; index < points.length; index += chunkSize) {
-    const chunk = points.slice(index, index + chunkSize);
-    const values = chunk.map((point) => point.value);
+  for (let index = 0; index < plottable.length; index += chunkSize) {
+    const chunk = plottable.slice(index, index + chunkSize);
+    const values = chunk.map((point) => point.value as number);
     const min = Math.min(...values);
     const max = Math.max(...values);
     const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
