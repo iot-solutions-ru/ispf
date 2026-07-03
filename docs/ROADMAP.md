@@ -302,7 +302,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Partial (80 Partial EX-8; 81 Done EX-9) |
 | 23.3 | Quality flags + driver interop CI matrix | EX-DRIVER | 82–84 | P2 | Partial (82 Done EX-10; 83–84 Partial EX-8) |
 | 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Done (EX-7) |
-| 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Partial (89 Done; 90 Partial EX-2; 91 Planned) |
+| 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Done (EX-11, EX-16) |
 | 23.6 | Mimic perf + a11y + symbol library + Lighthouse gate | EX-HMI | 92–95 | P2–P3 | Planned |
 | 23.7 | Solution catalog + bundle semver + CI template | EX-APP | 96–98 | P1–P2 | Done (EX-4) |
 | 23.8 | Third reference app (building/energy) + bundle signing | EX-APP | 99–100 | P1–P3 | Partial (99 Done EX-4) |
@@ -320,7 +320,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.20 | Tenant isolation + per-tenant quotas | EX-OPS | 125–126 | P3 | Planned |
 | 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Done (EX-14, EX-15) |
 | 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Done (EX-2) |
-| 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Planned |
+| 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Done (EX-16) |
 
 **Горизонты инвестиций:**
 
@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-15):** BL-90 (Android device sign-off), BL-131 (visual regression). Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-16):** BL-117/118 (federation edge) или BL-92/93 (mimic perf / a11y). Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

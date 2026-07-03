@@ -1,12 +1,12 @@
 # Operator PWA — Android Chrome smoke checklist (BL-90)
 
-Manual acceptance for installed operator mode on Android. Automated coverage: Playwright mobile viewport + offline cache (`e2e/live-operator.spec.ts`).
+Manual acceptance for installed operator mode on Android. **Automated coverage (CI):** Playwright Pixel 5 + vite preview (`e2e/pwa-android.spec.ts`) — manifest, SW, rotation, offline banner with SW reload. Mobile viewport + offline cache in `e2e/live-operator.spec.ts`.
 
 ## Prerequisites
 
 - HTTPS origin (prod `https://ispf.iot-solutions.ru` or local tunnel with valid cert)
 - Demo operator app available (`/?mode=operator&app=demo`)
-- Android device with Chrome 120+
+- Android device with Chrome 120+ (optional — for release sign-off only)
 
 ## Install
 
@@ -16,14 +16,14 @@ Manual acceptance for installed operator mode on Android. Automated coverage: Pl
 
 ## Operator smoke (5 min)
 
-| Step | Expected |
-|------|----------|
-| App opens to operator start URL (`start_url` contains `mode=operator`) | Shell loads, no admin tree |
-| Sign in (if required) | Session persists after app restart |
-| Navigate manifest tabs / dashboards | Top bar + nav visible, safe-area not clipped (notch) |
-| Rotate portrait ↔ landscape | Layout reflows; no horizontal overflow |
-| Enable airplane mode | Offline banner + cached shell (BL-91) |
-| Disable airplane mode | Banner clears; data refreshes without full reload |
+| Step | Expected | CI automated |
+|------|----------|--------------|
+| App opens to operator start URL (`start_url` contains `mode=operator`) | Shell loads, no admin tree | ✓ manifest + operator shell e2e |
+| Sign in (if required) | Session persists after app restart | mocked session in e2e |
+| Navigate manifest tabs / dashboards | Top bar + nav visible, safe-area not clipped (notch) | ✓ Pixel 5 safe-area + nav |
+| Rotate portrait ↔ landscape | Layout reflows; no horizontal overflow | ✓ viewport rotation test |
+| Enable airplane mode | Offline banner + cached shell (BL-91) | ✓ SW offline reload (preview) |
+| Disable airplane mode | Banner clears; data refreshes without full reload | ✓ reconnect test |
 
 ## Regression notes
 
@@ -33,7 +33,8 @@ Manual acceptance for installed operator mode on Android. Automated coverage: Pl
 
 ## Sign-off
 
-- [ ] Tested on physical Android device
-- [ ] Standalone launch OK
-- [ ] Offline stale banner OK
-- [ ] Tester / date: _______________
+- [x] Automated: Pixel 5 + preview build (`npm run test:e2e:preview`) — Sprint EX-16
+- [ ] Optional: tested on physical Android device (release notes)
+- [x] Standalone manifest + SW registration OK
+- [x] Offline stale banner OK (preview + dev navigator.onLine)
+- Tester / date: CI / 2026-07-03

@@ -1,0 +1,668 @@
+[
+  {
+    "file": "components/AiStudioStatusTab.tsx",
+    "line": 152,
+    "kind": "jsx-text",
+    "text": "scripts/run-local-with-ai.ps1"
+  },
+  {
+    "file": "components/ApplicationBundlePanel.tsx",
+    "line": 282,
+    "kind": "ui-attr",
+    "text": "root.platform.dashboards.my-dashboard"
+  },
+  {
+    "file": "components/ApplicationLifecyclePanel.tsx",
+    "line": 127,
+    "kind": "jsx-text",
+    "text": "deployApplicationFunction(appId, parseJson(functionText) as Record"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 120,
+    "kind": "jsx-text",
+    "text": "CRITICAL"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 121,
+    "kind": "jsx-text",
+    "text": "HIGH"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 122,
+    "kind": "jsx-text",
+    "text": "MEDIUM"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 123,
+    "kind": "jsx-text",
+    "text": "LOW"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 144,
+    "kind": "ui-attr",
+    "text": "https://hooks.example.com/alerts"
+  },
+  {
+    "file": "components/automation/AlertRuleInspector.tsx",
+    "line": 153,
+    "kind": "ui-attr",
+    "text": "ops@example.com|Alert|Threshold exceeded"
+  },
+  {
+    "file": "components/automation/CorrelatorInspector.tsx",
+    "line": 87,
+    "kind": "jsx-text",
+    "text": "COUNT"
+  },
+  {
+    "file": "components/automation/CorrelatorInspector.tsx",
+    "line": 88,
+    "kind": "jsx-text",
+    "text": "SEQUENCE"
+  },
+  {
+    "file": "components/automation/CorrelatorInspector.tsx",
+    "line": 89,
+    "kind": "jsx-text",
+    "text": "EVENT_CHAIN"
+  },
+  {
+    "file": "components/automation/CreateAlertRuleDialog.tsx",
+    "line": 136,
+    "kind": "jsx-text",
+    "text": "CRITICAL"
+  },
+  {
+    "file": "components/automation/CreateAlertRuleDialog.tsx",
+    "line": 137,
+    "kind": "jsx-text",
+    "text": "HIGH"
+  },
+  {
+    "file": "components/automation/CreateAlertRuleDialog.tsx",
+    "line": 138,
+    "kind": "jsx-text",
+    "text": "MEDIUM"
+  },
+  {
+    "file": "components/automation/CreateAlertRuleDialog.tsx",
+    "line": 139,
+    "kind": "jsx-text",
+    "text": "LOW"
+  },
+  {
+    "file": "components/BindingActivatorsEditor.tsx",
+    "line": 111,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.foo"
+  },
+  {
+    "file": "components/BindingExpressionField.tsx",
+    "line": 91,
+    "kind": "jsx-text",
+    "text": "0 && inlineSuggestions.length"
+  },
+  {
+    "file": "components/BindingRulesPanel.tsx",
+    "line": 241,
+    "kind": "ui-attr",
+    "text": "params.mode"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 414,
+    "kind": "ui-attr",
+    "text": "root.platform.data-sources.myapp"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 437,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 450,
+    "kind": "ui-attr",
+    "text": "root.platform.data-sources.myapp"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 485,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/CreateSecurityRoleDialog.tsx",
+    "line": 70,
+    "kind": "ui-attr",
+    "text": "Supervisor"
+  },
+  {
+    "file": "components/CreateSecurityUserDialog.tsx",
+    "line": 80,
+    "kind": "ui-attr",
+    "text": "Operator 2"
+  },
+  {
+    "file": "components/dashboard/ScadaMimicWidgetEditorFields.tsx",
+    "line": 64,
+    "kind": "ui-attr",
+    "text": "root.platform.mimics.my-mimic"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1016,
+    "kind": "ui-attr",
+    "text": "gpu-*"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1030,
+    "kind": "jsx-text",
+    "text": "DEVICE"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1031,
+    "kind": "jsx-text",
+    "text": "FOLDER"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1032,
+    "kind": "jsx-text",
+    "text": "DASHBOARD"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1033,
+    "kind": "jsx-text",
+    "text": "CUSTOM"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1054,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1077,
+    "kind": "ui-attr",
+    "text": "count>10 && name contains abc"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1352,
+    "kind": "ui-attr",
+    "text": "root.platform.reports.ready-items"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1640,
+    "kind": "ui-attr",
+    "text": "SVG"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1646,
+    "kind": "ui-attr",
+    "text": "/lab-assets/button.svg"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1863,
+    "kind": "ui-attr",
+    "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1922,
+    "kind": "ui-attr",
+    "text": "HTML"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 405,
+    "kind": "ui-attr",
+    "text": "root.platform.dashboards.detail"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 530,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 888,
+    "kind": "ui-attr",
+    "text": "root.platform.workflows..."
+  },
+  {
+    "file": "components/dashboard/widgetEditorStructured.tsx",
+    "line": 561,
+    "kind": "ui-attr",
+    "text": "root.platform.dashboards..."
+  },
+  {
+    "file": "components/dashboard/widgetEditorStructured.tsx",
+    "line": 768,
+    "kind": "ui-attr",
+    "text": "0.88rem"
+  },
+  {
+    "file": "components/dashboard/widgets/ChartRadarWidgetView.tsx",
+    "line": 41,
+    "kind": "jsx-text",
+    "text": "(editable && series.rows.length"
+  },
+  {
+    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
+    "line": 101,
+    "kind": "jsx-text",
+    "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
+  },
+  {
+    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
+    "line": 91,
+    "kind": "jsx-text",
+    "text": "(editable && series.points.length"
+  },
+  {
+    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
+    "line": 95,
+    "kind": "jsx-text",
+    "text": "(editable && isRangeChart && series.rangePoints.length"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 281,
+    "kind": "jsx-text",
+    "text": "DEBUG"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 282,
+    "kind": "jsx-text",
+    "text": "INFO"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 283,
+    "kind": "jsx-text",
+    "text": "WARNING"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 284,
+    "kind": "jsx-text",
+    "text": "ERROR"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 285,
+    "kind": "jsx-text",
+    "text": "CRITICAL"
+  },
+  {
+    "file": "components/EditDescriptorDialog.tsx",
+    "line": 339,
+    "kind": "ui-attr",
+    "text": "root.platform.data-sources.app_myapp"
+  },
+  {
+    "file": "components/FederationBindPanel.tsx",
+    "line": 230,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 286,
+    "kind": "ui-attr",
+    "text": "input.value"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 377,
+    "kind": "ui-attr",
+    "text": "literal or ${input.name}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 405,
+    "kind": "ui-attr",
+    "text": "${input.raw}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 452,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 458,
+    "kind": "ui-attr",
+    "text": "${input.id}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 469,
+    "kind": "ui-attr",
+    "text": "${instancePath}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 487,
+    "kind": "ui-attr",
+    "text": "SELECT id FROM orders WHERE id = ?"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 493,
+    "kind": "ui-attr",
+    "text": "${input.orderId}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 503,
+    "kind": "ui-attr",
+    "text": "${rows}"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 537,
+    "kind": "ui-attr",
+    "text": "root.platform.workflows.demo"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 543,
+    "kind": "ui-attr",
+    "text": "RUNNING"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 567,
+    "kind": "ui-attr",
+    "text": "NOT_FOUND"
+  },
+  {
+    "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
+    "line": 573,
+    "kind": "ui-attr",
+    "text": "Required value missing"
+  },
+  {
+    "file": "components/HaystackMetadataPanel.tsx",
+    "line": 194,
+    "kind": "ui-attr",
+    "text": "@site.equip"
+  },
+  {
+    "file": "components/journal/ObjectChangeHistoryPanel.tsx",
+    "line": 158,
+    "kind": "jsx-text",
+    "text": "Rev"
+  },
+  {
+    "file": "components/LocaleSwitcher.tsx",
+    "line": 22,
+    "kind": "ui-attr",
+    "text": "Language"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 1005,
+    "kind": "jsx-text",
+    "text": "RELATIVE"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 1006,
+    "kind": "jsx-text",
+    "text": "INSTANCE"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 1007,
+    "kind": "jsx-text",
+    "text": "ABSOLUTE"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 1077,
+    "kind": "jsx-text",
+    "text": "RELATIVE"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 1078,
+    "kind": "jsx-text",
+    "text": "INSTANCE"
+  },
+  {
+    "file": "components/ModelEditorPanel.tsx",
+    "line": 717,
+    "kind": "ui-attr",
+    "text": "UUID vendor extension model"
+  },
+  {
+    "file": "components/MultiPenTrendModal.tsx",
+    "line": 156,
+    "kind": "jsx-text",
+    "text": "0 && pens.length"
+  },
+  {
+    "file": "components/ObjectAclPanel.tsx",
+    "line": 101,
+    "kind": "jsx-text",
+    "text": "ROLE"
+  },
+  {
+    "file": "components/ObjectAclPanel.tsx",
+    "line": 102,
+    "kind": "jsx-text",
+    "text": "USER"
+  },
+  {
+    "file": "components/ObjectAclPanel.tsx",
+    "line": 122,
+    "kind": "jsx-text",
+    "text": "READ"
+  },
+  {
+    "file": "components/ObjectAclPanel.tsx",
+    "line": 123,
+    "kind": "jsx-text",
+    "text": "WRITE"
+  },
+  {
+    "file": "components/ObjectAclPanel.tsx",
+    "line": 124,
+    "kind": "jsx-text",
+    "text": "INVOKE"
+  },
+  {
+    "file": "components/operator/ManifestActionForm.tsx",
+    "line": 25,
+    "kind": "jsx-text",
+    "text": "| Record"
+  },
+  {
+    "file": "components/operator/ManifestScreen.tsx",
+    "line": 47,
+    "kind": "jsx-text",
+    "text": "| Record"
+  },
+  {
+    "file": "components/operator/OperatorAlarmBarEditor.tsx",
+    "line": 161,
+    "kind": "ui-attr",
+    "text": "fireAlarm, gasLeak"
+  },
+  {
+    "file": "components/platform/PlatformChangeSetsPanel.tsx",
+    "line": 108,
+    "kind": "jsx-text",
+    "text": "DRAFT"
+  },
+  {
+    "file": "components/platform/PlatformChangeSetsPanel.tsx",
+    "line": 109,
+    "kind": "jsx-text",
+    "text": "APPLIED"
+  },
+  {
+    "file": "components/platform/ScheduleEditor.tsx",
+    "line": 116,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/platform/SemanticExportPanel.tsx",
+    "line": 60,
+    "kind": "ui-attr",
+    "text": "root.platform.devices"
+  },
+  {
+    "file": "components/platform/SqlBindingEditor.tsx",
+    "line": 148,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/report/ReportExportControls.tsx",
+    "line": 12,
+    "kind": "jsx-text",
+    "text": "void | Promise"
+  },
+  {
+    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
+    "line": 154,
+    "kind": "ui-attr",
+    "text": "root.platform.devices…"
+  },
+  {
+    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
+    "line": 164,
+    "kind": "jsx-text",
+    "text": "CEL"
+  },
+  {
+    "file": "components/runtime/BindingInvokeJournalPanel.tsx",
+    "line": 165,
+    "kind": "jsx-text",
+    "text": "SQL"
+  },
+  {
+    "file": "components/scada/MimicPropertiesPanel.tsx",
+    "line": 207,
+    "kind": "ui-attr",
+    "text": "mm, m3, t"
+  },
+  {
+    "file": "components/TenantsPanel.tsx",
+    "line": 111,
+    "kind": "ui-attr",
+    "text": "Acme Corp"
+  },
+  {
+    "file": "components/TimezoneSwitcher.tsx",
+    "line": 17,
+    "kind": "ui-attr",
+    "text": "Timezone"
+  },
+  {
+    "file": "components/workflow/BpmnDiagramEditor.tsx",
+    "line": 193,
+    "kind": "jsx-text",
+    "text": "ISPF task properties"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 130,
+    "kind": "cyrillic",
+    "text": "const PLAN_APPROVAL_MESSAGE = \"Утверждаю план, начинай выполнение\";"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 150,
+    "kind": "cyrillic",
+    "text": "label.includes(\"утверд\") ||"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 152,
+    "kind": "cyrillic",
+    "text": "message.includes(\"утверждаю план\") ||"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 92,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 93,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 94,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 95,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/AgentChatContext.tsx",
+    "line": 96,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "context/UserTimeZoneContext.tsx",
+    "line": 21,
+    "kind": "jsx-text",
+    "text": "Promise"
+  },
+  {
+    "file": "scada/symbols/extra.tsx",
+    "line": 97,
+    "kind": "jsx-text",
+    "text": "INV"
+  },
+  {
+    "file": "scada/symbols/industrial.tsx",
+    "line": 440,
+    "kind": "jsx-text",
+    "text": "UPS"
+  },
+  {
+    "file": "scada/symbols/industrial.tsx",
+    "line": 451,
+    "kind": "jsx-text",
+    "text": "MCC"
+  },
+  {
+    "file": "scada/symbols/industrial.tsx",
+    "line": 462,
+    "kind": "jsx-text",
+    "text": "PLC"
+  }
+]

@@ -162,7 +162,7 @@
 | **BL-87** | Priority classes + ack workflow + flood control | P1 | Done (EX-7) | Operator / Automation |
 | **BL-88** | Operator alarm bar 24/7 polish (WS push, notifications) | P2 | Done | Operator HMI |
 | **BL-89** | Trend client: multi-pen, pan/zoom, export | P1 | Done | Operator HMI |
-| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Partial (EX-2, EX-11) | Operator HMI |
+| **BL-90** | Operator PWA shell (manifest + service worker) | P1 | Done (EX-11, EX-16) | Operator HMI |
 | **BL-91** | Offline cache for critical screens | P2 | Done (EX-11) | Operator HMI |
 | **BL-92** | SCADA mimic performance budget (60fps) | P2 | Planned | SCADA |
 | **BL-93** | Accessibility baseline WCAG 2.1 AA partial | P2 | Planned | a11y |
@@ -259,8 +259,8 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-129** | Playwright live: operator + alarming | P1 | Done | QA |
 | **BL-130** | Scheduled staging e2e (weekly cron) | P2 | Done | QA |
-| **BL-131** | Visual regression smoke (screenshot compare) | P3 | Planned | QA |
-| **BL-132** | i18n zero hardcoded gate in CI | P2 | Planned | i18n / QA |
+| **BL-131** | Visual regression smoke (screenshot compare) | P3 | Done (EX-16) | QA |
+| **BL-132** | i18n zero hardcoded gate in CI | P2 | Done (EX-16) | i18n / QA |
 
 ### Wave F — Уже сделано / не требует BL (reference)
 
@@ -824,8 +824,13 @@ Sprint EX-7 (Trust close-out + CI load gate)
 Sprint EX-8 (Driver production depth) — Partial
   BL-80, BL-83, BL-84, BL-85 — core delivered; tails: subscribe test, interop summary, capabilities API, DRIVERS.md
 
+Sprint EX-16 (QA close-out) — Done
+  BL-90 — Pixel 5 + preview PWA smoke
+  BL-131 — visual regression screenshots
+  BL-132 — i18n hardcoded baseline gate
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android PWA manual), BL-117…126, BL-131, BL-132
+  BL-117…126, BL-92…95
 ```
 
 ---
@@ -836,7 +841,7 @@ Backlog по demand (следующий приоритет)
 | ---- | --------- |
 | 2026-07-03 | Sprint EX-15: BL-128 air-gap deployment guide + pack/apply scripts |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start |
-| 2026-07-03 | Sprint EX-11: BL-91 offline cache + stale banner; BL-90 Playwright offline smoke |
+| 2026-07-03 | Sprint EX-16: BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-07-03 | REQ-EX audit sync: Wave J Partial (BL-80/83–85 EX-8); Wave K BL-90 Partial; Wave L/N Done; Wave O BL-114 Partial; ROADMAP Phase 23 + GAP |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
 | 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |

@@ -79,5 +79,6 @@ jobs:
           npx playwright install chromium --with-deps
           npm run test:e2e
           npm run build
+          npm run test:e2e:preview
           test -f dist/legal/LICENSE
           test -f dist/legal/THIRD_PARTY_NOTICES.md

@@ -35,7 +35,7 @@ export default defineConfig({
     : [
         {
           name: "mocked-chromium",
-          testIgnore: /^.*\/live\.spec\.ts$/,
+          testIgnore: [/^.*\/live\.spec\.ts$/, /pwa-android\.spec\.ts$/, /visual-regression\.spec\.ts$/],
           use: { ...devices["Desktop Chrome"] },
         },
       ],
