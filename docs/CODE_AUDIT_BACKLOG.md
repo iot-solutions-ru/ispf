@@ -829,8 +829,12 @@ Sprint EX-16 (QA close-out) — Done
   BL-131 — visual regression screenshots
   BL-132 — i18n hardcoded baseline gate
 
+Sprint EX-17 (Federation edge) — Done
+  BL-117 — in-memory store-and-forward + replay on reconnect
+  BL-118 — peer health API + UI badges
+
 Backlog по demand (следующий приоритет)
-  BL-117…126, BL-92…95
+  BL-119…126, BL-92…95, BL-90 (Android device sign-off)
 ```
 
 ---
@@ -841,7 +845,8 @@ Backlog по demand (следующий приоритет)
 | ---- | --------- |
 | 2026-07-03 | Sprint EX-15: BL-128 air-gap deployment guide + pack/apply scripts |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start |
-| 2026-07-03 | Sprint EX-16: BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
+| 2026-07-03 | Sprint EX-17 merged (#36): BL-117 store-and-forward; BL-118 peer health SLO + UI badges |
+| 2026-07-03 | Sprint EX-16 merged (#35): BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-07-03 | REQ-EX audit sync: Wave J Partial (BL-80/83–85 EX-8); Wave K BL-90 Partial; Wave L/N Done; Wave O BL-114 Partial; ROADMAP Phase 23 + GAP |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
 | 2026-06-30 | Wave I BL-72…77: admin mobile, report TZ, AI rate limits, driver observedAt pilots, i18n tails, playwright live |

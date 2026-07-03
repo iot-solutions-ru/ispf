@@ -220,6 +220,8 @@ ispf.federation:
 
 Тесты: `FederationOutboundEventBufferTest`, `FederationStoreForwardIntegrationTest`.
 
+**Limits (v1):** буфер только in-memory — при restart edge/hub события в очереди теряются. Не покрывает HTTP-only peers без outbound tunnel.
+
 ### Peer health SLO (BL-118)
 
 Per-peer диагностика для оператора и алертинга:
@@ -228,8 +230,10 @@ Per-peer диагностика для оператора и алертинга:
 |--------|----------|
 | Tunnel connected | `FederationTunnelHubService` |
 | Auth status | `FederationPeer.authStatus` |
-| Last proxy success / latency / error | `FederationPeerHealthService` (HTTP proxy) |
+| Last proxy success / latency / error | `FederationPeerHealthService` (HTTP + tunnel proxy) |
 | Pending buffered events | outbound buffer registry |
+
+**Limits (v1):** proxy snapshots and buffer stats are in-memory only (reset on server restart). No automated alerting — operator sees badges in UI only.
 
 **API:**
 
@@ -249,6 +253,8 @@ Web Console: колонка health badge на панели **Federation peers** 
 
 - Write proxy — variable patch, function invoke, **dashboard layout/title**; полная двусторонняя синхронизация дерева не поддерживается.
 - Catalog sync — import + operator resolutions; без `BIND` конфликтующие local native / proxy mismatch **не перезаписываются**.
+- ~~Edge store-forward~~ — **Done (BL-117, EX-17):** in-memory buffer + replay; disk persistence — backlog.
+- ~~Peer health SLO~~ — **Done (BL-118, EX-17):** health API + UI badges; alerting integration — backlog.
 - ~~Federated dashboards read-only~~ — **Done (BL-46):** layout/title write проксируется на remote.
 - ~~Catalog sync без merge конфликтов~~ — **Done (BL-45):** preview + SKIP/BIND в UI.
 - ~~Tenant scope на federation API~~ — **Done v0.3.0** (`FederationAccessService`, peer CRUD admin-only, proxy scoped).

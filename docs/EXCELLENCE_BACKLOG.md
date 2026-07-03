@@ -910,6 +910,7 @@
 
 - Outbound agent буферизует telemetry/events при разрыве WS; replay с ordering guard.
 - Config: max buffer MB, drop policy.
+- **Limits (v1):** in-memory only (lost on process restart); outbound tunnel + `ObjectChangeEvent` по `pathPrefix`.
 
 **Acceptance:**
 
@@ -929,12 +930,13 @@
 **Scope:**
 
 - Per-peer: last successful proxy, latency, tunnel state.
-- System UI cards + warn when stale &gt; N minutes.
+- Federation peers table: health badge column (green/yellow/red) when stale &gt; N minutes.
+- **Limits (v1):** in-memory proxy snapshots (reset on restart); no outbound alerting integration.
 
 **Acceptance:**
 
-- [x] `GET /federation/peers/{id}/health` or extend auth-status
-- [x] Explorer federation panel shows red/yellow/green
+- [x] `GET /federation/peers/{id}/health`
+- [x] Explorer federation panel shows red/yellow/green badges
 
 ---
 
@@ -1301,8 +1303,8 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-03 | Sprint EX-17: BL-117 store-and-forward buffer; BL-118 peer health SLO + UI badges |
-| 2026-07-03 | Sprint EX-16: BL-90 PWA Pixel5 preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
+| 2026-07-03 | Sprint EX-17 merged (#36): BL-117 store-and-forward; BL-118 peer health SLO + UI badges |
+| 2026-07-03 | Sprint EX-16 merged (#35): BL-90 PWA Pixel5 preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
 | 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
 | 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |

@@ -111,7 +111,8 @@
 
 | Дата | Изменение |
 |------|-----------|
-| 2026-07-03 | Sprint EX-16: BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
+| 2026-07-03 | Sprint EX-17 merged (#36): BL-117 store-and-forward; BL-118 peer health SLO + UI badges |
+| 2026-07-03 | Sprint EX-16 merged (#35): BL-90 PWA preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132; текущая волна excellence |
 | 2026-06-30 | Phase 22 tail: BL-72…77 (admin mobile, report TZ, AI rate limits, i18n, playwright live); ROADMAP Phase 22 |
 | 2026-06-30 | UI↔API parity ~100%: Application lifecycle, platform schedules, semantic export, workflow cancel/signal, federation proxy invoke, device TZ; prod 0.9.60; AGENT_KNOWLEDGE + ContextPack |
