@@ -215,6 +215,7 @@ ispf:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
     enforce: ${ISPF_LICENSE_ENFORCE:false}
+    require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:false}
   ai:
     enabled: ${ISPF_AI_ENABLED:true}
     provider: ${ISPF_AI_PROVIDER:noop}

@@ -549,7 +549,7 @@
 | | |
 | - | - |
 | **P** | P3 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-14) |
 | **Зависимости** | BL-97 |
 
 **Scope:**
@@ -559,8 +559,8 @@
 
 **Acceptance:**
 
-- [ ] Signed bundle imports; tampered bundle rejected
-- [ ] Document key rotation in `DEPLOYMENT.md`
+- [x] Signed bundle imports; tampered bundle rejected (`CommercialBundleLicenseVerifierTest`, `BundleTrustRequireSignedApiTest`)
+- [x] Document key rotation + `require-signed-bundles` in `DEPLOYMENT.md` / `COMMERCIAL_LICENSING.md`
 
 ---
 
@@ -1109,7 +1109,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-14) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -1119,8 +1119,8 @@
 
 **Acceptance:**
 
-- [ ] `DEPLOYMENT.md` «Production quick start» ≤ 30 min on fresh Linux
-- [ ] Health checks pass script
+- [x] `DEPLOYMENT.md` «Production quick start» — `deploy/prod-quickstart.sh`
+- [x] Health checks — `deploy/health-check.sh` (`/actuator/health`, `/api/v1/info`)
 
 ---
 
@@ -1273,8 +1273,12 @@ Sprint EX-13 (Production gates + operator security) — Done
   BL-109 — `OperatorAgentToolAllowlist` + contract tests
   BL-90 — mobile viewport e2e + [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
 
+Sprint EX-14 (Bundle trust + prod quick start) — Done
+  BL-100 — `ispf.license.require-signed-bundles`, API 403 on unsigned import
+  BL-127 — `deploy/prod-quickstart.sh`, `docker-compose.prod-stack.yml`, `health-check.sh`
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android device sign-off), BL-100, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android device sign-off), BL-128, BL-117…126, BL-131, BL-132
 ```
 
 ---
@@ -1283,6 +1287,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
 | 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
 | 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |
 | 2026-07-03 | Sprint EX-10: BL-82 telemetry quality ADR-0025, OPC UA/virtual drivers, chart BAD gaps |

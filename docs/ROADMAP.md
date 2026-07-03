@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-13):** BL-90 (Android device sign-off), BL-100, BL-127. Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-14):** BL-90 (Android device sign-off), BL-128 (air-gap guide). Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

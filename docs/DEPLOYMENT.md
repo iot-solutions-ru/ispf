@@ -71,6 +71,68 @@ cd apps/web-console && npm run build
 
 Dev: `npm run dev`, proxy на backend.
 
+## Production quick start (BL-127)
+
+Одна команда поднимает production-like стек на чистом Linux-хосте с Docker (PostgreSQL + Redis + `ispf-server` + nginx для UI). Не привязан к VPS `ispf.iot-solutions.ru`.
+
+**Требования:** Docker Engine + Compose v2, JDK 25 (для сборки), Node.js 20+ (для UI).
+
+```bash
+bash deploy/prod-quickstart.sh
+```
+
+Скрипт:
+
+1. Собирает `ispf-server` JAR (`bootJar`, без тестов).
+2. Собирает `apps/web-console` (`npm ci && npm run build`).
+3. Копирует JAR в `deploy/staging/ispf-server.jar`.
+4. Запускает `deploy/docker-compose.prod-stack.yml`.
+5. Ждёт readiness через `deploy/health-check.sh`.
+
+| Endpoint | URL |
+|----------|-----|
+| API info | http://localhost:8080/api/v1/info |
+| Actuator health | http://localhost:8080/actuator/health |
+| Web UI (nginx) | http://localhost:8088/ |
+
+Остановка:
+
+```bash
+docker compose -f deploy/docker-compose.prod-stack.yml down
+```
+
+Volumes PostgreSQL сохраняются (`ispf_prod_pg`). Полная очистка: добавьте `-v`.
+
+**Файлы:**
+
+| Файл | Назначение |
+|------|------------|
+| `deploy/docker-compose.prod-stack.yml` | postgres, redis, ispf-server (Temurin JRE + mounted JAR), nginx |
+| `deploy/nginx-local-prod.conf` | proxy `/api/`, `/ws/`, `/actuator/` → server; static SPA |
+| `deploy/health-check.sh` | Poll `/actuator/health` + smoke `/api/v1/info` |
+
+**Prod VPS:** для `ispf.iot-solutions.ru` по-прежнему используйте `deploy/vps-deploy-direct.ps1` (direct SCP + staging), не этот quick start.
+
+## Bundle signing (BL-100)
+
+Commercial bundle manifests могут содержать RSA-signed блок `license`. По умолчанию подпись **опциональна**; для production marketplace включите обязательную проверку:
+
+| Переменная / property | Default | Описание |
+|-----------------------|---------|----------|
+| `ISPF_LICENSE_PUBLIC_KEY_PEM` / `ispf.license.public-key-pem` | пусто | PEM RSA public key(s); несколько блоков для ротации |
+| `ISPF_LICENSE_ENFORCE` / `ispf.license.enforce` | `false` | invalid license → HTTP 403 на deploy/import |
+| `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES` / `ispf.license.require-signed-bundles` | `false` | manifest **без** `license` или с invalid signature → 403 |
+
+Поведение при import/deploy:
+
+| Условие | `require-signed-bundles=false` | `require-signed-bundles=true` |
+|---------|-------------------------------|------------------------------|
+| Нет `license` | OK | HTTP 403 |
+| Valid signed `license` | OK | OK |
+| Invalid / tampered signature | WARN (если `enforce=false`) или 403 | HTTP 403 |
+
+Подробнее: [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) (поведение deploy, key rotation).
+
 ## Production topology (target)
 
 ```

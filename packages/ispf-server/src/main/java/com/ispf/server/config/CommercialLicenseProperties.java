@@ -13,6 +13,9 @@ public class CommercialLicenseProperties {
     /** When true, invalid commercial licenses block startup, bundle deploy, and licensed driver packs. */
     private boolean enforce = false;
 
+    /** When true, bundle import/deploy requires a valid RSA-signed license block (BL-100). */
+    private boolean requireSignedBundles = false;
+
     public String getDataDir() {
         return dataDir;
     }
@@ -35,5 +38,13 @@ public class CommercialLicenseProperties {
 
     public void setEnforce(boolean enforce) {
         this.enforce = enforce;
+    }
+
+    public boolean isRequireSignedBundles() {
+        return requireSignedBundles;
+    }
+
+    public void setRequireSignedBundles(boolean requireSignedBundles) {
+        this.requireSignedBundles = requireSignedBundles;
     }
 }

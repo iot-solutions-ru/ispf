@@ -179,7 +179,7 @@
 | **BL-97** | Bundle semver contract on deploy | P1 | Done (EX-4) | Applications |
 | **BL-98** | Integrator CI template (`examples/ci-template/`) | P2 | Done (EX-4) | Applications / QA |
 | **BL-99** | Third reference app (building or energy) | P1 | Done (EX-4) | Reference |
-| **BL-100** | Bundle trust: optional RSA signing | P3 | Planned | Security |
+| **BL-100** | Bundle trust: optional RSA signing | P3 | Done (EX-14) | Security |
 
 ### Wave M — EX-SEM: semantic runtime (BL-101…105)
 
@@ -248,7 +248,7 @@
 | -- | ------ | - | ------ | ------- |
 | **BL-125** | Tenant isolation hardening + `TenantIsolationTest` | P3 | Planned | Security |
 | **BL-126** | Per-tenant quotas (optional SaaS) | P3 | Planned | Multi-tenant |
-| **BL-127** | One-click production deploy (Helm or compose stack) | P1 | Planned | Ops |
+| **BL-127** | One-click production deploy (Helm or compose stack) | P1 | Done (EX-14) | Ops |
 | **BL-128** | Air-gap deployment guide | P2 | Planned | Ops |
 
 ### Wave S — EX-QA & i18n (BL-129…132)
@@ -825,7 +825,7 @@ Sprint EX-8 (Driver production depth) — Partial
   BL-80, BL-83, BL-84, BL-85 — core delivered; tails: subscribe test, interop summary, capabilities API, DRIVERS.md
 
 Backlog по demand (следующий приоритет)
-  BL-90 (Android PWA manual), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android PWA manual), BL-128, BL-117…126, BL-131, BL-132
 ```
 
 ---
@@ -834,6 +834,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start |
 | 2026-07-03 | Sprint EX-11: BL-91 offline cache + stale banner; BL-90 Playwright offline smoke |
 | 2026-07-03 | REQ-EX audit sync: Wave J Partial (BL-80/83–85 EX-8); Wave K BL-90 Partial; Wave L/N Done; Wave O BL-114 Partial; ROADMAP Phase 23 + GAP |
 | 2026-06-30 | Phase 23 REQ-EX: [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md) BL-78…132, Wave J…S в CODE_AUDIT, ROADMAP Phase 23 |
