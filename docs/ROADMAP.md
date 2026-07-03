@@ -252,7 +252,7 @@ Track: **UI** (не REQ-PF — не меняет platform API). См. [0013](dec
 
 **Partial — расшифровка:** 20.15 — **BL-28 Done** (write UI), BL-27/30 Done; 20.16 — Done (backend + UI); 20.17 — **BL-41,42,43 Done**; 20.19 = Phase 18.1 smoke baseline; 20.20 — Done.
 
-**Следующие приоритеты:** [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) — после EX-8: BL-81, BL-82, BL-91; tails BL-80/83–85; ops ClickHouse rollout по запросу (BL-114).
+**Следующие приоритеты:** [Phase 23 REQ-EX](ROADMAP.md#phase-23--platform-excellence-req-ex) — EX-16/17 Done; далее BL-119/120 (federation) или BL-92/93 (mimic/a11y); ops ClickHouse rollout по запросу (BL-114).
 
 **Спринты:** см. [CODE_AUDIT_BACKLOG.md § Sprint planning](CODE_AUDIT_BACKLOG.md#sprint-planning-рекомендация).
 
@@ -313,7 +313,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.13 | Telemetry ingress ADR + MQTT worker + load CI gate | EX-SCALE | 111–113 | P2 | Done (111 EX-6; 112 Cancelled; 113 EX-7) |
 | 23.14 | ClickHouse prod playbook + horizontal scale docs | EX-SCALE | 114–115 | P1–P3 | Partial (114 Partial EX-1; 115 Planned) |
 | 23.15 | Historian dual-write migration tooling | EX-SCALE | 116 | P3 | Planned |
-| 23.16 | Edge store-forward + peer health SLO | EX-FED | 117–118 | P2 | Planned |
+| 23.16 | Edge store-forward + peer health SLO | EX-FED | 117–118 | P2 | Done (EX-17) |
 | 23.17 | Selective subtree sync + federation chaos tests | EX-FED | 119–120 | P3 | Planned |
 | 23.18 | OEE pattern + BPMN timers + escalation templates | EX-MES | 121–123 | P2–P3 | Planned |
 | 23.19 | ISA-95 catalog documentation | EX-MES | 124 | P3 | Planned |
@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-16):** BL-117/118 (federation edge) или BL-92/93 (mimic perf / a11y). Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-17):** BL-119/120 (federation selective sync + chaos) или BL-92/93 (mimic perf / a11y). Хвост BL-90 — Android device sign-off. Деплой на VPS — только по запросу.
 
 ## Platform baseline
 
