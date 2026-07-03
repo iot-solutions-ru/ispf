@@ -47,8 +47,11 @@ export function configureDriver(
   });
 }
 
-export function pollDriver(devicePath: string): Promise<DriverRuntimeStatus> {
+export function pollDriver(devicePath: string, pointId?: string): Promise<DriverRuntimeStatus> {
   const params = new URLSearchParams({ devicePath });
+  if (pointId) {
+    params.set("pointId", pointId);
+  }
   return request(`/api/v1/drivers/runtime/poll?${params}`, { method: "POST" });
 }
 

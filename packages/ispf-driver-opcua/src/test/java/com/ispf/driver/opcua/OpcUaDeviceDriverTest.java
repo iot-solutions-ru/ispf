@@ -44,6 +44,59 @@ class OpcUaDeviceDriverTest {
     }
 
     @Test
+    void subscribeModeReceivesPushUpdates() throws Exception {
+        int port = freePort();
+        serverDriver = startServer(port);
+        String nodeId = serverNodeId(serverDriver, NODE);
+
+        StubDriverObject clientObject = new StubDriverObject(Map.of(
+                "endpointUrl", endpointUrl(port),
+                "timeoutMs", "10000",
+                "readMode", "subscribe"
+        ));
+        OpcUaDeviceDriver client = new OpcUaDeviceDriver();
+        client.initialize(clientObject);
+        client.connect();
+        client.readPoints(Map.of("temp", nodeId));
+
+        waitForVariable(clientObject, "temp", 5000);
+
+        client.writePoint("temp", DataRecord.single(VALUE_SCHEMA, Map.of("value", "88.0")));
+        waitForVariableValue(clientObject, "temp", "88", 5000);
+
+        client.disconnect();
+    }
+
+    private static void waitForVariable(StubDriverObject clientObject, String name, long timeoutMs)
+            throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            if (clientObject.variables.containsKey(name)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Timed out waiting for variable " + name);
+    }
+
+    private static void waitForVariableValue(
+            StubDriverObject clientObject,
+            String name,
+            String expectedFragment,
+            long timeoutMs
+    ) throws InterruptedException {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        while (System.currentTimeMillis() < deadline) {
+            DataRecord record = clientObject.variables.get(name);
+            if (record != null && record.firstRow().get("value").toString().contains(expectedFragment)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("Timed out waiting for " + name + " to contain " + expectedFragment);
+    }
+
+    @Test
     void browseChildrenFindsTemperatureNode() throws Exception {
         int port = freePort();
         serverDriver = startServer(port);

@@ -89,6 +89,19 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const [mappingsJson, setMappingsJson] = useState("{}");
   const [formError, setFormError] = useState<string | null>(null);
   const [mappingTestMessage, setMappingTestMessage] = useState<string | null>(null);
+  const [testReadPointId, setTestReadPointId] = useState("");
+
+  const mappingKeys = useMemo(() => {
+    try {
+      const parsed = JSON.parse(mappingsJson) as unknown;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return Object.keys(parsed as Record<string, unknown>).sort();
+      }
+    } catch {
+      // invalid JSON — validation panel shows errors
+    }
+    return [];
+  }, [mappingsJson]);
 
   const variablesQuery = useQuery({
     queryKey: ["variables", devicePath],
@@ -195,9 +208,13 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   });
 
   const pollMutation = useMutation({
-    mutationFn: () => pollDriver(devicePath),
+    mutationFn: () => pollDriver(devicePath, testReadPointId || undefined),
     onSuccess: () => {
-      setMappingTestMessage(t("inspector:driver.mappingsTestReadOk"));
+      setMappingTestMessage(
+        testReadPointId
+          ? t("inspector:driver.mappingsTestReadPointOk", { pointId: testReadPointId })
+          : t("inspector:driver.mappingsTestReadOk"),
+      );
       queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
     },
     onError: (error: Error) => setMappingTestMessage(error.message),
@@ -394,6 +411,25 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                 </ul>
               )}
               <div className="form-actions full">
+                {mappingKeys.length > 0 && (
+                  <label>
+                    {t("inspector:driver.mappingsTestReadPoint")}
+                    <select
+                      value={testReadPointId}
+                      onChange={(e) => {
+                        setTestReadPointId(e.target.value);
+                        setMappingTestMessage(null);
+                      }}
+                    >
+                      <option value="">{t("inspector:driver.mappingsTestReadAll")}</option>
+                      {mappingKeys.map((key) => (
+                        <option key={key} value={key}>
+                          {key}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <button
                   type="button"
                   className="btn"

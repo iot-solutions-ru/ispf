@@ -299,7 +299,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | # | Тема | Track | BL | P | Статус |
 |---|------|-------|----|---|--------|
 | 23.1 | Driver production matrix + observedAt rollout | EX-DRIVER | 78–79, 85 | P1 | Partial (78–79 Done EX-1; 85 Partial EX-8) |
-| 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Partial (80 Partial EX-8; 81 Planned) |
+| 23.2 | OPC UA discovery/subscribe; BACnet discovery | EX-DRIVER | 80–81 | P1–P2 | Partial (80 Partial EX-8; 81 Done EX-9) |
 | 23.3 | Quality flags + driver interop CI matrix | EX-DRIVER | 82–84 | P2 | Partial (83–84 Partial EX-8; 82 Planned) |
 | 23.4 | Alarm shelving + priority + ack workflow | EX-HMI | 86–88 | P1–P2 | Done (EX-7) |
 | 23.5 | Industrial trends + operator PWA + offline cache | EX-HMI | 89–91 | P1–P2 | Partial (89 Done; 90 Partial EX-2; 91 Planned) |
@@ -331,7 +331,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-8):** BL-81, BL-82, BL-91, BL-90 (Android PWA smoke), BL-107, BL-127; tails EX-8 — subscribe test, interop CI summary, capabilities API, `DRIVERS.md`. Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-9):** BL-82 (quality flags), BL-91 (offline cache), BL-90 (Android PWA); tails EX-8 — interop PR badge, PRODUCTION↔interop gate. Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

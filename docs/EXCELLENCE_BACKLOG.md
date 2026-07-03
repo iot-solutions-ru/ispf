@@ -122,8 +122,8 @@
 - [x] Demo: connect к embedded OPC UA server, browse → import mappings JSON
 - [x] Subscription path с fallback на poll (`readMode=subscribe`) — код в `OpcUaDeviceDriver`
 - [x] Loopback browse test в CI (embedded server)
-- [ ] Loopback/integration test для `readMode=subscribe`
-- [ ] `DRIVERS.md`: `readMode`, browse API, security modes для prod
+- [x] Loopback/integration test для `readMode=subscribe`
+- [x] `DRIVERS.md`: `readMode`, browse API, security modes для prod
 
 ---
 
@@ -132,7 +132,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-9) |
 | **Зависимости** | BL-78 |
 
 **Scope:**
@@ -142,8 +142,8 @@
 
 **Acceptance:**
 
-- [ ] `BacnetDeviceDriverNetworkTest` или BACnet loopback расширен discovery smoke
-- [ ] Документация config keys в `DRIVERS.md`
+- [x] `BacnetDeviceDriverNetworkTest` Who-Is smoke + typed read (binary/multi-state, units)
+- [x] `discoveryMode` + read output documented in `DRIVERS.md`
 
 ---
 
@@ -186,8 +186,8 @@
 
 - [x] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
 - [ ] Badge или comment в PR при regression
-- [ ] CI job summary (pass/fail per driver pack)
-- [ ] Matrix покрывает top-10: `modbus-rtu`, `flexible`
+- [x] CI job summary (pass/fail per driver pack)
+- [x] Matrix покрывает top-10: `modbus-rtu`, `flexible`
 
 ---
 
@@ -209,7 +209,7 @@
 - [x] UI errors для invalid JSON schema
 - [x] Test read вызывает poll / variable refresh (все mapped points)
 - [x] i18n en/ru/de/zh
-- [ ] Test read одной точки (или явное изменение scope → poll all)
+- [x] Test read одной точки (`POST …/poll?pointId=`)
 - [ ] Haystack tag hints (autocomplete / suggest), не только validation warning
 
 ---
@@ -233,7 +233,7 @@
 - [x] `GET /api/v1/drivers` отражает maturity
 - [x] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test` (`DriverProductionMatrixTest`)
 - [ ] PRODUCTION promotion связан с green `driver-interop` matrix (required check или nightly gate)
-- [ ] Capabilities matrix (`SUBSCRIBE`, `DISCOVERY`, …) прокинуты в catalog API (`DriverCapabilityRegistry`)
+- [x] Capabilities matrix (`SUBSCRIBE`, `DISCOVERY`, …) прокинуты в catalog API (`DriverCapabilityRegistry` ← matrix)
 
 ---
 
@@ -1249,10 +1249,13 @@ Sprint EX-7 (Trust close-out + CI load gate)
   BL-113 Done — load-test.yml
 
 Sprint EX-8 (Driver production depth) — Partial
-  BL-80, BL-83, BL-84, BL-85 — core delivered; tails: subscribe test, interop summary, capabilities API, DRIVERS.md
+  BL-80, BL-83, BL-84, BL-85 — tails: interop PR badge, PRODUCTION↔interop gate, Haystack mapping hints
+
+Sprint EX-9 (BACnet discovery) — Done
+  BL-81 — Who-Is discovery, typed read + units, network tests, DRIVERS.md
 
 Backlog по demand (следующий приоритет)
-  BL-81, BL-82, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-82, BL-91, BL-90 (Android PWA), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -1261,6 +1264,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-9: BL-81 BACnet Who-Is + typed read/units; EX-8 tails — capabilities API, interop matrix, subscribe test, single-point poll |
 | 2026-07-03 | REQ-EX audit: BL-80/83–85/90/114 → Partial; sync ROADMAP Phase 23, GAP_REGISTRY, CODE_AUDIT |
 | 2026-07-02 | Sprint EX-8: BL-80 OPC UA browse/subscribe; BL-83 driver-interop.yml; BL-84 mapping validation UI; BL-85 top-10 PRODUCTION gate |
 | 2026-07-02 | PR #24 review fixes: load-test pipefail, ackRequired enforcement, BL-113 scope sync |

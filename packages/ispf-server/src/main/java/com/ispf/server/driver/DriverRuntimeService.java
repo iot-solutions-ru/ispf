@@ -285,7 +285,12 @@ public class DriverRuntimeService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus pollNow(String devicePath) {
-        poll(devicePath);
+        return pollNow(devicePath, null);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DriverRuntimeStatus pollNow(String devicePath, String pointId) {
+        poll(devicePath, pointId);
         return status(devicePath).orElseThrow();
     }
 
@@ -366,12 +371,23 @@ public class DriverRuntimeService {
     }
 
     private void poll(String devicePath) {
+        poll(devicePath, null);
+    }
+
+    private void poll(String devicePath, String pointId) {
         ActiveDriver active = activeDrivers.get(devicePath);
         if (active == null) {
             return;
         }
         try {
-            active.driver().readPoints(active.binding().pointMappings());
+            Map<String, String> mappings = active.binding().pointMappings();
+            if (pointId != null && !pointId.isBlank()) {
+                if (!mappings.containsKey(pointId)) {
+                    throw new IllegalArgumentException("Unknown point mapping: " + pointId);
+                }
+                mappings = Map.of(pointId, mappings.get(pointId));
+            }
+            active.driver().readPoints(mappings);
             boolean connected = active.driver().isConnected();
             ActiveDriver next = new ActiveDriver(
                     active.driver(),

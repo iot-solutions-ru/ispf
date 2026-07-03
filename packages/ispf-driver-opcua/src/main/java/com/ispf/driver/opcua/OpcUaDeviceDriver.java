@@ -229,6 +229,15 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                 );
             });
         }
+        for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
+            OpcUaPoint point = points.get(entry.getKey());
+            PointRead read = readPoint(point);
+            driverObject.updateVariable(
+                    entry.getKey(),
+                    read.record(),
+                    DriverPollTimestamps.sourceOrPollTick(read.observedAt())
+            );
+        }
     }
 
     private List<DriverDiscovery.Node> browseWithClient(String parentNodeId) throws DriverException {

@@ -18,6 +18,8 @@ jobs:
           - ispf-driver-virtual
           - ispf-driver-mqtt
           - ispf-driver-modbus
+          - ispf-driver-modbus-rtu
+          - ispf-driver-flexible
           - ispf-driver-opcua
           - ispf-driver-snmp
           - ispf-driver-bacnet
@@ -35,4 +37,23 @@ jobs:
           java-version: "25"
 
       - name: Run driver tests (${{ matrix.module }})
+        id: test
         run: ./gradlew :packages:${{ matrix.module }}:test --no-daemon
+
+      - name: Record interop result
+        if: always()
+        run: |
+          echo "## Driver interop (${{ matrix.module }})" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.test.outcome }}" = "success" ]; then
+            echo "Result: **pass** ✅" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Result: **fail** ❌" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  summary:
+    needs: matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interop matrix complete
+        run: echo "Driver interop matrix finished (see job summaries per pack)." >> "$GITHUB_STEP_SUMMARY"
