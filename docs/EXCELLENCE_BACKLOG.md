@@ -903,7 +903,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | Phase 7 tunnel Done |
 
 **Scope:**
@@ -913,8 +913,8 @@
 
 **Acceptance:**
 
-- [ ] Integration test: disconnect 60s → reconnect → hub receives backlog
-- [ ] `FEDERATION.md` updated
+- [x] Integration test: disconnect → reconnect → hub drains backlog (`FederationStoreForwardIntegrationTest`)
+- [x] `FEDERATION.md` updated
 
 ---
 
@@ -923,7 +923,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done |
 | **Зависимости** | — |
 
 **Scope:**
@@ -933,8 +933,8 @@
 
 **Acceptance:**
 
-- [ ] `GET /federation/peers/{id}/health` or extend auth-status
-- [ ] Explorer federation panel shows red/yellow/green
+- [x] `GET /federation/peers/{id}/health` or extend auth-status
+- [x] Explorer federation panel shows red/yellow/green
 
 ---
 
@@ -1287,8 +1287,12 @@ Sprint EX-16 (QA close-out) — Done
   BL-131 — visual regression screenshots (`e2e/visual-regression.spec.ts`)
   BL-132 — i18n hardcoded baseline gate (`scripts/i18n-check-hardcoded.mjs`)
 
+Sprint EX-17 (Federation edge) — Done
+  BL-117 — outbound store-and-forward buffer + replay on reconnect
+  BL-118 — peer health API + UI badges (green/yellow/red)
+
 Backlog по demand (следующий приоритет)
-  BL-117…126, BL-92…95
+  BL-90 (Android device sign-off), BL-119…126, BL-92, BL-93
 ```
 
 ---
@@ -1297,6 +1301,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-17: BL-117 store-and-forward buffer; BL-118 peer health SLO + UI badges |
 | 2026-07-03 | Sprint EX-16: BL-90 PWA Pixel5 preview smoke; BL-131 visual regression; BL-132 i18n hardcoded gate |
 | 2026-07-03 | Sprint EX-14: BL-100 require-signed-bundles; BL-127 prod quick start compose + health-check |
 | 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |

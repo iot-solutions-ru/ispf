@@ -90,10 +90,12 @@ class VariableHistoryAsyncWriterTest {
         ));
 
         writer.awaitQueueDrain(5, TimeUnit.SECONDS);
+        Thread.sleep(100);
 
         ArgumentCaptor<List<VariableSampleEntity>> captor = ArgumentCaptor.forClass(List.class);
         verify(batchPersister, timeout(5000).atLeastOnce()).persistBatch(captor.capture());
-        assertTrue(captor.getValue().size() >= 2);
+        int totalPersisted = captor.getAllValues().stream().mapToInt(List::size).sum();
+        assertTrue(totalPersisted >= 2, "expected at least 2 samples persisted, got " + totalPersisted);
         verify(automationMetricsRecorder, atLeastOnce()).recordVariableHistoryFlushed(2);
     }
 

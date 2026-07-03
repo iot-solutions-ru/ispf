@@ -53,7 +53,7 @@
 | **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127, BL-128 Done (EX-14, EX-15) |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
 | **P2** | Scale | Demand-driven pub/sub, CI load gate | BL-111 Done; BL-113 Done |
-| **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 — Phase 23 |
+| **P2** | Federation edge | Store-forward, peer health SLO | BL-117, 118 Done (EX-17) |
 | **P2** | QA live | Playwright operator + alarming; visual regression + i18n hardcoded gate | BL-129…132 Done (EX-2, EX-16) |
 | **P3** | Multi-tenant SaaS | Tenant isolation hardening, quotas | BL-125, 126 — Phase 23 |
 ## Таблица подсистем
@@ -77,14 +77,14 @@
 | Licensed driver packs | ~100% | — | FW-50, [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md) |
 | Driver stub catalog | ~92% | top-10 PRODUCTION gate partial; subscribe test, interop summary, capabilities API | BL-78…85, [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | Driver maturity labels | ~98% | — | — |
-| Frontend e2e (Playwright) | ~95% | mimic perf CI gate (BL-95) | BL-129…132 Done |
+| Frontend e2e (Playwright) | ~95% | mimic perf, a11y (BL-92…93) | BL-129…132 Done |
 | Operator alarming UX | ~95% | mimic perf, a11y (BL-92…93) | BL-86…88 Done |
 | Operator trends / PWA | ~98% | mimic perf, a11y (BL-92…93) | BL-89…91 Done |
 | App marketplace | ~98% | — | BL-96…100 Done |
 | Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
 | AI agent production | ~98% | — | BL-106…110 Done |
 | Telemetry ingress scale | ~75% | demand-driven pub/sub (ADR-0024); CI load gate Done | BL-111, BL-113 Done |
-| Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |
+| Federation edge | ~95% | selective sync, chaos tests | BL-117, 118 Done (EX-17); BL-119, 120 |
 | Production deploy UX | ~95% | — | BL-127, BL-128 Done |
 | Web Console i18n | ~98% | tails | BL-07 Done |
 | UI ↔ API parity | ~100% | MCP wire, installation-id (ops-only) | BL-01…18 + lifecycle UI 0.9.60 |

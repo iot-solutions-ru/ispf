@@ -7,6 +7,7 @@ import com.ispf.server.object.ObjectChangeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,17 +33,21 @@ public class FederationTunnelHubService {
     private final ObjectMapper objectMapper;
     private final FederationWebSocketFanoutService webSocketFanout;
     private final ApplicationEventPublisher eventPublisher;
+    private final FederationPeerHealthService peerHealthService;
     private final Map<UUID, WebSocketSession> sessionsByPeer = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<FederationTunnelProxyResult>> pending = new ConcurrentHashMap<>();
+    private final Map<UUID, Long> lastEventSeqByPeer = new ConcurrentHashMap<>();
 
     public FederationTunnelHubService(
             ObjectMapper objectMapper,
             FederationWebSocketFanoutService webSocketFanout,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            @Lazy FederationPeerHealthService peerHealthService
     ) {
         this.objectMapper = objectMapper;
         this.webSocketFanout = webSocketFanout;
         this.eventPublisher = eventPublisher;
+        this.peerHealthService = peerHealthService;
     }
 
     public void registerSession(UUID peerId, WebSocketSession session) {
@@ -104,25 +109,37 @@ public class FederationTunnelHubService {
         String requestId = UUID.randomUUID().toString();
         CompletableFuture<FederationTunnelProxyResult> future = new CompletableFuture<>();
         pending.put(requestId, future);
+        long startedAt = System.nanoTime();
         try {
             session.sendMessage(new TextMessage(
                     FederationTunnelProtocol.proxyRequest(requestId, method, path, query, body, objectMapper)
             ));
         } catch (IOException e) {
             pending.remove(requestId);
+            peerHealthService.recordProxyFailure(peerId, e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to send tunnel proxy request", e);
         } catch (Exception e) {
             pending.remove(requestId);
+            peerHealthService.recordProxyFailure(peerId, e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to encode tunnel proxy request", e);
         }
         try {
-            return future.get(PROXY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            FederationTunnelProxyResult result = future.get(PROXY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            long latencyMs = (System.nanoTime() - startedAt) / 1_000_000L;
+            if (result.status() >= 400) {
+                peerHealthService.recordProxyFailure(peerId, result.error() != null ? result.error() : "HTTP " + result.status());
+            } else {
+                peerHealthService.recordProxySuccess(peerId, latencyMs);
+            }
+            return result;
         } catch (TimeoutException e) {
             pending.remove(requestId);
+            peerHealthService.recordProxyFailure(peerId, "Tunnel proxy timed out");
             log.warn("Tunnel proxy timed out for peer {} {} {}", peerId, method, path);
             throw new ResponseStatusException(HttpStatus.GATEWAY_TIMEOUT, "Tunnel proxy request timed out");
         } catch (Exception e) {
             pending.remove(requestId);
+            peerHealthService.recordProxyFailure(peerId, e.getMessage());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Tunnel proxy request failed: " + e.getMessage(), e);
         }
     }
@@ -151,6 +168,14 @@ public class FederationTunnelHubService {
         String variableName = node.path("variableName").asString(null);
         if (remotePath == null || remotePath.isBlank()) {
             return;
+        }
+        if (node.hasNonNull("seq")) {
+            long seq = node.get("seq").asLong();
+            Long previous = lastEventSeqByPeer.put(peerId, seq);
+            if (previous != null && seq <= previous) {
+                log.debug("Ignoring out-of-order tunnel event_notify seq {} for peer {}", seq, peerId);
+                return;
+            }
         }
         if (FederationPaths.isCatalogMirrorPath(remotePath)) {
             return;

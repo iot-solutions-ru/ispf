@@ -1,6 +1,6 @@
 import type { UseMutationResult, UseQueryResult } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { FederationPeer, FederationPeerPayload } from "../../api/federation";
+import type { FederationPeer, FederationPeerPayload, FederationPeerHealthLevel } from "../../api/federation";
 import { formatTokenExpiry } from "../../api/federation";
 import { getStoredSession } from "../../auth/session";
 
@@ -56,6 +56,21 @@ export default function FederationPeersTab({
   const { t } = useTranslation(["federation", "common"]);
   const peers = peersQuery.data ?? [];
 
+  const healthBadgeClass = (level: FederationPeerHealthLevel | undefined): string => {
+    if (level === "GREEN") return "badge ok";
+    if (level === "YELLOW") return "badge warn";
+    return "badge danger";
+  };
+
+  const healthBadge = (peer: FederationPeer): React.ReactNode => {
+    const level = peer.healthLevel ?? "YELLOW";
+    return (
+      <span className={healthBadgeClass(level)} title={peer.healthSummary ?? t("peers.healthUnknown")}>
+        {t(`peers.health.${level.toLowerCase()}`)}
+      </span>
+    );
+  };
+
   const authBadge = (peer: FederationPeer): React.ReactNode => {
     if (peer.authMode === "SERVICE_ACCOUNT") {
       return (
@@ -93,6 +108,7 @@ export default function FederationPeersTab({
                 <th>{t("peers.column.name")}</th>
                 <th>{t("peers.column.url")}</th>
                 <th>{t("peers.column.prefix")}</th>
+                <th>{t("peers.column.health")}</th>
                 <th>{t("peers.column.auth")}</th>
                 <th>{t("peers.column.token")}</th>
                 <th>{t("peers.column.enabled")}</th>
@@ -112,6 +128,7 @@ export default function FederationPeersTab({
                   </td>
                   <td>{peer.baseUrl}</td>
                   <td><code>{peer.pathPrefix || t("common:empty.dash")}</code></td>
+                  <td>{healthBadge(peer)}</td>
                   <td>{authBadge(peer)}</td>
                   <td>{peer.hasAuthToken ? t("common:action.yes") : t("common:action.no")}</td>
                   <td>{peer.enabled ? t("common:action.yes") : t("common:action.no")}</td>

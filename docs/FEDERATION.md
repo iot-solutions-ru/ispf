@@ -192,6 +192,59 @@ Hub ──proxy_request──► Edge ──local services──► response
 
 Требования prod: `ispf.security.secrets-key` на edge (хранение registration code / session token); reverse proxy с поддержкой `wss`.
 
+### Store-and-forward (BL-117)
+
+При разрыве исходящего tunnel edge **не теряет** platform events, которые hub должен получить через `event_notify`:
+
+1. `FederationOutboundEventBufferRegistry` держит per-agent in-memory буфер.
+2. Пока WS disconnected, `FederationTunnelAgentService` кладёт `ObjectChangeEvent` в буфер вместо отправки.
+3. После reconnect — `replayBufferedEvents()` с ordering guard на hub (`lastEventSeqByPeer`).
+
+Конфиг (`application.yml`):
+
+```yaml
+ispf.federation:
+  outbound-buffer:
+    max-bytes: 2097152          # ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES
+    drop-policy: DROP_OLDEST    # или DROP_NEWEST
+  health:
+    stale-minutes: 15           # ISPF_FEDERATION_HEALTH_STALE_MINUTES
+```
+
+| Политика | Поведение при переполнении |
+|----------|----------------------------|
+| `DROP_OLDEST` | Удаляет старейшие события, принимает новое |
+| `DROP_NEWEST` | Отклоняет новое событие, сохраняет очередь |
+
+`event_notify` включает опциональные `seq` и `occurredAt` для детерминированного replay.
+
+Тесты: `FederationOutboundEventBufferTest`, `FederationStoreForwardIntegrationTest`.
+
+### Peer health SLO (BL-118)
+
+Per-peer диагностика для оператора и алертинга:
+
+| Сигнал | Источник |
+|--------|----------|
+| Tunnel connected | `FederationTunnelHubService` |
+| Auth status | `FederationPeer.authStatus` |
+| Last proxy success / latency / error | `FederationPeerHealthService` (HTTP proxy) |
+| Pending buffered events | outbound buffer registry |
+
+**API:**
+
+```http
+GET /api/v1/federation/peers/{id}/health
+```
+
+Ответ: `{ peerId, level, tunnelConnected, lastProxySuccessAt, lastProxyLatencyMs, lastProxyError, pendingBufferedEvents, summary }`.
+
+`level`: `GREEN` | `YELLOW` | `RED` — stale proxy &gt; N мин, tunnel offline, auth failed, pending buffer.
+
+List peers (`GET /api/v1/federation/peers`) дополнительно возвращает `healthLevel` и `healthSummary`.
+
+Web Console: колонка health badge на панели **Federation peers** (green/yellow/red).
+
 ## Ограничения spike / production gaps
 
 - Write proxy — variable patch, function invoke, **dashboard layout/title**; полная двусторонняя синхронизация дерева не поддерживается.
