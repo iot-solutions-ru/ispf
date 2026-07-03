@@ -185,7 +185,7 @@
 **Acceptance:**
 
 - [x] `.github/workflows/driver-interop.yml` на PR при изменении `packages/ispf-driver-*`
-- [ ] Badge или comment в PR при regression
+- [x] Badge или comment в PR при regression (sticky PR comment via `github-script`)
 - [x] CI job summary (pass/fail per driver pack)
 - [x] Matrix покрывает top-10: `modbus-rtu`, `flexible`
 
@@ -196,7 +196,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Partial (Sprint EX-8) |
+| **Статус** | Done (Sprint EX-8, EX-12) |
 | **Зависимости** | BL-59 (Haystack mappings Done) |
 
 **Scope:**
@@ -210,7 +210,7 @@
 - [x] Test read вызывает poll / variable refresh (все mapped points)
 - [x] i18n en/ru/de/zh
 - [x] Test read одной точки (`POST …/poll?pointId=`)
-- [ ] Haystack tag hints (autocomplete / suggest), не только validation warning
+- [x] Haystack tag hints (autocomplete / suggest), не только validation warning
 
 ---
 
@@ -691,7 +691,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-12) |
 | **Зависимости** | — |
 
 **Scope:**
@@ -701,8 +701,8 @@
 
 **Acceptance:**
 
-- [ ] Admin-only; matches `ai_tool_audit` DB rows
-- [ ] Document retention in `AI_DEVELOPMENT.md`
+- [x] Admin-only; matches `ai_tool_audit` DB rows
+- [x] Document retention in `AI_DEVELOPMENT.md`
 
 ---
 
@@ -1262,8 +1262,12 @@ Sprint EX-11 (Operator offline) — Done
   BL-91 — localStorage cache (manifest/ui/dashboard/variables/screens), stale banner, reconnect invalidate
   BL-90 — Playwright offline smoke (Android manual tail)
 
+Sprint EX-12 (Audit + driver UX tails) — Done
+  BL-107 — agent audit export JSON/CSV, admin-only
+  EX-8 tails — driver-interop PR comment, Haystack mapping hints in inspector
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android PWA manual), BL-100, BL-107, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android PWA manual), BL-100, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---

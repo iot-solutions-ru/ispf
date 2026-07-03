@@ -49,7 +49,7 @@
 | **P1** | Operator alarming | Shelving, priority, ack workflow | BL-86…88 Done (EX-7) — [EXCELLENCE_BACKLOG](EXCELLENCE_BACKLOG.md) |
 | **P1** | Operator HMI | Industrial trends Done; PWA installable; offline cache | BL-89 Done; BL-90 Partial (EX-11 Playwright); BL-91 Done (EX-11) |
 | **P1** | App platform | Solution catalog, semver bundles, 3rd reference app | BL-96…99 Done (EX-4); BL-100 Planned |
-| **P1** | AI production | Approval mode, scenario catalog, SLO dashboard Done | BL-106, 108, 110 Done (EX-3); BL-107, 109 Planned |
+| **P1** | AI production | Approval mode, scenario catalog, SLO dashboard Done | BL-106, 108, 110 Done (EX-3); BL-107 Done (EX-12); BL-109 Planned |
 | **P1** | Ops / deploy | CH history playbook (docs); one-click prod stack | BL-114 Partial (EX-1); BL-127 Planned |
 | **P2** | Semantic runtime | Haystack query over tree (not full Haxall) | BL-101…103 — Done (EX-5) |
 | **P2** | Scale | Demand-driven pub/sub, CI load gate | BL-111 Done; BL-113 Done |
@@ -82,7 +82,7 @@
 | Operator trends / PWA | ~92% | Android PWA manual smoke (BL-90) | BL-89…91 |
 | App marketplace | ~95% | bundle signing (BL-100) | BL-96…98 Done |
 | Haystack query runtime | ~85% | Brick inference (BL-104), roundtrip (BL-105) | BL-101…103 Done |
-| AI agent production | ~90% | audit export (BL-107), operator allowlist (BL-109) | BL-106…110 |
+| AI agent production | ~95% | operator allowlist (BL-109) | BL-106…110 |
 | Telemetry ingress scale | ~75% | demand-driven pub/sub (ADR-0024); CI load gate Done | BL-111, BL-113 Done |
 | Federation edge | ~80% | store-forward buffer, peer health SLO | BL-117, 118 |
 | Production deploy UX | ~70% | one-click stack, air-gap guide | BL-127, 128 |

@@ -200,7 +200,7 @@
 | ID | Задача | P | Статус | Область |
 | -- | ------ | - | ------ | ------- |
 | **BL-106** | Mutating tools: explicit approval mode (prod default) | P1 | Done (EX-3) | AI |
-| **BL-107** | Agent audit export (JSON/CSV) | P2 | Planned | AI |
+| **BL-107** | Agent audit export (JSON/CSV) | P2 | Done (EX-12) | AI |
 | **BL-108** | Reference scenario catalog (10 spec→deploy paths) | P1 | Done (EX-3) | AI / QA |
 | **BL-109** | Operator agent hard allowlist + fuzz tests | P2 | Planned | AI / Security |
 | **BL-110** | Agent SLO dashboard (metrics cards) | P2 | Done (EX-3) | AI / Ops |

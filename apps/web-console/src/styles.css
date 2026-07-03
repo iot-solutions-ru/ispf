@@ -7943,6 +7943,28 @@ body.scada-mimic-editor-open {
   gap: 1rem;
 }
 
+.driver-mapping-issues {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.driver-mapping-hint {
+  color: var(--text-muted);
+}
+
+.driver-haystack-tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.driver-haystack-apply {
+  margin-left: 0.5rem;
+}
+
 .driver-panel-head {
   display: flex;
   align-items: flex-start;

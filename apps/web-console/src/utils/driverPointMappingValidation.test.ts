@@ -28,4 +28,22 @@ describe("validateDriverPointMappingsJson", () => {
     expect(result.issues.some((issue) => issue.code === "unknown_variable")).toBe(true);
     expect(result.issues.some((issue) => issue.code === "duplicate_address")).toBe(true);
   });
+
+  it("suggests haystack tags for string mappings", () => {
+    const result = validateDriverPointMappingsJson(
+      JSON.stringify({ temperature: "HOLDING:1:40001" }),
+      ["temperature"],
+    );
+    expect(result.issues.some((issue) => issue.code === "haystack_object_suggested")).toBe(true);
+  });
+
+  it("hints missing haystack tags on extended mapping", () => {
+    const result = validateDriverPointMappingsJson(
+      JSON.stringify({
+        temperature: { point: "ns=2;s=Temp", haystackTags: ["point"] },
+      }),
+      ["temperature"],
+    );
+    expect(result.issues.some((issue) => issue.code === "haystack_tags_missing")).toBe(true);
+  });
 });

@@ -7,6 +7,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,37 @@ public class AiToolAuditStore {
         );
         Long id = jdbcTemplate.queryForObject("SELECT MAX(id) FROM %s".formatted(auditTable), Long.class);
         return id != null ? id : 0L;
+    }
+
+    public List<Map<String, Object>> listByAppId(String appId, int limit) {
+        int capped = Math.min(Math.max(limit, 1), 5000);
+        return jdbcTemplate.query("""
+                SELECT id, tool_name, app_id, actor, request_hash, status,
+                       provider_id, model_id, context_pack_version, errors_json, created_at
+                FROM %s
+                WHERE app_id = ?
+                ORDER BY created_at ASC, id ASC
+                LIMIT ?
+                """.formatted(auditTable),
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("id", rs.getLong("id"));
+                    row.put("toolName", rs.getString("tool_name"));
+                    row.put("appId", rs.getString("app_id"));
+                    row.put("actor", rs.getString("actor"));
+                    row.put("requestHash", rs.getString("request_hash"));
+                    row.put("status", rs.getString("status"));
+                    row.put("providerId", rs.getString("provider_id"));
+                    row.put("modelId", rs.getString("model_id"));
+                    row.put("contextPackVersion", rs.getString("context_pack_version"));
+                    row.put("errors", rs.getString("errors_json"));
+                    Timestamp createdAt = rs.getTimestamp("created_at");
+                    row.put("createdAt", createdAt != null ? createdAt.toInstant().toString() : null);
+                    return row;
+                },
+                appId,
+                capped
+        );
     }
 
     private String writeErrors(List<String> errors) {

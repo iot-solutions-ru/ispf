@@ -1,5 +1,6 @@
 package com.ispf.server.ai.api;
 
+import com.ispf.server.ai.audit.AgentAuditExportService;
 import com.ispf.server.ai.agent.AgentAttachmentValidator;
 import com.ispf.server.ai.agent.AgentInteractionMode;
 import com.ispf.server.ai.agent.AgentSession;
@@ -11,6 +12,7 @@ import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.ai.tool.AiToolRegistry;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.BundleManifestJsonSupport;
+import com.ispf.server.security.acl.ObjectAccessService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -61,6 +63,8 @@ public class AiController {
     private final PlatformAgentToolRegistry agentToolRegistry;
     private final ObjectMapper objectMapper;
     private final AgentAttachmentValidator attachmentValidator;
+    private final AgentAuditExportService agentAuditExportService;
+    private final ObjectAccessService objectAccessService;
 
     public AiController(
             AiToolRegistry toolRegistry,
@@ -70,7 +74,9 @@ public class AiController {
             AgentSessionStore agentSessionStore,
             PlatformAgentToolRegistry agentToolRegistry,
             ObjectMapper objectMapper,
-            AgentAttachmentValidator attachmentValidator
+            AgentAttachmentValidator attachmentValidator,
+            AgentAuditExportService agentAuditExportService,
+            ObjectAccessService objectAccessService
     ) {
         this.toolRegistry = toolRegistry;
         this.llmProviderRegistry = llmProviderRegistry;
@@ -80,6 +86,8 @@ public class AiController {
         this.agentToolRegistry = agentToolRegistry;
         this.objectMapper = objectMapper;
         this.attachmentValidator = attachmentValidator;
+        this.agentAuditExportService = agentAuditExportService;
+        this.objectAccessService = objectAccessService;
     }
 
     @GetMapping("/models")
@@ -155,6 +163,24 @@ public class AiController {
         AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
         return session.toMap();
+    }
+
+    @GetMapping("/agent/sessions/{sessionId}/audit")
+    public ResponseEntity<?> exportAgentSessionAudit(
+            Authentication authentication,
+            @PathVariable String sessionId,
+            @RequestParam(name = "format", defaultValue = "json") String format
+    ) {
+        objectAccessService.requireAdmin(authentication);
+        AgentSession session = agentSessionStore.getForAdmin(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        if ("csv".equalsIgnoreCase(format)) {
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"agent-audit-" + sessionId + ".csv\"")
+                    .contentType(MediaType.parseMediaType("text/csv"))
+                    .body(agentAuditExportService.exportCsv(session));
+        }
+        return ResponseEntity.ok(agentAuditExportService.exportJson(session));
     }
 
     @GetMapping("/agent/sessions/{sessionId}/progress")

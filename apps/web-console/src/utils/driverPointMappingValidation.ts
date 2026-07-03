@@ -1,8 +1,14 @@
+import {
+  extractHaystackTagsFromMappingValue,
+  suggestHaystackTagsForVariable,
+} from "./haystackMappingHints";
+
 export type DriverMappingValidationIssue = {
-  level: "error" | "warning";
+  level: "error" | "warning" | "hint";
   code: string;
   message: string;
   key?: string;
+  suggestedTags?: string[];
 };
 
 export type DriverMappingValidationResult = {
@@ -129,6 +135,36 @@ export function validateDriverPointMappingsJson(
           key,
         });
       }
+      const existingTags = extractHaystackTagsFromMappingValue(value);
+      const suggested = suggestHaystackTagsForVariable(key);
+      if (existingTags.length === 0) {
+        issues.push({
+          level: "hint",
+          code: "haystack_tags_suggested",
+          message: `Suggested Haystack tags for "${key}": ${suggested.join(", ")}`,
+          key,
+          suggestedTags: suggested,
+        });
+      } else {
+        const missing = suggested.filter((tag) => !existingTags.includes(tag));
+        if (missing.length > 0) {
+          issues.push({
+            level: "hint",
+            code: "haystack_tags_missing",
+            message: `Consider adding Haystack tags for "${key}": ${missing.join(", ")}`,
+            key,
+            suggestedTags: missing,
+          });
+        }
+      }
+    } else if (address) {
+      issues.push({
+        level: "hint",
+        code: "haystack_object_suggested",
+        message: `Use extended mapping with haystackTags for "${key}" (semantic export)`,
+        key,
+        suggestedTags: suggestHaystackTagsForVariable(key),
+      });
     }
   }
 

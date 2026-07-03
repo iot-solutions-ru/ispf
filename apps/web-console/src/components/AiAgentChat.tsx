@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { downloadAgentAuditCsv } from "../api/ai";
 import { useAgentChat } from "../context/AgentChatContext";
 import type { AgentInteractionMode } from "../api/ai";
 import type { AiAgentStep } from "../api/ai";
@@ -55,6 +56,7 @@ function AgentModeBadge({ mode }: { mode: AgentInteractionMode }) {
 
 export default function AiAgentChat() {
   const { t } = useTranslation("ai");
+  const [auditExportBusy, setAuditExportBusy] = useState(false);
   const {
     provider,
     agentApiReady,
@@ -150,6 +152,22 @@ export default function AiAgentChat() {
         >
           <span className="ai-agent-new-chat-label">{t("agent.newChat")}</span>
         </button>
+        {activeSessionId && (
+          <button
+            type="button"
+            className="btn"
+            disabled={auditExportBusy || !chatEnabled}
+            onClick={() => {
+              setAuditExportBusy(true);
+              void downloadAgentAuditCsv(activeSessionId)
+                .catch(() => undefined)
+                .finally(() => setAuditExportBusy(false));
+            }}
+            title={t("agent.exportAuditTitle")}
+          >
+            {auditExportBusy ? t("agent.exportAuditBusy") : t("agent.exportAudit")}
+          </button>
+        )}
         <div className="ai-agent-chat-strip" role="tablist" aria-label={t("agent.toolbarAria")}>
           {chatIndex.chats.length === 0 && (
             <span className="ai-agent-chat-strip-empty op-muted">{t("agent.noChats")}</span>

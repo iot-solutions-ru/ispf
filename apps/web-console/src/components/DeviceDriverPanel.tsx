@@ -18,6 +18,10 @@ import {
   hasDriverMappingErrors,
   validateDriverPointMappingsJson,
 } from "../utils/driverPointMappingValidation";
+import {
+  buildHaystackMappingTemplate,
+  COMMON_HAYSTACK_MARKER_TAGS,
+} from "../utils/haystackMappingHints";
 import { pollDriver, browseDriverNodes } from "../api/drivers";
 
 interface DeviceDriverPanelProps {
@@ -155,6 +159,27 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
     queryClient.invalidateQueries({ queryKey: ["variables", devicePath] });
   };
 
+  const applyHaystackTemplate = (variableKey: string, tags: string[]) => {
+    try {
+      const parsed = JSON.parse(mappingsJson) as Record<string, unknown>;
+      const current = parsed[variableKey];
+      const address =
+        typeof current === "string"
+          ? current
+          : current && typeof current === "object" && !Array.isArray(current)
+            ? String((current as Record<string, unknown>).point
+                ?? (current as Record<string, unknown>).address
+                ?? (current as Record<string, unknown>).nodeId
+                ?? "")
+            : "";
+      parsed[variableKey] = buildHaystackMappingTemplate(variableKey, address || "ADDRESS", tags);
+      setMappingsJson(JSON.stringify(parsed, null, 2));
+      setMappingTestMessage(t("inspector:driver.haystackTemplateApplied", { key: variableKey }));
+    } catch {
+      setMappingTestMessage(t("inspector:driver.haystackTemplateFailed"));
+    }
+  };
+
   const startMutation = useMutation({
     mutationFn: () => startDriver(devicePath),
     onSuccess: invalidate,
@@ -176,10 +201,6 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
   const saveMutation = useMutation({
     mutationFn: (autoStart: boolean) => {
       setFormError(null);
-      const mappingsLabel = t("inspector:driver.mappingsLabel");
-      if (hasDriverMappingErrors(mappingValidation)) {
-        throw new Error(t("inspector:driver.mappingsValidationFailed"));
-      }
       const configLabel = t("inspector:driver.configLabel");
       const mappingsLabel = t("inspector:driver.mappingsLabel");
       const configuration = parseJsonObject(
@@ -403,13 +424,45 @@ export default function DeviceDriverPanel({ devicePath, canManage }: DeviceDrive
                   {mappingValidation.issues.map((issue) => (
                     <li
                       key={`${issue.code}-${issue.key ?? issue.message}`}
-                      className={issue.level === "error" ? "hint error" : "hint warning"}
+                      className={
+                        issue.level === "error"
+                          ? "hint error"
+                          : issue.level === "hint"
+                            ? "hint driver-mapping-hint"
+                            : "hint warning"
+                      }
                     >
-                      {issue.message}
+                      <span>{issue.message}</span>
+                      {issue.level === "hint" && issue.key && issue.suggestedTags && (
+                        <button
+                          type="button"
+                          className="btn small driver-haystack-apply"
+                          onClick={() => applyHaystackTemplate(issue.key!, issue.suggestedTags!)}
+                        >
+                          {t("inspector:driver.haystackApplyTemplate")}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
               )}
+              <div className="driver-haystack-tag-chips full">
+                <span className="driver-runtime-label">{t("inspector:driver.haystackCommonTags")}</span>
+                {COMMON_HAYSTACK_MARKER_TAGS.slice(0, 10).map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="btn small"
+                    title={t("inspector:driver.haystackTagChipHint")}
+                    onClick={() => {
+                      navigator.clipboard.writeText(`"${tag}"`).catch(() => {});
+                      setMappingTestMessage(t("inspector:driver.haystackTagCopied", { tag }));
+                    }}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
               <div className="form-actions full">
                 {mappingKeys.length > 0 && (
                   <label>
