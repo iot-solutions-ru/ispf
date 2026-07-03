@@ -101,3 +101,26 @@ jobs:
                 body,
               });
             }
+
+  production-gate:
+    needs: matrix
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Verify PRODUCTION↔interop matrix gate (BL-85)
+        run: >
+          ./gradlew
+          :packages:ispf-server:test
+          --tests com.ispf.server.driver.DriverInteropWorkflowGateTest
+          --tests com.ispf.server.driver.DriverProductionMatrixTest
+          --no-daemon

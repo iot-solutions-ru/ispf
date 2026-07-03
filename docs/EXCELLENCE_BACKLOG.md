@@ -219,7 +219,7 @@
 | | |
 | - | - |
 | **P** | P1 |
-| **Статус** | Partial (Sprint EX-8) |
+| **Статус** | Done (Sprint EX-8, EX-13) |
 | **Зависимости** | BL-78…84 |
 
 **Scope:**
@@ -232,7 +232,7 @@
 - [x] Все 10 — `PRODUCTION` в `DriverMaturityRegistry`
 - [x] `GET /api/v1/drivers` отражает maturity
 - [x] Нет PRODUCTION без теста в `packages/ispf-driver-*/src/test` (`DriverProductionMatrixTest`)
-- [ ] PRODUCTION promotion связан с green `driver-interop` matrix (required check или nightly gate)
+- [x] PRODUCTION promotion связан с green `driver-interop` matrix (`DriverInteropWorkflowGateTest` + `production-gate` job)
 - [x] Capabilities matrix (`SUBSCRIBE`, `DISCOVERY`, …) прокинуты в catalog API (`DriverCapabilityRegistry` ← matrix)
 
 ---
@@ -348,7 +348,9 @@
 - [x] Lighthouse PWA checklist: installable
 - [x] `npm run build` включает manifest icons
 - [x] Playwright: offline operator shell + stale banner (`e2e/live-operator.spec.ts`)
-- [ ] Operator mode работает installed на Android Chrome smoke (manual)
+- [x] Playwright: mobile viewport smoke (`e2e/live-operator.spec.ts`)
+- [x] Manual checklist: [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
+- [ ] Operator mode работает installed на Android Chrome smoke (sign-off по чеклисту)
 
 ---
 
@@ -731,7 +733,7 @@
 | | |
 | - | - |
 | **P** | P2 |
-| **Статус** | Planned |
+| **Статус** | Done (Sprint EX-13) |
 | **Зависимости** | OperatorAgentTurnGuard |
 
 **Scope:**
@@ -741,8 +743,8 @@
 
 **Acceptance:**
 
-- [ ] `AgentToolGuardContractTest` extended for OPERATOR profile
-- [ ] MCP operator scope documented
+- [x] `AgentToolGuardContractTest` extended for OPERATOR profile
+- [x] MCP operator scope documented
 
 ---
 
@@ -1266,8 +1268,13 @@ Sprint EX-12 (Audit + driver UX tails) — Done
   BL-107 — agent audit export JSON/CSV, admin-only
   EX-8 tails — driver-interop PR comment, Haystack mapping hints in inspector
 
+Sprint EX-13 (Production gates + operator security) — Done
+  BL-85 — PRODUCTION↔driver-interop matrix gate (`DriverInteropWorkflowGateTest`, `production-gate` CI job)
+  BL-109 — `OperatorAgentToolAllowlist` + contract tests
+  BL-90 — mobile viewport e2e + [OPERATOR_PWA_ANDROID_SMOKE.md](OPERATOR_PWA_ANDROID_SMOKE.md)
+
 Backlog по demand (следующий приоритет)
-  BL-90 (Android PWA manual), BL-100, BL-127, BL-117…128, BL-131, BL-132
+  BL-90 (Android device sign-off), BL-100, BL-127, BL-117…128, BL-131, BL-132
 ```
 
 ---
@@ -1276,6 +1283,7 @@ Backlog по demand (следующий приоритет)
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-03 | Sprint EX-13: BL-85 interop gate; BL-109 operator allowlist; BL-90 Android smoke checklist + mobile e2e |
 | 2026-07-03 | Sprint EX-11: BL-91 operator offline cache + stale banner; BL-90 Playwright offline smoke |
 | 2026-07-03 | Sprint EX-10: BL-82 telemetry quality ADR-0025, OPC UA/virtual drivers, chart BAD gaps |
 | 2026-07-03 | Sprint EX-9: BL-81 BACnet Who-Is + typed read/units; EX-8 tails — capabilities API, interop matrix, subscribe test, single-point poll |

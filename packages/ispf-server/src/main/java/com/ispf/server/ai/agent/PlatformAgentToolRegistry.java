@@ -69,37 +69,7 @@ import java.util.function.Function;
 @Service
 public class PlatformAgentToolRegistry {
 
-    static final Set<String> OPERATOR_TOOLS = Set.of(
-            "get_operator_scope",
-            "list_objects",
-            "get_object",
-            "search_objects",
-            "search_by_haystack_tags",
-            "list_variables",
-            "describe_variables",
-            "list_functions",
-            "get_function",
-            "invoke_bff",
-            "invoke_tree_function",
-            "list_events",
-            "get_event_schema",
-            "list_event_catalog",
-            "list_reports",
-            "get_report_schema",
-            "run_report",
-            "get_dashboard_layout",
-            "list_automation",
-            "get_automation_schema",
-            "get_variable_history",
-            "get_variable_trend",
-            "list_work_queue",
-            "list_app_memory",
-            "remember_app_memory",
-            "list_app_documents",
-            "read_app_document",
-            "search_app_documents",
-            "get_operator_link"
-    );
+    static final Set<String> OPERATOR_TOOLS = OperatorAgentToolAllowlist.ALLOWED_TOOLS;
 
     private final Map<String, PlatformAgentTool> toolsByName;
     private final ObjectMapper objectMapper;

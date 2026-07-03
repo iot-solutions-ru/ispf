@@ -150,7 +150,7 @@
 | **BL-82** | Quality flags GOOD/UNCERTAIN/BAD | P2 | Done (EX-10) | Telemetry |
 | **BL-83** | Driver interop CI matrix (GitHub Actions) | P2 | Partial (EX-8) | Driver QA |
 | **BL-84** | Point mapping validation UI + test read | P2 | Partial (EX-8) | Driver UI |
-| **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Partial (EX-8) | Driver catalog |
+| **BL-85** | Top-10 PRODUCTION promotion gate | P1 | Done (EX-8, EX-13) | Driver catalog |
 
 ### Wave K — EX-HMI & alarming (BL-86…95)
 
@@ -202,7 +202,7 @@
 | **BL-106** | Mutating tools: explicit approval mode (prod default) | P1 | Done (EX-3) | AI |
 | **BL-107** | Agent audit export (JSON/CSV) | P2 | Done (EX-12) | AI |
 | **BL-108** | Reference scenario catalog (10 spec→deploy paths) | P1 | Done (EX-3) | AI / QA |
-| **BL-109** | Operator agent hard allowlist + fuzz tests | P2 | Planned | AI / Security |
+| **BL-109** | Operator agent hard allowlist + fuzz tests | P2 | Done (EX-13) | AI / Security |
 | **BL-110** | Agent SLO dashboard (metrics cards) | P2 | Done (EX-3) | AI / Ops |
 
 ### Wave O — EX-SCALE: telemetry & historian (BL-111…116)

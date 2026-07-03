@@ -42,10 +42,15 @@ final class DriverProductionMatrix {
             String driverId,
             DriverMaturity maturity,
             Set<Capability> capabilities,
-            String loopbackTestSourcePath
+            String loopbackTestSourcePath,
+            String interopGradleModule
     ) {
         Entry {
             capabilities = Set.copyOf(capabilities);
+        }
+
+        Entry(String driverId, DriverMaturity maturity, Set<Capability> capabilities, String loopbackTestSourcePath) {
+            this(driverId, maturity, capabilities, loopbackTestSourcePath, null);
         }
     }
 
@@ -61,30 +66,40 @@ final class DriverProductionMatrix {
 
     private static final Map<String, Entry> ENTRIES = Map.ofEntries(
             entry("virtual", DriverMaturity.PRODUCTION, POLL_OBSERVED_QUALITY,
-                    testPath("ispf-driver-virtual", "com.ispf.driver.virtual.VirtualUnifiedProfileTest")),
+                    testPath("ispf-driver-virtual", "com.ispf.driver.virtual.VirtualUnifiedProfileTest"),
+                    "ispf-driver-virtual"),
             entry("mqtt", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-mqtt", "com.ispf.driver.mqtt.MqttDeviceDriverTest")),
+                    testPath("ispf-driver-mqtt", "com.ispf.driver.mqtt.MqttDeviceDriverTest"),
+                    "ispf-driver-mqtt"),
             entry("modbus-tcp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest")),
+                    testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest"),
+                    "ispf-driver-modbus"),
             entry("modbus-rtu", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-modbus-rtu", "com.ispf.driver.modbusrtu.ModbusRtuDeviceDriverTest")),
+                    testPath("ispf-driver-modbus-rtu", "com.ispf.driver.modbusrtu.ModbusRtuDeviceDriverTest"),
+                    "ispf-driver-modbus-rtu"),
             entry("modbus-udp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest")),
+                    testPath("ispf-driver-modbus", "com.ispf.driver.modbus.ModbusTcpDeviceDriverTest"),
+                    "ispf-driver-modbus"),
             entry("opcua", DriverMaturity.PRODUCTION, EnumSet.of(
                     Capability.POLL, Capability.SUBSCRIBE, Capability.WRITE, Capability.DISCOVERY,
                     Capability.OBSERVED_AT, Capability.QUALITY
             ),
-                    testPath("ispf-driver-opcua", "com.ispf.driver.opcua.OpcUaDeviceDriverTest")),
+                    testPath("ispf-driver-opcua", "com.ispf.driver.opcua.OpcUaDeviceDriverTest"),
+                    "ispf-driver-opcua"),
             entry("opcua-server", DriverMaturity.PRODUCTION, POLL_WRITE,
                     testPath("ispf-driver-opcua-server", "com.ispf.driver.opcuaserver.OpcUaServerPointTest")),
             entry("s7", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-s7", "com.ispf.driver.s7.S7DeviceDriverTest")),
+                    testPath("ispf-driver-s7", "com.ispf.driver.s7.S7DeviceDriverTest"),
+                    "ispf-driver-s7"),
             entry("snmp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-snmp", "com.ispf.driver.snmp.SnmpDeviceDriverTest")),
+                    testPath("ispf-driver-snmp", "com.ispf.driver.snmp.SnmpDeviceDriverTest"),
+                    "ispf-driver-snmp"),
             entry("http", DriverMaturity.PRODUCTION, POLL_ONLY,
-                    testPath("ispf-driver-http", "com.ispf.driver.http.HttpDeviceDriverTest")),
+                    testPath("ispf-driver-http", "com.ispf.driver.http.HttpDeviceDriverTest"),
+                    "ispf-driver-http"),
             entry("bacnet", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
-                    testPath("ispf-driver-bacnet", "com.ispf.driver.bacnet.BacnetDeviceDriverNetworkTest")),
+                    testPath("ispf-driver-bacnet", "com.ispf.driver.bacnet.BacnetDeviceDriverNetworkTest"),
+                    "ispf-driver-bacnet"),
             entry("iec104", DriverMaturity.BETA, POLL_WRITE,
                     testPath("ispf-driver-iec104", "com.ispf.driver.iec104.Iec104DeviceDriverTest")),
             entry("iec104-server", DriverMaturity.BETA, POLL_ONLY,
@@ -113,7 +128,8 @@ final class DriverProductionMatrix {
             entry("graph-db", DriverMaturity.BETA, POLL_ONLY,
                     testPath("ispf-driver-graph-db", "com.ispf.driver.graphdb.GraphDbPointTest")),
             entry("flexible", DriverMaturity.PRODUCTION, POLL_ONLY,
-                    testPath("ispf-driver-flexible", "com.ispf.driver.flexible.FlexiblePointTest")),
+                    testPath("ispf-driver-flexible", "com.ispf.driver.flexible.FlexiblePointTest"),
+                    "ispf-driver-flexible"),
             entry("gps-tracker", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-gps-tracker", "com.ispf.driver.gpstracker.GpsTrackerPointTest")),
             entry("haystack", DriverMaturity.BETA, POLL_ONLY,
@@ -143,6 +159,10 @@ final class DriverProductionMatrix {
         return Optional.ofNullable(ENTRIES.get(driverId));
     }
 
+    static Optional<String> resolveInteropGradleModule(String driverId) {
+        return entry(driverId).map(Entry::interopGradleModule).filter(s -> s != null && !s.isBlank());
+    }
+
     static Map<String, Entry> entries() {
         return ENTRIES;
     }
@@ -153,7 +173,17 @@ final class DriverProductionMatrix {
             Set<Capability> capabilities,
             String loopbackTestSourcePath
     ) {
-        return Map.entry(driverId, new Entry(driverId, maturity, capabilities, loopbackTestSourcePath));
+        return entry(driverId, maturity, capabilities, loopbackTestSourcePath, null);
+    }
+
+    private static Map.Entry<String, Entry> entry(
+            String driverId,
+            DriverMaturity maturity,
+            Set<Capability> capabilities,
+            String loopbackTestSourcePath,
+            String interopGradleModule
+    ) {
+        return Map.entry(driverId, new Entry(driverId, maturity, capabilities, loopbackTestSourcePath, interopGradleModule));
     }
 
     private static String testPath(String module, String className) {

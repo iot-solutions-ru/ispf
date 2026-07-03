@@ -21,6 +21,10 @@ We need a thin bridge so MCP clients reuse the **same** ACL-aware platform tools
 5. **Transport**: start with **stdio** MCP for local dev and **SSE/HTTP** for remote hub; not bundled into core JAR by default (profile `mcp`).
 6. **Out of scope for v1**: MCP resources/prompts for ContextPack (only tools); auto-import without validate/dry-run gates.
 
+## Operator scope (BL-109)
+
+When MCP `AgentContext` uses `AgentProfile.OPERATOR` (operator copilot / scoped app), tool execution is restricted to `OperatorAgentToolAllowlist` — read-only catalog, reports, historian, and app documents. Mutating platform tools (`create_object`, `configure_driver`, `import_package`, …) return `Tool not allowed in operator mode`. Admin MCP sessions use the full catalog.
+
 ## Tool surface (initial)
 
 | MCP tool | Platform tool |
