@@ -60,6 +60,7 @@ public class ApplicationSqlBindingService {
     }
 
     public void deploy(String appId, DeploySqlBindingRequest request) {
+        ApplicationSchemaSupport.validateSelectQuery(request.query(), "Binding query");
         String valueField = request.valueField() != null && !request.valueField().isBlank()
                 ? request.valueField()
                 : "value";
@@ -150,6 +151,7 @@ public class ApplicationSqlBindingService {
             String schemaName = resolveSchemaName(binding.appId());
             Object[] extractedHolder = new Object[1];
             schemaSession.runInSchema(schemaName, () -> {
+                ApplicationSchemaSupport.validateSelectQuery(binding.querySql(), "Binding query");
                 List<Map<String, Object>> rows = dataStore.queryForList(binding.querySql());
                 if (rows.isEmpty()) {
                     extractedHolder[0] = 0;

@@ -178,6 +178,9 @@ export function zipBubbleTrajectoryPoints(
   for (let index = 0; index < count; index += 1) {
     const xPoint = xSeries[index];
     const yPoint = ySeries[index];
+    if (xPoint.value == null || yPoint.value == null) {
+      continue;
+    }
     points.push({
       name: xPoint.time,
       x: xPoint.value,

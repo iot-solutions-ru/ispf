@@ -109,8 +109,9 @@ test.describe("operator offline cache (mocked)", () => {
       timeout: 15_000,
     });
 
+    // Vite dev server cannot serve a full document reload while offline (no SW).
+    // Offline UX is driven by navigator.onLine — banner appears without reload.
     await context.setOffline(true);
-    await page.reload();
 
     await expect(page.getByTestId("operator-offline-banner")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("operator-shell")).toContainText("Demo Application");

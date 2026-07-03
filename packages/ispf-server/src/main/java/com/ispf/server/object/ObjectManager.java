@@ -67,6 +67,7 @@ public class ObjectManager {
     private final ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ObjectChangePublicationService publicationService;
+    private final ObjectProvider<ObjectManager> self;
     private final ObjectConfigAuditService configAuditService;
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
@@ -86,6 +87,7 @@ public class ObjectManager {
             ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
             @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
+            ObjectProvider<ObjectManager> self,
             ObjectConfigAuditService configAuditService,
             @org.springframework.context.annotation.Lazy RuntimeTelemetryCoalescer telemetryCoalescer,
             JavaFunctionRuntimeService javaFunctionRuntimeService
@@ -103,6 +105,7 @@ public class ObjectManager {
         this.fixtureModelBootstrap = fixtureModelBootstrap;
         this.visualGroupService = visualGroupService;
         this.publicationService = publicationService;
+        this.self = self;
         this.configAuditService = configAuditService;
         this.telemetryCoalescer = telemetryCoalescer;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
@@ -231,8 +234,8 @@ public class ObjectManager {
         SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(path)
                 .orElseThrow(() -> new IllegalStateException("Missing system description: " + path));
         if (objectTree.findByPath(path).isPresent()) {
-            updateInfo(path, entry.displayName(), entry.description());
-            reconcileType(path, type);
+            self.getObject().updateInfo(path, entry.displayName(), entry.description());
+            self.getObject().reconcileType(path, type);
             return;
         }
         Optional<ObjectNodeEntity> persisted = nodeRepository.findByPath(path);
@@ -243,7 +246,7 @@ public class ObjectManager {
             return;
         }
         int lastDot = path.lastIndexOf('.');
-        create(
+        self.getObject().create(
                 path.substring(0, lastDot),
                 path.substring(lastDot + 1),
                 type,

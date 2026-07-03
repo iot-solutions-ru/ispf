@@ -8,6 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.application.data.ApplicationSchemaSession;
+import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.model.SystemObjectStructureService;
@@ -64,12 +65,17 @@ public class SqlBindingObjectService {
 
     @Transactional
     public void ensureCatalog() {
+        ensureCatalogInternal();
+    }
+
+    private void ensureCatalogInternal() {
         SystemObjectCatalogSupport.ensureFolder(objectManager, BINDINGS_ROOT, ObjectType.BINDINGS, null);
     }
 
     @Transactional
     public void upsert(BindingDefinition definition) {
-        ensureCatalog();
+        ensureCatalogInternal();
+        ApplicationSchemaSupport.validateSelectQuery(definition.query(), "Binding query");
         String nodeName = sanitizeNodeName(definition.bindingId());
         String path = BINDINGS_ROOT + "." + nodeName;
         if (objectManager.tree().findByPath(path).isEmpty()) {
@@ -201,7 +207,7 @@ public class SqlBindingObjectService {
     }
 
     private List<BindingDefinition> listAll() {
-        ensureCatalog();
+        ensureCatalogInternal();
         List<BindingDefinition> bindings = new ArrayList<>();
         if (objectManager.tree().findByPath(BINDINGS_ROOT).isEmpty()) {
             return bindings;
@@ -219,6 +225,7 @@ public class SqlBindingObjectService {
         String schemaName = dataSourcePathResolver.resolveSchemaName(binding.dataSourcePath());
         Object[] extracted = new Object[1];
         schemaSession.runInSchema(schemaName, () -> {
+            ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(binding.query());
             if (rows.isEmpty()) {
                 extracted[0] = null;

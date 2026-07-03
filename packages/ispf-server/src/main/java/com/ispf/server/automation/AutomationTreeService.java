@@ -80,12 +80,20 @@ public class AutomationTreeService {
 
     @Transactional
     public void ensurePlatformFolders() {
+        ensurePlatformFoldersInternal();
+    }
+
+    private void ensurePlatformFoldersInternal() {
         ensureNode(ALERT_RULES_ROOT, ObjectType.ALERT_RULES, "Alert Rules", "CEL rules that publish events on variable changes");
         ensureNode(CORRELATORS_ROOT, ObjectType.CORRELATORS, "Correlators", "Event patterns that trigger workflows");
     }
 
     @Transactional
     public void ensureAlertRuleStructure(String path) {
+        ensureAlertRuleStructureInternal(path);
+    }
+
+    private void ensureAlertRuleStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.ALERT) {
             throw new IllegalArgumentException("Not an alert rule object: " + path);
@@ -95,6 +103,10 @@ public class AutomationTreeService {
 
     @Transactional
     public void ensureCorrelatorStructure(String path) {
+        ensureCorrelatorStructureInternal(path);
+    }
+
+    private void ensureCorrelatorStructureInternal(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.type() != ObjectType.CORRELATOR) {
             throw new IllegalArgumentException("Not a correlator object: " + path);
@@ -104,7 +116,7 @@ public class AutomationTreeService {
 
     @Transactional
     public void migrateLegacyTables() {
-        ensurePlatformFolders();
+        ensurePlatformFoldersInternal();
         Map<String, String> correlatorIdMap = new HashMap<>();
         for (AlertRuleEntity entity : legacyAlertRuleRepository.findAll()) {
             String path = rulePathForName(entity.getName());
@@ -515,7 +527,7 @@ public class AutomationTreeService {
         String name = leafName(path);
         objectManager.create(parentPath(path), name, ObjectType.ALERT, displayName,
                 "CEL alert rule", "alert-rule-v1");
-        ensureAlertRuleStructure(path);
+        ensureAlertRuleStructureInternal(path);
         setString(path, "targetObjectPath", targetObjectPath);
         setString(path, "watchVariable", watchVariable);
         setString(path, "conditionExpr", conditionExpr);
@@ -561,7 +573,7 @@ public class AutomationTreeService {
         String name = leafName(path);
         objectManager.create(parentPath(path), name, ObjectType.CORRELATOR, displayName,
                 "Event correlator", "correlator-v1");
-        ensureCorrelatorStructure(path);
+        ensureCorrelatorStructureInternal(path);
         setString(path, "targetObjectPath", targetObjectPath != null ? targetObjectPath : "");
         setString(path, "patternType", patternType.name());
         setString(path, "eventName", eventName);
@@ -711,9 +723,9 @@ public class AutomationTreeService {
     private void ensureParent(String path) {
         String parent = parentPath(path);
         if (parent.equals(ALERT_RULES_ROOT)) {
-            ensurePlatformFolders();
+            ensurePlatformFoldersInternal();
         } else if (parent.equals(CORRELATORS_ROOT)) {
-            ensurePlatformFolders();
+            ensurePlatformFoldersInternal();
         }
     }
 

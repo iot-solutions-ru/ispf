@@ -14,10 +14,7 @@ import DriverMaturityBadge, { formatDriverOptionLabel } from "./DriverMaturityBa
 import DriverWriteForm from "./DriverWriteForm";
 import { driverSupportsWrite } from "../types/drivers";
 import type { VariableDto } from "../types";
-import {
-  hasDriverMappingErrors,
-  validateDriverPointMappingsJson,
-} from "../utils/driverPointMappingValidation";
+import { validateDriverPointMappingsJson } from "../utils/driverPointMappingValidation";
 import {
   buildHaystackMappingTemplate,
   COMMON_HAYSTACK_MARKER_TAGS,

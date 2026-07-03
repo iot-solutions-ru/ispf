@@ -7,6 +7,7 @@ import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
@@ -22,17 +23,20 @@ public class WorkflowInstanceCancelService {
     private final JdbcTemplate jdbcTemplate;
     private final ApplicationSchemaSession schemaSession;
     private final String cancelJournalTable;
+    private final ObjectProvider<WorkflowInstanceCancelService> self;
 
     public WorkflowInstanceCancelService(
             WorkflowInstanceRepository instanceRepository,
             JdbcTemplate jdbcTemplate,
             ApplicationSchemaSession schemaSession,
-            PlatformSqlCatalog platformSqlCatalog
+            PlatformSqlCatalog platformSqlCatalog,
+            ObjectProvider<WorkflowInstanceCancelService> self
     ) {
         this.instanceRepository = instanceRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.schemaSession = schemaSession;
         this.cancelJournalTable = platformSqlCatalog.table("workflow_cancel_journal");
+        this.self = self;
     }
 
     @Transactional
@@ -113,7 +117,7 @@ public class WorkflowInstanceCancelService {
                     status
             );
             for (WorkflowInstanceEntity entity : instances) {
-                cancel(entity.getId(), reason, detailJson, cancelledBy);
+                self.getObject().cancel(entity.getId(), reason, detailJson, cancelledBy);
                 count++;
             }
         }

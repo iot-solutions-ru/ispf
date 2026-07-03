@@ -21,6 +21,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +56,7 @@ public class DriverRuntimeService {
     private final ObjectMapper objectMapper;
     private final Environment environment;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
+    private final ObjectProvider<DriverRuntimeService> self;
     private final ScheduledExecutorService scheduler;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
@@ -64,6 +66,7 @@ public class DriverRuntimeService {
             ObjectMapper objectMapper,
             Environment environment,
             DeviceTelemetryPolicyService telemetryPolicyService,
+            ObjectProvider<DriverRuntimeService> self,
             @Value("${ispf.driver.scheduler-threads:4}") int schedulerThreads
     ) {
         this.objectManager = objectManager;
@@ -71,6 +74,7 @@ public class DriverRuntimeService {
         this.objectMapper = objectMapper;
         this.environment = environment;
         this.telemetryPolicyService = telemetryPolicyService;
+        this.self = self;
         int threads = Math.max(1, schedulerThreads);
         this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
             Thread thread = new Thread(r, "ispf-driver-runtime");
@@ -92,13 +96,13 @@ public class DriverRuntimeService {
             }
             if (readBinding(path).isEmpty()) {
                 if ("root.platform.devices.demo-sensor-01".equals(path)) {
-                    configure(path, DriverBinding.virtualDemo());
+                    self.getObject().configure(path, DriverBinding.virtualDemo());
                 } else {
                     continue;
                 }
             }
             try {
-                start(path);
+                self.getObject().start(path);
             } catch (Exception e) {
                 log.warn("Failed to auto-start driver for {}: {}", path, e.getMessage());
             }

@@ -30,6 +30,7 @@ import com.ispf.server.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -64,6 +65,7 @@ public class WorkflowService {
     private final WorkflowEventTriggerIndex eventTriggerIndex;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final WorkflowTriggerIndexRefresh triggerIndexRefresh;
+    private final ObjectProvider<WorkflowService> self;
 
     public WorkflowService(
             ObjectManager objectManager,
@@ -80,7 +82,8 @@ public class WorkflowService {
             BindingRefreshAfterCommit bindingRefreshAfterCommit,
             WorkflowEventTriggerIndex eventTriggerIndex,
             AutomationMetricsRecorder automationMetricsRecorder,
-            WorkflowTriggerIndexRefresh triggerIndexRefresh
+            WorkflowTriggerIndexRefresh triggerIndexRefresh,
+            ObjectProvider<WorkflowService> self
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
@@ -97,6 +100,7 @@ public class WorkflowService {
         this.eventTriggerIndex = eventTriggerIndex;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.triggerIndexRefresh = triggerIndexRefresh;
+        this.self = self;
     }
 
     @Transactional
@@ -440,7 +444,7 @@ public class WorkflowService {
             }
             case START_WORKFLOW -> {
                 String childPath = required(params, "workflowPath");
-                runWorkflow(
+                self.getObject().runWorkflow(
                         childPath,
                         params.get("objectPath"),
                         AutomationMetricsRecorder.WorkflowStartTrigger.EVENT

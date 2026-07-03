@@ -117,6 +117,7 @@ public class ApplicationDataStore {
     }
 
     public List<Map<String, Object>> queryForList(String sql) {
+        ApplicationSchemaSupport.validateSelectQuery(sql, "SQL query");
         return jdbcTemplate.queryForList(sql);
     }
 

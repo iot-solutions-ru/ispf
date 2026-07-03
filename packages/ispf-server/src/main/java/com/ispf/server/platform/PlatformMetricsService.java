@@ -91,6 +91,10 @@ public class PlatformMetricsService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> snapshot() {
+        return snapshotInternal();
+    }
+
+    private Map<String, Object> snapshotInternal() {
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("timestamp", Instant.now().toString());
         metrics.put("runtime", runtimeMetrics());
@@ -217,7 +221,7 @@ public class PlatformMetricsService {
     }
 
     public List<Map<String, Object>> metricSections() {
-        Map<String, Object> snapshot = snapshot();
+        Map<String, Object> snapshot = snapshotInternal();
         List<Map<String, Object>> sections = new java.util.ArrayList<>(List.of(
                 section("runtime", "Среда выполнения", snapshot.get("runtime")),
                 section("database", "База данных", snapshot.get("database")),

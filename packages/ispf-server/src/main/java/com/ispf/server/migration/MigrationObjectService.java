@@ -55,13 +55,8 @@ public class MigrationObjectService {
     }
 
     @Transactional
-    public void ensureCatalog() {
-        SystemObjectCatalogSupport.ensureFolder(objectManager, MIGRATIONS_ROOT, ObjectType.MIGRATIONS, null);
-    }
-
-    @Transactional
     public void upsert(MigrationDefinition definition) {
-        ensureCatalog();
+        ensureCatalogInternal();
         String nodeName = sanitizeNodeName(definition.scriptId());
         String path = MIGRATIONS_ROOT + "." + nodeName;
         if (objectManager.tree().findByPath(path).isEmpty()) {
@@ -187,7 +182,7 @@ public class MigrationObjectService {
     }
 
     private List<MigrationDefinition> listAll() {
-        ensureCatalog();
+        ensureCatalogInternal();
         List<MigrationDefinition> migrations = new ArrayList<>();
         if (objectManager.tree().findByPath(MIGRATIONS_ROOT).isEmpty()) {
             return migrations;
@@ -203,6 +198,15 @@ public class MigrationObjectService {
 
     private void ensureStructure(String path) {
         structureService.ensureMigrationStructure(path);
+    }
+
+    @Transactional
+    public void ensureCatalog() {
+        ensureCatalogInternal();
+    }
+
+    private void ensureCatalogInternal() {
+        SystemObjectCatalogSupport.ensureFolder(objectManager, MIGRATIONS_ROOT, ObjectType.MIGRATIONS, null);
     }
 
     private Optional<MigrationDefinition> toDefinition(String path, PlatformObject node) {

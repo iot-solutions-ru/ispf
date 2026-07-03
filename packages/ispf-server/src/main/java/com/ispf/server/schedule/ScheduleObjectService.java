@@ -53,12 +53,16 @@ public class ScheduleObjectService {
 
     @Transactional
     public void ensureCatalog() {
+        ensureCatalogInternal();
+    }
+
+    private void ensureCatalogInternal() {
         SystemObjectCatalogSupport.ensureFolder(objectManager, SCHEDULES_ROOT, ObjectType.SCHEDULES, null);
     }
 
     @Transactional(readOnly = true)
     public List<ScheduleDefinition> listEnabled() {
-        ensureCatalogPresent();
+        ensureCatalogPresentInternal();
         List<ScheduleDefinition> schedules = new ArrayList<>();
         if (objectManager.tree().findByPath(SCHEDULES_ROOT).isEmpty()) {
             return schedules;
@@ -74,7 +78,7 @@ public class ScheduleObjectService {
 
     @Transactional
     public void upsert(ScheduleDefinition definition) {
-        ensureCatalog();
+        ensureCatalogInternal();
         String nodeName = sanitizeNodeName(definition.scheduleId());
         String path = SCHEDULES_ROOT + "." + nodeName;
         if (objectManager.tree().findByPath(path).isEmpty()) {
@@ -247,8 +251,12 @@ public class ScheduleObjectService {
     }
 
     private void ensureCatalogPresent() {
+        ensureCatalogPresentInternal();
+    }
+
+    private void ensureCatalogPresentInternal() {
         if (objectManager.tree().findByPath(SCHEDULES_ROOT).isEmpty()) {
-            ensureCatalog();
+            ensureCatalogInternal();
         }
     }
 

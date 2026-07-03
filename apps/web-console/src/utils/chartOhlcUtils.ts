@@ -14,26 +14,28 @@ export function livePointsToCandlestickPoints(
   points: TrendPoint[],
   targetBuckets = 16
 ): CandlestickPoint[] {
-  if (points.length === 0) {
+  const plottable = points.filter((point) => point.value != null && Number.isFinite(point.value));
+  if (plottable.length === 0) {
     return [];
   }
-  if (points.length === 1) {
-    const point = points[0];
-    return [{ ...point, open: point.value, high: point.value, low: point.value, close: point.value }];
+  if (plottable.length === 1) {
+    const point = plottable[0];
+    const value = point.value as number;
+    return [{ ...point, open: value, high: value, low: value, close: value }];
   }
-  const chunkSize = Math.max(1, Math.ceil(points.length / targetBuckets));
+  const chunkSize = Math.max(1, Math.ceil(plottable.length / targetBuckets));
   const result: CandlestickPoint[] = [];
-  for (let index = 0; index < points.length; index += chunkSize) {
-    const chunk = points.slice(index, index + chunkSize);
-    const values = chunk.map((point) => point.value);
+  for (let index = 0; index < plottable.length; index += chunkSize) {
+    const chunk = plottable.slice(index, index + chunkSize);
+    const values = chunk.map((point) => point.value as number);
     const anchor = chunk[chunk.length - 1];
     result.push({
       t: anchor.t,
       time: anchor.time,
-      open: chunk[0].value,
+      open: values[0],
       high: Math.max(...values),
       low: Math.min(...values),
-      close: chunk[chunk.length - 1].value,
+      close: values[values.length - 1],
     });
   }
   return result;
