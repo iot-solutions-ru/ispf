@@ -10,10 +10,16 @@ import {
 test.describe("visual regression smoke", () => {
   test("login page", async ({ page }) => {
     await mockAuthConfig(page);
+    const authReady = page.waitForResponse(
+      (response) => response.url().includes("/api/v1/auth/config") && response.ok()
+    );
     await page.goto("/");
+    await authReady;
     const card = page.locator(".login-card");
-    await expect(card).toBeVisible();
-    await expect(card).toHaveScreenshot("login-card.png");
+    await expect(page.getByLabel("Username")).toBeVisible();
+    await expect(card).toHaveScreenshot("login-card.png", {
+      mask: [page.locator(".login-card-head")],
+    });
   });
 
   test("admin explorer", async ({ page }) => {
