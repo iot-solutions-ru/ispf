@@ -1,7 +1,6 @@
 package com.ispf.server.cassandra;
 
 import com.datastax.oss.driver.api.core.CqlSession;
-import com.datastax.oss.driver.api.core.CqlSessionBuilder;
 import com.datastax.oss.driver.api.core.cql.BatchStatement;
 import com.datastax.oss.driver.api.core.cql.BatchType;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
@@ -14,7 +13,6 @@ import com.ispf.server.config.CassandraStoreProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,17 +29,9 @@ public class CassandraClient implements AutoCloseable {
     private final String keyspace;
 
     public CassandraClient(CassandraStoreProperties settings) {
-        this.keyspace = settings.getKeyspace();
-        CqlSessionBuilder builder = CqlSession.builder()
-                .withLocalDatacenter(settings.getLocalDatacenter())
-                .withKeyspace(keyspace);
-        for (InetSocketAddress contactPoint : parseContactPoints(settings)) {
-            builder.addContactPoint(contactPoint);
-        }
-        if (settings.getUsername() != null && !settings.getUsername().isBlank()) {
-            builder.withAuthCredentials(settings.getUsername(), settings.getPassword() != null ? settings.getPassword() : "");
-        }
-        this.session = builder.build();
+        CassandraSchemaBootstrap.ensureKeyspaceExists(settings);
+        this.keyspace = CassandraSchemaBootstrap.requireValidKeyspace(settings.getKeyspace());
+        this.session = CassandraSchemaBootstrap.openSession(settings, keyspace);
         log.info(
                 "Cassandra session opened (keyspace={}, datacenter={}, contacts={})",
                 keyspace,
@@ -150,19 +140,5 @@ public class CassandraClient implements AutoCloseable {
     @Override
     public void close() {
         session.close();
-    }
-
-    private static List<InetSocketAddress> parseContactPoints(CassandraStoreProperties settings) {
-        List<InetSocketAddress> points = new ArrayList<>();
-        for (String raw : settings.getContactPoints().split(",")) {
-            String trimmed = raw.trim();
-            if (!trimmed.isEmpty()) {
-                points.add(new InetSocketAddress(trimmed, settings.getPort()));
-            }
-        }
-        if (points.isEmpty()) {
-            points.add(new InetSocketAddress("127.0.0.1", settings.getPort()));
-        }
-        return points;
     }
 }

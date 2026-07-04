@@ -3,12 +3,12 @@ package com.ispf.server.history;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.storage.ClickHouseSchemaBootstrap;
+import com.ispf.server.storage.StorageStartupRetry;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -57,39 +57,42 @@ public class ClickHouseVariableHistoryStore implements VariableHistoryWriteStore
                 .build();
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(111)
+    @PostConstruct
     public void ensureSchema() {
         VariableHistoryProperties.ClickHouse config = properties.getClickhouse();
-        executeStatement("CREATE DATABASE IF NOT EXISTS " + config.getDatabase());
-        int retentionDays = properties.getRetentionDays();
-        String ttlClause = retentionDays > 0
-                ? " TTL toDateTime(sampled_at) + INTERVAL " + retentionDays + " DAY"
-                : "";
-        executeStatement(String.format("""
-                CREATE TABLE IF NOT EXISTS %s.%s (
-                    object_path String,
-                    variable_name String,
-                    field_name String,
-                    sampled_at DateTime64(3, 'UTC'),
-                    observed_at DateTime64(3, 'UTC'),
-                    value_double Nullable(Float64),
-                    value_text Nullable(String)
-                ) ENGINE = MergeTree()
-                PARTITION BY toYYYYMM(sampled_at)
-                ORDER BY (object_path, variable_name, field_name, sampled_at)%s
-                SETTINGS index_granularity = 8192
-                """, config.getDatabase(), config.getTable(), ttlClause));
-        executeStatement(String.format(
-                "ALTER TABLE %s.%s ADD COLUMN IF NOT EXISTS observed_at DateTime64(3, 'UTC') DEFAULT sampled_at",
-                config.getDatabase(),
-                config.getTable()
-        ));
+        String database = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getDatabase(), "database");
+        String table = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getTable(), "table");
+        String qualifiedTable = database + "." + table;
+        StorageStartupRetry.run("ClickHouse variable history", () -> {
+            executeStatement("CREATE DATABASE IF NOT EXISTS " + database);
+            int retentionDays = properties.getRetentionDays();
+            String ttlClause = retentionDays > 0
+                    ? " TTL toDateTime(sampled_at) + INTERVAL " + retentionDays + " DAY"
+                    : "";
+            executeStatement(String.format("""
+                    CREATE TABLE IF NOT EXISTS %s (
+                        object_path String,
+                        variable_name String,
+                        field_name String,
+                        sampled_at DateTime64(3, 'UTC'),
+                        observed_at DateTime64(3, 'UTC'),
+                        value_double Nullable(Float64),
+                        value_text Nullable(String)
+                    ) ENGINE = MergeTree()
+                    PARTITION BY toYYYYMM(sampled_at)
+                    ORDER BY (object_path, variable_name, field_name, sampled_at)%s
+                    SETTINGS index_granularity = 8192
+                    """, qualifiedTable, ttlClause));
+            executeStatement(String.format(
+                    "ALTER TABLE %s ADD COLUMN IF NOT EXISTS observed_at DateTime64(3, 'UTC') DEFAULT sampled_at",
+                    qualifiedTable
+            ));
+        });
         log.info(
                 "ClickHouse variable history ready (database={}, table={}, retentionDays={})",
-                config.getDatabase(),
-                config.getTable(),
-                retentionDays
+                database,
+                table,
+                properties.getRetentionDays()
         );
     }
 

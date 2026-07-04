@@ -3,12 +3,12 @@ package com.ispf.server.event;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.storage.ClickHouseSchemaBootstrap;
+import com.ispf.server.storage.StorageStartupRetry;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -62,33 +62,37 @@ public class ClickHouseEventJournalStore implements EventJournalStore {
                 .build();
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(110)
+    @PostConstruct
     public void ensureSchema() {
         EventJournalProperties.ClickHouse config = properties.getClickhouse();
-        executeStatement("CREATE DATABASE IF NOT EXISTS " + config.getDatabase());
-        int retentionDays = properties.getRetentionDays();
-        String ttlClause = retentionDays > 0
-                ? " TTL toDateTime(occurred_at) + INTERVAL " + retentionDays + " DAY"
-                : "";
-        executeStatement(String.format("""
-                CREATE TABLE IF NOT EXISTS %s.%s (
-                    id String,
-                    object_path String,
-                    event_name String,
-                    level LowCardinality(String),
-                    payload_json String,
-                    occurred_at DateTime64(3, 'UTC')
-                ) ENGINE = MergeTree()
-                PARTITION BY toYYYYMM(occurred_at)
-                ORDER BY (object_path, occurred_at, id)%s
-                SETTINGS index_granularity = 8192
-                """, config.getDatabase(), config.getTable(), ttlClause));
+        String database = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getDatabase(), "database");
+        String table = ClickHouseSchemaBootstrap.requireValidIdentifier(config.getTable(), "table");
+        String qualifiedTable = database + "." + table;
+        StorageStartupRetry.run("ClickHouse event journal", () -> {
+            executeStatement("CREATE DATABASE IF NOT EXISTS " + database);
+            int retentionDays = properties.getRetentionDays();
+            String ttlClause = retentionDays > 0
+                    ? " TTL toDateTime(occurred_at) + INTERVAL " + retentionDays + " DAY"
+                    : "";
+            executeStatement(String.format("""
+                    CREATE TABLE IF NOT EXISTS %s (
+                        id String,
+                        object_path String,
+                        event_name String,
+                        level LowCardinality(String),
+                        payload_json String,
+                        occurred_at DateTime64(3, 'UTC')
+                    ) ENGINE = MergeTree()
+                    PARTITION BY toYYYYMM(occurred_at)
+                    ORDER BY (object_path, occurred_at, id)%s
+                    SETTINGS index_granularity = 8192
+                    """, qualifiedTable, ttlClause));
+        });
         log.info(
                 "ClickHouse event journal ready (database={}, table={}, retentionDays={})",
-                config.getDatabase(),
-                config.getTable(),
-                retentionDays
+                database,
+                table,
+                properties.getRetentionDays()
         );
     }
 

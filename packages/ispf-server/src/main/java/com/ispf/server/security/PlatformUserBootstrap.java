@@ -18,7 +18,7 @@ public class PlatformUserBootstrap {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    @Order(Ordered.LOWEST_PRECEDENCE - 10)
+    @Order(Ordered.HIGHEST_PRECEDENCE + 5)
     public void seedUsersAndSyncTree() {
         roleService.ensureDefaultRoles();
         userService.ensureDefaultUsers();

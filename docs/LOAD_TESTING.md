@@ -61,7 +61,21 @@ python deploy/setup-mqtt-event-journal.py --base-url http://127.0.0.1:8080
 
 **HTTP tap** (`deploy/mqtt-event-ingest-tap.py`, `mqtt-event-ingest-test-remote.sh`) — тот же publisher, fire через REST; baseline overhead API на том же стенде.
 
-**HTTP tap** (`deploy/mqtt-event-ingest-tap.py`, `mqtt-event-ingest-test-remote.sh`) — тот же publisher, fire через REST; baseline overhead API на том же стенде.
+### VPS fair single-device bench (event journal)
+
+1× mqtt, `EVENT_JOURNAL_ONLY`, `ingressCoalesceEnabled=false`, Scylla journal. Сравнимые фазы emqtt для regression на prod hardware:
+
+```bash
+# На VPS (после scp deploy/vps-ispf-fair-*.sh)
+bash /opt/ispf/loadtest/vps-ispf-fair-run.sh
+```
+
+| Phase | emqtt | Typical eventsFired/s (VPS 0.9.87, Scylla 1 SMP) |
+|-------|-------|--------------------------------------------------|
+| Sustained | 65s, 20 clients, 10ms | **~1.9k** (elastic L0 + L5′) |
+| Peak | 65s, 32 clients, 1ms | высокий delta; нужен journal queue ≥500k |
+
+Опциональный tuning перед peak: `bash deploy/vps-event-journal-peak-tuning.sh` (queue 500k, batch 1k, flush 20ms). Метрики: `eventsFiredTotal`, `eventJournalSyncFallbackTotal`, `eventJournalQueueSize` в `/api/v1/platform/metrics` (section `automation`). Scylla `COUNT(*)` после peak может timeout — см. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).
 
 ### Lab stress (Scylla, multi-device emqtt)
 
@@ -85,14 +99,15 @@ AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 
 ### VPS prod (Scylla journal, smaller Scylla footprint)
 
-Same methodology on `ispf.iot-solutions.ru` — script `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`.
+Same methodology on `ispf.iot-solutions.ru` — multi-device: `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`. Single-device fair bench: `deploy/vps-ispf-fair-bench.sh` ([ADR-0027](decisions/0027-event-journal-ingress-fast-path.md)).
 
-| Metric (16×32k peak, 2026-07-04) | VPS prod | Lab (reference) |
-|----------------------------------|----------|-----------------|
-| eventsFired | **~349/s** | ~110k/s |
+| Metric | VPS prod (context) | Lab (reference) |
+|--------|-------------------|-----------------|
+| 16× peak (pre-elastic, 2026-07-04) | **~349/s** eventsFired | ~110k/s |
+| 1× sustained (elastic 0.9.87+, 2026-07-05) | **~1.9k/s** eventsFired | — |
 | Scylla | 1 SMP / 750M | 20 SMP / 48G |
 
-Absolute rates are **not comparable**; use VPS script for regression on prod hardware only.
+Absolute rates are **not comparable** across hosts; use fair bench for single-device regression, multi-device script for fleet-shaped load.
 
 ## MQTT ingress — historian (default)
 

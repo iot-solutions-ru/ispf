@@ -1,6 +1,7 @@
 package com.ispf.server.workflow;
 
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.storage.StorageStartupRetry;
 import io.nats.client.Connection;
 import io.nats.client.Dispatcher;
 import io.nats.client.JetStream;
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.time.Duration;
 
@@ -51,6 +53,24 @@ public class NatsJetStreamSupport {
         }
         this.jetStream = js;
         this.management = jsm;
+    }
+
+    @PostConstruct
+    public void bootstrapStream() {
+        if (!properties.enabled() || !properties.jetStreamEnabled() || !isActive()) {
+            return;
+        }
+        try {
+            StorageStartupRetry.run("NATS JetStream", () -> {
+                try {
+                    ensureStream();
+                } catch (IOException | JetStreamApiException ex) {
+                    throw new IllegalStateException(ex);
+                }
+            });
+        } catch (IllegalStateException ex) {
+            log.warn("JetStream stream bootstrap skipped: {}", ex.getMessage());
+        }
     }
 
     public boolean isActive() {

@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,14 +26,19 @@ public final class DriverIngressBuffer<K, V> {
     private final int capacity;
     private final BiConsumer<K, V> handler;
     private final boolean eagerDrain;
+    private final IngressElasticSettings elastic;
     private final ConcurrentHashMap<K, V> pendingByKey = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<K, AtomicBoolean> laneDrainScheduled = new ConcurrentHashMap<>();
     private final AtomicInteger pendingCount = new AtomicInteger();
     private final AtomicInteger coalescedTotal = new AtomicInteger();
     private final AtomicInteger evictedTotal = new AtomicInteger();
+    private final AtomicInteger activeWorkers = new AtomicInteger();
 
     private volatile boolean running = true;
     private ExecutorService workers;
+    private ElasticWorkerScaler scaler;
+    private ScheduledExecutorService scaleScheduler;
+    private ScheduledFuture<?> scaleTask;
     private volatile Thread drainWaiter;
 
     public DriverIngressBuffer(int workerThreads, int capacity, BiConsumer<K, V> handler) {
@@ -53,19 +60,69 @@ public final class DriverIngressBuffer<K, V> {
             String threadNamePrefix,
             boolean eagerDrain
     ) {
+        this(IngressElasticSettings.fixed(workerThreads), capacity, handler, threadNamePrefix, eagerDrain);
+    }
+
+    public DriverIngressBuffer(
+            IngressElasticSettings elastic,
+            int capacity,
+            BiConsumer<K, V> handler,
+            String threadNamePrefix,
+            boolean eagerDrain
+    ) {
         this.capacity = Math.max(1, capacity);
         this.handler = handler;
         this.eagerDrain = eagerDrain;
-        int threads = Math.max(1, workerThreads);
-        workers = Executors.newFixedThreadPool(threads, runnable -> {
+        this.elastic = elastic;
+        startWorkers(threadNamePrefix);
+    }
+
+    private void startWorkers(String threadNamePrefix) {
+        int minWorkers = elastic.resolvedMinWorkers();
+        int maxWorkers = elastic.resolvedMaxWorkers();
+        if (elastic.enabled()) {
+            scaler = new ElasticWorkerScaler(
+                    minWorkers,
+                    maxWorkers,
+                    elastic.scaleUpQueueThreshold(),
+                    elastic.scaleDownSteps()
+            );
+            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, threadNamePrefix + "-scale");
+                thread.setDaemon(true);
+                return thread;
+            });
+            scaleTask = scaleScheduler.scheduleAtFixedRate(
+                    this::adjustWorkers,
+                    elastic.scaleCheckIntervalMs(),
+                    elastic.scaleCheckIntervalMs(),
+                    TimeUnit.MILLISECONDS
+            );
+        }
+        if (eagerDrain) {
+            workers = new java.util.concurrent.ThreadPoolExecutor(
+                    minWorkers,
+                    maxWorkers,
+                    60L,
+                    TimeUnit.MILLISECONDS,
+                    new java.util.concurrent.SynchronousQueue<>(),
+                    runnable -> {
+                        Thread thread = new Thread(runnable, threadNamePrefix);
+                        thread.setDaemon(true);
+                        return thread;
+                    },
+                    new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            return;
+        }
+        workers = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable, threadNamePrefix);
             thread.setDaemon(true);
             return thread;
         });
-        if (!eagerDrain) {
-            for (int i = 0; i < threads; i++) {
-                workers.submit(this::workerLoop);
-            }
+        int initial = elastic.enabled() ? minWorkers : maxWorkers;
+        for (int i = 0; i < initial; i++) {
+            spawnWorker();
         }
     }
 
@@ -92,10 +149,17 @@ public final class DriverIngressBuffer<K, V> {
         } else {
             unparkDrainWaiter();
         }
+        maybeScaleUp();
     }
 
     public void shutdown() {
         running = false;
+        if (scaleTask != null) {
+            scaleTask.cancel(false);
+        }
+        if (scaleScheduler != null) {
+            scaleScheduler.shutdownNow();
+        }
         unparkDrainWaiter();
         if (workers != null) {
             workers.shutdownNow();
@@ -115,6 +179,44 @@ public final class DriverIngressBuffer<K, V> {
 
     public int evictedTotal() {
         return evictedTotal.get();
+    }
+
+    public int activeWorkers() {
+        return activeWorkers.get();
+    }
+
+    private void maybeScaleUp() {
+        if (scaler != null && pendingCount.get() >= elastic.scaleUpQueueThreshold()) {
+            adjustWorkers();
+        }
+    }
+
+    private void adjustWorkers() {
+        if (scaler == null || !running) {
+            return;
+        }
+        if (eagerDrain && workers instanceof java.util.concurrent.ThreadPoolExecutor pool) {
+            scaler.adjust(pendingCount.get());
+            int target = scaler.targetWorkers();
+            pool.setCorePoolSize(target);
+            pool.setMaximumPoolSize(elastic.resolvedMaxWorkers());
+            while (pool.getPoolSize() < target && pool.getPoolSize() < pool.getMaximumPoolSize()) {
+                pool.prestartCoreThread();
+            }
+            return;
+        }
+        scaler.adjust(pendingCount.get());
+        while (activeWorkers.get() < scaler.targetWorkers()
+                && activeWorkers.get() < elastic.resolvedMaxWorkers()) {
+            spawnWorker();
+        }
+    }
+
+    private void spawnWorker() {
+        if (workers == null || activeWorkers.get() >= elastic.resolvedMaxWorkers()) {
+            return;
+        }
+        workers.submit(this::workerLoop);
     }
 
     private void scheduleLaneDrain(K key) {
@@ -146,16 +248,24 @@ public final class DriverIngressBuffer<K, V> {
     }
 
     private void workerLoop() {
-        while (running || pendingCount.get() > 0) {
-            List<Entry> batch = drainBatch(64);
-            if (batch.isEmpty()) {
-                drainWaiter = Thread.currentThread();
-                LockSupport.parkNanos(250_000L);
-                continue;
+        activeWorkers.incrementAndGet();
+        try {
+            while (running || pendingCount.get() > 0) {
+                if (scaler != null && activeWorkers.get() > scaler.targetWorkers() && pendingCount.get() == 0) {
+                    break;
+                }
+                List<Entry> batch = drainBatch(64);
+                if (batch.isEmpty()) {
+                    drainWaiter = Thread.currentThread();
+                    LockSupport.parkNanos(250_000L);
+                    continue;
+                }
+                for (Entry entry : batch) {
+                    handler.accept(entry.key, entry.value);
+                }
             }
-            for (Entry entry : batch) {
-                handler.accept(entry.key, entry.value);
-            }
+        } finally {
+            activeWorkers.decrementAndGet();
         }
     }
 

@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.model.ModelRegistry;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.plugin.model.ModelApplicationService;
@@ -36,6 +37,7 @@ public class LabPlatformBootstrap {
     private final ObjectManager objectManager;
     private final ReportService reportService;
     private final BootstrapProperties bootstrapProperties;
+    private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public LabPlatformBootstrap(
             LabModelBootstrap labModelBootstrap,
@@ -46,7 +48,8 @@ public class LabPlatformBootstrap {
             ObjectTemplateService objectTemplateService,
             ObjectManager objectManager,
             ReportService reportService,
-            BootstrapProperties bootstrapProperties
+            BootstrapProperties bootstrapProperties,
+            ClusterPlatformBootstrapService clusterBootstrapService
     ) {
         this.labModelBootstrap = labModelBootstrap;
         this.haystackModelBootstrap = haystackModelBootstrap;
@@ -57,6 +60,7 @@ public class LabPlatformBootstrap {
         this.objectManager = objectManager;
         this.reportService = reportService;
         this.bootstrapProperties = bootstrapProperties;
+        this.clusterBootstrapService = clusterBootstrapService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -65,7 +69,7 @@ public class LabPlatformBootstrap {
     public void onReady() {
         // Virtual driver RELATIVE models — required for agent create_virtual_device on prod (not demo fixtures).
         labModelBootstrap.ensureLabModels();
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         haystackModelBootstrap.ensureHaystackModel();

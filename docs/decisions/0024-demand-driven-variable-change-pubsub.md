@@ -24,7 +24,7 @@ Integrators expect broker-like semantics:
 
 ### 1. Single JVM, no sidecar
 
-All ingress and automation stays in `ispf-server`. Horizontal scale = bigger/faster dedicated host + tuned thread pools, not a separate ingress worker process.
+All ingress and automation stays in `ispf-server`. Horizontal scale = **N stateless JVM replicas** sharing one PostgreSQL (+ optional Redis/NATS), or a larger dedicated host with tuned thread pools — not a separate ingress worker process. See [ADR-0028](0028-horizontal-active-active-cluster.md).
 
 ### 2. Subscription registries
 

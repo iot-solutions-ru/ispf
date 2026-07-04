@@ -442,6 +442,11 @@ code,
   font-weight: 500;
 }
 
+.system-health-warn {
+  color: var(--warn, #b8860b);
+  font-weight: 500;
+}
+
 .system-health-error {
   color: var(--danger, #c0392b);
 }
@@ -452,6 +457,39 @@ code,
 
 .storage-health-card {
   margin-bottom: 1rem;
+}
+
+.system-metrics-card-wide {
+  grid-column: 1 / -1;
+}
+
+.cluster-health-nodes-title {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.cluster-health-nodes-wrap {
+  overflow-x: auto;
+}
+
+.cluster-health-nodes-table th,
+.cluster-health-nodes-table td {
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.cluster-health-nodes-table td:first-child {
+  white-space: normal;
+}
+
+.cluster-node-self-badge {
+  color: var(--accent, #2f81f7);
+  font-weight: 700;
+}
+
+.cluster-node-self td:first-child {
+  font-weight: 600;
 }
 
 .storage-health-grid {

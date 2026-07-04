@@ -91,7 +91,12 @@ def mqtt_bench_ingress_configuration(
     callback_threads: int | None = None,
     callback_queue_capacity: int | None = None,
 ) -> dict[str, str]:
-    """Driver config for event-journal load tests (1:1 MQTT message handling on L0)."""
+    """Driver config for load tests (1:1 MQTT message handling on L0).
+
+    callbackThreads / callbackQueueCapacity are omitted by default so each driver inherits
+    server defaults (ISPF_DRIVER_MQTT_CALLBACK_* / runtime-settings driver.mqtt-callback-*).
+    Pass explicit values only to override per device.
+    """
     if not no_l0_coalesce:
         return {}
     cfg: dict[str, str] = {"ingressCoalesceEnabled": "false"}

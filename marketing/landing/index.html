@@ -239,6 +239,14 @@
       background: linear-gradient(135deg, #60a5fa, #22d3ee);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    .hero-manifesto {
+      font-size: clamp(0.95rem, 2vw, 1.05rem); color: #bfdbfe; font-weight: 600;
+      letter-spacing: 0.06em; margin: 0 0 16px; text-wrap: balance;
+      padding-left: 14px; border-left: 3px solid var(--accent);
+    }
+    footer .brand-manifesto {
+      color: #93c5fd; font-weight: 600; letter-spacing: 0.05em; margin-top: 10px;
+    }
     .hero-lead { font-size: 1.15rem; color: var(--text-muted); max-width: 520px; margin-bottom: 32px; text-wrap: pretty; }
     .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 40px; }
     .hero-stats { display: flex; gap: 32px; flex-wrap: wrap; }
@@ -438,6 +446,7 @@
     <div class="wrap hero-grid">
       <div class="reveal">
         <div class="badge"><span class="badge-dot"></span> IoT · SCADA · MES · Production v0.9.41</div>
+        <p class="hero-manifesto">Инженерия. Сигналы. Процессы. Факты.</p>
         <h1>Единая платформа<br><em>IoT, SCADA и MES</em></h1>
         <p class="hero-lead">
           Сбор данных с поля, operator HMI, мнемосхемы P&ID, historian, алерты и производственные процессы —
@@ -1035,6 +1044,7 @@
   <footer>
     <div class="wrap">
       <p>© 2026 IoT Solutions Platform Framework (ISPF) · iot-solutions.ru</p>
+      <p class="brand-manifesto">Инженерия. Сигналы. Процессы. Факты.</p>
       <p style="margin-top:8px">IoT · SCADA · MES — единая платформа промышленной автоматизации</p>
     </div>
   </footer>

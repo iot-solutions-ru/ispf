@@ -3,7 +3,7 @@ package com.ispf.server.history;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
-import com.ispf.server.platform.concurrent.ElasticWorkerScaler;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

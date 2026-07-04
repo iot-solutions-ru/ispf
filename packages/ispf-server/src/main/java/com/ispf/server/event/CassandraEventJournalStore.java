@@ -8,13 +8,12 @@ import com.ispf.server.cassandra.CassandraClient;
 import com.ispf.server.cassandra.CassandraTimeSeriesSupport;
 import com.ispf.server.config.CassandraStoreProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.storage.StorageStartupRetry;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -69,17 +68,13 @@ public class CassandraEventJournalStore implements EventJournalStore {
         this.metaTableQualified = client.qualifiedTable(META_TABLE);
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(112)
+    @PostConstruct
     public void ensureSchema() {
+        StorageStartupRetry.run("Cassandra event journal", this::ensureSchemaOnce);
+    }
+
+    private void ensureSchemaOnce() {
         CassandraStoreProperties settings = properties.getCassandra();
-        client.execute(String.format(
-                """
-                CREATE KEYSPACE IF NOT EXISTS %s
-                WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
-                """,
-                settings.getKeyspace()
-        ));
         client.execute(String.format(
                 """
                 CREATE TABLE IF NOT EXISTS %s (

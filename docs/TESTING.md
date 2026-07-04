@@ -95,6 +95,26 @@ python deploy/events-load-test.py --base-url https://ispf.iot-solutions.ru
 python deploy/events-internal-load-test.py --skip-monitor-setup --condition-expr-file deploy/loadtest-sinewave-condition.txt
 ```
 
+## Cluster tests (BL-137/138)
+
+JDBC driver ownership и failover между репликами:
+
+```bash
+./gradlew :packages:ispf-server:test \
+  --tests com.ispf.server.driver.DriverOwnershipServiceTest \
+  --tests com.ispf.server.driver.ClusterFailoverIntegrationTest
+```
+
+Multi-replica compose smoke (Docker):
+
+```bash
+bash deploy/cluster-quickstart.sh
+curl -s http://127.0.0.1:8088/api/v1/info | jq .replicaId   # repeat — different replicaId (round-robin)
+docker stop deploy-ispf-server-2-1   # REST via nginx must stay 200
+```
+
+CI: workflow [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) (ownership tests + single-node baseline; full 1 vs 3 replica gate on Docker host).
+
 ## CI (рекомендация)
 
 ```bash

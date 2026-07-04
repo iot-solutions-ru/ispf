@@ -1,5 +1,7 @@
 package com.ispf.server.api;
 
+import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.config.NatsProperties;
 import com.ispf.server.federation.FederationSecretsKeyService;
 import com.ispf.server.platform.update.PlatformVersionSupport;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,15 +22,21 @@ public class PlatformInfoController {
 
     private final Optional<BuildProperties> buildProperties;
     private final FederationSecretsKeyService secretsKeyService;
+    private final NatsProperties natsProperties;
+    private final ClusterProperties clusterProperties;
     private final String environment;
 
     public PlatformInfoController(
             Optional<BuildProperties> buildProperties,
             FederationSecretsKeyService secretsKeyService,
+            NatsProperties natsProperties,
+            ClusterProperties clusterProperties,
             @Value("${ispf.environment:dev}") String environment
     ) {
         this.buildProperties = buildProperties;
         this.secretsKeyService = secretsKeyService;
+        this.natsProperties = natsProperties;
+        this.clusterProperties = clusterProperties;
         this.environment = environment;
     }
 
@@ -39,6 +47,8 @@ public class PlatformInfoController {
         payload.put("shortName", "ISPF");
         payload.put("version", PlatformVersionSupport.currentVersion(buildProperties));
         payload.put("environment", environment);
+        payload.put("replicaId", natsProperties.replicaId());
+        payload.put("clusterEnabled", clusterProperties.enabled());
         payload.put("timestamp", Instant.now().toString());
         payload.put("javaVersion", Runtime.version().toString());
         payload.put("springBootVersion", SpringBootVersion.getVersion());

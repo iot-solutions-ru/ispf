@@ -1,4 +1,4 @@
-package com.ispf.server.platform.concurrent;
+package com.ispf.driver.ingress;
 
 /**
  * Computes target worker count from queue depth for elastic async lanes.
@@ -17,7 +17,7 @@ public final class ElasticWorkerScaler {
             throw new IllegalArgumentException("minWorkers must be >= 1");
         }
         if (maxWorkers < minWorkers) {
-            throw new IllegalArgumentException("maxWorkers must be >= minWorkers");
+            throw new IllegalArgumentException("maxWorkers must be >= 1 and >= minWorkers");
         }
         if (scaleUpQueueThreshold < 1) {
             throw new IllegalArgumentException("scaleUpQueueThreshold must be >= 1");

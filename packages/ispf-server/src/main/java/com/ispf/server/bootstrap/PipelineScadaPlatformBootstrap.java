@@ -7,6 +7,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.mimic.MimicService;
@@ -82,6 +83,7 @@ public class PipelineScadaPlatformBootstrap {
     private final ApplicationDataService applicationDataService;
     private final OperatorAppUiService operatorAppUiService;
     private final BootstrapProperties bootstrapProperties;
+    private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public PipelineScadaPlatformBootstrap(
             TankFarmModelBootstrap modelBootstrap,
@@ -92,7 +94,8 @@ public class PipelineScadaPlatformBootstrap {
             DriverRuntimeService driverRuntimeService,
             ApplicationDataService applicationDataService,
             OperatorAppUiService operatorAppUiService,
-            BootstrapProperties bootstrapProperties
+            BootstrapProperties bootstrapProperties,
+            ClusterPlatformBootstrapService clusterBootstrapService
     ) {
         this.modelBootstrap = modelBootstrap;
         this.templateService = templateService;
@@ -103,12 +106,13 @@ public class PipelineScadaPlatformBootstrap {
         this.applicationDataService = applicationDataService;
         this.operatorAppUiService = operatorAppUiService;
         this.bootstrapProperties = bootstrapProperties;
+        this.clusterBootstrapService = clusterBootstrapService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 24)
     public void onReady() throws Exception {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         modelBootstrap.ensureTankFarmModels();
@@ -133,7 +137,7 @@ public class PipelineScadaPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 3)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         startDrivers();

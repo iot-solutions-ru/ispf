@@ -30,7 +30,17 @@ EMQTT_CPU_LIMIT="${EMQTT_CPU_LIMIT:-1.5}"
 EMQTT_BENCH_LABEL="${EMQTT_BENCH_LABEL:-ispf.emqtt-bench}"
 
 PAYLOAD_TEMPLATE="$(mktemp /tmp/ispf-emqtt-payload.XXXXXX)"
-echo '%TIMESTAMPMS%' >"$PAYLOAD_TEMPLATE"
+
+prepare_payload_template() {
+  if [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]]; then
+    printf '25.0' >"$PAYLOAD_TEMPLATE"
+    PAYLOAD_SIZE=4
+  else
+    echo '%TIMESTAMPMS%' >"$PAYLOAD_TEMPLATE"
+  fi
+}
+
+prepare_payload_template
 
 usage() {
   cat <<'EOF'
@@ -75,6 +85,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Historian load tests: plain numeric MQTT body via multi-container template mode.
+if [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]]; then
+  SINGLE_CONTAINER=false
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker is required" >&2
   exit 1
@@ -116,7 +131,7 @@ write_topics_json() {
   local out="$1"
   local from="$2"
   local to="$3"
-  TOPIC_PREFIX="$TOPIC_PREFIX" PAD="$PAD" INTERVAL_MS="$INTERVAL_MS" \
+  TOPIC_PREFIX="$TOPIC_PREFIX" PAD="$PAD" INTERVAL_MS="$INTERVAL_MS" NUMERIC_PAYLOAD="${NUMERIC_PAYLOAD:-false}" \
     python3 - "$out" "$from" "$to" <<'PY'
 import json, os, sys
 
@@ -124,20 +139,27 @@ out, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 prefix = os.environ["TOPIC_PREFIX"]
 pad = int(os.environ["PAD"])
 interval_ms = os.environ["INTERVAL_MS"]
+numeric = os.environ.get("NUMERIC_PAYLOAD", "false").lower() in ("1", "true", "yes")
 topics = []
 for i in range(start, end + 1):
     idx = f"{i:0{pad}d}"
-    topics.append({
+    entry = {
         "name": f"{prefix}/{idx}/temperature",
         "interval_ms": str(interval_ms),
-        "inject_timestamp": "ms",
         "QoS": 0,
         "retain": False,
-        "payload_encoding": "json",
-        "payload": {"v": 1},
         "stream": 0,
         "stream_priority": 0,
-    })
+    }
+    if numeric:
+        # Bare JSON number in MQTT body (no inject_timestamp — historian parses temperature.raw as double)
+        entry["payload_encoding"] = "json"
+        entry["payload"] = 25.0
+    else:
+        entry["inject_timestamp"] = "ms"
+        entry["payload_encoding"] = "json"
+        entry["payload"] = {"v": 1}
+    topics.append(entry)
 with open(out, "w", encoding="utf-8") as f:
     json.dump({"topics": topics}, f)
 PY
@@ -177,6 +199,8 @@ if [[ "${DO_PULL:-0}" == 1 ]]; then
 fi
 
 cleanup_stale_emqtt
+
+prepare_payload_template
 
 mode="multi-container"
 shard_count="$DEVICES"

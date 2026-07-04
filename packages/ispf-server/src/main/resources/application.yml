@@ -107,6 +107,17 @@ ispf:
     jet-stream-stream-name: ${ISPF_NATS_JETSTREAM_STREAM:ispf-automation}
     jet-stream-max-age-hours: ${ISPF_NATS_JETSTREAM_MAX_AGE_HOURS:24}
     jet-stream-replica-consumer-prefix: ${ISPF_NATS_JETSTREAM_CONSUMER_PREFIX:ispf-replica-}
+  cluster:
+    enabled: ${ISPF_CLUSTER_ENABLED:false}
+    driver-ownership-enabled: ${ISPF_CLUSTER_DRIVER_OWNERSHIP:true}
+    driver-lock-ttl-seconds: ${ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS:30}
+    driver-lock-renew-seconds: ${ISPF_CLUSTER_DRIVER_LOCK_RENEW_SECONDS:10}
+    driver-failover-scan-seconds: ${ISPF_CLUSTER_DRIVER_FAILOVER_SCAN_SECONDS:15}
+    driver-lock-renew-ms: ${ISPF_CLUSTER_DRIVER_LOCK_RENEW_MS:10000}
+    driver-failover-scan-ms: ${ISPF_CLUSTER_DRIVER_FAILOVER_SCAN_MS:15000}
+    replica-heartbeat-seconds: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_SECONDS:10}
+    replica-stale-seconds: ${ISPF_CLUSTER_REPLICA_STALE_SECONDS:30}
+    replica-heartbeat-ms: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_MS:10000}
   federation:
     outbound-buffer:
       max-bytes: ${ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES:2097152}
@@ -217,6 +228,12 @@ ispf:
     batch-size: ${ISPF_EVENT_JOURNAL_BATCH_SIZE:200}
     flush-interval-ms: ${ISPF_EVENT_JOURNAL_FLUSH_INTERVAL_MS:100}
     writer-threads: ${ISPF_EVENT_JOURNAL_WRITER_THREADS:2}
+    elastic-writer-enabled: ${ISPF_EVENT_JOURNAL_ELASTIC_WRITER:true}
+    writer-threads-min: ${ISPF_EVENT_JOURNAL_WRITER_THREADS_MIN:2}
+    writer-threads-max: ${ISPF_EVENT_JOURNAL_WRITER_THREADS_MAX:32}
+    elastic-scale-up-queue-threshold: ${ISPF_EVENT_JOURNAL_ELASTIC_SCALE_UP_THRESHOLD:100}
+    elastic-scale-down-steps: ${ISPF_EVENT_JOURNAL_ELASTIC_SCALE_DOWN_STEPS:6}
+    elastic-scale-check-interval-ms: ${ISPF_EVENT_JOURNAL_ELASTIC_SCALE_CHECK_MS:200}
     recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:2000}
     retention-days: ${ISPF_EVENT_JOURNAL_RETENTION_DAYS:90}
     store: ${ISPF_EVENT_JOURNAL_STORE:jdbc}
@@ -260,8 +277,20 @@ ispf:
     ingress-buffer-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ENABLED:true}
     ingress-buffer-threads: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS:2}
     ingress-buffer-capacity: ${ISPF_DRIVER_INGRESS_BUFFER_CAPACITY:10000}
+    ingress-buffer-elastic-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ELASTIC:true}
+    ingress-buffer-threads-min: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS_MIN:2}
+    ingress-buffer-threads-max: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS_MAX:32}
+    ingress-buffer-scale-up-queue-threshold: ${ISPF_DRIVER_INGRESS_BUFFER_SCALE_UP_THRESHOLD:100}
+    ingress-buffer-scale-down-steps: ${ISPF_DRIVER_INGRESS_BUFFER_SCALE_DOWN_STEPS:6}
+    ingress-buffer-scale-check-interval-ms: ${ISPF_DRIVER_INGRESS_BUFFER_SCALE_CHECK_MS:200}
     mqtt-callback-threads: ${ISPF_DRIVER_MQTT_CALLBACK_THREADS:4}
     mqtt-callback-queue-capacity: ${ISPF_DRIVER_MQTT_CALLBACK_QUEUE_CAPACITY:10000}
+    mqtt-callback-elastic-enabled: ${ISPF_DRIVER_MQTT_CALLBACK_ELASTIC:true}
+    mqtt-callback-threads-min: ${ISPF_DRIVER_MQTT_CALLBACK_THREADS_MIN:4}
+    mqtt-callback-threads-max: ${ISPF_DRIVER_MQTT_CALLBACK_THREADS_MAX:32}
+    mqtt-callback-scale-up-queue-threshold: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_UP_THRESHOLD:100}
+    mqtt-callback-scale-down-steps: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_DOWN_STEPS:6}
+    mqtt-callback-scale-check-interval-ms: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_CHECK_MS:200}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}

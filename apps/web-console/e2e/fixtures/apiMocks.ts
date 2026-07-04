@@ -321,6 +321,33 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
           correlatorWindowKeys: null,
           connectionError: null,
         });
+      case "/api/v1/platform/cluster/health":
+        return json(route, {
+          clusterEnabled: false,
+          driverOwnershipEnabled: false,
+          replicaId: "e2e-local",
+          heldDriverLocks: 0,
+          heldDevicePaths: [],
+          driverLockTtlSeconds: 30,
+          natsEnabled: false,
+          natsReplicaEventsEnabled: false,
+          nodes: [
+            {
+              replicaId: "e2e-local",
+              status: "UP",
+              version: "0.0.0-e2e",
+              environment: "test",
+              javaVersion: "21",
+              startedAt: null,
+              lastHeartbeatAt: new Date().toISOString(),
+              heldDriverLocks: 0,
+              self: true,
+            },
+          ],
+          nodesUp: 1,
+          nodesTotal: 1,
+          timestamp: new Date().toISOString(),
+        });
       case "/api/v1/platform/nats/health":
         return json(route, {
           enabled: false,

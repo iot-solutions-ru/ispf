@@ -311,7 +311,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.11 | AI approval mode + audit export + scenario catalog | EX-AI | 106–108 | P1–P2 | Partial (106, 108 Done EX-3; 107 Planned) |
 | 23.12 | Operator agent allowlist + agent SLO dashboard | EX-AI | 109–110 | P2 | Partial (110 Done EX-3; 109 Planned) |
 | 23.13 | Telemetry ingress ADR + MQTT worker + load CI gate | EX-SCALE | 111–113 | P2 | Done (111 EX-6; 112 Cancelled; 113 EX-7) |
-| 23.14 | ClickHouse prod playbook + horizontal scale docs | EX-SCALE | 114–115 | P1–P3 | Partial (114 Partial EX-1; 115 Planned) |
+| 23.14 | ClickHouse prod playbook + horizontal cluster | EX-SCALE / EX-CLUSTER | 114–115, 133–139 | P1 | Partial (114 Partial EX-1; 115 → BL-133…139 Partial EX-18) |
 | 23.15 | Historian dual-write migration tooling | EX-SCALE | 116 | P3 | Planned |
 | 23.16 | Edge store-forward + peer health SLO | EX-FED | 117–118 | P2 | Done (EX-17) |
 | 23.17 | Selective subtree sync + federation chaos tests | EX-FED | 119–120 | P3 | Planned |
@@ -321,6 +321,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 | 23.21 | One-click prod deploy + air-gap guide | EX-OPS | 127–128 | P1–P2 | Done (EX-14, EX-15) |
 | 23.22 | Playwright live operator + scheduled staging e2e | EX-QA | 129–130 | P1–P2 | Done (EX-2) |
 | 23.23 | Visual regression + i18n zero-hardcoded gate | EX-QA | 131–132 | P2–P3 | Done (EX-16) |
+| 23.24 | Horizontal active-active cluster (nginx RR, driver ownership) | EX-CLUSTER | 133–139 | P1–P2 | Partial (EX-18) |
 
 **Горизонты инвестиций:**
 
@@ -331,7 +332,7 @@ Track: **platform contract** (REQ-FW-60) + UI/drivers/history. Не меняет
 Постоянно: Wave S (QA), удержание tree-first north star
 ```
 
-**Следующие приоритеты (после EX-17):** BL-119/120 (federation selective sync + chaos) или BL-92/93 (mimic perf / a11y). Хвост BL-90 — Android device sign-off. Деплой на VPS — только по запросу.
+**Следующие приоритеты (после EX-17):** BL-133…139 (horizontal cluster EX-18) или BL-92/93 (mimic perf / a11y). Хвост BL-90 — Android device sign-off. Деплой на VPS — только по запросу.
 
 ## Platform baseline
 

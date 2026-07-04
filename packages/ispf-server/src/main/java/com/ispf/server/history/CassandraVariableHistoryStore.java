@@ -7,13 +7,12 @@ import com.ispf.server.cassandra.CassandraClient;
 import com.ispf.server.cassandra.CassandraTimeSeriesSupport;
 import com.ispf.server.config.CassandraStoreProperties;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.storage.StorageStartupRetry;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -51,17 +50,13 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         this.tableQualified = client.qualifiedTable(settings.resolveTable(DEFAULT_TABLE));
     }
 
-    @EventListener(ApplicationReadyEvent.class)
-    @Order(113)
+    @PostConstruct
     public void ensureSchema() {
+        StorageStartupRetry.run("Cassandra variable history", this::ensureSchemaOnce);
+    }
+
+    private void ensureSchemaOnce() {
         CassandraStoreProperties settings = properties.getCassandra();
-        client.execute(String.format(
-                """
-                CREATE KEYSPACE IF NOT EXISTS %s
-                WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
-                """,
-                settings.getKeyspace()
-        ));
         client.execute(String.format(
                 """
                 CREATE TABLE IF NOT EXISTS %s (

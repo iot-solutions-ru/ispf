@@ -29,6 +29,7 @@ import com.ispf.server.plugin.model.SystemIntrinsicModelMigration;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.event.TelemetryEventJournalFastPath;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
+import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -76,6 +77,7 @@ public class ObjectManager {
     private final TelemetryHistorianFastPath historianFastPath;
     private final TelemetryEventJournalFastPath eventJournalFastPath;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
+    private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -98,7 +100,8 @@ public class ObjectManager {
             @org.springframework.context.annotation.Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
             @org.springframework.context.annotation.Lazy TelemetryHistorianFastPath historianFastPath,
             @org.springframework.context.annotation.Lazy TelemetryEventJournalFastPath eventJournalFastPath,
-            JavaFunctionRuntimeService javaFunctionRuntimeService
+            JavaFunctionRuntimeService javaFunctionRuntimeService,
+            ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService
     ) {
         this.nodeRepository = nodeRepository;
         this.variableRepository = variableRepository;
@@ -120,6 +123,7 @@ public class ObjectManager {
         this.historianFastPath = historianFastPath;
         this.eventJournalFastPath = eventJournalFastPath;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
+        this.clusterBootstrapService = clusterBootstrapService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -129,6 +133,7 @@ public class ObjectManager {
         if (initialized) {
             return;
         }
+        clusterBootstrapService.ifAvailable(ClusterPlatformBootstrapService::prepareFixtureBootstrapRole);
         if (nodeRepository.existsByPath("root.platform")) {
             loadFromDatabase();
             ensureBootstrapNodes();
@@ -138,7 +143,7 @@ public class ObjectManager {
         modelBootstrap.getObject().ensureBuiltInModels();
         modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
         intrinsicModelMigration.ifAvailable(SystemIntrinsicModelMigration::migrate);
-        if (bootstrapProperties.isFixturesEnabled()) {
+        if (shouldApplyFixtureModels()) {
             fixtureModelBootstrap.ifAvailable(FixtureModelBootstrap::ensureFixtureModels);
             modelApplicationRunner.getObject().applyDemoModels();
             modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
@@ -152,6 +157,13 @@ public class ObjectManager {
         modelApplicationRunner.getObject().syncAllModelBackedVariableMetadata();
         modelApplicationRunner.getObject().restoreAttachments();
         modelApplicationRunner.getObject().ensureDashboardDemoRules();
+    }
+
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public synchronized void markInitialized() {
         initialized = true;
     }
 
@@ -380,22 +392,34 @@ public class ObjectManager {
     }
 
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
-        // RAM-only live update; historian/event journal/async pubsub happen in downstream ingress tiers.
-        Variable variable = setDriverTelemetryValueInMemory(path, name, value);
         if (eventJournalFastPath.isEligible(path)
                 && eventJournalFastPath.tryFire(path, name, value, observedAt)) {
-            return variable;
+            return resolveDriverTelemetryVariable(path, name, value);
         }
         if (historianFastPath.isHistorianOnlyEligible(path, name)
                 && historianFastPath.tryPublish(path, name, value, observedAt)) {
-            return variable;
+            return resolveDriverTelemetryVariable(path, name, value);
         }
+        Variable variable = setDriverTelemetryValueInMemory(path, name, value);
         if (telemetryIngressDispatcher.isEnabled()) {
             telemetryIngressDispatcher.submit(path, name, value, observedAt);
         } else {
             telemetryCoalescer.recordUpdate(path, name, value, observedAt);
         }
         return variable;
+    }
+
+    /**
+     * Fast-path ingress (event journal / historian-only): skip RAM live-value update — downstream
+     * async stores do not need object-tree computed value per tick.
+     */
+    private Variable resolveDriverTelemetryVariable(String path, String name, DataRecord value) {
+        PlatformObject node = objectTree.require(path);
+        return node.getVariable(name).orElseGet(() -> {
+            Variable created = new Variable(name, value.schema(), true, false, null);
+            node.addVariable(created);
+            return created;
+        });
     }
 
     public Variable setDriverTelemetryValueDirect(String path, String name, DataRecord value) {
@@ -740,34 +764,62 @@ public class ObjectManager {
         }
     }
 
+    public synchronized void reloadFromDatabase() {
+        clearNonRootNodes();
+        loadFromDatabase();
+        ensureBootstrapNodes();
+    }
+
+    public synchronized void syncPathFromDatabase(String path) {
+        if (path == null || path.isBlank() || "root".equals(path)) {
+            return;
+        }
+        Optional<ObjectNodeEntity> entityOpt = nodeRepository.findByPath(path);
+        if (entityOpt.isEmpty()) {
+            removePathFromMemoryIfPresent(path);
+            return;
+        }
+        registerNodeFromEntity(entityOpt.get(), loadVariablesByPath(List.of(path)).getOrDefault(path, List.of()));
+    }
+
+    public synchronized void removePathFromMemoryIfPresent(String path) {
+        if (path == null || path.isBlank() || "root".equals(path)) {
+            return;
+        }
+        if (objectTree.findByPath(path).isPresent()) {
+            objectTree.delete(path);
+        }
+    }
+
+    private boolean shouldApplyFixtureModels() {
+        if (!bootstrapProperties.isFixturesEnabled()) {
+            return false;
+        }
+        ClusterPlatformBootstrapService bootstrap = clusterBootstrapService.getIfAvailable();
+        return bootstrap == null || bootstrap.shouldRunFixtureBootstrap();
+    }
+
+    private void clearNonRootNodes() {
+        List<String> paths = objectTree.all().stream()
+                .map(PlatformObject::path)
+                .filter(path -> !"root".equals(path))
+                .sorted(Comparator.comparingInt(String::length).reversed())
+                .toList();
+        for (String path : paths) {
+            objectTree.delete(path);
+        }
+    }
+
     private void loadFromDatabase() {
         List<ObjectNodeEntity> nodes = nodeRepository.findAllByOrderByPathAsc();
         for (ObjectNodeEntity entity : nodes) {
             if ("root".equals(entity.getPath())) {
                 continue;
             }
-            PlatformObject node = new PlatformObject(
-                    entity.getId(),
-                    entity.getPath(),
-                    entity.getType(),
-                    entity.getDisplayName(),
-                    entity.getDescription(),
-                    entity.getTemplateId(),
-                    entity.getSortOrder(),
-                    entity.getRevision(),
-                    entity.getLastChangedBy(),
-                    entity.getLastChangedAt()
-            );
-            node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
-            for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
-                node.addEvent(event);
+            if (objectTree.findByPath(entity.getPath()).isPresent()) {
+                continue;
             }
-            for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
-                node.addFunction(function);
-            }
-            if (objectTree.findByPath(entity.getPath()).isEmpty()) {
-                objectTree.register(node);
-            }
+            registerNodeFromEntity(entity, List.of());
         }
         List<String> nodePaths = nodes.stream()
                 .map(ObjectNodeEntity::getPath)
@@ -780,6 +832,9 @@ public class ObjectManager {
             }
             PlatformObject node = objectTree.require(entity.getPath());
             for (ObjectVariableEntity varEntity : variablesByPath.getOrDefault(entity.getPath(), List.of())) {
+                if (node.variables().containsKey(varEntity.getName())) {
+                    continue;
+                }
                 DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
                 node.addVariable(new Variable(
                         varEntity.getName(),
@@ -791,6 +846,47 @@ public class ObjectManager {
                         varEntity.getHistoryRetentionDays()
                 ));
             }
+        }
+    }
+
+    private void registerNodeFromEntity(ObjectNodeEntity entity, List<ObjectVariableEntity> variableEntities) {
+        PlatformObject node = new PlatformObject(
+                entity.getId(),
+                entity.getPath(),
+                entity.getType(),
+                entity.getDisplayName(),
+                entity.getDescription(),
+                entity.getTemplateId(),
+                entity.getSortOrder(),
+                entity.getRevision(),
+                entity.getLastChangedBy(),
+                entity.getLastChangedAt()
+        );
+        node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
+        for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
+            node.addEvent(event);
+        }
+        for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
+            node.addFunction(function);
+        }
+        if (objectTree.findByPath(entity.getPath()).isEmpty()) {
+            objectTree.register(node);
+        }
+        PlatformObject registered = objectTree.require(entity.getPath());
+        for (ObjectVariableEntity varEntity : variableEntities) {
+            if (registered.variables().containsKey(varEntity.getName())) {
+                continue;
+            }
+            DataRecord value = mapper.readDataRecord(varEntity.getValueJson());
+            registered.addVariable(new Variable(
+                    varEntity.getName(),
+                    mapper.readSchema(varEntity.getSchemaJson()),
+                    varEntity.isReadable(),
+                    varEntity.isWritable(),
+                    value,
+                    varEntity.isHistoryEnabled(),
+                    varEntity.getHistoryRetentionDays()
+            ));
         }
     }
 

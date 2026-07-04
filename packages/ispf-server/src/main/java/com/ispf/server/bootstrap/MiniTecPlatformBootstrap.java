@@ -11,6 +11,7 @@ import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.mimic.MimicService;
 import com.ispf.server.driver.DriverRuntimeService;
@@ -45,6 +46,7 @@ public class MiniTecPlatformBootstrap {
     private final OperatorAppUiService operatorAppUiService;
     private final ApplicationDataService applicationDataService;
     private final BootstrapProperties bootstrapProperties;
+    private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public MiniTecPlatformBootstrap(
             MiniTecModelBootstrap modelBootstrap,
@@ -57,7 +59,8 @@ public class MiniTecPlatformBootstrap {
             DriverRuntimeService driverRuntimeService,
             OperatorAppUiService operatorAppUiService,
             ApplicationDataService applicationDataService,
-            BootstrapProperties bootstrapProperties
+            BootstrapProperties bootstrapProperties,
+            ClusterPlatformBootstrapService clusterBootstrapService
     ) {
         this.modelBootstrap = modelBootstrap;
         this.templateService = templateService;
@@ -70,12 +73,13 @@ public class MiniTecPlatformBootstrap {
         this.operatorAppUiService = operatorAppUiService;
         this.applicationDataService = applicationDataService;
         this.bootstrapProperties = bootstrapProperties;
+        this.clusterBootstrapService = clusterBootstrapService;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 22)
     public void onReady() throws Exception {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         modelBootstrap.ensureMiniTecModels();
@@ -100,7 +104,7 @@ public class MiniTecPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         startDrivers();

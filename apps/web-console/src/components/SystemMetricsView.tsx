@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformMetrics, type PlatformMetricSection } from "../api/platformMetrics";
 import AutomationIndexStatsCard from "./AutomationIndexStatsCard";
+import ClusterHealthCard from "./ClusterHealthCard";
 import RedisHealthCard from "./RedisHealthCard";
 import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
 import YargHealthCard from "./YargHealthCard";
@@ -127,6 +128,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             })}
           </p>
           <AutomationIndexStatsCard />
+          <ClusterHealthCard />
           <StorageHealthCard />
           <div className="system-metrics-grid system-backend-health-grid">
             <RedisHealthCard />

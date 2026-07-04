@@ -15,6 +15,12 @@ public class EventJournalProperties {
     private long flushIntervalMs = 100;
     private int recentCacheSize = 2000;
     private int writerThreads = 2;
+    private boolean elasticWriterEnabled = true;
+    private int writerThreadsMin = 2;
+    private int writerThreadsMax = 32;
+    private int elasticScaleUpQueueThreshold = 100;
+    private int elasticScaleDownSteps = 6;
+    private int elasticScaleCheckIntervalMs = 200;
     /** Platform default retention for event_history rows (Timescale policy, ClickHouse TTL, or app purge). */
     private int retentionDays = 90;
     /** {@code jdbc} (PostgreSQL/Timescale), {@code clickhouse}, or {@code cassandra}/{@code scylla}. */
@@ -120,6 +126,62 @@ public class EventJournalProperties {
 
     public void setWriterThreads(int writerThreads) {
         this.writerThreads = Math.max(1, writerThreads);
+    }
+
+    public boolean isElasticWriterEnabled() {
+        return elasticWriterEnabled;
+    }
+
+    public void setElasticWriterEnabled(boolean elasticWriterEnabled) {
+        this.elasticWriterEnabled = elasticWriterEnabled;
+    }
+
+    public int getWriterThreadsMin() {
+        return writerThreadsMin;
+    }
+
+    public void setWriterThreadsMin(int writerThreadsMin) {
+        this.writerThreadsMin = Math.max(1, writerThreadsMin);
+    }
+
+    public int getWriterThreadsMax() {
+        return writerThreadsMax;
+    }
+
+    public void setWriterThreadsMax(int writerThreadsMax) {
+        this.writerThreadsMax = Math.max(1, writerThreadsMax);
+    }
+
+    public int getElasticScaleUpQueueThreshold() {
+        return elasticScaleUpQueueThreshold;
+    }
+
+    public void setElasticScaleUpQueueThreshold(int elasticScaleUpQueueThreshold) {
+        this.elasticScaleUpQueueThreshold = Math.max(1, elasticScaleUpQueueThreshold);
+    }
+
+    public int getElasticScaleDownSteps() {
+        return elasticScaleDownSteps;
+    }
+
+    public void setElasticScaleDownSteps(int elasticScaleDownSteps) {
+        this.elasticScaleDownSteps = Math.max(1, elasticScaleDownSteps);
+    }
+
+    public int getElasticScaleCheckIntervalMs() {
+        return elasticScaleCheckIntervalMs;
+    }
+
+    public void setElasticScaleCheckIntervalMs(int elasticScaleCheckIntervalMs) {
+        this.elasticScaleCheckIntervalMs = Math.max(50, elasticScaleCheckIntervalMs);
+    }
+
+    public int resolvedWriterThreadsMin() {
+        return elasticWriterEnabled ? writerThreadsMin : Math.max(1, writerThreads);
+    }
+
+    public int resolvedWriterThreadsMax() {
+        return elasticWriterEnabled ? writerThreadsMax : Math.max(1, writerThreads);
     }
 
     public int getRetentionDays() {

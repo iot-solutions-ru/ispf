@@ -1,7 +1,7 @@
 package com.ispf.server.object.bus;
 
 import com.ispf.server.config.ObjectChangeProperties;
-import com.ispf.server.platform.concurrent.ElasticWorkerScaler;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.platform.AutomationMetricsRecorder;

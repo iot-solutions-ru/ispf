@@ -11,6 +11,7 @@ import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
+import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
@@ -65,6 +66,7 @@ public class DriverRuntimeService {
     private final DriverPackProperties driverPackProperties;
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
+    private final DriverOwnershipService ownershipService;
     private final ScheduledExecutorService scheduler;
     private final ExecutorService ioExecutor;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
@@ -77,7 +79,8 @@ public class DriverRuntimeService {
             DeviceTelemetryPolicyService telemetryPolicyService,
             DriverPackProperties driverPackProperties,
             RuntimeTelemetryProperties runtimeTelemetryProperties,
-            ObjectProvider<DriverRuntimeService> self
+            ObjectProvider<DriverRuntimeService> self,
+            DriverOwnershipService ownershipService
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
@@ -87,6 +90,7 @@ public class DriverRuntimeService {
         this.driverPackProperties = driverPackProperties;
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
+        this.ownershipService = ownershipService;
         int threads = Math.max(1, driverPackProperties.getSchedulerThreads());
         this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
             Thread thread = new Thread(r, "ispf-driver-runtime");
@@ -130,17 +134,7 @@ public class DriverRuntimeService {
     @PreDestroy
     void shutdownDrivers() {
         for (String devicePath : new ArrayList<>(activeDrivers.keySet())) {
-            ActiveDriver active = activeDrivers.remove(devicePath);
-            if (active == null) {
-                continue;
-            }
-            active.future().cancel(false);
-            try {
-                active.driver().disconnect();
-            } catch (Exception ex) {
-                log.debug("Driver disconnect during shutdown for {}: {}", devicePath, ex.getMessage());
-            }
-            active.driverObject().shutdown();
+            stopLocal(devicePath, true);
         }
         scheduler.shutdownNow();
         ioExecutor.shutdownNow();
@@ -184,7 +178,29 @@ public class DriverRuntimeService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus start(String devicePath) {
-        stop(devicePath);
+        stopLocal(devicePath, true);
+        if (!ownershipService.tryAcquire(devicePath)) {
+            setStatus(devicePath, "STANDBY");
+            String owner = ownershipService.findOwner(devicePath).orElse("unknown");
+            throw new IllegalStateException(
+                    "Driver owned by replica " + owner + "; this replica is " + ownershipService.instanceId()
+            );
+        }
+        return doStart(devicePath);
+    }
+
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public DriverRuntimeStatus startHeld(String devicePath) {
+        if (activeDrivers.containsKey(devicePath)) {
+            return status(devicePath).orElseThrow();
+        }
+        if (ownershipService.isEnabled() && !ownershipService.holdsLock(devicePath)) {
+            throw new IllegalStateException("Not driver lock holder for: " + devicePath);
+        }
+        return doStart(devicePath);
+    }
+
+    private DriverRuntimeStatus doStart(String devicePath) {
         PlatformObject device = objectManager.require(devicePath);
         if (device.type() != ObjectType.DEVICE) {
             throw new IllegalArgumentException("Drivers attach only to DEVICE objects: " + devicePath);
@@ -205,10 +221,11 @@ public class DriverRuntimeService {
         if (driverPackProperties.isIngressBufferEnabled() && !usesDirectIngress(devicePath)) {
             String threadPrefix = "driver-ingress-" + devicePath.substring(Math.max(0, devicePath.length() - 24));
             ingressBuffer = new DriverIngressBuffer<>(
-                    driverPackProperties.getIngressBufferThreads(),
+                    driverPackProperties.resolvedIngressBufferElastic(),
                     driverPackProperties.getIngressBufferCapacity(),
                     (name, update) -> variableUpdater.accept(update),
-                    threadPrefix
+                    threadPrefix,
+                    false
             );
         }
         ServerDriverObject driverObject = new ServerDriverObject(
@@ -241,12 +258,19 @@ public class DriverRuntimeService {
     }
 
     public DriverRuntimeStatus stop(String devicePath) {
+        return stopLocal(devicePath, true);
+    }
+
+    public DriverRuntimeStatus stopLocal(String devicePath, boolean releaseOwnership) {
         ActiveDriver active = activeDrivers.remove(devicePath);
         DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
         if (active != null) {
             active.future().cancel(false);
             active.driver().disconnect();
             active.driverObject().shutdown();
+        }
+        if (releaseOwnership) {
+            ownershipService.release(devicePath);
         }
         setStatus(devicePath, "STOPPED");
         return statusOf(
@@ -260,8 +284,16 @@ public class DriverRuntimeService {
 
     public void stopIfRunning(String devicePath) {
         if (activeDrivers.containsKey(devicePath)) {
-            stop(devicePath);
+            stopLocal(devicePath, true);
         }
+    }
+
+    public boolean isActiveLocally(String devicePath) {
+        return activeDrivers.containsKey(devicePath);
+    }
+
+    public List<String> activeDevicePaths() {
+        return List.copyOf(activeDrivers.keySet());
     }
 
     @Transactional
@@ -605,6 +637,30 @@ public class DriverRuntimeService {
         configuration.putIfAbsent(
                 DriverIngress.CALLBACK_THREADS,
                 String.valueOf(driverPackProperties.getMqttCallbackThreads())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_ELASTIC_ENABLED,
+                String.valueOf(driverPackProperties.isMqttCallbackElasticEnabled())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_THREADS_MIN,
+                String.valueOf(driverPackProperties.resolvedMqttCallbackThreadsMin())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_THREADS_MAX,
+                String.valueOf(driverPackProperties.resolvedMqttCallbackThreadsMax())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_SCALE_UP_QUEUE_THRESHOLD,
+                String.valueOf(driverPackProperties.getMqttCallbackScaleUpQueueThreshold())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_SCALE_DOWN_STEPS,
+                String.valueOf(driverPackProperties.getMqttCallbackScaleDownSteps())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_SCALE_CHECK_INTERVAL_MS,
+                String.valueOf(driverPackProperties.getMqttCallbackScaleCheckIntervalMs())
         );
         configuration.putIfAbsent(
                 DriverIngress.CALLBACK_QUEUE_CAPACITY,

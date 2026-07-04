@@ -36,7 +36,28 @@ Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (
 
 - Shared last-value-wins buffer in `ispf-driver-api`.
 - Wired in MQTT (Paho callbacks), OPC UA (`subscribe` mode), IEC104-server (ASDU handler).
-- Config keys: `callbackThreads`, `callbackQueueCapacity`.
+- Config keys: `callbackThreads`, `callbackQueueCapacity`, plus elastic tuning (below).
+
+### L0 — Elastic workers (0.9.87+)
+
+Fixed thread pools on L0 and L1 capped sustained journal throughput (~4 MQTT FIFO threads ≈ few hundred events/s on typical VPS). All ingress tiers now share the same elastic pattern as L3/L5 (`ElasticWorkerScaler` in `ispf-driver-api`).
+
+| Mode | Component | Elastic default |
+|------|-----------|-----------------|
+| L0 coalesce (`ingressCoalesceEnabled=true`) | `DriverIngressBuffer` (eager per-lane drain) | 4→32 workers |
+| L0 FIFO (`ingressCoalesceEnabled=false`) | `DriverIngressFifoExecutor` | 4→32 threads |
+| L1 | `DriverIngressBuffer` (park-loop workers) | 2→32 workers |
+| L5′ | `EventJournalAsyncWriter` | 4→32 writers (env min; was 2→32 in yml default) |
+
+Platform env (see `application.yml`):
+
+- `ISPF_DRIVER_MQTT_CALLBACK_ELASTIC`, `ISPF_DRIVER_MQTT_CALLBACK_THREADS_MIN/MAX`, `ISPF_DRIVER_MQTT_CALLBACK_SCALE_*`
+- `ISPF_DRIVER_INGRESS_BUFFER_ELASTIC`, `ISPF_DRIVER_INGRESS_BUFFER_THREADS_MIN/MAX`, `ISPF_DRIVER_INGRESS_BUFFER_SCALE_*`
+- `ISPF_EVENT_JOURNAL_ELASTIC_WRITER`, `ISPF_EVENT_JOURNAL_WRITER_THREADS_MIN/MAX`, `ISPF_EVENT_JOURNAL_ELASTIC_SCALE_*`
+
+Per-device overrides via driver binding `configuration`: `callbackElasticEnabled`, `callbackThreadsMin`, `callbackThreadsMax`, `callbackScaleUpQueueThreshold`, `callbackScaleDownSteps`, `callbackScaleCheckIntervalMs` (resolved through `IngressElasticSettings`).
+
+Scale-up triggers when pending queue depth ≥ threshold; scale-down after consecutive empty checks. Hot reload (subset): runtime-settings `driver.mqtt-callback-elastic-enabled`, `driver.mqtt-callback-threads-max`, `driver.ingress-buffer-elastic-enabled`, `event-journal.elastic-writer-enabled`.
 
 ### L1 — Server driver bridge (`ServerDriverObject`)
 
@@ -58,6 +79,7 @@ Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (
 - `TelemetryHistorianFastPath` for `TELEMETRY_ONLY` historian-only devices.
 - `TelemetryEventJournalFastPath` for `EVENT_JOURNAL_ONLY` — driver ingress → async journal ([ADR-0027](0027-event-journal-ingress-fast-path.md)).
 - `VariableHistoryAsyncWriter` overflow coalesce (no sync persist on producer threads).
+- `EventJournalAsyncWriter` elastic writers (L5′) — same scaler semantics as variable history; avoids fixed 2-thread journal bottleneck under flood load.
 - Scylla/Cassandra historian writes group samples **by partition** `(object_path, variable_name, field_name)` before UNLOGGED batch execute (avoids cross-partition batch anti-pattern).
 - Hot-path caches: `historyEnabled` lookup TTL cache; fast path skips duplicate tree walk via `recordFromDataRecordTrusted`.
 - L3 ingress drain calls `publishCoalescedBatch` → single historian `enqueue` per drain batch.
@@ -74,10 +96,13 @@ Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (
 
 ## Configuration
 
-- `ispf.driver.ingress-buffer-*`, `ispf.driver.async-poll-enabled`, `ispf.driver.io-threads`
+- `ispf.driver.ingress-buffer-*` (including `ingress-buffer-elastic-enabled`, min/max threads, scale thresholds)
+- `ispf.driver.mqtt-callback-*` (including elastic and min/max threads)
+- `ispf.driver.async-poll-enabled`, `ispf.driver.io-threads`
 - `ispf.runtime-telemetry.ingress-*`, `ispf.runtime-telemetry.fast-historian-path`
 - `ispf.variable-history.elastic-writer-enabled`, `ispf.variable-history.overflow-coalesce-enabled`
-- Per-driver: `callbackThreads`, `callbackQueueCapacity`
+- `ispf.event-journal.elastic-writer-enabled`, `ispf.event-journal.writer-threads-min/max`, `ispf.event-journal.elastic-scale-*`
+- Per-driver: `callbackThreads`, `callbackQueueCapacity`, elastic keys above
 
 ## Related
 

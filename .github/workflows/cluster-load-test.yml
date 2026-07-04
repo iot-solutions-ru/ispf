@@ -1,0 +1,81 @@
+name: Cluster load test gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      scale_factor_floor:
+        description: "Minimum acceptable throughput ratio (3 replicas / 1 replica)"
+        required: false
+        default: "1.8"
+  schedule:
+    # Weekly Sunday 04:00 UTC — cluster scale-out regression (BL-138)
+    - cron: "0 4 * * 0"
+
+jobs:
+  cluster-ownership-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Driver ownership + failover tests
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.driver.DriverOwnershipServiceTest \
+            --tests com.ispf.server.driver.ClusterFailoverIntegrationTest \
+            --no-daemon \
+            2>&1 | tee cluster-ownership.log
+
+      - name: Upload cluster test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cluster-ownership-${{ github.run_id }}
+          path: cluster-ownership.log
+          retention-days: 14
+
+  jvm-baseline-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Single-node API throughput baseline
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.api.ListDevicesLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee cluster-baseline-list-devices.log
+
+      - name: Upload baseline logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cluster-baseline-${{ github.run_id }}
+          path: cluster-baseline-list-devices.log
+          retention-days: 14
+
+      - name: Scale-out note
+        run: |
+          echo "Scale factor floor (manual compose gate): ${{ inputs.scale_factor_floor || '1.8' }}"
+          echo "Run deploy/cluster-quickstart.sh on a host with Docker to compare 1 vs 3 replicas via nginx."
+          echo "Regression: 3-replica p99 throughput should be >= floor × single-node baseline."

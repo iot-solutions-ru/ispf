@@ -154,18 +154,72 @@ Commercial bundle manifests могут содержать RSA-signed блок `l
 
 ```
                     ┌─────────────┐
-   Clients ────────►│   Ingress   │
+   Clients ────────►│   Ingress   │  nginx round-robin (REST) + sticky WS
                     └──────┬──────┘
            ┌───────────────┼───────────────┐
            ▼               ▼               ▼
-    ispf-server x N   web-console    Keycloak
-           │
-           ├── PostgreSQL (managed)
-           ├── Redis
-           └── NATS JetStream
+    ispf-server-1   ispf-server-2   ispf-server-N
+           │               │               │
+           └───────────────┼───────────────┘
+                           ▼
+              PostgreSQL + Redis + NATS JetStream
 ```
 
-- Stateless replicas `ispf-server`
+- Stateless API replicas share one PostgreSQL tree ([ADR-0028](decisions/0028-horizontal-active-active-cluster.md)).
+- Driver poll loops: exactly-one owner per device via `platform_driver_locks` (BL-136).
+- Singleton schedulers: JDBC leader locks (`platform_leader_locks`).
+
+## Multi-instance cluster (BL-134…139)
+
+Lab stack with three replicas behind nginx:
+
+```bash
+bash deploy/cluster-quickstart.sh
+# UI + API via LB: http://127.0.0.1:8088/
+# Round-robin: curl -s http://127.0.0.1:8088/api/v1/info | jq .replicaId
+```
+
+Compose file: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
+Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST round-robin, `/ws/` `ip_hash` sticky, `max_fails` passive health.
+
+### Required env (each replica)
+
+| Variable | Example | Notes |
+|----------|---------|-------|
+| `ISPF_REPLICA_ID` | `replica-1` | Unique per node; exposed in `/api/v1/info` |
+| `ISPF_DB_URL` | `jdbc:postgresql://postgres:5432/ispf` | Same DB for all replicas |
+| `ISPF_CLUSTER_ENABLED` | `true` | Enables driver ownership + cluster health API |
+| `ISPF_NATS_ENABLED` | `true` | Cross-replica WS/object-change fan-out |
+| `ISPF_NATS_REPLICA_EVENTS` | `true` | Required for multi-replica UI sync |
+| `ISPF_REDIS_ENABLED` | `true` | Recommended (correlator windows, ACL cache) |
+
+Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUSTER_DRIVER_LOCK_RENEW_MS` (default 10000).
+
+### Ops runbook
+
+**Add node**
+
+1. Copy an existing `ispf-server-N` service block in compose; set unique `ISPF_REPLICA_ID`.
+2. Add `server ispf-server-N:8080` to `upstream ispf_backend` and `ispf_ws_backend` in nginx config.
+3. `docker compose -f deploy/docker-compose.cluster.yml up -d ispf-server-N nginx`
+4. Verify: `GET /api/v1/platform/cluster/health` (admin) shows `replicaId` and held driver locks.
+
+**Remove node (graceful)**
+
+1. `docker stop ispf-server-N` — nginx marks upstream down after `max_fails`.
+2. Driver locks on that node expire within TTL; another replica reclaims via `DriverOwnershipScheduler`.
+3. Remove service from compose/nginx when drained.
+
+**Failover verify**
+
+1. `curl -sf http://127.0.0.1:8088/api/v1/info` — should succeed with any replica up.
+2. Stop one replica: REST must not 502; WS clients on other replicas stay connected (sticky); NATS propagates variable updates.
+3. Admin → System → Metrics → cluster health card (`/api/v1/platform/cluster/health`).
+
+**Rollback**
+
+1. Scale back to single node: use [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml) or prod VPS layout.
+2. Set `ISPF_CLUSTER_ENABLED=false` on remaining node if driver ownership not needed.
 
 ## ClickHouse variable history (prod playbook, BL-114)
 

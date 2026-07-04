@@ -1,5 +1,6 @@
 package com.ispf.server.platform.settings;
 
+import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
@@ -23,6 +24,7 @@ public class PlatformRuntimeSettingsService {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final EventJournalProperties eventJournalProperties;
     private final VariableHistoryProperties variableHistoryProperties;
+    private final DriverPackProperties driverPackProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
 
     public PlatformRuntimeSettingsService(
@@ -32,6 +34,7 @@ public class PlatformRuntimeSettingsService {
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             EventJournalProperties eventJournalProperties,
             VariableHistoryProperties variableHistoryProperties,
+            DriverPackProperties driverPackProperties,
             ObjectChangeEventBus objectChangeEventBus
     ) {
         this.environment = environment;
@@ -40,6 +43,7 @@ public class PlatformRuntimeSettingsService {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.eventJournalProperties = eventJournalProperties;
         this.variableHistoryProperties = variableHistoryProperties;
+        this.driverPackProperties = driverPackProperties;
         this.objectChangeEventBus = objectChangeEventBus;
     }
 
@@ -232,6 +236,22 @@ public class PlatformRuntimeSettingsService {
                     variableHistoryProperties.setBatchSize(Integer.parseInt(value));
             case "variable-history.flush-interval-ms" ->
                     variableHistoryProperties.setFlushIntervalMs(Long.parseLong(value));
+            case "driver.mqtt-callback-threads" ->
+                    driverPackProperties.setMqttCallbackThreads(Integer.parseInt(value));
+            case "driver.mqtt-callback-queue-capacity" ->
+                    driverPackProperties.setMqttCallbackQueueCapacity(Integer.parseInt(value));
+            case "driver.mqtt-callback-elastic-enabled" ->
+                    driverPackProperties.setMqttCallbackElasticEnabled(Boolean.parseBoolean(value));
+            case "driver.mqtt-callback-threads-max" ->
+                    driverPackProperties.setMqttCallbackThreadsMax(Integer.parseInt(value));
+            case "driver.ingress-buffer-elastic-enabled" ->
+                    driverPackProperties.setIngressBufferElasticEnabled(Boolean.parseBoolean(value));
+            case "driver.ingress-buffer-threads-max" ->
+                    driverPackProperties.setIngressBufferThreadsMax(Integer.parseInt(value));
+            case "event-journal.elastic-writer-enabled" ->
+                    eventJournalProperties.setElasticWriterEnabled(Boolean.parseBoolean(value));
+            case "event-journal.writer-threads-max" ->
+                    eventJournalProperties.setWriterThreadsMax(Integer.parseInt(value));
             default -> throw new IllegalStateException("Missing hot reload handler for " + definition.id());
         }
         if (definition.id().startsWith("object-change.")) {

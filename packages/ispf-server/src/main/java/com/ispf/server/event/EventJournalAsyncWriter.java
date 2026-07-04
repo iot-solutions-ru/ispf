@@ -1,6 +1,7 @@
 package com.ispf.server.event;
 
 import com.ispf.core.object.ObjectEvent;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -15,7 +16,10 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class EventJournalAsyncWriter {
@@ -41,7 +45,11 @@ public class EventJournalAsyncWriter {
     private final AutomationMetricsRecorder automationMetricsRecorder;
 
     private BlockingQueue<PendingEntry> queue;
-    private ExecutorService worker;
+    private ExecutorService workers;
+    private ScheduledExecutorService scaleScheduler;
+    private ScheduledFuture<?> scaleTask;
+    private ElasticWorkerScaler scaler;
+    private final AtomicInteger activeWorkers = new AtomicInteger();
     private volatile boolean running;
 
     public EventJournalAsyncWriter(
@@ -63,22 +71,46 @@ public class EventJournalAsyncWriter {
         }
         queue = new LinkedBlockingQueue<>(properties.getQueueCapacity());
         running = true;
-        int writerThreads = Math.max(1, properties.getWriterThreads());
-        worker = Executors.newFixedThreadPool(writerThreads, runnable -> {
+        if (properties.isElasticWriterEnabled()) {
+            scaler = new ElasticWorkerScaler(
+                    properties.resolvedWriterThreadsMin(),
+                    properties.resolvedWriterThreadsMax(),
+                    properties.getElasticScaleUpQueueThreshold(),
+                    properties.getElasticScaleDownSteps()
+            );
+            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "event-journal-scale");
+                thread.setDaemon(true);
+                return thread;
+            });
+            scaleTask = scaleScheduler.scheduleAtFixedRate(
+                    this::adjustWorkers,
+                    properties.getElasticScaleCheckIntervalMs(),
+                    properties.getElasticScaleCheckIntervalMs(),
+                    TimeUnit.MILLISECONDS
+            );
+        }
+        workers = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable, "event-journal-writer");
             thread.setDaemon(true);
             return thread;
         });
-        for (int i = 0; i < writerThreads; i++) {
-            worker.submit(this::writerLoop);
+        int initial = properties.isElasticWriterEnabled()
+                ? properties.resolvedWriterThreadsMin()
+                : properties.resolvedWriterThreadsMax();
+        for (int i = 0; i < initial; i++) {
+            spawnWorker();
         }
         automationMetricsRecorder.bindEventJournalQueue(queue);
         log.info(
-                "Event journal async writer started (queueCapacity={}, batchSize={}, flushIntervalMs={}, writerThreads={})",
+                "Event journal async writer started (queueCapacity={}, batchSize={}, flushIntervalMs={}, "
+                        + "writers={}-{}, elastic={})",
                 properties.getQueueCapacity(),
                 properties.getBatchSize(),
                 properties.getFlushIntervalMs(),
-                writerThreads
+                properties.resolvedWriterThreadsMin(),
+                properties.resolvedWriterThreadsMax(),
+                properties.isElasticWriterEnabled()
         );
     }
 
@@ -94,6 +126,7 @@ public class EventJournalAsyncWriter {
             return;
         }
         if (queue.offer(entry)) {
+            maybeScaleUp();
             return;
         }
         automationMetricsRecorder.recordEventJournalSyncFallback();
@@ -104,6 +137,30 @@ public class EventJournalAsyncWriter {
                 event.eventName()
         );
         persistSync(entry);
+    }
+
+    private void maybeScaleUp() {
+        if (scaler != null && queue.size() >= properties.getElasticScaleUpQueueThreshold()) {
+            adjustWorkers();
+        }
+    }
+
+    private void adjustWorkers() {
+        if (scaler == null || !running) {
+            return;
+        }
+        scaler.adjust(queue.size());
+        while (activeWorkers.get() < scaler.targetWorkers()
+                && activeWorkers.get() < properties.resolvedWriterThreadsMax()) {
+            spawnWorker();
+        }
+    }
+
+    private void spawnWorker() {
+        if (workers == null || activeWorkers.get() >= properties.resolvedWriterThreadsMax()) {
+            return;
+        }
+        workers.submit(this::writerLoop);
     }
 
     public void awaitQueueDrain(long timeout, TimeUnit unit) throws InterruptedException {
@@ -120,10 +177,14 @@ public class EventJournalAsyncWriter {
     }
 
     private void writerLoop() {
+        activeWorkers.incrementAndGet();
         int batchSize = Math.max(1, properties.getBatchSize());
         long flushIntervalMs = Math.max(1, properties.getFlushIntervalMs());
-        while (running || !queue.isEmpty()) {
-            try {
+        try {
+            while (running || !queue.isEmpty()) {
+                if (scaler != null && activeWorkers.get() > scaler.targetWorkers() && queue.isEmpty()) {
+                    break;
+                }
                 List<PendingEntry> batch = new ArrayList<>(batchSize);
                 PendingEntry first = queue.poll(flushIntervalMs, TimeUnit.MILLISECONDS);
                 if (first != null) {
@@ -133,12 +194,12 @@ public class EventJournalAsyncWriter {
                 if (!batch.isEmpty()) {
                     flushBatch(batch);
                 }
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                break;
             }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        } finally {
+            activeWorkers.decrementAndGet();
         }
-        drainRemaining();
     }
 
     private void drainRemaining() {
@@ -182,17 +243,23 @@ public class EventJournalAsyncWriter {
     @PreDestroy
     void shutdown() {
         running = false;
-        if (worker == null) {
+        if (scaleTask != null) {
+            scaleTask.cancel(false);
+        }
+        if (scaleScheduler != null) {
+            scaleScheduler.shutdownNow();
+        }
+        if (workers == null) {
             return;
         }
-        worker.shutdown();
+        workers.shutdown();
         try {
-            if (!worker.awaitTermination(15, TimeUnit.SECONDS)) {
-                worker.shutdownNow();
+            if (!workers.awaitTermination(15, TimeUnit.SECONDS)) {
+                workers.shutdownNow();
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            worker.shutdownNow();
+            workers.shutdownNow();
         }
         drainRemaining();
     }

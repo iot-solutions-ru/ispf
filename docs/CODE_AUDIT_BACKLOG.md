@@ -215,8 +215,22 @@
 | **BL-112** | MQTT ingress worker (stateless sidecar) | P2 | Cancelled | Scale |
 | **BL-113** | CI load test gate (events-internal) | P2 | Done (EX-7) | QA / Scale |
 | **BL-114** | ClickHouse variable history prod playbook | P1 | Partial (EX-1 docs) | Ops |
-| **BL-115** | Horizontal scale documentation | P3 | Planned | Ops |
+| **BL-115** | Horizontal scale (parent epic → BL-133…139) | P1 | Partial | Ops |
 | **BL-116** | Historian dual-write migration tooling | P3 | Planned | History |
+
+### Wave T — EX-CLUSTER: horizontal active-active (BL-133…139)
+
+Детали — [EXCELLENCE_BACKLOG.md § Wave T](EXCELLENCE_BACKLOG.md#wave-t--ex-cluster-horizontal-active-active-bl-133139).
+
+| ID | Задача | P | Статус | Область |
+| -- | ------ | - | ------ | ------- |
+| **BL-133** | ADR horizontal active-active cluster | P1 | Partial | Architecture |
+| **BL-134** | Multi-replica Docker Compose stack | P1 | Partial | Ops |
+| **BL-135** | Nginx round-robin + WS sticky + failover | P1 | Partial | Ops |
+| **BL-136** | Driver runtime cluster ownership | P1 | Partial | Drivers / Scale |
+| **BL-137** | Multi-replica integration + failover tests | P2 | Partial | QA |
+| **BL-138** | Scale-out load test gate | P2 | Partial | QA / Scale |
+| **BL-139** | Cluster ops API + runbook | P2 | Partial | Ops |
 
 ### Wave P — EX-FED: edge excellence (BL-117…120)
 

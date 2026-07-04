@@ -6,6 +6,12 @@ import java.util.Map;
 public final class DriverIngress {
 
     public static final String CALLBACK_THREADS = "callbackThreads";
+    public static final String CALLBACK_THREADS_MIN = "callbackThreadsMin";
+    public static final String CALLBACK_THREADS_MAX = "callbackThreadsMax";
+    public static final String CALLBACK_ELASTIC_ENABLED = "callbackElasticEnabled";
+    public static final String CALLBACK_SCALE_UP_QUEUE_THRESHOLD = "callbackScaleUpQueueThreshold";
+    public static final String CALLBACK_SCALE_DOWN_STEPS = "callbackScaleDownSteps";
+    public static final String CALLBACK_SCALE_CHECK_INTERVAL_MS = "callbackScaleCheckIntervalMs";
     public static final String CALLBACK_QUEUE_CAPACITY = "callbackQueueCapacity";
     /** When false, each MQTT callback is queued for handling (no last-value-wins coalesce on L0). */
     public static final String INGRESS_COALESCE_ENABLED = "ingressCoalesceEnabled";
@@ -14,15 +20,25 @@ public final class DriverIngress {
     }
 
     public static int resolveThreads(Map<String, String> configuration, int fallback) {
-        return parsePositive(configuration.get(CALLBACK_THREADS), fallback);
+        return resolvePositive(configuration, CALLBACK_THREADS, fallback);
     }
 
     public static int resolveCapacity(Map<String, String> configuration, int fallback) {
-        return parsePositive(configuration.get(CALLBACK_QUEUE_CAPACITY), fallback);
+        return resolvePositive(configuration, CALLBACK_QUEUE_CAPACITY, fallback);
     }
 
     public static boolean resolveCoalesceEnabled(Map<String, String> configuration, boolean fallback) {
-        return parseBoolean(configuration.get(INGRESS_COALESCE_ENABLED), fallback);
+        return resolveBoolean(configuration, INGRESS_COALESCE_ENABLED, fallback);
+    }
+
+    public static boolean resolveBoolean(Map<String, String> configuration, String key, boolean fallback) {
+        String raw = configuration.get(key);
+        return parseBoolean(raw, fallback);
+    }
+
+    public static int resolvePositive(Map<String, String> configuration, String key, int fallback) {
+        String raw = configuration.get(key);
+        return parsePositive(raw, fallback);
     }
 
     private static boolean parseBoolean(String raw, boolean fallback) {

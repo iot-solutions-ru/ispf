@@ -3,7 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.platform.AutomationMetricsRecorder;
-import com.ispf.server.platform.concurrent.ElasticWorkerScaler;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

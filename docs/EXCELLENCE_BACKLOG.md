@@ -9,7 +9,7 @@
 | Документ | Роль |
 | -------- | ---- |
 | [ROADMAP.md § Phase 23](ROADMAP.md#phase-23--platform-excellence-req-ex) | Фазы и статусы |
-| [CODE_AUDIT_BACKLOG.md § Wave J…S](CODE_AUDIT_BACKLOG.md#wave-j--ex-driver-production-depth) | Сводные таблицы BL-78…132 |
+| [CODE_AUDIT_BACKLOG.md § Wave J…T](CODE_AUDIT_BACKLOG.md#wave-j--ex-driver-production-depth) | Сводные таблицы BL-78…139 |
 | [GAP_REGISTRY.md](GAP_REGISTRY.md) | Sprint planning |
 | [0002 dogfooding gate](decisions/0002-dogfooding-gate.md) | Новые драйверы и API |
 
@@ -29,6 +29,7 @@
 | App platform | — (наш лидер) | EX-APP | 96–100 | Marketplace, semver bundle, 3+ reference apps |
 | Edge + federation | AWS IoT Edge | EX-FED | 117–120 | Store-forward, peer SLO, selective sync |
 | Масштаб telemetry | EMQX / AWS IoT | EX-SCALE | 111–116 | Ingress tier, CI load gate, CH prod path |
+| Horizontal cluster | K8s / Docker Swarm HA | EX-CLUSTER | 133–139 | Active-active API, nginx RR, driver ownership, failover |
 | UX / mobile | Commercial HMI | EX-HMI | 90–95 | Operator PWA, offline, a11y |
 | Open / self-host | ThingsBoard | EX-OPS | 127–128 | One-click prod, air-gap runbook |
 | AI engineering | — (наша ниша) | EX-AI | 106–110 | Spec→deploy, audit, SLO, safe mutate |
@@ -855,22 +856,23 @@
 
 ---
 
-### BL-115 — Horizontal scale documentation
+### BL-115 — Horizontal scale (parent epic)
 
 | | |
 | - | - |
-| **P** | P3 |
-| **Статус** | Planned |
+| **P** | P1 |
+| **Статус** | Partial (Wave T BL-133…139) |
 | **Зависимости** | BL-41, BL-42 |
 
 **Scope:**
 
-- Architecture doc: N replicas, NATS fan-out, sticky sessions for WS, leader election schedulers.
-- Limits and known single-writer constraints.
+- Parent epic для горизонтального active-active кластера (одна БД, единое дерево, nginx ingress).
+- Реализация разбита на **BL-133…139** (Wave T EX-CLUSTER).
 
 **Acceptance:**
 
-- [ ] `DEPLOYMENT.md` multi-instance section updated with tested topology
+- [ ] BL-133…139 acceptance выполнены
+- [ ] `DEPLOYMENT.md` multi-instance cluster section с tested topology
 
 ---
 
@@ -1228,6 +1230,154 @@
 
 ---
 
+## Wave T — EX-CLUSTER: horizontal active-active (BL-133…139)
+
+**Цель:** active-active кластер `ispf-server` с единой PostgreSQL, nginx round-robin для REST, sticky WebSocket, driver ownership per device и автоматический failover.
+
+**Не путать с federation (BL-117…120):** cluster = одна площадка / одна БД; federation = несколько площадок с единым каталогом.
+
+### BL-133 — ADR: Horizontal active-active cluster
+
+| | |
+| - | - |
+| **P** | P1 |
+| **Статус** | Partial |
+| **Зависимости** | BL-111 |
+
+**Scope:**
+
+- ADR [0028](decisions/0028-horizontal-active-active-cluster.md): topology, single-writer constraints, env vars.
+- Cross-link [ADR-0024](decisions/0024-demand-driven-variable-change-pubsub.md) (demand-driven сохраняется).
+
+**Acceptance:**
+
+- [x] ADR Accepted в `docs/decisions/`
+- [x] Диаграмма + таблица constraints
+- [x] Список env vars для multi-replica deploy
+
+---
+
+### BL-134 — Multi-replica Docker Compose stack
+
+| | |
+| - | - |
+| **P** | P1 |
+| **Статус** | Partial |
+| **Зависимости** | BL-133 |
+
+**Scope:**
+
+- `deploy/docker-compose.cluster.yml`: postgres, redis, nats, `ispf-server` ×3, nginx.
+- `deploy/cluster-quickstart.sh` — сборка + старт кластера.
+
+**Acceptance:**
+
+- [x] Compose поднимает 3 реплики + nginx
+- [ ] `GET /api/v1/info` через nginx возвращает разные `replicaId` (round-robin)
+
+---
+
+### BL-135 — Nginx ingress: round-robin + WS sticky + failover
+
+| | |
+| - | - |
+| **P** | P1 |
+| **Статус** | Partial |
+| **Зависимости** | BL-134 |
+
+**Scope:**
+
+- `deploy/nginx-cluster.conf`: upstream с `max_fails` / `fail_timeout`; `/api/` round-robin; `/ws/` ip_hash sticky.
+
+**Acceptance:**
+
+- [x] Конфиг committed
+- [ ] При остановке одной реплики REST без 502 (manual verify)
+
+---
+
+### BL-136 — Driver runtime cluster ownership
+
+| | |
+| - | - |
+| **P** | P1 |
+| **Статус** | Partial |
+| **Зависимости** | BL-133 |
+
+**Scope:**
+
+- `platform_driver_locks` + `DriverOwnershipService` (JDBC lock per `device_path`).
+- `DriverRuntimeService`: acquire перед poll loop, renew heartbeat, release on stop.
+- Failover reaper: expired lock → другая реплика забирает driver.
+
+**Acceptance:**
+
+- [x] Migration + service + scheduler
+- [x] Integration test: два holder — poll lock на одном device
+- [ ] Kill owner → failover в compose smoke
+
+---
+
+### BL-137 — Multi-replica integration + failover tests
+
+| | |
+| - | - |
+| **P** | P2 |
+| **Статус** | Partial |
+| **Зависимости** | BL-136 |
+
+**Scope:**
+
+- `ClusterFailoverIntegrationTest`, `DriverOwnershipServiceTest`.
+- Документация в [TESTING.md](TESTING.md).
+
+**Acceptance:**
+
+- [x] Gradle tests green
+- [x] TESTING.md section cluster
+
+---
+
+### BL-138 — Scale-out load test gate
+
+| | |
+| - | - |
+| **P** | P2 |
+| **Статус** | Partial |
+| **Зависимости** | BL-134, BL-113 |
+
+**Scope:**
+
+- `.github/workflows/cluster-load-test.yml` (workflow_dispatch + optional schedule).
+- Baseline 1-node JVM gate + documented cluster compose smoke script.
+
+**Acceptance:**
+
+- [x] Workflow committed
+- [ ] Cluster 1 vs 3 nodes throughput >= 1.8× (manual / self-hosted)
+
+---
+
+### BL-139 — Cluster ops UI + runbook
+
+| | |
+| - | - |
+| **P** | P2 |
+| **Статус** | Partial |
+| **Зависимости** | BL-133, BL-136 |
+
+**Scope:**
+
+- `GET /api/v1/platform/cluster/health` — replicaId, driver locks held, NATS/Redis hints.
+- [DEPLOYMENT.md](DEPLOYMENT.md) § Multi-instance cluster runbook.
+
+**Acceptance:**
+
+- [x] API + DEPLOYMENT runbook
+- [ ] GAP_REGISTRY ops-ready checklist
+
+---
+
 ## Sprint planning (рекомендация)
 
 ```text
@@ -1292,6 +1442,10 @@ Sprint EX-16 (QA close-out) — Done
 Sprint EX-17 (Federation edge) — Done
   BL-117 — outbound store-and-forward buffer + replay on reconnect
   BL-118 — peer health API + UI badges (green/yellow/red)
+
+Sprint EX-18 (Horizontal cluster) — In progress
+  BL-133 ADR + BL-134 compose + BL-135 nginx
+  BL-136 driver ownership + BL-137 tests + BL-138 load gate + BL-139 ops
 
 Backlog по demand (следующий приоритет)
   BL-90 (Android device sign-off), BL-119…126, BL-92, BL-93

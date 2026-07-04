@@ -8,6 +8,8 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
+import com.ispf.driver.ingress.DriverIngressFifoExecutor;
+import com.ispf.driver.ingress.IngressElasticSettings;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -20,10 +22,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * MQTT device driver — subscribes to topics and maps payloads to object variables.
@@ -54,6 +53,10 @@ public class MqttDeviceDriver implements DeviceDriver {
             .field("raw", FieldType.STRING)
             .build();
 
+    private static final IngressElasticSettings DEFAULT_ELASTIC = new IngressElasticSettings(
+            true, 4, 32, 100, 6, 200
+    );
+
     private DriverObject driverObject;
     private MqttClient client;
     private String brokerUrl = "tcp://localhost:1883";
@@ -64,10 +67,11 @@ public class MqttDeviceDriver implements DeviceDriver {
     private int callbackThreads = 4;
     private int callbackQueueCapacity = 10_000;
     private boolean ingressCoalesceEnabled = true;
+    private IngressElasticSettings ingressElastic = DEFAULT_ELASTIC;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
     private volatile boolean connected;
     private DriverIngressBuffer<String, byte[]> ingressBuffer;
-    private ExecutorService ingressExecutor;
+    private DriverIngressFifoExecutor ingressFifo;
 
     @Override
     public DriverMetadata metadata() {
@@ -78,6 +82,7 @@ public class MqttDeviceDriver implements DeviceDriver {
     public void initialize(DriverObject driverObject) {
         this.driverObject = driverObject;
         driverObject.configuration().forEach(this::applyConfig);
+        ingressElastic = IngressElasticSettings.resolve(driverObject.configuration(), DEFAULT_ELASTIC);
         driverObject.getVariable("topicPrefix").ifPresent(record -> {
             Object raw = record.firstRow().get("raw");
             if (raw != null && !raw.toString().isBlank()) {
@@ -108,24 +113,17 @@ public class MqttDeviceDriver implements DeviceDriver {
         try {
             if (ingressCoalesceEnabled) {
                 ingressBuffer = new DriverIngressBuffer<>(
-                        callbackThreads,
+                        ingressElastic,
                         callbackQueueCapacity,
                         this::handleMessage,
                         "mqtt-ingress-worker",
                         true
                 );
             } else {
-                ingressExecutor = new ThreadPoolExecutor(
-                        callbackThreads,
-                        callbackThreads,
-                        0L,
-                        TimeUnit.MILLISECONDS,
-                        new LinkedBlockingQueue<>(callbackQueueCapacity),
-                        runnable -> {
-                            Thread thread = new Thread(runnable, "mqtt-ingress-fifo");
-                            thread.setDaemon(true);
-                            return thread;
-                        },
+                ingressFifo = new DriverIngressFifoExecutor(
+                        ingressElastic,
+                        callbackQueueCapacity,
+                        "mqtt-ingress-fifo",
                         new ThreadPoolExecutor.CallerRunsPolicy()
                 );
             }
@@ -151,7 +149,7 @@ public class MqttDeviceDriver implements DeviceDriver {
                     byte[] payload = message.getPayload();
                     byte[] copy = payload == null ? new byte[0] : payload.clone();
                     DriverIngressBuffer<String, byte[]> buffer = ingressBuffer;
-                    ExecutorService fifo = ingressExecutor;
+                    DriverIngressFifoExecutor fifo = ingressFifo;
                     if (fifo != null) {
                         fifo.execute(() -> handleMessage(topic, copy));
                     } else if (buffer != null) {
@@ -206,23 +204,14 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     private void shutdownIngress() {
         shutdownIngressBuffer();
-        shutdownIngressExecutor();
+        shutdownIngressFifo();
     }
 
-    private void shutdownIngressExecutor() {
-        ExecutorService executor = ingressExecutor;
-        ingressExecutor = null;
-        if (executor == null) {
-            return;
-        }
-        executor.shutdown();
-        try {
-            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                executor.shutdownNow();
-            }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            executor.shutdownNow();
+    private void shutdownIngressFifo() {
+        DriverIngressFifoExecutor fifo = ingressFifo;
+        ingressFifo = null;
+        if (fifo != null) {
+            fifo.close();
         }
     }
 

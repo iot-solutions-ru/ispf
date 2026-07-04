@@ -141,6 +141,12 @@ public class ObjectController {
         this.driverRuntimeService = driverRuntimeService;
     }
 
+    private void requireObjectTreeReady() {
+        if (!objectManager.isInitialized()) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Object tree is initializing");
+        }
+    }
+
     private ObjectDto toDto(PlatformObject node) {
         return ObjectDto.from(
                 node,
@@ -234,6 +240,7 @@ public class ObjectController {
             @RequestParam(defaultValue = "false") boolean lite,
             Authentication authentication
     ) {
+        requireObjectTreeReady();
         var tree = objectManager.tree();
         java.util.function.Function<PlatformObject, ObjectDto> mapper = lite
                 ? this::toLiteDto
@@ -263,6 +270,7 @@ public class ObjectController {
 
     @GetMapping("/by-path/editor")
     public ObjectEditorDto editor(@RequestParam String path, Authentication authentication) {
+        requireObjectTreeReady();
         if (!tenantScopeService.isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
@@ -272,6 +280,7 @@ public class ObjectController {
 
     @GetMapping("/by-path")
     public ObjectDto get(@RequestParam String path, Authentication authentication) {
+        requireObjectTreeReady();
         if (!tenantScopeService.isPathVisible(path, authentication)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
         }
