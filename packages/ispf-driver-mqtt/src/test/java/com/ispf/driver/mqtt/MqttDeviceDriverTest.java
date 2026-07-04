@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -107,6 +108,30 @@ class MqttDeviceDriverTest {
     }
 
     @Test
+    void fifoIngressHandlesEachMessageWithoutCoalesceBuffer() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/loadtest/00001/temperature";
+
+        CountingStubDriverObject driverObject = new CountingStubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "ingressCoalesceEnabled", "false",
+                "callbackThreads", "4",
+                "callbackQueueCapacity", "10000"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("temperature", topic));
+
+        publish(topic, "42.0", port);
+        awaitVariable(driverObject, "temperature");
+        assertEquals(1, driverObject.updateCount.get());
+        driver.disconnect();
+    }
+
+    @Test
     void writeRequiresConnection() {
         MqttDeviceDriver driver = new MqttDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));
@@ -157,7 +182,30 @@ class MqttDeviceDriverTest {
         }
     }
 
-    private static final class StubDriverObject implements DeviceDriver.DriverObject {
+    private static final class CountingStubDriverObject extends StubDriverObject {
+
+        private final AtomicInteger updateCount = new AtomicInteger();
+
+        CountingStubDriverObject(Map<String, String> configuration) {
+            super(configuration);
+        }
+
+        @Override
+        public void updateVariable(String name, DataRecord value) {
+            updateCount.incrementAndGet();
+            super.updateVariable(name, value);
+        }
+
+        boolean awaitUpdates(int minimum, long timeout, TimeUnit unit) throws InterruptedException {
+            long deadline = System.nanoTime() + unit.toNanos(timeout);
+            while (updateCount.get() < minimum && System.nanoTime() < deadline) {
+                Thread.sleep(10);
+            }
+            return updateCount.get() >= minimum;
+        }
+    }
+
+    private static class StubDriverObject implements DeviceDriver.DriverObject {
 
         private final Map<String, String> configuration;
         private final Map<String, DataRecord> variables = new HashMap<>();

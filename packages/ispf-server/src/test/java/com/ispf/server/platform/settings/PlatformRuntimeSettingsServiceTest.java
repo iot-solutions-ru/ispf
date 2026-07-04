@@ -1,7 +1,9 @@
 package com.ispf.server.platform.settings;
 
+import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.bus.ObjectChangeEventBus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,8 @@ class PlatformRuntimeSettingsServiceTest {
                 store,
                 new ObjectChangeProperties(),
                 new RuntimeTelemetryProperties(),
+                new EventJournalProperties(),
+                new VariableHistoryProperties(),
                 objectChangeEventBus
         );
     }
@@ -76,6 +80,29 @@ class PlatformRuntimeSettingsServiceTest {
         verify(store).writeOverrides(captor.capture());
         assertThat(captor.getValue())
                 .containsEntry("ispf.object-change.elastic-scale-up-queue-threshold", "77");
+    }
+
+    @Test
+    void patchHotReloadsEventJournalBatchSize() {
+        when(store.readOverrides()).thenReturn(Map.of());
+        EventJournalProperties eventJournalProperties = new EventJournalProperties();
+        service = new PlatformRuntimeSettingsService(
+                environment,
+                store,
+                new ObjectChangeProperties(),
+                new RuntimeTelemetryProperties(),
+                eventJournalProperties,
+                new VariableHistoryProperties(),
+                objectChangeEventBus
+        );
+
+        PlatformRuntimeSettingsPatchResult result = service.patch(
+                new PlatformRuntimeSettingsPatchRequest(Map.of("event-journal.batch-size", "5000"))
+        );
+
+        assertThat(result.errors()).isEmpty();
+        assertThat(result.appliedLive()).containsExactly("event-journal.batch-size");
+        assertThat(eventJournalProperties.getBatchSize()).isEqualTo(5000);
     }
 
     private static PlatformRuntimeSettingView findSetting(PlatformRuntimeSettingsResponse response, String id) {

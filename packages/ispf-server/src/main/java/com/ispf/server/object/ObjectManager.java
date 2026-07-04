@@ -27,6 +27,7 @@ import com.ispf.server.plugin.model.ModelBootstrap;
 import com.ispf.server.plugin.model.ModelPersistenceService;
 import com.ispf.server.plugin.model.SystemIntrinsicModelMigration;
 import com.ispf.server.history.TelemetryHistorianFastPath;
+import com.ispf.server.event.TelemetryEventJournalFastPath;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -73,6 +74,7 @@ public class ObjectManager {
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
     private final TelemetryIngressDispatcher telemetryIngressDispatcher;
     private final TelemetryHistorianFastPath historianFastPath;
+    private final TelemetryEventJournalFastPath eventJournalFastPath;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private volatile boolean initialized;
 
@@ -95,6 +97,7 @@ public class ObjectManager {
             @org.springframework.context.annotation.Lazy RuntimeTelemetryCoalescer telemetryCoalescer,
             @org.springframework.context.annotation.Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
             @org.springframework.context.annotation.Lazy TelemetryHistorianFastPath historianFastPath,
+            @org.springframework.context.annotation.Lazy TelemetryEventJournalFastPath eventJournalFastPath,
             JavaFunctionRuntimeService javaFunctionRuntimeService
     ) {
         this.nodeRepository = nodeRepository;
@@ -115,6 +118,7 @@ public class ObjectManager {
         this.telemetryCoalescer = telemetryCoalescer;
         this.telemetryIngressDispatcher = telemetryIngressDispatcher;
         this.historianFastPath = historianFastPath;
+        this.eventJournalFastPath = eventJournalFastPath;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
     }
 
@@ -378,6 +382,10 @@ public class ObjectManager {
     public Variable setDriverTelemetryValue(String path, String name, DataRecord value, Instant observedAt) {
         // RAM-only live update; historian/event journal/async pubsub happen in downstream ingress tiers.
         Variable variable = setDriverTelemetryValueInMemory(path, name, value);
+        if (eventJournalFastPath.isEligible(path)
+                && eventJournalFastPath.tryFire(path, name, value, observedAt)) {
+            return variable;
+        }
         if (historianFastPath.isHistorianOnlyEligible(path, name)
                 && historianFastPath.tryPublish(path, name, value, observedAt)) {
             return variable;

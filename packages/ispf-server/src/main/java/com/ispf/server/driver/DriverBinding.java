@@ -20,6 +20,8 @@ public record DriverBinding(
     public static final String DEFAULT_DRIVER_ID = "virtual";
     private static final String KEY_PUBLISH_MODE = "telemetryPublishMode";
     private static final String KEY_COALESCE_MS = "telemetryCoalesceMs";
+    private static final String KEY_INGRESS_EVENT = "ingressEventName";
+    public static final String DEFAULT_INGRESS_EVENT_NAME = "messageReceived";
 
     public DriverBinding {
         if (telemetryPublishMode == null) {
@@ -100,6 +102,15 @@ public record DriverBinding(
                 DriverPointMappingParser.parse(pointMappingsJson, objectMapper)
         );
         return of(resolvedDriverId, interval, Map.copyOf(config), mappings, mode, coalesceOverride);
+    }
+
+    /** Event fired on each driver ingress update when {@link TelemetryPublishMode#EVENT_JOURNAL_ONLY}. */
+    public String ingressEventName() {
+        String fromConfig = configuration.get(KEY_INGRESS_EVENT);
+        if (fromConfig != null && !fromConfig.isBlank()) {
+            return fromConfig.trim();
+        }
+        return DEFAULT_INGRESS_EVENT_NAME;
     }
 
     public Map<String, String> configurationWithPolicy() {

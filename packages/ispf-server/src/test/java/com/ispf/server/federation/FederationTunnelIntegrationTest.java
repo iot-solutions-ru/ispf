@@ -1,10 +1,12 @@
 package com.ispf.server.federation;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -12,8 +14,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,14 +27,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Isolated
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(properties = {
         "ispf.security.rbac-enabled=true",
-        "ispf.security.secrets-key=test-secret-key-for-federation-phase7"
+        "ispf.security.secrets-key=test-secret-key-for-federation-phase7",
+        "ispf.runtime-telemetry.enabled=false",
+        "ispf.object-change.async-enabled=false"
 })
 class FederationTunnelIntegrationTest {
 
     private static final long TUNNEL_CONNECT_TIMEOUT_SECONDS =
             System.getenv("CI") != null ? 120 : 60;
+    private static final long PROXY_READY_TIMEOUT_SECONDS =
+            System.getenv("CI") != null ? 60 : 30;
     private static final long CONNECT_RETRY_INTERVAL_MS = 5_000;
 
     @Autowired
@@ -38,6 +48,9 @@ class FederationTunnelIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private FederationTunnelHubService tunnelHubService;
 
     @org.springframework.boot.test.web.server.LocalServerPort
     private int port;
@@ -84,12 +97,7 @@ class FederationTunnelIntegrationTest {
 
         String peerId = waitForConnectedTunnelPeer(token, agentId, siteName);
 
-        mockMvc.perform(get("/api/v1/federation/proxy/objects/by-path")
-                        .header("Authorization", "Bearer " + token)
-                        .param("peerId", peerId)
-                        .param("path", "devices.demo-sensor-01"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.path").value("root.platform.devices.demo-sensor-01"));
+        waitForProxyObject(token, peerId, "devices.demo-sensor-01");
 
         mockMvc.perform(get("/api/v1/federation/tunnels")
                         .header("Authorization", "Bearer " + token))
@@ -140,7 +148,10 @@ class FederationTunnelIntegrationTest {
                 if ("CONNECTED".equals(lastAgentStatus)
                         && linkedPeerIdNode != null
                         && !linkedPeerIdNode.isNull()) {
-                    return linkedPeerIdNode.asString();
+                    UUID linkedPeerId = UUID.fromString(linkedPeerIdNode.asString());
+                    if (tunnelHubService.isConnected(linkedPeerId)) {
+                        return linkedPeerId.toString();
+                    }
                 }
             }
             Thread.sleep(500);
@@ -151,6 +162,39 @@ class FederationTunnelIntegrationTest {
                 siteName,
                 lastAgentStatus,
                 lastError
+        ));
+    }
+
+    private void waitForProxyObject(String token, String peerId, String path) throws Exception {
+        UUID peerUuid = UUID.fromString(peerId);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROXY_READY_TIMEOUT_SECONDS);
+        Integer lastStatus = null;
+        String lastBody = null;
+        while (System.nanoTime() < deadline) {
+            if (!tunnelHubService.isConnected(peerUuid)) {
+                Thread.sleep(200);
+                continue;
+            }
+            MvcResult result = mockMvc.perform(get("/api/v1/federation/proxy/objects/by-path")
+                            .header("Authorization", "Bearer " + token)
+                            .param("peerId", peerId)
+                            .param("path", path))
+                    .andReturn();
+            lastStatus = result.getResponse().getStatus();
+            lastBody = result.getResponse().getContentAsString();
+            if (lastStatus == 200) {
+                assertThat(objectMapper.readTree(lastBody).path("path").asString())
+                        .isEqualTo("root.platform.devices.demo-sensor-01");
+                return;
+            }
+            Thread.sleep(500);
+        }
+        throw new AssertionError(String.format(
+                "Timed out waiting for federation proxy (peer=%s, path=%s, lastStatus=%s, lastBody=%s)",
+                peerId,
+                path,
+                lastStatus,
+                lastBody
         ));
     }
 

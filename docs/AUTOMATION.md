@@ -10,14 +10,19 @@
 
 ### Публикация
 
+**API (ручной fire, интеграции):**
+
 ```http
 POST /api/v1/events/fire
 ```
 
-1. Валидация по descriptor объекта
-2. Запись в `event_history` (Timescale hypertable на prod — [0015](decisions/0015-event-history-timescale.md))
-3. `ObjectChangeEvent` → WebSocket
-4. Слушатели: correlators, UI
+**Driver ingress (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждое обновление переменной от драйвера вызывает `EventService.fireIngress` → async journal. Событие задаётся `ingressEventName` в driver config (default `messageReceived`). См. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).
+
+Общий hot path после валидации descriptor:
+
+1. Запись в `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) или ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))
+2. `ObjectChangeEvent` → WebSocket
+3. Слушатели: correlators, UI
 
 ### Журнал
 
@@ -29,7 +34,7 @@ GET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50
 
 ### Демо
 
-`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire).
+`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire); `messageReceived` — для loadtest / audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).
 
 ---
 

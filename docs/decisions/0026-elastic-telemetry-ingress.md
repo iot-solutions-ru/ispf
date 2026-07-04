@@ -8,7 +8,7 @@ Accepted (2026-07-04)
 
 High-rate MQTT load tests showed:
 
-- Publisher at 10k msg/s overloads the synchronous coalesce path before historian writes.
+- Publisher rates above the synchronous coalesce path saturate before historian or journal writes complete.
 - Unbounded append-only FIFO ingest queues grow until the JVM runs out of memory.
 - Poll and push drivers called `updateVariable` from protocol or scheduler threads, coupling I/O latency to the platform pipeline.
 
@@ -26,6 +26,7 @@ The hot path from device samples to `DriverObject.updateVariable` must **not** p
 | **L3** | `TelemetryIngressDispatcher` | Platform last-value-wins lanes → coalescer |
 | **L4** | `RuntimeTelemetryCoalescer` | Time coalesce + route to pubsub / gateway |
 | **L5** | `TelemetryHistorianFastPath` + elastic `VariableHistoryAsyncWriter` | Async historian; overflow coalesce, no sync DB on producers |
+| **L5′** | `TelemetryEventJournalFastPath` + `EventService.fireIngress` | Async event journal for `EVENT_JOURNAL_ONLY`; no HTTP, no object-change bus |
 
 Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (no DB flush per tick).
 
@@ -52,9 +53,10 @@ Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (
 - `ispf.runtime-telemetry.ingress-queue-enabled=true`.
 - Elastic workers (4–32); lane-capacity eviction publishes immediately.
 
-### L4–L5 — Coalescer, historian fast path, elastic writer
+### L4–L5 — Coalescer, historian fast path, elastic writer, event journal fast path
 
 - `TelemetryHistorianFastPath` for `TELEMETRY_ONLY` historian-only devices.
+- `TelemetryEventJournalFastPath` for `EVENT_JOURNAL_ONLY` — driver ingress → async journal ([ADR-0027](0027-event-journal-ingress-fast-path.md)).
 - `VariableHistoryAsyncWriter` overflow coalesce (no sync persist on producer threads).
 - Scylla/Cassandra historian writes group samples **by partition** `(object_path, variable_name, field_name)` before UNLOGGED batch execute (avoids cross-partition batch anti-pattern).
 - Hot-path caches: `historyEnabled` lookup TTL cache; fast path skips duplicate tree walk via `recordFromDataRecordTrusted`.
@@ -81,4 +83,5 @@ Live RAM values are updated in `ObjectManager.setDriverTelemetryValueInMemory` (
 
 - [ADR-0017](0017-telemetry-ingest-pipeline.md)
 - [ADR-0024](0024-demand-driven-variable-change-pubsub.md)
+- [ADR-0027](0027-event-journal-ingress-fast-path.md)
 - [LOAD_TESTING.md](../LOAD_TESTING.md)

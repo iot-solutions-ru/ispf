@@ -39,6 +39,8 @@
 | [0023](0023-haystack-query-runtime.md) | Haystack filter query runtime (subset, tree-first) | Accepted |
 | [0024](0024-demand-driven-variable-change-pubsub.md) | Demand-driven object change pub/sub (single JVM) | Accepted |
 | [0025](0025-cassandra-scylla-timeseries-store.md) | Cassandra/Scylla time-series store SPI | Accepted |
+| [0026](0026-elastic-telemetry-ingress.md) | Multi-level async telemetry ingress (L0–L5) | Accepted |
+| [0027](0027-event-journal-ingress-fast-path.md) | Event journal ingress fast path (`EVENT_JOURNAL_ONLY`) | Accepted |
 
 ## Шаблон нового ADR
 

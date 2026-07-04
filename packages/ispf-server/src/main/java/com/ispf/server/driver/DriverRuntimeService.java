@@ -9,6 +9,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
+import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.server.config.DriverPackProperties;
@@ -201,7 +202,7 @@ public class DriverRuntimeService {
             }
         };
         DriverIngressBuffer<String, ServerDriverObject.VariableUpdate> ingressBuffer = null;
-        if (driverPackProperties.isIngressBufferEnabled() && !usesDirectHistorianIngress(devicePath)) {
+        if (driverPackProperties.isIngressBufferEnabled() && !usesDirectIngress(devicePath)) {
             String threadPrefix = "driver-ingress-" + devicePath.substring(Math.max(0, devicePath.length() - 24));
             ingressBuffer = new DriverIngressBuffer<>(
                     driverPackProperties.getIngressBufferThreads(),
@@ -212,7 +213,7 @@ public class DriverRuntimeService {
         }
         ServerDriverObject driverObject = new ServerDriverObject(
                 device,
-                binding.configuration(),
+                effectiveDriverConfiguration(binding),
                 variableUpdater,
                 entry -> log.info("[driver:{}] {} {}", devicePath, entry.level(), entry.message()),
                 ingressBuffer
@@ -579,17 +580,37 @@ public class DriverRuntimeService {
     }
 
     /**
-     * TELEMETRY_ONLY devices on the historian fast path skip the server driver ingress buffer (L1)
-     * so MQTT L0 drain rate is not stacked with platform ingress coalescing.
+     * High-rate ingress modes skip the server driver ingress buffer (L1) so MQTT L0 drain is not stacked
+     * with platform ingress coalescing.
      */
-    private boolean usesDirectHistorianIngress(String devicePath) {
+    private boolean usesDirectIngress(String devicePath) {
+        TelemetryPublishMode mode = telemetryPolicyService.publishMode(devicePath);
+        if (mode == TelemetryPublishMode.EVENT_JOURNAL_ONLY) {
+            return true;
+        }
         return runtimeTelemetryProperties.isFastHistorianPath()
-                && telemetryPolicyService.publishMode(devicePath) == TelemetryPublishMode.TELEMETRY_ONLY;
+                && mode == TelemetryPublishMode.TELEMETRY_ONLY;
     }
 
     /** Debug-only helper for agent instrumentation session c91425. */
     public java.util.Optional<String> debugReadDriverId(String devicePath) {
         return readBinding(devicePath).map(DriverBinding::driverId);
+    }
+
+    private Map<String, String> effectiveDriverConfiguration(DriverBinding binding) {
+        Map<String, String> configuration = new LinkedHashMap<>(binding.configuration());
+        if (!"mqtt".equalsIgnoreCase(binding.driverId())) {
+            return configuration;
+        }
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_THREADS,
+                String.valueOf(driverPackProperties.getMqttCallbackThreads())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.CALLBACK_QUEUE_CAPACITY,
+                String.valueOf(driverPackProperties.getMqttCallbackQueueCapacity())
+        );
+        return configuration;
     }
 
     // #region agent log

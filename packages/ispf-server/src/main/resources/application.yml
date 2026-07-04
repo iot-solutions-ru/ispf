@@ -146,6 +146,8 @@ ispf:
       table: ${ISPF_VARIABLE_HISTORY_CASSANDRA_TABLE:variable_samples}
       username: ${ISPF_VARIABLE_HISTORY_CASSANDRA_USERNAME:}
       password: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PASSWORD:}
+      max-statements-per-partition-batch: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARTITION_BATCH:200}
+      max-parallel-partition-batches: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_BATCHES:8}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true
@@ -218,6 +220,8 @@ ispf:
     recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:2000}
     retention-days: ${ISPF_EVENT_JOURNAL_RETENTION_DAYS:90}
     store: ${ISPF_EVENT_JOURNAL_STORE:jdbc}
+    cassandra-global-table-enabled: ${ISPF_EVENT_JOURNAL_CASSANDRA_GLOBAL_TABLE_ENABLED:true}
+    cassandra-async-counter-update: ${ISPF_EVENT_JOURNAL_CASSANDRA_ASYNC_COUNTER_UPDATE:true}
     clickhouse:
       url: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_URL:http://localhost:8123}
       database: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_DATABASE:ispf}
@@ -232,6 +236,8 @@ ispf:
       table: ${ISPF_EVENT_JOURNAL_CASSANDRA_TABLE:event_history}
       username: ${ISPF_EVENT_JOURNAL_CASSANDRA_USERNAME:}
       password: ${ISPF_EVENT_JOURNAL_CASSANDRA_PASSWORD:}
+      max-statements-per-partition-batch: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARTITION_BATCH:200}
+      max-parallel-partition-batches: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_BATCHES:8}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}
@@ -254,6 +260,8 @@ ispf:
     ingress-buffer-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ENABLED:true}
     ingress-buffer-threads: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS:2}
     ingress-buffer-capacity: ${ISPF_DRIVER_INGRESS_BUFFER_CAPACITY:10000}
+    mqtt-callback-threads: ${ISPF_DRIVER_MQTT_CALLBACK_THREADS:4}
+    mqtt-callback-queue-capacity: ${ISPF_DRIVER_MQTT_CALLBACK_QUEUE_CAPACITY:10000}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}

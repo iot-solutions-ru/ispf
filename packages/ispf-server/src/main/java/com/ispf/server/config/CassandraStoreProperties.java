@@ -13,6 +13,10 @@ public class CassandraStoreProperties {
     private String table = "";
     private String username = "";
     private String password = "";
+    /** Max CQL statements per UNLOGGED batch within one partition. */
+    private int maxStatementsPerPartitionBatch = 200;
+    /** Max concurrent same-partition batches (async driver requests). */
+    private int maxParallelPartitionBatches = 8;
 
     public String getContactPoints() {
         return contactPoints;
@@ -76,5 +80,21 @@ public class CassandraStoreProperties {
 
     public String connectionKey() {
         return contactPoints + ":" + port + "/" + keyspace + "/" + localDatacenter;
+    }
+
+    public int getMaxStatementsPerPartitionBatch() {
+        return maxStatementsPerPartitionBatch;
+    }
+
+    public void setMaxStatementsPerPartitionBatch(int maxStatementsPerPartitionBatch) {
+        this.maxStatementsPerPartitionBatch = Math.max(1, maxStatementsPerPartitionBatch);
+    }
+
+    public int getMaxParallelPartitionBatches() {
+        return maxParallelPartitionBatches;
+    }
+
+    public void setMaxParallelPartitionBatches(int maxParallelPartitionBatches) {
+        this.maxParallelPartitionBatches = Math.max(1, maxParallelPartitionBatches);
     }
 }

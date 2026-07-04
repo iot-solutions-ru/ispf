@@ -34,9 +34,6 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
 
     private static final Logger log = LoggerFactory.getLogger(CassandraVariableHistoryStore.class);
     private static final int MAX_AGGREGATE_SAMPLE_ROWS = 100_000;
-    /** UNLOGGED batches must stay within one partition; cap statement count per round-trip. */
-    private static final int MAX_STATEMENTS_PER_PARTITION_BATCH = 200;
-    private static final int MAX_PARALLEL_PARTITION_BATCHES = 4;
     private static final String DEFAULT_TABLE = "variable_samples";
 
     private final VariableHistoryProperties properties;
@@ -98,10 +95,13 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         );
 
         log.info(
-                "Cassandra variable history ready (keyspace={}, table={}, retentionDays={})",
+                "Cassandra variable history ready (keyspace={}, table={}, retentionDays={}, "
+                        + "partitionBatch={}, parallelBatches={})",
                 settings.getKeyspace(),
                 settings.resolveTable(DEFAULT_TABLE),
-                properties.getRetentionDays()
+                properties.getRetentionDays(),
+                settings.getMaxStatementsPerPartitionBatch(),
+                settings.getMaxParallelPartitionBatches()
         );
     }
 
@@ -110,7 +110,10 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         if (records.isEmpty()) {
             return;
         }
+        CassandraStoreProperties settings = properties.getCassandra();
         int ttl = CassandraTimeSeriesSupport.ttlSeconds(properties.getRetentionDays());
+        int chunkSize = settings.getMaxStatementsPerPartitionBatch();
+        int maxParallel = settings.getMaxParallelPartitionBatches();
         Map<String, List<BoundStatement>> byPartition = new LinkedHashMap<>();
         for (VariableHistoryWriteRecord record : records) {
             String partitionKey = CassandraTimeSeriesSupport.variableSamplePartitionKey(
@@ -123,12 +126,9 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         }
         List<List<BoundStatement>> batches = new ArrayList<>();
         for (List<BoundStatement> partitionStatements : byPartition.values()) {
-            batches.addAll(CassandraTimeSeriesSupport.chunk(
-                    partitionStatements,
-                    MAX_STATEMENTS_PER_PARTITION_BATCH
-            ));
+            batches.addAll(CassandraTimeSeriesSupport.chunk(partitionStatements, chunkSize));
         }
-        client.executePartitionBatches(batches, MAX_PARALLEL_PARTITION_BATCHES);
+        client.executePartitionBatches(batches, maxParallel);
     }
 
     private BoundStatement bindInsert(VariableHistoryWriteRecord record, int ttl) {

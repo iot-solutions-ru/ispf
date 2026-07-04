@@ -85,6 +85,23 @@ def mqtt_topic(index: int, pad: int = 5) -> str:
     return f"{TOPIC_PREFIX}/{index:0{pad}d}/temperature"
 
 
+def mqtt_bench_ingress_configuration(
+    *,
+    no_l0_coalesce: bool = True,
+    callback_threads: int | None = None,
+    callback_queue_capacity: int | None = None,
+) -> dict[str, str]:
+    """Driver config for event-journal load tests (1:1 MQTT message handling on L0)."""
+    if not no_l0_coalesce:
+        return {}
+    cfg: dict[str, str] = {"ingressCoalesceEnabled": "false"}
+    if callback_threads is not None:
+        cfg["callbackThreads"] = str(callback_threads)
+    if callback_queue_capacity is not None:
+        cfg["callbackQueueCapacity"] = str(callback_queue_capacity)
+    return cfg
+
+
 class Client:
     def __init__(self, base_url: str, host_header: str | None, timeout: float):
         self.base = base_url.rstrip("/")
@@ -196,7 +213,17 @@ MQTT_SENSOR_MODEL_BODY: dict = {
             },
         },
     ],
-    "events": [],
+    "events": [
+        {
+            "name": "messageReceived",
+            "description": "MQTT payload received (load test / ingress audit)",
+            "level": "INFO",
+            "schema": {
+                "name": "mqttPayload",
+                "fields": [{"name": "raw", "type": "STRING"}],
+            },
+        }
+    ],
     "functions": [],
     "bindings": [],
     "parameters": {},

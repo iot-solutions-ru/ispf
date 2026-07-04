@@ -11,7 +11,9 @@ if [ ! -f "$ENV_FILE" ]; then
 fi
 
 tmp="$(mktemp)"
-grep -v '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" | grep -v '^ISPF_EVENT_JOURNAL_CLICKHOUSE_' > "$tmp" || true
+grep -v '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" \
+  | grep -v '^ISPF_EVENT_JOURNAL_CLICKHOUSE_' \
+  | grep -v '^ISPF_EVENT_JOURNAL_CASSANDRA_' > "$tmp" || true
 echo "ISPF_EVENT_JOURNAL_STORE=jdbc" >> "$tmp"
 mv "$tmp" "$ENV_FILE"
 chmod 600 "$ENV_FILE"

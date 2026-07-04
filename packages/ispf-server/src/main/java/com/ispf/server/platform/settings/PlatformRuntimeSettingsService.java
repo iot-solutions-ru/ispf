@@ -1,7 +1,9 @@
 package com.ispf.server.platform.settings;
 
+import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.bus.ObjectChangeEventBus;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,8 @@ public class PlatformRuntimeSettingsService {
     private final PlatformRuntimeSettingsStore store;
     private final ObjectChangeProperties objectChangeProperties;
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
+    private final EventJournalProperties eventJournalProperties;
+    private final VariableHistoryProperties variableHistoryProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
 
     public PlatformRuntimeSettingsService(
@@ -26,12 +30,16 @@ public class PlatformRuntimeSettingsService {
             PlatformRuntimeSettingsStore store,
             ObjectChangeProperties objectChangeProperties,
             RuntimeTelemetryProperties runtimeTelemetryProperties,
+            EventJournalProperties eventJournalProperties,
+            VariableHistoryProperties variableHistoryProperties,
             ObjectChangeEventBus objectChangeEventBus
     ) {
         this.environment = environment;
         this.store = store;
         this.objectChangeProperties = objectChangeProperties;
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
+        this.eventJournalProperties = eventJournalProperties;
+        this.variableHistoryProperties = variableHistoryProperties;
         this.objectChangeEventBus = objectChangeEventBus;
     }
 
@@ -176,6 +184,8 @@ public class PlatformRuntimeSettingsService {
         switch (definition.id()) {
             case "runtime-telemetry.coalesce-ms" ->
                     runtimeTelemetryProperties.setCoalesceMs(Long.parseLong(value));
+            case "runtime-telemetry.ingress-capacity" ->
+                    runtimeTelemetryProperties.setIngressQueueCapacity(Integer.parseInt(value));
             case "object-change.coalesce-telemetry" ->
                     objectChangeProperties.setCoalesceTelemetryUpdates(Boolean.parseBoolean(value));
             case "object-change.worker-threads" ->
@@ -202,6 +212,26 @@ public class PlatformRuntimeSettingsService {
                     objectChangeProperties.setAutomationWorkerThreadsMin(Integer.parseInt(value));
             case "object-change.automation-workers-max" ->
                     objectChangeProperties.setAutomationWorkerThreadsMax(Integer.parseInt(value));
+            case "event-journal.cassandra.partition-batch" ->
+                    eventJournalProperties.getCassandra().setMaxStatementsPerPartitionBatch(Integer.parseInt(value));
+            case "event-journal.cassandra.parallel-batches" ->
+                    eventJournalProperties.getCassandra().setMaxParallelPartitionBatches(Integer.parseInt(value));
+            case "event-journal.cassandra.global-table" ->
+                    eventJournalProperties.setCassandraGlobalTableEnabled(Boolean.parseBoolean(value));
+            case "event-journal.cassandra.async-counter" ->
+                    eventJournalProperties.setCassandraAsyncCounterUpdate(Boolean.parseBoolean(value));
+            case "event-journal.batch-size" ->
+                    eventJournalProperties.setBatchSize(Integer.parseInt(value));
+            case "event-journal.flush-interval-ms" ->
+                    eventJournalProperties.setFlushIntervalMs(Long.parseLong(value));
+            case "variable-history.cassandra.partition-batch" ->
+                    variableHistoryProperties.getCassandra().setMaxStatementsPerPartitionBatch(Integer.parseInt(value));
+            case "variable-history.cassandra.parallel-batches" ->
+                    variableHistoryProperties.getCassandra().setMaxParallelPartitionBatches(Integer.parseInt(value));
+            case "variable-history.batch-size" ->
+                    variableHistoryProperties.setBatchSize(Integer.parseInt(value));
+            case "variable-history.flush-interval-ms" ->
+                    variableHistoryProperties.setFlushIntervalMs(Long.parseLong(value));
             default -> throw new IllegalStateException("Missing hot reload handler for " + definition.id());
         }
         if (definition.id().startsWith("object-change.")) {

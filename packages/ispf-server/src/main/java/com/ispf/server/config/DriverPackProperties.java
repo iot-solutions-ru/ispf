@@ -30,6 +30,12 @@ public class DriverPackProperties {
 
     private int ingressBufferCapacity = 10_000;
 
+    /** Default MQTT Paho callback thread pool size when not set on the device binding. */
+    private int mqttCallbackThreads = 4;
+
+    /** Default MQTT ingress FIFO capacity per device when not set on the device binding. */
+    private int mqttCallbackQueueCapacity = 10_000;
+
     public String getPacksDir() {
         return packsDir;
     }
@@ -84,5 +90,21 @@ public class DriverPackProperties {
 
     public void setIngressBufferCapacity(int ingressBufferCapacity) {
         this.ingressBufferCapacity = Math.max(1, ingressBufferCapacity);
+    }
+
+    public int getMqttCallbackThreads() {
+        return mqttCallbackThreads;
+    }
+
+    public void setMqttCallbackThreads(int mqttCallbackThreads) {
+        this.mqttCallbackThreads = Math.max(1, mqttCallbackThreads);
+    }
+
+    public int getMqttCallbackQueueCapacity() {
+        return mqttCallbackQueueCapacity;
+    }
+
+    public void setMqttCallbackQueueCapacity(int mqttCallbackQueueCapacity) {
+        this.mqttCallbackQueueCapacity = Math.max(1, mqttCallbackQueueCapacity);
     }
 }

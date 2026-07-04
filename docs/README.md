@@ -29,6 +29,7 @@
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
 | [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), [gap registry](GAP_REGISTRY.md), sprint roadmap |
 | [Excellence backlog REQ-EX](EXCELLENCE_BACKLOG.md) | Phase 23: BL-78…132 — drivers, HMI, app platform, semantic, AI, scale, federation, ops, QA |
+| [Sprint backlog ускорения (8 недель)](EX_ACCELERATION_SPRINT_BACKLOG.md) | Execution plan: спринты, SP, KPI, owners, риски, Go/No-Go |
 | [Code audit backlog](CODE_AUDIT_BACKLOG.md) | BL-01…77 закрытые волны + сводка Wave J…S |
 | [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0019 |
 | [Roadmap](ROADMAP.md) | Единый roadmap platform + production ops; **Phase 5** — усиление механизмов |
@@ -54,6 +55,7 @@
 | [Развёртывание](DEPLOYMENT.md) | Docker, переменные окружения, профили Spring |
 | [Тестирование](TESTING.md) | Unit, integration, smoke |
 | [Load testing](LOAD_TESTING.md) | HTTP vs internal automation throughput, baselines |
+| **[Lab event journal stress](LAB_EVENT_JOURNAL_STRESS.md)** | Scylla lab, emqtt multi-device, metrics & ~110k/s baseline |
 | [Observability](OBSERVABILITY.md) | Prometheus scrape, OTLP metrics export |
 | [Лицензия](LICENSE.md) | Apache 2.0 ядро; коммерческие плагины отдельно |
 | [Плагины и границы](PLUGINS.md) | Что не входит в `main` |

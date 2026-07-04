@@ -20,7 +20,8 @@ public class AutomationMetricsRecorder {
         ALERT("alert"),
         API("api"),
         CORRELATOR("correlator"),
-        FUNCTION("function");
+        FUNCTION("function"),
+        INGRESS("ingress");
 
         private final String tag;
 

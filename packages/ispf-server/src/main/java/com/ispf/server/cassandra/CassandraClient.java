@@ -58,6 +58,16 @@ public class CassandraClient implements AutoCloseable {
         session.execute(statement.setTimeout(Duration.ofSeconds(30)));
     }
 
+    /** Fire-and-forget CQL (errors logged); use for non-critical hot-path side effects such as counter bumps. */
+    public void executeAsync(Statement<?> statement) {
+        session.executeAsync(statement.setTimeout(Duration.ofSeconds(30)))
+                .whenComplete((resultSet, error) -> {
+                    if (error != null) {
+                        log.warn("Async CQL failed: {}", error.getMessage());
+                    }
+                });
+    }
+
     public void executeBatch(List<BoundStatement> statements) {
         if (statements.isEmpty()) {
             return;

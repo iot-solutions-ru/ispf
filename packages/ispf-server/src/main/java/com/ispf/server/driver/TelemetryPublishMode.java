@@ -7,7 +7,9 @@ public enum TelemetryPublishMode {
     /** Historian + WebSocket + alert/workflow evaluation (default). */
     FULL,
     /** RAM + telemetry lane only; no alert CEL on each coalesced update. */
-    TELEMETRY_ONLY;
+    TELEMETRY_ONLY,
+    /** RAM + async event journal only (one driver ingress update → one journal event). */
+    EVENT_JOURNAL_ONLY;
 
     public static TelemetryPublishMode parse(String raw) {
         if (raw == null || raw.isBlank()) {
@@ -15,6 +17,7 @@ public enum TelemetryPublishMode {
         }
         return switch (raw.trim().toUpperCase()) {
             case "TELEMETRY_ONLY", "TELEMETRY", "HISTORY_ONLY" -> TELEMETRY_ONLY;
+            case "EVENT_JOURNAL_ONLY", "EVENT_JOURNAL", "EVENTS_ONLY" -> EVENT_JOURNAL_ONLY;
             default -> FULL;
         };
     }

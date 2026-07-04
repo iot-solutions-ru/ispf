@@ -51,8 +51,23 @@ docker exec ispf-postgres psql -U ispf -d postgres -v ON_ERROR_STOP=1 \
   -c 'DROP DATABASE IF EXISTS ispf;' \
   -c 'CREATE DATABASE ispf OWNER ispf;'
 
-echo "=== Truncate ClickHouse event journal ==="
-docker exec ispf-clickhouse clickhouse-client --query "TRUNCATE TABLE IF EXISTS ispf.event_history"
+echo "=== Truncate ClickHouse event journal (if present) ==="
+if docker ps --format '{{.Names}}' | grep -qx ispf-clickhouse; then
+  docker exec ispf-clickhouse clickhouse-client --query "TRUNCATE TABLE IF EXISTS ispf.event_history" 2>/dev/null || true
+fi
+
+echo "=== Reset Scylla/Cassandra keyspace (if present) ==="
+if docker ps --format '{{.Names}}' | grep -qx ispf-scylla; then
+  docker exec ispf-scylla cqlsh -e "DROP KEYSPACE IF EXISTS ispf;" 2>/dev/null || true
+  for i in $(seq 1 30); do
+    if docker exec ispf-scylla cqlsh -e "SELECT now() FROM system.local" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+  done
+  docker exec ispf-scylla cqlsh -e \
+    "CREATE KEYSPACE IF NOT EXISTS ispf WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+fi
 
 echo "=== Start ISPF (Flyway + bootstrap) ==="
 systemctl start ispf-server
@@ -94,7 +109,13 @@ docker exec ispf-postgres psql -U ispf -d ispf -c \
    UNION ALL SELECT 'alert_rules', COUNT(*) FROM alert_rules
    UNION ALL SELECT 'event_history_pg', COUNT(*) FROM event_history;"
 
-docker exec ispf-clickhouse clickhouse-client --query "SELECT count() AS event_history_ch FROM ispf.event_history"
+if docker ps --format '{{.Names}}' | grep -qx ispf-clickhouse; then
+  docker exec ispf-clickhouse clickhouse-client --query "SELECT count() AS event_history_ch FROM ispf.event_history" 2>/dev/null || true
+fi
+if docker ps --format '{{.Names}}' | grep -qx ispf-scylla; then
+  docker exec ispf-scylla cqlsh -e "SELECT total_count FROM ispf.event_journal_meta WHERE id='total';" 2>/dev/null \
+    || docker exec ispf-scylla cqlsh -e "DESCRIBE KEYSPACE ispf;" 2>/dev/null | head -5 || true
+fi
 
 curl -sf http://127.0.0.1:8080/api/v1/info
 echo

@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -36,6 +38,7 @@ public class CassandraEventJournalStore implements EventJournalStore {
     private static final String GLOBAL_TABLE = "event_history_global";
     private static final String META_TABLE = "event_journal_meta";
     private static final String META_ROW_ID = "total";
+    private static final String GLOBAL_PARTITION_PREFIX = "global:";
 
     private final EventJournalProperties properties;
     private final EventHistoryRecordCounter recordCounter;
@@ -106,20 +109,20 @@ public class CassandraEventJournalStore implements EventJournalStore {
                 """,
                 globalTableQualified
         ));
+        dropLegacyMetaTableIfNeeded(settings);
         client.execute(String.format(
                 """
                 CREATE TABLE IF NOT EXISTS %s (
                     id text PRIMARY KEY,
-                    total_count bigint
+                    total_count counter
                 )
                 """,
                 metaTableQualified
         ));
         client.execute(
                 SimpleStatement.newInstance(
-                        "INSERT INTO " + metaTableQualified + " (id, total_count) VALUES (?, ?) IF NOT EXISTS",
-                        META_ROW_ID,
-                        0L
+                        "UPDATE " + metaTableQualified + " SET total_count = total_count + 0 WHERE id = ?",
+                        META_ROW_ID
                 )
         );
 
@@ -146,17 +149,22 @@ public class CassandraEventJournalStore implements EventJournalStore {
         selectLatestByEventName = client.prepare(
                 "SELECT id, object_path, event_name, level, payload_json, occurred_at FROM "
                         + tableQualified
-                        + " WHERE object_path = ? AND event_name = ? ALLOW FILTERING LIMIT 1"
+                        + " WHERE object_path = ? AND event_name = ? LIMIT 1 ALLOW FILTERING"
         );
         selectTotal = client.prepare(
                 "SELECT total_count FROM " + metaTableQualified + " WHERE id = ?"
         );
 
         log.info(
-                "Cassandra event journal ready (keyspace={}, table={}, retentionDays={})",
+                "Cassandra event journal ready (keyspace={}, table={}, retentionDays={}, "
+                        + "partitionBatch={}, parallelBatches={}, globalTable={}, asyncCounter={})",
                 settings.getKeyspace(),
                 settings.resolveTable(DEFAULT_TABLE),
-                properties.getRetentionDays()
+                properties.getRetentionDays(),
+                settings.getMaxStatementsPerPartitionBatch(),
+                settings.getMaxParallelPartitionBatches(),
+                properties.isCassandraGlobalTableEnabled(),
+                properties.isCassandraAsyncCounterUpdate()
         );
     }
 
@@ -165,14 +173,32 @@ public class CassandraEventJournalStore implements EventJournalStore {
         if (records.isEmpty()) {
             return;
         }
+        CassandraStoreProperties settings = properties.getCassandra();
         int ttl = CassandraTimeSeriesSupport.ttlSeconds(properties.getRetentionDays());
-        List<BoundStatement> statements = new ArrayList<>(records.size() * 2);
+        int chunkSize = settings.getMaxStatementsPerPartitionBatch();
+        int maxParallel = settings.getMaxParallelPartitionBatches();
+        Map<String, List<BoundStatement>> byPartition = new LinkedHashMap<>();
         for (EventJournalRecord record : records) {
-            statements.add(bindInsert(insertEvent, record, ttl));
-            statements.add(bindGlobalInsert(record, ttl));
+            byPartition.computeIfAbsent(record.objectPath(), ignored -> new ArrayList<>())
+                    .add(bindInsert(insertEvent, record, ttl));
+            if (properties.isCassandraGlobalTableEnabled()) {
+                String globalPartition = GLOBAL_PARTITION_PREFIX
+                        + CassandraTimeSeriesSupport.monthBucket(record.occurredAt());
+                byPartition.computeIfAbsent(globalPartition, ignored -> new ArrayList<>())
+                        .add(bindGlobalInsert(record, ttl));
+            }
         }
-        client.executeBatch(statements);
-        client.execute(incrementTotal.bind((long) records.size(), META_ROW_ID));
+        List<List<BoundStatement>> batches = new ArrayList<>();
+        for (List<BoundStatement> partitionStatements : byPartition.values()) {
+            batches.addAll(CassandraTimeSeriesSupport.chunk(partitionStatements, chunkSize));
+        }
+        client.executePartitionBatches(batches, maxParallel);
+        var counterUpdate = incrementTotal.bind((long) records.size(), META_ROW_ID);
+        if (properties.isCassandraAsyncCounterUpdate()) {
+            client.executeAsync(counterUpdate);
+        } else {
+            client.execute(counterUpdate);
+        }
         recordCounter.recordPersisted(records.size());
     }
 
@@ -221,6 +247,26 @@ public class CassandraEventJournalStore implements EventJournalStore {
     @PreDestroy
     void closeClient() {
         client.close();
+    }
+
+    private void dropLegacyMetaTableIfNeeded(CassandraStoreProperties settings) {
+        List<Row> rows = client.queryRows(
+                "SELECT type FROM system_schema.columns WHERE keyspace_name = ? AND table_name = ? AND column_name = 'total_count'",
+                settings.getKeyspace(),
+                META_TABLE
+        );
+        if (rows.isEmpty()) {
+            return;
+        }
+        String type = rows.getFirst().getString("type");
+        if (type != null && !"counter".equals(type)) {
+            log.warn(
+                    "Dropping legacy {} (total_count type={}, expected counter)",
+                    metaTableQualified,
+                    type
+            );
+            client.execute("DROP TABLE IF EXISTS " + metaTableQualified);
+        }
     }
 
     private List<EventJournalRecord> queryRecentGlobal(int limit) {

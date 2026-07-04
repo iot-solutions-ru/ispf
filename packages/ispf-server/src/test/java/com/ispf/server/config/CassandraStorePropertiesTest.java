@@ -49,4 +49,36 @@ class CassandraStorePropertiesTest {
         assertFalse(properties.isCassandraStore());
         assertTrue(properties.isExternalTimeSeriesStore());
     }
+
+    @Test
+    void cassandraWriteTuningDefaultsAndClamps() {
+        CassandraStoreProperties properties = new CassandraStoreProperties();
+        assertEquals(200, properties.getMaxStatementsPerPartitionBatch());
+        assertEquals(8, properties.getMaxParallelPartitionBatches());
+
+        properties.setMaxStatementsPerPartitionBatch(0);
+        properties.setMaxParallelPartitionBatches(-3);
+        assertEquals(1, properties.getMaxStatementsPerPartitionBatch());
+        assertEquals(1, properties.getMaxParallelPartitionBatches());
+    }
+
+    @Test
+    void eventJournalCassandraWriteFlagsDefaultTrue() {
+        EventJournalProperties properties = new EventJournalProperties();
+        assertTrue(properties.isCassandraGlobalTableEnabled());
+        assertTrue(properties.isCassandraAsyncCounterUpdate());
+    }
+
+    @Test
+    void eventJournalQueueTuningClamps() {
+        EventJournalProperties properties = new EventJournalProperties();
+        properties.setQueueCapacity(0);
+        properties.setBatchSize(-1);
+        properties.setFlushIntervalMs(0);
+        properties.setWriterThreads(0);
+        assertEquals(1, properties.getQueueCapacity());
+        assertEquals(1, properties.getBatchSize());
+        assertEquals(1, properties.getFlushIntervalMs());
+        assertEquals(1, properties.getWriterThreads());
+    }
 }

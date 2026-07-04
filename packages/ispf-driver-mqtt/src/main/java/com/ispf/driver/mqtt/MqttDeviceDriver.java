@@ -20,6 +20,10 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * MQTT device driver — subscribes to topics and maps payloads to object variables.
@@ -59,9 +63,11 @@ public class MqttDeviceDriver implements DeviceDriver {
     private String password;
     private int callbackThreads = 4;
     private int callbackQueueCapacity = 10_000;
+    private boolean ingressCoalesceEnabled = true;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
     private volatile boolean connected;
     private DriverIngressBuffer<String, byte[]> ingressBuffer;
+    private ExecutorService ingressExecutor;
 
     @Override
     public DriverMetadata metadata() {
@@ -92,6 +98,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             case "password" -> password = value;
             case "callbackThreads" -> callbackThreads = DriverIngress.resolveThreads(Map.of(key, value), callbackThreads);
             case "callbackQueueCapacity" -> callbackQueueCapacity = DriverIngress.resolveCapacity(Map.of(key, value), callbackQueueCapacity);
+            case "ingressCoalesceEnabled" -> ingressCoalesceEnabled = DriverIngress.resolveCoalesceEnabled(Map.of(key, value), ingressCoalesceEnabled);
             default -> { }
         }
     }
@@ -99,13 +106,29 @@ public class MqttDeviceDriver implements DeviceDriver {
     @Override
     public void connect() throws DriverException {
         try {
-            ingressBuffer = new DriverIngressBuffer<>(
-                    callbackThreads,
-                    callbackQueueCapacity,
-                    this::handleMessage,
-                    "mqtt-ingress-worker",
-                    true
-            );
+            if (ingressCoalesceEnabled) {
+                ingressBuffer = new DriverIngressBuffer<>(
+                        callbackThreads,
+                        callbackQueueCapacity,
+                        this::handleMessage,
+                        "mqtt-ingress-worker",
+                        true
+                );
+            } else {
+                ingressExecutor = new ThreadPoolExecutor(
+                        callbackThreads,
+                        callbackThreads,
+                        0L,
+                        TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<>(callbackQueueCapacity),
+                        runnable -> {
+                            Thread thread = new Thread(runnable, "mqtt-ingress-fifo");
+                            thread.setDaemon(true);
+                            return thread;
+                        },
+                        new ThreadPoolExecutor.CallerRunsPolicy()
+                );
+            }
             client = new MqttClient(brokerUrl, "ispf-driver-" + UUID.randomUUID(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
@@ -125,10 +148,14 @@ public class MqttDeviceDriver implements DeviceDriver {
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
+                    byte[] payload = message.getPayload();
+                    byte[] copy = payload == null ? new byte[0] : payload.clone();
                     DriverIngressBuffer<String, byte[]> buffer = ingressBuffer;
-                    if (buffer != null) {
-                        byte[] payload = message.getPayload();
-                        buffer.submit(topic, payload == null ? new byte[0] : payload.clone());
+                    ExecutorService fifo = ingressExecutor;
+                    if (fifo != null) {
+                        fifo.execute(() -> handleMessage(topic, copy));
+                    } else if (buffer != null) {
+                        buffer.submit(topic, copy);
                     }
                 }
 
@@ -141,7 +168,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             connected = true;
             driverObject.log(DriverLogLevel.INFO, "Connected to MQTT broker: " + brokerUrl);
         } catch (Exception e) {
-            shutdownIngressBuffer();
+            shutdownIngress();
             throw new DriverException("MQTT connect failed", e);
         }
     }
@@ -174,7 +201,29 @@ public class MqttDeviceDriver implements DeviceDriver {
                 // best effort
             }
         }
+        shutdownIngress();
+    }
+
+    private void shutdownIngress() {
         shutdownIngressBuffer();
+        shutdownIngressExecutor();
+    }
+
+    private void shutdownIngressExecutor() {
+        ExecutorService executor = ingressExecutor;
+        ingressExecutor = null;
+        if (executor == null) {
+            return;
+        }
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            executor.shutdownNow();
+        }
     }
 
     private void shutdownIngressBuffer() {

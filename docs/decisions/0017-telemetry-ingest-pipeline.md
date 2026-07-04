@@ -55,8 +55,15 @@ Timescale: hypertable `variable_samples`, retention 90d, compression segmentby `
 
 ### Telemetry publish mode
 
-Per-device `telemetryPublishMode`: `FULL` (automation + historian) or `TELEMETRY_ONLY` (historian lane only).  
-Per-device `telemetryCoalesceMs` caps sample rate before historian (loadtest knob).
+Per-device `telemetryPublishMode`:
+
+| Mode | Historian | Automation bus | Event journal |
+|------|-----------|----------------|---------------|
+| `FULL` (default) | yes | yes | via alerts, API, correlators |
+| `TELEMETRY_ONLY` | yes (fast path) | telemetry lane only | no |
+| `EVENT_JOURNAL_ONLY` | no | skipped | yes (`fireIngress` fast path, [ADR-0027](0027-event-journal-ingress-fast-path.md)) |
+
+Per-device `telemetryCoalesceMs` caps sample/event rate before downstream tiers (loadtest knob).
 
 ## Pipeline diagram
 
@@ -77,10 +84,10 @@ flowchart LR
 
 ## Consequences
 
-- Gateway loadtest (4 devices, ~2k msg/s publisher, prod VPS): **~461 samples/s** @ `telemetryCoalesceMs=1` with JDBC store (0.9.31) vs **~307/s** JPA (0.9.30).
-- Throughput still bounded by `telemetryCoalesceMs` × device count and DB I/O; tune coalesce for production dashboards (10–50ms typical).
-- Loadtest requires `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=1` on prod (platform debounce default 5000ms).
-- ClickHouse historian remains optional future work; reads stay on JPA/SQL until migrated.
+- Gateway loadtest with JDBC store and minimal coalesce shows higher historian throughput than JPA `saveAll` on the same topology; absolute rates depend on hardware, coalesce, and `min-interval-ms`.
+- Throughput is bounded by `telemetryCoalesceMs`, device count, and store I/O; tune coalesce for production dashboards (typical tens of ms).
+- Loadtest on prod often sets `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=1` (platform debounce default is much higher).
+- ClickHouse / Cassandra historian stores are optional; see [ADR-0025](0025-cassandra-scylla-timeseries-store.md), [VARIABLE_HISTORY.md](../VARIABLE_HISTORY.md).
 
 ## Related
 

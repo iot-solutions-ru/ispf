@@ -50,4 +50,35 @@ journalctl -u ispf-server -n 300 --no-pager \
   | grep -E 'Cassandra event journal ready|Cassandra variable history ready|TimescaleDB hypertable skipped' \
   | tail -8 || echo "(no matching log lines — check journalctl -u ispf-server)"
 
+SMOKE_WRITE="${ISPF_CASSANDRA_VERIFY_WRITE:-true}"
+API_BASE="${ISPF_VERIFY_API_BASE:-http://127.0.0.1:8080}"
+ADMIN_USER="${ISPF_VERIFY_ADMIN_USER:-admin}"
+ADMIN_PASS="${ISPF_VERIFY_ADMIN_PASS:-admin}"
+
+if [ "$SMOKE_WRITE" = "true" ]; then
+  echo "=== Write smoke (POST /api/v1/events/fire → Scylla) ==="
+  TOKEN=$(curl -sf -X POST "${API_BASE}/api/v1/auth/login" \
+    -H 'Content-Type: application/json' \
+    -d "{\"username\":\"${ADMIN_USER}\",\"password\":\"${ADMIN_PASS}\"}" \
+    | sed -n 's/.*"token":"\([^"]*\)".*/\1/p') || true
+  if [ -z "$TOKEN" ]; then
+    echo "WARN: login failed — skip write smoke"
+  else
+    COUNT_BEFORE=$(docker exec ispf-scylla cqlsh -e "SELECT COUNT(*) FROM ${KEYSPACE}.event_history;" 2>/dev/null \
+      | python3 -c "import re,sys; t=sys.stdin.read(); m=re.search(r'\\n\\s*(\\d+)\\s*\\n', t); print(m.group(1) if m else '0')" || echo "0")
+    FIRE_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST \
+      "${API_BASE}/api/v1/events/fire?objectPath=root.platform.devices.mqtt-device-01&eventName=messageReceived" \
+      -H "Authorization: Bearer ${TOKEN}")
+    if [ "$FIRE_STATUS" != "200" ]; then
+      echo "WARN: events/fire HTTP $FIRE_STATUS (ACL or missing event descriptor — journal store still verified via startup log)"
+    else
+      sleep 3
+      COUNT_AFTER=$(docker exec ispf-scylla cqlsh -e "SELECT COUNT(*) FROM ${KEYSPACE}.event_history;" 2>/dev/null \
+        | python3 -c "import re,sys; t=sys.stdin.read(); m=re.search(r'\\n\\s*(\\d+)\\s*\\n', t); print(m.group(1) if m else '0')" || echo "0")
+      echo "event_history count: ${COUNT_BEFORE} -> ${COUNT_AFTER}"
+      [ "$COUNT_AFTER" -gt "$COUNT_BEFORE" ] || fail "event_history count did not increase"
+    fi
+  fi
+fi
+
 echo "OK: Cassandra/Scylla verify passed (contacts=${CONTACT_POINTS}:${CASSANDRA_PORT}, dc=${LOCAL_DC})"

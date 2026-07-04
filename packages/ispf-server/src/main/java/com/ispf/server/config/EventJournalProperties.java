@@ -19,6 +19,10 @@ public class EventJournalProperties {
     private int retentionDays = 90;
     /** {@code jdbc} (PostgreSQL/Timescale), {@code clickhouse}, or {@code cassandra}/{@code scylla}. */
     private String store = "jdbc";
+    /** When false, skip {@code event_history_global} inserts (higher write throughput; global feed degraded). */
+    private boolean cassandraGlobalTableEnabled = true;
+    /** When true, bump {@code event_journal_meta} counter without blocking writer threads. */
+    private boolean cassandraAsyncCounterUpdate = true;
     private ClickHouse clickhouse = new ClickHouse();
     private CassandraStoreProperties cassandra = new CassandraStoreProperties();
 
@@ -83,7 +87,7 @@ public class EventJournalProperties {
     }
 
     public void setQueueCapacity(int queueCapacity) {
-        this.queueCapacity = queueCapacity;
+        this.queueCapacity = Math.max(1, queueCapacity);
     }
 
     public int getBatchSize() {
@@ -91,7 +95,7 @@ public class EventJournalProperties {
     }
 
     public void setBatchSize(int batchSize) {
-        this.batchSize = batchSize;
+        this.batchSize = Math.max(1, batchSize);
     }
 
     public long getFlushIntervalMs() {
@@ -99,7 +103,7 @@ public class EventJournalProperties {
     }
 
     public void setFlushIntervalMs(long flushIntervalMs) {
-        this.flushIntervalMs = flushIntervalMs;
+        this.flushIntervalMs = Math.max(1, flushIntervalMs);
     }
 
     public int getRecentCacheSize() {
@@ -115,7 +119,7 @@ public class EventJournalProperties {
     }
 
     public void setWriterThreads(int writerThreads) {
-        this.writerThreads = writerThreads;
+        this.writerThreads = Math.max(1, writerThreads);
     }
 
     public int getRetentionDays() {
@@ -132,6 +136,22 @@ public class EventJournalProperties {
 
     public void setStore(String store) {
         this.store = store;
+    }
+
+    public boolean isCassandraGlobalTableEnabled() {
+        return cassandraGlobalTableEnabled;
+    }
+
+    public void setCassandraGlobalTableEnabled(boolean cassandraGlobalTableEnabled) {
+        this.cassandraGlobalTableEnabled = cassandraGlobalTableEnabled;
+    }
+
+    public boolean isCassandraAsyncCounterUpdate() {
+        return cassandraAsyncCounterUpdate;
+    }
+
+    public void setCassandraAsyncCounterUpdate(boolean cassandraAsyncCounterUpdate) {
+        this.cassandraAsyncCounterUpdate = cassandraAsyncCounterUpdate;
     }
 
     public ClickHouse getClickhouse() {

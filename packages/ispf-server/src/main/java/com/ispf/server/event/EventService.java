@@ -73,6 +73,20 @@ public class EventService {
         );
     }
 
+    /**
+     * Hot-path fire for high-rate driver ingress ({@code EVENT_JOURNAL_ONLY}). No HTTP, no transaction.
+     */
+    public ObjectEvent fireIngress(String objectPath, String eventName, DataRecord payload, Instant occurredAt) {
+        return fireInternal(
+                objectPath,
+                eventName,
+                DataRecordPayloadResolver.fromRecord(payload),
+                null,
+                AutomationMetricsRecorder.EventFireSource.INGRESS,
+                occurredAt
+        );
+    }
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
         return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API, null);
