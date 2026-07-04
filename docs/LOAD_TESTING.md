@@ -83,6 +83,17 @@ DEVICES=16 RATE_PER_DEVICE=32000 EMQTT_SHARD_MAX=8 bash lab-mqtt-event-journal-m
 AUTO_CALIBRATE=true bash lab-mqtt-event-journal-multi-test.sh
 ```
 
+### VPS prod (Scylla journal, smaller Scylla footprint)
+
+Same methodology on `ispf.iot-solutions.ru` — script `deploy/vps-mqtt-event-journal-multi-test.sh`, orchestration `deploy/run_vps_max_load.py`.
+
+| Metric (16×32k peak, 2026-07-04) | VPS prod | Lab (reference) |
+|----------------------------------|----------|-----------------|
+| eventsFired | **~349/s** | ~110k/s |
+| Scylla | 1 SMP / 750M | 20 SMP / 48G |
+
+Absolute rates are **not comparable**; use VPS script for regression on prod hardware only.
+
 ## MQTT ingress — historian (default)
 
 Сценарий **датчик → дашборд**: mqtt driver подписывается на топик, `TELEMETRY_ONLY` пишет в `variable_samples` (Timescale), **без** alert/correlator/workflow.

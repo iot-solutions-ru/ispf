@@ -14,6 +14,7 @@ listener 1883
 allow_anonymous true
 persistence false
 log_type error
+sys_interval 1
 EOF
 
 if docker ps -a --format '{{.Names}}' | grep -qx "$CONTAINER_NAME"; then

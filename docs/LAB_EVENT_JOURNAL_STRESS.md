@@ -182,3 +182,28 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 - [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md) — EVENT_JOURNAL_ONLY
 - [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) — ingress pipeline
 - [AUTOMATION.md](AUTOMATION.md) — platform metrics API
+
+## VPS prod comparison (ispf.iot-solutions.ru)
+
+Same benchmark params as lab peak: **16×32k target**, **8 emqtt shards**, 60s measure, `EVENT_JOURNAL_ONLY`, Scylla journal.
+
+| | Lab (84.42.21.226) | VPS prod |
+|--|-------------------|----------|
+| ISPF | 0.9.88 | 0.9.86 |
+| Scylla | 20 SMP / 48G | **1 SMP / 750M** |
+| Journal writers | 24 | **6** |
+| **eventsFired** | **~110k/s** | **~349/s** |
+| Per device | ~6.8k/s | ~19/s |
+| meta vs eventsFired | 100% | ~88% (queue backlog) |
+| Script | `lab-mqtt-event-journal-multi-test.sh` | `vps-mqtt-event-journal-multi-test.sh` |
+
+```bash
+# On VPS (after scripts in /opt/ispf/loadtest)
+DEVICES=16 RATE_PER_DEVICE=32000 EMQTT_SHARD_MAX=8 \
+  bash /opt/ispf/loadtest/vps-mqtt-event-journal-multi-test.sh
+
+# From dev machine
+python deploy/run_vps_max_load.py
+```
+
+VPS Scylla is sized for prod footprint, not flood load — **do not compare absolute events/s with lab**. Journal path still works; bottleneck is Scylla capacity and MQTT ingress at QoS0 under overload.
