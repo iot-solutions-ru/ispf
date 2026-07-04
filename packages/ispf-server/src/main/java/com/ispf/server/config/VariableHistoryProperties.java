@@ -22,17 +22,28 @@ public class VariableHistoryProperties {
      * ({@link com.ispf.server.history.VariableHistoryAsyncWriter}).
      */
     private boolean asyncEnabled = true;
-    private int queueCapacity = 10_000;
-    private int batchSize = 500;
-    private long flushIntervalMs = 50;
+    private int queueCapacity = 50_000;
+    private int batchSize = 1_000;
+    private long flushIntervalMs = 20;
     private int writerThreads = 4;
+    private boolean elasticWriterEnabled = true;
+    private int writerThreadsMin = 4;
+    private int writerThreadsMax = 32;
+    private int elasticScaleUpQueueThreshold = 100;
+    private int elasticScaleDownSteps = 6;
+    private int elasticScaleCheckIntervalMs = 200;
+    /**
+     * When true, queue overflow merges by (path, variable, field) instead of blocking the producer thread.
+     */
+    private boolean overflowCoalesceEnabled = true;
 
     /**
      * Write backend: {@code jdbc} (batched JDBC insert, default), {@code jpa} (legacy {@code saveAll}),
-     * or {@code clickhouse} (column store; BL-40 backend).
+     * {@code clickhouse} (column store; BL-40 backend), or {@code cassandra}/{@code scylla}.
      */
     private String store = "jdbc";
     private ClickHouse clickhouse = new ClickHouse();
+    private CassandraStoreProperties cassandra = new CassandraStoreProperties();
 
     public static class ClickHouse {
         private String url = "http://localhost:8123";
@@ -159,6 +170,70 @@ public class VariableHistoryProperties {
         this.writerThreads = writerThreads;
     }
 
+    public boolean isElasticWriterEnabled() {
+        return elasticWriterEnabled;
+    }
+
+    public void setElasticWriterEnabled(boolean elasticWriterEnabled) {
+        this.elasticWriterEnabled = elasticWriterEnabled;
+    }
+
+    public int getWriterThreadsMin() {
+        return writerThreadsMin;
+    }
+
+    public void setWriterThreadsMin(int writerThreadsMin) {
+        this.writerThreadsMin = Math.max(1, writerThreadsMin);
+    }
+
+    public int getWriterThreadsMax() {
+        return writerThreadsMax;
+    }
+
+    public void setWriterThreadsMax(int writerThreadsMax) {
+        this.writerThreadsMax = Math.max(1, writerThreadsMax);
+    }
+
+    public int getElasticScaleUpQueueThreshold() {
+        return elasticScaleUpQueueThreshold;
+    }
+
+    public void setElasticScaleUpQueueThreshold(int elasticScaleUpQueueThreshold) {
+        this.elasticScaleUpQueueThreshold = Math.max(1, elasticScaleUpQueueThreshold);
+    }
+
+    public int getElasticScaleDownSteps() {
+        return elasticScaleDownSteps;
+    }
+
+    public void setElasticScaleDownSteps(int elasticScaleDownSteps) {
+        this.elasticScaleDownSteps = Math.max(1, elasticScaleDownSteps);
+    }
+
+    public int getElasticScaleCheckIntervalMs() {
+        return elasticScaleCheckIntervalMs;
+    }
+
+    public void setElasticScaleCheckIntervalMs(int elasticScaleCheckIntervalMs) {
+        this.elasticScaleCheckIntervalMs = Math.max(50, elasticScaleCheckIntervalMs);
+    }
+
+    public boolean isOverflowCoalesceEnabled() {
+        return overflowCoalesceEnabled;
+    }
+
+    public void setOverflowCoalesceEnabled(boolean overflowCoalesceEnabled) {
+        this.overflowCoalesceEnabled = overflowCoalesceEnabled;
+    }
+
+    public int resolvedWriterThreadsMin() {
+        return elasticWriterEnabled ? writerThreadsMin : Math.max(1, writerThreads);
+    }
+
+    public int resolvedWriterThreadsMax() {
+        return elasticWriterEnabled ? writerThreadsMax : Math.max(1, writerThreads);
+    }
+
     public String getStore() {
         return store;
     }
@@ -175,8 +250,24 @@ public class VariableHistoryProperties {
         this.clickhouse = clickhouse;
     }
 
+    public CassandraStoreProperties getCassandra() {
+        return cassandra;
+    }
+
+    public void setCassandra(CassandraStoreProperties cassandra) {
+        this.cassandra = cassandra;
+    }
+
     public boolean isClickHouseStore() {
         return "clickhouse".equalsIgnoreCase(store);
+    }
+
+    public boolean isCassandraStore() {
+        return "cassandra".equalsIgnoreCase(store) || "scylla".equalsIgnoreCase(store);
+    }
+
+    public boolean isExternalTimeSeriesStore() {
+        return isClickHouseStore() || isCassandraStore();
     }
 
     public List<String> getExcludedVariables() {

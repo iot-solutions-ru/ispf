@@ -16,8 +16,8 @@ const QUICK_BOOLEAN_IDS = [
 ] as const;
 
 const QUICK_SELECT_SETTINGS: Record<string, readonly string[]> = {
-  "event-journal.store": ["jdbc", "clickhouse"],
-  "variable-history.store": ["jdbc", "jpa", "clickhouse"],
+  "event-journal.store": ["jdbc", "clickhouse", "cassandra", "scylla"],
+  "variable-history.store": ["jdbc", "jpa", "clickhouse", "cassandra", "scylla"],
   "ai.provider": ["noop", "openai-compatible", "ollama", "custom-url"],
 };
 

@@ -68,8 +68,11 @@ public class TimescaleHypertableInitializer {
     }
 
     private void ensureVariableSamplesHypertable() {
-        if (variableHistoryProperties.isClickHouseStore()) {
-            log.info("TimescaleDB hypertable skipped for variable_samples (variable-history.store=clickhouse)");
+        if (variableHistoryProperties.isExternalTimeSeriesStore()) {
+            log.info(
+                    "TimescaleDB hypertable skipped for variable_samples (variable-history.store={})",
+                    variableHistoryProperties.getStore()
+            );
             return;
         }
         try {
@@ -95,8 +98,11 @@ public class TimescaleHypertableInitializer {
     }
 
     private void ensureEventHistoryHypertable() {
-        if (eventJournalProperties.isClickHouseStore()) {
-            log.info("TimescaleDB hypertable skipped for event_history (event-journal.store=clickhouse)");
+        if (eventJournalProperties.isExternalTimeSeriesStore()) {
+            log.info(
+                    "TimescaleDB hypertable skipped for event_history (event-journal.store={})",
+                    eventJournalProperties.getStore()
+            );
             return;
         }
         try {

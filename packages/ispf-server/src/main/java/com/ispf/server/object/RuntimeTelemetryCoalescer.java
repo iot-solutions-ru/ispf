@@ -4,12 +4,15 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
+import com.ispf.server.history.TelemetryHistorianFastPath;
 import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,6 +31,7 @@ public class RuntimeTelemetryCoalescer {
     private final DeviceTelemetryPolicyService policyService;
     private final ObjectChangePublicationService publicationService;
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
+    private final TelemetryHistorianFastPath historianFastPath;
     private final ScheduledExecutorService scheduler;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, DataRecord> lastPublished = new ConcurrentHashMap<>();
@@ -37,12 +41,14 @@ public class RuntimeTelemetryCoalescer {
             RuntimeTelemetryProperties properties,
             DeviceTelemetryPolicyService policyService,
             ObjectChangePublicationService publicationService,
-            @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch
+            @Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
+            @Lazy TelemetryHistorianFastPath historianFastPath
     ) {
         this.properties = properties;
         this.policyService = policyService;
         this.publicationService = publicationService;
         this.gatewayIngressDispatch = gatewayIngressDispatch;
+        this.historianFastPath = historianFastPath;
         int schedulerThreads = Math.max(1, properties.getCoalesceSchedulerThreads());
         AtomicInteger threadIndex = new AtomicInteger();
         this.scheduler = Executors.newScheduledThreadPool(schedulerThreads, r -> {
@@ -71,6 +77,50 @@ public class RuntimeTelemetryCoalescer {
 
     public void flushNow() {
         flushAll();
+    }
+
+    /**
+     * Publishes a batch-coalesced update (ingress queue path). Skips the coalescer pending map because
+     * {@link TelemetryIngressDispatcher} already merged lanes.
+     */
+    public void publishCoalescedUpdate(String path, String variableName, DataRecord value, Instant observedAt) {
+        publishCoalescedBatch(List.of(new CoalescedTelemetryUpdate(path, variableName, value, observedAt)));
+    }
+
+    /**
+     * Publishes a drained ingress batch. Historian-only {@code TELEMETRY_ONLY} lanes are merged into one
+     * enqueue on the fast path; gateway and bus lanes are published individually.
+     * <p>
+     * Skips {@link #valuesEqual(DataRecord, DataRecord)} — {@link TelemetryIngressDispatcher} already
+     * last-value-wins coalesced each lane; historian sampling is gated by {@code minIntervalMs}, not payload dedup.
+     */
+    public void publishCoalescedBatch(List<CoalescedTelemetryUpdate> updates) {
+        if (updates.isEmpty()) {
+            return;
+        }
+        List<CoalescedTelemetryUpdate> historianBatch = new ArrayList<>(updates.size());
+        for (CoalescedTelemetryUpdate update : updates) {
+            String coalesceKey = resolveCoalesceKey(update.path(), update.variableName(), update.value());
+            lastPublished.put(coalesceKey, update.value());
+            if (gatewayIngressDispatch.tryScheduleDispatch(update.path(), update.variableName(), update.value())) {
+                continue;
+            }
+            if (historianFastPath.isHistorianOnlyEligible(update.path(), update.variableName())) {
+                historianBatch.add(update);
+                continue;
+            }
+            if (!historianFastPath.tryPublish(
+                    update.path(),
+                    update.variableName(),
+                    update.value(),
+                    update.observedAt()
+            )) {
+                publicationService.publishVariableChange(update.path(), update.variableName(), update.observedAt());
+            }
+        }
+        if (!historianBatch.isEmpty()) {
+            historianFastPath.publishBatch(historianBatch);
+        }
     }
 
     @PreDestroy
@@ -136,6 +186,9 @@ public class RuntimeTelemetryCoalescer {
         }
         lastPublished.put(coalesceKey, value);
         if (gatewayIngressDispatch.tryScheduleDispatch(path, variableName, value)) {
+            return;
+        }
+        if (historianFastPath.tryPublish(path, variableName, value, observedAt)) {
             return;
         }
         publicationService.publishVariableChange(path, variableName, observedAt);

@@ -59,6 +59,10 @@ public class AutomationMetricsRecorder {
     private final AtomicLong eventJournalSyncFallbackCount = new AtomicLong();
     private final AtomicLong eventJournalFlushedCount = new AtomicLong();
     private final AtomicLong variableHistorySyncFallbackCount = new AtomicLong();
+    private final AtomicLong variableHistoryOverflowCoalescedCount = new AtomicLong();
+    private final AtomicLong variableHistoryCoalescedCount = new AtomicLong();
+    private final AtomicLong telemetryIngressCoalescedCount = new AtomicLong();
+    private final AtomicLong telemetryIngressLaneEvictedCount = new AtomicLong();
     private final AtomicLong variableHistoryFlushedCount = new AtomicLong();
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
@@ -198,8 +202,48 @@ public class AutomationMetricsRecorder {
         eventJournalFlushedCount.addAndGet(count);
     }
 
+    public void bindVariableHistoryWorkers(java.util.concurrent.atomic.AtomicInteger workers) {
+        meterRegistry.ifPresent(registry -> registry.gauge(
+                "ispf.variable_history.workers.active",
+                workers,
+                java.util.concurrent.atomic.AtomicInteger::doubleValue
+        ));
+    }
+
+    public void bindTelemetryIngressPending(java.util.concurrent.atomic.AtomicInteger pending) {
+        meterRegistry.ifPresent(registry -> registry.gauge(
+                "ispf.telemetry_ingress.pending.lanes",
+                pending,
+                java.util.concurrent.atomic.AtomicInteger::doubleValue
+        ));
+    }
+
+    public void bindTelemetryIngressWorkers(java.util.concurrent.atomic.AtomicInteger workers) {
+        meterRegistry.ifPresent(registry -> registry.gauge(
+                "ispf.telemetry_ingress.workers.active",
+                workers,
+                java.util.concurrent.atomic.AtomicInteger::doubleValue
+        ));
+    }
+
     public void recordVariableHistorySyncFallback() {
         variableHistorySyncFallbackCount.incrementAndGet();
+    }
+
+    public void recordVariableHistoryOverflowCoalesced() {
+        variableHistoryOverflowCoalescedCount.incrementAndGet();
+    }
+
+    public void recordVariableHistoryCoalesced() {
+        variableHistoryCoalescedCount.incrementAndGet();
+    }
+
+    public void recordTelemetryIngressCoalesced() {
+        telemetryIngressCoalescedCount.incrementAndGet();
+    }
+
+    public void recordTelemetryIngressLaneEvicted() {
+        telemetryIngressLaneEvictedCount.incrementAndGet();
     }
 
     public void recordVariableHistoryFlushed(long count) {

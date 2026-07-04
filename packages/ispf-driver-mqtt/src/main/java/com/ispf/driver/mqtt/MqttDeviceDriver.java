@@ -6,6 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.ingress.DriverIngress;
+import com.ispf.driver.ingress.DriverIngressBuffer;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -17,16 +19,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MQTT device driver — subscribes to topics and maps payloads to object variables.
+ * <p>
+ * Callbacks enqueue into a last-value-wins ingress buffer so Paho I/O threads never block on
+ * variable updates under flood load.
  */
 public class MqttDeviceDriver implements DeviceDriver {
 
@@ -62,7 +61,7 @@ public class MqttDeviceDriver implements DeviceDriver {
     private int callbackQueueCapacity = 10_000;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
     private volatile boolean connected;
-    private ExecutorService callbackExecutor;
+    private DriverIngressBuffer<String, byte[]> ingressBuffer;
 
     @Override
     public DriverMetadata metadata() {
@@ -91,25 +90,22 @@ public class MqttDeviceDriver implements DeviceDriver {
             case "ingressVariable" -> ingressVariable = value.trim();
             case "username" -> username = value.trim();
             case "password" -> password = value;
-            case "callbackThreads" -> callbackThreads = parsePositiveInt(value, callbackThreads);
-            case "callbackQueueCapacity" -> callbackQueueCapacity = parsePositiveInt(value, callbackQueueCapacity);
+            case "callbackThreads" -> callbackThreads = DriverIngress.resolveThreads(Map.of(key, value), callbackThreads);
+            case "callbackQueueCapacity" -> callbackQueueCapacity = DriverIngress.resolveCapacity(Map.of(key, value), callbackQueueCapacity);
             default -> { }
-        }
-    }
-
-    private static int parsePositiveInt(String raw, int fallback) {
-        try {
-            int parsed = Integer.parseInt(raw.trim());
-            return parsed > 0 ? parsed : fallback;
-        } catch (NumberFormatException ex) {
-            return fallback;
         }
     }
 
     @Override
     public void connect() throws DriverException {
         try {
-            callbackExecutor = createCallbackExecutor();
+            ingressBuffer = new DriverIngressBuffer<>(
+                    callbackThreads,
+                    callbackQueueCapacity,
+                    this::handleMessage,
+                    "mqtt-ingress-worker",
+                    true
+            );
             client = new MqttClient(brokerUrl, "ispf-driver-" + UUID.randomUUID(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
@@ -129,8 +125,11 @@ public class MqttDeviceDriver implements DeviceDriver {
 
                 @Override
                 public void messageArrived(String topic, MqttMessage message) {
-                    byte[] payload = message.getPayload();
-                    callbackExecutor.execute(() -> handleMessage(topic, payload));
+                    DriverIngressBuffer<String, byte[]> buffer = ingressBuffer;
+                    if (buffer != null) {
+                        byte[] payload = message.getPayload();
+                        buffer.submit(topic, payload == null ? new byte[0] : payload.clone());
+                    }
                 }
 
                 @Override
@@ -142,33 +141,14 @@ public class MqttDeviceDriver implements DeviceDriver {
             connected = true;
             driverObject.log(DriverLogLevel.INFO, "Connected to MQTT broker: " + brokerUrl);
         } catch (Exception e) {
-            shutdownCallbackExecutor();
+            shutdownIngressBuffer();
             throw new DriverException("MQTT connect failed", e);
         }
     }
 
-    private ExecutorService createCallbackExecutor() {
-        int threads = Math.max(1, callbackThreads);
-        AtomicInteger threadIndex = new AtomicInteger();
-        ThreadFactory threadFactory = runnable -> {
-            Thread thread = new Thread(runnable, "mqtt-driver-callback-" + threadIndex.incrementAndGet());
-            thread.setDaemon(true);
-            return thread;
-        };
-        return new ThreadPoolExecutor(
-                threads,
-                threads,
-                0L,
-                TimeUnit.MILLISECONDS,
-                new ArrayBlockingQueue<>(Math.max(1, callbackQueueCapacity)),
-                threadFactory,
-                new ThreadPoolExecutor.CallerRunsPolicy()
-        );
-    }
-
     private void handleMessage(String topic, byte[] payloadBytes) {
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
-        Instant observed = resolveObservedInstant(payload);
+        Instant observed = MqttPayloadTimestamps.resolve(payloadBytes);
         String variableName = resolveVariableForTopic(topic);
         if (usesIngressSchema(variableName)) {
             driverObject.updateVariable(variableName, DataRecord.single(
@@ -183,34 +163,6 @@ public class MqttDeviceDriver implements DeviceDriver {
         }
     }
 
-    private static Instant resolveObservedInstant(String payload) {
-        if (payload == null || payload.isBlank()) {
-            return Instant.now();
-        }
-        java.util.regex.Pattern isoField = java.util.regex.Pattern.compile(
-                "\"(?:observedAt|timestamp|ts|time)\"\\s*:\\s*\"([^\"]+)\"",
-                java.util.regex.Pattern.CASE_INSENSITIVE
-        );
-        java.util.regex.Matcher isoMatch = isoField.matcher(payload);
-        if (isoMatch.find()) {
-            try {
-                return Instant.parse(isoMatch.group(1));
-            } catch (Exception ignored) {
-                // fall through
-            }
-        }
-        java.util.regex.Pattern epochField = java.util.regex.Pattern.compile(
-                "\"(?:observedAt|timestamp|ts|time)\"\\s*:\\s*(\\d+)",
-                java.util.regex.Pattern.CASE_INSENSITIVE
-        );
-        java.util.regex.Matcher epochMatch = epochField.matcher(payload);
-        if (epochMatch.find()) {
-            long raw = Long.parseLong(epochMatch.group(1));
-            return raw > 1_000_000_000_000L ? Instant.ofEpochMilli(raw) : Instant.ofEpochSecond(raw);
-        }
-        return Instant.now();
-    }
-
     @Override
     public void disconnect() {
         connected = false;
@@ -222,14 +174,14 @@ public class MqttDeviceDriver implements DeviceDriver {
                 // best effort
             }
         }
-        shutdownCallbackExecutor();
+        shutdownIngressBuffer();
     }
 
-    private void shutdownCallbackExecutor() {
-        ExecutorService executor = callbackExecutor;
-        callbackExecutor = null;
-        if (executor != null) {
-            executor.shutdownNow();
+    private void shutdownIngressBuffer() {
+        DriverIngressBuffer<String, byte[]> buffer = ingressBuffer;
+        ingressBuffer = null;
+        if (buffer != null) {
+            buffer.shutdown();
         }
     }
 

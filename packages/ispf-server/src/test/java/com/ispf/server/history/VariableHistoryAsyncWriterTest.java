@@ -100,11 +100,41 @@ class VariableHistoryAsyncWriterTest {
     }
 
     @Test
-    void syncFallbackWhenQueueFull() throws Exception {
+    void overflowCoalesceWhenQueueFull() throws Exception {
+        writer.shutdown();
+        properties.setQueueCapacity(1);
+        properties.setBatchSize(1);
+        properties.setFlushIntervalMs(3_600_000);
+        properties.setElasticWriterEnabled(false);
+        properties.setOverflowCoalesceEnabled(true);
+        writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
+        CountDownLatch blockFlush = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            blockFlush.await(5, TimeUnit.SECONDS);
+            return null;
+        }).when(batchPersister).persistBatch(anyList());
+        writer.start();
+
+        writer.enqueue(List.of(sample("root.a", "temperature", "value", 1.0)));
+        Thread.sleep(30);
+        writer.enqueue(List.of(
+                sample("root.b", "temperature", "value", 2.0),
+                sample("root.c", "temperature", "value", 3.0)
+        ));
+
+        verify(batchPersister, never()).persistOne(org.mockito.ArgumentMatchers.any());
+        verify(automationMetricsRecorder, atLeastOnce()).recordVariableHistoryOverflowCoalesced();
+        blockFlush.countDown();
+        writer.awaitQueueDrain(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void syncFallbackWhenQueueFullAndOverflowDisabled() throws Exception {
         writer.shutdown();
         properties.setQueueCapacity(1);
         properties.setBatchSize(1);
         properties.setFlushIntervalMs(3600_000);
+        properties.setOverflowCoalesceEnabled(false);
         writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
         CountDownLatch blockFlush = new CountDownLatch(1);
         doAnswer(invocation -> {

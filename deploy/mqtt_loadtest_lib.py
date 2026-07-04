@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from loadtest_cleanup_lib import delete_loadtest_alert_rules
 from urllib.parse import quote
 
@@ -14,6 +16,8 @@ MODEL_NAME = "mqtt-sensor-v1"
 SENSOR_NAME_PREFIX = "loadtest-mqtt-sensor-"
 TOPIC_PREFIX = "ispf/loadtest"
 GATEWAY_TOPIC_FILTER = "ispf/loadtest/+/temperature"
+INGRESS_VARIABLE = "lastIngress"
+INGRESS_HISTORY_FIELD = "raw"
 
 PARSE_TEMPERATURE_BINDING = [
     {
@@ -106,10 +110,253 @@ class Client:
         return self.session.request(method, f"{self.base}{path}", **kwargs)
 
 
-def resolve_model_id(client: Client, model_name: str = MODEL_NAME) -> str:
-    r = client.request("GET", f"/api/v1/models/by-name/{model_name}")
-    r.raise_for_status()
-    return r.json()["id"]
+def find_relative_model_id(client: Client, model_name: str) -> str | None:
+    r = client.request("GET", "/api/v1/relative-models")
+    if r.status_code != 200:
+        return None
+    for item in r.json():
+        if item.get("name") == model_name:
+            return item.get("id")
+    return None
+
+
+def apply_relative_model(client: Client, model_id: str, object_path: str) -> None:
+    r = client.request(
+        "POST",
+        f"/api/v1/relative-models/{model_id}/apply?objectPath={quote(object_path, safe='')}",
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"apply model {model_id} on {object_path}: HTTP {r.status_code} {r.text[:200]}"
+        )
+
+
+def ensure_relative_model(client: Client, model_name: str, body: dict) -> str:
+    """Find or create a RELATIVE model (prod has fixtures disabled)."""
+    existing = find_relative_model_id(client, model_name)
+    if existing:
+        return existing
+    payload = {k: v for k, v in body.items() if k != "type"}
+    payload["name"] = model_name
+    create = client.request("POST", "/api/v1/relative-models", json=payload)
+    if create.status_code == 409:
+        existing = find_relative_model_id(client, model_name)
+        if existing:
+            return existing
+    if create.status_code >= 400:
+        raise RuntimeError(
+            f"create relative model {model_name}: HTTP {create.status_code} {create.text[:200]}"
+        )
+    return create.json()["id"]
+
+
+MQTT_SENSOR_MODEL_BODY: dict = {
+    "name": MODEL_NAME,
+    "description": "MQTT temperature sensor (minimal lab model)",
+    "targetObjectType": "DEVICE",
+    "suitabilityExpression": "",
+    "variables": [
+        {
+            "name": "temperature",
+            "description": "Current temperature reading",
+            "group": "telemetry",
+            "schema": {
+                "name": "temperature",
+                "fields": [
+                    {"name": "value", "type": "DOUBLE"},
+                    {"name": "unit", "type": "STRING"},
+                    {"name": "raw", "type": "STRING"},
+                ],
+            },
+            "readable": True,
+            "writable": True,
+            "historyEnabled": True,
+            "defaultValue": {
+                "schema": {
+                    "name": "temperature",
+                    "fields": [
+                        {"name": "value", "type": "DOUBLE"},
+                        {"name": "unit", "type": "STRING"},
+                        {"name": "raw", "type": "STRING"},
+                    ],
+                },
+                "rows": [{"value": 0.0, "unit": "C", "raw": ""}],
+            },
+        },
+        {
+            "name": "threshold",
+            "description": "Alarm threshold in Celsius",
+            "group": "config",
+            "schema": {"name": "threshold", "fields": [{"name": "value", "type": "DOUBLE"}]},
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": {"name": "threshold", "fields": [{"name": "value", "type": "DOUBLE"}]},
+                "rows": [{"value": 35.0}],
+            },
+        },
+    ],
+    "events": [],
+    "functions": [],
+    "bindings": [],
+    "parameters": {},
+}
+
+_MQTT_INGRESS_SCHEMA = {
+    "name": "mqttIngress",
+    "fields": [
+        {"name": "topic", "type": "STRING"},
+        {"name": "raw", "type": "STRING"},
+    ],
+}
+_DISPATCH_STATUS_SCHEMA = {
+    "name": "dispatchStatus",
+    "fields": [
+        {"name": "ok", "type": "BOOLEAN"},
+        {"name": "message", "type": "STRING"},
+        {"name": "routedPath", "type": "STRING"},
+    ],
+}
+_STRING_VALUE_SCHEMA = {"name": "stringValue", "fields": [{"name": "value", "type": "STRING"}]}
+_INTEGER_VALUE_SCHEMA = {"name": "integerValue", "fields": [{"name": "value", "type": "INTEGER"}]}
+
+MQTT_GATEWAY_MODEL_BODY: dict = {
+    "name": GATEWAY_MODEL_NAME,
+    "description": "MQTT ingress gateway — routes lastIngress to child sensors via dispatchTelemetry",
+    "targetObjectType": "DEVICE",
+    "suitabilityExpression": "",
+    "variables": [
+        {
+            "name": "lastIngress",
+            "description": "Latest MQTT message (topic + raw payload)",
+            "group": "ingress",
+            "schema": _MQTT_INGRESS_SCHEMA,
+            "readable": True,
+            "writable": False,
+            "defaultValue": {
+                "schema": _MQTT_INGRESS_SCHEMA,
+                "rows": [{"topic": "", "raw": ""}],
+            },
+        },
+        {
+            "name": "dispatchStatus",
+            "description": "Last dispatchTelemetry result",
+            "group": "runtime",
+            "schema": _DISPATCH_STATUS_SCHEMA,
+            "readable": True,
+            "writable": False,
+            "defaultValue": {
+                "schema": _DISPATCH_STATUS_SCHEMA,
+                "rows": [{"ok": False, "message": "", "routedPath": ""}],
+            },
+        },
+        {
+            "name": "sensorParentPath",
+            "description": "Parent path for routed child sensors",
+            "group": "config",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {"schema": _STRING_VALUE_SCHEMA, "rows": [{"value": ""}]},
+        },
+        {
+            "name": "sensorNamePrefix",
+            "description": "Child sensor object name prefix (suffix from topic index)",
+            "group": "config",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": _STRING_VALUE_SCHEMA,
+                "rows": [{"value": SENSOR_NAME_PREFIX}],
+            },
+        },
+        {
+            "name": "topicIndexPattern",
+            "description": "Regex with capture group for sensor index in MQTT topic",
+            "group": "config",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": _STRING_VALUE_SCHEMA,
+                "rows": [{"value": "ispf/loadtest/(\\d+)/temperature"}],
+            },
+        },
+        {
+            "name": "driverId",
+            "description": "Attached driver plugin id",
+            "group": "driver",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {"schema": _STRING_VALUE_SCHEMA, "rows": [{"value": "mqtt"}]},
+        },
+        {
+            "name": "driverStatus",
+            "description": "Driver runtime status",
+            "group": "driver",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": False,
+            "defaultValue": {"schema": _STRING_VALUE_SCHEMA, "rows": [{"value": "STOPPED"}]},
+        },
+        {
+            "name": "driverPollIntervalMs",
+            "description": "Driver polling interval",
+            "group": "driver",
+            "schema": _INTEGER_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {"schema": _INTEGER_VALUE_SCHEMA, "rows": [{"value": 5000}]},
+        },
+        {
+            "name": "driverConfigJson",
+            "description": "Driver configuration JSON",
+            "group": "driver",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": _STRING_VALUE_SCHEMA,
+                "rows": [{"value": '{"ingressVariable":"lastIngress"}'}],
+            },
+        },
+        {
+            "name": "driverPointMappingsJson",
+            "description": "Driver point mappings JSON",
+            "group": "driver",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": _STRING_VALUE_SCHEMA,
+                "rows": [{"value": '{"ingress":"ispf/loadtest/+/temperature"}'}],
+            },
+        },
+    ],
+    "events": [],
+    "functions": [
+        {
+            "name": "dispatchTelemetry",
+            "description": "Route lastIngress MQTT payload to a child sensor object",
+            "inputSchema": _MQTT_INGRESS_SCHEMA,
+            "outputSchema": _DISPATCH_STATUS_SCHEMA,
+        }
+    ],
+    "bindings": [],
+    "parameters": {},
+}
+
+
+def ensure_mqtt_sensor_model(client: Client) -> str:
+    """Register mqtt-sensor-v1 when fixtures are disabled."""
+    return ensure_relative_model(client, MODEL_NAME, MQTT_SENSOR_MODEL_BODY)
+
+
+def ensure_mqtt_gateway_model(client: Client) -> str:
+    """Register mqtt-gateway-v1 when fixtures are disabled."""
+    return ensure_relative_model(client, GATEWAY_MODEL_NAME, MQTT_GATEWAY_MODEL_BODY)
 
 
 def list_mqtt_loadtest_devices(client: Client) -> list[str]:
@@ -154,19 +401,13 @@ def ensure_device(client: Client, index: int, pad: int, model_id: str) -> str:
     if r.status_code == 409:
         status = driver_status(client, path)
         if status and status.get("driverId") == "mqtt":
-            client.request(
-                "POST",
-                f"/api/v1/models/{model_id}/apply?objectPath={quote(path, safe='')}",
-            )
+            apply_relative_model(client, model_id, path)
             return path
         delete_device(client, path)
         r = client.request("POST", "/api/v1/objects", json=body)
     if r.status_code >= 400:
         raise RuntimeError(f"create device {name}: HTTP {r.status_code} {r.text[:200]}")
-    client.request(
-        "POST",
-        f"/api/v1/models/{model_id}/apply?objectPath={quote(path, safe='')}",
-    ).raise_for_status()
+    apply_relative_model(client, model_id, path)
     return path
 
 
@@ -352,6 +593,87 @@ def variable_history_sample_count(client: Client) -> int:
     return int(variable_history_metrics(client).get("sampleCount") or 0)
 
 
+def enable_variable_history(
+    client: Client,
+    path: str,
+    variable_name: str,
+    *,
+    history_enabled: bool = True,
+) -> None:
+    r = client.request(
+        "PATCH",
+        f"/api/v1/objects/by-path/variables/history?path={quote(path, safe='')}&name={variable_name}",
+        json={"historyEnabled": history_enabled},
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"enable history {variable_name} on {path}: HTTP {r.status_code} {r.text[:200]}"
+        )
+
+
+def clear_binding_rules(client: Client, path: str) -> None:
+    r = client.request(
+        "PUT",
+        f"/api/v1/objects/by-path/binding-rules?path={quote(path, safe='')}",
+        json=[],
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(f"clear binding rules {path}: HTTP {r.status_code} {r.text[:200]}")
+
+
+def read_last_ingress_raw(client: Client, path: str) -> str | None:
+    r = client.request(
+        "GET",
+        f"/api/v1/objects/by-path/variables/detail?path={quote(path, safe='')}&name={INGRESS_VARIABLE}",
+    )
+    if r.status_code != 200:
+        return None
+    data = r.json()
+    value = data.get("value") if isinstance(data, dict) else None
+    if not value:
+        return None
+    rows = value.get("rows") or []
+    if not rows:
+        return None
+    row = rows[0]
+    if row.get("raw") is not None:
+        return str(row.get("raw"))
+    return None
+
+
+def _iso_instant(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def variable_history_field_sample_count(
+    client: Client,
+    object_path: str,
+    variable_name: str,
+    field_name: str,
+    from_instant: datetime | None = None,
+    to_instant: datetime | None = None,
+) -> int:
+    """Count historian samples for one variable field (history query, up to 10k points)."""
+    params: dict[str, str] = {
+        "path": object_path,
+        "name": variable_name,
+        "field": field_name,
+        "limit": "10000",
+    }
+    if from_instant is not None:
+        params["from"] = _iso_instant(from_instant)
+    if to_instant is not None:
+        params["to"] = _iso_instant(to_instant)
+    r = client.request("GET", "/api/v1/objects/by-path/variables/history", params=params)
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"history query {object_path}/{variable_name}.{field_name}: "
+            f"HTTP {r.status_code} {r.text[:200]}"
+        )
+    samples = r.json().get("samples") or []
+    return len(samples)
+
+
 def event_history_count(client: Client) -> int:
     return int(automation_metrics(client).get("eventHistoryRecords") or 0)
 
@@ -513,10 +835,7 @@ def ensure_gateway_tree(
         "Single MQTT connection orchestrator for load test",
     )
     _create_object(client, gw, "sensors", "CUSTOM", "Sensors", "Child sensors for gateway load test")
-    client.request(
-        "POST",
-        f"/api/v1/models/{gateway_model_id}/apply?objectPath={quote(gw, safe='')}",
-    ).raise_for_status()
+    apply_relative_model(client, gateway_model_id, gw)
     put_gateway_binding_rules(client, gw)
     _set_string_variable(client, gw, "sensorParentPath", sensors_parent)
 
@@ -531,10 +850,7 @@ def ensure_gateway_tree(
             f"MQTT loadtest sensor {index}",
             "MQTT gateway child sensor (no driver)",
         )
-        client.request(
-            "POST",
-            f"/api/v1/models/{sensor_model_id}/apply?objectPath={quote(path, safe='')}",
-        ).raise_for_status()
+        apply_relative_model(client, sensor_model_id, path)
         put_binding_rules(client, path)
         configure_child_telemetry_policy(client, path, telemetry_coalesce_ms=child_coalesce_ms)
         sensor_paths.append(path)
@@ -549,11 +865,17 @@ def configure_mqtt_gateway_driver(
     telemetry_coalesce_ms: int | None = None,
     poll_ms: int = 5000,
     auto_start: bool = True,
+    *,
+    ingress_topic_lanes: bool = True,
 ) -> dict:
     if topics:
         point_mappings = {f"t{index}": topic for index, topic in enumerate(topics)}
     else:
         point_mappings = {"ingress": GATEWAY_TOPIC_FILTER}
+    driver_configuration = {
+        "ingressVariable": "lastIngress",
+        "ingressTopicLanes": "true" if ingress_topic_lanes else "false",
+    }
     return configure_mqtt_driver(
         client,
         path,
@@ -564,8 +886,72 @@ def configure_mqtt_gateway_driver(
         poll_ms=poll_ms,
         auto_start=auto_start,
         point_mappings=point_mappings,
-        configuration={"ingressVariable": "lastIngress", "ingressTopicLanes": "true"},
+        configuration=driver_configuration,
     )
+
+
+def ensure_gateway_ingress_only(client: Client, gateway_model_id: str) -> str:
+    """Single MQTT gateway: lastIngress historian only (no child sensors, no dispatch binding)."""
+    delete_gateway_tree(client)
+    gw = gateway_path()
+    client.request("DELETE", f"/api/v1/objects/by-path?path={quote(gw, safe='')}")
+    _create_object(
+        client,
+        "root.platform.devices",
+        GATEWAY_NAME,
+        "DEVICE",
+        "MQTT loadtest gateway (ingress historian)",
+        "MQTT ingress load test — historian on lastIngress only",
+    )
+    try:
+        apply_relative_model(client, gateway_model_id, gw)
+    except RuntimeError:
+        client.request("DELETE", f"/api/v1/objects/by-path?path={quote(gw, safe='')}")
+        _create_object(
+            client,
+            "root.platform.devices",
+            GATEWAY_NAME,
+            "DEVICE",
+            "MQTT loadtest gateway (ingress historian)",
+            "MQTT ingress load test — historian on lastIngress only",
+        )
+        apply_relative_model(client, gateway_model_id, gw)
+    clear_binding_rules(client, gw)
+    enable_variable_history(client, gw, INGRESS_VARIABLE, history_enabled=True)
+    return gw
+
+
+def seed_mqtt_gateway_ingress_history(
+    client: Client,
+    topic_count: int,
+    broker_url: str,
+    poll_ms: int = 5000,
+    topics: list[str] | None = None,
+    telemetry_coalesce_ms: int | None = None,
+) -> str:
+    """Gateway-only MQTT ingress benchmark: historian samples on lastIngress.raw."""
+    gateway_model_id = ensure_mqtt_gateway_model(client)
+    gw = ensure_gateway_ingress_only(client, gateway_model_id)
+    delete_loadtest_alert_rules(client)
+    configure_mqtt_gateway_driver(
+        client,
+        gw,
+        broker_url,
+        topics=topics,
+        telemetry_coalesce_ms=telemetry_coalesce_ms,
+        poll_ms=poll_ms,
+        auto_start=False,
+        ingress_topic_lanes=False,
+    )
+    print(
+        f"  gateway {gw}: ingress historian on {INGRESS_VARIABLE}.{INGRESS_HISTORY_FIELD}, "
+        f"no child sensors ({topic_count} publisher topics, ingressTopicLanes=false)"
+    )
+    if start_mqtt_driver(client, gw):
+        print("  mqtt gateway driver started (broker must be reachable from ISPF server)")
+    else:
+        print("  WARN: mqtt gateway driver failed to start")
+    return gw
 
 
 def seed_mqtt_gateway_devices(
@@ -578,8 +964,8 @@ def seed_mqtt_gateway_devices(
 ) -> tuple[str, list[str]]:
     """1× mqtt gateway + N child sensors (orchestrator load test)."""
     pad = max(5, len(str(device_count)))
-    gateway_model_id = resolve_model_id(client, GATEWAY_MODEL_NAME)
-    sensor_model_id = resolve_model_id(client, MODEL_NAME)
+    gateway_model_id = ensure_mqtt_gateway_model(client)
+    sensor_model_id = ensure_mqtt_sensor_model(client)
     gw, sensor_paths = ensure_gateway_tree(
         client,
         device_count,
@@ -621,7 +1007,7 @@ def seed_mqtt_devices(
     historian_only: bool = True,
 ) -> list[str]:
     pad = max(5, len(str(device_count)))
-    model_id = resolve_model_id(client)
+    model_id = ensure_mqtt_sensor_model(client)
     paths: list[str] = []
     if historian_only:
         telemetry_only_count = device_count
@@ -632,7 +1018,6 @@ def seed_mqtt_devices(
     for index in range(1, device_count + 1):
         path = ensure_device(client, index, pad, model_id)
         put_binding_rules(client, path)
-        prepare_for_mqtt_driver(client, path)
         if historian_only:
             mode = "TELEMETRY_ONLY"
         elif telemetry_mix_ratio > 0 and index <= telemetry_only_count:
@@ -671,3 +1056,50 @@ def seed_mqtt_devices(
             started += 1
     print(f"  mqtt drivers started: {started}/{len(paths)} (broker must be reachable from ISPF server)")
     return paths
+
+
+def seed_one_mqtt_device(
+    client: Client,
+    device_name: str,
+    topic: str,
+    broker_url: str,
+    *,
+    telemetry_coalesce_ms: int | None = None,
+    poll_ms: int = 5000,
+    history_variable: str = "temperature",
+) -> str:
+    """Create a single MQTT device with historian on the given variable."""
+    model_id = ensure_mqtt_sensor_model(client)
+    path = f"root.platform.devices.{device_name}"
+    body = {
+        "parentPath": "root.platform.devices",
+        "name": device_name,
+        "type": "DEVICE",
+        "displayName": device_name,
+        "description": "Single MQTT device (lab)",
+    }
+    r = client.request("POST", "/api/v1/objects", json=body)
+    if r.status_code == 409:
+        delete_device(client, path)
+        r = client.request("POST", "/api/v1/objects", json=body)
+    if r.status_code >= 400:
+        raise RuntimeError(f"create device {device_name}: HTTP {r.status_code} {r.text[:200]}")
+    apply_relative_model(client, model_id, path)
+    put_binding_rules(client, path)
+    configure_mqtt_driver(
+        client,
+        path,
+        broker_url,
+        topic,
+        telemetry_publish_mode="TELEMETRY_ONLY",
+        telemetry_coalesce_ms=telemetry_coalesce_ms,
+        poll_ms=poll_ms,
+        auto_start=False,
+    )
+    enable_variable_history(client, path, history_variable, history_enabled=True)
+    delete_loadtest_alert_rules(client)
+    if start_mqtt_driver(client, path):
+        print(f"  mqtt driver started on {path}")
+    else:
+        print(f"  WARN: mqtt driver failed to start on {path} (broker must be reachable)")
+    return path

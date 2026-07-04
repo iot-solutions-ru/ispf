@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@ConditionalOnExpression("'${ispf.variable-history.store:jdbc}' != 'clickhouse'")
+@ConditionalOnExpression("'${ispf.variable-history.store:jdbc}' != 'clickhouse' && '${ispf.variable-history.store:jdbc}' != 'cassandra' && '${ispf.variable-history.store:jdbc}' != 'scylla'")
 class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
 
     private static final int MAX_AGGREGATE_SAMPLE_ROWS = 100_000;

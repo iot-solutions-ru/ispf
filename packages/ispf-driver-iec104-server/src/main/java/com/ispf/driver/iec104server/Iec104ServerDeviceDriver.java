@@ -6,6 +6,8 @@ import com.ispf.core.model.FieldType;
 import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
+import com.ispf.driver.ingress.DriverIngress;
+import com.ispf.driver.ingress.DriverIngressBuffer;
 import org.openmuc.j60870.ASdu;
 import org.openmuc.j60870.Connection;
 import org.openmuc.j60870.ConnectionEventListener;
@@ -61,6 +63,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private final AtomicInteger clientOriginatorAddress = new AtomicInteger(-1);
     private volatile boolean clientConnected;
     private volatile boolean listening;
+    private DriverIngressBuffer<String, Iec104ServerPoint> ingressBuffer;
 
     @Override
     public DriverMetadata metadata() {
@@ -94,9 +97,16 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
                     .build();
             server.start(serverEventListener);
             listening = true;
+            ingressBuffer = new DriverIngressBuffer<>(
+                    DriverIngress.resolveThreads(driverObject.configuration(), 2),
+                    DriverIngress.resolveCapacity(driverObject.configuration(), 10_000),
+                    (variableName, point) -> driverObject.updateVariable(variableName, readPoint(point)),
+                    "iec104-server-ingress"
+            );
             driverObject.log(DriverLogLevel.INFO, "IEC104 server listening on port " + listenPort);
         } catch (IOException e) {
             listening = false;
+            shutdownIngressBuffer();
             server = null;
             throw new DriverException("IEC104 server start failed", e);
         }
@@ -106,6 +116,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     public void disconnect() {
         listening = false;
         clientConnected = false;
+        shutdownIngressBuffer();
         if (server != null) {
             server.stop();
             server = null;
@@ -177,10 +188,23 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     }
 
     private void refreshPointsForIoa(int ioa) {
+        DriverIngressBuffer<String, Iec104ServerPoint> buffer = ingressBuffer;
         for (Map.Entry<String, Iec104ServerPoint> entry : points.entrySet()) {
             if (entry.getValue().ioa() == ioa) {
-                driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue()));
+                if (buffer != null) {
+                    buffer.submit(entry.getKey(), entry.getValue());
+                } else {
+                    driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue()));
+                }
             }
+        }
+    }
+
+    private void shutdownIngressBuffer() {
+        DriverIngressBuffer<String, Iec104ServerPoint> buffer = ingressBuffer;
+        ingressBuffer = null;
+        if (buffer != null) {
+            buffer.shutdown();
         }
     }
 

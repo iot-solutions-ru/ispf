@@ -1,0 +1,21 @@
+# Local ScyllaDB for Cassandra-compatible time-series testing.
+# Usage:
+#   docker compose -f deploy/docker-compose.scylla.yml up -d
+#   ISPF_EVENT_JOURNAL_STORE=cassandra
+#   ISPF_EVENT_JOURNAL_CASSANDRA_CONTACT_POINTS=127.0.0.1
+#   ISPF_EVENT_JOURNAL_CASSANDRA_LOCAL_DATACENTER=datacenter1
+#
+# Scylla is wire-compatible with Cassandra CQL; use store=cassandra or store=scylla.
+services:
+  scylla:
+    image: scylladb/scylla:6.2
+    container_name: ispf-scylla
+    restart: unless-stopped
+    command: --smp 1 --memory 750M --overprovisioned 1 --api-address 0.0.0.0
+    ports:
+      - "127.0.0.1:9042:9042"
+    volumes:
+      - scylla-data:/var/lib/scylla
+
+volumes:
+  scylla-data:

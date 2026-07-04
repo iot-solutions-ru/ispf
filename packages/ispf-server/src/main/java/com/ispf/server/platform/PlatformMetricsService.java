@@ -188,6 +188,7 @@ public class PlatformMetricsService {
 
         Map<String, Object> section = new LinkedHashMap<>();
         section.put("enabled", variableHistoryProperties.isEnabled());
+        section.put("store", variableHistoryProperties.getStore());
         section.put("asyncEnabled", variableHistoryProperties.isAsyncEnabled());
         section.put("minIntervalMs", variableHistoryProperties.getMinIntervalMs());
         section.put("defaultRetentionDays", variableHistoryProperties.getRetentionDays());

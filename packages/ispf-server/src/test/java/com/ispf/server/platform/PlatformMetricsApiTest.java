@@ -68,6 +68,19 @@ class PlatformMetricsApiTest {
     }
 
     @Test
+    void adminCanReadStorageHealth() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/storage/health")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.backends[?(@.id == 'relational')]").exists())
+                .andExpect(jsonPath("$.backends[?(@.id == 'eventJournal')]").exists())
+                .andExpect(jsonPath("$.backends[?(@.id == 'variableHistory')]").exists())
+                .andExpect(jsonPath("$.backends[?(@.id == 'redis')]").exists())
+                .andExpect(jsonPath("$.backends[?(@.id == 'eventJournal')].store").value("jdbc"))
+                .andExpect(jsonPath("$.backends[?(@.id == 'variableHistory')].store").value("jdbc"));
+    }
+
+    @Test
     void operatorCannotReadMessagingHealth() throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -85,6 +98,10 @@ class PlatformMetricsApiTest {
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/v1/platform/nats/health")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/platform/storage/health")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isForbidden());
     }

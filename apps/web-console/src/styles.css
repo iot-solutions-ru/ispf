@@ -450,6 +450,105 @@ code,
   margin-bottom: 1rem;
 }
 
+.storage-health-card {
+  margin-bottom: 1rem;
+}
+
+.storage-health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.storage-health-panel {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  padding: 0.65rem 0.75rem;
+  min-width: 0;
+}
+
+.storage-health-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.45rem;
+}
+
+.storage-health-panel-title {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.storage-health-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.storage-health-badge.is-ok {
+  color: var(--success, #2d8a4e);
+  background: color-mix(in srgb, var(--success, #2d8a4e) 14%, transparent);
+}
+
+.storage-health-badge.is-bad {
+  color: var(--danger, #c0392b);
+  background: color-mix(in srgb, var(--danger, #c0392b) 14%, transparent);
+}
+
+.storage-health-badge.is-muted {
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+}
+
+.storage-health-panel-table {
+  margin: 0;
+}
+
+.storage-health-panel-table th {
+  width: 38%;
+  padding-top: 0.28rem;
+  padding-bottom: 0.28rem;
+}
+
+.storage-health-panel-table td {
+  padding-top: 0.28rem;
+  padding-bottom: 0.28rem;
+}
+
+.storage-health-endpoint {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  color: var(--text);
+  background: transparent;
+  padding: 0;
+}
+
+.storage-health-panel-error {
+  margin: 0.45rem 0 0;
+  font-size: 0.74rem;
+}
+
+.storage-health-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.76rem;
+}
+
 .admin-shell {
   display: flex;
   flex-direction: column;

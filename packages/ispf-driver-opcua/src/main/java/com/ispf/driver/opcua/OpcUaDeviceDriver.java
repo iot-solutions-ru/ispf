@@ -9,6 +9,8 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.DriverPollTimestamps;
 import com.ispf.driver.TelemetryQuality;
+import com.ispf.driver.ingress.DriverIngress;
+import com.ispf.driver.ingress.DriverIngressBuffer;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -66,6 +68,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     private String readMode = "poll";
     private final Map<String, OpcUaPoint> points = new ConcurrentHashMap<>();
     private ManagedSubscription subscription;
+    private DriverIngressBuffer<String, PointRead> ingressBuffer;
     private volatile boolean connected;
 
     @Override
@@ -132,6 +135,7 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     public void disconnect() {
         connected = false;
         subscription = null;
+        shutdownIngressBuffer();
         if (client != null) {
             try {
                 client.disconnect().get(timeoutMs, TimeUnit.MILLISECONDS);
@@ -206,6 +210,19 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
     }
 
     private void ensureSubscription(Map<String, String> pointMappings) throws Exception {
+        if (ingressBuffer == null) {
+            Map<String, String> configuration = driverObject.configuration();
+            ingressBuffer = new DriverIngressBuffer<>(
+                    DriverIngress.resolveThreads(configuration, 2),
+                    DriverIngress.resolveCapacity(configuration, 10_000),
+                    (variableName, read) -> driverObject.updateVariable(
+                            variableName,
+                            read.record(),
+                            DriverPollTimestamps.sourceOrPollTick(read.observedAt())
+                    ),
+                    "opcua-ingress-worker"
+            );
+        }
         if (subscription == null) {
             subscription = ManagedSubscription.create(client);
             subscription.setDefaultMonitoringMode(MonitoringMode.Reporting);
@@ -223,11 +240,16 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
             String variableName = entries.get(i).getKey();
             item.addDataValueListener((dataItem, dataValue) -> {
                 PointRead read = toPointRead(dataValue);
-                driverObject.updateVariable(
-                        variableName,
-                        read.record(),
-                        DriverPollTimestamps.sourceOrPollTick(read.observedAt())
-                );
+                DriverIngressBuffer<String, PointRead> buffer = ingressBuffer;
+                if (buffer != null) {
+                    buffer.submit(variableName, read);
+                } else {
+                    driverObject.updateVariable(
+                            variableName,
+                            read.record(),
+                            DriverPollTimestamps.sourceOrPollTick(read.observedAt())
+                    );
+                }
             });
         }
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
@@ -238,6 +260,14 @@ public class OpcUaDeviceDriver implements DeviceDriver, DriverDiscovery {
                     read.record(),
                     DriverPollTimestamps.sourceOrPollTick(read.observedAt())
             );
+        }
+    }
+
+    private void shutdownIngressBuffer() {
+        DriverIngressBuffer<String, PointRead> buffer = ingressBuffer;
+        ingressBuffer = null;
+        if (buffer != null) {
+            buffer.shutdown();
         }
     }
 

@@ -31,11 +31,12 @@ echo "Mosquitto running: 127.0.0.1:1883 (container $CONTAINER_NAME)"
 docker ps --filter "name=$CONTAINER_NAME" --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-for f in mqtt-loadtest-publisher.py mqtt-loadtest-tap.py mqtt_loadtest_lib.py; do
+for f in mqtt-loadtest-publisher.py mqtt-loadtest-tap.py mqtt_loadtest_lib.py mqtt-emqtt-bench.sh; do
   if [ -f "$SCRIPT_DIR/$f" ]; then
     cp "$SCRIPT_DIR/$f" "$LOADTEST_DIR/"
   fi
 done
+chmod +x "$LOADTEST_DIR/mqtt-emqtt-bench.sh" 2>/dev/null || true
 
 echo "ISPF mqtt driver brokerUrl: tcp://127.0.0.1:1883"
 
@@ -51,3 +52,10 @@ if [ ! -x "$VENV_DIR/bin/python" ]; then
   "$VENV_DIR/bin/pip" install --quiet paho-mqtt
 fi
 echo "Publisher venv: $VENV_DIR/bin/python"
+
+EMQTT_BENCH_IMAGE="${EMQTT_BENCH_IMAGE:-emqx/emqtt-bench:latest}"
+if command -v docker >/dev/null 2>&1; then
+  echo "Pulling emqtt-bench image: $EMQTT_BENCH_IMAGE"
+  docker pull "$EMQTT_BENCH_IMAGE" || echo "WARN: emqtt-bench pull failed (run mqtt-emqtt-bench.sh --pull on VPS)"
+fi
+echo "High-rate publisher: bash $LOADTEST_DIR/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 5000"

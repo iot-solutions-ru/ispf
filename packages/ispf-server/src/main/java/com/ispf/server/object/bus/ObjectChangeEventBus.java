@@ -1,6 +1,7 @@
 package com.ispf.server.object.bus;
 
 import com.ispf.server.config.ObjectChangeProperties;
+import com.ispf.server.platform.concurrent.ElasticWorkerScaler;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.platform.AutomationMetricsRecorder;
@@ -315,7 +316,7 @@ public class ObjectChangeEventBus {
         private volatile int minWorkers;
         private volatile int maxWorkers;
         private final boolean elasticWorkers;
-        private final ObjectChangeWorkerScaler scaler;
+        private final ElasticWorkerScaler scaler;
         private final BlockingQueue<ObjectChangeEvent> queue;
         private final ExecutorService workers;
         private final List<ObjectChangeAsyncHandler> laneHandlers;
@@ -342,7 +343,7 @@ public class ObjectChangeEventBus {
             this.maxWorkers = maxWorkers;
             this.elasticWorkers = elasticWorkers;
             this.scaler = elasticWorkers
-                    ? new ObjectChangeWorkerScaler(minWorkers, maxWorkers, scaleUpQueueThreshold, scaleDownSteps)
+                    ? new ElasticWorkerScaler(minWorkers, maxWorkers, scaleUpQueueThreshold, scaleDownSteps)
                     : null;
             this.queue = new LinkedBlockingQueue<>(queueCapacity);
             this.laneHandlers = laneHandlers;

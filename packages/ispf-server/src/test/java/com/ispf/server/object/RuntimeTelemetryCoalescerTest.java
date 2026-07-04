@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,9 @@ class RuntimeTelemetryCoalescerTest {
 
     @Mock
     private MqttGatewayIngressDispatchService gatewayIngressDispatch;
+
+    @Mock
+    private com.ispf.server.history.TelemetryHistorianFastPath historianFastPath;
 
     private RuntimeTelemetryCoalescer coalescer;
 
@@ -66,7 +70,19 @@ class RuntimeTelemetryCoalescerTest {
         properties.setEnabled(false);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.automationEligible("root.dev.sensor")).thenReturn(false);
-        coalescer = new RuntimeTelemetryCoalescer(properties, policyService, publicationService, gatewayIngressDispatch);
+        org.mockito.Mockito.when(historianFastPath.isHistorianOnlyEligible(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()
+        )).thenReturn(false);
+        org.mockito.Mockito.when(historianFastPath.tryPublish(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        )).thenReturn(false);
+        coalescer = new RuntimeTelemetryCoalescer(
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+        );
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
 
         coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
@@ -185,6 +201,23 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     @Test
+    void ingressBatchRecordsHistorianDespiteDuplicatePayload() {
+        coalescer = newCoalescer(true, 1_000);
+        org.mockito.Mockito.when(historianFastPath.isHistorianOnlyEligible("root.dev.sensor", "temperature"))
+                .thenReturn(true);
+        DataSchema schema = DataSchema.builder("temperature").field("raw", FieldType.STRING).build();
+        DataRecord value = DataRecord.single(schema, Map.of("raw", "1734567890123"));
+
+        coalescer.publishCoalescedBatch(List.of(
+                new CoalescedTelemetryUpdate("root.dev.sensor", "temperature", value, null),
+                new CoalescedTelemetryUpdate("root.dev.sensor", "temperature", value, null)
+        ));
+
+        verify(historianFastPath).publishBatch(org.mockito.ArgumentMatchers.argThat(batch -> batch.size() == 2));
+        verifyNoInteractions(publicationService);
+    }
+
+    @Test
     void parallelGatewayDispatchSkipsBindingEvent() {
         coalescer = newCoalescer(true, 1_000);
         org.mockito.Mockito.when(gatewayIngressDispatch.tryScheduleDispatch(
@@ -227,7 +260,19 @@ class RuntimeTelemetryCoalescerTest {
                 .thenReturn(ingressPayloadLanes);
         org.mockito.Mockito.when(policyService.parallelIngressDispatch(org.mockito.ArgumentMatchers.anyString()))
                 .thenReturn(ingressTopicLanes || ingressPayloadLanes);
-        return new RuntimeTelemetryCoalescer(properties, policyService, publicationService, gatewayIngressDispatch);
+        org.mockito.Mockito.when(historianFastPath.isHistorianOnlyEligible(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString()
+        )).thenReturn(false);
+        org.mockito.Mockito.when(historianFastPath.tryPublish(
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        )).thenReturn(false);
+        return new RuntimeTelemetryCoalescer(
+                properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
+        );
     }
 
     private static DataRecord record(DataSchema schema, double value) {

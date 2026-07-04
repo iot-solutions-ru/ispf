@@ -7,6 +7,7 @@ import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
 import YargHealthCard from "./YargHealthCard";
 import McpHealthCard from "./McpHealthCard";
 import PlatformLicenseCard from "./PlatformLicenseCard";
+import StorageHealthCard from "./StorageHealthCard";
 
 const METRIC_KEYS = [
   "uptimeMs", "uptimeHuman", "heapUsedBytes", "heapMaxBytes", "heapUsedMb", "heapMaxMb",
@@ -16,7 +17,7 @@ const METRIC_KEYS = [
   "workflows", "applications", "models", "alerts", "deviceObjects", "activeDrivers",
   "connectedDrivers", "driversWithError", "stoppedDrivers", "websocketClients",
   "platformUsers", "enabledUsers", "activeAuthSessions", "enabled", "minIntervalMs",
-  "defaultRetentionDays", "historizedVariables", "sampleCount", "oldestSampleAt",
+  "defaultRetentionDays", "historizedVariables", "sampleCount", "store", "oldestSampleAt",
   "newestSampleAt", "eventHistoryRecords", "workflowInstancesTotal", "workflowInstancesRunning",
   "workflowInstancesCompleted", "workflowInstancesFailed", "workflowInstancesCancelled",
   "alertRules", "eventCorrelators", "applicationFunctions", "applicationFunctionVersions",
@@ -126,6 +127,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             })}
           </p>
           <AutomationIndexStatsCard />
+          <StorageHealthCard />
           <div className="system-metrics-grid system-backend-health-grid">
             <RedisHealthCard />
             <NatsJetStreamHealthCard />

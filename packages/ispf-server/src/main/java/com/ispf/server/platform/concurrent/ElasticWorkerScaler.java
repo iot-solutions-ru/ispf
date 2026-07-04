@@ -1,9 +1,9 @@
-package com.ispf.server.object.bus;
+package com.ispf.server.platform.concurrent;
 
 /**
- * Computes target worker count from queue depth for elastic object-change lanes.
+ * Computes target worker count from queue depth for elastic async lanes.
  */
-final class ObjectChangeWorkerScaler {
+public final class ElasticWorkerScaler {
 
     private int minWorkers;
     private int maxWorkers;
@@ -12,7 +12,7 @@ final class ObjectChangeWorkerScaler {
     private int targetWorkers;
     private int consecutiveEmptyChecks;
 
-    ObjectChangeWorkerScaler(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
+    public ElasticWorkerScaler(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
         if (minWorkers < 1) {
             throw new IllegalArgumentException("minWorkers must be >= 1");
         }
@@ -32,15 +32,15 @@ final class ObjectChangeWorkerScaler {
         this.targetWorkers = minWorkers;
     }
 
-    int targetWorkers() {
+    public int targetWorkers() {
         return targetWorkers;
     }
 
     /**
-     * @param queueSize current pending events
+     * @param queueSize current pending work units
      * @return true when target worker count changed
      */
-    boolean adjust(int queueSize) {
+    public boolean adjust(int queueSize) {
         int previous = targetWorkers;
         if (queueSize >= scaleUpQueueThreshold) {
             consecutiveEmptyChecks = 0;
@@ -58,7 +58,7 @@ final class ObjectChangeWorkerScaler {
         return targetWorkers != previous;
     }
 
-    void reconfigure(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
+    public void reconfigure(int minWorkers, int maxWorkers, int scaleUpQueueThreshold, int scaleDownSteps) {
         this.minWorkers = minWorkers;
         this.maxWorkers = maxWorkers;
         this.scaleUpQueueThreshold = scaleUpQueueThreshold;

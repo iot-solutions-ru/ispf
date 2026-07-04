@@ -56,12 +56,30 @@ docker exec ispf-clickhouse clickhouse-client --query "TRUNCATE TABLE IF EXISTS 
 
 echo "=== Start ISPF (Flyway + bootstrap) ==="
 systemctl start ispf-server
-for i in $(seq 1 90); do
-  if curl -sf http://127.0.0.1:8080/actuator/health >/dev/null 2>&1; then
-    echo HEALTH_OK
+for i in $(seq 1 60); do
+  if curl -sf http://127.0.0.1:8080/actuator/health/liveness >/dev/null 2>&1; then
+    echo LIVENESS_OK
     break
   fi
-  if [ "$i" -eq 90 ]; then
+  if [ "$i" -eq 60 ]; then
+    journalctl -u ispf-server -n 80 --no-pager
+    exit 1
+  fi
+  sleep 2
+done
+
+echo "=== Wait for bootstrap (admin login + platform tree) ==="
+for i in $(seq 1 120); do
+  login_code="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/v1/auth/login \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"admin","password":"admin"}')"
+  node_count="$(docker exec ispf-postgres psql -U ispf -d ispf -t -A -c "SELECT COUNT(*) FROM object_nodes WHERE path='root.platform';" 2>/dev/null || echo 0)"
+  if [ "$login_code" = "200" ] && [ "${node_count:-0}" -ge 1 ]; then
+    echo BOOTSTRAP_OK
+    break
+  fi
+  if [ "$i" -eq 120 ]; then
+    echo "WARN: bootstrap wait timed out (login=$login_code root.platform nodes=$node_count)" >&2
     journalctl -u ispf-server -n 80 --no-pager
     exit 1
   fi

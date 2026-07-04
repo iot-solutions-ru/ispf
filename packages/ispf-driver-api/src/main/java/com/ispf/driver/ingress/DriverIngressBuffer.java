@@ -1,0 +1,202 @@
+package com.ispf.driver.ingress;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiConsumer;
+
+/**
+ * Last-value-wins ingress buffer for driver protocol callbacks and poll hand-off.
+ * <p>
+ * Producers enqueue quickly; workers drain batches into the platform without blocking I/O threads
+ * or growing an unbounded FIFO queue.
+ */
+public final class DriverIngressBuffer<K, V> {
+
+    private final int capacity;
+    private final BiConsumer<K, V> handler;
+    private final boolean eagerDrain;
+    private final ConcurrentHashMap<K, V> pendingByKey = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<K, AtomicBoolean> laneDrainScheduled = new ConcurrentHashMap<>();
+    private final AtomicInteger pendingCount = new AtomicInteger();
+    private final AtomicInteger coalescedTotal = new AtomicInteger();
+    private final AtomicInteger evictedTotal = new AtomicInteger();
+
+    private volatile boolean running = true;
+    private ExecutorService workers;
+    private volatile Thread drainWaiter;
+
+    public DriverIngressBuffer(int workerThreads, int capacity, BiConsumer<K, V> handler) {
+        this(workerThreads, capacity, handler, "driver-ingress-worker", false);
+    }
+
+    public DriverIngressBuffer(int workerThreads, int capacity, BiConsumer<K, V> handler, String threadNamePrefix) {
+        this(workerThreads, capacity, handler, threadNamePrefix, false);
+    }
+
+    /**
+     * @param eagerDrain when true, schedules per-lane drain on submit (no worker park loop) for
+     *                   high-rate single-lane MQTT/telemetry paths
+     */
+    public DriverIngressBuffer(
+            int workerThreads,
+            int capacity,
+            BiConsumer<K, V> handler,
+            String threadNamePrefix,
+            boolean eagerDrain
+    ) {
+        this.capacity = Math.max(1, capacity);
+        this.handler = handler;
+        this.eagerDrain = eagerDrain;
+        int threads = Math.max(1, workerThreads);
+        workers = Executors.newFixedThreadPool(threads, runnable -> {
+            Thread thread = new Thread(runnable, threadNamePrefix);
+            thread.setDaemon(true);
+            return thread;
+        });
+        if (!eagerDrain) {
+            for (int i = 0; i < threads; i++) {
+                workers.submit(this::workerLoop);
+            }
+        }
+    }
+
+    public void submit(K key, V value) {
+        if (!running) {
+            return;
+        }
+        V previous = pendingByKey.put(key, value);
+        if (previous == null) {
+            int size = pendingCount.incrementAndGet();
+            if (size > capacity) {
+                V removed = pendingByKey.remove(key);
+                if (removed != null && pendingCount.decrementAndGet() >= 0) {
+                    evictedTotal.incrementAndGet();
+                }
+                handler.accept(key, value);
+                return;
+            }
+        } else {
+            coalescedTotal.incrementAndGet();
+        }
+        if (eagerDrain) {
+            scheduleLaneDrain(key);
+        } else {
+            unparkDrainWaiter();
+        }
+    }
+
+    public void shutdown() {
+        running = false;
+        unparkDrainWaiter();
+        if (workers != null) {
+            workers.shutdownNow();
+            workers = null;
+        }
+        drainAllRemaining();
+    }
+
+    /** Drains pending lanes synchronously (for explicit poll/write API semantics). */
+    public void flushNow() {
+        drainAllRemaining();
+    }
+
+    public int coalescedTotal() {
+        return coalescedTotal.get();
+    }
+
+    public int evictedTotal() {
+        return evictedTotal.get();
+    }
+
+    private void scheduleLaneDrain(K key) {
+        AtomicBoolean scheduled = laneDrainScheduled.computeIfAbsent(key, ignored -> new AtomicBoolean(false));
+        if (scheduled.compareAndSet(false, true)) {
+            workers.execute(() -> drainLane(key, scheduled));
+        }
+    }
+
+    private void drainLane(K key, AtomicBoolean scheduled) {
+        try {
+            while (running) {
+                V payload = pendingByKey.remove(key);
+                if (payload == null) {
+                    return;
+                }
+                pendingCount.decrementAndGet();
+                handler.accept(key, payload);
+                if (!pendingByKey.containsKey(key)) {
+                    return;
+                }
+            }
+        } finally {
+            scheduled.set(false);
+            if (running && pendingByKey.containsKey(key)) {
+                scheduleLaneDrain(key);
+            }
+        }
+    }
+
+    private void workerLoop() {
+        while (running || pendingCount.get() > 0) {
+            List<Entry> batch = drainBatch(64);
+            if (batch.isEmpty()) {
+                drainWaiter = Thread.currentThread();
+                LockSupport.parkNanos(250_000L);
+                continue;
+            }
+            for (Entry entry : batch) {
+                handler.accept(entry.key, entry.value);
+            }
+        }
+    }
+
+    private List<Entry> drainBatch(int maxBatch) {
+        List<Entry> batch = new ArrayList<>(Math.min(maxBatch, Math.max(0, pendingCount.get())));
+        Iterator<Map.Entry<K, V>> iterator = pendingByKey.entrySet().iterator();
+        while (iterator.hasNext() && batch.size() < maxBatch) {
+            Map.Entry<K, V> entry = iterator.next();
+            V payload = pendingByKey.remove(entry.getKey());
+            if (payload != null) {
+                pendingCount.decrementAndGet();
+                batch.add(new Entry(entry.getKey(), payload));
+            }
+        }
+        return batch;
+    }
+
+    private void drainAllRemaining() {
+        List<Entry> batch;
+        do {
+            batch = drainBatch(Math.max(256, capacity));
+            for (Entry entry : batch) {
+                handler.accept(entry.key, entry.value);
+            }
+        } while (!batch.isEmpty());
+    }
+
+    private void unparkDrainWaiter() {
+        Thread waiter = drainWaiter;
+        if (waiter != null) {
+            LockSupport.unpark(waiter);
+        }
+    }
+
+    private final class Entry {
+        private final K key;
+        private final V value;
+
+        private Entry(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
+    }
+}

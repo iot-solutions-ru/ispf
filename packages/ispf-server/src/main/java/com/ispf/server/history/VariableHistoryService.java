@@ -11,6 +11,7 @@ import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
+import com.ispf.server.object.CoalescedTelemetryUpdate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -42,6 +44,9 @@ public class VariableHistoryService {
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
+    /** Short-lived cache for historyEnabled lookups on the hot path. */
+    private final ConcurrentHashMap<String, HistorizedCacheEntry> historizedCache = new ConcurrentHashMap<>();
+    private static final long HISTORIZED_CACHE_TTL_MS = 10_000;
 
     public VariableHistoryService(
             VariableHistoryProperties properties,
@@ -164,6 +169,170 @@ public class VariableHistoryService {
             asyncWriter.enqueue(List.of(sample));
         } else {
             batchPersister.persistOne(sample);
+        }
+    }
+
+    /**
+     * High-throughput path: samples numeric fields from the supplied {@link DataRecord} without re-reading
+     * the in-memory variable (used by {@link TelemetryHistorianFastPath}).
+     */
+    public void recordFromDataRecord(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt
+    ) {
+        if (!properties.isEnabled() || record == null || record.rowCount() == 0) {
+            return;
+        }
+        if (properties.getExcludedVariables().contains(variableName)
+                || variableName.startsWith("driver")) {
+            return;
+        }
+        if (!isHistorizedVariable(objectPath, variableName)) {
+            return;
+        }
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+    }
+
+    /**
+     * Fast path when {@link TelemetryHistorianFastPath} already verified historian interest.
+     */
+    public void recordFromDataRecordTrusted(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt
+    ) {
+        if (!properties.isEnabled() || record == null || record.rowCount() == 0) {
+            return;
+        }
+        if (properties.getExcludedVariables().contains(variableName)
+                || variableName.startsWith("driver")) {
+            return;
+        }
+        enqueueFromDataRecord(objectPath, variableName, record, observedAt);
+    }
+
+    /**
+     * Batch trusted fast-path enqueue (single {@link VariableHistoryAsyncWriter#enqueue} per ingress drain batch).
+     */
+    public void recordFromDataRecordsTrusted(List<CoalescedTelemetryUpdate> updates) {
+        if (!properties.isEnabled() || updates.isEmpty()) {
+            return;
+        }
+        long nowMs = System.currentTimeMillis();
+        Instant now = Instant.ofEpochMilli(nowMs);
+        Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
+        for (CoalescedTelemetryUpdate update : updates) {
+            if (update.value() == null || update.value().rowCount() == 0) {
+                continue;
+            }
+            if (properties.getExcludedVariables().contains(update.variableName())
+                    || update.variableName().startsWith("driver")) {
+                continue;
+            }
+            appendSamplesFromDataRecord(
+                    update.path(),
+                    update.variableName(),
+                    update.value(),
+                    update.observedAt(),
+                    now,
+                    nowMs,
+                    coalesced
+            );
+        }
+        List<VariableSampleEntity> samples = new ArrayList<>(coalesced.size());
+        for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
+            if (!acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
+                continue;
+            }
+            samples.add(entry.getValue());
+        }
+        enqueueSamples(samples);
+    }
+
+    private boolean acceptDebouncedSample(String debounceKey, VariableSampleEntity sample, long fallbackMs) {
+        long debounceMs = sample.getObservedAt() != null
+                ? sample.getObservedAt().toEpochMilli()
+                : fallbackMs;
+        Long lastMs = lastSampleMs.get(debounceKey);
+        if (lastMs != null && debounceMs - lastMs < properties.getMinIntervalMs()) {
+            return false;
+        }
+        lastSampleMs.put(debounceKey, debounceMs);
+        return true;
+    }
+
+    private void enqueueFromDataRecord(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt
+    ) {
+        long nowMs = System.currentTimeMillis();
+        Instant now = Instant.ofEpochMilli(nowMs);
+        List<VariableSampleEntity> samples = new ArrayList<>();
+        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, samples);
+        enqueueSamples(samples);
+    }
+
+    private void appendSamplesFromDataRecord(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt,
+            Instant now,
+            long nowMs,
+            Map<String, VariableSampleEntity> samples
+    ) {
+        Instant effectiveObserved = observedAt != null ? observedAt : now;
+
+        for (var field : record.schema().fields()) {
+            String fieldName = field.name();
+            Object raw = record.firstRow().get(fieldName);
+            Optional<Double> numeric = toNumeric(raw);
+            if (numeric.isEmpty()) {
+                continue;
+            }
+            String debounceKey = objectPath + "|" + variableName + "|" + fieldName;
+            VariableSampleEntity sample = new VariableSampleEntity();
+            sample.setObjectPath(objectPath);
+            sample.setVariableName(variableName);
+            sample.setFieldName(fieldName);
+            sample.setSampledAt(now);
+            sample.setObservedAt(effectiveObserved);
+            sample.setValueDouble(numeric.get());
+            samples.put(debounceKey, sample);
+        }
+    }
+
+    private void appendSamplesFromDataRecord(
+            String objectPath,
+            String variableName,
+            DataRecord record,
+            Instant observedAt,
+            Instant now,
+            long nowMs,
+            List<VariableSampleEntity> samples
+    ) {
+        Map<String, VariableSampleEntity> coalesced = new LinkedHashMap<>();
+        appendSamplesFromDataRecord(objectPath, variableName, record, observedAt, now, nowMs, coalesced);
+        for (Map.Entry<String, VariableSampleEntity> entry : coalesced.entrySet()) {
+            if (acceptDebouncedSample(entry.getKey(), entry.getValue(), nowMs)) {
+                samples.add(entry.getValue());
+            }
+        }
+    }
+
+    private void enqueueSamples(List<VariableSampleEntity> samples) {
+        if (samples.isEmpty()) {
+            return;
+        }
+        if (asyncWriter.isAsyncEnabled()) {
+            asyncWriter.enqueue(samples);
+        } else {
+            batchPersister.persistBatch(samples);
         }
     }
 
@@ -367,11 +536,21 @@ public class VariableHistoryService {
     }
 
     private boolean isHistorizedVariable(String objectPath, String variableName) {
-        return objectManager.require(objectPath)
+        String cacheKey = objectPath + "|" + variableName;
+        long nowMs = System.currentTimeMillis();
+        HistorizedCacheEntry cached = historizedCache.get(cacheKey);
+        if (cached != null && nowMs - cached.loadedAtMs() < HISTORIZED_CACHE_TTL_MS) {
+            return cached.enabled();
+        }
+        boolean enabled = objectManager.require(objectPath)
                 .getVariable(variableName)
                 .map(Variable::historyEnabled)
                 .orElse(false);
+        historizedCache.put(cacheKey, new HistorizedCacheEntry(enabled, nowMs));
+        return enabled;
     }
+
+    private record HistorizedCacheEntry(boolean enabled, long loadedAtMs) {}
 
     private int resolveRetentionDays(ObjectVariableEntity entity) {
         if (entity.getHistoryRetentionDays() != null) {

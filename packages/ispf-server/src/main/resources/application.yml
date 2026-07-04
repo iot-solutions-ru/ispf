@@ -121,20 +121,45 @@ ispf:
     retention-days: ${ISPF_VARIABLE_HISTORY_RETENTION_DAYS:90}
     store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}
     async-enabled: ${ISPF_VARIABLE_HISTORY_ASYNC_ENABLED:true}
-    queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:10000}
-    batch-size: ${ISPF_VARIABLE_HISTORY_BATCH_SIZE:500}
-    flush-interval-ms: ${ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS:50}
+    queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:50000}
+    batch-size: ${ISPF_VARIABLE_HISTORY_BATCH_SIZE:1000}
+    flush-interval-ms: ${ISPF_VARIABLE_HISTORY_FLUSH_INTERVAL_MS:20}
     writer-threads: ${ISPF_VARIABLE_HISTORY_WRITER_THREADS:4}
+    elastic-writer-enabled: ${ISPF_VARIABLE_HISTORY_ELASTIC_WRITER:true}
+    writer-threads-min: ${ISPF_VARIABLE_HISTORY_WRITER_THREADS_MIN:4}
+    writer-threads-max: ${ISPF_VARIABLE_HISTORY_WRITER_THREADS_MAX:32}
+    elastic-scale-up-queue-threshold: ${ISPF_VARIABLE_HISTORY_ELASTIC_SCALE_UP_THRESHOLD:100}
+    elastic-scale-down-steps: ${ISPF_VARIABLE_HISTORY_ELASTIC_SCALE_DOWN_STEPS:6}
+    elastic-scale-check-interval-ms: ${ISPF_VARIABLE_HISTORY_ELASTIC_SCALE_CHECK_MS:200}
+    overflow-coalesce-enabled: ${ISPF_VARIABLE_HISTORY_OVERFLOW_COALESCE:true}
     clickhouse:
       url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
       database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
       table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
       username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
       password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
+    cassandra:
+      contact-points: ${ISPF_VARIABLE_HISTORY_CASSANDRA_CONTACT_POINTS:127.0.0.1}
+      port: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PORT:9042}
+      local-datacenter: ${ISPF_VARIABLE_HISTORY_CASSANDRA_LOCAL_DATACENTER:datacenter1}
+      keyspace: ${ISPF_VARIABLE_HISTORY_CASSANDRA_KEYSPACE:ispf}
+      table: ${ISPF_VARIABLE_HISTORY_CASSANDRA_TABLE:variable_samples}
+      username: ${ISPF_VARIABLE_HISTORY_CASSANDRA_USERNAME:}
+      password: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PASSWORD:}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true
     coalesce-scheduler-threads: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_THREADS:4}
+    ingress-queue-enabled: ${ISPF_RUNTIME_TELEMETRY_INGRESS_QUEUE_ENABLED:true}
+    ingress-queue-capacity: ${ISPF_RUNTIME_TELEMETRY_INGRESS_QUEUE_CAPACITY:50000}
+    ingress-elastic-workers: ${ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS:true}
+    ingress-worker-threads-min: ${ISPF_RUNTIME_TELEMETRY_INGRESS_WORKERS_MIN:4}
+    ingress-worker-threads-max: ${ISPF_RUNTIME_TELEMETRY_INGRESS_WORKERS_MAX:32}
+    ingress-scale-up-queue-threshold: ${ISPF_RUNTIME_TELEMETRY_INGRESS_SCALE_UP_THRESHOLD:100}
+    ingress-scale-down-steps: ${ISPF_RUNTIME_TELEMETRY_INGRESS_SCALE_DOWN_STEPS:6}
+    ingress-scale-check-interval-ms: ${ISPF_RUNTIME_TELEMETRY_INGRESS_SCALE_CHECK_MS:200}
+    ingress-drain-batch-size: ${ISPF_RUNTIME_TELEMETRY_INGRESS_DRAIN_BATCH:512}
+    fast-historian-path: ${ISPF_RUNTIME_TELEMETRY_FAST_HISTORIAN_PATH:true}
   binding:
     async-threads: ${ISPF_BINDING_ASYNC_THREADS:16}
     audit:
@@ -199,6 +224,14 @@ ispf:
       table: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_TABLE:event_history}
       username: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_USERNAME:default}
       password: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_PASSWORD:}
+    cassandra:
+      contact-points: ${ISPF_EVENT_JOURNAL_CASSANDRA_CONTACT_POINTS:127.0.0.1}
+      port: ${ISPF_EVENT_JOURNAL_CASSANDRA_PORT:9042}
+      local-datacenter: ${ISPF_EVENT_JOURNAL_CASSANDRA_LOCAL_DATACENTER:datacenter1}
+      keyspace: ${ISPF_EVENT_JOURNAL_CASSANDRA_KEYSPACE:ispf}
+      table: ${ISPF_EVENT_JOURNAL_CASSANDRA_TABLE:event_history}
+      username: ${ISPF_EVENT_JOURNAL_CASSANDRA_USERNAME:}
+      password: ${ISPF_EVENT_JOURNAL_CASSANDRA_PASSWORD:}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}
@@ -216,6 +249,11 @@ ispf:
       object-acl-ttl: ${ISPF_REDIS_OBJECT_ACL_TTL:10m}
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
+    async-poll-enabled: ${ISPF_DRIVER_ASYNC_POLL_ENABLED:true}
+    io-threads: ${ISPF_DRIVER_IO_THREADS:16}
+    ingress-buffer-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ENABLED:true}
+    ingress-buffer-threads: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS:2}
+    ingress-buffer-capacity: ${ISPF_DRIVER_INGRESS_BUFFER_CAPACITY:10000}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}

@@ -13,6 +13,7 @@ scp -o BatchMode=yes `
     "$RepoRoot\deploy\mqtt-loadtest-publisher.py" `
     "$RepoRoot\deploy\mqtt-loadtest-tap.py" `
     "$RepoRoot\deploy\mqtt_loadtest_lib.py" `
+    "$RepoRoot\deploy\mqtt-emqtt-bench.sh" `
     "$RepoRoot\deploy\mqtt-ingress-load-test.py" `
     "${RemoteHost}:/opt/ispf/loadtest/"
 ssh -o BatchMode=yes $RemoteHost "bash /tmp/vps-mqtt-broker.sh"
@@ -23,4 +24,6 @@ ssh -o BatchMode=yes $RemoteHost "docker ps --filter name=ispf-mqtt-loadtest"
 Write-Host ""
 Write-Host "Done. Run ingress test from workstation:"
 Write-Host "  pip install paho-mqtt requests"
+Write-Host "  python deploy/mqtt-ingress-load-test.py --devices 4 --messages-per-second 5000 --publish-via-ssh $RemoteHost --publisher emqtt-bench --gateway --skip-monitor-setup"
+Write-Host "  # or legacy paho publisher (~1.5k msg/s):"
 Write-Host "  python deploy/mqtt-ingress-load-test.py --devices 10 --messages-per-second 500 --publish-via-ssh $RemoteHost"

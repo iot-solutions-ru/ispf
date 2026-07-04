@@ -17,9 +17,10 @@ public class EventJournalProperties {
     private int writerThreads = 2;
     /** Platform default retention for event_history rows (Timescale policy, ClickHouse TTL, or app purge). */
     private int retentionDays = 90;
-    /** {@code jdbc} (PostgreSQL/Timescale) or {@code clickhouse}. */
+    /** {@code jdbc} (PostgreSQL/Timescale), {@code clickhouse}, or {@code cassandra}/{@code scylla}. */
     private String store = "jdbc";
     private ClickHouse clickhouse = new ClickHouse();
+    private CassandraStoreProperties cassandra = new CassandraStoreProperties();
 
     public static class ClickHouse {
         private String url = "http://localhost:8123";
@@ -141,11 +142,27 @@ public class EventJournalProperties {
         this.clickhouse = clickhouse;
     }
 
+    public CassandraStoreProperties getCassandra() {
+        return cassandra;
+    }
+
+    public void setCassandra(CassandraStoreProperties cassandra) {
+        this.cassandra = cassandra;
+    }
+
     public boolean isJdbcStore() {
-        return !isClickHouseStore();
+        return !isExternalTimeSeriesStore();
     }
 
     public boolean isClickHouseStore() {
         return "clickhouse".equalsIgnoreCase(store);
+    }
+
+    public boolean isCassandraStore() {
+        return "cassandra".equalsIgnoreCase(store) || "scylla".equalsIgnoreCase(store);
+    }
+
+    public boolean isExternalTimeSeriesStore() {
+        return isClickHouseStore() || isCassandraStore();
     }
 }

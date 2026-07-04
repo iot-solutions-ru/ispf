@@ -10,6 +10,12 @@ import java.util.Optional;
 /**
  * Service Provider Interface for device/protocol drivers.
  * Drivers map external data sources to ISPF object variables.
+ * <p>
+ * <strong>Ingress contract:</strong> the hot path from device samples to {@link DriverObject#updateVariable}
+ * must not perform platform persistence (database, historian, event journal, or disk writes). Drivers may
+ * keep short-lived in-memory caches for push protocols; durable storage is handled asynchronously by the
+ * ISPF server after {@code updateVariable}. Push/callback drivers should enqueue into a
+ * {@link com.ispf.driver.ingress.DriverIngressBuffer} and return quickly.
  */
 public interface DeviceDriver {
 

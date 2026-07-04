@@ -111,6 +111,43 @@ Report: `deploy/mqtt-coalesce-sweep-report-1782383597.json`.
 
 Lab push (локальный Mosquitto, `--mode push`) — синтетический publisher, см. `mqtt-loadtest-publisher.py`.
 
+### Ingress historian (`--ingress-history-only`)
+
+Benchmark **gateway `lastIngress.raw` only** — no child sensors, no `dispatchTelemetry` binding:
+
+```powershell
+python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
+  --ingress-history-only --devices 4 --messages-per-second 2000 --telemetry-coalesce-ms 1 `
+  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+```
+
+Samples/s measured via `GET .../variables/history` for `lastIngress.raw` on the gateway (not global `sampleCount`). Driver uses `ingressTopicLanes=false` so parallel dispatch does not suppress historian publication.
+
+### High-rate publisher (emqtt-bench)
+
+Для **>2k msg/s** используйте [emqtt-bench](https://github.com/emqx/emqtt-bench) через Docker на VPS (`deploy/mqtt-emqtt-bench.sh`):
+
+```powershell
+# Deploy Mosquitto + emqtt-bench image + scripts
+.\deploy\vps-mqtt-broker-deploy.ps1
+
+# Ingress load test с emqtt-bench (рекомендуется --gateway)
+python deploy/mqtt-ingress-load-test.py --mode push --broker-url tcp://127.0.0.1:1883 `
+  --devices 4 --messages-per-second 10000 --telemetry-coalesce-ms 1 `
+  --gateway --publisher emqtt-bench --emqtt-interval-ms 10 `
+  --publish-via-ssh root@ispf.iot-solutions.ru --skip-monitor-setup
+
+# Standalone на VPS (50k msg/s, 4 топика):
+# ssh root@ispf.iot-solutions.ru 'bash /opt/ispf/loadtest/mqtt-emqtt-bench.sh --devices 4 --messages-per-second 50000 --duration-seconds 30'
+```
+
+| Флаг | Default | Описание |
+|------|---------|----------|
+| `--publisher` | `python` | `emqtt-bench` — Docker на VPS; `python` — paho (~1.5k msg/s) |
+| `--emqtt-interval-ms` | `10` | `-I` emqtt-bench (100 msg/s на клиента при 10 ms) |
+
+Формула: `msg/s ≈ devices × clients_per_topic × (1000 / interval_ms)`.
+
 ## Internal load test (virtual driver)
 
 ## Подготовка окружения

@@ -38,6 +38,7 @@
 | [0022](0022-driver-production-matrix.md) | Driver production matrix + CI loopback gate | Accepted |
 | [0023](0023-haystack-query-runtime.md) | Haystack filter query runtime (subset, tree-first) | Accepted |
 | [0024](0024-demand-driven-variable-change-pubsub.md) | Demand-driven object change pub/sub (single JVM) | Accepted |
+| [0025](0025-cassandra-scylla-timeseries-store.md) | Cassandra/Scylla time-series store SPI | Accepted |
 
 ## Шаблон нового ADR
 

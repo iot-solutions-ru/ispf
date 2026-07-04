@@ -10,6 +10,10 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
+import com.ispf.driver.ingress.DriverIngressBuffer;
+import com.ispf.server.config.DriverPackProperties;
+import com.ispf.server.config.RuntimeTelemetryProperties;
+import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.object.ObjectManager;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -20,7 +24,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -34,10 +37,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -56,8 +61,11 @@ public class DriverRuntimeService {
     private final ObjectMapper objectMapper;
     private final Environment environment;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
+    private final DriverPackProperties driverPackProperties;
+    private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final ScheduledExecutorService scheduler;
+    private final ExecutorService ioExecutor;
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
     public DriverRuntimeService(
@@ -66,18 +74,27 @@ public class DriverRuntimeService {
             ObjectMapper objectMapper,
             Environment environment,
             DeviceTelemetryPolicyService telemetryPolicyService,
-            ObjectProvider<DriverRuntimeService> self,
-            @Value("${ispf.driver.scheduler-threads:4}") int schedulerThreads
+            DriverPackProperties driverPackProperties,
+            RuntimeTelemetryProperties runtimeTelemetryProperties,
+            ObjectProvider<DriverRuntimeService> self
     ) {
         this.objectManager = objectManager;
         this.driverFactory = driverFactory;
         this.objectMapper = objectMapper;
         this.environment = environment;
         this.telemetryPolicyService = telemetryPolicyService;
+        this.driverPackProperties = driverPackProperties;
+        this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
-        int threads = Math.max(1, schedulerThreads);
+        int threads = Math.max(1, driverPackProperties.getSchedulerThreads());
         this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
             Thread thread = new Thread(r, "ispf-driver-runtime");
+            thread.setDaemon(true);
+            return thread;
+        });
+        int ioThreads = Math.max(1, driverPackProperties.getIoThreads());
+        this.ioExecutor = Executors.newFixedThreadPool(ioThreads, r -> {
+            Thread thread = new Thread(r, "ispf-driver-io");
             thread.setDaemon(true);
             return thread;
         });
@@ -122,8 +139,10 @@ public class DriverRuntimeService {
             } catch (Exception ex) {
                 log.debug("Driver disconnect during shutdown for {}: {}", devicePath, ex.getMessage());
             }
+            active.driverObject().shutdown();
         }
         scheduler.shutdownNow();
+        ioExecutor.shutdownNow();
     }
 
     private boolean shouldAutoStart(String devicePath) {
@@ -172,19 +191,31 @@ public class DriverRuntimeService {
 
         DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
         DeviceDriver driver = driverFactory.create(binding.driverId());
+        Consumer<ServerDriverObject.VariableUpdate> variableUpdater = update -> {
+            if (update.system()) {
+                objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
+            } else {
+                objectManager.setDriverTelemetryValue(
+                        update.path(), update.variableName(), update.value(), update.observedAt()
+                );
+            }
+        };
+        DriverIngressBuffer<String, ServerDriverObject.VariableUpdate> ingressBuffer = null;
+        if (driverPackProperties.isIngressBufferEnabled() && !usesDirectHistorianIngress(devicePath)) {
+            String threadPrefix = "driver-ingress-" + devicePath.substring(Math.max(0, devicePath.length() - 24));
+            ingressBuffer = new DriverIngressBuffer<>(
+                    driverPackProperties.getIngressBufferThreads(),
+                    driverPackProperties.getIngressBufferCapacity(),
+                    (name, update) -> variableUpdater.accept(update),
+                    threadPrefix
+            );
+        }
         ServerDriverObject driverObject = new ServerDriverObject(
                 device,
                 binding.configuration(),
-                update -> {
-                    if (update.system()) {
-                        objectManager.setSystemVariableValue(update.path(), update.variableName(), update.value());
-                    } else {
-                        objectManager.setDriverTelemetryValue(
-                                update.path(), update.variableName(), update.value(), update.observedAt()
-                        );
-                    }
-                },
-                entry -> log.info("[driver:{}] {} {}", devicePath, entry.level(), entry.message())
+                variableUpdater,
+                entry -> log.info("[driver:{}] {} {}", devicePath, entry.level(), entry.message()),
+                ingressBuffer
         );
 
         driver.initialize(driverObject);
@@ -202,7 +233,7 @@ public class DriverRuntimeService {
                 TimeUnit.MILLISECONDS
         );
         boolean connected = driver.isConnected();
-        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null, connected));
+        activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null, connected, driverObject));
         poll(devicePath);
         setStatus(devicePath, "RUNNING");
         return status(devicePath).orElseThrow();
@@ -214,6 +245,7 @@ public class DriverRuntimeService {
         if (active != null) {
             active.future().cancel(false);
             active.driver().disconnect();
+            active.driverObject().shutdown();
         }
         setStatus(devicePath, "STOPPED");
         return statusOf(
@@ -294,7 +326,12 @@ public class DriverRuntimeService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public DriverRuntimeStatus pollNow(String devicePath, String pointId) {
-        poll(devicePath, pointId);
+        ActiveDriver active = activeDrivers.get(devicePath);
+        if (active == null) {
+            return status(devicePath).orElseThrow();
+        }
+        pollOnIoThread(devicePath, active, pointId);
+        active.driverObject().flushIngress();
         return status(devicePath).orElseThrow();
     }
 
@@ -321,7 +358,8 @@ public class DriverRuntimeService {
                     active.binding(),
                     active.future(),
                     null,
-                    connected
+                    connected,
+                    active.driverObject()
             ));
             setStatus(devicePath, "RUNNING");
         } catch (DriverException e) {
@@ -330,11 +368,13 @@ public class DriverRuntimeService {
                     active.binding(),
                     active.future(),
                     e.getMessage(),
-                    active.lastKnownConnected()
+                    active.lastKnownConnected(),
+                    active.driverObject()
             ));
             setStatus(devicePath, "ERROR");
             throw new IllegalStateException("Driver write failed: " + e.getMessage(), e);
         }
+        active.driverObject().flushIngress();
         return status(devicePath).orElseThrow();
     }
 
@@ -383,6 +423,14 @@ public class DriverRuntimeService {
         if (active == null) {
             return;
         }
+        if (driverPackProperties.isAsyncPollEnabled()) {
+            ioExecutor.submit(() -> pollOnIoThread(devicePath, active, pointId));
+            return;
+        }
+        pollOnIoThread(devicePath, active, pointId);
+    }
+
+    private void pollOnIoThread(String devicePath, ActiveDriver active, String pointId) {
         try {
             Map<String, String> mappings = active.binding().pointMappings();
             if (pointId != null && !pointId.isBlank()) {
@@ -398,7 +446,8 @@ public class DriverRuntimeService {
                     active.binding(),
                     active.future(),
                     null,
-                    connected
+                    connected,
+                    active.driverObject()
             );
             activeDrivers.put(devicePath, next);
             notifyConnectionIfChanged(devicePath, active, next);
@@ -409,7 +458,8 @@ public class DriverRuntimeService {
                     active.binding(),
                     active.future(),
                     e.getMessage(),
-                    active.lastKnownConnected()
+                    active.lastKnownConnected(),
+                    active.driverObject()
             ));
             setStatus(devicePath, "ERROR");
             log.warn("Driver poll failed for {}: {}", devicePath, e.getMessage());
@@ -471,7 +521,8 @@ public class DriverRuntimeService {
             DriverBinding binding,
             ScheduledFuture<?> future,
             String lastError,
-            boolean lastKnownConnected
+            boolean lastKnownConnected,
+            ServerDriverObject driverObject
     ) {
     }
 
@@ -525,6 +576,15 @@ public class DriverRuntimeService {
         metrics.put("driversWithError", withError);
         metrics.put("stoppedDrivers", Math.max(0, devices - active));
         return metrics;
+    }
+
+    /**
+     * TELEMETRY_ONLY devices on the historian fast path skip the server driver ingress buffer (L1)
+     * so MQTT L0 drain rate is not stacked with platform ingress coalescing.
+     */
+    private boolean usesDirectHistorianIngress(String devicePath) {
+        return runtimeTelemetryProperties.isFastHistorianPath()
+                && telemetryPolicyService.publishMode(devicePath) == TelemetryPublishMode.TELEMETRY_ONLY;
     }
 
     /** Debug-only helper for agent instrumentation session c91425. */
