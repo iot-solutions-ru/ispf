@@ -245,6 +245,60 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
           valid: true,
           message: "AGPL community mode (e2e mock)",
         });
+      case "/api/v1/platform/storage/health":
+        return json(route, {
+          timestamp: NOW,
+          backends: [
+            {
+              id: "relational",
+              role: "relational",
+              store: "jdbc",
+              engine: "h2",
+              endpoint: null,
+              connected: true,
+              connectionError: null,
+              recordCount: null,
+              retentionDays: null,
+              details: {},
+            },
+            {
+              id: "variableHistory",
+              role: "variableHistory",
+              store: "jdbc",
+              engine: "h2",
+              endpoint: null,
+              connected: true,
+              connectionError: null,
+              recordCount: 0,
+              retentionDays: 30,
+              details: {},
+            },
+            {
+              id: "eventJournal",
+              role: "eventJournal",
+              store: "jdbc",
+              engine: "h2",
+              endpoint: null,
+              connected: true,
+              connectionError: null,
+              recordCount: 0,
+              retentionDays: null,
+              details: {},
+            },
+            {
+              id: "redis",
+              role: "redis",
+              store: "disabled",
+              engine: "none",
+              endpoint: null,
+              connected: false,
+              connectionError: null,
+              recordCount: null,
+              retentionDays: null,
+              details: {},
+            },
+          ],
+        });
       case "/api/v1/platform/automation-index/stats":
         return json(route, {
           alertRulesIndexed: 0,
@@ -458,8 +512,19 @@ export async function seedAuthSession(
   await page.addInitScript(({ stored, selectedPath }) => {
     localStorage.setItem("ispf-auth-session", JSON.stringify(stored));
     sessionStorage.removeItem("ispf-tree-expanded-paths");
+    sessionStorage.removeItem("ispf:ui:active-tab:system");
     sessionStorage.setItem("ispf-tree-selected-path", selectedPath ?? "root.platform");
   }, { stored: session, selectedPath: options?.selectedPath });
+}
+
+export async function openSystemMetricsTab(page: Page) {
+  const metricsLoaded = page.waitForResponse(
+    (response) => response.url().includes("/api/v1/platform/metrics") && response.ok(),
+    { timeout: 15_000 },
+  );
+  await page.getByTestId("workspace-tab-system").click();
+  await page.locator("nav.tabs").getByRole("button", { name: "Metrics", exact: true }).click();
+  await metricsLoaded;
 }
 
 export async function waitForAdminExplorer(page: Page) {

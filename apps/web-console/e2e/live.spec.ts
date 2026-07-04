@@ -67,7 +67,8 @@ test.describe("live backend", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page.getByTestId("admin-shell")).toBeVisible({ timeout: 30_000 });
 
-    await page.getByRole("button", { name: "System" }).click();
+    await page.getByTestId("workspace-tab-system").click();
+    await page.locator("nav.tabs").getByRole("button", { name: "Metrics", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Platform license" })).toBeVisible({
       timeout: 30_000,
     });

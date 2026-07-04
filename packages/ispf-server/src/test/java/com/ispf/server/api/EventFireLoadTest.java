@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -36,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Baseline load test for {@code POST /events/fire} and {@code GET /events}.
  * Uses a real HTTP port and {@link HttpClient} — {@code MockMvc} is not thread-safe.
  */
+@Tag("load")
 @Isolated
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")

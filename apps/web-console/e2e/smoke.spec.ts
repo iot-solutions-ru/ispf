@@ -7,6 +7,7 @@ import {
   MOCK_DASHBOARD_PATH,
   MOCK_DEVICE_PATH,
   seedAuthSession,
+  openSystemMetricsTab,
   selectTreeObjectByLabel,
   waitForDashboardLoad,
   waitForObjectEditor,
@@ -235,7 +236,7 @@ test.describe("system metrics", () => {
     await seedAuthSession(page);
     await page.goto("/?mode=admin");
 
-    await page.getByRole("button", { name: "System" }).click();
+    await openSystemMetricsTab(page);
     await expect(page.getByRole("heading", { name: "Platform license" })).toBeVisible({
       timeout: 15_000,
     });

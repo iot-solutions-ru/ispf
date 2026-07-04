@@ -89,6 +89,11 @@ tasks.named<Test>("test") {
     if (System.getenv("CI") != null) {
         forkEvery = 1
     }
+    useJUnitPlatform {
+        if (System.getProperty("ispf.test.skipLoad") == "true") {
+            excludeTags("load")
+        }
+    }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {

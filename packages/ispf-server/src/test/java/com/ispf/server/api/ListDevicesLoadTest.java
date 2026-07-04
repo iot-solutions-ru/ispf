@@ -3,6 +3,7 @@ package com.ispf.server.api;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Baseline for GAP_REGISTRY scale item: p99 {@code list_devices} at 150 concurrent readers.
  * Uses a real HTTP port and {@link HttpClient} — {@code MockMvc} is not thread-safe.
  */
+@Tag("load")
 @Isolated
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")

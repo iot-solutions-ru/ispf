@@ -40,12 +40,21 @@ jobs:
           :packages:ispf-server:test
           --no-daemon
           -Dorg.gradle.workers.max=1
+          -Dispf.test.skipLoad=true
 
       - name: Scale gate — list_devices p99 baseline
         run: >
           ./gradlew
           :packages:ispf-server:test
           --tests com.ispf.server.api.ListDevicesLoadTest
+          --no-daemon
+          -Dorg.gradle.workers.max=1
+
+      - name: Scale gate — events fire/list p99 baseline
+        run: >
+          ./gradlew
+          :packages:ispf-server:test
+          --tests com.ispf.server.api.EventFireLoadTest
           --no-daemon
           -Dorg.gradle.workers.max=1
 

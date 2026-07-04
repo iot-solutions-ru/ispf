@@ -602,6 +602,7 @@ function AppShell() {
         {isAdmin && (
           <button
             type="button"
+            data-testid="workspace-tab-system"
             className={workspaceTab === "system" ? "active" : ""}
             onClick={() => setWorkspaceTab("system")}
           >
