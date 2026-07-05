@@ -1,7 +1,7 @@
 package com.ispf.server.driver;
 
 import com.ispf.driver.DriverMetadata;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;

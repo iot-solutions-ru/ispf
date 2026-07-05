@@ -11,7 +11,7 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

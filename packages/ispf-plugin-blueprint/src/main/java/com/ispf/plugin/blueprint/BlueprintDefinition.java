@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
@@ -12,22 +12,22 @@ import java.util.Map;
 /**
  * Full model definition — blueprint for object structure and binding rules.
  */
-public record ModelDefinition(
+public record BlueprintDefinition(
         String id,
         String name,
         String description,
-        ModelType type,
+        BlueprintType type,
         ObjectType targetObjectType,
         String suitabilityExpression,
-        List<ModelVariableDefinition> variables,
+        List<BlueprintVariableDefinition> variables,
         List<EventDescriptor> events,
         List<FunctionDescriptor> functions,
-        List<ModelBindingRule> bindingRules,
+        List<BlueprintBindingRule> bindingRules,
         Map<String, String> parameters,
         Instant createdAt,
         Instant updatedAt
 ) {
-    public ModelDefinition {
+    public BlueprintDefinition {
         if (description == null) {
             description = "";
         }
@@ -45,7 +45,7 @@ public record ModelDefinition(
 
     /** @deprecated use {@link #bindingRules()} */
     @Deprecated
-    public List<ModelBindingRule> bindings() {
+    public List<BlueprintBindingRule> bindings() {
         return bindingRules;
     }
 
@@ -54,29 +54,29 @@ public record ModelDefinition(
     }
 
     public String catalogRoot() {
-        return ModelCatalogRoots.catalogRoot(type);
+        return BlueprintCatalogRoots.catalogRoot(type);
     }
 
     public String catalogObjectPath() {
         return catalogRoot() + "." + name;
     }
 
-    /** Semantic version string stored in {@link #parameters()} under {@code modelVersion}. */
-    public String modelVersion() {
-        return parameters.getOrDefault("modelVersion", "1");
+    /** Semantic version string stored in {@link #parameters()} under {@code blueprintVersion}. */
+    public String blueprintVersion() {
+        return parameters.getOrDefault("blueprintVersion", "1");
     }
 
     public boolean systemIntrinsic() {
-        return "true".equalsIgnoreCase(parameters.getOrDefault(SystemIntrinsicModels.PARAM_SYSTEM_INTRINSIC, "false"));
+        return "true".equalsIgnoreCase(parameters.getOrDefault(SystemIntrinsicBlueprints.PARAM_SYSTEM_INTRINSIC, "false"));
     }
 
-    public ModelDefinition withSystemIntrinsicFlag() {
+    public BlueprintDefinition withSystemIntrinsicFlag() {
         if (systemIntrinsic()) {
             return this;
         }
         Map<String, String> params = new LinkedHashMap<>(parameters);
-        params.put(SystemIntrinsicModels.PARAM_SYSTEM_INTRINSIC, "true");
-        return new ModelDefinition(
+        params.put(SystemIntrinsicBlueprints.PARAM_SYSTEM_INTRINSIC, "true");
+        return new BlueprintDefinition(
                 id,
                 name,
                 description,

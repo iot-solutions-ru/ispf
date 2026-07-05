@@ -58,7 +58,7 @@
   "error.objectLoadFailed": "加载对象失败",
   "error.treeLoadFailed": "无法加载对象树",
   "field.actor": "操作者",
-  "field.appliedModels": "应用型号",
+  "field.appliedBlueprints": "应用型号",
   "field.createdAt": "已创建",
   "field.description": "描述",
   "field.displayName": "显示名称",
@@ -68,7 +68,7 @@
   "field.level": "级别",
   "field.output": "输出",
   "field.path": "路径",
-  "field.primaryModel": "主要型号",
+  "field.primaryBlueprint": "主要型号",
   "field.templateId": "模板ID",
   "field.time": "时间",
   "hint.adminOnly": "仅供管理员使用。",
@@ -89,5 +89,6 @@
   "objectPath.filterHint": "显示类型：{{types}}",
   "objectPath.browseTree": "浏览树",
   "modal.select": "选择",
-  "modal.advancedSettings": "高级设置"
+  "modal.advancedSettings": "高级设置",
+  "objectType.BLUEPRINT": "蓝图"
 }

@@ -34,11 +34,11 @@ final class AgentGroundTruthGuard {
     );
 
     private static final Set<String> MODEL_DISCOVERY_TOOLS = Set.of(
-            "list_relative_models",
+            "list_relative_blueprints",
             "list_instance_types",
-            "list_absolute_models",
-            "list_object_models",
-            "get_object_model",
+            "list_absolute_blueprints",
+            "list_object_blueprints",
+            "get_object_blueprint",
             "list_virtual_profiles"
     );
 
@@ -92,9 +92,9 @@ final class AgentGroundTruthGuard {
             if (parentBlock.isPresent()) {
                 return parentBlock;
             }
-            return checkModelDiscovered(arguments, steps, "instanceType", "modelName", "modelId");
+            return checkBlueprintDiscovered(arguments, steps, "instanceType", "blueprintName", "blueprintId");
         }
-        if ("apply_relative_model".equals(tool)) {
+        if ("apply_relative_blueprint".equals(tool)) {
             String objectPath = resolveObjectPath(arguments);
             if (!objectPath.isBlank()) {
                 Optional<BlockDecision> pathBlock = checkObjectPathDiscovered(objectPath, tool, steps);
@@ -102,7 +102,7 @@ final class AgentGroundTruthGuard {
                     return pathBlock;
                 }
             }
-            return checkModelDiscovered(arguments, steps, "modelName", "modelId");
+            return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
         if (OBJECT_PATH_MUTATION_TOOLS.contains(tool)) {
             String objectPath = resolveObjectPath(arguments);
@@ -112,7 +112,7 @@ final class AgentGroundTruthGuard {
             return checkObjectPathDiscovered(objectPath, tool, steps);
         }
         if ("ensure_absolute_instance".equals(tool)) {
-            return checkModelDiscovered(arguments, steps, "modelName", "modelId");
+            return checkBlueprintDiscovered(arguments, steps, "blueprintName", "blueprintId");
         }
         return Optional.empty();
     }
@@ -174,7 +174,7 @@ final class AgentGroundTruthGuard {
                 """.formatted(parentFolder, parentFolder, step3);
     }
 
-    private static Optional<BlockDecision> checkModelDiscovered(
+    private static Optional<BlockDecision> checkBlueprintDiscovered(
             Map<String, Object> arguments,
             List<Map<String, Object>> steps,
             String... modelArgKeys
@@ -189,13 +189,13 @@ final class AgentGroundTruthGuard {
         if (modelRef.isBlank()) {
             return Optional.empty();
         }
-        if (isModelGrounded(steps, modelRef)) {
+        if (isBlueprintGrounded(steps, modelRef)) {
             return Optional.empty();
         }
         return Optional.of(new BlockDecision(
-                "Cannot apply model: \"" + modelRef + "\" was not returned by a catalog tool in this turn",
-                "Call list_relative_models (RELATIVE), list_instance_types (INSTANCE), "
-                        + "list_absolute_models (ABSOLUTE), or list_virtual_profiles — then pick modelName / "
+                "Cannot apply blueprint: \"" + modelRef + "\" was not returned by a catalog tool in this turn",
+                "Call list_relative_blueprints (RELATIVE), list_instance_types (INSTANCE), "
+                        + "list_absolute_blueprints (ABSOLUTE), or list_virtual_profiles — then pick modelName / "
                         + "profile / instanceType only from that tool result."
         ));
     }
@@ -281,7 +281,7 @@ final class AgentGroundTruthGuard {
         return false;
     }
 
-    static boolean isModelGrounded(List<Map<String, Object>> steps, String modelRef) {
+    static boolean isBlueprintGrounded(List<Map<String, Object>> steps, String modelRef) {
         if (steps == null || steps.isEmpty() || modelRef == null || modelRef.isBlank()) {
             return false;
         }
@@ -368,12 +368,12 @@ final class AgentGroundTruthGuard {
             return listContainsField(result, "profiles", "profile", needle)
                     || listContainsField(result, "profiles", "templateId", needle);
         }
-        return listContainsField(result, "models", "modelName", needle)
-                || listContainsField(result, "models", "name", needle)
-                || listContainsField(result, "models", "modelId", needle)
-                || listContainsField(result, "instanceTypes", "modelName", needle)
+        return listContainsField(result, "blueprints", "blueprintName", needle)
+                || listContainsField(result, "blueprints", "name", needle)
+                || listContainsField(result, "blueprints", "blueprintId", needle)
+                || listContainsField(result, "instanceTypes", "blueprintName", needle)
                 || listContainsField(result, "instanceTypes", "name", needle)
-                || stringFieldEquals(result, "modelName", needle)
+                || stringFieldEquals(result, "blueprintName", needle)
                 || stringFieldEquals(result, "name", needle);
     }
 

@@ -1,6 +1,6 @@
 package com.ispf.server.ai.agent;
 
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,9 +21,9 @@ final class VirtualDeviceProfileCatalog {
 
     private static final Map<String, ProfileSpec> PROFILES = Map.ofEntries(
             Map.entry("lab", new ProfileSpec(
-                    LabModelBootstrap.VIRTUAL_LAB_MODEL,
-                    LabModelBootstrap.LAB_DRIVER_CONFIG,
-                    LabModelBootstrap.LAB_POINT_MAPPINGS,
+                    LabBlueprintBootstrap.VIRTUAL_LAB_MODEL,
+                    LabBlueprintBootstrap.LAB_DRIVER_CONFIG,
+                    LabBlueprintBootstrap.LAB_POINT_MAPPINGS,
                     List.of("sineWave", "sawtoothWave", "triangleWave", "status"),
                     Map.of(
                             "sineWave", "vibration proxy",
@@ -33,7 +33,7 @@ final class VirtualDeviceProfileCatalog {
                     )
             )),
             Map.entry("meter", new ProfileSpec(
-                    LabModelBootstrap.VIRTUAL_UNIFIED_MODEL,
+                    LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL,
                     METER_DRIVER_CONFIG,
                     METER_POINT_MAPPINGS,
                     List.of("meterLiters", "flowRate", "filling"),
@@ -44,9 +44,9 @@ final class VirtualDeviceProfileCatalog {
                     )
             )),
             Map.entry("unified", new ProfileSpec(
-                    LabModelBootstrap.VIRTUAL_UNIFIED_MODEL,
-                    LabModelBootstrap.UNIFIED_DRIVER_CONFIG,
-                    LabModelBootstrap.UNIFIED_POINT_MAPPINGS,
+                    LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL,
+                    LabBlueprintBootstrap.UNIFIED_DRIVER_CONFIG,
+                    LabBlueprintBootstrap.UNIFIED_POINT_MAPPINGS,
                     List.of("temperature", "pressure", "flowRate", "meterLiters", "sineWave", "status"),
                     Map.of(
                             "temperature", "temperature",
@@ -58,14 +58,14 @@ final class VirtualDeviceProfileCatalog {
                     )
             )),
             Map.entry("demo", new ProfileSpec(
-                    LabModelBootstrap.VIRTUAL_UNIFIED_MODEL,
+                    LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL,
                     "{\"profile\":\"demo\",\"baseTemperature\":\"22.0\",\"amplitude\":\"15.0\",\"periodSec\":\"60\"}",
                     "{\"temperature\":\"sim\",\"humidity\":\"sim\",\"pressure\":\"sim\"}",
                     List.of("temperature", "humidity", "pressure"),
                     Map.of("temperature", "temperature", "humidity", "humidity", "pressure", "pressure")
             )),
             Map.entry("tank-farm-tank", new ProfileSpec(
-                    LabModelBootstrap.VIRTUAL_UNIFIED_MODEL,
+                    LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL,
                     "{\"profile\":\"tank-farm-tank\",\"tankIndex\":\"1\",\"initialLevelMm\":\"5000\","
                             + "\"rateBiasMmPerHour\":\"120\",\"maxLevelMm\":\"12000\"}",
                     "{\"fillLevelMm\":\"sim\",\"rateMmPerHour\":\"sim\",\"valveOpen\":\"sim\",\"maxLevelMm\":\"sim\"}",

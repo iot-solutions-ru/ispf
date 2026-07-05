@@ -1,12 +1,12 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import java.util.List;
 
-public record ModelApplyResult(
-        ModelAttachment attachment,
-        List<ModelMergeWarning> warnings
+public record BlueprintApplyResult(
+        BlueprintAttachment attachment,
+        List<BlueprintMergeWarning> warnings
 ) {
-    public ModelApplyResult {
+    public BlueprintApplyResult {
         warnings = warnings != null ? List.copyOf(warnings) : List.of();
     }
 }

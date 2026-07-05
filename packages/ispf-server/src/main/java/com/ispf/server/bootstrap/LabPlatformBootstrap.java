@@ -4,12 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import com.ispf.server.report.ReportService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -28,11 +28,11 @@ public class LabPlatformBootstrap {
 
     private static final String DEVICES_ROOT = "root.platform.devices";
 
-    private final LabModelBootstrap labModelBootstrap;
-    private final HaystackModelBootstrap haystackModelBootstrap;
-    private final BrickModelBootstrap brickModelBootstrap;
-    private final ModelRegistry modelRegistry;
-    private final ModelApplicationService modelApplicationService;
+    private final LabBlueprintBootstrap LabBlueprintBootstrap;
+    private final HaystackBlueprintBootstrap HaystackBlueprintBootstrap;
+    private final BrickBlueprintBootstrap BrickBlueprintBootstrap;
+    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintApplicationService BlueprintApplicationService;
     private final ObjectTemplateService objectTemplateService;
     private final ObjectManager objectManager;
     private final ReportService reportService;
@@ -40,22 +40,22 @@ public class LabPlatformBootstrap {
     private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public LabPlatformBootstrap(
-            LabModelBootstrap labModelBootstrap,
-            HaystackModelBootstrap haystackModelBootstrap,
-            BrickModelBootstrap brickModelBootstrap,
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+            LabBlueprintBootstrap LabBlueprintBootstrap,
+            HaystackBlueprintBootstrap HaystackBlueprintBootstrap,
+            BrickBlueprintBootstrap BrickBlueprintBootstrap,
+            BlueprintRegistry BlueprintRegistry,
+            BlueprintApplicationService BlueprintApplicationService,
             ObjectTemplateService objectTemplateService,
             ObjectManager objectManager,
             ReportService reportService,
             BootstrapProperties bootstrapProperties,
             ClusterPlatformBootstrapService clusterBootstrapService
     ) {
-        this.labModelBootstrap = labModelBootstrap;
-        this.haystackModelBootstrap = haystackModelBootstrap;
-        this.brickModelBootstrap = brickModelBootstrap;
-        this.modelRegistry = modelRegistry;
-        this.modelApplicationService = modelApplicationService;
+        this.LabBlueprintBootstrap = LabBlueprintBootstrap;
+        this.HaystackBlueprintBootstrap = HaystackBlueprintBootstrap;
+        this.BrickBlueprintBootstrap = BrickBlueprintBootstrap;
+        this.BlueprintRegistry = BlueprintRegistry;
+        this.BlueprintApplicationService = BlueprintApplicationService;
         this.objectTemplateService = objectTemplateService;
         this.objectManager = objectManager;
         this.reportService = reportService;
@@ -67,13 +67,13 @@ public class LabPlatformBootstrap {
     @Order(Ordered.HIGHEST_PRECEDENCE + 21)
     @Transactional
     public void onReady() {
-        // Virtual driver RELATIVE models — required for agent create_virtual_device on prod (not demo fixtures).
-        labModelBootstrap.ensureLabModels();
+        // Virtual driver Relative Blueprints — required for agent create_virtual_device on prod (not demo fixtures).
+        LabBlueprintBootstrap.ensureLabModels();
         if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
-        haystackModelBootstrap.ensureHaystackModel();
-        brickModelBootstrap.ensureBrickModel();
+        HaystackBlueprintBootstrap.ensureHaystackModel();
+        BrickBlueprintBootstrap.ensureBrickModel();
         ensureLabDevice(
                 "lab-userA-01",
                 "Lab User A Device 01",
@@ -84,7 +84,7 @@ public class LabPlatformBootstrap {
                 "Lab User B Device 01",
                 "Collaboration lab device for user B"
         );
-        seedHaystackDemo(HaystackModelBootstrap.DEMO_DEVICE_PATH);
+        seedHaystackDemo(HaystackBlueprintBootstrap.DEMO_DEVICE_PATH);
         LabVirtualReports.deployAll(reportService);
     }
 
@@ -97,22 +97,22 @@ public class LabPlatformBootstrap {
                     ObjectType.DEVICE,
                     displayName,
                     description,
-                    LabModelBootstrap.VIRTUAL_LAB_MODEL
+                    LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
             );
         } else {
             objectManager.reconcileType(path, ObjectType.DEVICE);
         }
 
-        objectTemplateService.applyTemplate(path, LabModelBootstrap.VIRTUAL_LAB_MODEL);
+        objectTemplateService.applyTemplate(path, LabBlueprintBootstrap.VIRTUAL_LAB_MODEL);
     }
 
     private void seedHaystackDemo(String path) {
         if (objectManager.tree().findByPath(path).isEmpty()) {
             return;
         }
-        modelRegistry.findByName(HaystackModelBootstrap.HAYSTACK_METADATA_MODEL).ifPresent(model -> {
-            if (!objectManager.require(path).appliedModelIds().contains(model.id())) {
-                modelApplicationService.applyModelWithRules(model, path, model.parameters());
+        BlueprintRegistry.findByName(HaystackBlueprintBootstrap.HAYSTACK_METADATA_MODEL).ifPresent(model -> {
+            if (!objectManager.require(path).appliedBlueprintIds().contains(model.id())) {
+                BlueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
             }
             DataSchema stringSchema = DataSchema.builder("stringValue")
                     .field("value", FieldType.STRING)
@@ -125,18 +125,18 @@ public class LabPlatformBootstrap {
             objectManager.setVariableValue(
                     path,
                     "haystackTags",
-                    DataRecord.single(stringSchema, Map.of("value", HaystackModelBootstrap.DEMO_HAYSTACK_TAGS))
+                    DataRecord.single(stringSchema, Map.of("value", HaystackBlueprintBootstrap.DEMO_HAYSTACK_TAGS))
             );
             objectManager.setVariableValue(
                     path,
                     "haystackRef",
-                    DataRecord.single(stringSchema, Map.of("value", HaystackModelBootstrap.DEMO_HAYSTACK_REF))
+                    DataRecord.single(stringSchema, Map.of("value", HaystackBlueprintBootstrap.DEMO_HAYSTACK_REF))
             );
             objectManager.persistNodeTree(path);
         });
-        modelRegistry.findByName(BrickModelBootstrap.BRICK_METADATA_MODEL).ifPresent(model -> {
-            if (!objectManager.require(path).appliedModelIds().contains(model.id())) {
-                modelApplicationService.applyModelWithRules(model, path, model.parameters());
+        BlueprintRegistry.findByName(BrickBlueprintBootstrap.BRICK_METADATA_MODEL).ifPresent(model -> {
+            if (!objectManager.require(path).appliedBlueprintIds().contains(model.id())) {
+                BlueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
             }
             DataSchema stringSchema = DataSchema.builder("stringValue")
                     .field("value", FieldType.STRING)
@@ -144,7 +144,7 @@ public class LabPlatformBootstrap {
             objectManager.setVariableValue(
                     path,
                     "brickClass",
-                    DataRecord.single(stringSchema, Map.of("value", BrickModelBootstrap.DEMO_BRICK_CLASS))
+                    DataRecord.single(stringSchema, Map.of("value", BrickBlueprintBootstrap.DEMO_BRICK_CLASS))
             );
             objectManager.persistNodeTree(path);
         });

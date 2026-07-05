@@ -1,10 +1,10 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,48 +18,48 @@ import java.util.Set;
  * Marks built-in 1:1 platform schemas as intrinsic, removes their catalog nodes, and strips applied-model metadata.
  */
 @Component
-public class SystemIntrinsicModelMigration {
+public class SystemIntrinsicBlueprintMigration {
 
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
-    private final ModelPersistenceService modelPersistence;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintPersistenceService blueprintPersistence;
     private final ObjectManager objectManager;
 
-    public SystemIntrinsicModelMigration(
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
-            ModelPersistenceService modelPersistence,
+    public SystemIntrinsicBlueprintMigration(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
             ObjectManager objectManager
     ) {
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
-        this.modelPersistence = modelPersistence;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintPersistence = blueprintPersistence;
         this.objectManager = objectManager;
     }
 
     @Transactional
     public void migrate() {
         patchBuiltinIntrinsicFlags();
-        modelEngine.removeIntrinsicCatalogNodes();
-        stripIntrinsicAppliedModelIds();
+        blueprintEngine.removeIntrinsicCatalogNodes();
+        stripIntrinsicappliedBlueprintIds();
     }
 
     private void patchBuiltinIntrinsicFlags() {
-        for (String name : SystemIntrinsicModels.NAMES) {
-            modelRegistry.findByName(name).ifPresent(existing -> {
+        for (String name : SystemIntrinsicBlueprints.NAMES) {
+            blueprintRegistry.findByName(name).ifPresent(existing -> {
                 if (!existing.systemIntrinsic()) {
-                    ModelDefinition updated = existing.withSystemIntrinsicFlag();
-                    modelRegistry.update(updated);
-                    modelPersistence.persist(updated, true);
+                    BlueprintDefinition updated = existing.withSystemIntrinsicFlag();
+                    blueprintRegistry.update(updated);
+                    blueprintPersistence.persist(updated, true);
                 }
             });
         }
     }
 
-    private void stripIntrinsicAppliedModelIds() {
+    private void stripIntrinsicappliedBlueprintIds() {
         Set<String> intrinsicIds = new HashSet<>();
-        for (ModelDefinition model : modelRegistry.all()) {
-            if (SystemIntrinsicModels.isIntrinsic(model)) {
+        for (BlueprintDefinition model : blueprintRegistry.all()) {
+            if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
                 intrinsicIds.add(model.id());
             }
         }
@@ -69,7 +69,7 @@ public class SystemIntrinsicModelMigration {
         for (PlatformObject node : objectManager.tree().all()) {
             List<String> remaining = new ArrayList<>();
             boolean changed = false;
-            for (String modelId : node.appliedModelIds()) {
+            for (String modelId : node.appliedBlueprintIds()) {
                 if (intrinsicIds.contains(modelId)) {
                     changed = true;
                 } else {
@@ -77,7 +77,7 @@ public class SystemIntrinsicModelMigration {
                 }
             }
             if (changed) {
-                node.setAppliedModelIds(remaining);
+                node.setappliedBlueprintIds(remaining);
                 objectManager.persistNodeTree(node.path());
             }
         }

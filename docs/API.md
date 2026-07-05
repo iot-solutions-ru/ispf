@@ -1,4 +1,4 @@
-# REST API (v1)
+﻿# REST API (v1)
 
 Базовый URL: `http://localhost:8080`
 
@@ -79,7 +79,7 @@ Content-Type: application/json
   "description": "",
   "templateId": "mqtt-sensor-v1",
   "driverId": "mqtt",
-  "autoApplyRelativeModels": true
+  "autoApplyRelativeBlueprints": true
 }
 ```
 
@@ -87,9 +87,9 @@ Content-Type: application/json
 |------|----------|
 | `templateId` | Явное применение модели (INSTANCE name или RELATIVE mixin) |
 | `driverId` | Для `DEVICE`: provisioning драйвера после create |
-| `autoApplyRelativeModels` | Default `true`. RELATIVE mixins с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
+| `autoApplyRelativeBlueprints` | Default `true`. RELATIVE mixins с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
 
-`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [BLUEPRINTS.md](BLUEPRINTS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Функции
 
@@ -202,16 +202,16 @@ Content-Type: application/json
 
 | Method | Path | Роли |
 |--------|------|------|
-| GET | `/api/v1/models` | admin |
-| GET | `/api/v1/models/{id}` | admin |
-| GET | `/api/v1/models/by-name/{name}` | admin |
-| POST | `/api/v1/models` | admin |
-| PUT | `/api/v1/models/{id}` | admin |
-| DELETE | `/api/v1/models/{id}` | admin |
-| POST | `/api/v1/models/{id}/apply?objectPath=` | admin |
-| POST | `/api/v1/models/{id}/instantiate` | admin |
-| POST | `/api/v1/models/from-object` | admin |
-| GET | `/api/v1/models/attachments` | admin |
+| GET | `/api/v1/blueprints` | admin |
+| GET | `/api/v1/blueprints/{id}` | admin |
+| GET | `/api/v1/blueprints/by-name/{name}` | admin |
+| POST | `/api/v1/blueprints` | admin |
+| PUT | `/api/v1/blueprints/{id}` | admin |
+| DELETE | `/api/v1/blueprints/{id}` | admin |
+| POST | `/api/v1/blueprints/{id}/apply?objectPath=` | admin |
+| POST | `/api/v1/blueprints/{id}/instantiate` | admin |
+| POST | `/api/v1/blueprints/from-object` | admin |
+| GET | `/api/v1/blueprints/attachments` | admin |
 
 ## Actuator
 

@@ -918,7 +918,7 @@ final class AgentAutomationTools {
                 Map.of("type", "CORRELATOR", "use", "Event patterns", "parent", AutomationTreeService.CORRELATORS_ROOT),
                 Map.of("type", "WORKFLOW", "use", "BPMN automation", "parent", "root.platform.workflows"),
                 Map.of("type", "REPORT", "use", "Report definitions", "parent", "root.platform.reports"),
-                Map.of("type", "MODEL_CATALOG", "use", "Blueprint definitions", "paths", "root.platform.relative-models, instance-types, absolute-models")
+                Map.of("type", "MODEL_CATALOG", "use", "Blueprint definitions", "paths", "root.platform.relative-blueprints, instance-types, absolute-models")
         );
     }
 

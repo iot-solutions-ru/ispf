@@ -1,7 +1,7 @@
 package com.ispf.server.driver;
 
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class GpsTrackerRuntimeTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private ModelApplicationService modelApplicationService;
+    private BlueprintApplicationService BlueprintApplicationService;
 
     @Autowired
     private DriverRuntimeService driverRuntimeService;
@@ -53,7 +53,7 @@ class GpsTrackerRuntimeTest {
     void createDevice() {
         devicePath = DriverIntegrationTestSupport.createDevice(
                 objectManager,
-                modelApplicationService,
+                BlueprintApplicationService,
                 driverRuntimeService,
                 DEVICE_NAME
         );

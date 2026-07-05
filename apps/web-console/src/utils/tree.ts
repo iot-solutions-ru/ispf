@@ -95,7 +95,7 @@ export function objectIcon(type: string): string {
       return "⬢";
     case "DEVICE":
       return "◉";
-    case "MODEL":
+    case "BLUEPRINT":
       return "▣";
     case "DASHBOARD":
       return "▦";

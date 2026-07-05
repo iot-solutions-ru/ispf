@@ -144,7 +144,7 @@
   "metrics.loading": "正在加载指标…",
   "metrics.maxPoolSize": "最大池大小",
   "metrics.minIntervalMs": "写入去抖动（毫秒）",
-  "metrics.models": "型号",
+  "metrics.blueprints": "型号",
   "metrics.newestSampleAt": "最新样品",
   "metrics.nonHeapUsedMb": "非堆使用 (MB)",
   "metrics.objectNodes": "树节点",

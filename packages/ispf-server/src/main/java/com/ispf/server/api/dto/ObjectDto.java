@@ -6,8 +6,8 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.VisualGroupConstants;
 import com.ispf.server.object.BindingStateVariables;
 import com.ispf.server.object.ObjectUiIconService;
-import com.ispf.server.plugin.model.dto.AppliedModelDto;
-import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.server.plugin.blueprint.dto.AppliedBlueprintDto;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +31,7 @@ public record ObjectDto(
         boolean federated,
         String federationPeerId,
         String federationRemotePath,
-        List<AppliedModelDto> appliedModels,
+        List<AppliedBlueprintDto> appliedBlueprints,
         boolean groupRef,
         String groupContextPath,
         boolean groupMemberMissing,
@@ -54,8 +54,8 @@ public record ObjectDto(
         return from(node, iconId, List.of());
     }
 
-    public static ObjectDto from(PlatformObject node, String iconId, List<AppliedModelDto> appliedModels) {
-        return from(node, iconId, appliedModels, false);
+    public static ObjectDto from(PlatformObject node, String iconId, List<AppliedBlueprintDto> appliedBlueprints) {
+        return from(node, iconId, appliedBlueprints, false);
     }
 
     /** Lightweight list payload without variable/event name lists. */
@@ -63,11 +63,11 @@ public record ObjectDto(
         return from(node, iconId, List.of(), true);
     }
 
-    public static ObjectDto fromLite(PlatformObject node, String iconId, List<AppliedModelDto> appliedModels) {
-        return from(node, iconId, appliedModels, true);
+    public static ObjectDto fromLite(PlatformObject node, String iconId, List<AppliedBlueprintDto> appliedBlueprints) {
+        return from(node, iconId, appliedBlueprints, true);
     }
 
-    private static ObjectDto from(PlatformObject node, String iconId, List<AppliedModelDto> appliedModels, boolean lite) {
+    private static ObjectDto from(PlatformObject node, String iconId, List<AppliedBlueprintDto> appliedBlueprints, boolean lite) {
         boolean federated = FederationProxyMetadata.isProxy(node);
         return new ObjectDto(
                 node.id(),
@@ -93,7 +93,7 @@ public record ObjectDto(
                 federated,
                 federated ? FederationProxyMetadata.peerId(node).map(UUID::toString).orElse(null) : null,
                 federated ? FederationProxyMetadata.remotePath(node).orElse(null) : null,
-                appliedModels != null ? appliedModels : List.of(),
+                appliedBlueprints != null ? appliedBlueprints : List.of(),
                 false,
                 null,
                 false,
@@ -124,7 +124,7 @@ public record ObjectDto(
                 federated,
                 federationPeerId,
                 federationRemotePath,
-                appliedModels,
+                appliedBlueprints,
                 groupRef,
                 groupContextPath,
                 groupMemberMissing,
@@ -140,7 +140,7 @@ public record ObjectDto(
         if (templateId == null || templateId.isBlank()) {
             return null;
         }
-        if (SystemIntrinsicModels.isIntrinsicName(templateId)) {
+        if (SystemIntrinsicBlueprints.isIntrinsicName(templateId)) {
             return null;
         }
         return templateId;

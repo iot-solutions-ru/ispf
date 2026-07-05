@@ -74,7 +74,7 @@ public class PipelineScadaPlatformBootstrap {
             new FormSeed(PipelineScadaPaths.MIMIC_NPS_PANEL, "root.platform.dashboards.pipeline-nps-panel", "Панель управления НПС", PipelineScadaMimicDocuments.NPS_PANEL),
     };
 
-    private final TankFarmModelBootstrap modelBootstrap;
+    private final TankFarmBlueprintBootstrap BlueprintBootstrap;
     private final ObjectTemplateService templateService;
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
@@ -86,7 +86,7 @@ public class PipelineScadaPlatformBootstrap {
     private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public PipelineScadaPlatformBootstrap(
-            TankFarmModelBootstrap modelBootstrap,
+            TankFarmBlueprintBootstrap BlueprintBootstrap,
             ObjectTemplateService templateService,
             ObjectManager objectManager,
             DashboardService dashboardService,
@@ -97,7 +97,7 @@ public class PipelineScadaPlatformBootstrap {
             BootstrapProperties bootstrapProperties,
             ClusterPlatformBootstrapService clusterBootstrapService
     ) {
-        this.modelBootstrap = modelBootstrap;
+        this.BlueprintBootstrap = BlueprintBootstrap;
         this.templateService = templateService;
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
@@ -115,7 +115,7 @@ public class PipelineScadaPlatformBootstrap {
         if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
-        modelBootstrap.ensureTankFarmModels();
+        BlueprintBootstrap.ensureTankFarmModels();
         registerApplication();
         ensureFolder();
         for (TankSeed tank : allTanks()) {
@@ -190,14 +190,14 @@ public class PipelineScadaPlatformBootstrap {
                     ObjectType.DEVICE,
                     "Резервуар №" + tank.number(),
                     "",
-                    TankFarmModelBootstrap.TANK_MODEL
+                    TankFarmBlueprintBootstrap.TANK_MODEL
             );
         }
-        templateService.applyTemplate(path, TankFarmModelBootstrap.TANK_MODEL);
+        templateService.applyTemplate(path, TankFarmBlueprintBootstrap.TANK_MODEL);
         setStringVar(
                 path,
                 "driverConfigJson",
-                TankFarmModelBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
+                TankFarmBlueprintBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
         );
     }
 
@@ -210,11 +210,11 @@ public class PipelineScadaPlatformBootstrap {
                     ObjectType.CUSTOM,
                     "Коллектор магистрали",
                     "",
-                    TankFarmModelBootstrap.MANIFOLD_HUB_MODEL
+                    TankFarmBlueprintBootstrap.MANIFOLD_HUB_MODEL
             );
         }
-        templateService.applyTemplate(path, TankFarmModelBootstrap.MANIFOLD_HUB_MODEL);
-        setStringVar(path, "driverConfigJson", TankFarmModelBootstrap.MANIFOLD_HUB_DRIVER_CONFIG);
+        templateService.applyTemplate(path, TankFarmBlueprintBootstrap.MANIFOLD_HUB_MODEL);
+        setStringVar(path, "driverConfigJson", TankFarmBlueprintBootstrap.MANIFOLD_HUB_DRIVER_CONFIG);
     }
 
     /** Backward-compatible alias: tank-farm-demo → same RP diagram. */

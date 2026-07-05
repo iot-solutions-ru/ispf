@@ -68,7 +68,7 @@ include(
     "packages:ispf-driver-radius",
     "packages:ispf-driver-ipmi",
     "packages:ispf-driver-wmi",
-    "packages:ispf-plugin-model",
+    "packages:ispf-plugin-blueprint",
     "packages:ispf-plugin-workflow",
     "packages:ispf-ai-api",
     "packages:ispf-ai-openai-compatible",

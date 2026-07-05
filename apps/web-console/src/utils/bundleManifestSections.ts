@@ -2,7 +2,7 @@ export type BundleSectionKey =
   | "objects"
   | "dashboards"
   | "workflows"
-  | "models"
+  | "blueprints"
   | "migrations"
   | "functions"
   | "bindings"
@@ -22,7 +22,7 @@ const SECTION_KEYS: BundleSectionKey[] = [
   "objects",
   "dashboards",
   "workflows",
-  "models",
+  "blueprints",
   "migrations",
   "functions",
   "bindings",
@@ -46,7 +46,7 @@ function labelForItem(section: BundleSectionKey, item: Record<string, unknown>):
     case "dashboards":
     case "workflows":
       return String(item.path ?? "?");
-    case "models":
+    case "blueprints":
       return String(item.name ?? "?");
     case "migrations":
       return String(item.id ?? "?");

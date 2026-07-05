@@ -7,7 +7,7 @@ JAVA_GLOBS = [
     ROOT / "packages/ispf-server/src/main/java",
     ROOT / "packages/ispf-server/src/test/java",
     ROOT / "packages/ispf-expression/src/test/java",
-    ROOT / "packages/ispf-plugin-model/src/test/java",
+    ROOT / "packages/ispf-plugin-blueprint/src/test/java",
 ]
 
 BINDING_RULE_REPLACEMENTS = [

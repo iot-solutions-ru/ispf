@@ -112,7 +112,7 @@ public class BundleManifestValidator {
                 || hasNonEmptyList(manifest.dashboards())
                 || hasNonEmptyList(manifest.objects())
                 || hasNonEmptyList(manifest.workflows())
-                || hasNonEmptyList(manifest.models())
+                || hasNonEmptyList(manifest.blueprints())
                 || hasNonEmptyList(manifest.bindings())
                 || hasNonEmptyList(manifest.reports())
                 || hasNonEmptyList(manifest.alertRules())
@@ -125,7 +125,7 @@ public class BundleManifestValidator {
         }
         builder.addError(
                 "manifest must include at least one deployable section "
-                        + "(migrations, functions, dashboards, operatorUi, objects, workflows, models, reports, events, ...)"
+                        + "(migrations, functions, dashboards, operatorUi, objects, workflows, blueprints, reports, events, ...)"
         );
     }
 
@@ -356,8 +356,8 @@ public class BundleManifestValidator {
         if (manifest.workflows() != null && !manifest.workflows().isEmpty()) {
             builder.addWouldApply("workflows");
         }
-        if (manifest.models() != null && !manifest.models().isEmpty()) {
-            builder.addWouldApply("models");
+        if (manifest.blueprints() != null && !manifest.blueprints().isEmpty()) {
+            builder.addWouldApply("blueprints");
         }
         if (manifest.alertRules() != null && !manifest.alertRules().isEmpty()) {
             builder.addWouldApply("alertRules");

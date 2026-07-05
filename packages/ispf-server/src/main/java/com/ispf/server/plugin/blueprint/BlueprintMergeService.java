@@ -1,11 +1,11 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 
@@ -16,19 +16,19 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class ModelMergeService {
+public class BlueprintMergeService {
 
-    private final ModelRegistry modelRegistry;
+    private final BlueprintRegistry BlueprintRegistry;
     private final ObjectManager objectManager;
 
-    public ModelMergeService(ModelRegistry modelRegistry, ObjectManager objectManager) {
-        this.modelRegistry = modelRegistry;
+    public BlueprintMergeService(BlueprintRegistry BlueprintRegistry, ObjectManager objectManager) {
+        this.BlueprintRegistry = BlueprintRegistry;
         this.objectManager = objectManager;
     }
 
     public Map<String, Object> mergePreview(String baseModelId, String theirsModelId, String objectPath) {
-        ModelDefinition base = modelRegistry.requireById(baseModelId);
-        ModelDefinition theirs = modelRegistry.requireById(theirsModelId);
+        BlueprintDefinition base = BlueprintRegistry.requireById(baseModelId);
+        BlueprintDefinition theirs = BlueprintRegistry.requireById(theirsModelId);
         PlatformObject object = objectManager.require(objectPath);
 
         List<Map<String, Object>> variableConflicts = new ArrayList<>();
@@ -37,8 +37,8 @@ public class ModelMergeService {
         LinkedHashSet<String> objectVars = new LinkedHashSet<>(object.variables().keySet());
 
         for (String name : union(baseVars, theirsVars)) {
-            ModelVariableDefinition baseVar = findVariable(base, name);
-            ModelVariableDefinition theirsVar = findVariable(theirs, name);
+            BlueprintVariableDefinition baseVar = findVariable(base, name);
+            BlueprintVariableDefinition theirsVar = findVariable(theirs, name);
             if (baseVar != null && theirsVar != null && !sameVariable(baseVar, theirsVar)) {
                 variableConflicts.add(Map.of(
                         "name", name,
@@ -56,8 +56,8 @@ public class ModelMergeService {
                 "objectPath", objectPath,
                 "baseModelId", baseModelId,
                 "theirsModelId", theirsModelId,
-                "baseModelVersion", base.modelVersion(),
-                "theirsModelVersion", theirs.modelVersion(),
+                "baseBlueprintVersion", base.blueprintVersion(),
+                "theirsBlueprintVersion", theirs.blueprintVersion(),
                 "variableConflicts", variableConflicts,
                 "eventsToAdd", eventsToAdd,
                 "functionsToAdd", functionsToAdd,
@@ -92,22 +92,22 @@ public class ModelMergeService {
         );
     }
 
-    private static LinkedHashSet<String> names(List<ModelVariableDefinition> variables) {
+    private static LinkedHashSet<String> names(List<BlueprintVariableDefinition> variables) {
         LinkedHashSet<String> result = new LinkedHashSet<>();
-        for (ModelVariableDefinition variable : variables) {
+        for (BlueprintVariableDefinition variable : variables) {
             result.add(variable.name());
         }
         return result;
     }
 
-    private static ModelVariableDefinition findVariable(ModelDefinition model, String name) {
+    private static BlueprintVariableDefinition findVariable(BlueprintDefinition model, String name) {
         return model.variables().stream()
                 .filter(variable -> variable.name().equals(name))
                 .findFirst()
                 .orElse(null);
     }
 
-    private static boolean sameVariable(ModelVariableDefinition left, ModelVariableDefinition right) {
+    private static boolean sameVariable(BlueprintVariableDefinition left, BlueprintVariableDefinition right) {
         return left.name().equals(right.name())
                 && left.schema().name().equals(right.schema().name())
                 && left.readable() == right.readable()

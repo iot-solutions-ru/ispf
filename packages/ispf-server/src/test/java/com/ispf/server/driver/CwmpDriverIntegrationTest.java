@@ -3,7 +3,7 @@ package com.ispf.server.driver;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ class CwmpDriverIntegrationTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private ModelApplicationService modelApplicationService;
+    private BlueprintApplicationService BlueprintApplicationService;
 
     @Autowired
     private DriverRuntimeService driverRuntimeService;
@@ -57,7 +57,7 @@ class CwmpDriverIntegrationTest {
     void createDevice() {
         devicePath = DriverIntegrationTestSupport.createDevice(
                 objectManager,
-                modelApplicationService,
+                BlueprintApplicationService,
                 driverRuntimeService,
                 DEVICE_NAME
         );

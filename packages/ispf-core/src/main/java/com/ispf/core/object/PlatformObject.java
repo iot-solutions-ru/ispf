@@ -22,7 +22,7 @@ public class PlatformObject {
     private volatile String displayName;
     private volatile String description;
     private final String templateId;
-    private final List<String> appliedModelIds = new CopyOnWriteArrayList<>();
+    private final List<String> appliedBlueprintIds = new CopyOnWriteArrayList<>();
     private volatile int sortOrder;
     private volatile boolean bindingAuditEnabled;
     private volatile boolean functionAuditEnabled;
@@ -122,35 +122,35 @@ public class PlatformObject {
         return Optional.ofNullable(templateId);
     }
 
-    public List<String> appliedModelIds() {
-        return List.copyOf(appliedModelIds);
+    public List<String> appliedBlueprintIds() {
+        return List.copyOf(appliedBlueprintIds);
     }
 
-    public void setAppliedModelIds(List<String> modelIds) {
-        appliedModelIds.clear();
+    public void setappliedBlueprintIds(List<String> modelIds) {
+        appliedBlueprintIds.clear();
         if (modelIds != null) {
             for (String modelId : modelIds) {
                 if (modelId != null && !modelId.isBlank()) {
-                    appliedModelIds.add(modelId);
+                    appliedBlueprintIds.add(modelId);
                 }
             }
         }
     }
 
-    public void addAppliedModelId(String modelId) {
+    public void addAppliedBlueprintId(String modelId) {
         if (modelId == null || modelId.isBlank()) {
             return;
         }
-        if (!appliedModelIds.contains(modelId)) {
-            appliedModelIds.add(modelId);
+        if (!appliedBlueprintIds.contains(modelId)) {
+            appliedBlueprintIds.add(modelId);
         }
     }
 
-    public String lastAppliedModelId() {
-        if (appliedModelIds.isEmpty()) {
+    public String lastAppliedBlueprintId() {
+        if (appliedBlueprintIds.isEmpty()) {
             return null;
         }
-        return appliedModelIds.get(appliedModelIds.size() - 1);
+        return appliedBlueprintIds.get(appliedBlueprintIds.size() - 1);
     }
 
     public Instant createdAt() {

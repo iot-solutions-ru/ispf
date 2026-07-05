@@ -6,7 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class MqttGatewayFunctionHandler implements FunctionHandler {
 
     public static final String FUNCTION_NAME = "dispatchTelemetry";
-    public static final String MODEL_NAME = FixtureModelBootstrap.MQTT_GATEWAY_MODEL;
+    public static final String MODEL_NAME = FixtureBlueprintBootstrap.MQTT_GATEWAY_MODEL;
 
     private static final DataSchema INGRESS_SCHEMA = DataSchema.builder("mqttIngress")
             .field("topic", FieldType.STRING)

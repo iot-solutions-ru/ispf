@@ -19,7 +19,7 @@ export type ObjectType =
   | "DEVICES"
   | "DEVICE"
   | "DRIVER"
-  | "MODEL"
+  | "BLUEPRINT"
   | "DASHBOARDS"
   | "DASHBOARD"
   | "WORKFLOWS"
@@ -84,10 +84,10 @@ export interface ObjectSummary {
   bindingAuditEnabled?: boolean;
   functionAuditEnabled?: boolean;
   eventJournalEnabled?: boolean;
-  appliedModels?: AppliedModelSummary[];
+  appliedBlueprints?: appliedBlueprintsummary[];
 }
 
-export interface AppliedModelSummary {
+export interface appliedBlueprintsummary {
   id: string;
   name: string;
   type: "RELATIVE" | "INSTANCE" | "ABSOLUTE";
@@ -201,7 +201,7 @@ export interface CreateObjectPayload {
   displayName?: string;
   description?: string;
   templateId?: string;
-  autoApplyRelativeModels?: boolean;
+  autoApplyRelativeBlueprints?: boolean;
   driverId?: string;
   driverPollIntervalMs?: number;
   autoStartDriver?: boolean;

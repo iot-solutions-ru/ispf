@@ -14,8 +14,8 @@ import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
 import com.ispf.server.application.bundle.ApplicationBundleSnapshotStore;
 import com.ispf.server.application.data.ApplicationDataStore;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.bundle.BundleManifestJsonSupport;
@@ -49,7 +49,7 @@ import com.ispf.server.application.bundle.ApplicationBundlePullFromTreeService;
 import com.ispf.server.application.data.ApplicationDataService;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.platform.time.PlatformTimeZoneResolver;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.workflow.WorkQueueService;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
@@ -83,9 +83,9 @@ public class PlatformAgentToolRegistry {
             ApplicationFunctionStore applicationFunctionStore,
             ApplicationEventCatalogService eventCatalogService,
             EventService eventService,
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
-            LabModelBootstrap labModelBootstrap,
+            BlueprintRegistry BlueprintRegistry,
+            BlueprintApplicationService BlueprintApplicationService,
+            LabBlueprintBootstrap LabBlueprintBootstrap,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
@@ -185,13 +185,13 @@ public class PlatformAgentToolRegistry {
                 objectTemplateService,
                 deviceProvisioningService,
                 driverRuntimeService,
-                labModelBootstrap,
-                modelRegistry,
+                LabBlueprintBootstrap,
+                BlueprintRegistry,
                 objectMapper
         ));
-        tools.addAll(AgentModelTools.all(
-                modelRegistry,
-                modelApplicationService,
+        tools.addAll(AgentBlueprintTools.all(
+                BlueprintRegistry,
+                BlueprintApplicationService,
                 objectManager,
                 objectAccessService,
                 tenantScopeService
@@ -211,7 +211,7 @@ public class PlatformAgentToolRegistry {
                 objectAccessService,
                 tenantScopeService,
                 eventService,
-                modelRegistry,
+                BlueprintRegistry,
                 haystackExportService,
                 objectMapper
         ));

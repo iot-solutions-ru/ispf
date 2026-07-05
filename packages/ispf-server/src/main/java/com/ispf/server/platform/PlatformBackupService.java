@@ -193,7 +193,7 @@ public class PlatformBackupService {
         payload.put("displayName", node.displayName());
         payload.put("description", node.description());
         payload.put("templateId", node.templateId().orElse(null));
-        payload.put("appliedModelIds", node.appliedModelIds());
+        payload.put("appliedBlueprintIds", node.appliedBlueprintIds());
         payload.put("events", node.events().values().toArray(new EventDescriptor[0]));
         payload.put("functions", node.functions().values().toArray(new FunctionDescriptor[0]));
         List<Map<String, Object>> variables = node.variables().values().stream()

@@ -1,15 +1,15 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import java.time.Instant;
 
 /**
  * Records that a model has been applied to an object path.
  */
-public record ModelAttachment(
+public record BlueprintAttachment(
         String id,
-        String modelId,
-        String modelName,
-        ModelType modelType,
+        String blueprintId,
+        String blueprintName,
+        BlueprintType blueprintType,
         String objectPath,
         Instant attachedAt
 ) {

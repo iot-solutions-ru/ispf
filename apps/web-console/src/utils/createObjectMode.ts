@@ -34,9 +34,9 @@ function isPlatformCatalogContainer(path: string): boolean {
   }
   return (
     path.endsWith(".devices")
-    || path.endsWith(".relative-models")
+    || path.endsWith(".relative-blueprints")
     || path.endsWith(".instance-types")
-    || path.endsWith(".absolute-models")
+    || path.endsWith(".absolute-blueprints")
     || path.endsWith(".instances")
     || path.endsWith(".dashboards")
     || path.endsWith(".mimics")
@@ -104,8 +104,8 @@ export function resolveCreateLabelKind(parentPath: string): string {
       return "report";
     case "WORKFLOW":
       return "workflow";
-    case "MODEL":
-      return "model";
+    case "BLUEPRINT":
+      return "blueprint";
     default:
       if (parentPath.endsWith(".instances")) {
         return "instance";
@@ -216,7 +216,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     "APPLICATIONS",
     "OPERATOR_APPS",
     "MIMICS",
-    "MODEL",
+    "BLUEPRINT",
     "CUSTOM",
   ];
   if (!objectType || !containerTypes.includes(objectType)) {
@@ -233,9 +233,9 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
 
   const suffixAllowed =
     path.endsWith(".devices")
-    || path.endsWith(".relative-models")
+    || path.endsWith(".relative-blueprints")
     || path.endsWith(".instance-types")
-    || path.endsWith(".absolute-models")
+    || path.endsWith(".absolute-blueprints")
     || path.endsWith(".instances")
     || path.endsWith(".dashboards")
     || path.endsWith(".mimics")
@@ -263,11 +263,11 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
     return "DEVICE";
   }
   if (
-    parentPath.endsWith(".relative-models")
+    parentPath.endsWith(".relative-blueprints")
     || parentPath.endsWith(".instance-types")
-    || parentPath.endsWith(".absolute-models")
+    || parentPath.endsWith(".absolute-blueprints")
   ) {
-    return "MODEL";
+    return "BLUEPRINT";
   }
   return "CUSTOM";
 }

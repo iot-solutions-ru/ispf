@@ -1,4 +1,4 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

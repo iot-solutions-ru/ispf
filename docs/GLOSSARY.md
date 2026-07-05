@@ -1,4 +1,4 @@
-# Глоссарий ISPF
+﻿# Глоссарий ISPF
 
 Краткий словарь терминов платформы. Обзор продукта: [PRODUCT.md](PRODUCT.md).
 
@@ -96,11 +96,11 @@
 
 ## M
 
-**Model (ModelDefinition)** — шаблон объекта: variables, events, functions, bindings. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE mixins auto-apply при create только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явный apply — через `templateId` или API.
+**Model (BlueprintDefinition)** — шаблон объекта: variables, events, functions, bindings. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. RELATIVE mixins auto-apply при create только при непустом CEL (*Applicability condition* / `suitabilityExpression`). Явный apply — через `templateId` или API.
 
 **Fixture model** — demo/lab модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не часть core built-in registry. См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
-**Model engine** — плагин `ispf-plugin-model`, применяющий модели к объектам.
+**Model engine** — плагин `ispf-plugin-blueprint`, применяющий модели к объектам.
 
 ---
 
@@ -122,7 +122,7 @@
 
 **Platform object** — узел дерева объектов ISPF (в отличие от application record в таблице `applications`).
 
-**Plugin** — расширение платформы. В репозитории: `ispf-plugin-model`, `ispf-plugin-workflow`. Коммерческие — вне `main`.
+**Plugin** — расширение платформы. В репозитории: `ispf-plugin-blueprint`, `ispf-plugin-workflow`. Коммерческие — вне `main`.
 
 ---
 

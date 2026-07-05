@@ -228,22 +228,22 @@ def build_layout(device_path: str, idx: int) -> str:
     return json.dumps(layout, separators=(",", ":"))
 
 
-def resolve_model_ids(client: Client) -> dict[str, str]:
+def resolve_blueprint_ids(client: Client) -> dict[str, str]:
     ids: dict[str, str] = {}
     for name in LAB_MODELS:
-        r = client.request("GET", f"/api/v1/models/by-name/{name}")
+        r = client.request("GET", f"/api/v1/blueprints/by-name/{name}")
         r.raise_for_status()
         ids[name] = r.json()["id"]
     return ids
 
 
-def apply_lab_models(client: Client, object_path: str, model_ids: dict[str, str]) -> None:
+def apply_lab_blueprints(client: Client, object_path: str, blueprint_ids: dict[str, str]) -> None:
     """Legacy repair for objects created before server-side template apply."""
     for name in LAB_MODELS:
-        model_id = model_ids[name]
+        blueprint_id = blueprint_ids[name]
         r = client.request(
             "POST",
-            f"/api/v1/models/{model_id}/apply?objectPath={quote(object_path, safe='')}",
+            f"/api/v1/blueprints/{blueprint_id}/apply?objectPath={quote(object_path, safe='')}",
         )
         if r.status_code >= 400:
             print(f"  WARN apply {name} on {object_path}: HTTP {r.status_code} {r.text[:80]}")
@@ -273,7 +273,7 @@ def create_device(
     pad: int,
     driver_count: int,
     poll_ms: int,
-    model_ids: dict[str, str],
+    blueprint_ids: dict[str, str],
     repair_legacy: bool,
 ) -> str | None:
     parent = "root.platform.devices"
@@ -297,7 +297,7 @@ def create_device(
     r = client.request("POST", "/api/v1/objects", json=body)
     if r.status_code == 409:
         if repair_legacy:
-            apply_lab_models(client, path, model_ids)
+            apply_lab_blueprints(client, path, blueprint_ids)
         if with_driver:
             configure_virtual_driver(client, path, poll_ms)
         return path
@@ -320,7 +320,7 @@ def seed_fixtures(
     dash_pad = fixture_pad(dashboard_count)
     device_paths: list[str] = []
     parent = "root.platform.devices"
-    model_ids = resolve_model_ids(client)
+    blueprint_ids = resolve_blueprint_ids(client)
     print(f"Creating {device_count} devices ({driver_count} with virtual driver, workers={seed_workers})...")
     started = time.perf_counter()
 
@@ -335,7 +335,7 @@ def seed_fixtures(
 
     if seed_workers <= 1:
         for i in range(1, device_count + 1):
-            path = create_device(client, i, pad, driver_count, poll_ms, model_ids, repair_legacy)
+            path = create_device(client, i, pad, driver_count, poll_ms, blueprint_ids, repair_legacy)
             if path:
                 device_paths.append(path)
             if i % progress_step == 0 or i == device_count:
@@ -347,7 +347,7 @@ def seed_fixtures(
 
         def seed_one(index: int) -> str | None:
             return create_device(
-                client_factory(), index, pad, driver_count, poll_ms, model_ids, repair_legacy
+                client_factory(), index, pad, driver_count, poll_ms, blueprint_ids, repair_legacy
             )
 
         with ThreadPoolExecutor(max_workers=seed_workers) as pool:
@@ -717,7 +717,7 @@ def make_ops(fixtures: Fixtures) -> list[tuple[str, float, Callable[[Client], No
     add(0.03, "driver_status", lambda c: c.request(
         "GET", f"/api/v1/drivers/runtime/status?devicePath={quote(pick_device(), safe='')}"
     ).raise_for_status())
-    add(0.02, "list_models", lambda c: c.request("GET", "/api/v1/models").raise_for_status())
+    add(0.02, "list_blueprints", lambda c: c.request("GET", "/api/v1/blueprints").raise_for_status())
     add(0.02, "function_invocations", lambda c: c.request(
         "GET", "/api/v1/platform/function-invocations?limit=20"
     ).raise_for_status())

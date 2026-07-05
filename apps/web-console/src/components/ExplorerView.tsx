@@ -10,7 +10,7 @@ import SecurityRoleInspector from "./SecurityRoleInspector";
 import SystemFolderListPanel from "./SystemFolderListPanel";
 import FederationPeersPanel from "./FederationPeersPanel";
 import TenantsPanel from "./TenantsPanel";
-import { isModelsPath } from "../types/models";
+import { isBlueprintsPath } from "../types/blueprints";
 import type { ObjectSummary } from "../types";
 import {
   isOperatorAppChildPath,
@@ -118,7 +118,7 @@ export default function ExplorerView({
             {t("common:action.openInEditor")}
           </button>
           <span className="hint">
-            {isModelsPath(selectedPath)
+            {isBlueprintsPath(selectedPath)
               ? t("common:hint.modelFullDefinition")
               : t("common:hint.openEditorButton")}
           </span>

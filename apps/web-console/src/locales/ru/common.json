@@ -58,7 +58,7 @@
   "error.objectLoadFailed": "Не удалось загрузить объект",
   "error.treeLoadFailed": "Не удалось загрузить дерево объектов.",
   "field.actor": "Актор",
-  "field.appliedModels": "Прикладные модели",
+  "field.appliedBlueprints": "Прикладные модели",
   "field.createdAt": "Создано",
   "field.description": "Описание",
   "field.displayName": "Отображаемое имя",
@@ -68,7 +68,7 @@
   "field.level": "Уровень",
   "field.output": "Выход",
   "field.path": "Путь",
-  "field.primaryModel": "Основная модель",
+  "field.primaryBlueprint": "Основная модель",
   "field.templateId": "идентификатор шаблона",
   "field.time": "Время",
   "hint.adminOnly": "Доступно только администратору.",
@@ -89,5 +89,6 @@
   "objectPath.filterHint": "Показаны типы: {{types}}",
   "objectPath.browseTree": "Выбор из дерева",
   "modal.select": "Выбрать",
-  "modal.advancedSettings": "Расширенные настройки"
+  "modal.advancedSettings": "Расширенные настройки",
+  "objectType.BLUEPRINT": "Чертеж"
 }

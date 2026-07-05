@@ -3,7 +3,7 @@ package com.ispf.server.bootstrap;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.security.PlatformUserService;
@@ -41,8 +41,8 @@ public class PlatformBootstrap {
         register(tree, "root.platform.dashboards", ObjectType.DASHBOARDS, null);
         register(tree, "root.platform.mimics", ObjectType.MIMICS, null);
 
-        registerCatalogFolder(tree, "root.platform.relative-models");
-        registerCatalogFolder(tree, "root.platform.absolute-models");
+        registerCatalogFolder(tree, "root.platform.relative-blueprints");
+        registerCatalogFolder(tree, "root.platform.absolute-blueprints");
         registerCatalogFolder(tree, "root.platform.instance-types");
         register(tree, "root.platform.reports", ObjectType.REPORTS, null);
         register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
@@ -62,7 +62,7 @@ public class PlatformBootstrap {
                 """
                         Sample MQTT temperature device for learning the platform. \
                         Fixture model mqtt-sensor-v1 is applied when platform fixtures are enabled.""",
-                FixtureModelBootstrap.MQTT_SENSOR_MODEL
+                FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL
         );
         tree.register(demoDevice);
 
@@ -124,7 +124,7 @@ public class PlatformBootstrap {
         tree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
                 path,
-                ObjectType.MODEL,
+                ObjectType.BLUEPRINT,
                 entry.displayName(),
                 entry.description(),
                 null,

@@ -13,7 +13,7 @@ public enum ObjectType {
     DEVICES,
     DEVICE,
     DRIVER,
-    MODEL,
+    BLUEPRINT,
     /** Dashboard catalog folder. */
     DASHBOARDS,
     DASHBOARD,

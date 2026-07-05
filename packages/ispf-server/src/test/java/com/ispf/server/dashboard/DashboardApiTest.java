@@ -50,7 +50,7 @@ class DashboardApiTest {
 
     @Test
     void listsDashboardModel() throws Exception {
-        mockMvc.perform(get("/api/v1/models"))
+        mockMvc.perform(get("/api/v1/blueprints"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='dashboard-v1')]").exists());
     }

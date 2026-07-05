@@ -5,13 +5,13 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.core.model.DataSchema;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
@@ -35,7 +35,7 @@ import com.ispf.server.operator.OperatorAppObjectTreeService;
 import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
 import com.ispf.server.license.CommercialBundleLicenseVerifier;
-import com.ispf.server.plugin.model.ModelPersistenceService;
+import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -56,9 +56,9 @@ public class ApplicationBundleDeployService {
     private final ApplicationReportService reportService;
     private final ApplicationObjectTreeService objectTreeService;
     private final ApplicationBundleSnapshotStore snapshotStore;
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
-    private final ModelPersistenceService modelPersistence;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintPersistenceService blueprintPersistence;
     private final ObjectMapper objectMapper;
     private final DataSourceObjectService dataSourceObjectService;
     private final ScheduleObjectService scheduleObjectService;
@@ -82,9 +82,9 @@ public class ApplicationBundleDeployService {
             ApplicationReportService reportService,
             ApplicationObjectTreeService objectTreeService,
             ApplicationBundleSnapshotStore snapshotStore,
-            ModelEngine modelEngine,
-            ModelRegistry modelRegistry,
-            ModelPersistenceService modelPersistence,
+            BlueprintEngine blueprintEngine,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintPersistenceService blueprintPersistence,
             ObjectMapper objectMapper,
             DataSourceObjectService dataSourceObjectService,
             ScheduleObjectService scheduleObjectService,
@@ -107,9 +107,9 @@ public class ApplicationBundleDeployService {
         this.reportService = reportService;
         this.objectTreeService = objectTreeService;
         this.snapshotStore = snapshotStore;
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
-        this.modelPersistence = modelPersistence;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintPersistence = blueprintPersistence;
         this.objectMapper = objectMapper;
         this.dataSourceObjectService = dataSourceObjectService;
         this.scheduleObjectService = scheduleObjectService;
@@ -362,17 +362,17 @@ public class ApplicationBundleDeployService {
             errors.add("dataSource: " + ex.getMessage());
         }
 
-        if (manifest.models() != null) {
-            for (BundleModel model : manifest.models()) {
+        if (manifest.blueprints() != null) {
+            for (BundleBlueprint blueprint : manifest.blueprints()) {
                 try {
-                    if (createMissingOnly && modelRegistry.findByName(model.name()).isPresent()) {
-                        skipped.add("model:" + model.name());
+                    if (createMissingOnly && blueprintRegistry.findByName(blueprint.name()).isPresent()) {
+                        skipped.add("blueprint:" + blueprint.name());
                         continue;
                     }
-                    deployModel(model);
-                    applied.add("model:" + model.name());
+                    deployBlueprint(blueprint);
+                    applied.add("blueprint:" + blueprint.name());
                 } catch (Exception ex) {
-                    errors.add("model:" + model.name() + ": " + ex.getMessage());
+                    errors.add("blueprint:" + blueprint.name() + ": " + ex.getMessage());
                 }
             }
         }
@@ -920,46 +920,46 @@ public class ApplicationBundleDeployService {
         objectManager.upsertFunction(function.objectPath(), treeFunction);
     }
 
-    private void deployModel(BundleModel model) throws ModelException {
+    private void deployBlueprint(BundleBlueprint blueprint) throws BlueprintException {
         Instant now = Instant.now();
-        ModelDefinition definition = modelRegistry.findByName(model.name())
-                .map(existing -> new ModelDefinition(
+        BlueprintDefinition definition = blueprintRegistry.findByName(blueprint.name())
+                .map(existing -> new BlueprintDefinition(
                         existing.id(),
-                        model.name(),
-                        model.description(),
-                        model.type() != null ? model.type() : existing.type(),
-                        model.targetObjectType() != null ? model.targetObjectType() : existing.targetObjectType(),
-                        model.suitabilityExpression() != null
-                                ? model.suitabilityExpression()
+                        blueprint.name(),
+                        blueprint.description(),
+                        blueprint.type() != null ? blueprint.type() : existing.type(),
+                        blueprint.targetObjectType() != null ? blueprint.targetObjectType() : existing.targetObjectType(),
+                        blueprint.suitabilityExpression() != null
+                                ? blueprint.suitabilityExpression()
                                 : existing.suitabilityExpression(),
-                        model.variables() != null ? model.variables() : existing.variables(),
-                        model.events() != null ? model.events() : existing.events(),
-                        model.functions() != null ? model.functions() : existing.functions(),
-                        model.bindings() != null ? model.bindings() : existing.bindings(),
-                        model.parameters() != null ? model.parameters() : existing.parameters(),
+                        blueprint.variables() != null ? blueprint.variables() : existing.variables(),
+                        blueprint.events() != null ? blueprint.events() : existing.events(),
+                        blueprint.functions() != null ? blueprint.functions() : existing.functions(),
+                        blueprint.bindings() != null ? blueprint.bindings() : existing.bindings(),
+                        blueprint.parameters() != null ? blueprint.parameters() : existing.parameters(),
                         existing.createdAt(),
                         now
                 ))
-                .orElseGet(() -> new ModelDefinition(
+                .orElseGet(() -> new BlueprintDefinition(
                         UUID.randomUUID().toString(),
-                        model.name(),
-                        model.description(),
-                        model.type(),
-                        model.targetObjectType(),
-                        model.suitabilityExpression(),
-                        model.variables() != null ? model.variables() : List.of(),
-                        model.events() != null ? model.events() : List.of(),
-                        model.functions() != null ? model.functions() : List.of(),
-                        model.bindings() != null ? model.bindings() : List.of(),
-                        model.parameters() != null ? model.parameters() : Map.of(),
+                        blueprint.name(),
+                        blueprint.description(),
+                        blueprint.type(),
+                        blueprint.targetObjectType(),
+                        blueprint.suitabilityExpression(),
+                        blueprint.variables() != null ? blueprint.variables() : List.of(),
+                        blueprint.events() != null ? blueprint.events() : List.of(),
+                        blueprint.functions() != null ? blueprint.functions() : List.of(),
+                        blueprint.bindings() != null ? blueprint.bindings() : List.of(),
+                        blueprint.parameters() != null ? blueprint.parameters() : Map.of(),
                         now,
                         now
                 ));
 
-        ModelDefinition saved = modelRegistry.findByName(model.name()).isPresent()
-                ? modelEngine.updateModel(definition)
-                : modelEngine.createModel(definition);
-        modelPersistence.persist(saved, false);
+        BlueprintDefinition saved = blueprintRegistry.findByName(blueprint.name()).isPresent()
+                ? blueprintEngine.updateBlueprint(definition)
+                : blueprintEngine.createBlueprint(definition);
+        blueprintPersistence.persist(saved, false);
     }
 
     public record BundleManifest(
@@ -970,7 +970,7 @@ public class ApplicationBundleDeployService {
             List<BundleObject> objects,
             List<BundleDashboard> dashboards,
             List<BundleWorkflow> workflows,
-            List<BundleModel> models,
+            List<BundleBlueprint> blueprints,
             List<BundleMigration> migrations,
             List<BundleFunction> functions,
             List<BundleSqlBinding> bindings,
@@ -1013,16 +1013,16 @@ public class ApplicationBundleDeployService {
     ) {
     }
 
-    public record BundleModel(
+    public record BundleBlueprint(
             String name,
             String description,
-            ModelType type,
+            BlueprintType type,
             ObjectType targetObjectType,
             String suitabilityExpression,
-            List<ModelVariableDefinition> variables,
+            List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<ModelBindingRule> bindings,
+            List<BlueprintBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }

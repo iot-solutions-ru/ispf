@@ -1,20 +1,20 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.core.object.ObjectTree;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ModelPluginConfig {
+public class BlueprintPluginConfig {
 
     @Bean
-    ModelRegistry modelRegistry() {
-        return new ModelRegistry();
+    BlueprintRegistry blueprintRegistry() {
+        return new BlueprintRegistry();
     }
 
     @Bean
@@ -23,64 +23,64 @@ public class ModelPluginConfig {
     }
 
     @Bean
-    ModelEngine modelEngine(
-            ModelRegistry modelRegistry,
+    BlueprintEngine blueprintEngine(
+            BlueprintRegistry blueprintRegistry,
             ObjectTree objectTree,
             ExpressionEngine expressionEngine
     ) {
-        return new ModelEngine(modelRegistry, objectTree, expressionEngine);
+        return new BlueprintEngine(blueprintRegistry, objectTree, expressionEngine);
     }
 
     @Bean
-    TypedModelFacade relativeModelFacade(
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
-            ModelPersistenceService modelPersistence,
-            ModelApplicationService modelApplicationService,
+    TypedBlueprintFacade relativeBlueprintFacade(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager
     ) {
-        return new TypedModelFacade(
-                ModelType.RELATIVE,
-                modelRegistry,
-                modelEngine,
-                modelPersistence,
-                modelApplicationService,
+        return new TypedBlueprintFacade(
+                BlueprintType.RELATIVE,
+                blueprintRegistry,
+                blueprintEngine,
+                blueprintPersistence,
+                blueprintApplicationService,
                 objectManager
         );
     }
 
     @Bean
-    TypedModelFacade instanceTypeFacade(
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
-            ModelPersistenceService modelPersistence,
-            ModelApplicationService modelApplicationService,
+    TypedBlueprintFacade instanceTypeFacade(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager
     ) {
-        return new TypedModelFacade(
-                ModelType.INSTANCE,
-                modelRegistry,
-                modelEngine,
-                modelPersistence,
-                modelApplicationService,
+        return new TypedBlueprintFacade(
+                BlueprintType.INSTANCE,
+                blueprintRegistry,
+                blueprintEngine,
+                blueprintPersistence,
+                blueprintApplicationService,
                 objectManager
         );
     }
 
     @Bean
-    TypedModelFacade absoluteModelFacade(
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
-            ModelPersistenceService modelPersistence,
-            ModelApplicationService modelApplicationService,
+    TypedBlueprintFacade absoluteBlueprintFacade(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager
     ) {
-        return new TypedModelFacade(
-                ModelType.ABSOLUTE,
-                modelRegistry,
-                modelEngine,
-                modelPersistence,
-                modelApplicationService,
+        return new TypedBlueprintFacade(
+                BlueprintType.ABSOLUTE,
+                blueprintRegistry,
+                blueprintEngine,
+                blueprintPersistence,
+                blueprintApplicationService,
                 objectManager
         );
     }

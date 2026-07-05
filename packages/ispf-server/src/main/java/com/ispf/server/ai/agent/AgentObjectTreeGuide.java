@@ -1,6 +1,6 @@
 package com.ispf.server.ai.agent;
 
-import com.ispf.plugin.model.ModelCatalogRoots;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
 import com.ispf.server.automation.AutomationTreeService;
 
 import java.util.List;
@@ -32,12 +32,12 @@ public final class AgentObjectTreeGuide {
                 + AutomationTreeService.CORRELATORS_ROOT
                 + " | Correlators | CORRELATOR |\n"
                 + """
-                | root.platform.relative-models | Relative model catalog | MODEL definitions; apply via apply_relative_model |
+                | root.platform.relative-blueprints | Relative model catalog | MODEL definitions; apply via apply_relative_blueprint |
                 | root.platform.instance-types | Instance type catalog | (definitions only) |
-                | root.platform.absolute-models | Absolute model catalog | (definitions only) |
+                | root.platform.absolute-blueprints | Absolute model catalog | (definitions only) |
                 | root.platform.instances | Model instances | CUSTOM from instance type |
                 
-                Legacy `root.platform.models` removed — use typed catalogs above.
+                Legacy `root.platform.blueprints` removed — use typed catalogs above.
                 
                 ### Object types & key variables
                 
@@ -51,20 +51,20 @@ public final class AgentObjectTreeGuide {
                 
                 ### Models & templates
                 
-                - list_object_models — templateId / modelName; rows include modelType (RELATIVE|INSTANCE|ABSOLUTE)
-                - list_relative_models — RELATIVE mixins only (virtual-lab-v1, snmp-agent-v1, …)
+                - list_object_blueprints — templateId / modelName; rows include BlueprintType (RELATIVE|INSTANCE|ABSOLUTE)
+                - list_relative_blueprints — RELATIVE mixins only (virtual-lab-v1, snmp-agent-v1, …)
                 - list_instance_types — INSTANCE blueprints for instantiate_instance_type
-                - list_absolute_models — ABSOLUTE blueprints for ensure_absolute_instance
-                - get_object_model — variables, events, functions of a blueprint
+                - list_absolute_blueprints — ABSOLUTE blueprints for ensure_absolute_instance
+                - get_object_blueprint — variables, events, functions of a blueprint
                 - instantiate_instance_type — create object from INSTANCE catalog entry
-                - apply_relative_model — attach mixin to existing objectPath (preferred over empty DEVICE + manual vars)
+                - apply_relative_blueprint — attach mixin to existing objectPath (preferred over empty DEVICE + manual vars)
                 - ensure_absolute_instance — align/create object by ABSOLUTE model contract
                 - Model catalogs: """
-                + ModelCatalogRoots.RELATIVE
+                + BlueprintCatalogRoots.RELATIVE
                 + ", "
-                + ModelCatalogRoots.INSTANCE
+                + BlueprintCatalogRoots.INSTANCE
                 + ", "
-                + ModelCatalogRoots.ABSOLUTE
+                + BlueprintCatalogRoots.ABSOLUTE
                 + """
                 
                 - create_variable + create_binding_rule for cross-object data (refAt, CEL)
@@ -78,7 +78,7 @@ public final class AgentObjectTreeGuide {
                 ### Object-type sweep (complex TZ)
                 
                 Call get_automation_schema topic=objectTypes. For each layer in TZ, list_objects on catalog root, \
-                then create_object / configure_* / instantiate_instance_type / apply_relative_model as needed.
+                then create_object / configure_* / instantiate_instance_type / apply_relative_blueprint as needed.
                 Include plan.objectTypesCoverage[] — never skip DEVICE, CUSTOM hub, alerts, HMI layers without explicit N/A.
                 
                 ### Canonical order (every object type)
@@ -110,14 +110,14 @@ public final class AgentObjectTreeGuide {
                 "alertRulesRoot", AutomationTreeService.ALERT_RULES_ROOT,
                 "correlatorsRoot", AutomationTreeService.CORRELATORS_ROOT,
                 "modelCatalogs", List.of(
-                        ModelCatalogRoots.RELATIVE,
-                        ModelCatalogRoots.INSTANCE,
-                        ModelCatalogRoots.ABSOLUTE
+                        BlueprintCatalogRoots.RELATIVE,
+                        BlueprintCatalogRoots.INSTANCE,
+                        BlueprintCatalogRoots.ABSOLUTE
                 ),
-                "legacyRemoved", ModelCatalogRoots.LEGACY,
+                "legacyRemoved", BlueprintCatalogRoots.LEGACY,
                 "discoveryTools", List.of(
                         "list_objects", "get_object", "search_objects",
-                        "list_variables", "list_object_models", "describe_variables",
+                        "list_variables", "list_object_blueprints", "describe_variables",
                         "list_instance_types", "instantiate_instance_type", "ensure_absolute_instance"
                 )
         );

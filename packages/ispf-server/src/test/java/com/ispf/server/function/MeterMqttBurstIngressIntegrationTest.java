@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
@@ -63,13 +63,13 @@ class MeterMqttBurstIngressIntegrationTest {
     @Test
     void burstIngressCreatesAllInstancesWhenPayloadLanesEnabled() throws Exception {
         ensureBusDevice();
-        objectTemplateService.applyTemplate(BUS, FixtureModelBootstrap.MQTT_METER_BUS_MODEL);
+        objectTemplateService.applyTemplate(BUS, FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL);
         objectManager.setVariableValue(
                 BUS,
                 "driverConfigJson",
                 DataRecord.single(
                         DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                        Map.of("value", FixtureModelBootstrap.METER_INGRESS_DRIVER_CONFIG)
+                        Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_DRIVER_CONFIG)
                 )
         );
 

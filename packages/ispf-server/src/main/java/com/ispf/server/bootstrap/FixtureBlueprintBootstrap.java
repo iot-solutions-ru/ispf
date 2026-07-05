@@ -7,12 +7,12 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Component;
 
@@ -22,11 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Optional demo / lab relative models — registered only when platform fixtures are enabled.
+ * Optional demo / lab Relative Blueprints — registered only when platform fixtures are enabled.
  * Solution-specific models belong in application bundles ({@code models[]} in manifest).
  */
 @Component
-public class FixtureModelBootstrap {
+public class FixtureBlueprintBootstrap {
 
     public static final String MQTT_SENSOR_MODEL = "mqtt-sensor-v1";
     public static final String MQTT_GATEWAY_MODEL = "mqtt-gateway-v1";
@@ -115,65 +115,65 @@ public class FixtureModelBootstrap {
 
     private static final DataSchema VOID_INPUT_SCHEMA = DataSchema.builder("voidInput").build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public FixtureModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public FixtureBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
-    public void ensureFixtureModels() {
-        if (modelRegistry.findByName(MQTT_SENSOR_MODEL).isEmpty()) {
-            modelEngine.createModel(buildMqttSensorModel());
+    public void ensureFixtureBlueprints() {
+        if (blueprintRegistry.findByName(MQTT_SENSOR_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(buildMqttSensorModel());
         }
-        if (modelRegistry.findByName(MQTT_GATEWAY_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildMqttGatewayModel());
+        if (blueprintRegistry.findByName(MQTT_GATEWAY_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewayModel());
         }
-        if (modelRegistry.findByName(DEVICE_DRIVER_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildDeviceDriverModel());
+        if (blueprintRegistry.findByName(DEVICE_DRIVER_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildDeviceDriverModel());
         }
-        if (modelRegistry.findByName(BASE_SENSOR_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildBaseSensorModel());
+        if (blueprintRegistry.findByName(BASE_SENSOR_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildBaseSensorModel());
         }
-        if (modelRegistry.findByName(VENDOR_SENSOR_EXT_MODEL).isEmpty()) {
-            String baseId = modelRegistry.requireByName(BASE_SENSOR_MODEL).id();
-            modelEngine.createModel(FixtureModelDefinitions.buildVendorSensorExtensionModel(baseId));
+        if (blueprintRegistry.findByName(VENDOR_SENSOR_EXT_MODEL).isEmpty()) {
+            String baseId = blueprintRegistry.requireByName(BASE_SENSOR_MODEL).id();
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildVendorSensorExtensionModel(baseId));
         }
-        if (modelRegistry.findByName(SNMP_AGENT_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildSnmpAgentModel());
+        if (blueprintRegistry.findByName(SNMP_AGENT_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildSnmpAgentModel());
         }
-        if (modelRegistry.findByName(METERS_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildMetersModel());
+        if (blueprintRegistry.findByName(METERS_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMetersModel());
         }
-        if (modelRegistry.findByName(MQTT_METER_BUS_MODEL).isEmpty()) {
-            modelEngine.createModel(FixtureModelDefinitions.buildMqttMeterBusModel());
+        if (blueprintRegistry.findByName(MQTT_METER_BUS_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttMeterBusModel());
         }
     }
 
     /**
      * Drops demo/lab model catalog nodes from the object tree and in-memory registry.
      */
-    public void removeFixtureModelsIfPresent(ObjectManager objectManager) {
+    public void removeFixtureBlueprintsIfPresent(ObjectManager objectManager) {
         for (String name : FIXTURE_MODEL_NAMES) {
-            modelRegistry.findByName(name).ifPresent(model -> {
+            blueprintRegistry.findByName(name).ifPresent(model -> {
                 String path = model.catalogObjectPath();
                 objectManager.tree().findByPath(path).ifPresent(node -> objectManager.delete(path));
-                modelRegistry.delete(model.id());
+                blueprintRegistry.delete(model.id());
             });
         }
     }
 
-    public static ModelDefinition buildMqttSensorModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildMqttSensorModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 MQTT_SENSOR_MODEL,
                 "MQTT temperature sensor with threshold monitoring (demo fixture)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "temperature",
                                 "Current temperature reading",
                                 "telemetry",
@@ -181,7 +181,7 @@ public class FixtureModelBootstrap {
                                 true,
                                 true, DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 22.5, "unit", "C"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "threshold",
                                 "Alarm threshold in Celsius",
                                 "config",
@@ -189,7 +189,7 @@ public class FixtureModelBootstrap {
                                 true,
                                 true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "temperaturePercent",
                                 "Temperature normalized to 0-100% (-20..50 °C)",
                                 "telemetry",
@@ -198,7 +198,7 @@ public class FixtureModelBootstrap {
                                 false,
                                 DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 0.0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "alarmActive",
                                 "Whether temperature exceeds threshold",
                                 "status",
@@ -210,7 +210,7 @@ public class FixtureModelBootstrap {
                                         Map.of("value", false)
                                 )
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "alarmAcknowledged",
                                 "Operator acknowledged the active alarm",
                                 "status",
@@ -231,7 +231,7 @@ public class FixtureModelBootstrap {
                         VOID_INPUT_SCHEMA,
                         FUNCTION_RESULT_SCHEMA
                 )),
-                List.of(ModelBindingRule.of("alarm-active", "alarmActive", "hysteresis(temperature, 35, 33)")),
+                List.of(BlueprintBindingRule.of("alarm-active", "alarmActive", "hysteresis(temperature, 35, 33)")),
                 Map.of("unit", "C"),
                 Instant.now(),
                 Instant.now()

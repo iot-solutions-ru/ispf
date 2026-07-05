@@ -4,12 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
-import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-public class Phase14ModelBootstrap {
+public class Phase14BlueprintBootstrap {
 
     private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -32,12 +32,12 @@ public class Phase14ModelBootstrap {
             .field("value", FieldType.BOOLEAN)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public Phase14ModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public Phase14BlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensurePhase14Models() {
@@ -47,24 +47,24 @@ public class Phase14ModelBootstrap {
         ensureModel("migration-v1", buildMigrationModel());
     }
 
-    private void ensureModel(String name, ModelDefinition definition) {
-        ModelDefinition intrinsic = definition.withSystemIntrinsicFlag();
-        modelRegistry.findByName(name).ifPresentOrElse(
+    private void ensureModel(String name, BlueprintDefinition definition) {
+        BlueprintDefinition intrinsic = definition.withSystemIntrinsicFlag();
+        BlueprintRegistry.findByName(name).ifPresentOrElse(
                 existing -> {
                     if (!existing.systemIntrinsic()) {
-                        modelEngine.updateModel(existing.withSystemIntrinsicFlag());
+                        BlueprintEngine.updateBlueprint(existing.withSystemIntrinsicFlag());
                     }
                 },
-                () -> modelEngine.createModel(intrinsic)
+                () -> BlueprintEngine.createBlueprint(intrinsic)
         );
     }
 
-    private static ModelDefinition buildDataSourceModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildDataSourceModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "data-source-v1",
                 "SQL schema reference for reports, bindings, and script functions",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DATA_SOURCE,
                 "",
                 List.of(
@@ -74,18 +74,18 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    private static ModelDefinition buildScheduleModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildScheduleModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "schedule-v1",
                 "Platform schedule — invoke function on interval",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.SCHEDULE,
                 "",
                 List.of(
@@ -100,18 +100,18 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    private static ModelDefinition buildSqlBindingModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildSqlBindingModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "sql-binding-v1",
                 "SQL query result synced to object variable",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.BINDING,
                 "",
                 List.of(
@@ -130,18 +130,18 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    private static ModelDefinition buildMigrationModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildMigrationModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "migration-v1",
                 "SQL migration script applied on package import",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.MIGRATION,
                 "",
                 List.of(
@@ -155,14 +155,14 @@ public class Phase14ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    private static ModelVariableDefinition varDef(String name, String description, String group, String defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition varDef(String name, String description, String group, String defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -172,8 +172,8 @@ public class Phase14ModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition intDef(String name, String description, int defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition intDef(String name, String description, int defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "config",
@@ -183,8 +183,8 @@ public class Phase14ModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition boolDef(String name, String description, boolean defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition boolDef(String name, String description, boolean defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "config",

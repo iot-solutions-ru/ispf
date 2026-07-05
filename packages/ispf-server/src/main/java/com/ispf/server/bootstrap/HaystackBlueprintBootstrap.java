@@ -4,11 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -20,39 +20,39 @@ import java.util.UUID;
  * Haystack semantic overlay mixin ({@value #HAYSTACK_METADATA_MODEL}) — BL-57.
  */
 @Component
-public class HaystackModelBootstrap {
+public class HaystackBlueprintBootstrap {
 
     public static final String HAYSTACK_METADATA_MODEL = "haystack-metadata-v1";
 
     public static final String DEMO_DEVICE_PATH = "root.platform.devices.lab-userA-01";
     public static final String DEMO_HAYSTACK_REF = "@demo.lab.equip1";
     public static final String DEMO_HAYSTACK_TAGS = "[\"equip\",\"lab\",\"site\"]";
-    public static final String DEMO_POINT_MAPPINGS = LabModelBootstrap.LAB_POINT_MAPPINGS;
+    public static final String DEMO_POINT_MAPPINGS = LabBlueprintBootstrap.LAB_POINT_MAPPINGS;
 
     private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public HaystackModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public HaystackBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensureHaystackModel() {
-        if (modelRegistry.findByName(HAYSTACK_METADATA_MODEL).isEmpty()) {
-            modelEngine.createModel(buildHaystackMetadataModel());
+        if (BlueprintRegistry.findByName(HAYSTACK_METADATA_MODEL).isEmpty()) {
+            BlueprintEngine.createBlueprint(buildHaystackMetadataModel());
         }
     }
 
-    static ModelDefinition buildHaystackMetadataModel() {
-        return new ModelDefinition(
+    static BlueprintDefinition buildHaystackMetadataModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 HAYSTACK_METADATA_MODEL,
                 "Haystack tag overlay — optional metadata on devices (object tree remains source of truth)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -81,8 +81,8 @@ public class HaystackModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition stringVar(String name, String description, String defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition stringVar(String name, String description, String defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "haystack",

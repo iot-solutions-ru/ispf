@@ -1,6 +1,6 @@
 package com.ispf.server.support;
 
-import com.ispf.server.plugin.model.ModelApplicationRunner;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.env.Profiles;
 import org.springframework.test.context.TestContext;
@@ -21,9 +21,9 @@ public final class DemoFixtureTestExecutionListener extends AbstractTestExecutio
         if (!context.getEnvironment().getProperty("ispf.bootstrap.fixtures-enabled", Boolean.class, true)) {
             return;
         }
-        if (!context.containsBean("modelApplicationRunner")) {
+        if (!context.containsBean("BlueprintApplicationRunner")) {
             return;
         }
-        context.getBean(ModelApplicationRunner.class).ensureTestFixtures();
+        context.getBean(BlueprintApplicationRunner.class).ensureTestFixtures();
     }
 }

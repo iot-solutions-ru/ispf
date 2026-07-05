@@ -4,8 +4,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.ObjectEvent;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.application.bff.BffWireMapper;
 import com.ispf.server.application.function.ApplicationFunctionStore;
@@ -41,7 +41,7 @@ final class AgentActionTools {
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
             EventService eventService,
-            ModelRegistry modelRegistry,
+            BlueprintRegistry blueprintRegistry,
             HaystackExportService haystackExportService,
             ObjectMapper objectMapper
     ) {
@@ -50,7 +50,7 @@ final class AgentActionTools {
                 invokeTreeFunctionTool(functionService, objectAccessService, objectMapper),
                 searchObjectsTool(objectManager, objectAccessService, tenantScopeService),
                 searchHaystackTagsTool(haystackExportService, objectAccessService, tenantScopeService),
-                listObjectModelsTool(modelRegistry),
+                listObjectBlueprintsTool(blueprintRegistry),
                 fireEventTool(eventService, objectAccessService),
                 listEventsTool(eventService, objectAccessService)
         );
@@ -290,25 +290,25 @@ final class AgentActionTools {
         return HaystackExportService.normalizeTagQuery(List.of(raw.toString()));
     }
 
-    private static PlatformAgentTool listObjectModelsTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool listObjectBlueprintsTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "list_object_models";
+                return "list_object_blueprints";
             }
 
             @Override
             public String description() {
                 return "List platform object model templates (templateId for create_object). "
-                        + "Includes RELATIVE mixins (apply_relative_model), INSTANCE, ABSOLUTE. "
-                        + "Optional query filter; rows include modelType.";
+                        + "Includes RELATIVE mixins (apply_relative_blueprint), INSTANCE, ABSOLUTE. "
+                        + "Optional query filter; rows include BlueprintType.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
                 String query = stringArg(arguments, "query").toLowerCase(Locale.ROOT);
                 List<Map<String, Object>> rows = new ArrayList<>();
-                for (ModelDefinition model : modelRegistry.all()) {
+                for (BlueprintDefinition model : blueprintRegistry.all()) {
                     String haystack = (model.name() + " " + model.description() + " "
                             + model.targetObjectType()).toLowerCase(Locale.ROOT);
                     if (!query.isBlank() && !haystack.contains(query)) {
@@ -316,15 +316,15 @@ final class AgentActionTools {
                     }
                     Map<String, Object> row = new LinkedHashMap<>();
                     row.put("templateId", model.name());
-                    row.put("modelId", model.id());
-                    row.put("modelType", model.type().name());
+                    row.put("blueprintId", model.id());
+                    row.put("BlueprintType", model.type().name());
                     row.put("description", model.description());
                     row.put("targetObjectType", model.targetObjectType().name());
                     row.put("variableCount", model.variables().size());
                     row.put("functionCount", model.functions().size());
                     rows.add(row);
                 }
-                return Map.of("status", "OK", "count", rows.size(), "models", rows);
+                return Map.of("status", "OK", "count", rows.size(), "blueprints", rows);
             }
         };
     }

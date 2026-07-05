@@ -9,12 +9,12 @@ import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.function.MiniTecFunctionHandler;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +28,7 @@ import java.util.UUID;
  * INSTANCE models for the generic mini-TEC digital twin.
  */
 @Component
-public class MiniTecModelBootstrap {
+public class MiniTecBlueprintBootstrap {
 
     public static final String GPU_MODEL = "mini-tec-gpu-v1";
     public static final String GRPB_MODEL = "mini-tec-grpb-v1";
@@ -60,12 +60,12 @@ public class MiniTecModelBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public MiniTecModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public MiniTecBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensureMiniTecModels() {
@@ -77,17 +77,17 @@ public class MiniTecModelBootstrap {
         ensure(buildHubModel());
     }
 
-    private void ensure(ModelDefinition desired) {
-        var existing = modelRegistry.findByName(desired.name());
+    private void ensure(BlueprintDefinition desired) {
+        var existing = BlueprintRegistry.findByName(desired.name());
         if (existing.isEmpty()) {
-            modelEngine.createModel(desired);
+            BlueprintEngine.createBlueprint(desired);
             return;
         }
-        ModelDefinition current = existing.get();
+        BlueprintDefinition current = existing.get();
         if (hasAllEvents(current, desired)) {
             return;
         }
-        modelEngine.updateModel(new ModelDefinition(
+        BlueprintEngine.updateBlueprint(new BlueprintDefinition(
                 current.id(),
                 desired.name(),
                 desired.description(),
@@ -104,7 +104,7 @@ public class MiniTecModelBootstrap {
         ));
     }
 
-    private static boolean hasAllEvents(ModelDefinition current, ModelDefinition desired) {
+    private static boolean hasAllEvents(BlueprintDefinition current, BlueprintDefinition desired) {
         for (EventDescriptor event : desired.events()) {
             boolean found = current.events().stream().anyMatch(item -> item.name().equals(event.name()));
             if (!found) {
@@ -118,43 +118,43 @@ public class MiniTecModelBootstrap {
         return new EventDescriptor(name, description, BOOL, level);
     }
 
-    private static ModelVariableDefinition meas(String name, String desc, String group, String unit, double def) {
-        return ModelVariableDefinition.withHistory(
+    private static BlueprintVariableDefinition meas(String name, String desc, String group, String unit, double def) {
+        return BlueprintVariableDefinition.withHistory(
                 name, desc, group, MEAS, true, false,
                 DataRecord.single(MEAS, Map.of("value", def, "unit", unit))
         );
     }
 
-    private static ModelVariableDefinition boolVar(String name, String desc, String group, boolean def, boolean writable) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition boolVar(String name, String desc, String group, boolean def, boolean writable) {
+        return BlueprintVariableDefinition.of(
                 name, desc, group, BOOL, true, writable,
                 DataRecord.single(BOOL, Map.of("value", def))
         );
     }
 
-    private static ModelVariableDefinition intVar(String name, String desc, String group, int def, boolean writable) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition intVar(String name, String desc, String group, int def, boolean writable) {
+        return BlueprintVariableDefinition.of(
                 name, desc, group, INT, true, writable,
                 DataRecord.single(INT, Map.of("value", def))
         );
     }
 
-    private static List<ModelVariableDefinition> driverVars(String configJson) {
+    private static List<BlueprintVariableDefinition> driverVars(String configJson) {
         return List.of(
-                ModelVariableDefinition.of("driverId", "Driver id", "driver", STR, true, true,
+                BlueprintVariableDefinition.of("driverId", "Driver id", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", "virtual"))),
-                ModelVariableDefinition.of("driverConfigJson", "Driver config", "driver", STR, true, true,
+                BlueprintVariableDefinition.of("driverConfigJson", "Driver config", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", configJson))),
-                ModelVariableDefinition.of("driverPointMappingsJson", "Point mappings", "driver", STR, true, true,
+                BlueprintVariableDefinition.of("driverPointMappingsJson", "Point mappings", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", TEC_POINT_MAPPINGS))),
-                ModelVariableDefinition.of("driverPollIntervalMs", "Poll interval ms", "driver", INT, true, true,
+                BlueprintVariableDefinition.of("driverPollIntervalMs", "Poll interval ms", "driver", INT, true, true,
                         DataRecord.single(INT, Map.of("value", 2000))),
                 boolVar("driverAutoStart", "Auto-start driver", "driver", true, true)
         );
     }
 
-    private ModelDefinition buildGpuModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildGpuModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("jacketWaterTemp", "Jacket water temperature", "telemetry", "C", 75));
         vars.add(meas("jacketWaterPressure", "Jacket water pressure", "telemetry", "bar", 1.8));
         vars.add(meas("lubeOilTemp", "Lube oil temperature", "telemetry", "C", 70));
@@ -195,16 +195,16 @@ public class MiniTecModelBootstrap {
         vars.add(boolVar("protExciter", "Exciter protection", "protection", false, false));
         vars.addAll(driverVars(String.format(GPU_DRIVER_CONFIG_TEMPLATE, "1480", 1)));
 
-        List<ModelBindingRule> bindings = List.of(
-                ModelBindingRule.of("prot-overload", "protOverload",
+        List<BlueprintBindingRule> bindings = List.of(
+                BlueprintBindingRule.of("prot-overload", "protOverload",
                         "self.activePowerKw[\"value\"] > 1550"),
-                ModelBindingRule.of("prot-overvoltage", "protOvervoltage",
+                BlueprintBindingRule.of("prot-overvoltage", "protOvervoltage",
                         "self.excitationVoltage[\"value\"] > 160"),
-                ModelBindingRule.of("prot-undervoltage", "protUndervoltage",
+                BlueprintBindingRule.of("prot-undervoltage", "protUndervoltage",
                         "self.running[\"value\"] == true && self.excitationVoltage[\"value\"] < 80"),
-                ModelBindingRule.of("prot-frequency", "protFrequency",
+                BlueprintBindingRule.of("prot-frequency", "protFrequency",
                         "self.running[\"value\"] == true && (self.rpm[\"value\"] < 1400 || self.rpm[\"value\"] > 1600)"),
-                ModelBindingRule.of("prot-exciter", "protExciter",
+                BlueprintBindingRule.of("prot-exciter", "protExciter",
                         "self.excitationVoltage[\"value\"] > 180")
         );
 
@@ -223,8 +223,8 @@ public class MiniTecModelBootstrap {
         );
     }
 
-    private ModelDefinition buildGrpbModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildGrpbModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("gasOutletPressure", "Gas outlet pressure", "telemetry", "bar", 2.5));
         vars.add(meas("gasFlowRate", "Gas flow rate", "telemetry", "m3/h", 0));
         vars.add(meas("gasVolume", "Gas volume", "telemetry", "m3", 0));
@@ -255,8 +255,8 @@ public class MiniTecModelBootstrap {
         );
     }
 
-    private ModelDefinition buildRumbModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildRumbModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(boolVar("breakerClosed", "Breaker closed", "status", true, false));
         vars.add(boolVar("breakerPosition", "Breaker position", "status", true, false));
         vars.add(boolVar("cartPosition", "Cart position", "status", true, false));
@@ -272,8 +272,8 @@ public class MiniTecModelBootstrap {
                 List.of(MiniTecFunctionHandler.breakerOperateFn()));
     }
 
-    private ModelDefinition buildDguModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildDguModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(boolVar("cmdStart", "Start DGU", "control", false, true));
         vars.add(boolVar("cmdStop", "Stop DGU", "control", false, true));
         vars.add(boolVar("running", "DGU running", "status", false, false));
@@ -285,8 +285,8 @@ public class MiniTecModelBootstrap {
                 List.of(MiniTecFunctionHandler.dguStartFn(), MiniTecFunctionHandler.dguStopFn()));
     }
 
-    private ModelDefinition buildLoadModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildLoadModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("activePowerKw", "Active power", "telemetry", "kW", 0));
         vars.add(meas("reactivePowerKvar", "Reactive power", "telemetry", "kVAr", 0));
         vars.add(meas("apparentPowerKva", "Apparent power", "telemetry", "kVA", 0));
@@ -307,8 +307,8 @@ public class MiniTecModelBootstrap {
                 List.of(MiniTecFunctionHandler.loadModuleSetLoadFn()));
     }
 
-    private ModelDefinition buildHubModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildHubModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("totalGenPowerKw", "Total generation", "telemetry", "kW", 0));
         vars.add(meas("totalReactiveKvar", "Total reactive power", "telemetry", "kVAr", 0));
         vars.add(meas("totalLoadKw", "Total load", "telemetry", "kW", 4130));
@@ -320,7 +320,7 @@ public class MiniTecModelBootstrap {
         vars.add(meas("consumerLoad2Kw", "Consumer 2 load", "telemetry", "kW", 1200));
         vars.add(meas("consumerLoad3Kw", "Reserve load", "telemetry", "kW", 500));
         vars.add(boolVar("islandMode", "Island mode", "status", true, false));
-        vars.add(ModelVariableDefinition.of("plantState", "Plant state", "status", STR, true, false,
+        vars.add(BlueprintVariableDefinition.of("plantState", "Plant state", "status", STR, true, false,
                 DataRecord.single(STR, Map.of("value", "RUNNING"))));
         vars.add(boolVar("millLoadPending", "Mill load pending manual", "status", false, true));
         vars.add(boolVar("alarmLatched", "Alarm latched", "protection", false, true));
@@ -331,7 +331,7 @@ public class MiniTecModelBootstrap {
         vars.add(boolVar("stationUnderpower", "Station underpower", "protection", false, false));
         vars.add(boolVar("gpuSyncFault", "GPU sync fault", "protection", false, false));
 
-        List<ModelBindingRule> bindings = List.of(
+        List<BlueprintBindingRule> bindings = List.of(
                 refRule("gen-gpu1", "gpu1Power", MiniTecPaths.GPU_01, "activePowerKw"),
                 refRule("gen-gpu2", "gpu2Power", MiniTecPaths.GPU_02, "activePowerKw"),
                 refRule("gen-gpu3", "gpu3Power", MiniTecPaths.GPU_03, "activePowerKw"),
@@ -343,13 +343,13 @@ public class MiniTecModelBootstrap {
                 sumRule("bus-freq", "gridFrequencyHz", "refAt(\"" + MiniTecPaths.LOAD_MODULE + "\", frequencyHz)"),
                 sumRule("bus-10kv", "bus10kvVoltage", "10.5"),
                 sumRule("bus-04kv", "bus04kvVoltage", "0.4"),
-                ModelBindingRule.of("bus-overvoltage", "busOvervoltage", "self.bus10kvVoltage[\"value\"] > 11.0"),
-                ModelBindingRule.of("bus-undervoltage", "busUndervoltage", "self.bus10kvVoltage[\"value\"] < 9.5"),
-                ModelBindingRule.of("bus-freq-low", "busFrequencyLow", "self.gridFrequencyHz[\"value\"] < 49.5"),
-                ModelBindingRule.of("bus-freq-high", "busFrequencyHigh", "self.gridFrequencyHz[\"value\"] > 50.5"),
-                ModelBindingRule.of("station-underpower", "stationUnderpower",
+                BlueprintBindingRule.of("bus-overvoltage", "busOvervoltage", "self.bus10kvVoltage[\"value\"] > 11.0"),
+                BlueprintBindingRule.of("bus-undervoltage", "busUndervoltage", "self.bus10kvVoltage[\"value\"] < 9.5"),
+                BlueprintBindingRule.of("bus-freq-low", "busFrequencyLow", "self.gridFrequencyHz[\"value\"] < 49.5"),
+                BlueprintBindingRule.of("bus-freq-high", "busFrequencyHigh", "self.gridFrequencyHz[\"value\"] > 50.5"),
+                BlueprintBindingRule.of("station-underpower", "stationUnderpower",
                         "self.totalGenPowerKw[\"value\"] < self.totalLoadKw[\"value\"] - 100"),
-                ModelBindingRule.of("gpu-sync-fault", "gpuSyncFault",
+                BlueprintBindingRule.of("gpu-sync-fault", "gpuSyncFault",
                         "(refAt(\"" + MiniTecPaths.GPU_01 + "\", synced)[\"value\"] == false && refAt(\""
                                 + MiniTecPaths.GPU_01 + "\", running)[\"value\"] == true) || "
                                 + "(refAt(\"" + MiniTecPaths.GPU_02 + "\", synced)[\"value\"] == false && refAt(\""
@@ -377,8 +377,8 @@ public class MiniTecModelBootstrap {
         );
     }
 
-    private static ModelBindingRule refRule(String id, String target, String remotePath, String remoteVar) {
-        return new ModelBindingRule(
+    private static BlueprintBindingRule refRule(String id, String target, String remotePath, String remoteVar) {
+        return new BlueprintBindingRule(
                 id,
                 target,
                 true,
@@ -391,24 +391,24 @@ public class MiniTecModelBootstrap {
         );
     }
 
-    private static ModelBindingRule sumRule(String id, String target, String expression) {
-        return ModelBindingRule.of(id, target, expression);
+    private static BlueprintBindingRule sumRule(String id, String target, String expression) {
+        return BlueprintBindingRule.of(id, target, expression);
     }
 
-    private static ModelDefinition model(
+    private static BlueprintDefinition model(
             String name,
             String description,
             ObjectType type,
-            List<ModelVariableDefinition> variables,
-            List<ModelBindingRule> bindings,
+            List<BlueprintVariableDefinition> variables,
+            List<BlueprintBindingRule> bindings,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions
     ) {
-        return new ModelDefinition(
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 name,
                 description,
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 type,
                 "",
                 variables,
@@ -421,23 +421,23 @@ public class MiniTecModelBootstrap {
         );
     }
 
-    private static ModelDefinition model(
+    private static BlueprintDefinition model(
             String name,
             String description,
             ObjectType type,
-            List<ModelVariableDefinition> variables,
-            List<ModelBindingRule> bindings,
+            List<BlueprintVariableDefinition> variables,
+            List<BlueprintBindingRule> bindings,
             List<FunctionDescriptor> functions
     ) {
         return model(name, description, type, variables, bindings, List.of(), functions);
     }
 
-    private static ModelDefinition model(
+    private static BlueprintDefinition model(
             String name,
             String description,
             ObjectType type,
-            List<ModelVariableDefinition> variables,
-            List<ModelBindingRule> bindings
+            List<BlueprintVariableDefinition> variables,
+            List<BlueprintBindingRule> bindings
     ) {
         return model(name, description, type, variables, bindings, List.of(), List.of());
     }

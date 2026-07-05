@@ -1,4 +1,4 @@
-dependencies {
+﻿dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
 

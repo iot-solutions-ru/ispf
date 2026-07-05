@@ -5,11 +5,11 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -30,19 +30,19 @@ public class PlatformScriptBridge {
 
     private final ObjectMapper objectMapper;
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintApplicationService blueprintApplicationService;
 
     public PlatformScriptBridge(
             ObjectMapper objectMapper,
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService
     ) {
         this.objectMapper = objectMapper;
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelApplicationService = modelApplicationService;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintApplicationService = blueprintApplicationService;
     }
 
     public Map<String, Object> jsonParse(String source, List<String> fields) {
@@ -94,10 +94,10 @@ public class PlatformScriptBridge {
         return raw == null ? "" : String.valueOf(raw);
     }
 
-    public String instantiateModelIfMissing(String modelName, String parentPath, String instanceName) {
+    public String instantiateModelIfMissing(String blueprintName, String parentPath, String instanceName) {
         validateInstanceName(instanceName);
-        if (modelName == null || modelName.isBlank()) {
-            throw new IllegalArgumentException("instantiateModelIfMissing modelName is required");
+        if (blueprintName == null || blueprintName.isBlank()) {
+            throw new IllegalArgumentException("instantiateModelIfMissing blueprintName is required");
         }
         if (parentPath == null || parentPath.isBlank()) {
             throw new IllegalArgumentException("instantiateModelIfMissing parentPath is required");
@@ -106,14 +106,14 @@ public class PlatformScriptBridge {
         if (objectManager.tree().findByPath(fullPath).isPresent()) {
             return fullPath;
         }
-        ModelDefinition model = modelRegistry.findByName(modelName)
-                .orElseThrow(() -> new IllegalArgumentException("Model not found: " + modelName));
+        BlueprintDefinition model = blueprintRegistry.findByName(blueprintName)
+                .orElseThrow(() -> new IllegalArgumentException("Blueprint not found: " + blueprintName));
         try {
-            modelApplicationService.instantiateWithRules(model.id(), parentPath, instanceName, Map.of());
+            blueprintApplicationService.instantiateWithRules(model.id(), parentPath, instanceName, Map.of());
             objectManager.persistNodeTree(fullPath);
             return fullPath;
         } catch (IllegalArgumentException ex) {
-            if (ex.getCause() instanceof ModelException modelEx
+            if (ex.getCause() instanceof BlueprintException modelEx
                     && modelEx.getMessage() != null
                     && modelEx.getMessage().contains("Object already exists")) {
                 return fullPath;

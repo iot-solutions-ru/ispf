@@ -117,7 +117,7 @@ public class FunctionScriptValidator {
                 }
             }
             case "readVariable" -> require(step, "objectPath", "variable", "var");
-            case "instantiateModelIfMissing" -> require(step, "modelName", "parentPath", "instanceName", "var");
+            case "instantiateModelIfMissing" -> require(step, "blueprintName", "parentPath", "instanceName", "var");
             case "setDriverTelemetry" -> {
                 require(step, "objectPath");
                 if (!step.has("fields") || !step.get("fields").isObject()) {

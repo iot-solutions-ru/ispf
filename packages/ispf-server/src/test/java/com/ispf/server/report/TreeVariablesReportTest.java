@@ -7,7 +7,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import org.junit.jupiter.api.Test;
 
 import java.util.LinkedHashMap;
@@ -53,7 +53,7 @@ class TreeVariablesReportTest {
                 ObjectType.DEVICE,
                 "Lab A",
                 "",
-                LabModelBootstrap.VIRTUAL_LAB_MODEL
+                LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
         );
         List<Map<String, Object>> tableRows = List.of(
                 Map.of("int", 1, "string", "alpha"),
@@ -90,7 +90,7 @@ class TreeVariablesReportTest {
                 ObjectType.DEVICE,
                 "Lab A",
                 "",
-                LabModelBootstrap.VIRTUAL_LAB_MODEL
+                LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
         );
         device.addVariable(new Variable(
                 "sineWave",

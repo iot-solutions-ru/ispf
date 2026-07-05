@@ -131,7 +131,7 @@ final class AgentPlatformTurnGuard {
                     devicePaths.remove(path);
                 }
             }
-            if ("apply_relative_model".equals(tool) && "OK".equals(String.valueOf(result.get("status")))) {
+            if ("apply_relative_blueprint".equals(tool) && "OK".equals(String.valueOf(result.get("status")))) {
                 String path = String.valueOf(result.get("objectPath"));
                 if (!path.isBlank() && relativeModelVerified(result)) {
                     devicePaths.remove(path);
@@ -172,7 +172,7 @@ final class AgentPlatformTurnGuard {
                     return true;
                 }
             }
-            if ("apply_relative_model".equals(tool) && devicePath.equals(String.valueOf(result.get("objectPath")))) {
+            if ("apply_relative_blueprint".equals(tool) && devicePath.equals(String.valueOf(result.get("objectPath")))) {
                 Object added = result.get("variablesAdded");
                 Object count = result.get("variableCount");
                 if (added instanceof Number number && number.intValue() > 0) {

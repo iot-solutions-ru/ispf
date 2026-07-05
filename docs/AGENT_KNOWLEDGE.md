@@ -1,4 +1,4 @@
-# AGENT_KNOWLEDGE — справочник внутреннего агента ISPF
+﻿# AGENT_KNOWLEDGE — справочник внутреннего агента ISPF
 
 Документ для **tree-first agent**, AI Studio и MCP-клиентов. Описывает **все подходы к созданию приложений/решений** и даёт **карту документации** платформы.
 
@@ -422,7 +422,7 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 |----------|-------|------------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | architecture | Принципы, слои |
 | [OBJECT_MODEL.md](OBJECT_MODEL.md) | object-model, features | Дерево, типы, API |
-| [MODELS.md](MODELS.md) | models | Blueprints, templateId |
+| [BLUEPRINTS.md](BLUEPRINTS.md) | models | Blueprints, templateId |
 | [OBJECT_FUNCTIONS.md](OBJECT_FUNCTIONS.md) | functions | script/java handlers, invoke |
 | [BINDINGS.md](BINDINGS.md) | bindings, cel | CEL, platform bindings |
 | [PLATFORM_LOGIC.md](PLATFORM_LOGIC.md) | platform-logic, rules | Platform Rule, dashboard context |

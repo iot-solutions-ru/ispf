@@ -1,4 +1,4 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +16,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(properties = "ispf.bootstrap.fixtures-enabled=true")
-class ModelControllerTest {
+class BlueprintControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
     void listsFixtureMqttSensorModelWhenFixturesEnabled() throws Exception {
-        mockMvc.perform(get("/api/v1/models"))
+        mockMvc.perform(get("/api/v1/blueprints"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')]").exists())
                 .andExpect(jsonPath("$[?(@.name=='mqtt-sensor-v1')].type").value("RELATIVE"));

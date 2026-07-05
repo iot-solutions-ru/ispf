@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
@@ -63,11 +63,11 @@ class MeterMqttScriptDispatchIntegrationTest {
     @Test
     void ingestMeterPayloadCreatesInstanceAndUpdatesOnRepeat() throws Exception {
         ensureBusDevice();
-        objectTemplateService.applyTemplate(BUS, FixtureModelBootstrap.MQTT_METER_BUS_MODEL);
+        objectTemplateService.applyTemplate(BUS, FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL);
 
         DataRecord created = functionService.invoke(
                 BUS,
-                FixtureModelBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
+                FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
                 DataRecord.single(
                         INGRESS_SCHEMA,
                         Map.of("topic", "meter", "raw", "{\"id\":\"3123123123\",\"temperature\":\"22\"}")
@@ -84,7 +84,7 @@ class MeterMqttScriptDispatchIntegrationTest {
 
         DataRecord updated = functionService.invoke(
                 BUS,
-                FixtureModelBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
+                FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
                 DataRecord.single(
                         INGRESS_SCHEMA,
                         Map.of("topic", "meter", "raw", "{\"id\":\"3123123123\",\"temperature\":\"25\"}")

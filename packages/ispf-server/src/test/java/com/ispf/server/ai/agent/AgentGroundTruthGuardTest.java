@@ -72,25 +72,25 @@ class AgentGroundTruthGuardTest {
     @Test
     void blocksApplyRelativeModelWithoutCatalog() {
         var block = AgentGroundTruthGuard.checkBeforeTool(
-                "apply_relative_model",
-                Map.of("objectPath", "root.platform.devices.d1", "modelName", "virtual-lab-v1"),
+                "apply_relative_blueprint",
+                Map.of("objectPath", "root.platform.devices.d1", "blueprintName", "virtual-lab-v1"),
                 List.of(
                         listObjectsStep("root.platform.devices", List.of(Map.of("path", "root.platform.devices.d1")))
                 )
         );
         assertThat(block).isPresent();
-        assertThat(block.get().hint()).contains("list_relative_models");
+        assertThat(block.get().hint()).contains("list_relative_blueprints");
     }
 
     @Test
     void allowsApplyRelativeModelAfterListRelativeModels() {
         List<Map<String, Object>> steps = List.of(
                 listObjectsStep("root.platform.devices", List.of(Map.of("path", "root.platform.devices.d1"))),
-                relativeModelsStep(List.of(Map.of("modelName", "virtual-lab-v1")))
+                relativeBlueprintsStep(List.of(Map.of("blueprintName", "virtual-lab-v1")))
         );
         var block = AgentGroundTruthGuard.checkBeforeTool(
-                "apply_relative_model",
-                Map.of("objectPath", "root.platform.devices.d1", "modelName", "virtual-lab-v1"),
+                "apply_relative_blueprint",
+                Map.of("objectPath", "root.platform.devices.d1", "blueprintName", "virtual-lab-v1"),
                 steps
         );
         assertThat(block).isEmpty();
@@ -225,7 +225,7 @@ class AgentGroundTruthGuardTest {
                         "arguments", Map.of(),
                         "result", Map.of(
                                 "status", "OK",
-                                "models", List.of(Map.of("modelName", "base-sensor-v1"))
+                                "blueprints", List.of(Map.of("blueprintName", "base-sensor-v1"))
                         )
                 )
         );
@@ -252,7 +252,7 @@ class AgentGroundTruthGuardTest {
                 )
         );
         assertThat(AgentGroundTruthGuard.isParentGrounded(steps, "root.platform.devices")).isTrue();
-        assertThat(AgentGroundTruthGuard.isModelGrounded(steps, "lab")).isTrue();
+        assertThat(AgentGroundTruthGuard.isBlueprintGrounded(steps, "lab")).isTrue();
     }
 
     @Test
@@ -484,12 +484,12 @@ class AgentGroundTruthGuardTest {
         );
     }
 
-    private static Map<String, Object> relativeModelsStep(List<Map<String, Object>> models) {
+    private static Map<String, Object> relativeBlueprintsStep(List<Map<String, Object>> models) {
         return Map.of(
                 "type", "tool",
-                "tool", "list_relative_models",
+                "tool", "list_relative_blueprints",
                 "arguments", Map.of(),
-                "result", Map.of("status", "OK", "models", models)
+                "result", Map.of("status", "OK", "blueprints", models)
         );
     }
 

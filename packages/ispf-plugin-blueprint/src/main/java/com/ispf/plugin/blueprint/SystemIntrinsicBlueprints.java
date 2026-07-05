@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
 
@@ -8,7 +8,7 @@ import java.util.Set;
 /**
  * Platform 1:1 schemas for system {@link ObjectType}s — embedded in instances, not shown as relative-model catalog entries.
  */
-public final class SystemIntrinsicModels {
+public final class SystemIntrinsicBlueprints {
 
     public static final String PARAM_SYSTEM_INTRINSIC = "systemIntrinsic";
 
@@ -38,18 +38,18 @@ public final class SystemIntrinsicModels {
             Map.entry(ObjectType.WORKFLOW, "workflow-v1")
     );
 
-    private SystemIntrinsicModels() {
+    private SystemIntrinsicBlueprints() {
     }
 
     public static boolean isIntrinsicName(String name) {
         return name != null && NAMES.contains(name);
     }
 
-    public static boolean isIntrinsic(ModelDefinition model) {
+    public static boolean isIntrinsic(BlueprintDefinition model) {
         return model != null && (model.systemIntrinsic() || isIntrinsicName(model.name()));
     }
 
-    public static String modelNameForObjectType(ObjectType type) {
+    public static String blueprintNameForObjectType(ObjectType type) {
         return BY_OBJECT_TYPE.get(type);
     }
 

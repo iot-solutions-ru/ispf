@@ -694,20 +694,20 @@ export default function ObjectPropertiesEditor({
               <input value={ctx.path} readOnly className="readonly" />
             </label>
             <label>
-              {t("common:field.primaryModel")}
+              {t("common:field.primaryBlueprint")}
               <input
                 value={
-                  ctx.appliedModels?.find((m) => m.primary)?.name ?? ctx.templateId ?? "—"
+                  ctx.appliedBlueprints?.find((m) => m.primary)?.name ?? ctx.templateId ?? "—"
                 }
                 readOnly
                 className="readonly"
               />
             </label>
-            {(ctx.appliedModels?.length ?? 0) > 0 && (
+            {(ctx.appliedBlueprints?.length ?? 0) > 0 && (
               <div className="full">
-                <span className="field-label">{t("common:field.appliedModels")}</span>
+                <span className="field-label">{t("common:field.appliedBlueprints")}</span>
                 <ul className="applied-models-list">
-                  {ctx.appliedModels!.map((model) => (
+                  {ctx.appliedBlueprints!.map((model) => (
                     <li key={model.id}>
                       <code>{model.name}</code> ({model.type}
                       {model.primary ? ", primary" : ""})

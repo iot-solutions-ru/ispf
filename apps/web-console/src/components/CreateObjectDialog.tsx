@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createObject } from "../api";
-import { fetchInstanceTypes, instantiateModel } from "../api/models";
+import { fetchInstanceTypes, instantiateBlueprint } from "../api/blueprints";
 import { registerApplication } from "../api/applications";
 import { saveReportDefinition } from "../api/reports";
 import { createOperatorApp } from "../api/operatorApps";
@@ -23,7 +23,7 @@ import {
   operatorAppObjectPath,
   resolveCreateDialogMode,
 } from "../utils/createObjectMode";
-import type { ModelDto } from "../types/models";
+import type { BlueprintDto } from "../types/blueprints";
 import type { ObjectType } from "../types";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 
@@ -33,7 +33,7 @@ const OBJECT_TYPES: ObjectType[] = [
   "CUSTOM",
   "VISUAL_GROUP",
   "DEVICE",
-  "MODEL",
+  "BLUEPRINT",
   "DASHBOARD",
   "REPORT",
   "WORKFLOW",
@@ -258,7 +258,7 @@ export default function CreateObjectDialog({
         return created.path;
       }
       if (selectedInstanceModel) {
-        const obj = await instantiateModel(selectedInstanceModel.id, parentPath, name, {});
+        const obj = await instantiateBlueprint(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
       }
       // #region agent log
@@ -528,7 +528,7 @@ export default function CreateObjectDialog({
                   </optgroup>
                   {(instanceTypesQuery.data?.length ?? 0) > 0 && (
                     <optgroup label={t("dialog.instanceTypes")}>
-                      {(instanceTypesQuery.data ?? []).map((model: ModelDto) => (
+                      {(instanceTypesQuery.data ?? []).map((model: BlueprintDto) => (
                         <option key={model.id} value={`${INSTANCE_TYPE_PREFIX}${model.id}`}>
                           {model.name}
                           {model.targetObjectType ? ` (${model.targetObjectType})` : ""}

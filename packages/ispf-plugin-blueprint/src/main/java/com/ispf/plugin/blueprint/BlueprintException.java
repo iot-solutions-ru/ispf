@@ -1,12 +1,12 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
-public class ModelException extends RuntimeException {
+public class BlueprintException extends RuntimeException {
 
-    public ModelException(String message) {
+    public BlueprintException(String message) {
         super(message);
     }
 
-    public ModelException(String message, Throwable cause) {
+    public BlueprintException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -1,10 +1,10 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import tools.jackson.databind.ObjectMapper;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.plugin.model.dto.ModelDto;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,36 +13,36 @@ import java.time.Instant;
 import java.util.List;
 
 @Service
-public class ModelPersistenceService {
+public class BlueprintPersistenceService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
 
-    public ModelPersistenceService(
+    public BlueprintPersistenceService(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
     }
 
-    public void persist(ModelDefinition model, boolean builtin) {
+    public void persist(BlueprintDefinition model, boolean builtin) {
         try {
-            String json = objectMapper.writeValueAsString(ModelDto.from(model));
+            String json = objectMapper.writeValueAsString(BlueprintDto.from(model));
             Integer count = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM model_definitions WHERE id = ?",
+                    "SELECT COUNT(*) FROM blueprint_definitions WHERE id = ?",
                     Integer.class,
                     model.id()
             );
             if (count != null && count > 0) {
                 jdbcTemplate.update("""
-                        UPDATE model_definitions
+                        UPDATE blueprint_definitions
                         SET name = ?, definition_json = ?, builtin = ?, updated_at = ?
                         WHERE id = ?
                         """,
@@ -55,7 +55,7 @@ public class ModelPersistenceService {
                 return;
             }
             jdbcTemplate.update("""
-                    INSERT INTO model_definitions (id, name, definition_json, builtin, updated_at)
+                    INSERT INTO blueprint_definitions (id, name, definition_json, builtin, updated_at)
                     VALUES (?, ?, ?, ?, ?)
                     """,
                     model.id(),
@@ -70,21 +70,21 @@ public class ModelPersistenceService {
     }
 
     public void delete(String modelId) {
-        jdbcTemplate.update("DELETE FROM model_definitions WHERE id = ? AND builtin = FALSE", modelId);
+        jdbcTemplate.update("DELETE FROM blueprint_definitions WHERE id = ? AND builtin = FALSE", modelId);
     }
 
-    public void restoreCustomModels() {
+    public void restoreCustomBlueprints() {
         List<String> jsonRows = jdbcTemplate.queryForList(
-                "SELECT definition_json FROM model_definitions WHERE builtin = FALSE",
+                "SELECT definition_json FROM blueprint_definitions WHERE builtin = FALSE",
                 String.class
         );
         for (String json : jsonRows) {
             try {
-                ModelDto dto = objectMapper.readValue(json, ModelDto.class);
-                if (modelRegistry.findByName(dto.name()).isPresent()) {
+                BlueprintDto dto = objectMapper.readValue(json, BlueprintDto.class);
+                if (blueprintRegistry.findByName(dto.name()).isPresent()) {
                     continue;
                 }
-                ModelDefinition model = new ModelDefinition(
+                BlueprintDefinition model = new BlueprintDefinition(
                         dto.id(),
                         dto.name(),
                         dto.description(),
@@ -99,7 +99,7 @@ public class ModelPersistenceService {
                         dto.createdAt(),
                         dto.updatedAt()
                 );
-                modelRegistry.register(model);
+                blueprintRegistry.register(model);
             } catch (Exception ex) {
                 throw new IllegalStateException("Failed to restore model from persistence", ex);
             }

@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 /**
  * Model attachment semantics when applying a model to the object tree.
@@ -8,7 +8,7 @@ package com.ispf.plugin.model;
  *   <li>{@link #INSTANCE} — explicit on-demand instantiation under a parent path</li>
  * </ul>
  */
-public enum ModelType {
+public enum BlueprintType {
     RELATIVE,
     ABSOLUTE,
     INSTANCE

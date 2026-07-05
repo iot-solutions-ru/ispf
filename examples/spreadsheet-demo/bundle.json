@@ -6,7 +6,7 @@
   "metadata": {
     "purpose": "Minimal reference: device with sheetValues + dashboard spreadsheet widget"
   },
-  "models": [
+  "blueprints": [
     {
       "name": "sheet-storage-v1",
       "description": "Device that stores spreadsheet cell values in sheetValues (RECORD_LIST)",

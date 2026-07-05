@@ -1,19 +1,19 @@
-package com.ispf.server.plugin.model.dto;
+package com.ispf.server.plugin.blueprint.dto;
 
-import com.ispf.plugin.model.ModelMergeWarning;
+import com.ispf.plugin.blueprint.BlueprintMergeWarning;
 
-public record ModelMergeWarningDto(
+public record BlueprintMergeWarningDto(
         String kind,
         String name,
-        String previousModelId,
-        String appliedModelId
+        String previousBlueprintId,
+        String appliedBlueprintId
 ) {
-    public static ModelMergeWarningDto from(ModelMergeWarning warning) {
-        return new ModelMergeWarningDto(
+    public static BlueprintMergeWarningDto from(BlueprintMergeWarning warning) {
+        return new BlueprintMergeWarningDto(
                 warning.kind(),
                 warning.name(),
-                warning.previousModelId(),
-                warning.appliedModelId()
+                warning.previousBlueprintId(),
+                warning.appliedBlueprintId()
         );
     }
 }

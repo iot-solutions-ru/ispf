@@ -53,7 +53,7 @@ public class TankFarmPlatformBootstrap {
             new TankSeed(24, 1230, 45),
     };
 
-    private final TankFarmModelBootstrap modelBootstrap;
+    private final TankFarmBlueprintBootstrap BlueprintBootstrap;
     private final ObjectTemplateService templateService;
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
@@ -65,7 +65,7 @@ public class TankFarmPlatformBootstrap {
     private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public TankFarmPlatformBootstrap(
-            TankFarmModelBootstrap modelBootstrap,
+            TankFarmBlueprintBootstrap BlueprintBootstrap,
             ObjectTemplateService templateService,
             ObjectManager objectManager,
             DashboardService dashboardService,
@@ -76,7 +76,7 @@ public class TankFarmPlatformBootstrap {
             BootstrapProperties bootstrapProperties,
             ClusterPlatformBootstrapService clusterBootstrapService
     ) {
-        this.modelBootstrap = modelBootstrap;
+        this.BlueprintBootstrap = BlueprintBootstrap;
         this.templateService = templateService;
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
@@ -94,7 +94,7 @@ public class TankFarmPlatformBootstrap {
         if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
-        modelBootstrap.ensureTankFarmModels();
+        BlueprintBootstrap.ensureTankFarmModels();
         registerApplication();
         ensureFolder();
         for (TankSeed tank : allTanks()) {
@@ -166,14 +166,14 @@ public class TankFarmPlatformBootstrap {
                     ObjectType.DEVICE,
                     "Резервуар №" + tank.number(),
                     "",
-                    TankFarmModelBootstrap.TANK_MODEL
+                    TankFarmBlueprintBootstrap.TANK_MODEL
             );
         }
-        templateService.applyTemplate(path, TankFarmModelBootstrap.TANK_MODEL);
+        templateService.applyTemplate(path, TankFarmBlueprintBootstrap.TANK_MODEL);
         setStringVar(
                 path,
                 "driverConfigJson",
-                TankFarmModelBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
+                TankFarmBlueprintBootstrap.tankDriverConfig(tank.number(), tank.initialLevelMm(), tank.rateBiasMmPerHour())
         );
     }
 
@@ -186,11 +186,11 @@ public class TankFarmPlatformBootstrap {
                     ObjectType.CUSTOM,
                     "Коллектор магистрали",
                     "",
-                    TankFarmModelBootstrap.MANIFOLD_HUB_MODEL
+                    TankFarmBlueprintBootstrap.MANIFOLD_HUB_MODEL
             );
         }
-        templateService.applyTemplate(path, TankFarmModelBootstrap.MANIFOLD_HUB_MODEL);
-        setStringVar(path, "driverConfigJson", TankFarmModelBootstrap.MANIFOLD_HUB_DRIVER_CONFIG);
+        templateService.applyTemplate(path, TankFarmBlueprintBootstrap.MANIFOLD_HUB_MODEL);
+        setStringVar(path, "driverConfigJson", TankFarmBlueprintBootstrap.MANIFOLD_HUB_DRIVER_CONFIG);
     }
 
     private void setStringVar(String path, String name, String value) {

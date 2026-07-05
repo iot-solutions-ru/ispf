@@ -228,7 +228,7 @@ public class FunctionScriptEngine {
             }
             case "instantiateModelIfMissing" -> {
                 String instancePath = platformScriptBridge.instantiateModelIfMissing(
-                        String.valueOf(resolveStepValue(step.get("modelName"), vars)),
+                        String.valueOf(resolveStepValue(step.get("blueprintName"), vars)),
                         String.valueOf(resolveStepValue(step.get("parentPath"), vars)),
                         String.valueOf(resolveStepValue(step.get("instanceName"), vars))
                 );

@@ -1,22 +1,22 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
-import com.ispf.plugin.model.ModelAttachment;
-import com.ispf.plugin.model.ModelCatalogRoots;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintAttachment;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.dto.ModelAttachmentDto;
-import com.ispf.server.plugin.model.dto.ModelDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
@@ -42,53 +42,53 @@ import java.util.UUID;
  * REST API for the Models plugin.
  */
 @RestController
-@RequestMapping("/api/v1/models")
-public class ModelController {
+@RequestMapping("/api/v1/blueprints")
+public class BlueprintController {
 
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
     private final ObjectManager objectManager;
-    private final ModelPersistenceService modelPersistence;
-    private final ModelMergeService modelMergeService;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintPersistenceService blueprintPersistence;
+    private final BlueprintMergeService BlueprintMergeService;
+    private final BlueprintApplicationService blueprintApplicationService;
 
-    public ModelController(
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+    public BlueprintController(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
             ObjectManager objectManager,
-            ModelPersistenceService modelPersistence,
-            ModelMergeService modelMergeService,
-            ModelApplicationService modelApplicationService
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintMergeService BlueprintMergeService,
+            BlueprintApplicationService blueprintApplicationService
     ) {
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
         this.objectManager = objectManager;
-        this.modelPersistence = modelPersistence;
-        this.modelMergeService = modelMergeService;
-        this.modelApplicationService = modelApplicationService;
+        this.blueprintPersistence = blueprintPersistence;
+        this.BlueprintMergeService = BlueprintMergeService;
+        this.blueprintApplicationService = blueprintApplicationService;
     }
 
     @GetMapping
-    public List<ModelDto> list() {
-        return modelRegistry.all().stream()
-                .map(ModelDto::from)
+    public List<BlueprintDto> list() {
+        return blueprintRegistry.all().stream()
+                .map(BlueprintDto::from)
                 .toList();
     }
 
     @GetMapping("/{id}")
-    public ModelDto get(@PathVariable String id) {
-        return ModelDto.from(modelRegistry.requireById(id));
+    public BlueprintDto get(@PathVariable String id) {
+        return BlueprintDto.from(blueprintRegistry.requireById(id));
     }
 
     @GetMapping("/by-name/{name}")
-    public ModelDto getByName(@PathVariable String name) {
-        return ModelDto.from(modelRegistry.requireByName(name));
+    public BlueprintDto getByName(@PathVariable String name) {
+        return BlueprintDto.from(blueprintRegistry.requireByName(name));
     }
 
     @PostMapping
-    public ModelDto create(@Valid @RequestBody CreateModelRequest request) {
+    public BlueprintDto create(@Valid @RequestBody CreateModelRequest request) {
         Instant now = Instant.now();
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 request.name(),
                 request.description(),
@@ -104,18 +104,18 @@ public class ModelController {
                 now
         );
         try {
-            ModelDefinition created = modelEngine.createModel(model);
-            modelPersistence.persist(created, false);
-            return ModelDto.from(created);
-        } catch (ModelException e) {
+            BlueprintDefinition created = blueprintEngine.createBlueprint(model);
+            blueprintPersistence.persist(created, false);
+            return BlueprintDto.from(created);
+        } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ModelDto update(@PathVariable String id, @Valid @RequestBody UpdateModelRequest request) {
-        ModelDefinition existing = modelRegistry.requireById(id);
-        ModelDefinition updated = new ModelDefinition(
+    public BlueprintDto update(@PathVariable String id, @Valid @RequestBody UpdateModelRequest request) {
+        BlueprintDefinition existing = blueprintRegistry.requireById(id);
+        BlueprintDefinition updated = new BlueprintDefinition(
                 existing.id(),
                 request.name() != null ? request.name() : existing.name(),
                 request.description() != null ? request.description() : existing.description(),
@@ -130,25 +130,25 @@ public class ModelController {
                 existing.createdAt(),
                 Instant.now()
         );
-        ModelDefinition saved = modelEngine.updateModel(updated);
-        modelPersistence.persist(saved, false);
-        return ModelDto.from(saved);
+        BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
+        blueprintPersistence.persist(saved, false);
+        return BlueprintDto.from(saved);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable String id) {
-        modelEngine.deleteModel(id);
-        modelPersistence.delete(id);
+        blueprintEngine.deleteBlueprint(id);
+        blueprintPersistence.delete(id);
     }
 
     @PostMapping("/{id}/apply")
-    public ModelAttachmentDto apply(
+    public BlueprintAttachmentDto apply(
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {
         try {
-            ModelAttachmentDto attachment = ModelAttachmentDto.from(
-                    modelApplicationService.applyModelWithRules(id, objectPath)
+            BlueprintAttachmentDto attachment = BlueprintAttachmentDto.from(
+                    blueprintApplicationService.applyBlueprintWithRules(id, objectPath)
             );
             return attachment;
         } catch (IllegalArgumentException e) {
@@ -162,7 +162,7 @@ public class ModelController {
             @Valid @RequestBody InstantiateModelRequest request
     ) {
         try {
-            modelApplicationService.instantiateWithRules(
+            blueprintApplicationService.instantiateWithRules(
                     id,
                     request.parentPath(),
                     request.instanceName(),
@@ -172,9 +172,9 @@ public class ModelController {
             return ObjectDto.from(
                     objectManager.require(path),
                     null,
-                    com.ispf.server.plugin.model.dto.AppliedModelDto.resolve(
+                    com.ispf.server.plugin.blueprint.dto.AppliedBlueprintDto.resolve(
                             objectManager.require(path),
-                            modelRegistry
+                            blueprintRegistry
                     )
             );
         } catch (IllegalArgumentException e) {
@@ -183,28 +183,28 @@ public class ModelController {
     }
 
     @PostMapping("/from-object")
-    public ModelDto createFromObject(@Valid @RequestBody CreateFromObjectRequest request) {
+    public BlueprintDto createFromObject(@Valid @RequestBody CreateFromObjectRequest request) {
         try {
-            ModelDefinition model = modelEngine.createFromObject(
+            BlueprintDefinition model = blueprintEngine.createFromObject(
                     request.sourcePath(),
-                    request.modelName(),
+                    request.blueprintName(),
                     request.description(),
-                    request.type() != null ? request.type() : ModelType.INSTANCE
+                    request.type() != null ? request.type() : BlueprintType.INSTANCE
             );
-            modelPersistence.persist(model, false);
+            blueprintPersistence.persist(model, false);
             objectManager.persistNodeTree(model.catalogObjectPath());
-            return ModelDto.from(model);
-        } catch (ModelException e) {
+            return BlueprintDto.from(model);
+        } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     @GetMapping("/attachments")
-    public List<ModelAttachmentDto> attachments(@RequestParam(required = false) String objectPath) {
-        List<ModelAttachment> list = objectPath != null && !objectPath.isBlank()
-                ? modelEngine.attachmentsForObject(objectPath)
-                : modelEngine.attachments();
-        return list.stream().map(ModelAttachmentDto::from).toList();
+    public List<BlueprintAttachmentDto> attachments(@RequestParam(required = false) String objectPath) {
+        List<BlueprintAttachment> list = objectPath != null && !objectPath.isBlank()
+                ? blueprintEngine.attachmentsForObject(objectPath)
+                : blueprintEngine.attachments();
+        return list.stream().map(BlueprintAttachmentDto::from).toList();
     }
 
     @PostMapping("/{id}/upgrade")
@@ -214,20 +214,20 @@ public class ModelController {
             @RequestParam(required = false) String targetVersion
     ) {
         try {
-            ModelDefinition model = modelRegistry.requireById(id);
+            BlueprintDefinition model = blueprintRegistry.requireById(id);
             if (targetVersion != null && !targetVersion.isBlank()
-                    && !targetVersion.equals(model.modelVersion())) {
-                throw new ModelException(
-                        "Model version mismatch: requested " + targetVersion + ", actual " + model.modelVersion()
+                    && !targetVersion.equals(model.blueprintVersion())) {
+                throw new BlueprintException(
+                        "Model version mismatch: requested " + targetVersion + ", actual " + model.blueprintVersion()
                 );
             }
-            ModelAttachmentDto attachment = ModelAttachmentDto.from(
-                    modelApplicationService.applyModelWithRules(id, targetPath)
+            BlueprintAttachmentDto attachment = BlueprintAttachmentDto.from(
+                    blueprintApplicationService.applyBlueprintWithRules(id, targetPath)
             );
             return Map.of(
                     "status", "OK",
                     "targetPath", targetPath,
-                    "modelVersion", model.modelVersion(),
+                    "blueprintVersion", model.blueprintVersion(),
                     "attachmentId", attachment.id(),
                     "warnings", attachment.warnings()
             );
@@ -238,7 +238,7 @@ public class ModelController {
 
     @PostMapping("/merge-preview")
     public Map<String, Object> mergePreview(@Valid @RequestBody MergePreviewRequest request) {
-        return modelMergeService.mergePreview(
+        return BlueprintMergeService.mergePreview(
                 request.baseModelId(),
                 request.theirsModelId(),
                 request.objectPath()
@@ -247,7 +247,7 @@ public class ModelController {
 
     @PostMapping("/merge-apply")
     public Map<String, Object> mergeApply(@Valid @RequestBody MergeApplyRequest request) {
-        return modelMergeService.applyMerge(
+        return BlueprintMergeService.applyMerge(
                 request.baseModelId(),
                 request.theirsModelId(),
                 request.objectPath(),
@@ -261,18 +261,18 @@ public class ModelController {
             @RequestParam(defaultValue = "false") boolean dryRun
     ) {
         try {
-            ModelDefinition model = modelRegistry.requireById(id);
+            BlueprintDefinition model = blueprintRegistry.requireById(id);
             LinkedHashSet<String> targets = new LinkedHashSet<>();
-            for (ModelAttachment attachment : modelEngine.attachments()) {
-                if (id.equals(attachment.modelId())) {
+            for (BlueprintAttachment attachment : blueprintEngine.attachments()) {
+                if (id.equals(attachment.blueprintId())) {
                     targets.add(attachment.objectPath());
                 }
             }
             for (com.ispf.core.object.PlatformObject node : objectManager.tree().all()) {
-                if (modelEngine.isModelCatalogPath(node.path())) {
+                if (blueprintEngine.isBlueprintCatalogPath(node.path())) {
                     continue;
                 }
-                if (model.type() == com.ispf.plugin.model.ModelType.INSTANCE
+                if (model.type() == com.ispf.plugin.blueprint.BlueprintType.INSTANCE
                         && node.type() != model.targetObjectType()) {
                     continue;
                 }
@@ -288,17 +288,17 @@ public class ModelController {
                     upgraded.add(targetPath);
                     continue;
                 }
-                modelApplicationService.applyModelWithRules(id, targetPath);
+                blueprintApplicationService.applyBlueprintWithRules(id, targetPath);
                 upgraded.add(targetPath);
             }
             return Map.of(
                     "status", dryRun ? "DRY_RUN" : "OK",
                     "dryRun", dryRun,
-                    "modelVersion", model.modelVersion(),
+                    "blueprintVersion", model.blueprintVersion(),
                     "upgraded", upgraded,
                     "count", upgraded.size()
             );
-        } catch (ModelException e) {
+        } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
@@ -308,10 +308,10 @@ public class ModelController {
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {
-        ModelDefinition model = modelRegistry.requireById(id);
+        BlueprintDefinition model = blueprintRegistry.requireById(id);
         PlatformObject object = objectManager.require(objectPath);
         LinkedHashSet<String> modelVariables = model.variables().stream()
-                .map(ModelVariableDefinition::name)
+                .map(BlueprintVariableDefinition::name)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         LinkedHashSet<String> objectVariables = new LinkedHashSet<>(object.variables().keySet());
         LinkedHashSet<String> modelEvents = model.events().stream()
@@ -338,7 +338,7 @@ public class ModelController {
 
         return Map.of(
                 "objectPath", objectPath,
-                "modelVersion", model.modelVersion(),
+                "blueprintVersion", model.blueprintVersion(),
                 "variablesToAdd", variablesToAdd,
                 "variablesOnlyOnObject", variablesOnlyOnObject,
                 "eventsToAdd", eventsToAdd,
@@ -349,18 +349,18 @@ public class ModelController {
 
     @GetMapping("/{id}/instances")
     public List<Map<String, String>> listInstances(@PathVariable String id) {
-        ModelDefinition model = modelRegistry.requireById(id);
+        BlueprintDefinition model = blueprintRegistry.requireById(id);
         LinkedHashSet<String> paths = new LinkedHashSet<>();
-        for (ModelAttachment attachment : modelEngine.attachments()) {
-            if (id.equals(attachment.modelId())) {
+        for (BlueprintAttachment attachment : blueprintEngine.attachments()) {
+            if (id.equals(attachment.blueprintId())) {
                 paths.add(attachment.objectPath());
             }
         }
         for (com.ispf.core.object.PlatformObject node : objectManager.tree().all()) {
-            if (ModelCatalogRoots.isCatalogPath(node.path()) || ModelCatalogRoots.isLegacyPath(node.path())) {
+            if (BlueprintCatalogRoots.isCatalogPath(node.path()) || BlueprintCatalogRoots.isLegacyPath(node.path())) {
                 continue;
             }
-            if (model.type() == com.ispf.plugin.model.ModelType.INSTANCE
+            if (model.type() == com.ispf.plugin.blueprint.BlueprintType.INSTANCE
                     && node.type() != model.targetObjectType()) {
                 continue;
             }
@@ -378,13 +378,13 @@ public class ModelController {
     public record CreateModelRequest(
             @NotBlank String name,
             String description,
-            ModelType type,
+            BlueprintType type,
             ObjectType targetObjectType,
             String suitabilityExpression,
-            List<ModelVariableDefinition> variables,
+            List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<ModelBindingRule> bindings,
+            List<BlueprintBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }
@@ -392,13 +392,13 @@ public class ModelController {
     public record UpdateModelRequest(
             String name,
             String description,
-            ModelType type,
+            BlueprintType type,
             ObjectType targetObjectType,
             String suitabilityExpression,
-            List<ModelVariableDefinition> variables,
+            List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<ModelBindingRule> bindings,
+            List<BlueprintBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }
@@ -412,9 +412,9 @@ public class ModelController {
 
     public record CreateFromObjectRequest(
             @NotBlank String sourcePath,
-            @NotBlank String modelName,
+            @NotBlank String blueprintName,
             String description,
-            ModelType type
+            BlueprintType type
     ) {
     }
 
@@ -429,7 +429,7 @@ public class ModelController {
             @NotBlank String baseModelId,
             @NotBlank String theirsModelId,
             @NotBlank String objectPath,
-            List<ModelMergeService.MergeResolution> resolutions
+            List<BlueprintMergeService.MergeResolution> resolutions
     ) {
     }
 }

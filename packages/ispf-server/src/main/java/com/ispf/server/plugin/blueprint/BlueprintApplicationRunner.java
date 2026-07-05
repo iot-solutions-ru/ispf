@@ -1,4 +1,4 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
@@ -9,16 +9,16 @@ import com.ispf.server.object.ObjectBindingStatePort;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.server.dashboard.DashboardDemoRulesBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.workflow.WorkflowDefinitions;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -30,36 +30,36 @@ import java.util.Set;
  * Applies built-in models to demo objects after bootstrap.
  */
 @Component
-public class ModelApplicationRunner {
+public class BlueprintApplicationRunner {
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
     private final ObjectManager objectManager;
-    private final ModelBindingRulesMerger bindingRulesMerger;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintBindingRulesMerger bindingRulesMerger;
+    private final BlueprintApplicationService blueprintApplicationService;
     private final SystemObjectStructureService structureService;
     private final DeviceProvisioningService deviceProvisioningService;
     private final DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap;
     private final ObjectBindingStatePort bindingStatePort;
     private final BindingRulesService bindingRulesService;
 
-    public ModelApplicationRunner(
-            ModelEngine modelEngine,
-            ModelRegistry modelRegistry,
+    public BlueprintApplicationRunner(
+            BlueprintEngine blueprintEngine,
+            BlueprintRegistry blueprintRegistry,
             ObjectManager objectManager,
-            ModelBindingRulesMerger bindingRulesMerger,
-            ModelApplicationService modelApplicationService,
+            BlueprintBindingRulesMerger bindingRulesMerger,
+            BlueprintApplicationService blueprintApplicationService,
             SystemObjectStructureService structureService,
             DeviceProvisioningService deviceProvisioningService,
             DashboardDemoRulesBootstrap dashboardDemoRulesBootstrap,
             ObjectBindingStatePort bindingStatePort,
             BindingRulesService bindingRulesService
     ) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
         this.objectManager = objectManager;
         this.bindingRulesMerger = bindingRulesMerger;
-        this.modelApplicationService = modelApplicationService;
+        this.blueprintApplicationService = blueprintApplicationService;
         this.structureService = structureService;
         this.deviceProvisioningService = deviceProvisioningService;
         this.dashboardDemoRulesBootstrap = dashboardDemoRulesBootstrap;
@@ -68,17 +68,17 @@ public class ModelApplicationRunner {
     }
 
     public void restoreAttachments() {
-        modelApplicationService.restoreAttachments();
+        blueprintApplicationService.restoreAttachments();
     }
 
-    private void applyModelWithRules(ModelDefinition model, String path) {
-        modelApplicationService.applyModelWithRules(model, path, model.parameters());
+    private void applyBlueprintWithRules(BlueprintDefinition model, String path) {
+        blueprintApplicationService.applyBlueprintWithRules(model, path, model.parameters());
     }
 
-    public void applyDemoModels() {
+    public void applyDemoBlueprints() {
         ensureDemoFixtures();
 
-        modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
+        blueprintRegistry.findByName("dashboard-v1").ifPresent(model -> {
             String path = "root.platform.dashboards.demo-sensor";
             structureService.ensureDashboardStructure(path);
             PlatformObject dashboard = objectManager.require(path);
@@ -99,7 +99,7 @@ public class ModelApplicationRunner {
             objectManager.persistNodeTree(path);
         });
 
-        modelRegistry.findByName("dashboard-v1").ifPresent(model -> {
+        blueprintRegistry.findByName("dashboard-v1").ifPresent(model -> {
             String path = "root.platform.dashboards.snmp-host-monitoring";
             structureService.ensureDashboardStructure(path);
             PlatformObject dashboard = objectManager.require(path);
@@ -127,7 +127,7 @@ public class ModelApplicationRunner {
             objectManager.persistNodeTree(path);
         });
 
-        modelRegistry.findByName("workflow-v1").ifPresent(model -> {
+        blueprintRegistry.findByName("workflow-v1").ifPresent(model -> {
             String path = "root.platform.workflows.demo-alarm-handler";
             structureService.ensureWorkflowStructure(path);
             PlatformObject workflow = objectManager.require(path);
@@ -169,17 +169,17 @@ public class ModelApplicationRunner {
             objectManager.persistNodeTree(path);
         });
 
-        modelRegistry.findByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL).ifPresent(model -> {
-            String path = FixtureModelBootstrap.VENDOR_SENSOR_DEMO_PATH;
+        blueprintRegistry.findByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL).ifPresent(model -> {
+            String path = FixtureBlueprintBootstrap.VENDOR_SENSOR_DEMO_PATH;
             if (objectManager.tree().findByPath(path).isEmpty()) {
-                modelApplicationService.instantiateWithRules(
+                blueprintApplicationService.instantiateWithRules(
                         model.id(),
                         "root.platform.devices",
                         "vendor-sensor-demo",
                         Map.of()
                 );
             } else {
-                applyModelWithRules(model, path);
+                applyBlueprintWithRules(model, path);
             }
             objectManager.persistNodeTree(path);
         });
@@ -199,11 +199,11 @@ public class ModelApplicationRunner {
 
     private void ensureDemoFixtures(boolean provisionDriver) {
         ensurePlatformDemoNodes();
-        modelRegistry.findByName(FixtureModelBootstrap.MQTT_SENSOR_MODEL)
+        blueprintRegistry.findByName(FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL)
                 .ifPresent(model -> restoreDemoSensorFixture(model, provisionDriver));
     }
 
-    private void restoreDemoSensorFixture(ModelDefinition model, boolean provisionDriver) {
+    private void restoreDemoSensorFixture(BlueprintDefinition model, boolean provisionDriver) {
         String devicePath = "root.platform.devices.demo-sensor-01";
         if (objectManager.tree().findByPath(devicePath).isEmpty()) {
             return;
@@ -211,12 +211,12 @@ public class ModelApplicationRunner {
         PlatformObject device = objectManager.require(devicePath);
         if (device.getVariable("temperature").isEmpty()) {
             bindingStatePort.invalidateCache(devicePath);
-            modelEngine.applyModel(model.id(), devicePath);
-            bindingRulesMerger.mergeModelRules(devicePath, model, Map.of(), false);
+            blueprintEngine.applyBlueprint(model.id(), devicePath);
+            bindingRulesMerger.mergeBlueprintRules(devicePath, model, Map.of(), false);
             objectManager.persistNodeTree(devicePath);
         } else if (bindingRulesService.listRules(devicePath).isEmpty()) {
             bindingStatePort.invalidateCache(devicePath);
-            bindingRulesMerger.mergeModelRules(devicePath, model, Map.of(), false);
+            bindingRulesMerger.mergeBlueprintRules(devicePath, model, Map.of(), false);
             objectManager.persistNodeTree(devicePath);
         }
         if (provisionDriver) {
@@ -231,8 +231,8 @@ public class ModelApplicationRunner {
     }
 
     private void ensureMeterMqttBusDevice() {
-        modelRegistry.findByName(FixtureModelBootstrap.MQTT_METER_BUS_MODEL).ifPresent(model -> {
-            String path = FixtureModelBootstrap.MQTT_METER_BUS_PATH;
+        blueprintRegistry.findByName(FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL).ifPresent(model -> {
+            String path = FixtureBlueprintBootstrap.MQTT_METER_BUS_PATH;
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 objectManager.create(
                         "root.platform.devices",
@@ -243,7 +243,7 @@ public class ModelApplicationRunner {
                         null
                 );
             }
-            applyModelWithRules(model, path);
+            applyBlueprintWithRules(model, path);
             ensureMeterBusDriverVariables(path);
             objectManager.persistNodeTree(path);
         });
@@ -257,7 +257,7 @@ public class ModelApplicationRunner {
         if (!mappings.contains("\"ingress\"") || !mappings.contains("meter")) {
             device.setVariableValue(
                     "driverPointMappingsJson",
-                    DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.METER_INGRESS_POINT_MAPPINGS))
+                    DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_POINT_MAPPINGS))
             );
         }
         String config = readVariableStringField(device, "driverConfigJson", "value");
@@ -265,7 +265,7 @@ public class ModelApplicationRunner {
                 || !config.contains("ingressPayloadLanes")) {
             device.setVariableValue(
                     "driverConfigJson",
-                    DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.METER_INGRESS_DRIVER_CONFIG))
+                    DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_DRIVER_CONFIG))
             );
         }
         if (device.getVariable("driverId").isPresent()) {
@@ -287,7 +287,7 @@ public class ModelApplicationRunner {
 
     private void ensurePlatformDemoNodes() {
         ensureNode("root.platform.devices", ObjectType.DEVICES, "Devices", "Connected devices");
-        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor (fixture)", FixtureModelBootstrap.MQTT_SENSOR_MODEL);
+        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor (fixture)", FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL);
         ensureNode("root.platform.dashboards", ObjectType.DASHBOARDS, "Dashboards", "HMI dashboards");
         ensureNode("root.platform.dashboards.demo-sensor", ObjectType.DASHBOARD, "Demo Sensor Dashboard", "Live HMI for demo MQTT temperature sensor", "dashboard-v1");
         ensureNode("root.platform.dashboards.snmp-host-monitoring", ObjectType.DASHBOARD, "SNMP Host Monitoring", "System monitoring dashboard for SNMP agents (Windows/Linux)", "dashboard-v1");
@@ -314,33 +314,33 @@ public class ModelApplicationRunner {
     }
 
     public void ensureSnmpLocalhostDevice() {
-        modelRegistry.findByName(FixtureModelBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
-            if (objectManager.tree().findByPath(FixtureModelBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
-                modelApplicationService.instantiateWithRules(
+        blueprintRegistry.findByName(FixtureBlueprintBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
+            if (objectManager.tree().findByPath(FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
+                blueprintApplicationService.instantiateWithRules(
                         model.id(),
                         "root.platform.devices",
                         "snmp-localhost",
                         Map.of()
                 );
             } else {
-                syncSnmpAgentDevice(model, FixtureModelBootstrap.SNMP_LOCALHOST_PATH);
+                syncSnmpAgentDevice(model, FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH);
             }
-            objectManager.persistNodeTree(FixtureModelBootstrap.SNMP_LOCALHOST_PATH);
+            objectManager.persistNodeTree(FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH);
         });
     }
 
     /**
      * Aligns per-variable history metadata on all objects instantiated from a model.
      */
-    public void syncAllModelBackedVariableMetadata() {
+    public void syncAllBlueprintBackedVariableMetadata() {
         for (PlatformObject node : objectManager.tree().all()) {
             Optional<String> templateId = node.templateId();
             if (templateId.isEmpty() || templateId.get().isBlank()) {
                 continue;
             }
-            Optional<ModelDefinition> model = modelRegistry.findById(templateId.get());
+            Optional<BlueprintDefinition> model = blueprintRegistry.findById(templateId.get());
             if (model.isEmpty()) {
-                model = modelRegistry.findByName(templateId.get());
+                model = blueprintRegistry.findByName(templateId.get());
             }
             if (model.isEmpty()) {
                 continue;
@@ -354,17 +354,17 @@ public class ModelApplicationRunner {
     /**
      * Adds variables and OID mappings missing on demo SNMP devices created before HOST-RESOURCES-MIB support.
      */
-    private void syncSnmpAgentDevice(ModelDefinition model, String devicePath) {
+    private void syncSnmpAgentDevice(BlueprintDefinition model, String devicePath) {
         if (syncModelVariableMetadata(model, devicePath)) {
             // in-memory updates only; caller persists
         }
         ensureSnmpDriverMappings(objectManager.require(devicePath));
     }
 
-    private boolean syncModelVariableMetadata(ModelDefinition model, String objectPath) {
+    private boolean syncModelVariableMetadata(BlueprintDefinition model, String objectPath) {
         PlatformObject target = objectManager.require(objectPath);
         boolean changed = false;
-        for (ModelVariableDefinition varDef : model.variables()) {
+        for (BlueprintVariableDefinition varDef : model.variables()) {
             Optional<Variable> existingOpt = target.getVariable(varDef.name());
             if (existingOpt.isPresent()) {
                 Variable existing = existingOpt.get();
@@ -393,7 +393,7 @@ public class ModelApplicationRunner {
             }
         }
         if (!model.bindingRules().isEmpty()) {
-            bindingRulesMerger.mergeModelRules(objectPath, model, model.parameters());
+            bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters());
             changed = true;
         }
         return changed;
@@ -413,7 +413,7 @@ public class ModelApplicationRunner {
         DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
         device.setVariableValue(
                 "driverPointMappingsJson",
-                DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.SNMP_POINT_MAPPINGS))
+                DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS))
         );
         if (device.getVariable("driverId").isPresent()) {
             device.setVariableValue(
@@ -426,7 +426,7 @@ public class ModelApplicationRunner {
             if (config.isBlank() || config.equals("{}")) {
                 device.setVariableValue(
                         "driverConfigJson",
-                        DataRecord.single(stringSchema, Map.of("value", FixtureModelBootstrap.SNMP_DRIVER_CONFIG))
+                        DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG))
                 );
             }
         }

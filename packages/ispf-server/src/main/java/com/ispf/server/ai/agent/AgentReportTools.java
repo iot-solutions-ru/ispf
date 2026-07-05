@@ -2,7 +2,7 @@ package com.ispf.server.ai.agent;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.security.acl.ObjectAccessService;
@@ -233,7 +233,7 @@ final class AgentReportTools {
                             title = nodeName;
                         }
                         String templateId = treeVariables
-                                ? LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL
+                                ? LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL
                                 : "report-v1";
                         objectManager.create(
                                 ReportService.REPORTS_ROOT,
@@ -253,7 +253,7 @@ final class AgentReportTools {
                     objectAccessService.requireWrite(path, auth);
                     ReportService.ReportView current = reportService.getReport(path);
                     if (reportType.isBlank()) {
-                        treeVariables = LabModelBootstrap.TREE_VARIABLES_REPORT_TYPE.equals(current.reportType())
+                        treeVariables = LabBlueprintBootstrap.TREE_VARIABLES_REPORT_TYPE.equals(current.reportType())
                                 || !stringArg(arguments, "devicePathPattern").isBlank();
                     }
 

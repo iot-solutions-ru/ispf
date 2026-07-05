@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * Binding rule attached by a model.
  */
-public record ModelBindingRule(
+public record BlueprintBindingRule(
         String id,
         String name,
         Boolean enabled,
@@ -20,8 +20,8 @@ public record ModelBindingRule(
         String targetVariable,
         String targetField
 ) {
-    public static ModelBindingRule of(String id, String targetVariable, String expression) {
-        return new ModelBindingRule(
+    public static BlueprintBindingRule of(String id, String targetVariable, String expression) {
+        return new BlueprintBindingRule(
                 id,
                 targetVariable,
                 true,
@@ -47,8 +47,8 @@ public record ModelBindingRule(
         );
     }
 
-    public static ModelBindingRule fromBindingRule(BindingRule rule) {
-        return new ModelBindingRule(
+    public static BlueprintBindingRule fromBindingRule(BindingRule rule) {
+        return new BlueprintBindingRule(
                 rule.id(),
                 rule.name(),
                 rule.enabled(),

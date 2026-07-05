@@ -1,4 +1,4 @@
-# ADR-0021: Haystack semantic overlay
+﻿# ADR-0021: Haystack semantic overlay
 
 ## Status
 
@@ -41,7 +41,7 @@ RELATIVE mixin on `DEVICE` objects with variables in group `haystack`:
 | `haystackRef` | STRING | Optional external Haystack id |
 | `haystackKind` | STRING | Primary kind hint: `equip`, `point`, `site`, … |
 
-Apply manually via `POST /api/v1/relative-models/{id}/apply` or platform bootstrap/demo fixtures.
+Apply manually via `POST /api/v1/relative-blueprints/{id}/apply` or platform bootstrap/demo fixtures.
 
 **Demo:** `root.platform.devices.lab-userA-01` (virtual-lab fixture) ships with equip tags and sample export.
 
@@ -105,6 +105,6 @@ Out of scope: full Brick reasoner, runtime replacement of object paths.
 ## Related materials
 
 - [ROADMAP.md § Wave G (BL-56…62)](../ROADMAP.md#часть-e--полный-реестр-bl-01139)
-- [MODELS.md](../MODELS.md) — RELATIVE mixins
+- [BLUEPRINTS.md](../BLUEPRINTS.md) — RELATIVE mixins
 - [DRIVERS.md](../DRIVERS.md) — point mappings (future Haystack tag normalization)
 - [0002 Dogfooding gate](0002-dogfooding-gate.md)

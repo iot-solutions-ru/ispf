@@ -46,7 +46,7 @@ public final class SystemObjectDescriptions {
                 and exposes variables, events, and functions from its primary and applied models. \
                 Start/stop drivers from the Driver tab; bind variables on the Bindings tab. \
                 Use Federation bind (inspector) to proxy a remote device at a local path while keeping the operator path stable."""));
-        map.put("root.platform.relative-models", new Entry("Relative Models", """
+        map.put("root.platform.relative-blueprints", new Entry("Relative Blueprints", """
                 Optional RELATIVE model blueprints (mixins). They enrich existing objects with extra variables, \
                 events, functions, and binding rules without changing the object path. \
                 Platform system types (data source, schedule, dashboard, …) embed their schema in each instance — \
@@ -54,8 +54,8 @@ public final class SystemObjectDescriptions {
         map.put("root.platform.instance-types", new Entry("Instance Types", """
                 INSTANCE model blueprints — templates for new object instances (devices, folders, custom nodes). \
                 When you create an object with a templateId, the platform materializes structure from the matching INSTANCE model. \
-                Use Instance Types for repeatable device types; use Relative Models to add capabilities to existing nodes."""));
-        map.put("root.platform.absolute-models", new Entry("Absolute Models", """
+                Use Instance Types for repeatable device types; use Relative Blueprints to add capabilities to existing nodes."""));
+        map.put("root.platform.absolute-blueprints", new Entry("Absolute Blueprints", """
                 ABSOLUTE model blueprints for singleton configuration objects. \
                 Each absolute model has exactly one live instance under root.platform.instances. \
                 Typical for platform-wide settings objects that must exist once."""));

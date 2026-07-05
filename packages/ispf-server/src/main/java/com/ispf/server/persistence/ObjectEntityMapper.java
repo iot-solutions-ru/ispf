@@ -31,7 +31,7 @@ public class ObjectEntityMapper {
         entity.setDisplayName(node.displayName());
         entity.setDescription(node.description());
         entity.setTemplateId(node.templateId().orElse(null));
-        entity.setAppliedModelIdsJson(writeAppliedModelIds(node.appliedModelIds()));
+        entity.setappliedBlueprintIdsJson(writeappliedBlueprintIds(node.appliedBlueprintIds()));
         entity.setCreatedAt(node.createdAt());
         entity.setSortOrder(node.sortOrder());
         entity.setEventsJson(writeJson(node.events().values().toArray(new EventDescriptor[0])));
@@ -122,7 +122,7 @@ public class ObjectEntityMapper {
         return writeJson(summary);
     }
 
-    public List<String> readAppliedModelIds(String json) {
+    public List<String> readappliedBlueprintIds(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
         }
@@ -134,7 +134,7 @@ public class ObjectEntityMapper {
         }
     }
 
-    public String writeAppliedModelIds(List<String> modelIds) {
+    public String writeappliedBlueprintIds(List<String> modelIds) {
         if (modelIds == null || modelIds.isEmpty()) {
             return null;
         }

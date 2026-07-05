@@ -33,8 +33,8 @@ public class ObjectNodeEntity {
     @Column(name = "template_id", length = 128)
     private String templateId;
 
-    @Column(name = "applied_model_ids", columnDefinition = "TEXT")
-    private String appliedModelIdsJson;
+    @Column(name = "applied_blueprint_ids", columnDefinition = "TEXT")
+    private String appliedBlueprintIdsJson;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -110,12 +110,12 @@ public class ObjectNodeEntity {
         this.templateId = templateId;
     }
 
-    public String getAppliedModelIdsJson() {
-        return appliedModelIdsJson;
+    public String getappliedBlueprintIdsJson() {
+        return appliedBlueprintIdsJson;
     }
 
-    public void setAppliedModelIdsJson(String appliedModelIdsJson) {
-        this.appliedModelIdsJson = appliedModelIdsJson;
+    public void setappliedBlueprintIdsJson(String appliedBlueprintIdsJson) {
+        this.appliedBlueprintIdsJson = appliedBlueprintIdsJson;
     }
 
     public Instant getCreatedAt() {

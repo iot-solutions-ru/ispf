@@ -7,7 +7,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -88,7 +88,7 @@ class CrossObjectBindingIntegrationTest {
                     ObjectType.DEVICE,
                     "dev-01",
                     "",
-                    LabModelBootstrap.VIRTUAL_LAB_MODEL
+                    LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
             );
         }
     }

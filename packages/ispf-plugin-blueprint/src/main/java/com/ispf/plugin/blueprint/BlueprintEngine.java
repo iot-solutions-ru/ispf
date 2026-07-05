@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
@@ -19,15 +19,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Core engine for model lifecycle — create, apply, instantiate, template export.
  */
-public class ModelEngine {
+public class BlueprintEngine {
 
-    private final ModelRegistry registry;
+    private final BlueprintRegistry registry;
     private final ObjectTree objectTree;
     private final ExpressionEngine expressionEngine;
-    private final List<ModelAttachment> attachments = new CopyOnWriteArrayList<>();
+    private final List<BlueprintAttachment> attachments = new CopyOnWriteArrayList<>();
 
-    public ModelEngine(
-            ModelRegistry registry,
+    public BlueprintEngine(
+            BlueprintRegistry registry,
             ObjectTree objectTree,
             ExpressionEngine expressionEngine
     ) {
@@ -36,71 +36,71 @@ public class ModelEngine {
         this.expressionEngine = expressionEngine;
     }
 
-    public ModelDefinition createModel(ModelDefinition model) {
-        validateModelType(model);
+    public BlueprintDefinition createBlueprint(BlueprintDefinition model) {
+        validateBlueprintType(model);
         ensureCatalogContainers();
-        ModelDefinition stored = registry.register(model);
-        registerModelObject(stored);
-        if (stored.type() == ModelType.ABSOLUTE) {
+        BlueprintDefinition stored = registry.register(model);
+        registerBlueprintObject(stored);
+        if (stored.type() == BlueprintType.ABSOLUTE) {
             ensureAbsoluteInstance(stored);
         }
         return stored;
     }
 
-    public ModelDefinition updateModel(ModelDefinition model) {
-        validateModelType(model);
+    public BlueprintDefinition updateBlueprint(BlueprintDefinition model) {
+        validateBlueprintType(model);
         ensureCatalogContainers();
-        ModelDefinition stored = registry.update(model);
-        registerModelObject(stored);
-        if (stored.type() == ModelType.ABSOLUTE) {
+        BlueprintDefinition stored = registry.update(model);
+        registerBlueprintObject(stored);
+        if (stored.type() == BlueprintType.ABSOLUTE) {
             syncAbsoluteInstance(stored);
         }
         return stored;
     }
 
-    public void deleteModel(String modelId) {
-        ModelDefinition model = registry.requireById(modelId);
-        registry.delete(modelId);
+    public void deleteBlueprint(String blueprintId) {
+        BlueprintDefinition model = registry.requireById(blueprintId);
+        registry.delete(blueprintId);
         objectTree.findByPath(model.catalogObjectPath()).ifPresent(node ->
-                attachments.removeIf(a -> a.modelId().equals(modelId))
+                attachments.removeIf(a -> a.blueprintId().equals(blueprintId))
         );
     }
 
     /**
      * Merges model variables, events, functions into an existing object (RELATIVE / manual apply).
-     * Binding rules are merged separately via {@code ModelBindingRulesMerger} in ispf-server.
+     * Binding rules are merged separately via {@code BlueprintBindingRulesMerger} in ispf-server.
      */
-    public ModelApplyResult applyModel(String modelId, String targetPath) {
-        ModelDefinition model = registry.requireById(modelId);
-        if (SystemIntrinsicModels.isIntrinsic(model)) {
+    public BlueprintApplyResult applyBlueprint(String blueprintId, String targetPath) {
+        BlueprintDefinition model = registry.requireById(blueprintId);
+        if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
             return applyIntrinsicStructure(model, targetPath);
         }
         PlatformObject target = objectTree.require(targetPath);
         assertSuitable(model, target);
-        List<ModelMergeWarning> warnings = new ArrayList<>();
-        mergeModelChain(model, target, model.parameters(), warnings);
-        target.addAppliedModelId(model.id());
-        ModelAttachment attachment = recordAttachment(model, targetPath);
-        return new ModelApplyResult(attachment, warnings);
+        List<BlueprintMergeWarning> warnings = new ArrayList<>();
+        mergeBlueprintChain(model, target, model.parameters(), warnings);
+        target.addAppliedBlueprintId(model.id());
+        BlueprintAttachment attachment = recordAttachment(model, targetPath);
+        return new BlueprintApplyResult(attachment, warnings);
     }
 
     /**
-     * Merges a system-intrinsic schema into an object without catalog attachment or {@code appliedModelIds}.
+     * Merges a system-intrinsic schema into an object without catalog attachment or {@code appliedBlueprintIds}.
      */
-    public ModelApplyResult applyIntrinsicStructure(ModelDefinition model, String targetPath) {
+    public BlueprintApplyResult applyIntrinsicStructure(BlueprintDefinition model, String targetPath) {
         PlatformObject target = objectTree.require(targetPath);
-        List<ModelMergeWarning> warnings = new ArrayList<>();
-        mergeModelChain(model, target, model.parameters(), warnings);
-        return new ModelApplyResult(null, warnings);
+        List<BlueprintMergeWarning> warnings = new ArrayList<>();
+        mergeBlueprintChain(model, target, model.parameters(), warnings);
+        return new BlueprintApplyResult(null, warnings);
     }
 
-    public void applyIntrinsicStructureByName(String modelName, String targetPath) {
-        registry.findByName(modelName).ifPresent(model -> applyIntrinsicStructure(model, targetPath));
+    public void applyIntrinsicStructureByName(String blueprintName, String targetPath) {
+        registry.findByName(blueprintName).ifPresent(model -> applyIntrinsicStructure(model, targetPath));
     }
 
     public void removeIntrinsicCatalogNodes() {
-        for (String name : SystemIntrinsicModels.NAMES) {
-            removeCatalogNodeIfPresent(ModelCatalogRoots.RELATIVE + "." + name);
+        for (String name : SystemIntrinsicBlueprints.NAMES) {
+            removeCatalogNodeIfPresent(BlueprintCatalogRoots.RELATIVE + "." + name);
         }
     }
 
@@ -113,25 +113,25 @@ public class ModelEngine {
     /**
      * Creates a new child object from a model (INSTANCE / ABSOLUTE semantics).
      */
-    public ModelApplyResult instantiateModel(
-            String modelId,
+    public BlueprintApplyResult instantiateBlueprint(
+            String blueprintId,
             String parentPath,
             String instanceName,
             Map<String, String> parameters
     ) {
-        ModelDefinition model = registry.requireById(modelId);
-        if (model.type() == ModelType.RELATIVE) {
-            throw new ModelException("RELATIVE models cannot be instantiated as child objects. Use apply instead.");
+        BlueprintDefinition model = registry.requireById(blueprintId);
+        if (model.type() == BlueprintType.RELATIVE) {
+            throw new BlueprintException("Relative Blueprints cannot be instantiated as child objects. Use apply instead.");
         }
-        if (model.type() == ModelType.ABSOLUTE) {
-            throw new ModelException(
-                    "ABSOLUTE models use a fixed singleton instance. Open the instance path instead of instantiate."
+        if (model.type() == BlueprintType.ABSOLUTE) {
+            throw new BlueprintException(
+                    "Absolute Blueprints use a fixed singleton instance. Open the instance path instead of instantiate."
             );
         }
 
         String fullPath = objectTree.resolveChildPath(parentPath, instanceName);
         if (objectTree.findByPath(fullPath).isPresent()) {
-            throw new ModelException("Object already exists: " + fullPath);
+            throw new BlueprintException("Object already exists: " + fullPath);
         }
 
         ObjectType objectType = model.targetObjectType() != null
@@ -147,17 +147,17 @@ public class ModelEngine {
                 model.id()
         );
         objectTree.register(instance);
-        List<ModelMergeWarning> warnings = new ArrayList<>();
-        mergeModelChain(model, instance, parameters, warnings);
-        instance.addAppliedModelId(model.id());
+        List<BlueprintMergeWarning> warnings = new ArrayList<>();
+        mergeBlueprintChain(model, instance, parameters, warnings);
+        instance.addAppliedBlueprintId(model.id());
 
-        ModelAttachment attachment = recordAttachment(model, fullPath);
-        return new ModelApplyResult(attachment, warnings);
+        BlueprintAttachment attachment = recordAttachment(model, fullPath);
+        return new BlueprintApplyResult(attachment, warnings);
     }
 
-    public PlatformObject ensureAbsoluteInstance(ModelDefinition model) {
-        if (model.type() != ModelType.ABSOLUTE) {
-            throw new ModelException("ensureAbsoluteInstance requires ABSOLUTE model");
+    public PlatformObject ensureAbsoluteInstance(BlueprintDefinition model) {
+        if (model.type() != BlueprintType.ABSOLUTE) {
+            throw new BlueprintException("ensureAbsoluteInstance requires ABSOLUTE model");
         }
         String instancePath = absoluteInstancePath(model);
         return objectTree.findByPath(instancePath).orElseGet(() -> {
@@ -166,7 +166,7 @@ public class ModelEngine {
             String parentPath = instancePath.substring(0, lastDot);
             String name = instancePath.substring(lastDot + 1);
             if (objectTree.findByPath(parentPath).isEmpty()) {
-                throw new ModelException("Absolute instance parent missing: " + parentPath);
+                throw new BlueprintException("Absolute instance parent missing: " + parentPath);
             }
             ObjectType objectType = model.targetObjectType() != null
                     ? model.targetObjectType()
@@ -180,48 +180,48 @@ public class ModelEngine {
                     model.id()
             );
             objectTree.register(instance);
-            List<ModelMergeWarning> warnings = new ArrayList<>();
-            mergeModelChain(model, instance, model.parameters(), warnings);
-            instance.addAppliedModelId(model.id());
+            List<BlueprintMergeWarning> warnings = new ArrayList<>();
+            mergeBlueprintChain(model, instance, model.parameters(), warnings);
+            instance.addAppliedBlueprintId(model.id());
             recordAttachment(model, instancePath);
             return instance;
         });
     }
 
-    private void syncAbsoluteInstance(ModelDefinition model) {
+    private void syncAbsoluteInstance(BlueprintDefinition model) {
         String instancePath = absoluteInstancePath(model);
         if (objectTree.findByPath(instancePath).isEmpty()) {
             ensureAbsoluteInstance(model);
             return;
         }
         PlatformObject target = objectTree.require(instancePath);
-        List<ModelMergeWarning> warnings = new ArrayList<>();
-        mergeModelChain(model, target, model.parameters(), warnings);
-        target.addAppliedModelId(model.id());
+        List<BlueprintMergeWarning> warnings = new ArrayList<>();
+        mergeBlueprintChain(model, target, model.parameters(), warnings);
+        target.addAppliedBlueprintId(model.id());
         recordAttachment(model, instancePath);
     }
 
-    public static String absoluteInstancePath(ModelDefinition model) {
+    public static String absoluteInstancePath(BlueprintDefinition model) {
         String configured = model.parameters().get("absoluteInstancePath");
         if (configured != null && !configured.isBlank()) {
             return configured.trim();
         }
-        return ModelCatalogRoots.INSTANCES + "." + model.name();
+        return BlueprintCatalogRoots.INSTANCES + "." + model.name();
     }
 
     /**
      * Creates a model definition by snapshotting an existing object (variables/events/functions only).
      */
-    public ModelDefinition createFromObject(
+    public BlueprintDefinition createFromObject(
             String sourcePath,
-            String modelName,
+            String blueprintName,
             String description,
-            ModelType type
+            BlueprintType type
     ) {
         PlatformObject source = objectTree.require(sourcePath);
-        List<ModelVariableDefinition> variables = source.variables().values().stream()
+        List<BlueprintVariableDefinition> variables = source.variables().values().stream()
                 .filter(v -> !BindingRulesConstants.isReservedVariable(v.name()))
-                .map(v -> ModelVariableDefinition.of(
+                .map(v -> BlueprintVariableDefinition.of(
                         v.name(),
                         "",
                         "default",
@@ -234,9 +234,9 @@ public class ModelEngine {
                 ))
                 .toList();
 
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                modelName,
+                blueprintName,
                 description != null ? description : "Created from " + sourcePath,
                 type,
                 source.type(),
@@ -249,29 +249,29 @@ public class ModelEngine {
                 Instant.now(),
                 Instant.now()
         );
-        return createModel(model);
+        return createBlueprint(model);
     }
 
     /**
-     * Applies RELATIVE models with a non-blank applicability (CEL) expression that evaluates to true.
+     * Applies Relative Blueprints with a non-blank applicability (CEL) expression that evaluates to true.
      */
-    public List<ModelApplyResult> applyRelativeModels(String targetPath) {
+    public List<BlueprintApplyResult> applyRelativeBlueprints(String targetPath) {
         PlatformObject target = objectTree.require(targetPath);
-        List<ModelApplyResult> applied = new ArrayList<>();
-        for (ModelDefinition model : registry.all()) {
-            if (model.type() != ModelType.RELATIVE) {
+        List<BlueprintApplyResult> applied = new ArrayList<>();
+        for (BlueprintDefinition model : registry.all()) {
+            if (model.type() != BlueprintType.RELATIVE) {
                 continue;
             }
-            if (SystemIntrinsicModels.isIntrinsic(model)) {
+            if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
                 continue;
             }
-            if (target.appliedModelIds().contains(model.id())) {
+            if (target.appliedBlueprintIds().contains(model.id())) {
                 continue;
             }
             if (!isSuitableForAutoApply(model, target)) {
                 continue;
             }
-            applied.add(applyModel(model.id(), targetPath));
+            applied.add(applyBlueprint(model.id(), targetPath));
         }
         return applied;
     }
@@ -279,10 +279,10 @@ public class ModelEngine {
     public void restoreAttachmentsFromObjects() {
         attachments.clear();
         for (PlatformObject node : objectTree.all()) {
-            if (ModelCatalogRoots.isDefinitionPath(node.path())) {
+            if (BlueprintCatalogRoots.isDefinitionPath(node.path())) {
                 continue;
             }
-            for (String modelId : node.appliedModelIds()) {
+            for (String modelId : node.appliedBlueprintIds()) {
                 registry.findById(modelId).ifPresent(model ->
                         recordAttachment(model, node.path())
                 );
@@ -290,32 +290,32 @@ public class ModelEngine {
         }
     }
 
-    public List<ModelAttachment> attachments() {
+    public List<BlueprintAttachment> attachments() {
         return List.copyOf(attachments);
     }
 
-    public List<ModelAttachment> attachmentsForObject(String objectPath) {
+    public List<BlueprintAttachment> attachmentsForObject(String objectPath) {
         return attachments.stream()
                 .filter(a -> a.objectPath().equals(objectPath))
                 .toList();
     }
 
-    public void refreshModelCatalogNodes() {
+    public void refreshBlueprintCatalogNodes() {
         ensureCatalogContainers();
         removeIntrinsicCatalogNodes();
-        for (ModelDefinition model : registry.all()) {
-            if (!SystemIntrinsicModels.isIntrinsic(model)) {
-                registerModelObject(model);
+        for (BlueprintDefinition model : registry.all()) {
+            if (!SystemIntrinsicBlueprints.isIntrinsic(model)) {
+                registerBlueprintObject(model);
             }
         }
     }
 
-    public boolean isModelCatalogPath(String path) {
-        return ModelCatalogRoots.isCatalogPath(path);
+    public boolean isBlueprintCatalogPath(String path) {
+        return BlueprintCatalogRoots.isCatalogPath(path);
     }
 
-    private ModelAttachment recordAttachment(ModelDefinition model, String targetPath) {
-        ModelAttachment attachment = new ModelAttachment(
+    private BlueprintAttachment recordAttachment(BlueprintDefinition model, String targetPath) {
+        BlueprintAttachment attachment = new BlueprintAttachment(
                 UUID.randomUUID().toString(),
                 model.id(),
                 model.name(),
@@ -323,23 +323,23 @@ public class ModelEngine {
                 targetPath,
                 Instant.now()
         );
-        attachments.removeIf(a -> a.modelId().equals(model.id()) && a.objectPath().equals(targetPath));
+        attachments.removeIf(a -> a.blueprintId().equals(model.id()) && a.objectPath().equals(targetPath));
         attachments.add(attachment);
         return attachment;
     }
 
     public void ensureCatalogContainers() {
-        ensureCatalogContainer(ModelCatalogRoots.RELATIVE, "Relative Models", "Mixin blueprints applied to existing objects");
-        ensureCatalogContainer(ModelCatalogRoots.INSTANCE, "Instance Types", "Blueprints for new object instances");
-        ensureCatalogContainer(ModelCatalogRoots.ABSOLUTE, "Absolute Models", "Singleton object blueprints");
+        ensureCatalogContainer(BlueprintCatalogRoots.RELATIVE, "Relative Blueprints", "Mixin blueprints applied to existing objects");
+        ensureCatalogContainer(BlueprintCatalogRoots.INSTANCE, "Instance Types", "Blueprints for new object instances");
+        ensureCatalogContainer(BlueprintCatalogRoots.ABSOLUTE, "Absolute Blueprints", "Singleton object blueprints");
         ensureInstancesContainer();
     }
 
     private void ensureInstancesContainer() {
-        if (objectTree.findByPath(ModelCatalogRoots.INSTANCES).isEmpty()) {
+        if (objectTree.findByPath(BlueprintCatalogRoots.INSTANCES).isEmpty()) {
             objectTree.register(new PlatformObject(
                     UUID.randomUUID().toString(),
-                    ModelCatalogRoots.INSTANCES,
+                    BlueprintCatalogRoots.INSTANCES,
                     ObjectType.CUSTOM,
                     "Instances",
                     "Singleton absolute model instances",
@@ -352,12 +352,12 @@ public class ModelEngine {
         if (objectTree.findByPath(path).isEmpty()) {
             String parentPath = path.substring(0, path.lastIndexOf('.'));
             if (objectTree.findByPath(parentPath).isEmpty()) {
-                throw new ModelException("Catalog parent object missing: " + parentPath);
+                throw new BlueprintException("Catalog parent object missing: " + parentPath);
             }
             objectTree.register(new PlatformObject(
                     UUID.randomUUID().toString(),
                     path,
-                    ObjectType.MODEL,
+                    ObjectType.BLUEPRINT,
                     displayName,
                     description,
                     null
@@ -365,8 +365,8 @@ public class ModelEngine {
         }
     }
 
-    private void registerModelObject(ModelDefinition model) {
-        if (SystemIntrinsicModels.isIntrinsic(model)) {
+    private void registerBlueprintObject(BlueprintDefinition model) {
+        if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
             removeCatalogNodeIfPresent(model.catalogObjectPath());
             return;
         }
@@ -377,7 +377,7 @@ public class ModelEngine {
             PlatformObject node = new PlatformObject(
                     UUID.randomUUID().toString(),
                     path,
-                    ObjectType.MODEL,
+                    ObjectType.BLUEPRINT,
                     model.name(),
                     model.description(),
                     model.id()
@@ -387,12 +387,12 @@ public class ModelEngine {
         });
 
         modelObject.addVariable(new Variable(
-                "modelType",
-                com.ispf.core.model.DataSchema.builder("modelType").field("value", com.ispf.core.model.FieldType.STRING).build(),
+                "blueprintType",
+                com.ispf.core.model.DataSchema.builder("blueprintType").field("value", com.ispf.core.model.FieldType.STRING).build(),
                 true,
                 false,
                 com.ispf.core.model.DataRecord.single(
-                        com.ispf.core.model.DataSchema.builder("modelType").field("value", com.ispf.core.model.FieldType.STRING).build(),
+                        com.ispf.core.model.DataSchema.builder("blueprintType").field("value", com.ispf.core.model.FieldType.STRING).build(),
                         Map.of("value", model.type().name())
                 )
         ));
@@ -408,35 +408,35 @@ public class ModelEngine {
         ));
     }
 
-    private void mergeModelChain(
-            ModelDefinition model,
+    private void mergeBlueprintChain(
+            BlueprintDefinition model,
             PlatformObject target,
             Map<String, String> parameters,
-            List<ModelMergeWarning> warnings
+            List<BlueprintMergeWarning> warnings
     ) {
-        String parentRef = model.parameters().get("extendsModelId");
+        String parentRef = model.parameters().get("extendsBlueprintId");
         if (parentRef != null && !parentRef.isBlank()) {
-            ModelDefinition parent = registry.findById(parentRef)
+            BlueprintDefinition parent = registry.findById(parentRef)
                     .or(() -> registry.findByName(parentRef))
-                    .orElseThrow(() -> new ModelException("Parent model not found: " + parentRef));
-            mergeModelChain(parent, target, parameters, warnings);
+                    .orElseThrow(() -> new BlueprintException("Parent model not found: " + parentRef));
+            mergeBlueprintChain(parent, target, parameters, warnings);
         }
         mergeModelIntoObject(model, target, parameters, warnings);
     }
 
     private void mergeModelIntoObject(
-            ModelDefinition model,
+            BlueprintDefinition model,
             PlatformObject target,
             Map<String, String> parameters,
-            List<ModelMergeWarning> warnings
+            List<BlueprintMergeWarning> warnings
     ) {
-        String previousModelId = target.lastAppliedModelId();
-        for (ModelVariableDefinition varDef : model.variables()) {
+        String previousBlueprintId = target.lastAppliedBlueprintId();
+        for (BlueprintVariableDefinition varDef : model.variables()) {
             if (target.getVariable(varDef.name()).isPresent()) {
-                warnings.add(new ModelMergeWarning(
-                        ModelMergeWarning.KIND_VARIABLE,
+                warnings.add(new BlueprintMergeWarning(
+                        BlueprintMergeWarning.KIND_VARIABLE,
                         varDef.name(),
-                        previousModelId,
+                        previousBlueprintId,
                         model.id()
                 ));
             }
@@ -453,10 +453,10 @@ public class ModelEngine {
         }
         for (EventDescriptor event : model.events()) {
             if (target.events().containsKey(event.name())) {
-                warnings.add(new ModelMergeWarning(
-                        ModelMergeWarning.KIND_EVENT,
+                warnings.add(new BlueprintMergeWarning(
+                        BlueprintMergeWarning.KIND_EVENT,
                         event.name(),
-                        previousModelId,
+                        previousBlueprintId,
                         model.id()
                 ));
             }
@@ -464,10 +464,10 @@ public class ModelEngine {
         }
         for (FunctionDescriptor function : model.functions()) {
             if (target.functions().containsKey(function.name())) {
-                warnings.add(new ModelMergeWarning(
-                        ModelMergeWarning.KIND_FUNCTION,
+                warnings.add(new BlueprintMergeWarning(
+                        BlueprintMergeWarning.KIND_FUNCTION,
                         function.name(),
-                        previousModelId,
+                        previousBlueprintId,
                         model.id()
                 ));
             }
@@ -475,27 +475,27 @@ public class ModelEngine {
         }
     }
 
-    private void validateModelType(ModelDefinition model) {
-        if (model.type() == ModelType.RELATIVE && model.targetObjectType() == null) {
-            throw new ModelException("RELATIVE models require targetObjectType");
+    private void validateBlueprintType(BlueprintDefinition model) {
+        if (model.type() == BlueprintType.RELATIVE && model.targetObjectType() == null) {
+            throw new BlueprintException("Relative Blueprints require targetObjectType");
         }
-        if (model.type() == ModelType.INSTANCE && model.targetObjectType() == null) {
-            throw new ModelException("INSTANCE models require targetObjectType");
+        if (model.type() == BlueprintType.INSTANCE && model.targetObjectType() == null) {
+            throw new BlueprintException("INSTANCE models require targetObjectType");
         }
     }
 
-    private void assertSuitable(ModelDefinition model, PlatformObject target) {
+    private void assertSuitable(BlueprintDefinition model, PlatformObject target) {
         if (!isObjectTypeCompatible(model, target)) {
-            throw new ModelException("Model " + model.name() + " is not suitable for object " + target.path());
+            throw new BlueprintException("Model " + model.name() + " is not suitable for object " + target.path());
         }
         if (!model.suitabilityExpression().isBlank() && !evaluateSuitabilityExpression(model, target)) {
-            throw new ModelException(
+            throw new BlueprintException(
                     "Model " + model.name() + " applicability expression failed for object " + target.path()
             );
         }
     }
 
-    private boolean isSuitableForAutoApply(ModelDefinition model, PlatformObject target) {
+    private boolean isSuitableForAutoApply(BlueprintDefinition model, PlatformObject target) {
         if (!isObjectTypeCompatible(model, target)) {
             return false;
         }
@@ -505,11 +505,11 @@ public class ModelEngine {
         return evaluateSuitabilityExpression(model, target);
     }
 
-    private boolean isObjectTypeCompatible(ModelDefinition model, PlatformObject target) {
+    private boolean isObjectTypeCompatible(BlueprintDefinition model, PlatformObject target) {
         return model.targetObjectType() == null || target.type() == model.targetObjectType();
     }
 
-    private boolean evaluateSuitabilityExpression(ModelDefinition model, PlatformObject target) {
+    private boolean evaluateSuitabilityExpression(BlueprintDefinition model, PlatformObject target) {
         try {
             Object result = expressionEngine.evaluate(model.suitabilityExpression(), target);
             if (result instanceof Boolean bool) {

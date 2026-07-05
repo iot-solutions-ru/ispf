@@ -144,7 +144,7 @@
   "metrics.loading": "Metriken werden geladen…",
   "metrics.maxPoolSize": "Maximale Poolgröße",
   "metrics.minIntervalMs": "Schreibentprellung (ms)",
-  "metrics.models": "Modelle",
+  "metrics.blueprints": "Modelle",
   "metrics.newestSampleAt": "Neueste Probe",
   "metrics.nonHeapUsedMb": "Nicht-Heap-Nutzung (MB)",
   "metrics.objectNodes": "Baumknoten",

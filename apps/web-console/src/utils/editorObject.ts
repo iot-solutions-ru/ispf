@@ -1,4 +1,4 @@
-import { isModelsPath } from "../types/models";
+import { isBlueprintsPath } from "../types/blueprints";
 import type { ObjectType } from "../types";
 import { isPlatformSqlObjectPath } from "./platformSqlPath";
 
@@ -12,7 +12,7 @@ export function isSpecializedEditorObject(
     type === "DASHBOARD"
     || type === "REPORT"
     || type === "WORKFLOW"
-    || type === "MODEL"
+    || type === "BLUEPRINT"
     || type === "DATA_SOURCE"
     || type === "MIGRATION"
     || type === "BINDING"
@@ -33,7 +33,7 @@ export function isSpecializedEditorObject(
   ) {
     return true;
   }
-  if (isModelsPath(path)) {
+  if (isBlueprintsPath(path)) {
     return true;
   }
   return (
@@ -54,7 +54,7 @@ export function resolveEditorObjectType(
     type === "DASHBOARD"
     || type === "REPORT"
     || type === "WORKFLOW"
-    || type === "MODEL"
+    || type === "BLUEPRINT"
     || type === "DATA_SOURCE"
     || type === "MIGRATION"
     || type === "BINDING"
@@ -71,7 +71,7 @@ export function resolveEditorObjectType(
   if (templateId === "sql-binding-v1") return "BINDING";
   if (templateId === "schedule-v1") return "SCHEDULE";
   if (templateId === "mimic-v1") return "MIMIC";
-  if (isModelsPath(path)) return "MODEL";
+  if (isBlueprintsPath(path)) return "BLUEPRINT";
   if (path.startsWith("root.platform.reports.")) return "REPORT";
   if (path.startsWith("root.platform.dashboards.")) return "DASHBOARD";
   if (path.startsWith("root.platform.workflows.")) return "WORKFLOW";

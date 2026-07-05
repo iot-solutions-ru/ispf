@@ -66,7 +66,7 @@ jobs:
           ./gradlew
           :packages:ispf-core:test
           :packages:ispf-expression:test
-          :packages:ispf-plugin-model:test
+          :packages:ispf-plugin-blueprint:test
           :packages:ispf-plugin-workflow:test
           :packages:ispf-server:test
           --no-daemon

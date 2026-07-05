@@ -2,7 +2,7 @@ package com.ispf.server.driver;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +22,7 @@ class DeviceProvisioningMqttTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private ModelApplicationService modelApplicationService;
+    private BlueprintApplicationService blueprintApplicationService;
 
     @Autowired
     private DeviceProvisioningService deviceProvisioningService;
@@ -54,7 +54,7 @@ class DeviceProvisioningMqttTest {
                 null,
                 null
         );
-        modelApplicationService.applyRelativeModelsWithRules(DEVICE_PATH);
+        blueprintApplicationService.applyRelativeBlueprintsWithRules(DEVICE_PATH);
 
         assertThat(driverRuntimeService.debugReadDriverId(DEVICE_PATH)).isEmpty();
 

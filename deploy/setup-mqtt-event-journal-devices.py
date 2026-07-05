@@ -11,37 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from mqtt_loadtest_lib import (
     Client,
-    MQTT_SENSOR_MODEL_BODY,
     configure_mqtt_driver,
     driver_status,
     ensure_device,
-    ensure_relative_model,
     mqtt_bench_ingress_configuration,
     mqtt_topic,
+    start_mqtt_driver,
 )
-
-MESSAGE_RECEIVED_EVENT = {
-    "name": "messageReceived",
-    "description": "MQTT payload received (load test / ingress audit)",
-    "level": "INFO",
-    "schema": {
-        "name": "mqttPayload",
-        "fields": [{"name": "raw", "type": "STRING"}],
-    },
-}
-
-
-EVENT_JOURNAL_MODEL_NAME = "mqtt-sensor-event-journal-v1"
-
-
-def ensure_message_event_on_model(client: Client) -> str:
-    body = dict(MQTT_SENSOR_MODEL_BODY)
-    body["name"] = EVENT_JOURNAL_MODEL_NAME
-    events = list(body.get("events") or [])
-    if not any(e.get("name") == "messageReceived" for e in events):
-        events.append(MESSAGE_RECEIVED_EVENT)
-        body["events"] = events
-    return ensure_relative_model(client, EVENT_JOURNAL_MODEL_NAME, body)
 
 
 def seed_event_journal_devices(
@@ -55,9 +31,9 @@ def seed_event_journal_devices(
     bench_no_l0_coalesce: bool = True,
     callback_threads: int | None = None,
     callback_queue_capacity: int | None = None,
+    shared_topic: str | None = None,
 ) -> list[tuple[str, str]]:
     pad = max(5, len(str(device_count)))
-    model_id = ensure_message_event_on_model(client)
     seeded: list[tuple[str, str]] = []
     ingress_cfg = mqtt_bench_ingress_configuration(
         no_l0_coalesce=bench_no_l0_coalesce,
@@ -67,8 +43,8 @@ def seed_event_journal_devices(
     driver_cfg = {"ingressEventName": event_name, **ingress_cfg}
 
     for index in range(1, device_count + 1):
-        path = ensure_device(client, index, pad, model_id)
-        topic = mqtt_topic(index, pad)
+        path = ensure_device(client, index, pad, apply_blueprint=False)
+        topic = shared_topic if shared_topic else mqtt_topic(index, pad)
         configure_mqtt_driver(
             client,
             path,
@@ -104,6 +80,11 @@ def main() -> int:
     )
     parser.add_argument("--callback-threads", type=int, default=None)
     parser.add_argument("--callback-queue-capacity", type=int, default=None)
+    parser.add_argument(
+        "--shared-topic",
+        default=None,
+        help="All devices subscribe to one MQTT topic (broker fan-out → N journal writes per publish)",
+    )
     args = parser.parse_args()
 
     coalesce = args.telemetry_coalesce_ms if args.telemetry_coalesce_ms > 0 else None
@@ -111,7 +92,11 @@ def main() -> int:
     client.login(args.username, args.password)
 
     mode = "ingressCoalesceEnabled=false" if args.bench_no_l0_coalesce else "L0 coalesce on"
-    print(f"  seeding {args.devices} devices (EVENT_JOURNAL_ONLY, event={args.event_name}, {mode})")
+    topic_mode = f"shared-topic={args.shared_topic!r}" if args.shared_topic else "one-topic-per-device"
+    print(
+        f"  seeding {args.devices} devices (EVENT_JOURNAL_ONLY, event={args.event_name}, "
+        f"{mode}, {topic_mode})"
+    )
     paths = seed_event_journal_devices(
         client,
         args.devices,
@@ -121,6 +106,7 @@ def main() -> int:
         bench_no_l0_coalesce=args.bench_no_l0_coalesce,
         callback_threads=args.callback_threads,
         callback_queue_capacity=args.callback_queue_capacity,
+        shared_topic=args.shared_topic,
     )
     running = sum(
         1
@@ -132,7 +118,28 @@ def main() -> int:
         print(f"  sample: {path} topic={topic}")
     if len(paths) > 3:
         print(f"  ... and {len(paths) - 3} more")
-    return 0
+
+    for attempt in range(1, 4):
+        failed = [
+            path
+            for path, _ in paths
+            if (driver_status(client, path) or {}).get("status") != "RUNNING"
+        ]
+        if not failed:
+            break
+        print(f"  restart pass {attempt}: {len(failed)} drivers not RUNNING")
+        for path in failed:
+            start_mqtt_driver(client, path)
+        import time
+
+        time.sleep(5)
+    running = sum(
+        1
+        for path, _ in paths
+        if (driver_status(client, path) or {}).get("status") == "RUNNING"
+    )
+    print(f"  drivers running after restart: {running}/{len(paths)}")
+    return 0 if running == len(paths) else 1
 
 
 if __name__ == "__main__":

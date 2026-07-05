@@ -1,36 +1,36 @@
-package com.ispf.server.plugin.model.dto;
+package com.ispf.server.plugin.blueprint.dto;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
-import com.ispf.plugin.model.ModelAttachment;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintAttachment;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-public record ModelDto(
+public record BlueprintDto(
         String id,
         String name,
         String description,
-        ModelType type,
+        BlueprintType type,
         ObjectType targetObjectType,
         String suitabilityExpression,
         String objectPath,
-        List<ModelVariableDefinition> variables,
+        List<BlueprintVariableDefinition> variables,
         List<EventDescriptor> events,
         List<FunctionDescriptor> functions,
-        List<ModelBindingRule> bindings,
+        List<BlueprintBindingRule> bindings,
         Map<String, String> parameters,
         Instant createdAt,
         Instant updatedAt
 ) {
-    public static ModelDto from(ModelDefinition model) {
-        return new ModelDto(
+    public static BlueprintDto from(BlueprintDefinition model) {
+        return new BlueprintDto(
                 model.id(),
                 model.name(),
                 model.description(),

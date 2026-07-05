@@ -1,7 +1,7 @@
 package com.ispf.server.ai.agent;
 
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.bootstrap.MiniTecPaths;
 import com.ispf.server.bootstrap.PipelineScadaPaths;
 import com.ispf.server.bootstrap.TankFarmPaths;
@@ -16,9 +16,9 @@ import com.ispf.server.dashboard.DashboardLayouts;
  */
 public final class AgentPlaybooks {
 
-    public static final String SNMP_DEVICE_PATH = FixtureModelBootstrap.SNMP_LOCALHOST_PATH;
+    public static final String SNMP_DEVICE_PATH = FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH;
     public static final String SNMP_DASHBOARD_PATH = "root.platform.dashboards.snmp-host-monitoring";
-    public static final String SNMP_MODEL = FixtureModelBootstrap.SNMP_AGENT_MODEL;
+    public static final String SNMP_MODEL = FixtureBlueprintBootstrap.SNMP_AGENT_MODEL;
     public static final String SNMP_DRIVER_ID = "snmp";
 
     public static final String VIRT_CLUSTER_FOLDER = "root.platform.devices.virt-cluster";
@@ -58,13 +58,13 @@ public final class AgentPlaybooks {
                 3. set_variable path="""
                 + SNMP_DEVICE_PATH
                 + " name=driverConfigJson value="
-                + FixtureModelBootstrap.SNMP_DRIVER_CONFIG
+                + FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG
                 + """
                 
                 4. set_variable path="""
                 + SNMP_DEVICE_PATH
                 + " name=driverPointMappingsJson value="
-                + FixtureModelBootstrap.SNMP_POINT_MAPPINGS
+                + FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS
                 + """
                 
                 5. configure_driver devicePath="""
@@ -154,7 +154,7 @@ public final class AgentPlaybooks {
                 
                 driverPointMappingsJson:
                 """
-                + FixtureModelBootstrap.SNMP_POINT_MAPPINGS
+                + FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS
                 + "\n";
     }
 
@@ -169,7 +169,7 @@ public final class AgentPlaybooks {
                 Или вручную:
                 1. create_object parentPath=root.platform.devices name=virtual-meter type=DEVICE
                    displayName=Virtual meter, templateId="""
-                + LabModelBootstrap.VIRTUAL_UNIFIED_MODEL
+                + LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL
                 + """
                 , driverId=virtual, autoStartDriver=false
                 2. set_variable path=... name=driverConfigJson value="""
@@ -283,11 +283,11 @@ public final class AgentPlaybooks {
                 
                 Before approval: walk EVERY platform ObjectType relevant to the TZ. Do not skip layers silently.
                 Discovery: get_automation_schema topic=objectTypes + list_objects on each catalog root + \
-                list_instance_types + list_relative_models + list_absolute_models + list_virtual_profiles.
+                list_instance_types + list_relative_blueprints + list_absolute_blueprints + list_virtual_profiles.
                 
                 | ObjectType | Catalog / parent | Create autonomously when TZ needs it |
                 |------------|------------------|--------------------------------------|
-                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_relative_model + configure_driver |
+                | DEVICE | root.platform.devices | create_virtual_device / create_object + apply_relative_blueprint + configure_driver |
                 | CUSTOM | root.platform.devices.* or instances | create_object type=CUSTOM — hub, aggregation, refAt bindings |
                 | DASHBOARD | root.platform.dashboards | create_object + set_dashboard_layout template= |
                 | MIMIC | root.platform.mimics | create_object + save_mimic_diagram |
@@ -300,11 +300,11 @@ public final class AgentPlaybooks {
                 | APPLICATION | register_application / import_package | bundle deploy when TZ is app-level |
                 | FUNCTION | on DEVICE/CUSTOM/APPLICATION | create_function / deploy_app_function |
                 | MODEL strategy | relative / instance / absolute catalogs | pick catalog entry OR instantiate_instance_type OR \
-                apply_relative_model OR ensure_absolute_instance — do NOT ask user to create types manually in UI |
+                apply_relative_blueprint OR ensure_absolute_instance — do NOT ask user to create types manually in UI |
                 
                 Plan must include objectTypesCoverage[]: [{type, action, reason, modelName?}] for each type used or N/A with reason.
                 Execution: create missing types yourself via tools — never defer «создайте вручную в UI» if a tool exists.
-                If catalog has no fit: compose CUSTOM + create_variable + create_binding_rule, or stack relative models; \
+                If catalog has no fit: compose CUSTOM + create_variable + create_binding_rule, or stack Relative Blueprints; \
                 only then ask user (with options) which catalog model is closest.
                 
                 ## Questions — maximize dialogue (complex TZ only)
@@ -336,19 +336,19 @@ public final class AgentPlaybooks {
 
     public static String relativeModelsGuide() {
         return """
-                ## RELATIVE models — mixins для variables / events / functions
+                ## Relative Blueprints — mixins для variables / events / functions
                 
-                Каталог: root.platform.relative-models. Тип ModelType.RELATIVE.
+                Каталог: root.platform.relative-blueprints. Тип BlueprintType.RELATIVE.
                 
                 | Инструмент | Назначение |
                 |------------|------------|
-                | list_relative_models | Каталог mixin-моделей (virtual-lab-v1, snmp-agent-v1, …) |
-                | get_object_model | Схема: variables[], events[], functions[] |
-                | apply_relative_model | Прикрепить mixin к существующему objectPath |
+                | list_relative_blueprints | Каталог mixin-моделей (virtual-lab-v1, snmp-agent-v1, …) |
+                | get_object_blueprint | Схема: variables[], events[], functions[] |
+                | apply_relative_blueprint | Прикрепить mixin к существующему objectPath |
                 
                 Workflow:
                 1. create_object DEVICE (можно без templateId — только driver schema от provisionDriver)
-                2. apply_relative_model modelName=virtual-lab-v1 objectPath=...
+                2. apply_relative_blueprint modelName=virtual-lab-v1 objectPath=...
                    — добавляет sineWave, driverConfigJson, events, functions на тот же path
                 3. configure_driver + driver_control start
                 4. list_variables — проверка
@@ -407,7 +407,7 @@ public final class AgentPlaybooks {
                 + """
                  name=dev-0N type=DEVICE displayName=Virt cluster dev-0N
                    templateId="""
-                + LabModelBootstrap.VIRTUAL_LAB_MODEL
+                + LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
                 + """
                  driverId=virtual autoStartDriver=false
                    set_variable path=... name=driverConfigJson value="""
@@ -415,7 +415,7 @@ public final class AgentPlaybooks {
                 + """
                 
                    set_variable path=... name=driverPointMappingsJson value="""
-                + LabModelBootstrap.LAB_POINT_MAPPINGS
+                + LabBlueprintBootstrap.LAB_POINT_MAPPINGS
                 + """
                 
                    configure_driver devicePath=... driverId=virtual autoStart=true
@@ -521,7 +521,7 @@ public final class AgentPlaybooks {
                 
                 Дополнительно перед create:
                 - search_objects / get_object — если пользователь назвал объект
-                - list_relative_models + list_virtual_profiles — modelName/profile из ответа
+                - list_relative_blueprints + list_virtual_profiles — modelName/profile из ответа
                 - list_variables path=<существующий DEVICE> — имена переменных для виджетов
                 
                 **Переиспользование:** если list_objects показал папку/устройство — работай с этим path.
@@ -535,7 +535,7 @@ public final class AgentPlaybooks {
     public static String projectBlueprintGuide() {
         return "## Project blueprint (8 layers, end-to-end)\n\n"
                 + "Используй как каркас для новых решений. Не перескакивай через слои.\n\n"
-                + "0. **Ground truth**: list_objects / search_objects / list_relative_models — зафиксируй реальные paths "
+                + "0. **Ground truth**: list_objects / search_objects / list_relative_blueprints — зафиксируй реальные paths "
                 + "и modelName из ответов tools (см. groundTruthGuide). Playbook-пути — только примеры.\n"
                 + "1. **Intent + scope**: зафиксируй цель, бизнес-события, naming/path policy на основе существующего дерева.\n"
                 + "2. **Model strategy**: выбери INSTANCE vs RELATIVE vs ABSOLUTE "
@@ -563,14 +563,14 @@ public final class AgentPlaybooks {
 
                 2) Нужно обогатить уже существующий objectPath (добавить variables/events/functions)?
                    -> **RELATIVE**
-                   tools: list_relative_models -> apply_relative_model
+                   tools: list_relative_blueprints -> apply_relative_blueprint
 
                 3) Нужна строгая каноническая структура по абсолютной модели (без mixin-слоёв)?
                    -> **ABSOLUTE**
-                   tools: list_absolute_models -> ensure_absolute_instance
+                   tools: list_absolute_blueprints -> ensure_absolute_instance
 
                 Quick flow:
-                - Сначала покажи каталоги: list_instance_types, list_relative_models, list_absolute_models.
+                - Сначала покажи каталоги: list_instance_types, list_relative_blueprints, list_absolute_blueprints.
                 - Затем выбери один путь и НЕ смешивай INSTANCE/ABSOLUTE вслепую на одном объекте.
                 - После инстанцирования/применения модели: configure_driver + list_variables (verification).
                 """;
@@ -805,9 +805,9 @@ public final class AgentPlaybooks {
         return """
                 ## Platform master index (agent tools by area)
                 
-                **Discovery:** search_context, list_drivers, get_driver_help, list_examples, get_example_bundle, list_object_models
+                **Discovery:** search_context, list_drivers, get_driver_help, list_examples, get_example_bundle, list_object_blueprints
                 
-                **Models (RELATIVE mixins):** list_relative_models, get_object_model, apply_relative_model
+                **Models (RELATIVE mixins):** list_relative_blueprints, get_object_blueprint, apply_relative_blueprint
                 — enrich DEVICE/CUSTOM with variables, events, functions (virtual-lab-v1, virtual-unified-v1, …)
                 
                 **Object tree:** list_objects, get_object, create_object, delete_object, search_objects, search_by_haystack_tags

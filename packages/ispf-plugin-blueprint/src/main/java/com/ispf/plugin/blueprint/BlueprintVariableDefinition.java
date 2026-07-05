@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -6,7 +6,7 @@ import com.ispf.core.model.DataSchema;
 /**
  * Variable definition inside a model.
  */
-public record ModelVariableDefinition(
+public record BlueprintVariableDefinition(
         String name,
         String description,
         String group,
@@ -17,7 +17,7 @@ public record ModelVariableDefinition(
         Boolean historyEnabled,
         Integer historyRetentionDays
 ) {
-    public ModelVariableDefinition {
+    public BlueprintVariableDefinition {
         if (description == null) {
             description = "";
         }
@@ -29,7 +29,7 @@ public record ModelVariableDefinition(
         }
     }
 
-    public static ModelVariableDefinition of(
+    public static BlueprintVariableDefinition of(
             String name,
             String description,
             String group,
@@ -41,7 +41,7 @@ public record ModelVariableDefinition(
         return of(name, description, group, schema, readable, writable, defaultValue, false, null);
     }
 
-    public static ModelVariableDefinition of(
+    public static BlueprintVariableDefinition of(
             String name,
             String description,
             String group,
@@ -52,7 +52,7 @@ public record ModelVariableDefinition(
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
-        return new ModelVariableDefinition(
+        return new BlueprintVariableDefinition(
                 name,
                 description,
                 group,
@@ -66,7 +66,7 @@ public record ModelVariableDefinition(
     }
 
     /** Variable with history recording enabled (platform default retention). */
-    public static ModelVariableDefinition withHistory(
+    public static BlueprintVariableDefinition withHistory(
             String name,
             String description,
             String group,
@@ -78,7 +78,7 @@ public record ModelVariableDefinition(
         return withHistory(name, description, group, schema, readable, writable, defaultValue, null);
     }
 
-    public static ModelVariableDefinition withHistory(
+    public static BlueprintVariableDefinition withHistory(
             String name,
             String description,
             String group,

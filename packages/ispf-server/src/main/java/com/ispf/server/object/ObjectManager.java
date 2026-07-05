@@ -8,7 +8,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
@@ -20,12 +20,12 @@ import com.ispf.server.persistence.ObjectNodeRepository;
 import com.ispf.server.persistence.ObjectVariableRepository;
 import com.ispf.server.persistence.entity.ObjectNodeEntity;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
-import com.ispf.plugin.model.ModelCatalogRoots;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.server.plugin.model.ModelApplicationRunner;
-import com.ispf.server.plugin.model.ModelBootstrap;
-import com.ispf.server.plugin.model.ModelPersistenceService;
-import com.ispf.server.plugin.model.SystemIntrinsicModelMigration;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
+import com.ispf.server.plugin.blueprint.BlueprintBootstrap;
+import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
+import com.ispf.server.plugin.blueprint.SystemIntrinsicBlueprintMigration;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.event.TelemetryEventJournalFastPath;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
@@ -62,12 +62,12 @@ public class ObjectManager {
     private final ObjectEntityMapper mapper;
     private final PlatformBootstrap platformBootstrap;
     private final BootstrapProperties bootstrapProperties;
-    private final ObjectProvider<ModelBootstrap> modelBootstrap;
-    private final ObjectProvider<ModelApplicationRunner> modelApplicationRunner;
-    private final ObjectProvider<ModelPersistenceService> modelPersistence;
-    private final ObjectProvider<ModelEngine> modelEngine;
-    private final ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration;
-    private final ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap;
+    private final ObjectProvider<BlueprintBootstrap> blueprintBootstrap;
+    private final ObjectProvider<BlueprintApplicationRunner> blueprintApplicationRunner;
+    private final ObjectProvider<BlueprintPersistenceService> blueprintPersistence;
+    private final ObjectProvider<BlueprintEngine> blueprintEngine;
+    private final ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration;
+    private final ObjectProvider<FixtureBlueprintBootstrap> fixtureBlueprintBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ObjectChangePublicationService publicationService;
     private final ObjectProvider<ObjectManager> self;
@@ -86,12 +86,12 @@ public class ObjectManager {
             ObjectEntityMapper mapper,
             PlatformBootstrap platformBootstrap,
             BootstrapProperties bootstrapProperties,
-            ObjectProvider<ModelBootstrap> modelBootstrap,
-            ObjectProvider<ModelApplicationRunner> modelApplicationRunner,
-            ObjectProvider<ModelPersistenceService> modelPersistence,
-            ObjectProvider<ModelEngine> modelEngine,
-            ObjectProvider<SystemIntrinsicModelMigration> intrinsicModelMigration,
-            ObjectProvider<FixtureModelBootstrap> fixtureModelBootstrap,
+            ObjectProvider<BlueprintBootstrap> blueprintBootstrap,
+            ObjectProvider<BlueprintApplicationRunner> blueprintApplicationRunner,
+            ObjectProvider<BlueprintPersistenceService> blueprintPersistence,
+            ObjectProvider<BlueprintEngine> blueprintEngine,
+            ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration,
+            ObjectProvider<FixtureBlueprintBootstrap> fixtureBlueprintBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
             @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
             ObjectProvider<ObjectManager> self,
@@ -108,12 +108,12 @@ public class ObjectManager {
         this.mapper = mapper;
         this.platformBootstrap = platformBootstrap;
         this.bootstrapProperties = bootstrapProperties;
-        this.modelBootstrap = modelBootstrap;
-        this.modelApplicationRunner = modelApplicationRunner;
-        this.modelPersistence = modelPersistence;
-        this.modelEngine = modelEngine;
-        this.intrinsicModelMigration = intrinsicModelMigration;
-        this.fixtureModelBootstrap = fixtureModelBootstrap;
+        this.blueprintBootstrap = blueprintBootstrap;
+        this.blueprintApplicationRunner = blueprintApplicationRunner;
+        this.blueprintPersistence = blueprintPersistence;
+        this.blueprintEngine = blueprintEngine;
+        this.intrinsicBlueprintMigration = intrinsicBlueprintMigration;
+        this.fixtureBlueprintBootstrap = fixtureBlueprintBootstrap;
         this.visualGroupService = visualGroupService;
         this.publicationService = publicationService;
         this.self = self;
@@ -140,23 +140,23 @@ public class ObjectManager {
         } else {
             seedPlatformStructure();
         }
-        modelBootstrap.getObject().ensureBuiltInModels();
-        modelPersistence.ifAvailable(ModelPersistenceService::restoreCustomModels);
-        intrinsicModelMigration.ifAvailable(SystemIntrinsicModelMigration::migrate);
-        if (shouldApplyFixtureModels()) {
-            fixtureModelBootstrap.ifAvailable(FixtureModelBootstrap::ensureFixtureModels);
-            modelApplicationRunner.getObject().applyDemoModels();
-            modelApplicationRunner.getObject().ensureSnmpLocalhostDevice();
+        blueprintBootstrap.getObject().ensureBuiltInBlueprints();
+        blueprintPersistence.ifAvailable(BlueprintPersistenceService::restoreCustomBlueprints);
+        intrinsicBlueprintMigration.ifAvailable(SystemIntrinsicBlueprintMigration::migrate);
+        if (shouldApplyFixtureBlueprints()) {
+            fixtureBlueprintBootstrap.ifAvailable(FixtureBlueprintBootstrap::ensureFixtureBlueprints);
+            blueprintApplicationRunner.getObject().applyDemoBlueprints();
+            blueprintApplicationRunner.getObject().ensureSnmpLocalhostDevice();
         } else {
-            fixtureModelBootstrap.ifAvailable(bootstrap -> bootstrap.removeFixtureModelsIfPresent(this));
+            fixtureBlueprintBootstrap.ifAvailable(bootstrap -> bootstrap.removeFixtureBlueprintsIfPresent(this));
         }
-        modelEngine.ifAvailable(engine -> {
-            engine.refreshModelCatalogNodes();
-            cleanupLegacyModelCatalog();
+        blueprintEngine.ifAvailable(engine -> {
+            engine.refreshBlueprintCatalogNodes();
+            cleanupLegacyBlueprintCatalog();
         });
-        modelApplicationRunner.getObject().syncAllModelBackedVariableMetadata();
-        modelApplicationRunner.getObject().restoreAttachments();
-        modelApplicationRunner.getObject().ensureDashboardDemoRules();
+        blueprintApplicationRunner.getObject().syncAllBlueprintBackedVariableMetadata();
+        blueprintApplicationRunner.getObject().restoreAttachments();
+        blueprintApplicationRunner.getObject().ensureDashboardDemoRules();
     }
 
     public boolean isInitialized() {
@@ -303,7 +303,7 @@ public class ObjectManager {
                 entity.getLastChangedBy(),
                 entity.getLastChangedAt()
         );
-        node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
+        node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
         node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
         node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
         node.setEventJournalEnabled(entity.isEventJournalEnabled());
@@ -782,7 +782,7 @@ public class ObjectManager {
 
     private void seedPlatform() {
         seedPlatformStructure();
-        modelApplicationRunner.getObject().applyDemoModels();
+        blueprintApplicationRunner.getObject().applyDemoBlueprints();
     }
 
     private void persistAll() {
@@ -821,7 +821,7 @@ public class ObjectManager {
         }
     }
 
-    private boolean shouldApplyFixtureModels() {
+    private boolean shouldApplyFixtureBlueprints() {
         if (!bootstrapProperties.isFixturesEnabled()) {
             return false;
         }
@@ -892,7 +892,7 @@ public class ObjectManager {
                 entity.getLastChangedBy(),
                 entity.getLastChangedAt()
         );
-        node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
+        node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
         for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
             node.addEvent(event);
         }
@@ -935,11 +935,11 @@ public class ObjectManager {
         return grouped;
     }
 
-    private void cleanupLegacyModelCatalog() {
-        String legacyPrefix = ModelCatalogRoots.LEGACY + ".";
+    private void cleanupLegacyBlueprintCatalog() {
+        String legacyPrefix = BlueprintCatalogRoots.LEGACY + ".";
         List<String> legacyPaths = objectTree.all().stream()
                 .map(PlatformObject::path)
-                .filter(path -> path.equals(ModelCatalogRoots.LEGACY) || path.startsWith(legacyPrefix))
+                .filter(path -> path.equals(BlueprintCatalogRoots.LEGACY) || path.startsWith(legacyPrefix))
                 .sorted(Comparator.comparingInt(String::length).reversed())
                 .toList();
         for (String path : legacyPaths) {
@@ -1079,7 +1079,8 @@ public class ObjectManager {
                 node.lastChangedBy(),
                 false,
                 true,
-                null
+                null,
+                false
         ));
     }
 

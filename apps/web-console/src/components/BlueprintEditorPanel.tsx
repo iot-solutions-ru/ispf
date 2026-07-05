@@ -2,42 +2,42 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  applyModel,
-  createModel,
-  createModelFromObject,
-  deleteModel,
-  fetchModelByName,
-  fetchModelInstances,
-  fetchAbsoluteModelInstance,
-  fetchModelDiff,
-  fetchModelMergePreview,
-  fetchRelativeModels,
-  fetchAbsoluteModels,
+  applyBlueprint,
+  createBlueprint,
+  createBlueprintFromObject,
+  deleteBlueprint,
+  fetchBlueprintByName,
+  fetchBlueprintInstances,
+  fetchAbsoluteBlueprintInstance,
+  fetchBlueprintDiff,
+  fetchBlueprintMergePreview,
+  fetchRelativeBlueprints,
+  fetchAbsoluteBlueprints,
   fetchInstanceTypes,
-  instantiateModel,
-  updateModel,
-  upgradeModel,
-  upgradeModelInstances,
-} from "../api/models";
+  instantiateBlueprint,
+  updateBlueprint,
+  upgradeBlueprint,
+  upgradeBlueprintInstances,
+} from "../api/blueprints";
 import type { EventDescriptor, FunctionDescriptor, ObjectType } from "../types";
 import {
-  ABSOLUTE_MODELS_ROOT,
-  BUILTIN_MODEL_NAMES,
-  RELATIVE_MODELS_ROOT,
-  catalogRootForModelType,
-  isModelCatalogRoot,
-  modelNameFromPath,
-  type ModelBindingRule,
-  type ModelCatalogRoot,
-  type ModelDto,
-  type ModelType,
-  type ModelVariableDefinition,
-} from "../types/models";
+  ABSOLUTE_BLUEPRINTS_ROOT,
+  BUILTIN_BLUEPRINT_NAMES,
+  RELATIVE_BLUEPRINTS_ROOT,
+  catalogRootForBlueprintType,
+  isBlueprintCatalogRoot,
+  blueprintNameFromPath,
+  type BlueprintBindingRule,
+  type BlueprintCatalogRoot,
+  type BlueprintDto,
+  type BlueprintType,
+  type BlueprintVariableDefinition,
+} from "../types/blueprints";
 import { recordDisplayValue } from "../utils/tree";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import { formatHistoryRetention } from "./VariableHistoryFields";
 
-interface ModelEditorPanelProps {
+interface BlueprintEditorPanelProps {
   selectedPath: string;
   canManage: boolean;
   onSelectPath?: (path: string) => void;
@@ -59,7 +59,7 @@ function ModelDetail({
   canManage,
   onSelectPath,
 }: {
-  model: ModelDto;
+  model: BlueprintDto;
   canManage: boolean;
   onSelectPath?: (path: string) => void;
 }) {
@@ -68,14 +68,14 @@ function ModelDetail({
   const [description, setDescription] = useState(model.description);
   const [suitability, setSuitability] = useState(model.suitabilityExpression);
   const [applyPath, setApplyPath] = useState("");
-  const [theirsModelId, setTheirsModelId] = useState("");
+  const [theirsBlueprintId, settheirsBlueprintId] = useState("");
   const [parentPath, setParentPath] = useState("root.platform.devices");
   const [instanceName, setInstanceName] = useState("");
   const [variables, setVariables] = useState(model.variables);
   const [bindings, setBindings] = useState(model.bindings);
   const [events, setEvents] = useState(model.events);
   const [functions, setFunctions] = useState(model.functions);
-  const isBuiltin = BUILTIN_MODEL_NAMES.has(model.name);
+  const isBuiltin = BUILTIN_BLUEPRINT_NAMES.has(model.name);
 
   useEffect(() => {
     setVariables(model.variables);
@@ -104,7 +104,7 @@ function ModelDetail({
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      updateModel(model.id, {
+      updateBlueprint(model.id, {
         description,
         suitabilityExpression: suitability,
         variables,
@@ -113,13 +113,13 @@ function ModelDetail({
         functions,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["model", model.name] });
-      queryClient.invalidateQueries({ queryKey: ["models"] });
+      queryClient.invalidateQueries({ queryKey: ["BLUEPRINT", model.name] });
+      queryClient.invalidateQueries({ queryKey: ["blueprints"] });
     },
   });
 
   const applyMutation = useMutation({
-    mutationFn: () => applyModel(model.id, applyPath.trim()),
+    mutationFn: () => applyBlueprint(model.id, applyPath.trim()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
@@ -131,23 +131,23 @@ function ModelDetail({
 
   const instancesQuery = useQuery({
     queryKey: ["model-instances", model.id],
-    queryFn: () => fetchModelInstances(model.id),
+    queryFn: () => fetchBlueprintInstances(model.id),
   });
 
   const diffQuery = useQuery({
     queryKey: ["model-diff", model.id, applyPath],
-    queryFn: () => fetchModelDiff(model.id, applyPath.trim()),
+    queryFn: () => fetchBlueprintDiff(model.id, applyPath.trim()),
     enabled: Boolean(applyPath.trim()),
   });
 
   const mergePreviewQuery = useQuery({
-    queryKey: ["model-merge-preview", model.id, theirsModelId, applyPath],
-    queryFn: () => fetchModelMergePreview(model.id, theirsModelId.trim(), applyPath.trim()),
-    enabled: Boolean(applyPath.trim() && theirsModelId.trim()),
+    queryKey: ["model-merge-preview", model.id, theirsBlueprintId, applyPath],
+    queryFn: () => fetchBlueprintMergePreview(model.id, theirsBlueprintId.trim(), applyPath.trim()),
+    enabled: Boolean(applyPath.trim() && theirsBlueprintId.trim()),
   });
 
   const upgradeOneMutation = useMutation({
-    mutationFn: () => upgradeModel(model.id, applyPath.trim(), model.parameters.modelVersion),
+    mutationFn: () => upgradeBlueprint(model.id, applyPath.trim(), model.parameters.blueprintVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
@@ -156,7 +156,7 @@ function ModelDetail({
   });
 
   const upgradeAllMutation = useMutation({
-    mutationFn: () => upgradeModelInstances(model.id),
+    mutationFn: () => upgradeBlueprintInstances(model.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["variables"] });
@@ -166,7 +166,7 @@ function ModelDetail({
 
   const instantiateMutation = useMutation({
     mutationFn: () =>
-      instantiateModel(model.id, parentPath.trim(), instanceName.trim()),
+      instantiateBlueprint(model.id, parentPath.trim(), instanceName.trim()),
     onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       onSelectPath?.(created.path);
@@ -174,7 +174,7 @@ function ModelDetail({
   });
 
   const absoluteSingletonMutation = useMutation({
-    mutationFn: () => fetchAbsoluteModelInstance(model.id),
+    mutationFn: () => fetchAbsoluteBlueprintInstance(model.id),
     onSuccess: (instance) => {
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       onSelectPath?.(instance.path);
@@ -182,17 +182,17 @@ function ModelDetail({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteModel(model.id),
+    mutationFn: () => deleteBlueprint(model.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["models"] });
+      queryClient.invalidateQueries({ queryKey: ["blueprints"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
-      onSelectPath?.(catalogRootForModelType(model.type));
+      onSelectPath?.(catalogRootForBlueprintType(model.type));
     },
   });
 
   function patchVariableHistory(
     name: string,
-    patch: Pick<ModelVariableDefinition, "historyEnabled" | "historyRetentionDays">
+    patch: Pick<BlueprintVariableDefinition, "historyEnabled" | "historyRetentionDays">
   ) {
     setVariables((prev) =>
       prev.map((v) => (v.name === name ? { ...v, ...patch } : v))
@@ -222,7 +222,7 @@ function ModelDetail({
     setBindings((prev) => prev.filter((b) => b.targetVariable !== name));
   }
 
-  function patchBinding(index: number, patch: Partial<ModelBindingRule>) {
+  function patchBinding(index: number, patch: Partial<BlueprintBindingRule>) {
     setBindings((prev) =>
       prev.map((b, i) => (i === index ? { ...b, ...patch } : b))
     );
@@ -299,25 +299,25 @@ function ModelDetail({
     <div className="model-detail">
       <div className="model-meta-grid">
         <div>
-          <span className="model-meta-label">{t("inspector:model.meta.type")}</span>
+          <span className="model-meta-label">{t("inspector:blueprint.meta.type")}</span>
           <code>{model.type}</code>
         </div>
         <div>
-          <span className="model-meta-label">{t("inspector:model.meta.targetObjectType")}</span>
+          <span className="model-meta-label">{t("inspector:blueprint.meta.targetObjectType")}</span>
           <code>{model.targetObjectType}</code>
         </div>
         <div>
-          <span className="model-meta-label">{t("inspector:model.meta.treePath")}</span>
+          <span className="model-meta-label">{t("inspector:blueprint.meta.treePath")}</span>
           <code>{model.objectPath}</code>
         </div>
         <div>
-          <span className="model-meta-label">{t("inspector:model.meta.builtin")}</span>
+          <span className="model-meta-label">{t("inspector:blueprint.meta.builtin")}</span>
           <span>{isBuiltin ? t("common:action.yes") : t("common:action.no")}</span>
         </div>
-        {model.parameters.modelVersion && (
+        {model.parameters.blueprintVersion && (
           <div>
-            <span className="model-meta-label">modelVersion</span>
-            <code>{model.parameters.modelVersion}</code>
+            <span className="model-meta-label">blueprintVersion</span>
+            <code>{model.parameters.blueprintVersion}</code>
           </div>
         )}
         {model.parameters.extendsModelId && (
@@ -346,20 +346,20 @@ function ModelDetail({
             />
           </label>
           <label>
-            {t("inspector:model.applicabilityCel")}
+            {t("inspector:blueprint.applicabilityCel")}
             <input
               value={suitability}
               onChange={(e) => setSuitability(e.target.value)}
-              placeholder={t("inspector:model.applicabilityPlaceholder")}
+              placeholder={t("inspector:blueprint.applicabilityPlaceholder")}
             />
           </label>
           {!isBuiltin && (
             <button type="submit" className="btn primary" disabled={saveMutation.isPending}>
-              {t("inspector:model.saveMetadata")}
+              {t("inspector:blueprint.saveMetadata")}
             </button>
           )}
           {!isBuiltin && definitionDirty && (
-            <p className="hint">{t("inspector:model.definitionChanged")}</p>
+            <p className="hint">{t("inspector:blueprint.definitionChanged")}</p>
           )}
           {saveMutation.error && (
             <p className="hint error">{String(saveMutation.error)}</p>
@@ -369,7 +369,7 @@ function ModelDetail({
 
       <section className="model-section">
         <div className="model-section-header">
-          <h4>{t("inspector:model.variablesTitle", { count: variables.length })}</h4>
+          <h4>{t("inspector:blueprint.variablesTitle", { count: variables.length })}</h4>
           {canManage && !isBuiltin && (
             <button type="button" className="btn small" onClick={addVariable}>
               {t("inspector:variables.add")}
@@ -486,7 +486,7 @@ function ModelDetail({
               disabled={!definitionDirty || saveMutation.isPending}
               onClick={() => saveMutation.mutate()}
             >
-              {t("inspector:model.saveDefinition")}
+              {t("inspector:blueprint.saveDefinition")}
             </button>
           </div>
         )}
@@ -494,7 +494,7 @@ function ModelDetail({
 
       <section className="model-section">
         <div className="model-section-header">
-          <h4>{t("inspector:model.bindingsTitle", { count: bindings.length })}</h4>
+          <h4>{t("inspector:blueprint.bindingsTitle", { count: bindings.length })}</h4>
           {canManage && !isBuiltin && (
             <button type="button" className="btn small" onClick={addBinding}>
               + Binding
@@ -570,7 +570,7 @@ function ModelDetail({
       <section className="model-section model-section-inline">
         <div>
           <div className="model-section-header">
-            <h4>{t("inspector:model.eventsTitle", { count: events.length })}</h4>
+            <h4>{t("inspector:blueprint.eventsTitle", { count: events.length })}</h4>
             {canManage && !isBuiltin && (
               <button type="button" className="btn small" onClick={addEvent}>
                 {t("inspector:events.add")}
@@ -593,7 +593,7 @@ function ModelDetail({
                       <input
                         className="model-inline-input"
                         value={e.description}
-                        placeholder={t("inspector:model.descriptionPlaceholder")}
+                        placeholder={t("inspector:blueprint.descriptionPlaceholder")}
                         onChange={(ev) => patchEvent(index, { description: ev.target.value })}
                       />
                       <button
@@ -617,7 +617,7 @@ function ModelDetail({
         </div>
         <div>
           <div className="model-section-header">
-            <h4>{t("inspector:model.functionsTitle", { count: functions.length })}</h4>
+            <h4>{t("inspector:blueprint.functionsTitle", { count: functions.length })}</h4>
             {canManage && !isBuiltin && (
               <button type="button" className="btn small" onClick={addFunction}>
                 {t("inspector:functions.add")}
@@ -640,7 +640,7 @@ function ModelDetail({
                       <input
                         className="model-inline-input"
                         value={f.description}
-                        placeholder={t("inspector:model.descriptionPlaceholder")}
+                        placeholder={t("inspector:blueprint.descriptionPlaceholder")}
                         onChange={(ev) => patchFunction(index, { description: ev.target.value })}
                       />
                       <button
@@ -666,16 +666,16 @@ function ModelDetail({
 
       {canManage && (
         <section className="model-section model-actions">
-          <h4>{t("inspector:model.actionsTitle")}</h4>
+          <h4>{t("inspector:blueprint.actionsTitle")}</h4>
           <div className="model-action-block">
             <p className="hint">
-              {t("inspector:model.applyHint")}
+              {t("inspector:blueprint.applyHint")}
             </p>
             <div className="model-action-row">
               <input
                 value={applyPath}
                 onChange={(e) => setApplyPath(e.target.value)}
-                placeholder={t("inspector:model.applyPathPlaceholder")}
+                placeholder={t("inspector:blueprint.applyPathPlaceholder")}
               />
               <button
                 type="button"
@@ -683,7 +683,7 @@ function ModelDetail({
                 disabled={!applyPath.trim() || applyMutation.isPending}
                 onClick={() => applyMutation.mutate()}
               >
-                {t("inspector:model.apply")}
+                {t("inspector:blueprint.apply")}
               </button>
             </div>
             {applyMutation.error && (
@@ -693,10 +693,10 @@ function ModelDetail({
 
           <div className="model-action-block">
             <p className="hint">
-              {t("inspector:model.upgradeHint", {
-                version: model.parameters.modelVersion
-                  ? `v${model.parameters.modelVersion}`
-                  : t("inspector:model.upgradeNoVersion"),
+              {t("inspector:blueprint.upgradeHint", {
+                version: model.parameters.blueprintVersion
+                  ? `v${model.parameters.blueprintVersion}`
+                  : t("inspector:blueprint.upgradeNoVersion"),
               })}
             </p>
             {instancesQuery.data && instancesQuery.data.length > 0 && (
@@ -712,8 +712,8 @@ function ModelDetail({
               <label className="full">
                 Merge preview — theirs model ID
                 <input
-                  value={theirsModelId}
-                  onChange={(e) => setTheirsModelId(e.target.value)}
+                  value={theirsBlueprintId}
+                  onChange={(e) => settheirsBlueprintId(e.target.value)}
                   placeholder="UUID vendor extension model"
                 />
               </label>
@@ -732,7 +732,7 @@ function ModelDetail({
             )}
             {applyPath.trim() && diffQuery.data && (
               <div className="model-diff-preview hint">
-                <strong>{t("model.diffPreviewTitle")}</strong> (v{diffQuery.data.modelVersion} →{" "}
+                <strong>{t("model.diffPreviewTitle")}</strong> (v{diffQuery.data.blueprintVersion} →{" "}
                 <code>{diffQuery.data.objectPath}</code>)
                 <ul>
                   {diffQuery.data.variablesToAdd.length > 0 && (
@@ -750,7 +750,7 @@ function ModelDetail({
                   {diffQuery.data.variablesToAdd.length === 0 &&
                     diffQuery.data.eventsToAdd.length === 0 &&
                     diffQuery.data.functionsToAdd.length === 0 && (
-                      <li>{t("inspector:model.upgradeNoNewFields")}</li>
+                      <li>{t("inspector:blueprint.upgradeNoNewFields")}</li>
                     )}
                 </ul>
               </div>
@@ -780,7 +780,7 @@ function ModelDetail({
             )}
             {upgradeAllMutation.data && (
               <p className="hint">
-                {t("inspector:model.upgradeCount", { count: upgradeAllMutation.data.count })}
+                {t("inspector:blueprint.upgradeCount", { count: upgradeAllMutation.data.count })}
               </p>
             )}
           </div>
@@ -788,7 +788,7 @@ function ModelDetail({
           {model.type === "INSTANCE" && (
             <div className="model-action-block">
               <p className="hint">
-                {t("inspector:model.instantiateHint")}
+                {t("inspector:blueprint.instantiateHint")}
               </p>
               <div className="model-action-row">
                 <input
@@ -799,7 +799,7 @@ function ModelDetail({
                 <input
                   value={instanceName}
                   onChange={(e) => setInstanceName(e.target.value)}
-                  placeholder={t("inspector:model.instanceNamePlaceholder")}
+                  placeholder={t("inspector:blueprint.instanceNamePlaceholder")}
                 />
                 <button
                   type="button"
@@ -807,7 +807,7 @@ function ModelDetail({
                   disabled={!parentPath.trim() || !instanceName.trim() || instantiateMutation.isPending}
                   onClick={() => instantiateMutation.mutate()}
                 >
-                  {t("inspector:model.createInstance")}
+                  {t("inspector:blueprint.createInstance")}
                 </button>
               </div>
               {instantiateMutation.error && (
@@ -819,7 +819,7 @@ function ModelDetail({
           {model.type === "ABSOLUTE" && (
             <div className="model-action-block">
               <p className="hint">
-                {t("inspector:model.singletonHint")}{" "}
+                {t("inspector:blueprint.singletonHint")}{" "}
                 <code>
                   {model.parameters.absoluteInstancePath ||
                     `root.platform.instances.${model.name}`}
@@ -831,7 +831,7 @@ function ModelDetail({
                 disabled={absoluteSingletonMutation.isPending}
                 onClick={() => absoluteSingletonMutation.mutate()}
               >
-                {t("inspector:model.openSingleton")}
+                {t("inspector:blueprint.openSingleton")}
               </button>
               {absoluteSingletonMutation.error && (
                 <p className="hint error">{String(absoluteSingletonMutation.error)}</p>
@@ -846,12 +846,12 @@ function ModelDetail({
                 className="btn danger"
                 disabled={deleteMutation.isPending}
                 onClick={() => {
-                  if (confirm(t("inspector:model.confirmDelete", { name: model.name }))) {
+                  if (confirm(t("inspector:blueprint.confirmDelete", { name: model.name }))) {
                     deleteMutation.mutate();
                   }
                 }}
               >
-                {t("inspector:model.delete")}
+                {t("inspector:blueprint.delete")}
               </button>
             </div>
           )}
@@ -869,7 +869,7 @@ function ModelsCatalog({
 }: {
   canManage: boolean;
   selectedPath: string;
-  catalogRoot: ModelCatalogRoot;
+  catalogRoot: BlueprintCatalogRoot;
   onSelectPath?: (path: string) => void;
 }) {
   const { t } = useTranslation(["inspector", "common"]);
@@ -877,29 +877,29 @@ function ModelsCatalog({
   const [invalidEmptyModelName, setInvalidEmptyModelName] = useState(false);
   const [invalidExportModelName, setInvalidExportModelName] = useState(false);
   const modelsQuery = useQuery({
-    queryKey: ["models", catalogRoot],
+    queryKey: ["blueprints", catalogRoot],
     queryFn: () => {
-      if (catalogRoot === RELATIVE_MODELS_ROOT) {
-        return fetchRelativeModels();
+      if (catalogRoot === RELATIVE_BLUEPRINTS_ROOT) {
+        return fetchRelativeBlueprints();
       }
-      if (catalogRoot === ABSOLUTE_MODELS_ROOT) {
-        return fetchAbsoluteModels();
+      if (catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT) {
+        return fetchAbsoluteBlueprints();
       }
       return fetchInstanceTypes();
     },
   });
 
-  const defaultCreateType: ModelType =
-    catalogRoot === RELATIVE_MODELS_ROOT
+  const defaultCreateType: BlueprintType =
+    catalogRoot === RELATIVE_BLUEPRINTS_ROOT
       ? "RELATIVE"
-      : catalogRoot === ABSOLUTE_MODELS_ROOT
+      : catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT
         ? "ABSOLUTE"
         : "INSTANCE";
 
   const createMutation = useMutation({
-    mutationFn: createModel,
+    mutationFn: createBlueprint,
     onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ["models"] });
+      queryClient.invalidateQueries({ queryKey: ["blueprints"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       onSelectPath?.(created.objectPath);
     },
@@ -916,9 +916,9 @@ function ModelsCatalog({
       modelName: string;
       description: string;
       type: "RELATIVE" | "INSTANCE";
-    }) => createModelFromObject(sourcePath, modelName, description, type),
+    }) => createBlueprintFromObject(sourcePath, modelName, description, type),
     onSuccess: (created) => {
-      queryClient.invalidateQueries({ queryKey: ["models"] });
+      queryClient.invalidateQueries({ queryKey: ["blueprints"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       onSelectPath?.(created.objectPath);
     },
@@ -932,7 +932,7 @@ function ModelsCatalog({
   return (
     <div className="models-catalog">
       <p className="hint">
-        {t("inspector:model.listHint")}
+        {t("inspector:blueprint.listHint")}
       </p>
       {modelsQuery.error && (
         <p className="hint error">{String(modelsQuery.error)}</p>
@@ -943,7 +943,7 @@ function ModelsCatalog({
             <th>{t("common:table.name")}</th>
             <th>{t("common:table.type")}</th>
             <th>{t("model.columnObjectType")}</th>
-            <th>{t("inspector:model.variablesColumn")}</th>
+            <th>{t("inspector:blueprint.variablesColumn")}</th>
             <th></th>
           </tr>
         </thead>
@@ -990,17 +990,17 @@ function ModelsCatalog({
               form.reset();
             }}
           >
-            <h4>{t("inspector:model.newEmptyTitle")}</h4>
+            <h4>{t("inspector:blueprint.newEmptyTitle")}</h4>
             <div className="model-form-grid">
               <input
                 name="name"
-                placeholder={t("inspector:model.namePlaceholder")}
+                placeholder={t("inspector:blueprint.namePlaceholder")}
                 required
                 pattern="[a-zA-Z0-9._-]+"
                 aria-invalid={invalidEmptyModelName}
                 onChange={(e) => setInvalidEmptyModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
-              <input name="description" placeholder={t("inspector:model.descriptionPlaceholder")} />
+              <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
               <select name="type" defaultValue={defaultCreateType}>
                 <option value="RELATIVE">RELATIVE</option>
                 <option value="INSTANCE">INSTANCE</option>
@@ -1045,13 +1045,13 @@ function ModelsCatalog({
               form.reset();
             }}
           >
-            <h4>{t("inspector:model.exportObjectTitle")}</h4>
+            <h4>{t("inspector:blueprint.exportObjectTitle")}</h4>
             <p className="hint">
-              {t("inspector:model.exportObjectHint")}{" "}
+              {t("inspector:blueprint.exportObjectHint")}{" "}
               {selectedPath !== catalogRoot ? (
                 <code>{selectedPath}</code>
               ) : (
-                t("inspector:model.exportPathMissing")
+                t("inspector:blueprint.exportPathMissing")
               )}
             </p>
             <div className="model-form-grid">
@@ -1063,13 +1063,13 @@ function ModelsCatalog({
               />
               <input
                 name="modelName"
-                placeholder={t("inspector:model.newModelNamePlaceholder")}
+                placeholder={t("inspector:blueprint.newModelNamePlaceholder")}
                 required
                 pattern="[a-zA-Z0-9._-]+"
                 aria-invalid={invalidExportModelName}
                 onChange={(e) => setInvalidExportModelName(Boolean(e.target.value) && !isTechnicalIdentifier(e.target.value, "dottedName"))}
               />
-              <input name="description" placeholder={t("inspector:model.descriptionPlaceholder")} />
+              <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
               <select
                 name="type"
                 defaultValue={defaultCreateType === "ABSOLUTE" ? "INSTANCE" : defaultCreateType}
@@ -1078,7 +1078,7 @@ function ModelsCatalog({
                 <option value="INSTANCE">INSTANCE</option>
               </select>
               <button type="submit" className="btn" disabled={fromObjectMutation.isPending}>
-                {t("inspector:model.export")}
+                {t("inspector:blueprint.export")}
               </button>
             </div>
             {invalidExportModelName && (
@@ -1094,30 +1094,30 @@ function ModelsCatalog({
   );
 }
 
-export default function ModelEditorPanel({
+export default function BlueprintEditorPanel({
   selectedPath,
   canManage,
   onSelectPath,
   onClose,
   title,
-}: ModelEditorPanelProps) {
+}: BlueprintEditorPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
-  const modelName = modelNameFromPath(selectedPath);
-  const catalogRoot = isModelCatalogRoot(selectedPath) ? selectedPath : null;
+  const modelName = blueprintNameFromPath(selectedPath);
+  const catalogRoot = isBlueprintCatalogRoot(selectedPath) ? selectedPath : null;
   const isCatalog = catalogRoot != null;
   const headerTitle = isCatalog
-    ? catalogRoot === RELATIVE_MODELS_ROOT
-      ? t("inspector:model.relativeTitle")
-      : catalogRoot === ABSOLUTE_MODELS_ROOT
-        ? t("inspector:model.absoluteTitle")
-        : t("inspector:model.objectTypesTitle")
+    ? catalogRoot === RELATIVE_BLUEPRINTS_ROOT
+      ? t("inspector:blueprint.relativeTitle")
+      : catalogRoot === ABSOLUTE_BLUEPRINTS_ROOT
+        ? t("inspector:blueprint.absoluteTitle")
+        : t("inspector:blueprint.objectTypesTitle")
     : modelName
-      ? t("inspector:model.titleNamed", { name: modelName })
-      : (title ?? selectedPath.split(".").pop() ?? t("inspector:model.titleDefault"));
+      ? t("inspector:blueprint.titleNamed", { name: modelName })
+      : (title ?? selectedPath.split(".").pop() ?? t("inspector:blueprint.titleDefault"));
 
   const modelQuery = useQuery({
-    queryKey: ["model", modelName],
-    queryFn: () => fetchModelByName(modelName!),
+    queryKey: ["BLUEPRINT", modelName],
+    queryFn: () => fetchBlueprintByName(modelName!),
     enabled: !!modelName,
   });
 
@@ -1144,16 +1144,16 @@ export default function ModelEditorPanel({
             onSelectPath={onSelectPath}
           />
         ) : !modelName ? (
-          <p className="hint">{t("inspector:model.selectInTree")}</p>
+          <p className="hint">{t("inspector:blueprint.selectInTree")}</p>
         ) : (
           <>
             {!canManage && (
-              <p className="hint">{t("inspector:model.adminOnly")}</p>
+              <p className="hint">{t("inspector:blueprint.adminOnly")}</p>
             )}
-            {modelQuery.isLoading && <p className="hint">{t("inspector:model.loading")}</p>}
+            {modelQuery.isLoading && <p className="hint">{t("inspector:blueprint.loading")}</p>}
             {modelQuery.error && (
               <p className="hint error">
-                {t("inspector:model.notFound")}
+                {t("inspector:blueprint.notFound")}
                 <br />
                 {String(modelQuery.error)}
               </p>

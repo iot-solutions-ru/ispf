@@ -2,7 +2,7 @@ package com.ispf.server.driver;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 
 /**
  * Creates DEVICE objects without a pre-provisioned driver so integration tests can configure any driverId.
@@ -14,14 +14,14 @@ final class DriverIntegrationTestSupport {
 
     static String createDevice(
             ObjectManager objectManager,
-            ModelApplicationService modelApplicationService,
+            BlueprintApplicationService blueprintApplicationService,
             DriverRuntimeService driverRuntimeService,
             String name
     ) {
         String parent = "root.platform.devices";
         String path = parent + "." + name;
         objectManager.create(parent, name, ObjectType.DEVICE, name, null, null);
-        modelApplicationService.applyRelativeModelsWithRules(path);
+        blueprintApplicationService.applyRelativeBlueprintsWithRules(path);
         driverRuntimeService.stopIfRunning(path);
         return path;
     }

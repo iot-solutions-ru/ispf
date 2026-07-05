@@ -157,7 +157,7 @@ public class PlatformMetricsService {
         section.put("dashboards", objectNodeRepository.countByType(ObjectType.DASHBOARD));
         section.put("workflows", objectNodeRepository.countByType(ObjectType.WORKFLOW));
         section.put("applications", objectNodeRepository.countByType(ObjectType.APPLICATION));
-        section.put("models", objectNodeRepository.countByType(ObjectType.MODEL));
+        section.put("blueprints", objectNodeRepository.countByType(ObjectType.BLUEPRINT));
         section.put("alerts", objectNodeRepository.countByType(ObjectType.ALERT));
         section.put("correlators", objectNodeRepository.countByType(ObjectType.CORRELATOR));
         return section;

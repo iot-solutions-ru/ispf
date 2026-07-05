@@ -35,7 +35,7 @@ import java.util.Map;
 @Component
 public class MiniTecPlatformBootstrap {
 
-    private final MiniTecModelBootstrap modelBootstrap;
+    private final MiniTecBlueprintBootstrap BlueprintBootstrap;
     private final ObjectTemplateService templateService;
     private final ObjectManager objectManager;
     private final DashboardService dashboardService;
@@ -49,7 +49,7 @@ public class MiniTecPlatformBootstrap {
     private final ClusterPlatformBootstrapService clusterBootstrapService;
 
     public MiniTecPlatformBootstrap(
-            MiniTecModelBootstrap modelBootstrap,
+            MiniTecBlueprintBootstrap BlueprintBootstrap,
             ObjectTemplateService templateService,
             ObjectManager objectManager,
             DashboardService dashboardService,
@@ -62,7 +62,7 @@ public class MiniTecPlatformBootstrap {
             BootstrapProperties bootstrapProperties,
             ClusterPlatformBootstrapService clusterBootstrapService
     ) {
-        this.modelBootstrap = modelBootstrap;
+        this.BlueprintBootstrap = BlueprintBootstrap;
         this.templateService = templateService;
         this.objectManager = objectManager;
         this.dashboardService = dashboardService;
@@ -82,17 +82,17 @@ public class MiniTecPlatformBootstrap {
         if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
-        modelBootstrap.ensureMiniTecModels();
+        BlueprintBootstrap.ensureMiniTecModels();
         registerApplication();
         ensureSqlSchema();
         ensureFolder();
-        ensureDevice("gpu-01", "ГПУ-1", MiniTecModelBootstrap.GPU_MODEL, 1);
-        ensureDevice("gpu-02", "ГПУ-2", MiniTecModelBootstrap.GPU_MODEL, 2);
-        ensureDevice("gpu-03", "ГПУ-3", MiniTecModelBootstrap.GPU_MODEL, 3);
-        ensureDevice("grpb", "ГРПБ", MiniTecModelBootstrap.GRPB_MODEL, 0);
-        ensureDevice("rumb-10kv", "РУМБ 10/0.4 кВ", MiniTecModelBootstrap.RUMB_MODEL, 0);
-        ensureDevice("dgu", "ДГУ", MiniTecModelBootstrap.DGU_MODEL, 0);
-        ensureDevice("load-module", "Нагрузочный модуль", MiniTecModelBootstrap.LOAD_MODEL, 0);
+        ensureDevice("gpu-01", "ГПУ-1", MiniTecBlueprintBootstrap.GPU_MODEL, 1);
+        ensureDevice("gpu-02", "ГПУ-2", MiniTecBlueprintBootstrap.GPU_MODEL, 2);
+        ensureDevice("gpu-03", "ГПУ-3", MiniTecBlueprintBootstrap.GPU_MODEL, 3);
+        ensureDevice("grpb", "ГРПБ", MiniTecBlueprintBootstrap.GRPB_MODEL, 0);
+        ensureDevice("rumb-10kv", "РУМБ 10/0.4 кВ", MiniTecBlueprintBootstrap.RUMB_MODEL, 0);
+        ensureDevice("dgu", "ДГУ", MiniTecBlueprintBootstrap.DGU_MODEL, 0);
+        ensureDevice("load-module", "Нагрузочный модуль", MiniTecBlueprintBootstrap.LOAD_MODEL, 0);
         ensureHub();
         ensureMimics();
         ensureDashboards();
@@ -180,7 +180,7 @@ public class MiniTecPlatformBootstrap {
         }
         templateService.applyTemplate(path, model);
         if (unitIndex > 0) {
-            String config = String.format(MiniTecModelBootstrap.GPU_DRIVER_CONFIG_TEMPLATE, "1480", unitIndex);
+            String config = String.format(MiniTecBlueprintBootstrap.GPU_DRIVER_CONFIG_TEMPLATE, "1480", unitIndex);
             setStringVar(path, "driverConfigJson", config);
         }
     }
@@ -188,9 +188,9 @@ public class MiniTecPlatformBootstrap {
     private void ensureHub() {
         String path = MiniTecPaths.STATION_HUB;
         if (objectManager.tree().findByPath(path).isEmpty()) {
-            objectManager.create(MiniTecPaths.FOLDER, "station-hub", ObjectType.CUSTOM, "Станционный hub", "", MiniTecModelBootstrap.HUB_MODEL);
+            objectManager.create(MiniTecPaths.FOLDER, "station-hub", ObjectType.CUSTOM, "Станционный hub", "", MiniTecBlueprintBootstrap.HUB_MODEL);
         }
-        templateService.applyTemplate(path, MiniTecModelBootstrap.HUB_MODEL);
+        templateService.applyTemplate(path, MiniTecBlueprintBootstrap.HUB_MODEL);
     }
 
     private void setStringVar(String path, String name, String value) {

@@ -1,4 +1,4 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
@@ -7,13 +7,13 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
-import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.server.dashboard.DashboardContextSupport;
 import com.ispf.server.mimic.MimicLayouts;
@@ -28,7 +28,7 @@ import java.util.UUID;
  * Seeds built-in models for the platform.
  */
 @Component
-public class ModelBootstrap {
+public class BlueprintBootstrap {
 
     private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
             .field("value", FieldType.DOUBLE)
@@ -58,44 +58,44 @@ public class ModelBootstrap {
             .field("value", FieldType.INTEGER)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
 
-    public ModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public BlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
     }
 
     /**
      * Registers built-in models on every startup (in-memory registry is empty after restart).
      */
-    public void ensureBuiltInModels() {
+    public void ensureBuiltInBlueprints() {
         seedModels();
         ensureAutomationModels();
     }
 
     private void ensureAutomationModels() {
-        if (modelRegistry.findByName("alert-rule-v1").isEmpty()) {
-            modelEngine.createModel(buildAlertRuleModel().withSystemIntrinsicFlag());
+        if (blueprintRegistry.findByName("alert-rule-v1").isEmpty()) {
+            blueprintEngine.createBlueprint(buildAlertRuleModel().withSystemIntrinsicFlag());
         }
-        if (modelRegistry.findByName("correlator-v1").isEmpty()) {
-            modelEngine.createModel(buildCorrelatorModel().withSystemIntrinsicFlag());
+        if (blueprintRegistry.findByName("correlator-v1").isEmpty()) {
+            blueprintEngine.createBlueprint(buildCorrelatorModel().withSystemIntrinsicFlag());
         }
-        if (modelRegistry.findByName("mimic-v1").isEmpty()) {
-            modelEngine.createModel(buildMimicModel().withSystemIntrinsicFlag());
+        if (blueprintRegistry.findByName("mimic-v1").isEmpty()) {
+            blueprintEngine.createBlueprint(buildMimicModel().withSystemIntrinsicFlag());
         }
     }
 
-    static ModelDefinition buildMimicModel() {
-        return new ModelDefinition(
+    static BlueprintDefinition buildMimicModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "mimic-v1",
                 "SCADA mimic diagram with symbol library and live bindings",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.MIMIC,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "title",
                                 "Mimic title",
                                 "info",
@@ -103,7 +103,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Mimic"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "refreshIntervalMs",
                                 "Default polling interval in milliseconds",
                                 "config",
@@ -111,7 +111,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "diagram",
                                 "SCADA mimic diagram JSON (symbols, connections, bindings)",
                                 "config",
@@ -123,22 +123,22 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    static ModelDefinition buildAlertRuleModel() {
-        return new ModelDefinition(
+    static BlueprintDefinition buildAlertRuleModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "alert-rule-v1",
                 "CEL alert rule — watches a variable and publishes events",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.ALERT,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "targetObjectPath",
                                 "Object path to watch",
                                 "config",
@@ -146,7 +146,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "watchVariable",
                                 "Variable name that triggers evaluation",
                                 "config",
@@ -154,7 +154,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "conditionExpr",
                                 "CEL expression evaluated on the target object",
                                 "config",
@@ -162,7 +162,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "eventName",
                                 "Event to publish when condition is met",
                                 "config",
@@ -170,7 +170,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "payloadVariable",
                                 "Optional variable for event payload",
                                 "config",
@@ -178,7 +178,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "enabled",
                                 "Whether the rule is active",
                                 "config",
@@ -186,7 +186,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "edgeTrigger",
                                 "Fire only on false→true transition",
                                 "config",
@@ -194,7 +194,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "delaySeconds",
                                 "Seconds condition must stay true before firing (with sustainWhileTrue)",
                                 "config",
@@ -202,7 +202,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sustainWhileTrue",
                                 "Require condition to remain true for delaySeconds before firing",
                                 "config",
@@ -210,7 +210,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "rateLimitSeconds",
                                 "Minimum seconds between event fires (0 = no limit)",
                                 "config",
@@ -225,7 +225,7 @@ public class ModelBootstrap {
                                         Map.of("value", 0)
                                 )
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "priority",
                                 "Alarm priority (CRITICAL, HIGH, MEDIUM, LOW)",
                                 "config",
@@ -233,7 +233,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "HIGH"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "ackRequired",
                                 "Operator must acknowledge before alarm clears",
                                 "config",
@@ -241,7 +241,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastConditionMet",
                                 "Runtime: last evaluated condition result",
                                 "runtime",
@@ -249,7 +249,7 @@ public class ModelBootstrap {
                                 true,
                                 false, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastFiredAt",
                                 "Runtime: last event fire timestamp (ISO-8601)",
                                 "runtime",
@@ -257,7 +257,7 @@ public class ModelBootstrap {
                                 true,
                                 false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "conditionTrueSince",
                                 "Runtime: when condition first became true (ISO-8601)",
                                 "runtime",
@@ -269,22 +269,22 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    static ModelDefinition buildCorrelatorModel() {
-        return new ModelDefinition(
+    static BlueprintDefinition buildCorrelatorModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "correlator-v1",
                 "Event correlator — COUNT or SEQUENCE patterns trigger workflows",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.CORRELATOR,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "targetObjectPath",
                                 "Optional object path filter (empty = any)",
                                 "config",
@@ -292,7 +292,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "patternType",
                                 "COUNT, SEQUENCE or EVENT_CHAIN",
                                 "config",
@@ -300,7 +300,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "COUNT"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "eventName",
                                 "Primary event name",
                                 "config",
@@ -308,7 +308,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "secondEventName",
                                 "Second event for SEQUENCE pattern",
                                 "config",
@@ -316,7 +316,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "windowSeconds",
                                 "Sliding window for COUNT pattern",
                                 "config",
@@ -324,7 +324,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "minOccurrences",
                                 "Minimum occurrences in window",
                                 "config",
@@ -332,7 +332,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "cooldownSeconds",
                                 "Cooldown after trigger",
                                 "config",
@@ -340,7 +340,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 120))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sequenceGapSeconds",
                                 "Max seconds between consecutive events (SEQUENCE / EVENT_CHAIN; 0 = no limit)",
                                 "config",
@@ -348,7 +348,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "actionType",
                                 "Action on match (RUN_WORKFLOW)",
                                 "config",
@@ -356,7 +356,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "RUN_WORKFLOW"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "actionTarget",
                                 "Workflow path, event name, variable=value, or report path",
                                 "config",
@@ -364,7 +364,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "payloadFilterExpr",
                                 "Optional CEL filter on latest event payload (payload map context)",
                                 "config",
@@ -372,7 +372,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "enabled",
                                 "Whether the correlator is active",
                                 "config",
@@ -380,7 +380,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", true))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastTriggeredAt",
                                 "Runtime: last trigger timestamp (ISO-8601)",
                                 "runtime",
@@ -392,28 +392,28 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    /** @deprecated use {@link #ensureBuiltInModels()} */
+    /** @deprecated use {@link #ensureBuiltInBlueprints()} */
     @Deprecated
     public void seedModels() {
-        if (!modelRegistry.findByName("dashboard-v1").isEmpty()) {
+        if (!blueprintRegistry.findByName("dashboard-v1").isEmpty()) {
             return;
         }
 
-        ModelDefinition dashboard = new ModelDefinition(
+        BlueprintDefinition dashboard = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "dashboard-v1",
                 "Low-code HMI dashboard with widget layout stored as JSON",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DASHBOARD,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "title",
                                 "Dashboard title shown in the header",
                                 "info",
@@ -421,7 +421,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Dashboard"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "refreshIntervalMs",
                                 "Widget polling interval in milliseconds",
                                 "config",
@@ -429,7 +429,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "layout",
                                 "Dashboard layout JSON (grid + widgets)",
                                 "config",
@@ -437,7 +437,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DashboardLayouts.EMPTY_DASHBOARD))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 com.ispf.core.dashboard.DashboardContextConstants.VARIABLE,
                                 "Operator session context (selection, params, widgets)",
                                 "runtime",
@@ -449,22 +449,22 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(dashboard.withSystemIntrinsicFlag());
+        blueprintEngine.createBlueprint(dashboard.withSystemIntrinsicFlag());
 
-        ModelDefinition report = new ModelDefinition(
+        BlueprintDefinition report = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "report-v1",
                 "SQL report definition stored on object tree (REQ-PF-12)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.REPORT,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "title",
                                 "Report title",
                                 "info",
@@ -472,7 +472,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Report"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "dataSourcePath",
                                 "Data source object path for SQL schema",
                                 "config",
@@ -480,7 +480,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "query",
                                 "SELECT/WITH SQL query (? placeholders)",
                                 "config",
@@ -488,7 +488,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "parameters",
                                 "JSON array of SQL parameter names",
                                 "config",
@@ -496,7 +496,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "columns",
                                 "JSON array of {field, label}",
                                 "config",
@@ -504,7 +504,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "[]"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "defaultParameters",
                                 "JSON object of default parameter values for preview",
                                 "config",
@@ -512,7 +512,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "maxRows",
                                 "Maximum rows returned",
                                 "config",
@@ -520,7 +520,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 1000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "refreshIntervalMs",
                                 "Auto-refresh interval in view mode",
                                 "config",
@@ -528,7 +528,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 30000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "templateFormat",
                                 "YARG template format: xlsx, docx, html (empty = no template)",
                                 "config",
@@ -536,7 +536,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "layout",
                                 "Report layout JSON (web designer)",
                                 "config",
@@ -548,22 +548,22 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(report.withSystemIntrinsicFlag());
+        blueprintEngine.createBlueprint(report.withSystemIntrinsicFlag());
 
-        ModelDefinition workflow = new ModelDefinition(
+        BlueprintDefinition workflow = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "workflow-v1",
                 "BPMN workflow with NATS event bridge",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.WORKFLOW,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "title",
                                 "Workflow title",
                                 "info",
@@ -571,7 +571,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "Workflow"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "status",
                                 "Lifecycle status: DRAFT, ACTIVE, STOPPED",
                                 "config",
@@ -579,7 +579,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "DRAFT"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "bpmnXml",
                                 "BPMN 2.0 process definition",
                                 "config",
@@ -587,7 +587,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "triggerJson",
                                 "Trigger configuration JSON (variable or event)",
                                 "config",
@@ -595,7 +595,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "operatorAppId",
                                 "Operator App that receives user tasks from this workflow",
                                 "config",
@@ -603,7 +603,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "instanceState",
                                 "Last workflow instance state JSON",
                                 "runtime",
@@ -611,7 +611,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastRunAt",
                                 "Timestamp of last workflow run",
                                 "runtime",
@@ -619,7 +619,7 @@ public class ModelBootstrap {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastAction",
                                 "Last action recorded by workflow",
                                 "runtime",
@@ -631,15 +631,15 @@ public class ModelBootstrap {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
 
-        modelEngine.createModel(workflow.withSystemIntrinsicFlag());
+        blueprintEngine.createBlueprint(workflow.withSystemIntrinsicFlag());
     }
 
-    public ModelEngine modelEngine() {
-        return modelEngine;
+    public BlueprintEngine blueprintEngine() {
+        return blueprintEngine;
     }
 }

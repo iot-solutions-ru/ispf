@@ -1,9 +1,9 @@
 import type { EventDescriptor, FunctionDescriptor, ObjectType, DataRecord, DataSchema } from "../types";
 import type { BindingActivators } from "../types";
 
-export type ModelType = "RELATIVE" | "ABSOLUTE" | "INSTANCE";
+export type BlueprintType = "RELATIVE" | "ABSOLUTE" | "INSTANCE";
 
-export interface ModelVariableDefinition {
+export interface BlueprintVariableDefinition {
   name: string;
   description: string;
   group: string;
@@ -15,7 +15,7 @@ export interface ModelVariableDefinition {
   historyRetentionDays?: number | null;
 }
 
-export interface ModelBindingRule {
+export interface BlueprintBindingRule {
   id: string;
   name?: string | null;
   enabled?: boolean | null;
@@ -27,101 +27,101 @@ export interface ModelBindingRule {
   targetField?: string | null;
 }
 
-export interface ModelDto {
+export interface BlueprintDto {
   id: string;
   name: string;
   description: string;
-  type: ModelType;
+  type: BlueprintType;
   targetObjectType: ObjectType;
   suitabilityExpression: string;
   objectPath: string;
-  variables: ModelVariableDefinition[];
+  variables: BlueprintVariableDefinition[];
   events: EventDescriptor[];
   functions: FunctionDescriptor[];
-  bindings: ModelBindingRule[];
+  bindings: BlueprintBindingRule[];
   parameters: Record<string, string>;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ModelMergeWarningDto {
+export interface BlueprintMergeWarningDto {
   kind: string;
   name: string;
-  previousModelId: string | null;
-  appliedModelId: string;
+  previousBlueprintId: string | null;
+  appliedBlueprintId: string;
 }
 
-export interface ModelAttachmentDto {
+export interface BlueprintAttachmentDto {
   id: string;
-  modelId: string;
-  modelName: string;
-  modelType: ModelType;
+  blueprintId: string;
+  blueprintName: string;
+  blueprintType: BlueprintType;
   objectPath: string;
   attachedAt: string;
-  warnings?: ModelMergeWarningDto[];
+  warnings?: BlueprintMergeWarningDto[];
 }
 
-export interface CreateModelPayload {
+export interface CreateBlueprintPayload {
   name: string;
   description?: string;
-  type?: ModelType;
+  type?: BlueprintType;
   targetObjectType?: ObjectType;
   suitabilityExpression?: string;
-  variables?: ModelVariableDefinition[];
+  variables?: BlueprintVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];
-  bindings?: ModelBindingRule[];
+  bindings?: BlueprintBindingRule[];
   parameters?: Record<string, string>;
 }
 
-export interface UpdateModelPayload {
+export interface UpdateBlueprintPayload {
   name?: string;
   description?: string;
-  type?: ModelType;
+  type?: BlueprintType;
   targetObjectType?: ObjectType;
   suitabilityExpression?: string;
-  variables?: ModelVariableDefinition[];
+  variables?: BlueprintVariableDefinition[];
   events?: EventDescriptor[];
   functions?: FunctionDescriptor[];
-  bindings?: ModelBindingRule[];
+  bindings?: BlueprintBindingRule[];
   parameters?: Record<string, string>;
 }
 
-export const RELATIVE_MODELS_ROOT = "root.platform.relative-models";
+export const RELATIVE_BLUEPRINTS_ROOT = "root.platform.relative-blueprints";
 export const INSTANCE_TYPES_ROOT = "root.platform.instance-types";
-export const ABSOLUTE_MODELS_ROOT = "root.platform.absolute-models";
+export const ABSOLUTE_BLUEPRINTS_ROOT = "root.platform.absolute-blueprints";
 
-export const MODEL_CATALOG_ROOTS = [
-  RELATIVE_MODELS_ROOT,
+export const BLUEPRINT_CATALOG_ROOTS = [
+  RELATIVE_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  ABSOLUTE_MODELS_ROOT,
+  ABSOLUTE_BLUEPRINTS_ROOT,
 ] as const;
 
-export type ModelCatalogRoot = (typeof MODEL_CATALOG_ROOTS)[number];
+export type BlueprintCatalogRoot = (typeof BLUEPRINT_CATALOG_ROOTS)[number];
 
-export const BUILTIN_MODEL_NAMES = new Set([
+export const BUILTIN_BLUEPRINT_NAMES = new Set([
   "dashboard-v1",
   "workflow-v1",
   "virtual-lab-v1",
 ]);
 
-export function catalogRootForModelType(type: ModelType): ModelCatalogRoot {
+export function catalogRootForBlueprintType(type: BlueprintType): BlueprintCatalogRoot {
   switch (type) {
     case "RELATIVE":
-      return RELATIVE_MODELS_ROOT;
+      return RELATIVE_BLUEPRINTS_ROOT;
     case "ABSOLUTE":
-      return ABSOLUTE_MODELS_ROOT;
+      return ABSOLUTE_BLUEPRINTS_ROOT;
     default:
       return INSTANCE_TYPES_ROOT;
   }
 }
 
-export function isModelCatalogRoot(path: string): path is ModelCatalogRoot {
-  return (MODEL_CATALOG_ROOTS as readonly string[]).includes(path);
+export function isBlueprintCatalogRoot(path: string): path is BlueprintCatalogRoot {
+  return (BLUEPRINT_CATALOG_ROOTS as readonly string[]).includes(path);
 }
 
-export function modelNameFromPath(path: string): string | null {
-  for (const root of MODEL_CATALOG_ROOTS) {
+export function blueprintNameFromPath(path: string): string | null {
+  for (const root of BLUEPRINT_CATALOG_ROOTS) {
     const prefix = `${root}.`;
     if (path.startsWith(prefix)) {
       return path.slice(prefix.length);
@@ -130,15 +130,15 @@ export function modelNameFromPath(path: string): string | null {
   return null;
 }
 
-export function isModelsPath(path: string): boolean {
-  if (MODEL_CATALOG_ROOTS.some((root) => path === root || path.startsWith(`${root}.`))) {
+export function isBlueprintsPath(path: string): boolean {
+  if (BLUEPRINT_CATALOG_ROOTS.some((root) => path === root || path.startsWith(`${root}.`))) {
     return true;
   }
   return false;
 }
 
-export function modelCatalogRootFromPath(path: string): ModelCatalogRoot | null {
-  for (const root of MODEL_CATALOG_ROOTS) {
+export function blueprintCatalogRootFromPath(path: string): BlueprintCatalogRoot | null {
+  for (const root of BLUEPRINT_CATALOG_ROOTS) {
     if (path === root || path.startsWith(`${root}.`)) {
       return root;
     }

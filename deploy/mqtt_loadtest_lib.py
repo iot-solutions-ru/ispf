@@ -132,42 +132,46 @@ class Client:
         return self.session.request(method, f"{self.base}{path}", **kwargs)
 
 
-def find_relative_model_id(client: Client, model_name: str) -> str | None:
-    r = client.request("GET", "/api/v1/relative-models")
-    if r.status_code != 200:
-        return None
-    for item in r.json():
-        if item.get("name") == model_name:
-            return item.get("id")
+def find_relative_blueprint_id(client: Client, blueprint_name: str) -> str | None:
+    r = client.request("GET", "/api/v1/relative-blueprints")
+    if r.status_code == 200:
+        for item in r.json():
+            if item.get("name") == blueprint_name:
+                return item.get("id")
+    r = client.request("GET", "/api/v1/models")
+    if r.status_code == 200:
+        for item in r.json():
+            if item.get("name") == blueprint_name:
+                return item.get("id")
     return None
 
 
-def apply_relative_model(client: Client, model_id: str, object_path: str) -> None:
+def apply_relative_blueprint(client: Client, blueprint_id: str, object_path: str) -> None:
     r = client.request(
         "POST",
-        f"/api/v1/relative-models/{model_id}/apply?objectPath={quote(object_path, safe='')}",
+        f"/api/v1/relative-blueprints/{blueprint_id}/apply?objectPath={quote(object_path, safe='')}",
     )
     if r.status_code >= 400:
         raise RuntimeError(
-            f"apply model {model_id} on {object_path}: HTTP {r.status_code} {r.text[:200]}"
+            f"apply blueprint {blueprint_id} on {object_path}: HTTP {r.status_code} {r.text[:200]}"
         )
 
 
-def ensure_relative_model(client: Client, model_name: str, body: dict) -> str:
-    """Find or create a RELATIVE model (prod has fixtures disabled)."""
-    existing = find_relative_model_id(client, model_name)
+def ensure_relative_blueprint(client: Client, blueprint_name: str, body: dict) -> str:
+    """Find or create a RELATIVE blueprint (prod has fixtures disabled)."""
+    existing = find_relative_blueprint_id(client, blueprint_name)
     if existing:
         return existing
     payload = {k: v for k, v in body.items() if k != "type"}
-    payload["name"] = model_name
-    create = client.request("POST", "/api/v1/relative-models", json=payload)
-    if create.status_code == 409:
-        existing = find_relative_model_id(client, model_name)
+    payload["name"] = blueprint_name
+    create = client.request("POST", "/api/v1/relative-blueprints", json=payload)
+    if create.status_code == 409 or create.status_code == 403:
+        existing = find_relative_blueprint_id(client, blueprint_name)
         if existing:
             return existing
     if create.status_code >= 400:
         raise RuntimeError(
-            f"create relative model {model_name}: HTTP {create.status_code} {create.text[:200]}"
+            f"create relative blueprint {blueprint_name}: HTTP {create.status_code} {create.text[:200]}"
         )
     return create.json()["id"]
 
@@ -383,12 +387,12 @@ MQTT_GATEWAY_MODEL_BODY: dict = {
 
 def ensure_mqtt_sensor_model(client: Client) -> str:
     """Register mqtt-sensor-v1 when fixtures are disabled."""
-    return ensure_relative_model(client, MODEL_NAME, MQTT_SENSOR_MODEL_BODY)
+    return ensure_relative_blueprint(client, MODEL_NAME, MQTT_SENSOR_MODEL_BODY)
 
 
 def ensure_mqtt_gateway_model(client: Client) -> str:
     """Register mqtt-gateway-v1 when fixtures are disabled."""
-    return ensure_relative_model(client, GATEWAY_MODEL_NAME, MQTT_GATEWAY_MODEL_BODY)
+    return ensure_relative_blueprint(client, GATEWAY_MODEL_NAME, MQTT_GATEWAY_MODEL_BODY)
 
 
 def list_mqtt_loadtest_devices(client: Client) -> list[str]:
@@ -429,7 +433,14 @@ def ensure_event_journal_enabled(client: Client, path: str) -> None:
         raise RuntimeError(f"enable event journal {path}: HTTP {r.status_code} {r.text[:200]}")
 
 
-def ensure_device(client: Client, index: int, pad: int, model_id: str) -> str:
+def ensure_device(
+    client: Client,
+    index: int,
+    pad: int,
+    model_id: str | None = None,
+    *,
+    apply_blueprint: bool = True,
+) -> str:
     path = device_path(index, pad)
     name = device_name(index, pad)
     body = {
@@ -443,13 +454,14 @@ def ensure_device(client: Client, index: int, pad: int, model_id: str) -> str:
     if r.status_code == 409:
         status = driver_status(client, path)
         if status and status.get("driverId") == "mqtt":
-            apply_relative_model(client, model_id, path)
+            ensure_event_journal_enabled(client, path)
             return path
         delete_device(client, path)
         r = client.request("POST", "/api/v1/objects", json=body)
     if r.status_code >= 400:
         raise RuntimeError(f"create device {name}: HTTP {r.status_code} {r.text[:200]}")
-    apply_relative_model(client, model_id, path)
+    if apply_blueprint and model_id:
+        apply_relative_blueprint(client, model_id, path)
     ensure_event_journal_enabled(client, path)
     return path
 
@@ -878,7 +890,7 @@ def ensure_gateway_tree(
         "Single MQTT connection orchestrator for load test",
     )
     _create_object(client, gw, "sensors", "CUSTOM", "Sensors", "Child sensors for gateway load test")
-    apply_relative_model(client, gateway_model_id, gw)
+    apply_relative_blueprint(client, gateway_model_id, gw)
     put_gateway_binding_rules(client, gw)
     _set_string_variable(client, gw, "sensorParentPath", sensors_parent)
 
@@ -893,7 +905,7 @@ def ensure_gateway_tree(
             f"MQTT loadtest sensor {index}",
             "MQTT gateway child sensor (no driver)",
         )
-        apply_relative_model(client, sensor_model_id, path)
+        apply_relative_blueprint(client, sensor_model_id, path)
         put_binding_rules(client, path)
         configure_child_telemetry_policy(client, path, telemetry_coalesce_ms=child_coalesce_ms)
         sensor_paths.append(path)
@@ -947,7 +959,7 @@ def ensure_gateway_ingress_only(client: Client, gateway_model_id: str) -> str:
         "MQTT ingress load test — historian on lastIngress only",
     )
     try:
-        apply_relative_model(client, gateway_model_id, gw)
+        apply_relative_blueprint(client, gateway_model_id, gw)
     except RuntimeError:
         client.request("DELETE", f"/api/v1/objects/by-path?path={quote(gw, safe='')}")
         _create_object(
@@ -958,7 +970,7 @@ def ensure_gateway_ingress_only(client: Client, gateway_model_id: str) -> str:
             "MQTT loadtest gateway (ingress historian)",
             "MQTT ingress load test — historian on lastIngress only",
         )
-        apply_relative_model(client, gateway_model_id, gw)
+        apply_relative_blueprint(client, gateway_model_id, gw)
     clear_binding_rules(client, gw)
     enable_variable_history(client, gw, INGRESS_VARIABLE, history_enabled=True)
     return gw
@@ -1127,7 +1139,7 @@ def seed_one_mqtt_device(
         r = client.request("POST", "/api/v1/objects", json=body)
     if r.status_code >= 400:
         raise RuntimeError(f"create device {device_name}: HTTP {r.status_code} {r.text[:200]}")
-    apply_relative_model(client, model_id, path)
+    apply_relative_blueprint(client, model_id, path)
     put_binding_rules(client, path)
     configure_mqtt_driver(
         client,

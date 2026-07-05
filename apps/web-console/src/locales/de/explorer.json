@@ -20,7 +20,7 @@
   "contextMenu.create.instance": "Instanz erstellen",
   "contextMenu.create.migration": "Migration erstellen",
   "contextMenu.create.mimic": "SCADA-Mimic erstellen",
-  "contextMenu.create.model": "Modell erstellen",
+  "contextMenu.create.blueprint": "Blueprint erstellen",
   "contextMenu.create.object": "Objekt erstellen",
   "contextMenu.create.operator-app": "Betreiber-App erstellen",
   "contextMenu.create.report": "Bericht erstellen",

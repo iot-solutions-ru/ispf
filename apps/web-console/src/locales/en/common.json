@@ -50,8 +50,8 @@
   "field.description": "Description",
   "field.createdAt": "Created",
   "field.iconInTree": "Tree icon",
-  "field.primaryModel": "Primary model",
-  "field.appliedModels": "Applied models",
+  "field.primaryBlueprint": "Primary blueprint",
+  "field.appliedBlueprints": "Applied blueprints",
   "field.templateId": "templateId",
   "hint.adminOnly": "Available to admin only.",
   "hint.doubleClickEditor": "Double-click a tree node to open the editor",
@@ -89,5 +89,6 @@
   "objectPath.filterHint": "Showing types: {{types}}",
   "objectPath.browseTree": "Browse tree",
   "modal.select": "Select",
-  "modal.advancedSettings": "Advanced settings"
+  "modal.advancedSettings": "Advanced settings",
+  "objectType.BLUEPRINT": "Blueprint"
 }

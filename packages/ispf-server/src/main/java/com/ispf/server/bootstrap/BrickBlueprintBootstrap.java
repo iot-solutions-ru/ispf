@@ -4,11 +4,11 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -20,7 +20,7 @@ import java.util.UUID;
  * Brick Schema overlay mixin ({@value #BRICK_METADATA_MODEL}) — BL-60.
  */
 @Component
-public class BrickModelBootstrap {
+public class BrickBlueprintBootstrap {
 
     public static final String BRICK_METADATA_MODEL = "brick-metadata-v1";
 
@@ -30,30 +30,30 @@ public class BrickModelBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public BrickModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public BrickBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensureBrickModel() {
-        if (modelRegistry.findByName(BRICK_METADATA_MODEL).isEmpty()) {
-            modelEngine.createModel(buildBrickMetadataModel());
+        if (BlueprintRegistry.findByName(BRICK_METADATA_MODEL).isEmpty()) {
+            BlueprintEngine.createBlueprint(buildBrickMetadataModel());
         }
     }
 
-    static ModelDefinition buildBrickMetadataModel() {
-        return new ModelDefinition(
+    static BlueprintDefinition buildBrickMetadataModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 BRICK_METADATA_MODEL,
                 "Brick Schema class overlay — optional brickClass URI on devices (object tree remains source of truth)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "brickClass",
                                 "Brick class URI or CURIE, e.g. https://brickschema.org/schema/Brick#Sensor",
                                 "brick",

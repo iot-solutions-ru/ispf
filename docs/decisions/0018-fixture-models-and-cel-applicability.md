@@ -1,4 +1,6 @@
-# ADR-0018: Fixture-модели и CEL applicability для RELATIVE
+﻿# ADR-0018: Fixture-модели и CEL applicability для RELATIVE
+
+> **Примечание (2026):** fixture-модели и API переименованы в blueprint (`FixtureBlueprint*`, `/api/v1/relative-blueprints`). См. [BLUEPRINTS.md](../BLUEPRINTS.md).
 
 Статус: **Accepted**  
 Дата: 2026-06-25
@@ -8,7 +10,7 @@
 Три пересекающиеся проблемы:
 
 1. **Demo/lab модели в core** — `mqtt-sensor-v1`, `mqtt-gateway-v1`, `device-driver-v1`, `snmp-agent-v1` и семейство `base-sensor-v1` регистрировались как встроенные модели платформы и попадали в auto-apply при создании любого `DEVICE`.
-2. **`device-driver-v1` как relative mixin** — при `autoApplyRelativeModels=true` схема драйвера вливалась до `provisionDriver(mqtt)` с дефолтом `driverId=virtual`, после чего смена драйвера отклонялась runtime.
+2. **`device-driver-v1` как relative mixin** — при `autoApplyRelativeBlueprints=true` схема драйвера вливалась до `provisionDriver(mqtt)` с дефолтом `driverId=virtual`, после чего смена драйвера отклонялась runtime.
 3. **Пустой CEL = «подходит всем»** — `suitabilityExpression` (в UI: *Applicability condition*) при пустом значении трактовался как unconditional match по `targetObjectType`, что делало auto-apply непредсказуемым.
 
 Стандартные вещи платформы (dashboard, workflow, data-source schema) не должны быть optional relative mixins. Demo- и lab-шаблоны не должны жить в core registry без явного включения.
@@ -17,7 +19,7 @@
 
 ### 1. Три уровня моделей
 
-| Уровень | Регистрация | Каталог relative-models | Auto-apply RELATIVE |
+| Уровень | Регистрация | Каталог relative-blueprints | Auto-apply RELATIVE |
 |---------|-------------|-------------------------|---------------------|
 | **System-intrinsic** | `ModelBootstrap` + `parameters.systemIntrinsic=true` | Нет | Нет — структура вшивается через `SystemObjectStructureService` |
 | **Platform built-in** | `ModelBootstrap.ensureBuiltInModels()` | Да (если не intrinsic) | Только при непустом CEL (см. §2) |
@@ -40,14 +42,14 @@
 
 ### 2. CEL applicability (`suitabilityExpression`)
 
-Поле `ModelDefinition.suitabilityExpression` — **Applicability condition (CEL)** в редакторе моделей.
+Поле `BlueprintDefinition.suitabilityExpression` — **Applicability condition (CEL)** в редакторе моделей.
 
 | Путь применения | Пустой CEL | Непустой CEL |
 |-----------------|------------|--------------|
-| **Auto-apply** (`applyRelativeModels` при `POST /objects`, `autoApplyRelativeModels=true`) | **Не применяется** | Применяется, если CEL → `true` и `targetObjectType` совпадает |
-| **Явный apply** (`templateId`, `POST /relative-models/{id}/apply`, companion-models) | Разрешён (проверяется только `targetObjectType`) | CEL должен вычислиться в `true` |
+| **Auto-apply** (`applyRelativeModels` при `POST /objects`, `autoApplyRelativeBlueprints=true`) | **Не применяется** | Применяется, если CEL → `true` и `targetObjectType` совпадает |
+| **Явный apply** (`templateId`, `POST /relative-blueprints/{id}/apply`, companion-blueprints) | Разрешён (проверяется только `targetObjectType`) | CEL должен вычислиться в `true` |
 
-Реализация: `ModelEngine.isSuitableForAutoApply()` — пустой CEL → `false`; `assertSuitable()` для ручного apply — CEL опционален.
+Реализация: `BlueprintEngine.isSuitableForAutoApply()` — пустой CEL → `false`; `assertSuitable()` для ручного apply — CEL опционален.
 
 Примеры CEL для auto-apply:
 
@@ -59,7 +61,7 @@ self.driverId.value == "mqtt"
 
 ### 3. Схема драйвера на DEVICE (не relative auto-apply)
 
-Переменные `driverId`, `driverStatus`, `driverConfigJson`, … на **любом** `DEVICE` при provisioning встраиваются через `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` из blueprint `FixtureModelDefinitions.buildDeviceDriverModel()` (**без** записи в каталог и **без** `appliedModelIds`).
+Переменные `driverId`, `driverStatus`, `driverConfigJson`, … на **любом** `DEVICE` при provisioning встраиваются через `DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` из blueprint `FixtureBlueprintDefinitions.buildDeviceDriverModel()` (**без** записи в каталог и **без** `appliedBlueprintIds`).
 
 Это отдельно от RELATIVE mixin `device-driver-v1` (fixture для demo/lab и явного apply).
 
@@ -83,13 +85,13 @@ ispf:
 ## Последствия
 
 - `device-driver-v1`, `mqtt-gateway-v1` удалены из `ModelBootstrap` и `SystemIntrinsicModels`.
-- Код: `FixtureModelBootstrap`, `FixtureModelDefinitions`, обновлённый `ModelEngine`.
+- Код: `FixtureModelBootstrap`, `FixtureBlueprintDefinitions`, обновлённый `BlueprintEngine`.
 - Существующие RELATIVE-модели без CEL перестают auto-apply’иться — для auto-apply нужно задать выражение в редакторе.
-- Документация: [MODELS.md](../MODELS.md), [DRIVERS.md](../DRIVERS.md).
+- Документация: [BLUEPRINTS.md](../BLUEPRINTS.md), [DRIVERS.md](../DRIVERS.md).
 
 ## Связанные материалы
 
 - [ADR-0011](0011-model-type-semantics.md) — три вида моделей
 - [ADR-0017](0017-telemetry-ingest-pipeline.md) — `mqtt-gateway-v1` ingest
-- [MODELS.md](../MODELS.md)
+- [BLUEPRINTS.md](../BLUEPRINTS.md)
 - [DRIVERS.md](../DRIVERS.md)

@@ -8,12 +8,12 @@ import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.EventLevel;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-public class LabModelBootstrap {
+public class LabBlueprintBootstrap {
 
     public static final String VIRTUAL_LAB_MODEL = "virtual-lab-v1";
     public static final String VIRTUAL_UNIFIED_MODEL = "virtual-unified-v1";
@@ -182,12 +182,12 @@ public class LabModelBootstrap {
             .field("mimeType", FieldType.STRING)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public LabModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public LabBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensureLabModels() {
@@ -197,18 +197,18 @@ public class LabModelBootstrap {
         ensureModel(TREE_VARIABLES_REPORT_MODEL, buildTreeVariablesReportModel());
     }
 
-    private void ensureModel(String name, ModelDefinition definition) {
-        if (modelRegistry.findByName(name).isEmpty()) {
-            modelEngine.createModel(definition);
+    private void ensureModel(String name, BlueprintDefinition definition) {
+        if (BlueprintRegistry.findByName(name).isEmpty()) {
+            BlueprintEngine.createBlueprint(definition);
         }
     }
 
-    private static ModelDefinition buildVirtualLabModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildVirtualLabModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 VIRTUAL_LAB_MODEL,
                 "Virtual lab device — waves, writable vars, table, events, and functions",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -267,8 +267,8 @@ public class LabModelBootstrap {
                         )
                 ),
                 List.of(
-                        ModelBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
-                        ModelBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(table, int)")
+                        BlueprintBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
+                        BlueprintBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(table, int)")
                 ),
                 Map.of(),
                 Instant.now(),
@@ -276,12 +276,12 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelDefinition buildVirtualUnifiedModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildVirtualUnifiedModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 VIRTUAL_UNIFIED_MODEL,
                 "Virtual unified device — all field types (scalars, geo, tables, binary, waves, meter, signals)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
@@ -363,8 +363,8 @@ public class LabModelBootstrap {
                         )
                 ),
                 List.of(
-                        ModelBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
-                        ModelBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(eventLog, int)")
+                        BlueprintBindingRule.of("sum-int-float", "sumIntFloat", "self.intValue.value + self.floatValue.value"),
+                        BlueprintBindingRule.of("table-int-sum", "tableIntSum", "sumRecordField(eventLog, int)")
                 ),
                 Map.of(),
                 Instant.now(),
@@ -372,13 +372,13 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition writableStringDef(
+    private static BlueprintVariableDefinition writableStringDef(
             String name,
             String description,
             String group,
             String defaultValue
     ) {
-        return ModelVariableDefinition.of(
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -388,12 +388,12 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelDefinition buildTreeVariablesReportModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildTreeVariablesReportModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 TREE_VARIABLES_REPORT_MODEL,
                 "Tree-variables report — scan devices by path pattern and flatten RECORD_LIST rows",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.REPORT,
                 "",
                 List.of(
@@ -419,36 +419,36 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelDefinition buildVirtualLabWavesSumModel() {
-        return new ModelDefinition(
+    private static BlueprintDefinition buildVirtualLabWavesSumModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 VIRTUAL_LAB_WAVES_SUM_MODEL,
                 "Virtual lab waves sum — adds sumWaves binding only",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(),
                 List.of(),
                 List.of(),
-                List.of(ModelBindingRule.of("sum-waves", "sumWaves", "self.sineWave.value + self.sawtoothWave.value")),
+                List.of(BlueprintBindingRule.of("sum-waves", "sumWaves", "self.sineWave.value + self.sawtoothWave.value")),
                 Map.of(),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    private static ModelVariableDefinition varDef(
+    private static BlueprintVariableDefinition varDef(
             String name,
             String description,
             String group,
             DataSchema schema,
             DataRecord defaultValue
     ) {
-        return ModelVariableDefinition.of(name, description, group, schema, true, false, defaultValue);
+        return BlueprintVariableDefinition.of(name, description, group, schema, true, false, defaultValue);
     }
 
-    private static ModelVariableDefinition doubleDef(String name, String description, String group, double defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition doubleDef(String name, String description, String group, double defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -458,8 +458,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition telemetryHistoryDef(String name, String description, double defaultValue) {
-        return ModelVariableDefinition.withHistory(
+    private static BlueprintVariableDefinition telemetryHistoryDef(String name, String description, double defaultValue) {
+        return BlueprintVariableDefinition.withHistory(
                 name,
                 description,
                 "telemetry",
@@ -469,8 +469,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition intDef(String name, String description, int defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition intDef(String name, String description, int defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "config",
@@ -480,8 +480,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition intDef(String name, String description, String group, int defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition intDef(String name, String description, String group, int defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -491,8 +491,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition boolDef(String name, String description, boolean defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition boolDef(String name, String description, boolean defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "status",
@@ -502,8 +502,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition boolDef(String name, String description, String group, boolean defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition boolDef(String name, String description, String group, boolean defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -513,8 +513,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition stringDef(String name, String description, String group, String defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition stringDef(String name, String description, String group, String defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -524,8 +524,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition longDef(String name, String description, String group, long defaultValue) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition longDef(String name, String description, String group, long defaultValue) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -535,14 +535,14 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition measurementDef(
+    private static BlueprintVariableDefinition measurementDef(
             String name,
             String description,
             String group,
             double defaultValue,
             String unit
     ) {
-        return ModelVariableDefinition.of(
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 group,
@@ -552,8 +552,8 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition tableDef(String name, String description, DataSchema schema) {
-        return ModelVariableDefinition.of(
+    private static BlueprintVariableDefinition tableDef(String name, String description, DataSchema schema) {
+        return BlueprintVariableDefinition.of(
                 name,
                 description,
                 "telemetry",
@@ -563,7 +563,7 @@ public class LabModelBootstrap {
         );
     }
 
-    private static ModelVariableDefinition tableDef(String name, String description) {
+    private static BlueprintVariableDefinition tableDef(String name, String description) {
         return tableDef(name, description, TABLE_SCHEMA);
     }
 }

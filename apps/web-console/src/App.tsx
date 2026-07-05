@@ -45,7 +45,7 @@ import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import ShellPreferences from "./components/ShellPreferences";
 import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
 import { ThemeProvider, useThemeController } from "./theme";
-import { isModelsPath } from "./types/models";
+import { isBlueprintsPath } from "./types/blueprints";
 import { isOperatorAppChildPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
@@ -61,7 +61,7 @@ const MigrationEditor = lazy(() => import("./components/platform/MigrationEditor
 const SqlBindingEditor = lazy(() => import("./components/platform/SqlBindingEditor"));
 const ScheduleEditor = lazy(() => import("./components/platform/ScheduleEditor"));
 const MimicEditorPanel = lazy(() => import("./components/scada/MimicEditorPanel"));
-const ModelEditorPanel = lazy(() => import("./components/ModelEditorPanel"));
+const BlueprintEditorPanel = lazy(() => import("./components/BlueprintEditorPanel"));
 
 function LazyFallback() {
   return <div className="loading" />;
@@ -438,13 +438,13 @@ function AppShell() {
     activeEditor.objectType === "DASHBOARD"
     || activeEditor.objectType === "REPORT"
     || activeEditor.objectType === "WORKFLOW"
-    || activeEditor.objectType === "MODEL"
+    || activeEditor.objectType === "BLUEPRINT"
     || activeEditor.objectType === "DATA_SOURCE"
     || activeEditor.objectType === "MIGRATION"
     || activeEditor.objectType === "BINDING"
     || activeEditor.objectType === "SCHEDULE"
     || activeEditor.objectType === "MIMIC"
-    || isModelsPath(activeEditor.path)
+    || isBlueprintsPath(activeEditor.path)
   );
   const showPropertiesEditor =
     activeEditor != null
@@ -771,8 +771,8 @@ function AppShell() {
                   onClose={() => closeEditor(activeEditor.id)}
                   onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
                 />
-              ) : activeEditor.objectType === "MODEL" || isModelsPath(activeEditor.path) ? (
-                <ModelEditorPanel
+              ) : activeEditor.objectType === "BLUEPRINT" || isBlueprintsPath(activeEditor.path) ? (
+                <BlueprintEditorPanel
                   selectedPath={activeEditor.path}
                   canManage={isAdmin}
                   title={activeEditor.title}

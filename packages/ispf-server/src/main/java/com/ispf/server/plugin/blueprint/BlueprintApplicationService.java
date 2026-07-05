@@ -1,12 +1,12 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelApplyResult;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelMergeWarning;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintApplyResult;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintMergeWarning;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,69 +16,69 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Unified model apply path: structure merge, binding rules, persistence of appliedModelIds.
+ * Unified blueprint apply path: structure merge, binding rules, persistence of appliedBlueprintIds.
  */
 @Service
-public class ModelApplicationService {
+public class BlueprintApplicationService {
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
-    private final ModelBindingRulesMerger bindingRulesMerger;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintBindingRulesMerger bindingRulesMerger;
     private final ObjectManager objectManager;
 
-    public ModelApplicationService(
-            ModelEngine modelEngine,
-            ModelRegistry modelRegistry,
-            ModelBindingRulesMerger bindingRulesMerger,
+    public BlueprintApplicationService(
+            BlueprintEngine blueprintEngine,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintBindingRulesMerger bindingRulesMerger,
             ObjectManager objectManager
     ) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintRegistry = blueprintRegistry;
         this.bindingRulesMerger = bindingRulesMerger;
         this.objectManager = objectManager;
     }
 
     @Transactional
-    public ModelApplyResult applyModelWithRules(String modelId, String objectPath) {
-        return applyModelWithRules(modelRegistry.requireById(modelId), objectPath, Map.of());
+    public BlueprintApplyResult applyBlueprintWithRules(String blueprintId, String objectPath) {
+        return applyBlueprintWithRules(blueprintRegistry.requireById(blueprintId), objectPath, Map.of());
     }
 
     @Transactional
-    public ModelApplyResult applyModelWithRules(ModelDefinition model, String objectPath, Map<String, String> parameters) {
+    public BlueprintApplyResult applyBlueprintWithRules(BlueprintDefinition model, String objectPath, Map<String, String> parameters) {
         try {
-            if (com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model)) {
-                ModelApplyResult result = modelEngine.applyIntrinsicStructure(model, objectPath);
-                bindingRulesMerger.mergeModelRules(objectPath, model, parameters);
+            if (com.ispf.plugin.blueprint.SystemIntrinsicBlueprints.isIntrinsic(model)) {
+                BlueprintApplyResult result = blueprintEngine.applyIntrinsicStructure(model, objectPath);
+                bindingRulesMerger.mergeBlueprintRules(objectPath, model, parameters);
                 objectManager.persistNodeTree(objectPath);
                 return result;
             }
-            ModelApplyResult result = modelEngine.applyModel(model.id(), objectPath);
-            bindingRulesMerger.mergeModelRules(objectPath, model, parameters);
+            BlueprintApplyResult result = blueprintEngine.applyBlueprint(model.id(), objectPath);
+            bindingRulesMerger.mergeBlueprintRules(objectPath, model, parameters);
             objectManager.persistNodeTree(objectPath);
             return result;
-        } catch (ModelException e) {
+        } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
     @Transactional
-    public ModelApplyResult instantiateWithRules(
-            String modelId,
+    public BlueprintApplyResult instantiateWithRules(
+            String blueprintId,
             String parentPath,
             String instanceName,
             Map<String, String> parameters
     ) {
         try {
-            ModelApplyResult result = modelEngine.instantiateModel(modelId, parentPath, instanceName, parameters);
+            BlueprintApplyResult result = blueprintEngine.instantiateBlueprint(blueprintId, parentPath, instanceName, parameters);
             PlatformObject instance = objectManager.require(
                     objectManager.tree().resolveChildPath(parentPath, instanceName)
             );
-            ModelDefinition model = modelRegistry.requireById(modelId);
-            bindingRulesMerger.mergeModelRules(instance.path(), model, parameters != null ? parameters : Map.of());
-            List<ModelApplyResult> relativeResults = modelEngine.applyRelativeModels(instance.path());
-            for (ModelApplyResult relative : relativeResults) {
-                modelRegistry.findById(relative.attachment().modelId()).ifPresent(relativeModel ->
-                        bindingRulesMerger.mergeModelRules(
+            BlueprintDefinition model = blueprintRegistry.requireById(blueprintId);
+            bindingRulesMerger.mergeBlueprintRules(instance.path(), model, parameters != null ? parameters : Map.of());
+            List<BlueprintApplyResult> relativeResults = blueprintEngine.applyRelativeBlueprints(instance.path());
+            for (BlueprintApplyResult relative : relativeResults) {
+                blueprintRegistry.findById(relative.attachment().blueprintId()).ifPresent(relativeModel ->
+                        bindingRulesMerger.mergeBlueprintRules(
                                 instance.path(),
                                 relativeModel,
                                 relativeModel.parameters()
@@ -87,17 +87,17 @@ public class ModelApplicationService {
             }
             objectManager.persistNodeTree(instance.path());
             return aggregateResults(result, relativeResults);
-        } catch (ModelException e) {
+        } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
     @Transactional
-    public List<ModelApplyResult> applyRelativeModelsWithRules(String objectPath) {
-        List<ModelApplyResult> results = modelEngine.applyRelativeModels(objectPath);
-        for (ModelApplyResult result : results) {
-            modelRegistry.findById(result.attachment().modelId()).ifPresent(model ->
-                    bindingRulesMerger.mergeModelRules(objectPath, model, model.parameters())
+    public List<BlueprintApplyResult> applyRelativeBlueprintsWithRules(String objectPath) {
+        List<BlueprintApplyResult> results = blueprintEngine.applyRelativeBlueprints(objectPath);
+        for (BlueprintApplyResult result : results) {
+            blueprintRegistry.findById(result.attachment().blueprintId()).ifPresent(model ->
+                    bindingRulesMerger.mergeBlueprintRules(objectPath, model, model.parameters())
             );
         }
         if (!results.isEmpty()) {
@@ -107,27 +107,27 @@ public class ModelApplicationService {
     }
 
     public void restoreAttachments() {
-        modelEngine.restoreAttachmentsFromObjects();
+        blueprintEngine.restoreAttachmentsFromObjects();
     }
 
     @Transactional
-    public PlatformObject ensureAbsoluteInstanceWithRules(String modelId) {
+    public PlatformObject ensureAbsoluteInstanceWithRules(String blueprintId) {
         try {
-            ModelDefinition model = modelRegistry.requireById(modelId);
-            PlatformObject instance = modelEngine.ensureAbsoluteInstance(model);
-            bindingRulesMerger.mergeModelRules(instance.path(), model, model.parameters());
+            BlueprintDefinition model = blueprintRegistry.requireById(blueprintId);
+            PlatformObject instance = blueprintEngine.ensureAbsoluteInstance(model);
+            bindingRulesMerger.mergeBlueprintRules(instance.path(), model, model.parameters());
             objectManager.persistNodeTree(instance.path());
             return objectManager.require(instance.path());
-        } catch (ModelException e) {
+        } catch (BlueprintException e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }
     }
 
-    private static ModelApplyResult aggregateResults(ModelApplyResult primary, List<ModelApplyResult> additional) {
-        List<ModelMergeWarning> warnings = new ArrayList<>(primary.warnings());
-        for (ModelApplyResult result : additional) {
+    private static BlueprintApplyResult aggregateResults(BlueprintApplyResult primary, List<BlueprintApplyResult> additional) {
+        List<BlueprintMergeWarning> warnings = new ArrayList<>(primary.warnings());
+        for (BlueprintApplyResult result : additional) {
             warnings.addAll(result.warnings());
         }
-        return new ModelApplyResult(primary.attachment(), warnings);
+        return new BlueprintApplyResult(primary.attachment(), warnings);
     }
 }

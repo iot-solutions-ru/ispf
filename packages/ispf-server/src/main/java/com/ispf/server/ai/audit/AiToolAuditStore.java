@@ -41,7 +41,7 @@ public class AiToolAuditStore {
                 entry.requestHash(),
                 entry.status(),
                 entry.providerId(),
-                entry.modelId(),
+                entry.blueprintId(),
                 entry.contextPackVersion(),
                 writeErrors(entry.errors()),
                 Timestamp.from(entry.createdAt())
@@ -69,7 +69,7 @@ public class AiToolAuditStore {
                     row.put("requestHash", rs.getString("request_hash"));
                     row.put("status", rs.getString("status"));
                     row.put("providerId", rs.getString("provider_id"));
-                    row.put("modelId", rs.getString("model_id"));
+                    row.put("blueprintId", rs.getString("model_id"));
                     row.put("contextPackVersion", rs.getString("context_pack_version"));
                     row.put("errors", rs.getString("errors_json"));
                     Timestamp createdAt = rs.getTimestamp("created_at");
@@ -99,7 +99,7 @@ public class AiToolAuditStore {
             String requestHash,
             String status,
             String providerId,
-            String modelId,
+            String blueprintId,
             String contextPackVersion,
             List<String> errors,
             Instant createdAt

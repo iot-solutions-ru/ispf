@@ -1,4 +1,4 @@
-# Безопасность и RBAC
+﻿# Безопасность и RBAC
 
 ## Модель
 
@@ -86,7 +86,7 @@ Web Console: экран входа; сессия хранится в `localStora
 | `/api/v1/schedules/**` | ✓ | | |
 | `/api/v1/alert-rules/**` | ✓ | | |
 | `/api/v1/correlators/**` | ✓ | | |
-| `/api/v1/models/**` (write) | ✓ | | |
+| `/api/v1/blueprints/**` (write) | ✓ | | |
 
 **operator** может: читать объекты/дашборды/workflows, вызывать функции, work queue, fire events.
 

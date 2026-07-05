@@ -1,11 +1,11 @@
 import { getAuthHeaders } from "../auth/session";
 import type {
-  CreateModelPayload,
-  ModelAttachmentDto,
-  ModelDto,
-  ModelType,
-  UpdateModelPayload,
-} from "../types/models";
+  CreateBlueprintPayload,
+  BlueprintAttachmentDto,
+  BlueprintDto,
+  BlueprintType,
+  UpdateBlueprintPayload,
+} from "../types/blueprints";
 import type { ObjectSummary } from "../types";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -27,15 +27,15 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json();
 }
 
-export function fetchModels(): Promise<ModelDto[]> {
-  return request("/api/v1/models");
+export function fetchBlueprints(): Promise<BlueprintDto[]> {
+  return request("/api/v1/blueprints");
 }
 
-export function fetchRelativeModels(): Promise<ModelDto[]> {
-  return request("/api/v1/relative-models");
+export function fetchRelativeBlueprints(): Promise<BlueprintDto[]> {
+  return request("/api/v1/relative-blueprints");
 }
 
-export function fetchInstanceTypes(platformType?: string, parentPath?: string): Promise<ModelDto[]> {
+export function fetchInstanceTypes(platformType?: string, parentPath?: string): Promise<BlueprintDto[]> {
   const params = new URLSearchParams();
   if (platformType) params.set("platformType", platformType);
   if (parentPath) params.set("parentPath", parentPath);
@@ -43,102 +43,102 @@ export function fetchInstanceTypes(platformType?: string, parentPath?: string): 
   return request(`/api/v1/instance-types${query ? `?${query}` : ""}`);
 }
 
-export function fetchAbsoluteModels(): Promise<ModelDto[]> {
-  return request("/api/v1/absolute-models");
+export function fetchAbsoluteBlueprints(): Promise<BlueprintDto[]> {
+  return request("/api/v1/absolute-blueprints");
 }
 
-export function fetchModelByName(name: string): Promise<ModelDto> {
-  return request(`/api/v1/models/by-name/${encodeURIComponent(name)}`);
+export function fetchBlueprintByName(name: string): Promise<BlueprintDto> {
+  return request(`/api/v1/blueprints/by-name/${encodeURIComponent(name)}`);
 }
 
-export function createModel(payload: CreateModelPayload): Promise<ModelDto> {
-  return request("/api/v1/models", {
+export function createBlueprint(payload: CreateBlueprintPayload): Promise<BlueprintDto> {
+  return request("/api/v1/blueprints", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export function updateModel(id: string, payload: UpdateModelPayload): Promise<ModelDto> {
-  return request(`/api/v1/models/${encodeURIComponent(id)}`, {
+export function updateBlueprint(id: string, payload: UpdateBlueprintPayload): Promise<BlueprintDto> {
+  return request(`/api/v1/blueprints/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
-export function deleteModel(id: string): Promise<void> {
-  return request(`/api/v1/models/${encodeURIComponent(id)}`, { method: "DELETE" });
+export function deleteBlueprint(id: string): Promise<void> {
+  return request(`/api/v1/blueprints/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
-export function applyModel(modelId: string, objectPath: string): Promise<ModelAttachmentDto> {
+export function applyBlueprint(blueprintId: string, objectPath: string): Promise<BlueprintAttachmentDto> {
   return request(
-    `/api/v1/models/${encodeURIComponent(modelId)}/apply?objectPath=${encodeURIComponent(objectPath)}`,
+    `/api/v1/blueprints/${encodeURIComponent(blueprintId)}/apply?objectPath=${encodeURIComponent(objectPath)}`,
     { method: "POST" }
   );
 }
 
-export function fetchAbsoluteModelInstance(modelId: string): Promise<ObjectSummary> {
-  return request(`/api/v1/absolute-models/${encodeURIComponent(modelId)}/instance`);
+export function fetchAbsoluteBlueprintInstance(blueprintId: string): Promise<ObjectSummary> {
+  return request(`/api/v1/absolute-blueprints/${encodeURIComponent(blueprintId)}/instance`);
 }
 
-export function instantiateModel(
-  modelId: string,
+export function instantiateBlueprint(
+  blueprintId: string,
   parentPath: string,
   instanceName: string,
   parameters?: Record<string, string>
 ): Promise<ObjectSummary> {
-  return request(`/api/v1/models/${encodeURIComponent(modelId)}/instantiate`, {
+  return request(`/api/v1/blueprints/${encodeURIComponent(blueprintId)}/instantiate`, {
     method: "POST",
     body: JSON.stringify({ parentPath, instanceName, parameters: parameters ?? {} }),
   });
 }
 
-export function createModelFromObject(
+export function createBlueprintFromObject(
   sourcePath: string,
-  modelName: string,
+  blueprintName: string,
   description?: string,
-  type?: ModelType
-): Promise<ModelDto> {
-  return request("/api/v1/models/from-object", {
+  type?: BlueprintType
+): Promise<BlueprintDto> {
+  return request("/api/v1/blueprints/from-object", {
     method: "POST",
-    body: JSON.stringify({ sourcePath, modelName, description, type }),
+    body: JSON.stringify({ sourcePath, blueprintName, description, type }),
   });
 }
 
-export function fetchModelAttachments(objectPath?: string): Promise<ModelAttachmentDto[]> {
+export function fetchBlueprintAttachments(objectPath?: string): Promise<BlueprintAttachmentDto[]> {
   const query = objectPath ? `?objectPath=${encodeURIComponent(objectPath)}` : "";
-  return request(`/api/v1/models/attachments${query}`);
+  return request(`/api/v1/blueprints/attachments${query}`);
 }
 
-export function upgradeModelInstances(modelId: string): Promise<{
+export function upgradeBlueprintInstances(blueprintId: string): Promise<{
   status: string;
-  modelVersion: string;
+  blueprintVersion: string;
   upgraded: string[];
   count: number;
 }> {
-  return request(`/api/v1/models/${encodeURIComponent(modelId)}/upgrade-instances`, {
+  return request(`/api/v1/blueprints/${encodeURIComponent(blueprintId)}/upgrade-instances`, {
     method: "POST",
   });
 }
 
-export function fetchModelInstances(modelId: string): Promise<{ objectPath: string }[]> {
-  return request(`/api/v1/models/${encodeURIComponent(modelId)}/instances`);
+export function fetchBlueprintInstances(blueprintId: string): Promise<{ objectPath: string }[]> {
+  return request(`/api/v1/blueprints/${encodeURIComponent(blueprintId)}/instances`);
 }
 
-export function upgradeModel(
-  modelId: string,
+export function upgradeBlueprint(
+  blueprintId: string,
   targetPath: string,
   targetVersion?: string
 ): Promise<Record<string, unknown>> {
   const params = new URLSearchParams({ targetPath });
   if (targetVersion) params.set("targetVersion", targetVersion);
-  return request(`/api/v1/models/${encodeURIComponent(modelId)}/upgrade?${params}`, {
+  return request(`/api/v1/blueprints/${encodeURIComponent(blueprintId)}/upgrade?${params}`, {
     method: "POST",
   });
 }
 
-export interface ModelDiffResult {
+export interface BlueprintDiffResult {
   objectPath: string;
-  modelVersion: string;
+  blueprintVersion: string;
   variablesToAdd: string[];
   variablesOnlyOnObject: string[];
   eventsToAdd: string[];
@@ -146,26 +146,26 @@ export interface ModelDiffResult {
   bindingsCount: number;
 }
 
-export function fetchModelDiff(modelId: string, objectPath: string): Promise<ModelDiffResult> {
+export function fetchBlueprintDiff(blueprintId: string, objectPath: string): Promise<BlueprintDiffResult> {
   const params = new URLSearchParams({ objectPath });
-  return request(`/api/v1/models/${encodeURIComponent(modelId)}/diff?${params}`);
+  return request(`/api/v1/blueprints/${encodeURIComponent(blueprintId)}/diff?${params}`);
 }
 
-export interface ModelMergePreviewResult {
+export interface BlueprintMergePreviewResult {
   objectPath: string;
-  baseModelId: string;
-  theirsModelId: string;
+  baseBlueprintId: string;
+  theirsBlueprintId: string;
   variableConflicts: Array<{ name: string; baseSchema: string; theirsSchema: string; onObject: boolean }>;
   conflictCount: number;
 }
 
-export function fetchModelMergePreview(
-  baseModelId: string,
-  theirsModelId: string,
+export function fetchBlueprintMergePreview(
+  baseBlueprintId: string,
+  theirsBlueprintId: string,
   objectPath: string
-): Promise<ModelMergePreviewResult> {
-  return request("/api/v1/models/merge-preview", {
+): Promise<BlueprintMergePreviewResult> {
+  return request("/api/v1/blueprints/merge-preview", {
     method: "POST",
-    body: JSON.stringify({ baseModelId, theirsModelId, objectPath }),
+    body: JSON.stringify({ baseBlueprintId, theirsBlueprintId, objectPath }),
   });
 }

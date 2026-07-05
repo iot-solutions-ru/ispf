@@ -40,7 +40,7 @@ class WorkflowApiTest {
 
     @Test
     void listsWorkflowModel() throws Exception {
-        mockMvc.perform(get("/api/v1/models"))
+        mockMvc.perform(get("/api/v1/blueprints"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.name=='workflow-v1')]").exists());
     }

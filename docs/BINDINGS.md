@@ -1,10 +1,10 @@
-# Привязки переменных (binding rules)
+﻿# Привязки переменных (binding rules)
 
 **Binding rule** — декларативное правило вычисления значения переменной на объекте: **когда** (activators) → **если** (condition, CEL) → **как** (expression) → **куда** (target).
 
 Правила хранятся в системной переменной `@bindingRules` (JSON-массив, reserved). Runtime — **`BindingRuleEngine`** (единственный механизм привязок с v0.8.0).
 
-См. также: [OBJECT_MODEL.md](OBJECT_MODEL.md), [MODELS.md](MODELS.md), ADR [0010](decisions/0010-binding-rules-only.md).
+См. также: [OBJECT_MODEL.md](OBJECT_MODEL.md), [BLUEPRINTS.md](BLUEPRINTS.md), ADR [0010](decisions/0010-binding-rules-only.md).
 
 ---
 

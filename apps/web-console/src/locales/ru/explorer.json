@@ -20,7 +20,7 @@
   "contextMenu.create.instance": "Создать экземпляр",
   "contextMenu.create.migration": "Создать миграцию",
   "contextMenu.create.mimic": "Создать мнемосхему",
-  "contextMenu.create.model": "Создать модель",
+  "contextMenu.create.blueprint": "Создать чертеж",
   "contextMenu.create.object": "Создать объект",
   "contextMenu.create.operator-app": "Создать приложение оператора",
   "contextMenu.create.report": "Создать отчёт",

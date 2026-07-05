@@ -53,9 +53,6 @@ export function resolveObjectTreeLookup(path: string): I18nLookup | null {
 }
 
 function lookupTitle(t: TFunction, lookup: I18nLookup, displayName?: string): string {
-  if (displayName?.trim()) {
-    return displayName.trim();
-  }
   if (lookup.kind === "path") {
     const key = `objectTree:path.${lookup.path}.title`;
     const value = t(key, { defaultValue: "" });
@@ -69,7 +66,7 @@ function lookupTitle(t: TFunction, lookup: I18nLookup, displayName?: string): st
       return value;
     }
   }
-  return "";
+  return displayName?.trim() ?? "";
 }
 
 function lookupDescription(t: TFunction, lookup: I18nLookup, serverDescription?: string): string {

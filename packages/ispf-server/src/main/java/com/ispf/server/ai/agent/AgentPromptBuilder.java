@@ -23,7 +23,7 @@ public final class AgentPromptBuilder {
             Before create_object / create_virtual_device: list_objects parent=<exact folder> on the real parent.
             Before save_workflow_bpmn / save_mimic_diagram / set_dashboard_layout / configure_*: create_object must succeed first
             (or get_object/list_objects returned that path in this turn). Never configure a path that was not discovered or created.
-            Before apply_relative_model: list_relative_models or list_virtual_profiles — pick modelName/profile from result.
+            Before apply_relative_blueprint: list_relative_blueprints or list_virtual_profiles — pick modelName/profile from result.
             If Object exists — reuse with get_object + list_variables; do not recreate.
             search_context and get_automation_schema describe documentation, not live tree state.
             
@@ -34,13 +34,13 @@ public final class AgentPromptBuilder {
             For dashboards: follow Dashboard guide in Playbooks — list_variables first, prefer set_dashboard_layout
             template= over many add_dashboard_widget; never set_variable name=widgets.
             For widgets: get_widget_catalog type=<type> for exact fields before add_dashboard_widget;
-            list_variables for variableName values; list_object_models before create_object.
+            list_variables for variableName values; list_object_blueprints before create_object.
             For drivers/docs: list_drivers, get_driver_help, list_examples, get_example_bundle, search_context (topic=...).
             For reports: get_automation_schema topic=report; list_reports; get_report_schema; run_report preview;
             configure_report to create/update; template upload is UI-only (Report Builder → Шаблон YARG).
             For SCADA mimics: list_mimic_symbols → create_object type=MIMIC → save_mimic_diagram with non-empty elements[];
             never finish with empty mimic; do NOT use set_variable name=diagram; follow SCADA guide in Playbooks.
-            For model choice: list_instance_types + list_relative_models + list_absolute_models before create_object.
+            For model choice: list_instance_types + list_relative_blueprints + list_absolute_blueprints before create_object.
             For complex tasks: get_automation_schema topic=platformMaster first; then area-specific tools (workflow, lifecycle, dashboard, scada).
             For complex build recipes: search_platform_recipes query="<task>" before inventing steps.
             Complete end-to-end — dashboards, SCADA panels, workflows, apps, alerts — using tools only.
@@ -85,11 +85,11 @@ public final class AgentPromptBuilder {
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
             - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (both are RELATIVE mixins); profile lab|meter|unified in driverConfigJson
             - Before project implementation: get_automation_schema topic=projectBlueprint
-            - Model selection baseline: list_instance_types + list_relative_models + list_absolute_models
-              (then instantiate_instance_type / apply_relative_model / ensure_absolute_instance)
-            - RELATIVE models: list_relative_models → apply_relative_model objectPath=... modelName=virtual-lab-v1
+            - Model selection baseline: list_instance_types + list_relative_blueprints + list_absolute_blueprints
+              (then instantiate_instance_type / apply_relative_blueprint / ensure_absolute_instance)
+            - Relative Blueprints: list_relative_blueprints → apply_relative_blueprint objectPath=... modelName=virtual-lab-v1
               (adds variables, events, functions to existing DEVICE); or create_object with same templateId
-            - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_relative_model or create_virtual_device
+            - NEVER create_object DEVICE with driverId=virtual and empty/wrong templateId — use apply_relative_blueprint or create_virtual_device
             - Virtual pump station: create_virtual_device profile=lab (pumps), profile=meter (flow), profile=unified (pressure/temp)
             - Never claim devices have variables/drivers unless list_variables or create_virtual_device returned telemetryVariableCount>0
             - Chart/sparkline widgets need historian: configure_variable_history path=... name=sineWave historyEnabled=true
@@ -102,7 +102,7 @@ public final class AgentPromptBuilder {
             - Dashboard templates: snmp-host-monitoring, demo-sensor, virtual-cluster-overview, virtual-cluster-detail,
               monitoring-overview, scada-facility-overview, empty
             - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
-            - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_relative_model) autonomously
+            - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_relative_blueprint) autonomously
             - Never tell user to configure dashboards/alerts/operator/models manually in UI when agent tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
             - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
@@ -125,7 +125,7 @@ public final class AgentPromptBuilder {
             - BFF / app functions: list_functions → get_function → invoke_bff (objectPath, functionName, inputRows)
             - Tree functions: invoke_tree_function; search: search_objects; events: list_event_catalog, get_event_schema, fire_event, list_events
             - Variables: describe_variables for schema before set_variable; list_variables for current values
-            - Object templates: list_object_models before create_object
+            - Object templates: list_object_blueprints before create_object
             - Never invent REST paths; use tools only
             - SCADA mimic workflow: list_mimic_symbols → create_object type=MIMIC templateId=mimic-v1
               → save_mimic_diagram path=... elements=[{id,symbolId,layerId,x,y,bindings}] (or full diagramJson)

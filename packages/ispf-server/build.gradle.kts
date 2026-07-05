@@ -7,7 +7,7 @@ dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
     implementation(project(":packages:ispf-driver-api"))
-    implementation(project(":packages:ispf-plugin-model"))
+    implementation(project(":packages:ispf-plugin-blueprint"))
     implementation(project(":packages:ispf-plugin-workflow"))
     implementation(project(":packages:ispf-ai-api"))
     implementation(project(":packages:ispf-ai-openai-compatible"))

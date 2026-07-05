@@ -9,9 +9,9 @@ import {
 
 describe("canCreateChildAt", () => {
   it("allows create in new model catalog folders", () => {
-    expect(canCreateChildAt("root.platform.instance-types", "MODEL")).toBe(true);
-    expect(canCreateChildAt("root.platform.relative-models", "MODEL")).toBe(true);
-    expect(canCreateChildAt("root.platform.absolute-models", "MODEL")).toBe(true);
+    expect(canCreateChildAt("root.platform.instance-types", "BLUEPRINT")).toBe(true);
+    expect(canCreateChildAt("root.platform.relative-blueprints", "BLUEPRINT")).toBe(true);
+    expect(canCreateChildAt("root.platform.absolute-blueprints", "BLUEPRINT")).toBe(true);
     expect(canCreateChildAt("root.platform.instances", "CUSTOM")).toBe(true);
   });
 
@@ -25,7 +25,7 @@ describe("canCreateChildAt", () => {
   });
 
   it("blocks create on model definition leaves", () => {
-    expect(canCreateChildAt("root.platform.instance-types.sensor-v1", "MODEL")).toBe(false);
+    expect(canCreateChildAt("root.platform.instance-types.sensor-v1", "BLUEPRINT")).toBe(false);
   });
 });
 
@@ -37,7 +37,7 @@ describe("resolveCreateLabelKind", () => {
     expect(resolveCreateLabelKind("root.platform.mimics")).toBe("mimic");
     expect(resolveCreateLabelKind("root.platform.workflows")).toBe("workflow");
     expect(resolveCreateLabelKind("root.platform.alert-rules")).toBe("alert-rule");
-    expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("model");
+    expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("blueprint");
     expect(resolveCreateLabelKind("root.platform.instances")).toBe("instance");
     expect(resolveCreateLabelKind("root.platform.my-folder")).toBe("object");
   });
@@ -75,7 +75,7 @@ describe("defaultObjectTypeForParent", () => {
   it("maps parent folders to sensible default types", () => {
     expect(defaultObjectTypeForParent("root.platform.devices")).toBe("DEVICE");
     expect(defaultObjectTypeForParent("root.platform.mimics")).toBe("MIMIC");
-    expect(defaultObjectTypeForParent("root.platform.instance-types")).toBe("MODEL");
+    expect(defaultObjectTypeForParent("root.platform.instance-types")).toBe("BLUEPRINT");
     expect(defaultObjectTypeForParent("root.platform.my-folder")).toBe("CUSTOM");
   });
 });

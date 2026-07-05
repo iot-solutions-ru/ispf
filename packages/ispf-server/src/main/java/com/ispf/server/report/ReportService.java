@@ -9,16 +9,16 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.model.FieldType;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.report.ApplicationReportStore;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public class ReportService {
 
     public static final String REPORTS_ROOT = "root.platform.reports";
-    public static final String REPORT_TYPE_TREE_VARIABLES = LabModelBootstrap.TREE_VARIABLES_REPORT_TYPE;
+    public static final String REPORT_TYPE_TREE_VARIABLES = LabBlueprintBootstrap.TREE_VARIABLES_REPORT_TYPE;
 
     private static final List<ReportColumn> DEFAULT_TREE_VARIABLE_COLUMNS = List.of(
             new ReportColumn("devicepath", "Device path"),
@@ -63,8 +63,8 @@ public class ReportService {
             .build();
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintEngine BlueprintEngine;
     private final SystemObjectStructureService structureService;
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
@@ -77,8 +77,8 @@ public class ReportService {
 
     public ReportService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
+            BlueprintRegistry BlueprintRegistry,
+            BlueprintEngine BlueprintEngine,
             SystemObjectStructureService structureService,
             ApplicationSchemaSession schemaSession,
             ApplicationReportStore reportStore,
@@ -90,8 +90,8 @@ public class ReportService {
             PlatformCalendarParameterEnricher calendarParameterEnricher
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
+        this.BlueprintEngine = BlueprintEngine;
         this.structureService = structureService;
         this.schemaSession = schemaSession;
         this.reportStore = reportStore;
@@ -163,8 +163,8 @@ public class ReportService {
         if (node.getVariable("reportType").isPresent()) {
             return;
         }
-        modelRegistry.findByName(LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL).ifPresent(model -> {
-            modelEngine.applyModel(model.id(), path);
+        BlueprintRegistry.findByName(LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL).ifPresent(model -> {
+            BlueprintEngine.applyBlueprint(model.id(), path);
             objectManager.persistNodeTree(path);
         });
     }
@@ -215,7 +215,7 @@ public class ReportService {
     ) {
         ensureReportsCatalogInternal();
         String path = reportPath(reportId);
-        ensureReportNode(path, title, description, LabModelBootstrap.TREE_VARIABLES_REPORT_MODEL);
+        ensureReportNode(path, title, description, LabBlueprintBootstrap.TREE_VARIABLES_REPORT_MODEL);
         ensureTreeVariablesReportStructure(path);
         saveTreeVariablesDefinitionInternal(
                 path,

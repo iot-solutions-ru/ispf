@@ -34,7 +34,7 @@ Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `s
 |--------|---------|
 | ispf-core | `ObjectTreeTest`, `DataRecordTest` |
 | ispf-expression | `BindingEvaluatorTest` (expression eval), `ExpressionEngineTest` |
-| ispf-plugin-model | `ModelEngineTest` |
+| ispf-plugin-blueprint | `BlueprintEngineTest` |
 | ispf-plugin-workflow | `BpmnParserTest`, `WorkflowEngineV2/V3Test` |
 | ispf-driver-modbus | `ModbusPointTest` |
 | ispf-driver-snmp | `SnmpPointTest` |
@@ -52,7 +52,7 @@ Backend tests use modular Boot 4 starters (`spring-boot-starter-webmvc-test`, `s
 | `WorkQueueApiTest` | Claim/complete |
 | `AlertRuleApiTest` | Alert rules CRUD |
 | `EventCorrelatorApiTest` | Correlators CRUD |
-| `ModelControllerTest` | Models API |
+| `BlueprintControllerTest` | Blueprints API |
 | `OperatorAccessTest` | RBAC operator vs admin |
 | `ApplicationPlatformApiTest` | REQ-PF: applications, bundle deploy, BFF invoke |
 

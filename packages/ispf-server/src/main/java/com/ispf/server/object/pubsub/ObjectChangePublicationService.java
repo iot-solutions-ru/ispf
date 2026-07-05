@@ -92,7 +92,8 @@ public class ObjectChangePublicationService {
                 template.changedBy(),
                 telemetry,
                 automationEligible,
-                template.observedAt()
+                template.observedAt(),
+                false
         ));
         return true;
     }

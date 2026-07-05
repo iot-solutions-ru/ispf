@@ -9,7 +9,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.plugin.workflow.BpmnProcess;
 import com.ispf.plugin.workflow.InstanceStatus;
 import com.ispf.plugin.workflow.MessageTaskDefinition;

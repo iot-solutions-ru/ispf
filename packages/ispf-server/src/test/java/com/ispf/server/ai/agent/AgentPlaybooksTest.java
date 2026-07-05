@@ -34,7 +34,7 @@ class AgentPlaybooksTest {
     void groundTruthGuideMentionsDiscoveryTools() {
         String guide = AgentPlaybooks.groundTruthGuide();
         assertTrue(guide.contains("list_objects"));
-        assertTrue(guide.contains("list_relative_models"));
+        assertTrue(guide.contains("list_relative_blueprints"));
         assertTrue(guide.contains("Object exists"));
     }
 

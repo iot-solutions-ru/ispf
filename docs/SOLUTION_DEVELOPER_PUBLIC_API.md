@@ -1,4 +1,4 @@
-# Public API для разработчика решений
+﻿# Public API для разработчика решений
 
 Стабильная граница между **platform** (ISPF core) и **solution** (ваш bundle). Подробный workflow — [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md). Архитектурные границы — [0001](decisions/0001-app-platform-boundary.md).
 
@@ -14,7 +14,7 @@
 | Script functions | `POST .../functions/deploy`, tree path `{appId}.functions.*` | JSON script steps |
 | Invoke | `POST .../functions/invoke`, `POST /api/v1/bff/invoke` | Operator wire profile |
 | Object tree | `GET/POST/PATCH /api/v1/objects/**` | CRUD, variables, functions |
-| Models | `POST /api/v1/models`, apply to device | Blueprint |
+| Models | `POST /api/v1/blueprints`, apply to device | Blueprint |
 | Dashboards / workflows | Object tree + REST | Layout JSON, BPMN XML |
 | Automation | Alert rules, correlators в дереве | CEL, correlator patterns |
 | Operator UI | `operatorUi` / `dashboards[]` в bundle | `GET .../operator-ui` |

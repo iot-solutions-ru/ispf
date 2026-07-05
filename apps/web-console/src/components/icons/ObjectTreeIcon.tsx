@@ -7,7 +7,7 @@ export type TreeIconKind =
   | "user"
   | "device"
   | "driver"
-  | "model"
+  | "blueprint"
   | "dashboard"
   | "mimic"
   | "workflow"
@@ -56,7 +56,7 @@ export const TREE_ICON_CATALOG: TreeIconDefinition[] = [
   { id: "roles-folder", category: "platform" },
   { id: "device", category: "objects" },
   { id: "driver", category: "objects" },
-  { id: "model", category: "objects" },
+  { id: "blueprint", category: "objects" },
   { id: "dashboard", category: "objects" },
   { id: "mimic", category: "objects" },
   { id: "workflow", category: "objects" },
@@ -130,8 +130,8 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
       return "device";
     case "DRIVER":
       return "driver";
-    case "MODEL":
-      return "model";
+    case "BLUEPRINT":
+      return "blueprint";
     case "DASHBOARDS":
     case "DASHBOARD":
       return "dashboard";
@@ -231,7 +231,7 @@ const ICONS: Record<TreeIconKind, ReactNode> = {
       <circle cx="11" cy="10.5" r="1.2" fill="currentColor" stroke="none" />
     </>
   ),
-  model: (
+  blueprint: (
     <>
       <rect x="2.5" y="2.5" width="11" height="11" rx="1.2" />
       <path d="M5 5.5h6M5 8h6M5 10.5h4" />

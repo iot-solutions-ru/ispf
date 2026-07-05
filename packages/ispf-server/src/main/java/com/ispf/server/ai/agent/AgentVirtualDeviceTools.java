@@ -4,8 +4,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
@@ -35,8 +35,8 @@ final class AgentVirtualDeviceTools {
             ObjectTemplateService objectTemplateService,
             DeviceProvisioningService deviceProvisioningService,
             DriverRuntimeService driverRuntimeService,
-            LabModelBootstrap labModelBootstrap,
-            ModelRegistry modelRegistry,
+            LabBlueprintBootstrap LabBlueprintBootstrap,
+            BlueprintRegistry BlueprintRegistry,
             ObjectMapper objectMapper
     ) {
         return List.of(
@@ -46,15 +46,15 @@ final class AgentVirtualDeviceTools {
                         objectTemplateService,
                         deviceProvisioningService,
                         driverRuntimeService,
-                        labModelBootstrap,
-                        modelRegistry,
+                        LabBlueprintBootstrap,
+                        BlueprintRegistry,
                         objectMapper
                 ),
-                listVirtualProfilesTool(modelRegistry)
+                listVirtualProfilesTool(BlueprintRegistry)
         );
     }
 
-    private static PlatformAgentTool listVirtualProfilesTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool listVirtualProfilesTool(BlueprintRegistry BlueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -76,7 +76,7 @@ final class AgentVirtualDeviceTools {
                                 Map<String, Object> row = VirtualDeviceProfileCatalog.profileCatalogRow(name, spec);
                                 row.put(
                                         "templateRegistered",
-                                        modelRegistry.findByName(spec.templateId()).isPresent()
+                                        BlueprintRegistry.findByName(spec.templateId()).isPresent()
                                 );
                                 rows.add(row);
                             });
@@ -98,8 +98,8 @@ final class AgentVirtualDeviceTools {
             ObjectTemplateService objectTemplateService,
             DeviceProvisioningService deviceProvisioningService,
             DriverRuntimeService driverRuntimeService,
-            LabModelBootstrap labModelBootstrap,
-            ModelRegistry modelRegistry,
+            LabBlueprintBootstrap LabBlueprintBootstrap,
+            BlueprintRegistry BlueprintRegistry,
             ObjectMapper objectMapper
     ) {
         return new PlatformAgentTool() {
@@ -139,8 +139,8 @@ final class AgentVirtualDeviceTools {
                     );
                 }
                 VirtualDeviceProfileCatalog.ProfileSpec spec = specOpt.get();
-                labModelBootstrap.ensureLabModels();
-                if (modelRegistry.findByName(spec.templateId()).isEmpty()) {
+                LabBlueprintBootstrap.ensureLabModels();
+                if (BlueprintRegistry.findByName(spec.templateId()).isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
                             "error", "Model not registered: " + spec.templateId()

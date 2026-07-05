@@ -4,12 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,7 +22,7 @@ import java.util.UUID;
  * INSTANCE models for the anonymized tank-farm SCADA demo.
  */
 @Component
-public class TankFarmModelBootstrap {
+public class TankFarmBlueprintBootstrap {
 
     public static final String TANK_MODEL = "tank-farm-tank-v1";
     public static final String MANIFOLD_HUB_MODEL = "tank-farm-hub-v1";
@@ -49,12 +49,12 @@ public class TankFarmModelBootstrap {
             .field("value", FieldType.STRING)
             .build();
 
-    private final ModelEngine modelEngine;
-    private final ModelRegistry modelRegistry;
+    private final BlueprintEngine BlueprintEngine;
+    private final BlueprintRegistry BlueprintRegistry;
 
-    public TankFarmModelBootstrap(ModelEngine modelEngine, ModelRegistry modelRegistry) {
-        this.modelEngine = modelEngine;
-        this.modelRegistry = modelRegistry;
+    public TankFarmBlueprintBootstrap(BlueprintEngine BlueprintEngine, BlueprintRegistry BlueprintRegistry) {
+        this.BlueprintEngine = BlueprintEngine;
+        this.BlueprintRegistry = BlueprintRegistry;
     }
 
     public void ensureTankFarmModels() {
@@ -62,17 +62,17 @@ public class TankFarmModelBootstrap {
         ensure(buildHubModel());
     }
 
-    private void ensure(ModelDefinition desired) {
-        var existing = modelRegistry.findByName(desired.name());
+    private void ensure(BlueprintDefinition desired) {
+        var existing = BlueprintRegistry.findByName(desired.name());
         if (existing.isEmpty()) {
-            modelEngine.createModel(desired);
+            BlueprintEngine.createBlueprint(desired);
             return;
         }
-        ModelDefinition current = existing.get();
+        BlueprintDefinition current = existing.get();
         if (current.variables().size() >= desired.variables().size()) {
             return;
         }
-        modelEngine.updateModel(new ModelDefinition(
+        BlueprintEngine.updateBlueprint(new BlueprintDefinition(
                 current.id(),
                 desired.name(),
                 desired.description(),
@@ -89,8 +89,8 @@ public class TankFarmModelBootstrap {
         ));
     }
 
-    private ModelDefinition buildTankModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildTankModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("fillLevelMm", "Fill level", "telemetry", "mm", 5000));
         vars.add(meas("rateMmPerHour", "Level change rate", "telemetry", "mm/h", 0));
         vars.add(meas("maxLevelMm", "Max level", "config", "mm", 10000));
@@ -99,8 +99,8 @@ public class TankFarmModelBootstrap {
         return model(TANK_MODEL, "Storage tank (demo)", ObjectType.DEVICE, vars, List.of());
     }
 
-    private ModelDefinition buildHubModel() {
-        List<ModelVariableDefinition> vars = new ArrayList<>();
+    private BlueprintDefinition buildHubModel() {
+        List<BlueprintVariableDefinition> vars = new ArrayList<>();
         vars.add(meas("linePressureMpa", "Line pressure", "telemetry", "MPa", 0.82));
         vars.add(meas("lineFlowM3h", "Line flow", "telemetry", "m³/h", 1240));
         vars.add(meas("lineTempC", "Line temperature", "telemetry", "°C", 12));
@@ -110,45 +110,45 @@ public class TankFarmModelBootstrap {
         return model(MANIFOLD_HUB_MODEL, "Pipeline manifold hub (demo)", ObjectType.CUSTOM, vars, List.of());
     }
 
-    private static List<ModelVariableDefinition> driverVars(String configJson) {
+    private static List<BlueprintVariableDefinition> driverVars(String configJson) {
         return List.of(
-                ModelVariableDefinition.of("driverId", "Driver id", "driver", STR, true, true,
+                BlueprintVariableDefinition.of("driverId", "Driver id", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", "virtual"))),
-                ModelVariableDefinition.of("driverConfigJson", "Driver config", "driver", STR, true, true,
+                BlueprintVariableDefinition.of("driverConfigJson", "Driver config", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", configJson))),
-                ModelVariableDefinition.of("driverPointMappingsJson", "Point mappings", "driver", STR, true, true,
-                        DataRecord.single(STR, Map.of("value", MiniTecModelBootstrap.TEC_POINT_MAPPINGS)))
+                BlueprintVariableDefinition.of("driverPointMappingsJson", "Point mappings", "driver", STR, true, true,
+                        DataRecord.single(STR, Map.of("value", MiniTecBlueprintBootstrap.TEC_POINT_MAPPINGS)))
         );
     }
 
-    private static ModelVariableDefinition meas(
+    private static BlueprintVariableDefinition meas(
             String name, String desc, String group, String unit, double def
     ) {
-        return ModelVariableDefinition.withHistory(
+        return BlueprintVariableDefinition.withHistory(
                 name, desc, group, MEAS, true, false,
                 DataRecord.single(MEAS, Map.of("value", def, "unit", unit))
         );
     }
 
-    private static ModelVariableDefinition boolVar(
+    private static BlueprintVariableDefinition boolVar(
             String name, String desc, String group, boolean def, boolean writable
     ) {
-        return ModelVariableDefinition.of(name, desc, group, BOOL, true, writable,
+        return BlueprintVariableDefinition.of(name, desc, group, BOOL, true, writable,
                 DataRecord.single(BOOL, Map.of("value", def)));
     }
 
-    private static ModelDefinition model(
+    private static BlueprintDefinition model(
             String name,
             String description,
             ObjectType type,
-            List<ModelVariableDefinition> variables,
-            List<ModelBindingRule> bindings
+            List<BlueprintVariableDefinition> variables,
+            List<BlueprintBindingRule> bindings
     ) {
-        return new ModelDefinition(
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 name,
                 description,
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 type,
                 "",
                 variables,

@@ -2,14 +2,14 @@ package com.ispf.server.ai.agent;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelApplyResult;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.SystemIntrinsicModels;
+import com.ispf.plugin.blueprint.BlueprintApplyResult;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 
@@ -23,68 +23,68 @@ import java.util.Optional;
 /**
  * Agent tools for RELATIVE mixins, INSTANCE types, and ABSOLUTE singleton hubs.
  */
-final class AgentModelTools {
+final class AgentBlueprintTools {
 
-    private AgentModelTools() {
+    private AgentBlueprintTools() {
     }
 
     static List<PlatformAgentTool> all(
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
         return List.of(
-                listRelativeModelsTool(modelRegistry),
-                listInstanceTypesTool(modelRegistry),
-                listAbsoluteModelsTool(modelRegistry),
-                getObjectModelTool(modelRegistry),
-                applyRelativeModelTool(
-                        modelRegistry,
-                        modelApplicationService,
+                listRelativeBlueprintsTool(blueprintRegistry),
+                listInstanceTypesTool(blueprintRegistry),
+                listAbsoluteBlueprintsTool(blueprintRegistry),
+                getObjectBlueprintTool(blueprintRegistry),
+                applyRelativeBlueprintTool(
+                        blueprintRegistry,
+                        blueprintApplicationService,
                         objectManager,
                         objectAccessService,
                         tenantScopeService
                 ),
                 instantiateInstanceTypeTool(
-                        modelRegistry,
-                        modelApplicationService,
+                        blueprintRegistry,
+                        blueprintApplicationService,
                         objectManager,
                         objectAccessService,
                         tenantScopeService
                 ),
                 ensureAbsoluteInstanceTool(
-                        modelRegistry,
-                        modelApplicationService,
+                        blueprintRegistry,
+                        blueprintApplicationService,
                         objectAccessService,
                         tenantScopeService
                 )
         );
     }
 
-    private static PlatformAgentTool listRelativeModelsTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool listRelativeBlueprintsTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "list_relative_models";
+                return "list_relative_blueprints";
             }
 
             @Override
             public String description() {
-                return "List RELATIVE model blueprints (mixins) under root.platform.relative-models. "
-                        + "They add variables, events, functions to existing objects via apply_relative_model. "
+                return "List RELATIVE model blueprints (mixins) under root.platform.relative-blueprints. "
+                        + "They add variables, events, functions to existing objects via apply_relative_blueprint. "
                         + "Optional query filter and targetObjectType (DEVICE, CUSTOM, …).";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                return listModelsByType(modelRegistry, ModelType.RELATIVE, arguments, true);
+                return listBlueprintsByType(blueprintRegistry, BlueprintType.RELATIVE, arguments, true);
             }
         };
     }
 
-    private static PlatformAgentTool listInstanceTypesTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool listInstanceTypesTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
@@ -100,44 +100,44 @@ final class AgentModelTools {
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                Map<String, Object> result = listModelsByType(modelRegistry, ModelType.INSTANCE, arguments, false);
+                Map<String, Object> result = listBlueprintsByType(blueprintRegistry, BlueprintType.INSTANCE, arguments, false);
                 result.put(
                         "hint",
-                        "Create with instantiate_instance_type parentPath=... instanceName=... modelName=<name>"
+                        "Create with instantiate_instance_type parentPath=... instanceName=... blueprintName=<name>"
                 );
                 return result;
             }
         };
     }
 
-    private static PlatformAgentTool listAbsoluteModelsTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool listAbsoluteBlueprintsTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "list_absolute_models";
+                return "list_absolute_blueprints";
             }
 
             @Override
             public String description() {
-                return "List ABSOLUTE model blueprints (singleton hubs) under root.platform.absolute-models. "
+                return "List ABSOLUTE model blueprints (singleton hubs) under root.platform.absolute-blueprints. "
                         + "Each has one live instance under root.platform.instances.* — use ensure_absolute_instance.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                Map<String, Object> result = listModelsByType(modelRegistry, ModelType.ABSOLUTE, arguments, false);
+                Map<String, Object> result = listBlueprintsByType(blueprintRegistry, BlueprintType.ABSOLUTE, arguments, false);
                 result.put(
                         "hint",
-                        "Use ensure_absolute_instance modelName=<name> — never instantiate twice (409 if exists)"
+                        "Use ensure_absolute_instance blueprintName=<name> — never instantiate twice (409 if exists)"
                 );
                 return result;
             }
         };
     }
 
-    private static Map<String, Object> listModelsByType(
-            ModelRegistry modelRegistry,
-            ModelType type,
+    private static Map<String, Object> listBlueprintsByType(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintType type,
             Map<String, Object> arguments,
             boolean excludeIntrinsic
     ) {
@@ -147,11 +147,11 @@ final class AgentModelTools {
             targetFilter = stringArg(arguments, "platformType").toUpperCase(Locale.ROOT);
         }
         List<Map<String, Object>> rows = new ArrayList<>();
-        for (ModelDefinition model : modelRegistry.all()) {
+        for (BlueprintDefinition model : blueprintRegistry.all()) {
             if (model.type() != type) {
                 continue;
             }
-            if (excludeIntrinsic && SystemIntrinsicModels.isIntrinsic(model)) {
+            if (excludeIntrinsic && SystemIntrinsicBlueprints.isIntrinsic(model)) {
                 continue;
             }
             if (!targetFilter.isBlank()
@@ -162,46 +162,46 @@ final class AgentModelTools {
             if (!query.isBlank() && !haystack.contains(query)) {
                 continue;
             }
-            rows.add(modelSummary(model));
+            rows.add(blueprintSummary(model));
         }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
-        result.put("modelType", type.name());
+        result.put("BlueprintType", type.name());
         result.put("count", rows.size());
-        result.put("models", rows);
+        result.put("blueprints", rows);
         return result;
     }
 
-    private static PlatformAgentTool getObjectModelTool(ModelRegistry modelRegistry) {
+    private static PlatformAgentTool getObjectBlueprintTool(BlueprintRegistry blueprintRegistry) {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "get_object_model";
+                return "get_object_blueprint";
             }
 
             @Override
             public String description() {
-                return "Schema of a model blueprint: variables, events, functions, modelType, targetObjectType. "
-                        + "Args: modelName or modelId (e.g. virtual-lab-v1).";
+                return "Schema of a model blueprint: variables, events, functions, BlueprintType, targetObjectType. "
+                        + "Args: blueprintName or blueprintId (e.g. virtual-lab-v1).";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                Optional<ModelDefinition> model = resolveModel(modelRegistry, arguments);
+                Optional<BlueprintDefinition> model = resolveBlueprint(blueprintRegistry, arguments);
                 if (model.isEmpty()) {
                     return Map.of(
                             "status", "ERROR",
-                            "error", "modelName or modelId required; use list_relative_models or list_object_models"
+                            "error", "blueprintName or blueprintId required; use list_relative_blueprints or list_object_blueprints"
                     );
                 }
-                return Map.of("status", "OK", "model", modelDetail(model.get()));
+                return Map.of("status", "OK", "model", blueprintDetail(model.get()));
             }
         };
     }
 
-    private static PlatformAgentTool applyRelativeModelTool(
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+    private static PlatformAgentTool applyRelativeBlueprintTool(
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
@@ -209,14 +209,14 @@ final class AgentModelTools {
         return new PlatformAgentTool() {
             @Override
             public String name() {
-                return "apply_relative_model";
+                return "apply_relative_blueprint";
             }
 
             @Override
             public String description() {
                 return "Attach a RELATIVE model mixin to an existing object — merges variables, events, functions, "
                         + "binding rules without changing object path. "
-                        + "Args: objectPath (required), modelName or modelId (e.g. virtual-lab-v1). "
+                        + "Args: objectPath (required), blueprintName or blueprintId (e.g. virtual-lab-v1). "
                         + "Prefer over manual create_variable when a catalog model fits. "
                         + "After apply on DEVICE: configure_driver + driver_control start, then list_variables.";
             }
@@ -230,19 +230,19 @@ final class AgentModelTools {
                 if (objectPath.isBlank()) {
                     return Map.of("status", "ERROR", "error", "objectPath is required");
                 }
-                Optional<ModelDefinition> modelOpt = resolveModel(modelRegistry, arguments);
+                Optional<BlueprintDefinition> modelOpt = resolveBlueprint(blueprintRegistry, arguments);
                 if (modelOpt.isEmpty()) {
-                    return Map.of("status", "ERROR", "error", "modelName or modelId is required");
+                    return Map.of("status", "ERROR", "error", "blueprintName or blueprintId is required");
                 }
-                ModelDefinition model = modelOpt.get();
-                if (model.type() != ModelType.RELATIVE) {
+                BlueprintDefinition model = modelOpt.get();
+                if (model.type() != BlueprintType.RELATIVE) {
                     return Map.of(
                             "status", "ERROR",
                             "error", model.name() + " is " + model.type() + ", not RELATIVE. "
                                     + "Use instantiate_instance_type for INSTANCE or ensure_absolute_instance for ABSOLUTE."
                     );
                 }
-                if (SystemIntrinsicModels.isIntrinsic(model)) {
+                if (SystemIntrinsicBlueprints.isIntrinsic(model)) {
                     return Map.of("status", "ERROR", "error", "System-intrinsic model cannot be applied via agent");
                 }
                 var auth = context.authentication();
@@ -260,7 +260,7 @@ final class AgentModelTools {
                 }
                 try {
                     int variablesBefore = target.variables().size();
-                    ModelApplyResult applyResult = modelApplicationService.applyModelWithRules(
+                    BlueprintApplyResult applyResult = blueprintApplicationService.applyBlueprintWithRules(
                             model.id(),
                             objectPath
                     );
@@ -269,8 +269,8 @@ final class AgentModelTools {
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("status", "OK");
                     result.put("objectPath", objectPath);
-                    result.put("modelName", model.name());
-                    result.put("modelId", model.id());
+                    result.put("blueprintName", model.name());
+                    result.put("blueprintId", model.id());
                     result.put("variablesAdded", Math.max(0, variablesAfter - variablesBefore));
                     result.put("variableCount", variablesAfter);
                     result.put("attachmentId", applyResult.attachment().id());
@@ -292,8 +292,8 @@ final class AgentModelTools {
     }
 
     private static PlatformAgentTool instantiateInstanceTypeTool(
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
@@ -307,7 +307,7 @@ final class AgentModelTools {
             @Override
             public String description() {
                 return "Create a new object from an INSTANCE model blueprint. "
-                        + "Args: parentPath (required), instanceName (required), modelName or modelId. "
+                        + "Args: parentPath (required), instanceName (required), blueprintName or blueprintId. "
                         + "Equivalent to create_object with templateId. After DEVICE: configure_driver + list_variables.";
             }
 
@@ -324,16 +324,16 @@ final class AgentModelTools {
                 if (parentPath.isBlank() || instanceName.isBlank()) {
                     return Map.of("status", "ERROR", "error", "parentPath and instanceName are required");
                 }
-                Optional<ModelDefinition> modelOpt = resolveModel(modelRegistry, arguments);
+                Optional<BlueprintDefinition> modelOpt = resolveBlueprint(blueprintRegistry, arguments);
                 if (modelOpt.isEmpty()) {
-                    return Map.of("status", "ERROR", "error", "modelName or modelId is required");
+                    return Map.of("status", "ERROR", "error", "blueprintName or blueprintId is required");
                 }
-                ModelDefinition model = modelOpt.get();
-                if (model.type() != ModelType.INSTANCE) {
+                BlueprintDefinition model = modelOpt.get();
+                if (model.type() != BlueprintType.INSTANCE) {
                     return Map.of(
                             "status", "ERROR",
                             "error", model.name() + " is " + model.type()
-                                    + ". Use apply_relative_model for RELATIVE or ensure_absolute_instance for ABSOLUTE."
+                                    + ". Use apply_relative_blueprint for RELATIVE or ensure_absolute_instance for ABSOLUTE."
                     );
                 }
                 var auth = context.authentication();
@@ -342,7 +342,7 @@ final class AgentModelTools {
                 }
                 objectAccessService.requireWrite(parentPath, auth);
                 try {
-                    ModelApplyResult result = modelApplicationService.instantiateWithRules(
+                    BlueprintApplyResult result = blueprintApplicationService.instantiateWithRules(
                             model.id(),
                             parentPath,
                             instanceName,
@@ -356,8 +356,8 @@ final class AgentModelTools {
                     response.put("objectPath", fullPath);
                     response.put("parentPath", parentPath);
                     response.put("instanceName", instanceName);
-                    response.put("modelName", model.name());
-                    response.put("modelId", model.id());
+                    response.put("blueprintName", model.name());
+                    response.put("blueprintId", model.id());
                     response.put("objectType", instance.type().name());
                     response.put("templateId", model.name());
                     response.put("variableCount", instance.variables().size());
@@ -377,8 +377,8 @@ final class AgentModelTools {
     }
 
     private static PlatformAgentTool ensureAbsoluteInstanceTool(
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService
     ) {
@@ -391,24 +391,24 @@ final class AgentModelTools {
             @Override
             public String description() {
                 return "Ensure the singleton instance for an ABSOLUTE model exists under root.platform.instances.*. "
-                        + "Args: modelName or modelId. Idempotent — returns existing path if already present.";
+                        + "Args: blueprintName or blueprintId. Idempotent — returns existing path if already present.";
             }
 
             @Override
             public Map<String, Object> execute(Map<String, Object> arguments, AgentContext context) {
-                Optional<ModelDefinition> modelOpt = resolveModel(modelRegistry, arguments);
+                Optional<BlueprintDefinition> modelOpt = resolveBlueprint(blueprintRegistry, arguments);
                 if (modelOpt.isEmpty()) {
-                    return Map.of("status", "ERROR", "error", "modelName or modelId is required");
+                    return Map.of("status", "ERROR", "error", "blueprintName or blueprintId is required");
                 }
-                ModelDefinition model = modelOpt.get();
-                if (model.type() != ModelType.ABSOLUTE) {
+                BlueprintDefinition model = modelOpt.get();
+                if (model.type() != BlueprintType.ABSOLUTE) {
                     return Map.of(
                             "status", "ERROR",
                             "error", model.name() + " is " + model.type()
                                     + ". ensure_absolute_instance requires ABSOLUTE model."
                     );
                 }
-                String instancePath = ModelEngine.absoluteInstancePath(model);
+                String instancePath = BlueprintEngine.absoluteInstancePath(model);
                 var auth = context.authentication();
                 int lastDot = instancePath.lastIndexOf('.');
                 String parentPath = lastDot > 0 ? instancePath.substring(0, lastDot) : instancePath;
@@ -417,13 +417,13 @@ final class AgentModelTools {
                 }
                 objectAccessService.requireWrite(parentPath, auth);
                 try {
-                    PlatformObject instance = modelApplicationService.ensureAbsoluteInstanceWithRules(model.id());
+                    PlatformObject instance = blueprintApplicationService.ensureAbsoluteInstanceWithRules(model.id());
                     Map<String, Object> response = new LinkedHashMap<>();
                     response.put("status", "OK");
                     response.put("path", instance.path());
                     response.put("objectPath", instance.path());
-                    response.put("modelName", model.name());
-                    response.put("modelId", model.id());
+                    response.put("blueprintName", model.name());
+                    response.put("blueprintId", model.id());
                     response.put("objectType", instance.type().name());
                     response.put("variableCount", instance.variables().size());
                     response.put("nextSteps", "create_binding_rule / refAt on hub variables, then list_variables");
@@ -435,41 +435,41 @@ final class AgentModelTools {
         };
     }
 
-    private static Optional<ModelDefinition> resolveModel(
-            ModelRegistry modelRegistry,
+    private static Optional<BlueprintDefinition> resolveBlueprint(
+            BlueprintRegistry blueprintRegistry,
             Map<String, Object> arguments
     ) {
-        String modelId = stringArg(arguments, "modelId");
+        String modelId = stringArg(arguments, "blueprintId");
         if (!modelId.isBlank()) {
-            return modelRegistry.findById(modelId).or(() -> modelRegistry.findByName(modelId));
+            return blueprintRegistry.findById(modelId).or(() -> blueprintRegistry.findByName(modelId));
         }
-        String modelName = stringArg(arguments, "modelName");
+        String modelName = stringArg(arguments, "blueprintName");
         if (!modelName.isBlank()) {
-            return modelRegistry.findByName(modelName).or(() -> modelRegistry.findById(modelName));
+            return blueprintRegistry.findByName(modelName).or(() -> blueprintRegistry.findById(modelName));
         }
         String model = stringArg(arguments, "model");
         if (!model.isBlank()) {
-            return modelRegistry.findByName(model).or(() -> modelRegistry.findById(model));
+            return blueprintRegistry.findByName(model).or(() -> blueprintRegistry.findById(model));
         }
         String templateId = stringArg(arguments, "templateId");
         if (!templateId.isBlank()) {
-            return modelRegistry.findByName(templateId).or(() -> modelRegistry.findById(templateId));
+            return blueprintRegistry.findByName(templateId).or(() -> blueprintRegistry.findById(templateId));
         }
         return Optional.empty();
     }
 
-    private static Map<String, Object> modelSummary(ModelDefinition model) {
+    private static Map<String, Object> blueprintSummary(BlueprintDefinition model) {
         Map<String, Object> row = new LinkedHashMap<>();
-        row.put("modelName", model.name());
-        row.put("modelId", model.id());
-        row.put("modelType", model.type().name());
+        row.put("blueprintName", model.name());
+        row.put("blueprintId", model.id());
+        row.put("blueprintType", model.type().name());
         row.put("description", model.description());
         row.put("targetObjectType", model.targetObjectType().name());
         row.put("variableCount", model.variables().size());
         row.put("eventCount", model.events().size());
         row.put("functionCount", model.functions().size());
-        if (model.type() == ModelType.ABSOLUTE) {
-            row.put("absoluteInstancePath", ModelEngine.absoluteInstancePath(model));
+        if (model.type() == BlueprintType.ABSOLUTE) {
+            row.put("absoluteInstancePath", BlueprintEngine.absoluteInstancePath(model));
         }
         String cel = model.suitabilityExpression();
         if (cel != null && !cel.isBlank()) {
@@ -478,8 +478,8 @@ final class AgentModelTools {
         return row;
     }
 
-    private static Map<String, Object> modelDetail(ModelDefinition model) {
-        Map<String, Object> detail = modelSummary(model);
+    private static Map<String, Object> blueprintDetail(BlueprintDefinition model) {
+        Map<String, Object> detail = blueprintSummary(model);
         detail.put("variables", model.variables().stream().map(v -> v.name()).toList());
         detail.put("events", model.events().stream().map(e -> e.name()).toList());
         detail.put("functions", model.functions().stream().map(f -> f.name()).toList());

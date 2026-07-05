@@ -8,10 +8,10 @@ import com.ispf.server.function.MqttGatewayFunctionHandler;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.binding.BindingActivators;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /** Static model blueprints for platform fixtures (demo / lab only). */
-public final class FixtureModelDefinitions {
+public final class FixtureBlueprintDefinitions {
 
     private static final DataSchema TEMPERATURE_SCHEMA = DataSchema.builder("temperature")
             .field("value", FieldType.DOUBLE)
@@ -66,19 +66,19 @@ public final class FixtureModelDefinitions {
             .field("routedPath", FieldType.STRING)
             .build();
 
-    private FixtureModelDefinitions() {
+    private FixtureBlueprintDefinitions() {
     }
 
-    public static ModelDefinition buildMqttGatewayModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildMqttGatewayModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureModelBootstrap.MQTT_GATEWAY_MODEL,
+                FixtureBlueprintBootstrap.MQTT_GATEWAY_MODEL,
                 "MQTT ingress gateway — routes lastIngress to child sensors via dispatchTelemetry",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastIngress",
                                 "Latest MQTT message (topic + raw payload)",
                                 "ingress",
@@ -87,7 +87,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(MQTT_INGRESS_SCHEMA, Map.of("topic", "", "raw", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "dispatchStatus",
                                 "Last dispatchTelemetry result",
                                 "runtime",
@@ -96,7 +96,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(DISPATCH_STATUS_SCHEMA, Map.of("ok", false, "message", "", "routedPath", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sensorParentPath",
                                 "Parent path for routed child sensors",
                                 "config",
@@ -105,7 +105,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sensorNamePrefix",
                                 "Child sensor object name prefix (suffix from topic index)",
                                 "config",
@@ -114,7 +114,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "loadtest-mqtt-sensor-"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "topicIndexPattern",
                                 "Regex with capture group for sensor index in MQTT topic",
                                 "config",
@@ -126,7 +126,7 @@ public final class FixtureModelDefinitions {
                                         Map.of("value", "ispf/loadtest/(\\d+)/temperature")
                                 )
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -135,7 +135,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "mqtt"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -144,7 +144,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -153,7 +153,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -165,7 +165,7 @@ public final class FixtureModelDefinitions {
                                         Map.of("value", "{\"ingressVariable\":\"lastIngress\"}")
                                 )
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
@@ -185,7 +185,7 @@ public final class FixtureModelDefinitions {
                         MQTT_INGRESS_SCHEMA,
                         DISPATCH_STATUS_SCHEMA
                 )),
-                List.of(new ModelBindingRule(
+                List.of(new BlueprintBindingRule(
                         "dispatch-on-ingress",
                         "Dispatch ingress to child sensor",
                         true,
@@ -208,16 +208,16 @@ public final class FixtureModelDefinitions {
         );
     }
 
-    public static ModelDefinition buildDeviceDriverModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildDeviceDriverModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureModelBootstrap.DEVICE_DRIVER_MODEL,
+                FixtureBlueprintBootstrap.DEVICE_DRIVER_MODEL,
                 "Generic device with driver binding (driverId, config, mappings)",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "status",
                                 "Device connectivity status",
                                 "status",
@@ -225,7 +225,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 false, DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -233,7 +233,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -241,7 +241,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -249,7 +249,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -257,7 +257,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
@@ -265,7 +265,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "{}"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "timeZone",
                                 "IANA timezone for device-local timestamps (empty = inherit from parent or UTC)",
                                 "config",
@@ -283,16 +283,16 @@ public final class FixtureModelDefinitions {
         );
     }
 
-    public static ModelDefinition buildMetersModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildMetersModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureModelBootstrap.METERS_MODEL,
+                FixtureBlueprintBootstrap.METERS_MODEL,
                 "MQTT meter instance — temperature telemetry",
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 ObjectType.CUSTOM,
                 "",
                 List.of(
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "temperature",
                                 "Current temperature reading",
                                 "telemetry",
@@ -311,16 +311,16 @@ public final class FixtureModelDefinitions {
         );
     }
 
-    public static ModelDefinition buildMqttMeterBusModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildMqttMeterBusModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureModelBootstrap.MQTT_METER_BUS_MODEL,
+                FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL,
                 "MQTT meter bus — ingests JSON meter payloads and upserts Meters instances",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "lastIngress",
                                 "Latest MQTT message (topic + raw payload)",
                                 "ingress",
@@ -329,7 +329,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(MQTT_INGRESS_SCHEMA, Map.of("topic", "", "raw", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "ingestStatus",
                                 "Last ingestMeterPayload result",
                                 "runtime",
@@ -338,7 +338,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(DISPATCH_STATUS_SCHEMA, Map.of("ok", false, "message", "", "routedPath", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "instanceParentPath",
                                 "Parent path for auto-created meter instances",
                                 "config",
@@ -347,16 +347,16 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "root.platform.instances"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "instanceModelName",
                                 "INSTANCE model name for auto-created meters",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 true,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureModelBootstrap.METERS_MODEL))
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.METERS_MODEL))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -365,7 +365,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "mqtt"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -374,7 +374,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -383,7 +383,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
@@ -392,10 +392,10 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(
                                         STRING_VALUE_SCHEMA,
-                                        Map.of("value", FixtureModelBootstrap.METER_INGRESS_DRIVER_CONFIG)
+                                        Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_DRIVER_CONFIG)
                                 )
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
@@ -404,22 +404,22 @@ public final class FixtureModelDefinitions {
                                 true,
                                 DataRecord.single(
                                         STRING_VALUE_SCHEMA,
-                                        Map.of("value", FixtureModelBootstrap.METER_INGRESS_POINT_MAPPINGS)
+                                        Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_POINT_MAPPINGS)
                                 )
                         )
                 ),
                 List.of(),
                 List.of(new FunctionDescriptor(
-                        FixtureModelBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
+                        FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
                         "Parse meter JSON from MQTT ingress and upsert Meters instance",
                         MQTT_INGRESS_SCHEMA,
                         DISPATCH_STATUS_SCHEMA,
                         "script",
-                        FixtureModelBootstrap.METER_INGEST_SCRIPT_BODY,
+                        FixtureBlueprintBootstrap.METER_INGEST_SCRIPT_BODY,
                         null,
                         "1"
                 )),
-                List.of(new ModelBindingRule(
+                List.of(new BlueprintBindingRule(
                         "ingest-on-ingress",
                         "Ingest meter payload from MQTT",
                         true,
@@ -432,7 +432,7 @@ public final class FixtureModelDefinitions {
                                 true
                         ),
                         "",
-                        "callFunction(" + FixtureModelBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", lastIngress)",
+                        "callFunction(" + FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", lastIngress)",
                         "ingestStatus",
                         "ok"
                 )),
@@ -442,16 +442,16 @@ public final class FixtureModelDefinitions {
         );
     }
 
-    public static ModelDefinition buildBaseSensorModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildBaseSensorModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "base-sensor-v1",
                 "Base temperature sensor — family blueprint",
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "temperature",
                                 "Current temperature",
                                 "telemetry",
@@ -459,7 +459,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 20.0, "unit", "C"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "threshold",
                                 "Alarm threshold",
                                 "config",
@@ -471,22 +471,22 @@ public final class FixtureModelDefinitions {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of("modelVersion", "1"),
+                Map.of("blueprintVersion", "1"),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    public static ModelDefinition buildVendorSensorExtensionModel(String baseModelId) {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildVendorSensorExtensionModel(String baseModelId) {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "vendor-sensor-ext-v1",
                 "Vendor extension — adds humidity without duplicating base sensor",
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "humidity",
                                 "Relative humidity percent",
                                 "telemetry",
@@ -494,7 +494,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 45.0))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "threshold",
                                 "Vendor-specific threshold override",
                                 "config",
@@ -506,22 +506,22 @@ public final class FixtureModelDefinitions {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of("extendsModelId", baseModelId, "modelVersion", "1"),
+                Map.of("extendsBlueprintId", baseModelId, "blueprintVersion", "1"),
                 Instant.now(),
                 Instant.now()
         );
     }
 
-    public static ModelDefinition buildSnmpAgentModel() {
-        return new ModelDefinition(
+    public static BlueprintDefinition buildSnmpAgentModel() {
+        return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureModelBootstrap.SNMP_AGENT_MODEL,
+                FixtureBlueprintBootstrap.SNMP_AGENT_MODEL,
                 "SNMP agent device (MIB-II system group)",
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "status",
                                 "Device connectivity status",
                                 "status",
@@ -529,7 +529,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 false, DataRecord.single(STATUS_SCHEMA, Map.of("online", false, "lastSeen", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sysName",
                                 "SNMP sysName (1.3.6.1.2.1.1.5.0)",
                                 "telemetry",
@@ -537,7 +537,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sysDescr",
                                 "SNMP sysDescr (1.3.6.1.2.1.1.1.0)",
                                 "telemetry",
@@ -545,7 +545,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "sysUpTime",
                                 "SNMP sysUpTime (1.3.6.1.2.1.1.3.0)",
                                 "telemetry",
@@ -553,7 +553,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sysLocation",
                                 "SNMP sysLocation (1.3.6.1.2.1.1.6.0)",
                                 "telemetry",
@@ -561,7 +561,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "sysContact",
                                 "SNMP sysContact (1.3.6.1.2.1.1.4.0)",
                                 "telemetry",
@@ -569,7 +569,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_STRING_SCHEMA, Map.of("value", "", "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "hrMemorySize",
                                 "Physical memory size in KB (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.2.2.0)",
                                 "telemetry",
@@ -577,7 +577,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "hrSystemProcesses",
                                 "Running processes (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.1.6.0)",
                                 "telemetry",
@@ -585,7 +585,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "hrSystemNumUsers",
                                 "Logged-in users (HOST-RESOURCES-MIB 1.3.6.1.2.1.25.1.5.0)",
                                 "telemetry",
@@ -593,7 +593,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "ifNumber",
                                 "Network interfaces count (IF-MIB 1.3.6.1.2.1.2.1.0)",
                                 "telemetry",
@@ -601,7 +601,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "ifInOctets",
                                 "IF-MIB ifInOctets Counter32 — total octets received on interface (monotonic, wraps at 2^32)",
                                 "telemetry",
@@ -609,7 +609,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "ifOutOctets",
                                 "IF-MIB ifOutOctets Counter32 — total octets sent on interface (monotonic, wraps at 2^32)",
                                 "telemetry",
@@ -617,7 +617,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "ifInOctetsRate",
                                 "Inbound traffic rate B/s derived from ifInOctets Counter32",
                                 "telemetry",
@@ -626,7 +626,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "ifOutOctetsRate",
                                 "Outbound traffic rate B/s derived from ifOutOctets Counter32",
                                 "telemetry",
@@ -635,7 +635,7 @@ public final class FixtureModelDefinitions {
                                 false,
                                 DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.withHistory(
+                        BlueprintVariableDefinition.withHistory(
                                 "hrProcessorLoad",
                                 "CPU load % (HOST-RESOURCES-MIB hrProcessorLoad, Linux index 196608)",
                                 "telemetry",
@@ -643,7 +643,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(SNMP_NUMERIC_SCHEMA, Map.of("value", 0.0, "raw", "", "type", ""))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -651,7 +651,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "snmp"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverStatus",
                                 "Driver runtime status",
                                 "driver",
@@ -659,7 +659,7 @@ public final class FixtureModelDefinitions {
                                 true,
                                 false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "STOPPED"))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPollIntervalMs",
                                 "Driver polling interval",
                                 "driver",
@@ -667,28 +667,28 @@ public final class FixtureModelDefinitions {
                                 true,
                                 true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 5000))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverConfigJson",
                                 "Driver configuration JSON",
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureModelBootstrap.SNMP_DRIVER_CONFIG))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "driverPointMappingsJson",
                                 "Driver point mappings JSON",
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureModelBootstrap.SNMP_POINT_MAPPINGS))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS))
                         )
                 ),
                 List.of(),
                 List.of(),
                 List.of(
-                        ModelBindingRule.of("if-in-octets-rate", "ifInOctetsRate", "counterRate(ifInOctets)"),
-                        ModelBindingRule.of("if-out-octets-rate", "ifOutOctetsRate", "counterRate(ifOutOctets)")
+                        BlueprintBindingRule.of("if-in-octets-rate", "ifInOctetsRate", "counterRate(ifInOctets)"),
+                        BlueprintBindingRule.of("if-out-octets-rate", "ifOutOctetsRate", "counterRate(ifOutOctets)")
                 ),
                 Map.of(),
                 Instant.now(),

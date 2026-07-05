@@ -174,7 +174,7 @@ Content-Type: application/json
       "status": "ACTIVE"
     }
   ],
-  "models": [
+  "blueprints": [
     {
       "name": "my-device-v1",
       "description": "Custom device template",

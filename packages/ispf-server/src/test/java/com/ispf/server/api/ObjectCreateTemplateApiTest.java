@@ -2,7 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.bootstrap.LabModelBootstrap;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,15 +52,15 @@ class ObjectCreateTemplateApiTest {
                 ObjectType.DEVICE,
                 "Template create test",
                 null,
-                LabModelBootstrap.VIRTUAL_LAB_MODEL
+                LabBlueprintBootstrap.VIRTUAL_LAB_MODEL
         );
-        objectTemplateService.applyTemplate(node.path(), LabModelBootstrap.VIRTUAL_LAB_MODEL);
+        objectTemplateService.applyTemplate(node.path(), LabBlueprintBootstrap.VIRTUAL_LAB_MODEL);
         objectManager.persistNodeTree(node.path());
 
         mockMvc.perform(get("/api/v1/objects/by-path")
                         .param("path", PATH))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.templateId").value(LabModelBootstrap.VIRTUAL_LAB_MODEL));
+                .andExpect(jsonPath("$.templateId").value(LabBlueprintBootstrap.VIRTUAL_LAB_MODEL));
 
         mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
                         .param("path", PATH)

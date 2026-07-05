@@ -57,7 +57,7 @@ final class AgentLoopGuard {
             }
             return """
                     Object created. For virtual simulators use create_virtual_device next time. \
-                    If driverId=virtual: set templateId from list_relative_models OR recreate with create_virtual_device; \
+                    If driverId=virtual: set templateId from list_relative_blueprints OR recreate with create_virtual_device; \
                     set driverConfigJson profile from list_virtual_profiles, configure_driver autoStart=true, list_variables before finish.""";
         }
         if ("save_workflow_bpmn".equals(lastTool) && lastStepGroundTruthBlocked(steps)) {
@@ -89,7 +89,7 @@ final class AgentLoopGuard {
         if ("search_platform_recipes".equals(lastTool) || "get_automation_schema".equals(lastTool)) {
             return """
                     Recipe/schema loaded — this is a pattern, not live tree state. \
-                    Next: list_objects on the real parent folder, list_relative_models / list_virtual_profiles, \
+                    Next: list_objects on the real parent folder, list_relative_blueprints / list_virtual_profiles, \
                     then create using paths and modelName from those tool results only.""";
         }
         if ("create_virtual_device".equals(lastTool)) {

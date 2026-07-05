@@ -1,4 +1,4 @@
-# Совместная работа (Phase 11)
+﻿# Совместная работа (Phase 11)
 
 Механизмы безопасной параллельной работы нескольких инженеров над одним деревом объектов ISPF.
 
@@ -69,9 +69,9 @@ GET    /api/v1/objects/leases
 ### Model merge
 
 ```
-POST /api/v1/models/merge-preview
-POST /api/v1/models/merge-apply
-POST /api/v1/models/{id}/upgrade-instances?dryRun=true
+POST /api/v1/blueprints/merge-preview
+POST /api/v1/blueprints/merge-apply
+POST /api/v1/blueprints/{id}/upgrade-instances?dryRun=true
 ```
 
 Preview показывает конфликты переменных между двумя моделями; apply требует resolution per conflict.
@@ -105,5 +105,5 @@ Environment badge: `GET /api/v1/info` → `environment` (`ispf.environment`, def
 
 - [SECURITY.md](SECURITY.md) — RBAC и ACL
 - [OBJECT_MODEL.md](OBJECT_MODEL.md) — дерево объектов
-- [MODELS.md](MODELS.md) — diff/upgrade моделей
+- [BLUEPRINTS.md](BLUEPRINTS.md) — diff/upgrade моделей
 - [ROADMAP.md](ROADMAP.md) — Phase 11

@@ -15,9 +15,9 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.api.dto.ObjectDto;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.plugin.model.ModelApplicationService;
-import com.ispf.server.plugin.model.dto.AppliedModelDto;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
+import com.ispf.server.plugin.blueprint.dto.AppliedBlueprintDto;
 import com.ispf.server.api.dto.ObjectEditorDto;
 import com.ispf.server.api.dto.VariableDto;
 import com.ispf.server.object.ObjectChangeEvent;
@@ -89,8 +89,8 @@ public class ObjectController {
     private final FederationBindService federationBindService;
     private final ObjectMapper objectMapper;
     private final ObjectEditLeaseService editLeaseService;
-    private final ModelRegistry modelRegistry;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintApplicationService blueprintApplicationService;
     private final VisualGroupService visualGroupService;
     private final ObjectBulkDeleteService objectBulkDeleteService;
     private final DriverRuntimeService driverRuntimeService;
@@ -112,8 +112,8 @@ public class ObjectController {
             FederationBindService federationBindService,
             ObjectMapper objectMapper,
             ObjectEditLeaseService editLeaseService,
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintApplicationService blueprintApplicationService,
             VisualGroupService visualGroupService,
             ObjectBulkDeleteService objectBulkDeleteService,
             DriverRuntimeService driverRuntimeService
@@ -134,8 +134,8 @@ public class ObjectController {
         this.federationBindService = federationBindService;
         this.objectMapper = objectMapper;
         this.editLeaseService = editLeaseService;
-        this.modelRegistry = modelRegistry;
-        this.modelApplicationService = modelApplicationService;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintApplicationService = blueprintApplicationService;
         this.visualGroupService = visualGroupService;
         this.objectBulkDeleteService = objectBulkDeleteService;
         this.driverRuntimeService = driverRuntimeService;
@@ -151,7 +151,7 @@ public class ObjectController {
         return ObjectDto.from(
                 node,
                 objectUiIconService.readIconId(node).orElse(null),
-                AppliedModelDto.resolve(node, modelRegistry)
+                AppliedBlueprintDto.resolve(node, blueprintRegistry)
         );
     }
 
@@ -159,7 +159,7 @@ public class ObjectController {
         ObjectDto dto = ObjectDto.fromLite(
                 node,
                 objectUiIconService.readIconId(node).orElse(null),
-                AppliedModelDto.resolve(node, modelRegistry)
+                AppliedBlueprintDto.resolve(node, blueprintRegistry)
         );
         return ObjectTreeDriverEnricher.enrichLite(dto, node, driverRuntimeService);
     }
@@ -307,10 +307,10 @@ public class ObjectController {
                 request.templateId()
         );
         objectTemplateService.applyTemplate(node.path(), request.templateId());
-        boolean autoApplyRelative = request.autoApplyRelativeModels() == null
-                || Boolean.TRUE.equals(request.autoApplyRelativeModels());
+        boolean autoApplyRelative = request.autoApplyRelativeBlueprints() == null
+                || Boolean.TRUE.equals(request.autoApplyRelativeBlueprints());
         if (autoApplyRelative) {
-            modelApplicationService.applyRelativeModelsWithRules(node.path());
+            blueprintApplicationService.applyRelativeBlueprintsWithRules(node.path());
         }
         // #region agent log
         if (request.type() == ObjectType.DEVICE) {
@@ -764,7 +764,7 @@ public class ObjectController {
             String displayName,
             String description,
             String templateId,
-            Boolean autoApplyRelativeModels,
+            Boolean autoApplyRelativeBlueprints,
             String driverId,
             Integer driverPollIntervalMs,
             Boolean autoStartDriver
@@ -808,7 +808,7 @@ public class ObjectController {
                 true,
                 target.peerId().toString(),
                 target.remotePath(),
-                remote.appliedModels() != null ? remote.appliedModels() : List.of(),
+                remote.appliedBlueprints() != null ? remote.appliedBlueprints() : List.of(),
                 false,
                 null,
                 false,

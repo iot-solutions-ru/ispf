@@ -1,37 +1,37 @@
-# Models Plugin
+﻿# Blueprints Plugin
 
-Модуль `ispf-plugin-model` — система **blueprint** (шаблонов структуры объектов). Один движок, три вида в дереве и API.
+Модуль `ispf-plugin-blueprint` — система **blueprint** (шаблонов структуры объектов). Один движок, три вида в дереве и API.
 
-## Три вида моделей (`ModelType`)
+## Три вида моделей (`BlueprintType`)
 
 | Тип | Каталог | Поведение |
 |-----|---------|-----------|
-| `RELATIVE` | `root.platform.relative-models` | Optional mixins — variables/events/functions **вливаются** в существующий объект |
+| `RELATIVE` | `root.platform.relative-blueprints` | Optional mixins — variables/events/functions **вливаются** в существующий объект |
 | `INSTANCE` | `root.platform.instance-types` | Шаблон **типа объекта** — создание экземпляров через instantiate |
-| `ABSOLUTE` | `root.platform.absolute-models` | Singleton blueprint — один живой объект в `root.platform.instances.*` |
+| `ABSOLUTE` | `root.platform.absolute-blueprints` | Singleton blueprint — один живой объект в `root.platform.instances.*` |
 
-**System-intrinsic schemas** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в registry для bootstrap, но **не показываются** в каталоге relative-models и **не попадают** в `appliedModelIds`. Структура вшивается в экземпляр через `*ObjectService.ensureStructure()`.
+**System-intrinsic schemas** (1:1 с `ObjectType`: `DATA_SOURCE`, `SCHEDULE`, `DASHBOARD`, …) хранятся в registry для bootstrap, но **не показываются** в каталоге relative-blueprints и **не попадают** в `appliedBlueprintIds`. Структура вшивается в экземпляр через `*ObjectService.ensureStructure()`.
 
 См. [0011](decisions/0011-model-type-semantics.md).
 
 ### Связь с объектом
 
 - `templateId` — primary model (INSTANCE/ABSOLUTE)
-- `appliedModelIds` — JSON-массив id всех применённых моделей (persisted)
+- `appliedBlueprintIds` — JSON-массив id всех применённых моделей (persisted)
 - При merge коллизий имён: **last-wins + warning** (не ошибка)
 
 ### Auto-apply RELATIVE
 
-При `POST /objects` с `autoApplyRelativeModels=true` (default) вызывается `ModelEngine.applyRelativeModels()`.
+При `POST /objects` с `autoApplyRelativeBlueprints=true` (default) вызывается `BlueprintEngine.applyRelativeModels()`.
 
 **Условия auto-apply** (все обязательны):
 
-1. `ModelType.RELATIVE`, не system-intrinsic
+1. `BlueprintType.RELATIVE`, не system-intrinsic
 2. `targetObjectType` совпадает с типом объекта
 3. **`suitabilityExpression` (Applicability condition, CEL) не пустой** и вычисляется в `true`
-4. Модель ещё не в `appliedModelIds`
+4. Модель ещё не в `appliedBlueprintIds`
 
-**Пустой CEL** → модель **никогда** не применяется автоматически. Для mixin без условия используйте явный apply: `templateId` при create, `POST /api/v1/relative-models/{id}/apply`, companion-models в bundle.
+**Пустой CEL** → модель **никогда** не применяется автоматически. Для mixin без условия используйте явный apply: `templateId` при create, `POST /api/v1/relative-blueprints/{id}/apply`, companion-models в bundle.
 
 **Явный apply** (template / API): проверяется `targetObjectType`; CEL опционален — если задан, должен быть `true`.
 
@@ -39,7 +39,7 @@
 
 ### Applicability condition (CEL)
 
-Поле `suitabilityExpression` в `ModelDefinition` — в Web Console: *Applicability condition (CEL)*.
+Поле `suitabilityExpression` в `BlueprintDefinition` — в Web Console: *Applicability condition (CEL)*.
 
 | Значение | Auto-apply | Явный apply |
 |----------|------------|-------------|
@@ -53,12 +53,12 @@
 
 | Уровень | Источник | Когда в registry |
 |---------|----------|------------------|
-| **System-intrinsic** | `ModelBootstrap` | Всегда; не в каталоге relative-models |
+| **System-intrinsic** | `ModelBootstrap` | Всегда; не в каталоге relative-blueprints |
 | **Platform built-in** | `ModelBootstrap` | Всегда (`dashboard-v1`, `alert-rule-v1`, …) |
 | **Fixtures** | `FixtureModelBootstrap` | Только `ispf.bootstrap.fixtures-enabled=true` |
 | **Solution** | `bundle.json` → `models[]` | При deploy bundle |
 
-**System-intrinsic** (схема вшивается в экземпляр, без `appliedModelIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.
+**System-intrinsic** (схема вшивается в экземпляр, без `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.
 
 **Fixtures** (demo/lab, не часть core): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Конфиг: `ispf.bootstrap.fixtures-enabled` (default `true`).
 
@@ -68,28 +68,28 @@
 
 | Method | Path | Описание |
 |--------|------|----------|
-| GET/POST/… | `/api/v1/relative-models` | RELATIVE facades |
+| GET/POST/… | `/api/v1/relative-blueprints` | RELATIVE facades |
 | GET/POST/… | `/api/v1/instance-types` | INSTANCE facades (+ `?platformType=` для create dialog) |
-| GET/POST/… | `/api/v1/absolute-models` | ABSOLUTE facades |
-| GET/POST/… | `/api/v1/models` | Legacy unified API (совместимость) |
+| GET/POST/… | `/api/v1/absolute-blueprints` | ABSOLUTE facades |
+| GET/POST/… | `/api/v1/blueprints` | Legacy unified API (совместимость) |
 
-## Состав модели (`ModelDefinition`)
+## Состав модели (`BlueprintDefinition`)
 
 - Переменные (`ModelVariableDefinition`) — schema, default, group, readable/writable
 - События (`EventDescriptor`)
 - Функции (`FunctionDescriptor`)
 - Binding rules (`ModelBindingRule`) — см. [BINDINGS.md](BINDINGS.md)
-- Метаданные: name, description, `ObjectType`, `ModelType`
+- Метаданные: name, description, `ObjectType`, `BlueprintType`
 
 ## Engine
 
 | Класс | Назначение |
 |-------|------------|
 | `ModelRegistry` | In-memory каталог моделей |
-| `ModelEngine` | CRUD, apply, instantiate, fromObject, `applyRelativeModels` (CEL-gated) |
+| `BlueprintEngine` | CRUD, apply, instantiate, fromObject, `applyRelativeModels` (CEL-gated) |
 | `ModelBootstrap` | Platform built-in + system-intrinsic models |
 | `FixtureModelBootstrap` | Demo/lab fixture models (`fixtures-enabled`) |
-| `ModelPersistenceService` | Сохранение пользовательских моделей в `model_definitions` (REQ-PF-07) |
+| `ModelPersistenceService` | Сохранение пользовательских моделей в `blueprint_definitions` (REQ-PF-07) |
 
 Пользовательские модели (не `builtin`) восстанавливаются из БД при старте сервера после `ensureBuiltInModels()`.
 
@@ -97,16 +97,16 @@
 
 | Method | Path | Описание |
 |--------|------|----------|
-| GET | `/api/v1/models` | Список |
-| GET | `/api/v1/models/{id}` | По ID |
-| GET | `/api/v1/models/by-name/{name}` | По имени |
-| POST | `/api/v1/models` | Создать |
-| PUT | `/api/v1/models/{id}` | Обновить |
-| DELETE | `/api/v1/models/{id}` | Удалить |
-| POST | `/api/v1/models/{id}/apply?objectPath=` | Применить к объекту |
-| POST | `/api/v1/models/{id}/instantiate` | Создать экземпляр |
-| POST | `/api/v1/models/from-object` | Экспорт модели из объекта |
-| GET | `/api/v1/models/attachments` | Привязки model↔type |
+| GET | `/api/v1/blueprints` | Список |
+| GET | `/api/v1/blueprints/{id}` | По ID |
+| GET | `/api/v1/blueprints/by-name/{name}` | По имени |
+| POST | `/api/v1/blueprints` | Создать |
+| PUT | `/api/v1/blueprints/{id}` | Обновить |
+| DELETE | `/api/v1/blueprints/{id}` | Удалить |
+| POST | `/api/v1/blueprints/{id}/apply?objectPath=` | Применить к объекту |
+| POST | `/api/v1/blueprints/{id}/instantiate` | Создать экземпляр |
+| POST | `/api/v1/blueprints/from-object` | Экспорт модели из объекта |
+| GET | `/api/v1/blueprints/attachments` | Привязки model↔type |
 
 Доступ: **admin**. См. [API.md](API.md).
 
@@ -178,7 +178,7 @@ SNMP-устройство (MIB-II + HOST-RESOURCES). Демо: `root.platform.de
 ## Пример: instantiate
 
 ```http
-POST /api/v1/models/{id}/instantiate
+POST /api/v1/blueprints/{id}/instantiate
 Content-Type: application/json
 
 {

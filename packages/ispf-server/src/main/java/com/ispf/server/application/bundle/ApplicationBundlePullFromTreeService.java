@@ -342,7 +342,7 @@ public class ApplicationBundlePullFromTreeService {
                 pick(sections.contains("objects"), objects, base.objects()),
                 pick(sections.contains("dashboards"), dashboards, base.dashboards()),
                 pick(sections.contains("workflows"), workflows, base.workflows()),
-                base.models(),
+                base.blueprints(),
                 pick(sections.contains("migrations"), migrations, base.migrations()),
                 pick(sections.contains("functions"), functions, base.functions()),
                 pick(sections.contains("bindings"), bindings, base.bindings()),

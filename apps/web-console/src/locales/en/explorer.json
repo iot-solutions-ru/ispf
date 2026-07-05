@@ -19,7 +19,7 @@
   "contextMenu.create.device": "Create Device",
   "contextMenu.create.instance": "Create Instance",
   "contextMenu.create.migration": "Create Migration",
-  "contextMenu.create.model": "Create Model",
+  "contextMenu.create.blueprint": "Create Blueprint",
   "contextMenu.create.object": "Create Object",
   "contextMenu.create.operator-app": "Create Operator app",
   "contextMenu.create.report": "Create Report",

@@ -16,7 +16,7 @@ public final class ApplicationSchemaSupport {
             "application_data_seeds",
             "application_functions",
             "platform_schedules",
-            "model_definitions",
+            "blueprint_definitions",
             "function_invoke_audit",
             "binding_invoke_audit",
             "workflow_cancel_journal",

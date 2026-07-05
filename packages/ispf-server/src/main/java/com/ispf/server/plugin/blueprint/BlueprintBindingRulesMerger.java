@@ -1,8 +1,8 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.binding.BindingRule;
-import com.ispf.plugin.model.ModelBindingRule;
-import com.ispf.plugin.model.ModelDefinition;
+import com.ispf.plugin.blueprint.BlueprintBindingRule;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class ModelBindingRulesMerger {
+public class BlueprintBindingRulesMerger {
 
     private final BindingRulesService bindingRulesService;
     private final BindingDependencyIndex dependencyIndex;
     private final BindingRuleEngine bindingRuleEngine;
 
-    public ModelBindingRulesMerger(
+    public BlueprintBindingRulesMerger(
             BindingRulesService bindingRulesService,
             BindingDependencyIndex dependencyIndex,
             BindingRuleEngine bindingRuleEngine
@@ -30,13 +30,13 @@ public class ModelBindingRulesMerger {
         this.bindingRuleEngine = bindingRuleEngine;
     }
 
-    public void mergeModelRules(String objectPath, ModelDefinition model, Map<String, String> parameters) {
-        mergeModelRules(objectPath, model, parameters, true);
+    public void mergeBlueprintRules(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
+        mergeBlueprintRules(objectPath, model, parameters, true);
     }
 
-    public void mergeModelRules(
+    public void mergeBlueprintRules(
             String objectPath,
-            ModelDefinition model,
+            BlueprintDefinition model,
             Map<String, String> parameters,
             boolean evaluateRules
     ) {
@@ -49,7 +49,7 @@ public class ModelBindingRulesMerger {
         for (BindingRule existing : merged) {
             byId.put(existing.id(), existing);
         }
-        for (ModelBindingRule modelRule : model.bindingRules()) {
+        for (BlueprintBindingRule modelRule : model.bindingRules()) {
             BindingRule resolved = resolve(modelRule, resolvedParams);
             byId.put(resolved.id(), resolved);
         }
@@ -60,7 +60,7 @@ public class ModelBindingRulesMerger {
         }
     }
 
-    private static BindingRule resolve(ModelBindingRule modelRule, Map<String, String> parameters) {
+    private static BindingRule resolve(BlueprintBindingRule modelRule, Map<String, String> parameters) {
         String expression = resolveParameters(modelRule.expression(), parameters);
         String condition = resolveParameters(modelRule.condition(), parameters);
         return new BindingRule(

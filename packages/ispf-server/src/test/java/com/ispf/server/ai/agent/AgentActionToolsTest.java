@@ -4,9 +4,9 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.event.EventService;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.function.FunctionService;
@@ -50,7 +50,7 @@ class AgentActionToolsTest {
     @Mock
     private EventService eventService;
     @Mock
-    private ModelRegistry modelRegistry;
+    private BlueprintRegistry BlueprintRegistry;
     @Mock
     private HaystackExportService haystackExportService;
     @Mock
@@ -67,7 +67,7 @@ class AgentActionToolsTest {
                 objectAccessService,
                 tenantScopeService,
                 eventService,
-                modelRegistry,
+                BlueprintRegistry,
                 haystackExportService,
                 new ObjectMapper()
         );
@@ -93,12 +93,12 @@ class AgentActionToolsTest {
 
     @Test
     void listObjectModelsReturnsTemplates() throws Exception {
-        when(modelRegistry.all()).thenReturn(List.of(
-                new ModelDefinition(
+        when(BlueprintRegistry.all()).thenReturn(List.of(
+                new BlueprintDefinition(
                         "id-snmp",
                         "snmp-agent-v1",
                         "SNMP agent device",
-                        ModelType.INSTANCE,
+                        BlueprintType.INSTANCE,
                         ObjectType.DEVICE,
                         "",
                         List.of(),
@@ -111,7 +111,7 @@ class AgentActionToolsTest {
                 )
         ));
 
-        PlatformAgentTool listModels = tool("list_object_models");
+        PlatformAgentTool listModels = tool("list_object_blueprints");
         Map<String, Object> result = listModels.execute(Map.of("query", "snmp"), new AgentContext("admin", null, null));
 
         assertEquals("OK", result.get("status"));

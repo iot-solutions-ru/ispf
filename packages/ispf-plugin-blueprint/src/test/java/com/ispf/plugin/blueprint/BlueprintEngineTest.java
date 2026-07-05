@@ -1,4 +1,4 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
@@ -21,10 +21,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class ModelEngineTest {
+class BlueprintEngineTest {
 
     private ObjectTree objectTree;
-    private ModelEngine engine;
+    private BlueprintEngine engine;
 
     @BeforeEach
     void setUp() {
@@ -46,8 +46,8 @@ class ModelEngineTest {
                 null
         ));
 
-        engine = new ModelEngine(
-                new ModelRegistry(),
+        engine = new BlueprintEngine(
+                new BlueprintRegistry(),
                 objectTree,
                 new ExpressionEngine()
         );
@@ -60,14 +60,14 @@ class ModelEngineTest {
                 .field("unit", FieldType.STRING)
                 .build();
 
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "mqtt-sensor-v1",
                 "MQTT temperature sensor",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
-                List.of(ModelVariableDefinition.withHistory(
+                List.of(BlueprintVariableDefinition.withHistory(
                         "temperature",
                         "Current temperature",
                         "telemetry",
@@ -87,7 +87,7 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(model);
+        engine.createBlueprint(model);
 
         PlatformObject device = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -99,9 +99,9 @@ class ModelEngineTest {
         );
         objectTree.register(device);
 
-        ModelApplyResult result = engine.applyModel(model.id(), device.path());
+        BlueprintApplyResult result = engine.applyBlueprint(model.id(), device.path());
 
-        assertThat(result.attachment().modelName()).isEqualTo("mqtt-sensor-v1");
+        assertThat(result.attachment().blueprintName()).isEqualTo("mqtt-sensor-v1");
         assertThat(device.getVariable("temperature")).isPresent();
         assertThat(device.events()).containsKey("thresholdExceeded");
     }
@@ -112,14 +112,14 @@ class ModelEngineTest {
                 .field("value", FieldType.DOUBLE)
                 .build();
 
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "auto-skip-sensor",
                 "Sensor without applicability CEL",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "temperature",
                         "Current temperature",
                         "telemetry",
@@ -134,7 +134,7 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(model);
+        engine.createBlueprint(model);
 
         PlatformObject device = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -146,7 +146,7 @@ class ModelEngineTest {
         );
         objectTree.register(device);
 
-        List<ModelApplyResult> applied = engine.applyRelativeModels(device.path());
+        List<BlueprintApplyResult> applied = engine.applyRelativeBlueprints(device.path());
 
         assertThat(applied).isEmpty();
         assertThat(device.getVariable("temperature")).isEmpty();
@@ -158,14 +158,14 @@ class ModelEngineTest {
                 .field("value", FieldType.BOOLEAN)
                 .build();
 
-        ModelDefinition matching = new ModelDefinition(
+        BlueprintDefinition matching = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "cel-match",
                 "Applies when flag is true",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "self.flag.value == true",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "matched",
                         "Matched marker",
                         "meta",
@@ -181,14 +181,14 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        ModelDefinition nonMatching = new ModelDefinition(
+        BlueprintDefinition nonMatching = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "cel-no-match",
                 "Applies when flag is false",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "self.flag.value == false",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "nonMatched",
                         "Non-matched marker",
                         "meta",
@@ -204,8 +204,8 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(matching);
-        engine.createModel(nonMatching);
+        engine.createBlueprint(matching);
+        engine.createBlueprint(nonMatching);
 
         PlatformObject device = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -224,21 +224,21 @@ class ModelEngineTest {
                 DataRecord.single(flagSchema, Map.of("value", true))
         ));
 
-        List<ModelApplyResult> applied = engine.applyRelativeModels(device.path());
+        List<BlueprintApplyResult> applied = engine.applyRelativeBlueprints(device.path());
 
         assertThat(applied).hasSize(1);
-        assertThat(applied.getFirst().attachment().modelName()).isEqualTo("cel-match");
+        assertThat(applied.getFirst().attachment().blueprintName()).isEqualTo("cel-match");
         assertThat(device.getVariable("matched")).isPresent();
         assertThat(device.getVariable("nonMatched")).isEmpty();
     }
 
     @Test
-    void intrinsicModelsSkipCatalogAndAppliedModelIds() {
+    void intrinsicModelsSkipCatalogAndappliedBlueprintIds() {
         objectTree.register(new PlatformObject(
                 UUID.randomUUID().toString(),
-                ModelCatalogRoots.RELATIVE,
-                ObjectType.MODEL,
-                "Relative Models",
+                BlueprintCatalogRoots.RELATIVE,
+                ObjectType.BLUEPRINT,
+                "Relative Blueprints",
                 null,
                 null
         ));
@@ -251,14 +251,14 @@ class ModelEngineTest {
                 null
         ));
 
-        ModelDefinition intrinsic = new ModelDefinition(
+        BlueprintDefinition intrinsic = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "data-source-v1",
                 "Data source schema",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DATA_SOURCE,
                 "",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "schemaName",
                         "Schema",
                         "config",
@@ -273,13 +273,13 @@ class ModelEngineTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                SystemIntrinsicModels.parameters(),
+                SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(intrinsic);
+        engine.createBlueprint(intrinsic);
 
-        assertThat(objectTree.findByPath("root.platform.relative-models.data-source-v1")).isEmpty();
+        assertThat(objectTree.findByPath("root.platform.relative-blueprints.data-source-v1")).isEmpty();
 
         PlatformObject dataSource = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -291,20 +291,20 @@ class ModelEngineTest {
         );
         objectTree.register(dataSource);
 
-        ModelApplyResult result = engine.applyIntrinsicStructure(intrinsic, dataSource.path());
+        BlueprintApplyResult result = engine.applyIntrinsicStructure(intrinsic, dataSource.path());
 
         assertThat(result.attachment()).isNull();
         assertThat(dataSource.getVariable("schemaName")).isPresent();
-        assertThat(dataSource.appliedModelIds()).isEmpty();
+        assertThat(dataSource.appliedBlueprintIds()).isEmpty();
     }
 
     @Test
     void instantiatesInstanceModel() {
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "pump-controller",
                 "Pump controller",
-                ModelType.INSTANCE,
+                BlueprintType.INSTANCE,
                 ObjectType.DEVICE,
                 "",
                 List.of(),
@@ -315,9 +315,9 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(model);
+        engine.createBlueprint(model);
 
-        ModelApplyResult result = engine.instantiateModel(
+        BlueprintApplyResult result = engine.instantiateBlueprint(
                 model.id(),
                 "root.platform.devices",
                 "pump-01",
@@ -327,16 +327,16 @@ class ModelEngineTest {
 
         assertThat(instance.path()).isEqualTo("root.platform.devices.pump-01");
         assertThat(instance.templateId()).contains(model.id());
-        assertThat(result.attachment().modelId()).isEqualTo(model.id());
+        assertThat(result.attachment().blueprintId()).isEqualTo(model.id());
     }
 
     @Test
     void rejectsRelativeInstantiation() {
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "relative-only",
                 "",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(),
@@ -347,14 +347,14 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(model);
+        engine.createBlueprint(model);
 
-        assertThatThrownBy(() -> engine.instantiateModel(
+        assertThatThrownBy(() -> engine.instantiateBlueprint(
                 model.id(),
                 "root.platform.devices",
                 "x",
                 Map.of()
-        )).isInstanceOf(ModelException.class);
+        )).isInstanceOf(BlueprintException.class);
     }
 
     @Test
@@ -366,15 +366,15 @@ class ModelEngineTest {
                 .field("value", FieldType.DOUBLE)
                 .build();
 
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "sensor",
                 "",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
                 List.of(
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "alarmActive",
                                 "",
                                 "status",
@@ -383,7 +383,7 @@ class ModelEngineTest {
                                 false,
                                 DataRecord.single(alarmSchema, Map.of("value", false))
                         ),
-                        ModelVariableDefinition.of(
+                        BlueprintVariableDefinition.of(
                                 "temperaturePercent",
                                 "",
                                 "telemetry",
@@ -396,8 +396,8 @@ class ModelEngineTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        ModelBindingRule.of("alarm-active", "alarmActive", "self.temperature.value > self.threshold.value"),
-                        ModelBindingRule.of("temperature-percent", "temperaturePercent", "scale(temperature, 0, 100, 0, 1)")
+                        BlueprintBindingRule.of("alarm-active", "alarmActive", "self.temperature.value > self.threshold.value"),
+                        BlueprintBindingRule.of("temperature-percent", "temperaturePercent", "scale(temperature, 0, 100, 0, 1)")
                 ),
                 Map.of(),
                 Instant.now(),
@@ -413,14 +413,14 @@ class ModelEngineTest {
         DataSchema baseSchema = DataSchema.builder("temperature")
                 .field("value", FieldType.DOUBLE)
                 .build();
-        ModelDefinition base = new ModelDefinition(
+        BlueprintDefinition base = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "sensor-base-v1",
                 "Base sensor",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "temperature",
                         "Temperature",
                         "telemetry",
@@ -435,14 +435,14 @@ class ModelEngineTest {
                 Instant.now(),
                 Instant.now()
         );
-        ModelDefinition extension = new ModelDefinition(
+        BlueprintDefinition extension = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 "sensor-vendor-v1",
                 "Vendor extension",
-                ModelType.RELATIVE,
+                BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
                 "",
-                List.of(ModelVariableDefinition.of(
+                List.of(BlueprintVariableDefinition.of(
                         "vendorId",
                         "Vendor id",
                         "meta",
@@ -456,12 +456,12 @@ class ModelEngineTest {
                 List.of(),
                 List.of(),
                 List.of(),
-                Map.of("extendsModelId", base.id()),
+                Map.of("extendsBlueprintId", base.id()),
                 Instant.now(),
                 Instant.now()
         );
-        engine.createModel(base);
-        engine.createModel(extension);
+        engine.createBlueprint(base);
+        engine.createBlueprint(extension);
 
         PlatformObject device = new PlatformObject(
                 UUID.randomUUID().toString(),
@@ -473,7 +473,7 @@ class ModelEngineTest {
         );
         objectTree.register(device);
 
-        engine.applyModel(extension.id(), device.path());
+        engine.applyBlueprint(extension.id(), device.path());
 
         assertThat(device.getVariable("temperature")).isPresent();
         assertThat(device.getVariable("vendorId")).isPresent();

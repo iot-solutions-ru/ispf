@@ -13,6 +13,7 @@ const lockPath = path.resolve(here, "../../apps/web-console/package-lock.json");
 const LICENSE_OVERRIDES = {
   "@mapbox/jsonlint-lines-primitives": "MIT",
   buffers: "MIT",
+  "parse-cache-control": "MIT",
 };
 
 const FORBIDDEN = new Set(["UNLICENSED", "UNKNOWN", "MISSING"]);

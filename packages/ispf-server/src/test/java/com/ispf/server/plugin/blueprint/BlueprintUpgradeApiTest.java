@@ -1,10 +1,10 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureModelBootstrap;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,34 +23,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class ModelUpgradeApiTest {
 
-    private static final String VENDOR_PATH = FixtureModelBootstrap.VENDOR_SENSOR_DEMO_PATH;
+    private static final String VENDOR_PATH = FixtureBlueprintBootstrap.VENDOR_SENSOR_DEMO_PATH;
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private ModelRegistry modelRegistry;
+    private BlueprintRegistry blueprintRegistry;
 
     @Autowired
-    private ModelEngine modelEngine;
+    private BlueprintEngine blueprintEngine;
 
     @Autowired
     private ObjectManager objectManager;
 
     @Autowired
-    private ModelApplicationRunner modelApplicationRunner;
+    private BlueprintApplicationRunner BlueprintApplicationRunner;
 
     @Test
     void vendorDemoDeviceExistsAndBulkUpgradeSucceeds() throws Exception {
-        modelApplicationRunner.applyDemoModels();
+        BlueprintApplicationRunner.applyDemoBlueprints();
 
-        var vendorModel = modelRegistry.requireByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL);
+        var vendorModel = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL);
         objectManager.require(VENDOR_PATH);
 
-        mockMvc.perform(get("/api/v1/models/{id}/instances", vendorModel.id()))
+        mockMvc.perform(get("/api/v1/blueprints/{id}/instances", vendorModel.id()))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/models/{id}/upgrade-instances", vendorModel.id()))
+        mockMvc.perform(post("/api/v1/blueprints/{id}/upgrade-instances", vendorModel.id()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"))
                 .andExpect(jsonPath("$.count").value(org.hamcrest.Matchers.greaterThanOrEqualTo(0)));
@@ -62,10 +62,10 @@ class ModelUpgradeApiTest {
 
     @Test
     void singlePathUpgradeApi() throws Exception {
-        modelApplicationRunner.applyDemoModels();
-        var vendorModel = modelRegistry.requireByName(FixtureModelBootstrap.VENDOR_SENSOR_EXT_MODEL);
+        BlueprintApplicationRunner.applyDemoBlueprints();
+        var vendorModel = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL);
 
-        mockMvc.perform(post("/api/v1/models/{id}/upgrade", vendorModel.id())
+        mockMvc.perform(post("/api/v1/blueprints/{id}/upgrade", vendorModel.id())
                         .param("targetPath", VENDOR_PATH)
                         .param("targetVersion", "1"))
                 .andExpect(status().isOk())

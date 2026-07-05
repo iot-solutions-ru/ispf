@@ -24,6 +24,7 @@ import DriverWriteDialog from "./DriverWriteDialog";
 import type { TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 import { isTreeContainerType } from "../utils/objectTreeTypes";
 import { isSpecializedEditorObject } from "../utils/editorObject";
+import { localizedSystemFolderMeta } from "../utils/systemFolderI18n";
 import { deviceDriverTreeClass } from "../utils/deviceDriverTreeTone";
 
 interface ObjectTreeProps {
@@ -127,7 +128,7 @@ const TreeRow = memo(function TreeRow({
   onOpenEditor,
   onLoadChildren,
 }: TreeRowProps) {
-  const { t } = useTranslation("explorer");
+  const { t, i18n } = useTranslation("explorer");
   const { toggle } = useTreeExpanded();
   const drag = useTreeDrag();
   const path = node.object.path;
@@ -151,6 +152,11 @@ const TreeRow = memo(function TreeRow({
     node.object.driverStatus,
     node.object.driverConnected,
   );
+  const treeLabel = useMemo(
+    () => localizedSystemFolderMeta(i18n.t.bind(i18n), path, node.object.displayName, node.object.description).title,
+    [i18n, path, node.object.displayName, node.object.description],
+  );
+  const typeLabel = i18n.t(`common:objectType.${node.object.type}`, { defaultValue: node.object.type });
 
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
@@ -258,9 +264,9 @@ const TreeRow = memo(function TreeRow({
       </span>
       <span className="tree-label">
         {node.object.groupRef && <span className="group-ref-badge" title={t("tree.groupMember")}>↗</span>}
-        {node.object.displayName}
+        {treeLabel}
       </span>
-      <span className="tree-type">{node.object.type}</span>
+      <span className="tree-type">{typeLabel}</span>
     </div>
   );
 }, (prev, next) =>

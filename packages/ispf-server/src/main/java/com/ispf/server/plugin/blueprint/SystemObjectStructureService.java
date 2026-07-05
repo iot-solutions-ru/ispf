@@ -1,15 +1,15 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.Variable;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.SystemIntrinsicModels;
-import com.ispf.server.bootstrap.FixtureModelDefinitions;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.SystemIntrinsicBlueprints;
+import com.ispf.server.bootstrap.FixtureBlueprintDefinitions;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +21,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class SystemObjectStructureService {
 
     private final ObjectManager objectManager;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
 
     public SystemObjectStructureService(
             ObjectManager objectManager,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine
     ) {
         this.objectManager = objectManager;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
     }
 
     @Transactional
@@ -119,7 +119,7 @@ public class SystemObjectStructureService {
     public void ensureDeviceDriverStructure(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.getVariable("driverId").isEmpty()) {
-            modelEngine.applyIntrinsicStructure(FixtureModelDefinitions.buildDeviceDriverModel(), path);
+            blueprintEngine.applyIntrinsicStructure(FixtureBlueprintDefinitions.buildDeviceDriverModel(), path);
             objectManager.persistNodeTree(path);
             return;
         }
@@ -137,9 +137,9 @@ public class SystemObjectStructureService {
         objectManager.persistNodeTree(path);
     }
 
-    private void applyIntrinsic(String modelName, String path) {
-        modelRegistry.findByName(modelName).ifPresent(model -> {
-            modelEngine.applyIntrinsicStructure(model, path);
+    private void applyIntrinsic(String blueprintName, String path) {
+        blueprintRegistry.findByName(blueprintName).ifPresent(model -> {
+            blueprintEngine.applyIntrinsicStructure(model, path);
             objectManager.persistNodeTree(path);
         });
     }

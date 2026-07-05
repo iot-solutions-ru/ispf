@@ -1,9 +1,9 @@
 import type { TFunction } from "i18next";
 import {
-  ABSOLUTE_MODELS_ROOT,
+  ABSOLUTE_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  RELATIVE_MODELS_ROOT,
-} from "../types/models";
+  RELATIVE_BLUEPRINTS_ROOT,
+} from "../types/blueprints";
 import type { ObjectType } from "../types";
 import { isOperatorAppChildPath } from "./operatorAppsPath";
 import { isSecurityRolePath, isSecurityRolesRoot } from "./securityRolePath";
@@ -50,9 +50,9 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
 const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   "root.platform",
   "root.platform.devices",
-  RELATIVE_MODELS_ROOT,
+  RELATIVE_BLUEPRINTS_ROOT,
   INSTANCE_TYPES_ROOT,
-  ABSOLUTE_MODELS_ROOT,
+  ABSOLUTE_BLUEPRINTS_ROOT,
   "root.platform.instances",
   "root.platform.dashboards",
   "root.platform.reports",
@@ -87,11 +87,11 @@ function isApplicationSubfolder(path: string): boolean {
 
 function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType | null {
   if (
-    path === RELATIVE_MODELS_ROOT
+    path === RELATIVE_BLUEPRINTS_ROOT
     || path === INSTANCE_TYPES_ROOT
-    || path === ABSOLUTE_MODELS_ROOT
+    || path === ABSOLUTE_BLUEPRINTS_ROOT
   ) {
-    return "MODEL";
+    return "BLUEPRINT";
   }
   if (objectType && CATALOG_CONTAINER_TYPES.has(objectType)) {
     return objectType;
@@ -141,7 +141,7 @@ export function isSystemCatalogFolder(path: string, objectType?: ObjectType): bo
     return false;
   }
 
-  if (objectType === "MODEL" && !EXACT_CATALOG_PATHS.has(path)) {
+  if (objectType === "BLUEPRINT" && !EXACT_CATALOG_PATHS.has(path)) {
     return false;
   }
 

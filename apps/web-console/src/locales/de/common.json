@@ -58,7 +58,7 @@
   "error.objectLoadFailed": "Objekt konnte nicht geladen werden",
   "error.treeLoadFailed": "Objektbaum konnte nicht geladen werden",
   "field.actor": "Akteur",
-  "field.appliedModels": "Angewandte Modelle",
+  "field.appliedBlueprints": "Angewandte Modelle",
   "field.createdAt": "Erstellt",
   "field.description": "Beschreibung",
   "field.displayName": "Anzeigename",
@@ -68,7 +68,7 @@
   "field.level": "Stufe",
   "field.output": "Ausgabe",
   "field.path": "Pfad",
-  "field.primaryModel": "Primäres Modell",
+  "field.primaryBlueprint": "Primäres Modell",
   "field.templateId": "templateId",
   "field.time": "Zeit",
   "hint.adminOnly": "Nur für Administratoren verfügbar.",
@@ -89,5 +89,6 @@
   "objectPath.filterHint": "Angezeigte Typen: {{types}}",
   "objectPath.browseTree": "Baum durchsuchen",
   "modal.select": "Auswählen",
-  "modal.advancedSettings": "Erweiterte Einstellungen"
+  "modal.advancedSettings": "Erweiterte Einstellungen",
+  "objectType.BLUEPRINT": "Blueprint"
 }

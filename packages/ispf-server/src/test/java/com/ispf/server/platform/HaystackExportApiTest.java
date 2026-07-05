@@ -1,6 +1,6 @@
 package com.ispf.server.platform;
 
-import com.ispf.server.bootstrap.HaystackModelBootstrap;
+import com.ispf.server.bootstrap.HaystackBlueprintBootstrap;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,7 +30,7 @@ class HaystackExportApiTest {
                 .andExpect(jsonPath("$.rootPath").value("root.platform.devices.lab-userA-01"))
                 .andExpect(jsonPath("$.rowCount").isNumber())
                 .andExpect(jsonPath("$.rows[?(@.entityKind == 'equip')].haystackRef")
-                        .value(HaystackModelBootstrap.DEMO_HAYSTACK_REF))
+                        .value(HaystackBlueprintBootstrap.DEMO_HAYSTACK_REF))
                 .andExpect(jsonPath("$.rows[?(@.entityKind == 'equip')].tags.equip").value(true))
                 .andExpect(jsonPath("$.rows[?(@.variableName == 'sineWave')].entityKind")
                         .value("point"))

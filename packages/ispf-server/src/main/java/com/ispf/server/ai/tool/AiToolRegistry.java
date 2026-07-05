@@ -114,7 +114,7 @@ public class AiToolRegistry {
         );
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", status);
-        response.put("models", models);
+        response.put("blueprints", models);
         response.put("provider", llmProviderRegistry.status());
         response.put("auditId", auditId);
         if (!errors.isEmpty()) {

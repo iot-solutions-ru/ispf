@@ -1,38 +1,38 @@
-package com.ispf.server.plugin.model.dto;
+package com.ispf.server.plugin.blueprint.dto;
 
-import com.ispf.plugin.model.ModelApplyResult;
-import com.ispf.plugin.model.ModelAttachment;
-import com.ispf.plugin.model.ModelMergeWarning;
+import com.ispf.plugin.blueprint.BlueprintApplyResult;
+import com.ispf.plugin.blueprint.BlueprintAttachment;
+import com.ispf.plugin.blueprint.BlueprintMergeWarning;
 
 import java.time.Instant;
 import java.util.List;
 
-public record ModelAttachmentDto(
+public record BlueprintAttachmentDto(
         String id,
-        String modelId,
-        String modelName,
-        String modelType,
+        String blueprintId,
+        String blueprintName,
+        String blueprintType,
         String objectPath,
         Instant attachedAt,
-        List<ModelMergeWarningDto> warnings
+        List<BlueprintMergeWarningDto> warnings
 ) {
-    public static ModelAttachmentDto from(ModelAttachment attachment) {
+    public static BlueprintAttachmentDto from(BlueprintAttachment attachment) {
         return from(attachment, List.of());
     }
 
-    public static ModelAttachmentDto from(ModelApplyResult result) {
+    public static BlueprintAttachmentDto from(BlueprintApplyResult result) {
         return from(result.attachment(), result.warnings());
     }
 
-    public static ModelAttachmentDto from(ModelAttachment attachment, List<ModelMergeWarning> warnings) {
-        return new ModelAttachmentDto(
+    public static BlueprintAttachmentDto from(BlueprintAttachment attachment, List<BlueprintMergeWarning> warnings) {
+        return new BlueprintAttachmentDto(
                 attachment.id(),
-                attachment.modelId(),
-                attachment.modelName(),
-                attachment.modelType().name(),
+                attachment.blueprintId(),
+                attachment.blueprintName(),
+                attachment.blueprintType().name(),
                 attachment.objectPath(),
                 attachment.attachedAt(),
-                warnings.stream().map(ModelMergeWarningDto::from).toList()
+                warnings.stream().map(BlueprintMergeWarningDto::from).toList()
         );
     }
 }

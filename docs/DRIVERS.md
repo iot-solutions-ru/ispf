@@ -1,4 +1,4 @@
-# Драйверы устройств
+﻿# Драйверы устройств
 
 Каталог кандидатов на новые драйверы (roadmap): [ROADMAP.md § PF-14](ROADMAP.md#часть-a--req-pf-application-platform-закрыт), полный список ниже (REQ-PF-14).
 
@@ -51,7 +51,7 @@ public interface DeviceDriver {
 
 На объекте `DEVICE` переменные группы `driver` появляются при **provisioning драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через auto-apply RELATIVE-моделей.
 
-`DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedModelIds`.
+`DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.
 
 Fixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 

@@ -15,7 +15,7 @@ const METRIC_KEYS = [
   "nonHeapUsedMb", "processors", "threadCount", "peakThreadCount", "poolName",
   "activeConnections", "idleConnections", "totalConnections", "threadsAwaitingConnection",
   "maxPoolSize", "poolAvailable", "objectNodes", "variables", "devices", "dashboards",
-  "workflows", "applications", "models", "alerts", "deviceObjects", "activeDrivers",
+  "workflows", "applications", "blueprints", "alerts", "deviceObjects", "activeDrivers",
   "connectedDrivers", "driversWithError", "stoppedDrivers", "websocketClients",
   "platformUsers", "enabledUsers", "activeAuthSessions", "enabled", "minIntervalMs",
   "defaultRetentionDays", "historizedVariables", "sampleCount", "store", "oldestSampleAt",

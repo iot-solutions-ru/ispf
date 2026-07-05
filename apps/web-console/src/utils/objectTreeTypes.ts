@@ -9,7 +9,7 @@ const CONTAINER_TYPES = new Set([
   "DASHBOARD",
   "WORKFLOWS",
   "WORKFLOW",
-  "MODEL",
+  "BLUEPRINT",
   "REPORTS",
   "REPORT",
   "APPLICATIONS",

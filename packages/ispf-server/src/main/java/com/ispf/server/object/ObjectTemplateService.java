@@ -1,10 +1,10 @@
 package com.ispf.server.object;
 
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.server.bootstrap.LabModelBootstrap;
-import com.ispf.server.plugin.model.ModelApplicationService;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.bootstrap.LabBlueprintBootstrap;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,21 +21,21 @@ import java.util.Optional;
 public class ObjectTemplateService {
 
     private static final Map<String, List<String>> COMPANION_MODELS_BY_NAME = Map.of(
-            LabModelBootstrap.VIRTUAL_LAB_MODEL,
-            List.of(LabModelBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL),
-            LabModelBootstrap.VIRTUAL_UNIFIED_MODEL,
-            List.of(LabModelBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL)
+            LabBlueprintBootstrap.VIRTUAL_LAB_MODEL,
+            List.of(LabBlueprintBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL),
+            LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL,
+            List.of(LabBlueprintBootstrap.VIRTUAL_LAB_WAVES_SUM_MODEL)
     );
 
-    private final ModelRegistry modelRegistry;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintRegistry BlueprintRegistry;
+    private final BlueprintApplicationService BlueprintApplicationService;
 
     public ObjectTemplateService(
-            ModelRegistry modelRegistry,
-            ModelApplicationService modelApplicationService
+            BlueprintRegistry BlueprintRegistry,
+            BlueprintApplicationService BlueprintApplicationService
     ) {
-        this.modelRegistry = modelRegistry;
-        this.modelApplicationService = modelApplicationService;
+        this.BlueprintRegistry = BlueprintRegistry;
+        this.BlueprintApplicationService = BlueprintApplicationService;
     }
 
     @Transactional
@@ -43,32 +43,32 @@ public class ObjectTemplateService {
         if (templateId == null || templateId.isBlank()) {
             return;
         }
-        ModelDefinition model = resolveTemplate(templateId)
+        BlueprintDefinition model = resolveTemplate(templateId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
                         "Unknown templateId: " + templateId
                 ));
         applyResolvedModel(objectPath, model);
         for (String companionName : COMPANION_MODELS_BY_NAME.getOrDefault(model.name(), List.of())) {
-            modelRegistry.findByName(companionName).ifPresent(companion ->
+            BlueprintRegistry.findByName(companionName).ifPresent(companion ->
                     applyResolvedModel(objectPath, companion)
             );
         }
     }
 
-    private void applyResolvedModel(String objectPath, ModelDefinition model) {
+    private void applyResolvedModel(String objectPath, BlueprintDefinition model) {
         try {
-            modelApplicationService.applyModelWithRules(model, objectPath, model.parameters());
+            BlueprintApplicationService.applyBlueprintWithRules(model, objectPath, model.parameters());
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
-    private Optional<ModelDefinition> resolveTemplate(String templateId) {
-        Optional<ModelDefinition> byId = modelRegistry.findById(templateId);
+    private Optional<BlueprintDefinition> resolveTemplate(String templateId) {
+        Optional<BlueprintDefinition> byId = BlueprintRegistry.findById(templateId);
         if (byId.isPresent()) {
             return byId;
         }
-        return modelRegistry.findByName(templateId);
+        return BlueprintRegistry.findByName(templateId);
     }
 }

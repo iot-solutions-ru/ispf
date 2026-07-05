@@ -1,9 +1,9 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.dto.ModelAttachmentDto;
-import com.ispf.server.plugin.model.dto.ModelDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,39 +20,39 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/absolute-models")
-public class AbsoluteModelController {
+@RequestMapping("/api/v1/absolute-blueprints")
+public class AbsoluteBlueprintController {
 
-    private final TypedModelFacade facade;
+    private final TypedBlueprintFacade facade;
     private final ObjectManager objectManager;
 
-    public AbsoluteModelController(TypedModelFacade absoluteModelFacade, ObjectManager objectManager) {
-        this.facade = absoluteModelFacade;
+    public AbsoluteBlueprintController(TypedBlueprintFacade absoluteBlueprintFacade, ObjectManager objectManager) {
+        this.facade = absoluteBlueprintFacade;
         this.objectManager = objectManager;
     }
 
     @GetMapping
-    public List<ModelDto> list() {
+    public List<BlueprintDto> list() {
         return facade.list();
     }
 
     @GetMapping("/{id}")
-    public ModelDto get(@PathVariable String id) {
+    public BlueprintDto get(@PathVariable String id) {
         return facade.get(id);
     }
 
     @GetMapping("/by-name/{name}")
-    public ModelDto getByName(@PathVariable String name) {
+    public BlueprintDto getByName(@PathVariable String name) {
         return facade.getByName(name);
     }
 
     @PostMapping
-    public ModelDto create(@Valid @RequestBody TypedModelFacade.CreatePayload request) {
+    public BlueprintDto create(@Valid @RequestBody TypedBlueprintFacade.CreatePayload request) {
         return facade.create(request);
     }
 
     @PutMapping("/{id}")
-    public ModelDto update(@PathVariable String id, @Valid @RequestBody TypedModelFacade.UpdatePayload request) {
+    public BlueprintDto update(@PathVariable String id, @Valid @RequestBody TypedBlueprintFacade.UpdatePayload request) {
         return facade.update(id, request);
     }
 
@@ -62,7 +62,7 @@ public class AbsoluteModelController {
     }
 
     @PostMapping("/{id}/apply")
-    public ModelAttachmentDto apply(
+    public BlueprintAttachmentDto apply(
             @PathVariable String id,
             @RequestParam @NotBlank String objectPath
     ) {

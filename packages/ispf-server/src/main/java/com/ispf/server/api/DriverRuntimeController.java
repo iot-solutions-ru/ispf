@@ -8,7 +8,7 @@ import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.driver.DriverBinding;
 import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.driver.TelemetryPublishMode;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;

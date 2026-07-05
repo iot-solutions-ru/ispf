@@ -1,19 +1,19 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.EventDescriptor;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.plugin.model.ModelDefinition;
-import com.ispf.plugin.model.ModelEngine;
-import com.ispf.plugin.model.ModelException;
-import com.ispf.plugin.model.ModelRegistry;
-import com.ispf.plugin.model.ModelType;
-import com.ispf.plugin.model.ModelVariableDefinition;
+import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.plugin.blueprint.BlueprintEngine;
+import com.ispf.plugin.blueprint.BlueprintException;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.plugin.blueprint.BlueprintType;
+import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.dto.ModelAttachmentDto;
-import com.ispf.server.plugin.model.dto.ModelDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintAttachmentDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,68 +23,68 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Shared CRUD and operations for typed model API facades.
+ * Shared CRUD and operations for typed blueprint API facades.
  */
-public class TypedModelFacade {
+public class TypedBlueprintFacade {
 
-    private final ModelType modelType;
-    private final ModelRegistry modelRegistry;
-    private final ModelEngine modelEngine;
-    private final ModelPersistenceService modelPersistence;
-    private final ModelApplicationService modelApplicationService;
+    private final BlueprintType blueprintType;
+    private final BlueprintRegistry blueprintRegistry;
+    private final BlueprintEngine blueprintEngine;
+    private final BlueprintPersistenceService blueprintPersistence;
+    private final BlueprintApplicationService blueprintApplicationService;
     private final ObjectManager objectManager;
 
-    public TypedModelFacade(
-            ModelType modelType,
-            ModelRegistry modelRegistry,
-            ModelEngine modelEngine,
-            ModelPersistenceService modelPersistence,
-            ModelApplicationService modelApplicationService,
+    public TypedBlueprintFacade(
+            BlueprintType blueprintType,
+            BlueprintRegistry blueprintRegistry,
+            BlueprintEngine blueprintEngine,
+            BlueprintPersistenceService blueprintPersistence,
+            BlueprintApplicationService blueprintApplicationService,
             ObjectManager objectManager
     ) {
-        this.modelType = modelType;
-        this.modelRegistry = modelRegistry;
-        this.modelEngine = modelEngine;
-        this.modelPersistence = modelPersistence;
-        this.modelApplicationService = modelApplicationService;
+        this.blueprintType = blueprintType;
+        this.blueprintRegistry = blueprintRegistry;
+        this.blueprintEngine = blueprintEngine;
+        this.blueprintPersistence = blueprintPersistence;
+        this.blueprintApplicationService = blueprintApplicationService;
         this.objectManager = objectManager;
     }
 
-    public List<ModelDto> list() {
-        return modelRegistry.all().stream()
-                .filter(model -> model.type() == modelType)
-                .filter(model -> !com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model))
-                .map(ModelDto::from)
+    public List<BlueprintDto> list() {
+        return blueprintRegistry.all().stream()
+                .filter(model -> model.type() == blueprintType)
+                .filter(model -> ! com.ispf.plugin.blueprint.SystemIntrinsicBlueprints.isIntrinsic(model))
+                .map(BlueprintDto::from)
                 .toList();
     }
 
-    public List<ModelDto> listForCreate(ObjectType platformType, String parentPath) {
-        return modelRegistry.all().stream()
-                .filter(model -> model.type() == modelType)
-                .filter(model -> !com.ispf.plugin.model.SystemIntrinsicModels.isIntrinsic(model))
+    public List<BlueprintDto> listForCreate(ObjectType platformType, String parentPath) {
+        return blueprintRegistry.all().stream()
+                .filter(model -> model.type() == blueprintType)
+                .filter(model -> ! com.ispf.plugin.blueprint.SystemIntrinsicBlueprints.isIntrinsic(model))
                 .filter(model -> platformType == null || model.targetObjectType() == platformType)
-                .map(ModelDto::from)
+                .map(BlueprintDto::from)
                 .toList();
     }
 
-    public ModelDto get(String id) {
-        return ModelDto.from(requireTyped(id));
+    public BlueprintDto get(String id) {
+        return BlueprintDto.from(requireTyped(id));
     }
 
-    public ModelDto getByName(String name) {
-        ModelDefinition model = modelRegistry.requireByName(name);
+    public BlueprintDto getByName(String name) {
+        BlueprintDefinition model = blueprintRegistry.requireByName(name);
         assertType(model);
-        return ModelDto.from(model);
+        return BlueprintDto.from(model);
     }
 
-    public ModelDto create(CreatePayload request) {
+    public BlueprintDto create(CreatePayload request) {
         validateCreate(request);
         Instant now = Instant.now();
-        ModelDefinition model = new ModelDefinition(
+        BlueprintDefinition model = new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 request.name(),
                 request.description(),
-                modelType,
+                blueprintType,
                 request.targetObjectType(),
                 request.suitabilityExpression(),
                 request.variables(),
@@ -96,21 +96,21 @@ public class TypedModelFacade {
                 now
         );
         try {
-            ModelDefinition created = modelEngine.createModel(model);
-            modelPersistence.persist(created, false);
-            return ModelDto.from(created);
-        } catch (ModelException e) {
+            BlueprintDefinition created = blueprintEngine.createBlueprint(model);
+            blueprintPersistence.persist(created, false);
+            return BlueprintDto.from(created);
+        } catch (BlueprintException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
         }
     }
 
-    public ModelDto update(String id, UpdatePayload request) {
-        ModelDefinition existing = requireTyped(id);
-        ModelDefinition updated = new ModelDefinition(
+    public BlueprintDto update(String id, UpdatePayload request) {
+        BlueprintDefinition existing = requireTyped(id);
+        BlueprintDefinition updated = new BlueprintDefinition(
                 existing.id(),
                 request.name() != null ? request.name() : existing.name(),
                 request.description() != null ? request.description() : existing.description(),
-                modelType,
+                blueprintType,
                 request.targetObjectType() != null ? request.targetObjectType() : existing.targetObjectType(),
                 request.suitabilityExpression() != null ? request.suitabilityExpression() : existing.suitabilityExpression(),
                 request.variables() != null ? request.variables() : existing.variables(),
@@ -121,34 +121,34 @@ public class TypedModelFacade {
                 existing.createdAt(),
                 Instant.now()
         );
-        ModelDefinition saved = modelEngine.updateModel(updated);
-        modelPersistence.persist(saved, false);
+        BlueprintDefinition saved = blueprintEngine.updateBlueprint(updated);
+        blueprintPersistence.persist(saved, false);
         objectManager.persistNodeTree(saved.catalogObjectPath());
-        return ModelDto.from(saved);
+        return BlueprintDto.from(saved);
     }
 
     public void delete(String id) {
         requireTyped(id);
-        modelEngine.deleteModel(id);
-        modelPersistence.delete(id);
+        blueprintEngine.deleteBlueprint(id);
+        blueprintPersistence.delete(id);
     }
 
-    public ModelAttachmentDto apply(String id, String objectPath) {
+    public BlueprintAttachmentDto apply(String id, String objectPath) {
         requireTyped(id);
         try {
-            return ModelAttachmentDto.from(modelApplicationService.applyModelWithRules(id, objectPath));
+            return BlueprintAttachmentDto.from(blueprintApplicationService.applyBlueprintWithRules(id, objectPath));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     public ObjectDto instantiate(String id, InstantiatePayload request) {
-        if (modelType != ModelType.INSTANCE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "instantiate is only supported for INSTANCE models");
+        if (blueprintType != BlueprintType.INSTANCE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "instantiate is only supported for INSTANCE blueprints");
         }
         requireTyped(id);
         try {
-            modelApplicationService.instantiateWithRules(
+            blueprintApplicationService.instantiateWithRules(
                     id,
                     request.parentPath(),
                     request.instanceName(),
@@ -162,35 +162,35 @@ public class TypedModelFacade {
     }
 
     public PlatformObject absoluteInstance(String id) {
-        if (modelType != ModelType.ABSOLUTE) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "singleton instance is only for ABSOLUTE models");
+        if (blueprintType != BlueprintType.ABSOLUTE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "singleton instance is only for Absolute Blueprints");
         }
-        ModelDefinition model = requireTyped(id);
-        return modelEngine.ensureAbsoluteInstance(model);
+        BlueprintDefinition model = requireTyped(id);
+        return blueprintEngine.ensureAbsoluteInstance(model);
     }
 
-    private ModelDefinition requireTyped(String id) {
-        ModelDefinition model = modelRegistry.requireById(id);
+    private BlueprintDefinition requireTyped(String id) {
+        BlueprintDefinition model = blueprintRegistry.requireById(id);
         assertType(model);
         return model;
     }
 
-    private void assertType(ModelDefinition model) {
-        if (model.type() != modelType) {
+    private void assertType(BlueprintDefinition model) {
+        if (model.type() != blueprintType) {
             throw new ResponseStatusException(
                     HttpStatus.NOT_FOUND,
-                    "Model " + model.name() + " is not a " + modelType + " model"
+                    "Blueprint " + model.name() + " is not a " + blueprintType + " blueprint"
             );
         }
     }
 
     private void validateCreate(CreatePayload request) {
-        if (modelType == ModelType.INSTANCE || modelType == ModelType.RELATIVE) {
+        if (blueprintType == BlueprintType.INSTANCE || blueprintType == BlueprintType.RELATIVE) {
             if (request.targetObjectType() == null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, modelType + " models require targetObjectType");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, blueprintType + " blueprints require targetObjectType");
             }
         }
-        if (modelType == ModelType.INSTANCE && request.name() == null) {
+        if (blueprintType == BlueprintType.INSTANCE && request.name() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "name is required");
         }
     }
@@ -200,10 +200,10 @@ public class TypedModelFacade {
             String description,
             ObjectType targetObjectType,
             String suitabilityExpression,
-            List<ModelVariableDefinition> variables,
+            List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<com.ispf.plugin.model.ModelBindingRule> bindings,
+            List<com.ispf.plugin.blueprint.BlueprintBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }
@@ -213,10 +213,10 @@ public class TypedModelFacade {
             String description,
             ObjectType targetObjectType,
             String suitabilityExpression,
-            List<ModelVariableDefinition> variables,
+            List<BlueprintVariableDefinition> variables,
             List<EventDescriptor> events,
             List<FunctionDescriptor> functions,
-            List<com.ispf.plugin.model.ModelBindingRule> bindings,
+            List<com.ispf.plugin.blueprint.BlueprintBindingRule> bindings,
             Map<String, String> parameters
     ) {
     }

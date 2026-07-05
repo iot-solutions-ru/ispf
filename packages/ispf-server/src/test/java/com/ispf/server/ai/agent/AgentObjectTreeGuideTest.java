@@ -14,7 +14,7 @@ class AgentObjectTreeGuideTest {
     void referenceTextDocumentsDiscoveryFirst() {
         String text = AgentObjectTreeGuide.referenceText();
         assertTrue(text.contains("list_objects"));
-        assertTrue(text.contains("apply_relative_model"));
+        assertTrue(text.contains("apply_relative_blueprint"));
         assertTrue(text.contains("must come from tool results"));
     }
 
@@ -23,12 +23,12 @@ class AgentObjectTreeGuideTest {
         @SuppressWarnings("unchecked")
         List<String> tools = (List<String>) AgentObjectTreeGuide.summary().get("discoveryTools");
         assertTrue(tools.contains("list_objects"));
-        assertTrue(tools.contains("list_object_models"));
+        assertTrue(tools.contains("list_object_blueprints"));
         assertTrue(tools.contains("list_instance_types"));
     }
 
     @Test
-    void summaryListsModelCatalogRoots() {
+    void summaryListsBlueprintCatalogRoots() {
         @SuppressWarnings("unchecked")
         List<String> catalogs = (List<String>) AgentObjectTreeGuide.summary().get("modelCatalogs");
         assertFalse(catalogs.isEmpty());

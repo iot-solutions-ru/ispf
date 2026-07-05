@@ -3,7 +3,7 @@ package com.ispf.server.bootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.security.PlatformUserService;
-import com.ispf.plugin.model.ModelRegistry;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,7 +23,7 @@ class BootstrapCleanInstallTest {
     private ObjectManager objectManager;
 
     @Autowired
-    private ModelRegistry modelRegistry;
+    private BlueprintRegistry BlueprintRegistry;
 
     @Autowired
     private PlatformUserService userService;
@@ -33,15 +33,15 @@ class BootstrapCleanInstallTest {
 
     @Test
     void registersVirtualLabModelsWithoutFixtures() {
-        assertThat(modelRegistry.findByName(LabModelBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
-        assertThat(modelRegistry.findByName(LabModelBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
+        assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
+        assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
     }
 
     @Test
     void doesNotSeedFixtureModels() {
-        for (String name : FixtureModelBootstrap.FIXTURE_MODEL_NAMES) {
-            assertThat(modelRegistry.findByName(name)).isEmpty();
-            assertThat(objectManager.tree().findByPath("root.platform.relative-models." + name)).isEmpty();
+        for (String name : FixtureBlueprintBootstrap.FIXTURE_MODEL_NAMES) {
+            assertThat(BlueprintRegistry.findByName(name)).isEmpty();
+            assertThat(objectManager.tree().findByPath("root.platform.relative-blueprints." + name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.instance-types." + name)).isEmpty();
         }
     }

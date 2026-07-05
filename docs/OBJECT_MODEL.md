@@ -1,4 +1,4 @@
-# Модель объектов
+﻿# Модель объектов
 
 Бизнес-логика ISPF выражается через **состав узлов дерева**: модели (blueprint), переменные, события, функции, workflow и узлы автоматизации. См. [ARCHITECTURE.md § Основной принцип](ARCHITECTURE.md#основной-принцип-бизнес-логика-в-механизмах-платформы).
 
@@ -12,9 +12,9 @@ root
     ├── root.platform.devices
     │   ├── root.platform.devices.demo-sensor-01
     │   └── root.platform.devices.snmp-localhost
-    ├── root.platform.relative-models
+    ├── root.platform.relative-blueprints
     ├── root.platform.instance-types
-    ├── root.platform.absolute-models
+    ├── root.platform.absolute-blueprints
     ├── root.platform.instances
     ├── root.platform.dashboards
     │   └── root.platform.dashboards.demo-sensor
@@ -198,7 +198,7 @@ Content-Type: application/json
 
 **DEVICE + driver:** переменные `driver*` встраиваются при `provisionDriver()`, не через relative auto-apply.
 
-См. [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+См. [BLUEPRINTS.md](BLUEPRINTS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Персистентность
 

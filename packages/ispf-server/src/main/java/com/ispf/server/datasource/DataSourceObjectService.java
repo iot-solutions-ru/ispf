@@ -8,7 +8,7 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.plugin.model.SystemObjectStructureService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

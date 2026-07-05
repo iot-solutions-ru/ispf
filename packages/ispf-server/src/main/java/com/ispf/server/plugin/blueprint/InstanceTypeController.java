@@ -1,8 +1,8 @@
-package com.ispf.server.plugin.model;
+package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.api.dto.ObjectDto;
-import com.ispf.server.plugin.model.dto.ModelDto;
+import com.ispf.server.plugin.blueprint.dto.BlueprintDto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,14 +21,14 @@ import java.util.List;
 @RequestMapping("/api/v1/instance-types")
 public class InstanceTypeController {
 
-    private final TypedModelFacade facade;
+    private final TypedBlueprintFacade facade;
 
-    public InstanceTypeController(TypedModelFacade instanceTypeFacade) {
+    public InstanceTypeController(TypedBlueprintFacade instanceTypeFacade) {
         this.facade = instanceTypeFacade;
     }
 
     @GetMapping
-    public List<ModelDto> list(
+    public List<BlueprintDto> list(
             @RequestParam(required = false) ObjectType platformType,
             @RequestParam(required = false) String parentPath
     ) {
@@ -39,22 +39,22 @@ public class InstanceTypeController {
     }
 
     @GetMapping("/{id}")
-    public ModelDto get(@PathVariable String id) {
+    public BlueprintDto get(@PathVariable String id) {
         return facade.get(id);
     }
 
     @GetMapping("/by-name/{name}")
-    public ModelDto getByName(@PathVariable String name) {
+    public BlueprintDto getByName(@PathVariable String name) {
         return facade.getByName(name);
     }
 
     @PostMapping
-    public ModelDto create(@Valid @RequestBody TypedModelFacade.CreatePayload request) {
+    public BlueprintDto create(@Valid @RequestBody TypedBlueprintFacade.CreatePayload request) {
         return facade.create(request);
     }
 
     @PutMapping("/{id}")
-    public ModelDto update(@PathVariable String id, @Valid @RequestBody TypedModelFacade.UpdatePayload request) {
+    public BlueprintDto update(@PathVariable String id, @Valid @RequestBody TypedBlueprintFacade.UpdatePayload request) {
         return facade.update(id, request);
     }
 
@@ -66,7 +66,7 @@ public class InstanceTypeController {
     @PostMapping("/{id}/instantiate")
     public ObjectDto instantiate(
             @PathVariable String id,
-            @Valid @RequestBody TypedModelFacade.InstantiatePayload request
+            @Valid @RequestBody TypedBlueprintFacade.InstantiatePayload request
     ) {
         return facade.instantiate(id, request);
     }

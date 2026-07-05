@@ -43,8 +43,8 @@ if ($deploy.errors) {
     if ($fatal.Count -gt 0) { throw "Bundle deploy reported errors" }
 }
 
-$modelId = (Invoke-RestMethod -Uri "$BaseUrl/api/v1/models" -Headers $headers | Where-Object { $_.name -eq $ModelName }).id
-if (-not $modelId) { throw "Model not found: $ModelName" }
+    $blueprintId = (Invoke-RestMethod -Uri "$BaseUrl/api/v1/blueprints" -Headers $headers | Where-Object { $_.name -eq $ModelName }).id
+if (-not $blueprintId) { throw "Blueprint not found: $ModelName" }
 
 $sensors = @(
     @{ id = "sensor-01"; topic = "esp2/1wire_test1/temperature"; lat = 55.761; lon = 37.638; label = "1wire test 1"; base = "21.69" },
@@ -76,7 +76,7 @@ foreach ($s in $sensors) {
     Write-Host "Configuring $path ..."
 
     try {
-        Invoke-RestMethod -Uri "$BaseUrl/api/v1/models/$modelId/apply?objectPath=$path" -Method POST -Headers $headers | Out-Null
+        Invoke-RestMethod -Uri "$BaseUrl/api/v1/blueprints/$blueprintId/apply?objectPath=$path" -Method POST -Headers $headers | Out-Null
     } catch {
         Write-Host "  model apply: $($_.Exception.Message)"
     }

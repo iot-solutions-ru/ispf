@@ -1,6 +1,6 @@
 package com.ispf.server.platform;
 
-import com.ispf.server.bootstrap.HaystackModelBootstrap;
+import com.ispf.server.bootstrap.HaystackBlueprintBootstrap;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +40,7 @@ class HaystackQueryApiTest {
     void queriesEquipByFilter() throws Exception {
         mockMvc.perform(get("/api/v1/platform/haystack/query")
                         .param("filter", "equip and lab")
-                        .param("rootPath", HaystackModelBootstrap.DEMO_DEVICE_PATH)
+                        .param("rootPath", HaystackBlueprintBootstrap.DEMO_DEVICE_PATH)
                         .param("entityKind", "equip"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.count").value(1))

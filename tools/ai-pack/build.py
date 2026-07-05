@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Build ISPF ContextPack for AI Development Layer (FW-41, FW-45)."""
 
 from __future__ import annotations
@@ -95,7 +95,7 @@ BUNDLE_MANIFEST_FIELDS = [
     "objects",
     "dashboards",
     "workflows",
-    "models",
+    "blueprints",
     "migrations",
     "functions",
     "bindings",
@@ -311,7 +311,7 @@ def build_example_summaries(examples: list[dict]) -> list[dict]:
         app_id = str(example.get("appId", ""))
         sections = example.get("sections", [])
         key_sections = [s for s in sections if s in {
-            "functions", "objects", "dashboards", "workflows", "migrations", "models", "events"
+            "functions", "objects", "dashboards", "workflows", "migrations", "blueprints", "events"
         }]
         summaries.append(
             {
@@ -337,7 +337,7 @@ def build_doc_chunks() -> list[dict]:
         ("platform-logic", "Platform rules dashboard context", "platform-logic", DOCS / "PLATFORM_LOGIC.md", 7000),
         ("bindings", "CEL bindings", "bindings", DOCS / "BINDINGS.md", 6000),
         ("object-functions", "Object tree functions", "functions", DOCS / "OBJECT_FUNCTIONS.md", 7000),
-        ("models", "Object models", "models", DOCS / "MODELS.md", 6000),
+        ("blueprints", "Object blueprints", "blueprints", DOCS / "BLUEPRINTS.md", 6000),
         ("drivers", "Device drivers", "drivers", DOCS / "DRIVERS.md", 10000),
         ("workflows", "Workflows BPMN", "workflows", DOCS / "WORKFLOWS.md", 6000),
         ("automation", "Automation correlators", "automation", DOCS / "AUTOMATION.md", 5000),
@@ -467,7 +467,7 @@ def build_pack() -> dict:
                 "operatorUi",
                 "events",
                 "reports",
-                "models",
+                "blueprints",
                 "workflows",
             ],
             "forbidden": [

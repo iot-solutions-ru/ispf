@@ -1,21 +1,21 @@
-package com.ispf.plugin.model;
+package com.ispf.plugin.blueprint;
 
 /**
  * Tree paths for the three model catalog kinds (blueprint views).
  */
-public final class ModelCatalogRoots {
+public final class BlueprintCatalogRoots {
 
-    public static final String RELATIVE = "root.platform.relative-models";
+    public static final String RELATIVE = "root.platform.relative-blueprints";
     public static final String INSTANCE = "root.platform.instance-types";
-    public static final String ABSOLUTE = "root.platform.absolute-models";
+    public static final String ABSOLUTE = "root.platform.absolute-blueprints";
     /** Legacy catalog path — removed at startup migration. */
-    public static final String LEGACY = "root.platform.models";
+    public static final String LEGACY = "root.platform.blueprints";
     public static final String INSTANCES = "root.platform.instances";
 
-    private ModelCatalogRoots() {
+    private BlueprintCatalogRoots() {
     }
 
-    public static String catalogRoot(ModelType type) {
+    public static String catalogRoot(BlueprintType type) {
         return switch (type) {
             case RELATIVE -> RELATIVE;
             case INSTANCE -> INSTANCE;
@@ -23,11 +23,11 @@ public final class ModelCatalogRoots {
         };
     }
 
-    public static String catalogTitle(ModelType type) {
+    public static String catalogTitle(BlueprintType type) {
         return switch (type) {
-            case RELATIVE -> "Relative Models";
+            case RELATIVE -> "Relative Blueprints";
             case INSTANCE -> "Instance Types";
-            case ABSOLUTE -> "Absolute Models";
+            case ABSOLUTE -> "Absolute Blueprints";
         };
     }
 
