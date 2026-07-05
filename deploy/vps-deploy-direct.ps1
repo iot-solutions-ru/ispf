@@ -14,7 +14,8 @@ param(
     [ValidateSet('permissive', 'all')]
     [string]$DriverPackProfile = 'permissive',
     [switch]$KeepServiceRunning,
-    [switch]$VerifyClickHouse
+    [switch]$VerifyClickHouse,
+    [switch]$Cluster
 )
 
 $ErrorActionPreference = "Stop"
@@ -384,13 +385,21 @@ if (-not $SkipDriverPacks -and -not (Test-Path $packsTar)) {
 }
 
 if (-not $KeepServiceRunning) {
-    Stop-RemoteService -Reason "reduce disk I/O before upload"
+    if ($Cluster) {
+        Write-Host "==> Stopping systemd ispf-server before cluster rollout"
+        Invoke-Remote "systemctl stop ispf-server 2>/dev/null || true"
+    } else {
+        Stop-RemoteService -Reason "reduce disk I/O before upload"
+    }
 }
 
 Write-Host "==> Preparing staging on ${RemoteHost}:$staging"
 Invoke-Remote "mkdir -p $staging"
 $applyScript = Join-Path $PSScriptRoot "apply-platform-update.sh"
 $flywayRepairScript = Join-Path $PSScriptRoot "vps-flyway-repair.sh"
+$clusterBootstrapScript = Join-Path $PSScriptRoot "vps-cluster-bootstrap.sh"
+$clusterCompose = Join-Path $PSScriptRoot "docker-compose.vps-cluster.yml"
+$clusterNginx = Join-Path $PSScriptRoot "nginx-vps-cluster.conf"
 
 $uploads = @(
     @{ Local = $applyScript; Remote = "/opt/ispf/bin/apply-platform-update.sh" }
@@ -398,6 +407,13 @@ $uploads = @(
     @{ Local = $jarOut; Remote = "$staging/ispf-server.jar" }
     @{ Local = $zipPath; Remote = "$staging/web-console.zip" }
 )
+if ($Cluster) {
+    $uploads += @(
+        @{ Local = $clusterBootstrapScript; Remote = "/opt/ispf/bin/vps-cluster-bootstrap.sh" }
+        @{ Local = $clusterCompose; Remote = "/opt/ispf/docker-compose.vps-cluster.yml" }
+        @{ Local = $clusterNginx; Remote = "/opt/ispf/nginx-vps-cluster.conf" }
+    )
+}
 if (-not $SkipDriverPacks) {
     $uploads += @{ Local = $packsTar; Remote = "$staging/driver-packs.tar.gz" }
 } else {
@@ -406,12 +422,20 @@ if (-not $SkipDriverPacks) {
 Send-DeployUploads -RemoteHost $RemoteHost -Uploads $uploads
 
 Invoke-Remote "chmod +x /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh; sed -i 's/\r$//' /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh"
+if ($Cluster) {
+    Invoke-Remote "chmod +x /opt/ispf/bin/vps-cluster-bootstrap.sh; sed -i 's/\r$//' /opt/ispf/bin/vps-cluster-bootstrap.sh"
+}
 
 Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS (prod, no demo fixtures)"
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"
 
-Write-Host "==> Applying update on VPS"
-Invoke-Remote "bash /opt/ispf/bin/apply-platform-update.sh $staging"
+if ($Cluster) {
+    Write-Host "==> Applying 3-node cluster on VPS"
+    Invoke-Remote "bash /opt/ispf/bin/vps-cluster-bootstrap.sh $staging"
+} else {
+    Write-Host "==> Applying update on VPS"
+    Invoke-Remote "bash /opt/ispf/bin/apply-platform-update.sh $staging"
+}
 
 Write-Host "==> Verifying"
 $info = Invoke-Remote "curl -sf http://127.0.0.1:8080/api/v1/info"
@@ -427,7 +451,7 @@ try {
     Write-Warning "Public HTTPS check skipped: $_"
 }
 
-Write-Host "Deploy complete: $Version -> $RemoteHost"
+Write-Host "Deploy complete: $Version -> $RemoteHost$(if ($Cluster) { ' (3-node cluster)' })"
 
 Write-Host "==> Syncing nginx (agent API long timeouts)"
 & (Join-Path $PSScriptRoot "vps-nginx-sync.ps1") -RemoteHost $RemoteHost
