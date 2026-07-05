@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,8 +61,6 @@ public class ObjectChangeEventBus {
     private Lane automationLane;
     private ElasticScheduledPool coalesceSchedulerPool;
     private ScheduledThreadPoolExecutor coalesceScheduler;
-    private ElasticScheduledPool scaleSchedulerPool;
-    private ScheduledThreadPoolExecutor sharedScaleScheduler;
     private volatile boolean running;
     private final ConcurrentHashMap<String, ObjectChangeEvent> telemetryCoalesce = new ConcurrentHashMap<>();
     private volatile boolean coalesceFlushScheduled;
@@ -88,14 +85,6 @@ public class ObjectChangeEventBus {
             return;
         }
         running = true;
-        if (properties.isElasticWorkersEnabled()) {
-            scaleSchedulerPool = new ElasticScheduledPool(
-                    properties.resolvedScaleSchedulerElastic(),
-                    this::scaleSchedulerLoad,
-                    "object-change-bus-scale"
-            );
-            sharedScaleScheduler = scaleSchedulerPool.start();
-        }
         if (properties.isSplitLanesEnabled()) {
             telemetryLane = new Lane(
                     ObjectChangeLane.TELEMETRY,
@@ -105,7 +94,6 @@ public class ObjectChangeEventBus {
                     properties.isElasticWorkersEnabled(),
                     properties.getElasticScaleUpQueueThreshold(),
                     properties.getElasticScaleDownSteps(),
-                    properties.getElasticScaleCheckIntervalMs(),
                     handlersForLane(ObjectChangeLane.TELEMETRY)
             );
             automationLane = new Lane(
@@ -116,11 +104,10 @@ public class ObjectChangeEventBus {
                     properties.isElasticWorkersEnabled(),
                     properties.getElasticScaleUpQueueThreshold(),
                     properties.getElasticScaleDownSteps(),
-                    properties.getElasticScaleCheckIntervalMs(),
                     handlersForLane(ObjectChangeLane.AUTOMATION)
             );
-            telemetryLane.start(sharedScaleScheduler);
-            automationLane.start(sharedScaleScheduler);
+            telemetryLane.start();
+            automationLane.start();
             automationMetricsRecorder.bindObjectChangeQueue("telemetry", telemetryLane.queue);
             automationMetricsRecorder.bindObjectChangeQueue("automation", automationLane.queue);
             log.info(
@@ -144,10 +131,9 @@ public class ObjectChangeEventBus {
                     properties.isElasticWorkersEnabled(),
                     properties.getElasticScaleUpQueueThreshold(),
                     properties.getElasticScaleDownSteps(),
-                    properties.getElasticScaleCheckIntervalMs(),
                     handlers
             );
-            unifiedLane.start(sharedScaleScheduler);
+            unifiedLane.start();
             automationMetricsRecorder.bindObjectChangeQueue("unified", unifiedLane.queue);
             log.info(
                     "Object change event bus started (workers={}-{}, queueCapacity={}, elastic={}, handlers={})",
@@ -166,20 +152,6 @@ public class ObjectChangeEventBus {
             );
             coalesceScheduler = coalesceSchedulerPool.start();
         }
-    }
-
-    private int scaleSchedulerLoad() {
-        int load = 0;
-        if (telemetryLane != null) {
-            load += telemetryLane.queueDepth();
-        }
-        if (automationLane != null) {
-            load += automationLane.queueDepth();
-        }
-        if (unifiedLane != null) {
-            load += unifiedLane.queueDepth();
-        }
-        return load;
     }
 
     public void submit(ObjectChangeEvent event) {
@@ -248,6 +220,9 @@ public class ObjectChangeEventBus {
     private void flushCoalesce(Lane lane) {
         List<ObjectChangeEvent> pending = new ArrayList<>(telemetryCoalesce.values());
         telemetryCoalesce.clear();
+        if (coalesceSchedulerPool != null) {
+            coalesceSchedulerPool.signalIdle();
+        }
         for (ObjectChangeEvent event : pending) {
             lane.enqueue(event);
         }
@@ -280,9 +255,6 @@ public class ObjectChangeEventBus {
         }
         if (coalesceSchedulerPool != null) {
             coalesceSchedulerPool.close();
-        }
-        if (scaleSchedulerPool != null) {
-            scaleSchedulerPool.close();
         }
     }
 
@@ -330,9 +302,7 @@ public class ObjectChangeEventBus {
         private final List<ObjectChangeAsyncHandler> laneHandlers;
         private final AtomicInteger activeWorkers = new AtomicInteger(0);
         private volatile int scaleUpQueueThreshold;
-        private final int scaleCheckIntervalMs;
         private final int scaleDownSteps;
-        private ScheduledFuture<?> scaleTask;
 
         private Lane(
                 ObjectChangeLane id,
@@ -342,7 +312,6 @@ public class ObjectChangeEventBus {
                 boolean elasticWorkers,
                 int scaleUpQueueThreshold,
                 int scaleDownSteps,
-                int scaleCheckIntervalMs,
                 List<ObjectChangeAsyncHandler> laneHandlers
         ) {
             this.id = id;
@@ -356,7 +325,6 @@ public class ObjectChangeEventBus {
             this.queue = new LinkedBlockingQueue<>(queueCapacity);
             this.laneHandlers = laneHandlers;
             this.scaleUpQueueThreshold = scaleUpQueueThreshold;
-            this.scaleCheckIntervalMs = scaleCheckIntervalMs;
             this.scaleDownSteps = scaleDownSteps;
             this.workers = Executors.newCachedThreadPool(runnable -> {
                 Thread thread = new Thread(runnable, "object-change-bus-" + id.name().toLowerCase());
@@ -365,20 +333,12 @@ public class ObjectChangeEventBus {
             });
         }
 
-        private void start(ScheduledThreadPoolExecutor scaleScheduler) {
+        private void start() {
             int initial = elasticWorkers ? minWorkers : maxWorkers;
             for (int i = 0; i < initial; i++) {
                 spawnWorker();
             }
             automationMetricsRecorder.bindObjectChangeWorkers(id.name().toLowerCase(), activeWorkers);
-            if (elasticWorkers && scaleScheduler != null) {
-                scaleTask = scaleScheduler.scheduleAtFixedRate(
-                        this::adjustWorkers,
-                        scaleCheckIntervalMs,
-                        scaleCheckIntervalMs,
-                        TimeUnit.MILLISECONDS
-                );
-            }
         }
 
         private void adjustWorkers() {
@@ -418,7 +378,7 @@ public class ObjectChangeEventBus {
                 dispatch(event);
                 return;
             }
-            if (elasticWorkers && queue.size() >= scaleUpQueueThreshold) {
+            if (elasticWorkers) {
                 adjustWorkers();
             }
         }
@@ -433,8 +393,13 @@ public class ObjectChangeEventBus {
                     ObjectChangeEvent event = queue.poll(500, TimeUnit.MILLISECONDS);
                     if (event != null) {
                         dispatch(event);
-                    } else if (shouldWorkerExit()) {
-                        break;
+                    } else {
+                        if (elasticWorkers) {
+                            adjustWorkers();
+                        }
+                        if (shouldWorkerExit()) {
+                            break;
+                        }
                     }
                 }
             } catch (InterruptedException ex) {
@@ -497,9 +462,6 @@ public class ObjectChangeEventBus {
         }
 
         private void shutdown() {
-            if (scaleTask != null) {
-                scaleTask.cancel(false);
-            }
             workers.shutdownNow();
         }
     }

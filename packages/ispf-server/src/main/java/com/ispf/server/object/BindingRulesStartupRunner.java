@@ -12,15 +12,24 @@ public class BindingRulesStartupRunner {
     private final ObjectManager objectManager;
     private final BindingDependencyIndex dependencyIndex;
     private final BindingRuleEngine bindingRuleEngine;
+    private final BindingRulesService bindingRulesService;
+    private final BindingPeriodicScheduleRegistry periodicScheduleRegistry;
+    private final BindingPeriodicScheduler periodicScheduler;
 
     public BindingRulesStartupRunner(
             ObjectManager objectManager,
             BindingDependencyIndex dependencyIndex,
-            BindingRuleEngine bindingRuleEngine
+            BindingRuleEngine bindingRuleEngine,
+            BindingRulesService bindingRulesService,
+            BindingPeriodicScheduleRegistry periodicScheduleRegistry,
+            BindingPeriodicScheduler periodicScheduler
     ) {
         this.objectManager = objectManager;
         this.dependencyIndex = dependencyIndex;
         this.bindingRuleEngine = bindingRuleEngine;
+        this.bindingRulesService = bindingRulesService;
+        this.periodicScheduleRegistry = periodicScheduleRegistry;
+        this.periodicScheduler = periodicScheduler;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -28,6 +37,11 @@ public class BindingRulesStartupRunner {
     public void initializeBindingRules() {
         var paths = objectManager.tree().all().stream().map(node -> node.path()).toList();
         dependencyIndex.rebuildAll(paths);
+        periodicScheduleRegistry.clearAll();
+        for (String path : periodicScheduleRegistry.objectPathsWithBindingRules()) {
+            periodicScheduleRegistry.syncObject(path, bindingRulesService.listRules(path));
+        }
+        periodicScheduler.reschedule();
         for (String path : paths) {
             bindingRuleEngine.onStartup(path);
         }

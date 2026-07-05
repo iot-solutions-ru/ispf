@@ -173,7 +173,6 @@ final class PlatformRuntimeSettingsCatalog {
             def("automation", "function-audit.flush-interval-ms", "ISPF_FUNCTION_AUDIT_FLUSH_INTERVAL_MS", "ispf.function.audit.flush-interval-ms", PlatformRuntimeSettingType.INTEGER, "200", false, false),
             def("automation", "function-audit.retention-days", "ISPF_FUNCTION_AUDIT_RETENTION_DAYS", "ispf.function.audit.retention-days", PlatformRuntimeSettingType.INTEGER, "30", false, false),
 
-            def("observability", "metrics-probe.enabled", "ISPF_PLATFORM_METRICS_PROBE_ENABLED", "ispf.platform-metrics-probe.enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("observability", "metrics-probe.interval-ms", "ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS", "ispf.platform-metrics-probe.interval-ms", PlatformRuntimeSettingType.INTEGER, "5000", false, false),
             def("observability", "otlp.metrics.enabled", "ISPF_OTLP_METRICS_ENABLED", "management.otlp.metrics.export.enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("observability", "otlp.metrics.url", "ISPF_OTLP_METRICS_URL", "management.otlp.metrics.export.url", PlatformRuntimeSettingType.STRING, "http://localhost:4318/v1/metrics", false, false),

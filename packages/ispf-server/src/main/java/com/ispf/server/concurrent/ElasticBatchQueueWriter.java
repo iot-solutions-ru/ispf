@@ -12,8 +12,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -37,8 +35,6 @@ public final class ElasticBatchQueueWriter<T> {
 
     private BlockingQueue<T> queue;
     private ExecutorService workers;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private ElasticWorkerScaler scaler;
     private final AtomicInteger activeWorkers = new AtomicInteger();
     private volatile boolean running;
@@ -66,17 +62,6 @@ public final class ElasticBatchQueueWriter<T> {
                     settings.resolvedMaxWorkers(),
                     settings.scaleUpQueueThreshold(),
                     settings.scaleDownSteps()
-            );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, workerThreadName + "-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    settings.scaleCheckIntervalMs(),
-                    settings.scaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
             );
         }
         workers = Executors.newCachedThreadPool(runnable -> {
@@ -108,7 +93,7 @@ public final class ElasticBatchQueueWriter<T> {
             return false;
         }
         boolean accepted = queue.offer(item);
-        if (accepted && settings.enabled() && queue.size() >= settings.scaleUpQueueThreshold()) {
+        if (accepted) {
             adjustWorkers();
         }
         return accepted;
@@ -160,6 +145,8 @@ public final class ElasticBatchQueueWriter<T> {
                     flushBatch(batch);
                     batch.clear();
                     lastFlush = System.nanoTime();
+                } else if (batch.isEmpty()) {
+                    adjustWorkers();
                 }
             }
         } catch (InterruptedException ex) {
@@ -183,12 +170,6 @@ public final class ElasticBatchQueueWriter<T> {
     @PreDestroy
     public void shutdown() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         if (workers != null) {
             workers.shutdownNow();
         }

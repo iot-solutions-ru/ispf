@@ -18,8 +18,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -45,8 +43,6 @@ public class TelemetryIngressDispatcher {
     private LinkedBlockingQueue<PendingUpdate> pendingFifo;
     private volatile boolean running;
     private ExecutorService workers;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private ElasticWorkerScaler scaler;
     private final AtomicInteger activeWorkers = new AtomicInteger();
 
@@ -60,9 +56,17 @@ public class TelemetryIngressDispatcher {
         this.automationMetricsRecorder = automationMetricsRecorder;
     }
 
-    @jakarta.annotation.PostConstruct
-    void start() {
-        if (!properties.isIngressQueueEnabled()) {
+    public boolean isQueueEnabled() {
+        return properties.isIngressQueueEnabled();
+    }
+
+    /** True after the worker pool has been started (lazy: first telemetry sample). */
+    public boolean isStarted() {
+        return running;
+    }
+
+    public synchronized void start() {
+        if (running || !properties.isIngressQueueEnabled()) {
             return;
         }
         pendingFifo = new LinkedBlockingQueue<>(properties.getIngressQueueCapacity());
@@ -75,18 +79,6 @@ public class TelemetryIngressDispatcher {
                     maxWorkers,
                     properties.getIngressScaleUpQueueThreshold(),
                     properties.getIngressScaleDownSteps()
-            );
-            AtomicInteger scaleIndex = new AtomicInteger();
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "telemetry-ingress-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    properties.getIngressScaleCheckIntervalMs(),
-                    properties.getIngressScaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
             );
         }
         workers = Executors.newCachedThreadPool(runnable -> {
@@ -111,20 +103,23 @@ public class TelemetryIngressDispatcher {
         );
     }
 
-    public boolean isEnabled() {
-        return properties.isIngressQueueEnabled() && running;
-    }
-
     public void submit(String path, String variableName, DataRecord value, Instant observedAt) {
-        if (!isEnabled()) {
+        if (!properties.isIngressQueueEnabled()) {
             coalescer.recordUpdate(path, variableName, value, observedAt);
             return;
         }
+        ensureStarted();
         PendingUpdate update = new PendingUpdate(path, variableName, value, observedAt);
         if (properties.isIngressQueueCoalesceEnabled()) {
             submitCoalesced(update);
         } else {
             submitFifo(update);
+        }
+    }
+
+    private void ensureStarted() {
+        if (!running) {
+            start();
         }
     }
 
@@ -173,21 +168,13 @@ public class TelemetryIngressDispatcher {
     }
 
     private void signalWorkers() {
-        if (properties.isIngressElasticWorkers() && pendingCount.get() >= properties.getIngressScaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
+        adjustWorkers();
         LockSupport.unpark(drainWaiter);
     }
 
     @PreDestroy
     void shutdown() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         LockSupport.unpark(drainWaiter);
         if (workers != null) {
             workers.shutdownNow();
@@ -229,6 +216,7 @@ public class TelemetryIngressDispatcher {
                 }
                 List<PendingUpdate> drained = drainBatch(properties.getIngressDrainBatchSize());
                 if (drained.isEmpty()) {
+                    adjustWorkers();
                     drainWaiter = Thread.currentThread();
                     LockSupport.parkNanos(250_000L);
                     continue;

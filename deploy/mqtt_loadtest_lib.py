@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from loadtest_cleanup_lib import delete_loadtest_alert_rules
 from urllib.parse import quote
 
@@ -137,6 +139,13 @@ class Client:
     def request(self, method: str, path: str, **kwargs) -> requests.Response:
         kwargs.setdefault("timeout", self.timeout)
         return self.session.request(method, f"{self.base}{path}", **kwargs)
+
+    def clone(self) -> "Client":
+        """Thread-local HTTP client sharing auth with this session."""
+        cloned = Client(self.base, None, self.timeout)
+        cloned.token = self.token
+        cloned.session.headers.update(self.session.headers)
+        return cloned
 
 
 def find_relative_blueprint_id(client: Client, blueprint_name: str) -> str | None:
@@ -1190,8 +1199,9 @@ def _set_string_variable(client: Client, path: str, name: str, value: str) -> No
         raise RuntimeError(f"set {name} on {path}: HTTP {r.status_code} {r.text[:160]}")
 
 
-def _delete_gateway_child_sensors(client: Client) -> None:
+def _delete_gateway_child_sensors(client: Client, parallel_workers: int = 1) -> None:
     """Remove loadtest gateway child sensors (instances + legacy gateway.sensors folder)."""
+    paths: list[str] = []
     for parent in (gateway_instances_parent(), gateway_sensors_path()):
         try:
             children = client.request(
@@ -1202,19 +1212,37 @@ def _delete_gateway_child_sensors(client: Client) -> None:
                 path = item.get("path", "")
                 name = path.rsplit(".", 1)[-1] if path else ""
                 if path and name.startswith(SENSOR_NAME_PREFIX):
-                    delete_device(client, path)
+                    paths.append(path)
         except Exception:
             pass
+
+    workers = max(1, parallel_workers)
+    if len(paths) >= 32 and workers > 1:
+
+        def delete_one(path: str) -> None:
+            delete_device(client.clone(), path)
+
+        completed = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = [pool.submit(delete_one, path) for path in paths]
+            for future in as_completed(futures):
+                future.result()
+                completed += 1
+                if completed % 500 == 0 or completed == len(paths):
+                    print(f"  deleted {completed}/{len(paths)} gateway child sensors", flush=True)
+    else:
+        for path in paths:
+            delete_device(client, path)
     client.request(
         "DELETE",
         f"/api/v1/objects/by-path?path={quote(gateway_sensors_path(), safe='')}",
     )
 
 
-def delete_gateway_tree(client: Client) -> None:
+def delete_gateway_tree(client: Client, parallel_workers: int = 1) -> None:
     """Remove prior gateway loadtest tree (stale bindings/models break orchestrator)."""
     gw = gateway_path()
-    _delete_gateway_child_sensors(client)
+    _delete_gateway_child_sensors(client, parallel_workers=parallel_workers)
     if driver_status(client, gw):
         delete_device(client, gw)
     else:
@@ -1228,8 +1256,10 @@ def ensure_gateway_tree(
     gateway_model_id: str,
     instance_type_id: str,
     child_coalesce_ms: int | None = None,
+    parallel_workers: int = 1,
 ) -> tuple[str, list[str]]:
-    delete_gateway_tree(client)
+    workers = max(1, parallel_workers)
+    delete_gateway_tree(client, parallel_workers=workers)
     gw = gateway_path()
     instances_parent = gateway_instances_parent()
     _create_object(
@@ -1245,13 +1275,88 @@ def ensure_gateway_tree(
     _set_string_variable(client, gw, "sensorParentPath", instances_parent)
     _set_string_variable(client, gw, "instanceModelName", GATEWAY_SENSOR_MODEL_NAME)
 
-    sensor_paths: list[str] = []
-    for index in range(1, device_count + 1):
+    if workers <= 1 or device_count < 32:
+
+        def seed_one(index: int) -> str:
+            name = sensor_name(index, pad)
+            path = instantiate_instance_type(client, instance_type_id, instances_parent, name)
+            configure_child_telemetry_policy(client, path, telemetry_coalesce_ms=child_coalesce_ms)
+            return path
+
+        sensor_paths: list[str] = []
+        for index in range(1, device_count + 1):
+            sensor_paths.append(seed_one(index))
+            if device_count >= 100 and (index % 500 == 0 or index == device_count):
+                print(f"  instantiated {index}/{device_count} gateway child sensors", flush=True)
+        return gw, sensor_paths
+
+    def seed_one(index: int) -> str:
+        local = client.clone()
         name = sensor_name(index, pad)
-        path = instantiate_instance_type(client, instance_type_id, instances_parent, name)
-        configure_child_telemetry_policy(client, path, telemetry_coalesce_ms=child_coalesce_ms)
-        sensor_paths.append(path)
-    return gw, sensor_paths
+        path = instantiate_instance_type(local, instance_type_id, instances_parent, name)
+        configure_child_telemetry_policy(local, path, telemetry_coalesce_ms=child_coalesce_ms)
+        return path
+
+    sensor_paths: list[str | None] = [None] * device_count
+    completed = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(seed_one, index): index for index in range(1, device_count + 1)}
+        for future in as_completed(futures):
+            index = futures[future]
+            sensor_paths[index - 1] = future.result()
+            completed += 1
+            if completed % 500 == 0 or completed == device_count:
+                print(f"  instantiated {completed}/{device_count} gateway child sensors", flush=True)
+    return gw, [path for path in sensor_paths if path is not None]
+
+
+def seed_mqtt_gateway_only(
+    client: Client,
+    broker_url: str,
+    device_count: int,
+    poll_ms: int = 5000,
+    topics: list[str] | None = None,
+    telemetry_coalesce_ms: int | None = None,
+    parallel_workers: int = 16,
+) -> tuple[str, list[str]]:
+    """1× mqtt gateway — child sensors created lazily on first dispatch (no API seed loop)."""
+    gateway_model_id = ensure_mqtt_gateway_model(client)
+    ensure_mqtt_gateway_sensor_instance_type(client)
+    delete_gateway_tree(client, parallel_workers=parallel_workers)
+    gw = gateway_path()
+    instances_parent = gateway_instances_parent()
+    _create_object(
+        client,
+        "root.platform.devices",
+        GATEWAY_NAME,
+        "DEVICE",
+        "MQTT loadtest gateway",
+        "Single MQTT connection orchestrator for load test",
+    )
+    apply_relative_blueprint(client, gateway_model_id, gw)
+    put_gateway_binding_rules(client, gw)
+    _set_string_variable(client, gw, "sensorParentPath", instances_parent)
+    _set_string_variable(client, gw, "instanceModelName", GATEWAY_SENSOR_MODEL_NAME)
+
+    delete_loadtest_alert_rules(client)
+    configure_mqtt_gateway_driver(
+        client,
+        gw,
+        broker_url,
+        topics=topics,
+        telemetry_coalesce_ms=telemetry_coalesce_ms,
+        poll_ms=poll_ms,
+        auto_start=False,
+    )
+    print(
+        f"  gateway {gw}: lazy dispatch for up to {device_count} topics "
+        f"(instantiateModelIfMissing on first message)"
+    )
+    if start_mqtt_driver(client, gw):
+        print("  mqtt gateway driver started (broker must be reachable from ISPF server)")
+    else:
+        print("  WARN: mqtt gateway driver failed to start")
+    return gw, []
 
 
 def configure_mqtt_gateway_driver(
@@ -1358,6 +1463,7 @@ def seed_mqtt_gateway_devices(
     poll_ms: int = 5000,
     topics: list[str] | None = None,
     telemetry_coalesce_ms: int | None = None,
+    parallel_workers: int = 1,
 ) -> tuple[str, list[str]]:
     """1× mqtt gateway + N child sensors (orchestrator load test)."""
     pad = max(5, len(str(device_count)))
@@ -1370,6 +1476,7 @@ def seed_mqtt_gateway_devices(
         gateway_model_id,
         instance_type_id,
         child_coalesce_ms=telemetry_coalesce_ms,
+        parallel_workers=parallel_workers,
     )
 
     delete_loadtest_alert_rules(client)

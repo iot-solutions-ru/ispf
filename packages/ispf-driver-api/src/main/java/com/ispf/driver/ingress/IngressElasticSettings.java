@@ -2,7 +2,11 @@ package com.ispf.driver.ingress;
 
 import java.util.Map;
 
-/** Elastic worker tuning for driver ingress lanes (L0 MQTT, L1 server buffer). */
+/**
+ * Elastic worker tuning for driver ingress lanes (L0 MQTT, L1 server buffer).
+ *
+ * @param scaleCheckIntervalMs retained for config compatibility; scaling is event-driven, interval is ignored
+ */
 public record IngressElasticSettings(
         boolean enabled,
         int minWorkers,

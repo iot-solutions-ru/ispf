@@ -20,6 +20,8 @@ PHASE="${PHASE:-20}"
 INTERVAL_MS="${INTERVAL_MS:-1}"
 EMQTT_CPU_LIMIT="${EMQTT_CPU_LIMIT:-2.0}"
 SHARD_MAX="${SHARD_MAX:-4}"
+LAZY_INSTANCES="${LAZY_INSTANCES:-false}"
+PARALLEL_WORKERS="${PARALLEL_WORKERS:-0}"
 SKIP_DEVICE_SETUP="${SKIP_DEVICE_SETUP:-false}"
 MQTT_HOST="${MQTT_HOST:-mqtt}"
 MQTT_PORT="${MQTT_PORT:-1883}"
@@ -90,11 +92,19 @@ cd "$LAB_ROOT"
 
 if [ "$SKIP_DEVICE_SETUP" != "true" ] && [ -f "$SETUP" ]; then
   echo "Seeding mqtt-gateway + ${DEVICES} child sensors..."
-  "$VENV" "$SETUP" \
-    --devices "$DEVICES" \
-    --telemetry-coalesce-ms 1 \
-    --base-url "$BASE_URL" \
+  setup_args=(
+    --devices "$DEVICES"
+    --telemetry-coalesce-ms 1
+    --base-url "$BASE_URL"
     --broker-url "tcp://${MQTT_HOST}:${MQTT_PORT}"
+  )
+  if [[ "$PARALLEL_WORKERS" -gt 0 ]]; then
+    setup_args+=(--parallel-workers "$PARALLEL_WORKERS")
+  fi
+  if [[ "$LAZY_INSTANCES" == "true" ]] || [[ "$DEVICES" -ge 500 ]]; then
+    setup_args+=(--lazy-instances)
+  fi
+  "$VENV" "$SETUP" "${setup_args[@]}"
   sleep 8
 fi
 

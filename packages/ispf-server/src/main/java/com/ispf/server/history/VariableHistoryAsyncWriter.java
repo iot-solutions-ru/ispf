@@ -18,8 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -35,8 +33,6 @@ public class VariableHistoryAsyncWriter {
     private BlockingQueue<VariableSampleEntity> queue;
     private ConcurrentHashMap<String, VariableSampleEntity> overflowCoalesce;
     private ExecutorService workers;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private ElasticWorkerScaler scaler;
     private final AtomicInteger activeWorkers = new AtomicInteger();
     private volatile boolean running;
@@ -67,17 +63,6 @@ public class VariableHistoryAsyncWriter {
                     properties.resolvedWriterThreadsMax(),
                     properties.getElasticScaleUpQueueThreshold(),
                     properties.getElasticScaleDownSteps()
-            );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "variable-history-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    properties.getElasticScaleCheckIntervalMs(),
-                    properties.getElasticScaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
             );
         }
         workers = Executors.newCachedThreadPool(runnable -> {
@@ -126,7 +111,7 @@ public class VariableHistoryAsyncWriter {
 
     private void enqueueOne(VariableSampleEntity sample) {
         if (queue.offer(sample)) {
-            maybeScaleUp();
+            adjustWorkers();
             return;
         }
         if (overflowCoalesce != null) {
@@ -137,7 +122,7 @@ public class VariableHistoryAsyncWriter {
             } else {
                 automationMetricsRecorder.recordVariableHistoryCoalesced();
             }
-            maybeScaleUp();
+            adjustWorkers();
             return;
         }
         automationMetricsRecorder.recordVariableHistorySyncFallback();
@@ -150,12 +135,6 @@ public class VariableHistoryAsyncWriter {
         );
         batchPersister.persistOne(sample);
         automationMetricsRecorder.recordVariableHistoryFlushed(1);
-    }
-
-    private void maybeScaleUp() {
-        if (scaler != null && totalPending() >= properties.getElasticScaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
     }
 
     private int totalPending() {
@@ -212,6 +191,8 @@ public class VariableHistoryAsyncWriter {
                 }
                 if (!batch.isEmpty()) {
                     flushBatch(batch);
+                } else {
+                    adjustWorkers();
                 }
             }
         } catch (InterruptedException ex) {
@@ -282,12 +263,6 @@ public class VariableHistoryAsyncWriter {
     @PreDestroy
     void shutdown() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         if (workers != null) {
             workers.shutdownNow();
         }

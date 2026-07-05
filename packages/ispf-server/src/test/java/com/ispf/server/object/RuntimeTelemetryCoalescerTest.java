@@ -296,7 +296,7 @@ class RuntimeTelemetryCoalescerTest {
         return new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
         ) {{
-            startScheduler();
+            ensureSchedulerStarted();
         }};
     }
 

@@ -5,15 +5,13 @@ import com.ispf.driver.ingress.IngressElasticSettings;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.IntSupplier;
 
 /**
  * Cached worker pool with optional {@link ElasticWorkerScaler} ramp (L3 gateway dispatch, binding async, driver I/O).
+ * Scaling is event-driven: enqueue signals scale-up; idle workers signal scale-down — no periodic scale timer.
  */
 public final class ElasticWorkerLauncher implements AutoCloseable {
 
@@ -31,8 +29,6 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
     private volatile boolean running;
     private ExecutorService workers;
     private ElasticWorkerScaler scaler;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private final AtomicInteger activeWorkers = new AtomicInteger();
     private volatile Thread drainWaiter;
 
@@ -57,17 +53,6 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
                     settings.scaleUpQueueThreshold(),
                     settings.scaleDownSteps()
             );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, workerThreadName + "-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    settings.scaleCheckIntervalMs(),
-                    settings.scaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
-            );
         }
         workers = Executors.newCachedThreadPool(runnable -> {
             Thread thread = new Thread(runnable, workerThreadName);
@@ -85,9 +70,7 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
     }
 
     public void signalWork() {
-        if (settings.enabled() && queueSize.getAsInt() >= settings.scaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
+        adjustWorkers();
         LockSupport.unpark(drainWaiter);
     }
 
@@ -104,6 +87,7 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
     }
 
     public void parkWorker() {
+        adjustWorkers();
         drainWaiter = Thread.currentThread();
         LockSupport.parkNanos(250_000L);
     }
@@ -146,12 +130,6 @@ public final class ElasticWorkerLauncher implements AutoCloseable {
     @Override
     public void close() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         LockSupport.unpark(drainWaiter);
         if (workers != null) {
             workers.shutdownNow();

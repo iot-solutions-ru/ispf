@@ -20,7 +20,7 @@ public class PlatformMetricsProbeService {
 
     private static final Logger log = LoggerFactory.getLogger(PlatformMetricsProbeService.class);
 
-    static final String DEVICE_PATH = "root.platform.devices.platform-metrics-probe";
+    public static final String DEVICE_PATH = "root.platform.devices.platform-metrics-probe";
 
     private static final DataSchema INTEGER_VALUE = DataSchema.builder("integerValue")
             .field("value", FieldType.INTEGER)
@@ -32,6 +32,8 @@ public class PlatformMetricsProbeService {
     private final PlatformMetricsProbeProperties properties;
     private final PlatformMetricsService metricsService;
     private final ObjectManager objectManager;
+
+    private volatile boolean diagnosticsProbeEnabled;
 
     private Long lastEventHistoryRecords;
     private Long lastAlertFiresTotal;
@@ -49,20 +51,41 @@ public class PlatformMetricsProbeService {
 
     @EventListener(ApplicationReadyEvent.class)
     void bootstrap() {
-        if (!properties.isEnabled()) {
+        if (!diagnosticsProbeEnabled) {
             return;
         }
         if (!probeDeviceExists()) {
-            log.debug("Platform metrics probe disabled: device {} not found", DEVICE_PATH);
+            log.debug("Diagnostics metrics probe: device {} not found", DEVICE_PATH);
             return;
         }
-        log.info("Platform metrics probe syncing to {}", DEVICE_PATH);
+        log.info("Diagnostics metrics probe syncing to {}", DEVICE_PATH);
         syncOnce();
+    }
+
+    public boolean isDiagnosticsProbeEnabled() {
+        return diagnosticsProbeEnabled;
+    }
+
+    public void setDiagnosticsProbeEnabled(boolean enabled) {
+        diagnosticsProbeEnabled = enabled;
+        if (enabled) {
+            log.info("Diagnostics metrics probe enabled (Load diagnostics, interval {}ms)",
+                    properties.getIntervalMs());
+            if (probeDeviceExists()) {
+                syncOnce();
+            }
+            return;
+        }
+        log.info("Diagnostics metrics probe disabled");
+    }
+
+    public boolean probeDeviceExists() {
+        return objectManager.tree().findByPath(DEVICE_PATH).isPresent();
     }
 
     @Scheduled(fixedDelayString = "${ispf.platform-metrics-probe.interval-ms:5000}")
     void poll() {
-        if (!properties.isEnabled() || !probeDeviceExists()) {
+        if (!diagnosticsProbeEnabled || !probeDeviceExists()) {
             return;
         }
         syncOnce();
@@ -127,10 +150,6 @@ public class PlatformMetricsProbeService {
     }
 
     private record RateSnapshot(double eventsPerSecond, double alertFiresPerSecond) {}
-
-    private boolean probeDeviceExists() {
-        return objectManager.tree().findByPath(DEVICE_PATH).isPresent();
-    }
 
     private void writeInteger(String name, long value) {
         objectManager.setSystemVariableValue(

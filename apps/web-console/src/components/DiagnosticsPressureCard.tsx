@@ -1,8 +1,10 @@
-import { Fragment, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Fragment, useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   fetchClusterDiagnostics,
+  fetchDiagnosticsMetricsProbe,
+  setDiagnosticsMetricsProbe,
   type ClusterDiagnosticsNode,
   type DiagnosticsSeverity,
   type DriverDiagnosticsRow,
@@ -54,6 +56,18 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
       {threadGroups.length > 0 && (
         <section>
           <h4>{t("diagnostics.threadsTitle")}</h4>
+          {detail.threadSampleReady === false && (
+            <p className="op-muted diagnostics-thread-hint">{t("diagnostics.threadSampleWarmup")}</p>
+          )}
+          {detail.threadSampleReady !== false && detail.threadCpuAttributedPercent != null && (
+            <p className="op-muted diagnostics-thread-hint">
+              {t("diagnostics.threadCpuAttributed", {
+                attributed: formatPercent(detail.threadCpuAttributedPercent),
+                process: formatPercent(node.processCpuPercent),
+                window: detail.threadSampleWindowSeconds ?? "—",
+              })}
+            </p>
+          )}
           <table className="op-table diagnostics-detail-table">
             <thead>
               <tr>
@@ -102,6 +116,7 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
                 <th>{t("diagnostics.col.devicePath")}</th>
                 <th>{t("diagnostics.col.driverId")}</th>
                 <th>{t("diagnostics.col.pollMs")}</th>
+                <th>{t("diagnostics.col.pointCount")}</th>
                 <th>{t("diagnostics.col.ingressPending")}</th>
                 <th>{t("diagnostics.col.pressure")}</th>
               </tr>
@@ -115,8 +130,9 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
                   <td className="mono">{driver.devicePath}</td>
                   <td>{driver.driverId}</td>
                   <td>{driver.pollIntervalMs}</td>
+                  <td>{driver.pointMappingCount ?? "—"}</td>
                   <td>{driver.ingressPending ?? "—"}</td>
-                  <td>{driver.pressureScore}</td>
+                  <td title={driver.lastError ?? undefined}>{driver.pressureScore}</td>
                 </tr>
               ))}
             </tbody>
@@ -174,6 +190,31 @@ function NodeDetailPanel({ node }: { node: ClusterDiagnosticsNode }) {
 export default function DiagnosticsPressureCard() {
   const { t } = useTranslation("system");
   const [expandedReplicaId, setExpandedReplicaId] = useState<string | null>(null);
+  const [probeToggle, setProbeToggle] = useState(false);
+
+  const probeStatusQuery = useQuery({
+    queryKey: ["diagnostics-metrics-probe"],
+    queryFn: fetchDiagnosticsMetricsProbe,
+  });
+
+  const probeMutation = useMutation({
+    mutationFn: setDiagnosticsMetricsProbe,
+    onSuccess: (data) => setProbeToggle(data.enabled),
+    onError: () => setProbeToggle(false),
+  });
+
+  useEffect(() => {
+    if (probeStatusQuery.data != null) {
+      setProbeToggle(probeStatusQuery.data.enabled);
+    }
+  }, [probeStatusQuery.data]);
+
+  useEffect(() => {
+    return () => {
+      void setDiagnosticsMetricsProbe(false).catch(() => undefined);
+    };
+  }, []);
+
   const diagnosticsQuery = useQuery({
     queryKey: ["cluster-diagnostics"],
     queryFn: fetchClusterDiagnostics,
@@ -182,6 +223,11 @@ export default function DiagnosticsPressureCard() {
 
   const top = diagnosticsQuery.data?.clusterTopSuspect;
 
+  const handleProbeToggle = (enabled: boolean) => {
+    setProbeToggle(enabled);
+    probeMutation.mutate(enabled);
+  };
+
   return (
     <section className="system-metrics-card diagnostics-pressure-card">
       <div className="diagnostics-pressure-header">
@@ -189,15 +235,30 @@ export default function DiagnosticsPressureCard() {
           <h3>{t("diagnostics.title")}</h3>
           <p className="op-muted">{t("diagnostics.subtitle")}</p>
         </div>
-        <button
-          type="button"
-          className="btn"
-          disabled={diagnosticsQuery.isFetching}
-          onClick={() => diagnosticsQuery.refetch()}
-        >
-          {t("metrics.refresh")}
-        </button>
+        <div className="diagnostics-pressure-actions">
+          <label className="diagnostics-probe-toggle">
+            <input
+              type="checkbox"
+              checked={probeToggle}
+              disabled={probeMutation.isPending}
+              onChange={(event) => handleProbeToggle(event.target.checked)}
+            />
+            <span>{t("diagnostics.metricsProbeToggle")}</span>
+          </label>
+          <button
+            type="button"
+            className="btn"
+            disabled={diagnosticsQuery.isFetching}
+            onClick={() => diagnosticsQuery.refetch()}
+          >
+            {t("metrics.refresh")}
+          </button>
+        </div>
       </div>
+
+      {probeToggle && (
+        <p className="op-muted diagnostics-probe-hint">{t("diagnostics.metricsProbeHint")}</p>
+      )}
 
       {diagnosticsQuery.error && (
         <div className="op-alert op-alert-error">{String(diagnosticsQuery.error)}</div>

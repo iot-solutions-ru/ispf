@@ -2,6 +2,9 @@ package com.ispf.driver.ingress;
 
 /**
  * Computes target worker count from queue depth for elastic async lanes.
+ * <p>
+ * Event-driven contract: call {@link #adjust(int)} when work is enqueued (scale-up) and when a
+ * worker finds the queue empty (scale-down via consecutive empty observations). No periodic polling.
  */
 public final class ElasticWorkerScaler {
 

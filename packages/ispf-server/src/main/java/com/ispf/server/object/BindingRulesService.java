@@ -14,6 +14,7 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.expression.BindingDependencyParser;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,10 +32,19 @@ public class BindingRulesService {
 
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
+    private final BindingPeriodicScheduleRegistry periodicScheduleRegistry;
+    private final BindingPeriodicScheduler periodicScheduler;
 
-    public BindingRulesService(ObjectManager objectManager, ObjectMapper objectMapper) {
+    public BindingRulesService(
+            ObjectManager objectManager,
+            ObjectMapper objectMapper,
+            BindingPeriodicScheduleRegistry periodicScheduleRegistry,
+            @Lazy BindingPeriodicScheduler periodicScheduler
+    ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
+        this.periodicScheduleRegistry = periodicScheduleRegistry;
+        this.periodicScheduler = periodicScheduler;
     }
 
     public List<BindingRule> listRules(String objectPath) {
@@ -48,6 +58,8 @@ public class BindingRulesService {
             validateRule(objectPath, rule);
         }
         writeRules(objectPath, normalized);
+        periodicScheduleRegistry.syncObject(objectPath, normalized);
+        periodicScheduler.reschedule();
         return normalized;
     }
 
@@ -66,7 +78,7 @@ public class BindingRulesService {
         List<BindingRule> rules = listRules(objectPath).stream()
                 .filter(rule -> !rule.id().equals(ruleId))
                 .toList();
-        writeRules(objectPath, rules);
+        saveRules(objectPath, rules);
     }
 
     public static BindingActivators defaultActivators(String objectPath, String expression) {

@@ -49,8 +49,8 @@ log "Bootstrap fixtures: $FIXTURES"
 upsert_env ISPF_BOOTSTRAP_FIXTURES_ENABLED "$FIXTURES"
 
 log "Stop cluster replicas"
-docker stop ispf-vps-replica-1 ispf-vps-replica-2 ispf-vps-replica-3 2>/dev/null || true
-docker rm ispf-vps-replica-1 ispf-vps-replica-2 ispf-vps-replica-3 2>/dev/null || true
+docker stop ispf-vps-replica-1 ispf-vps-replica-2 ispf-vps-replica-3 ispf-vps-worker-1 ispf-nats 2>/dev/null || true
+docker rm ispf-vps-replica-1 ispf-vps-replica-2 ispf-vps-replica-3 ispf-vps-worker-1 ispf-nats 2>/dev/null || true
 systemctl stop ispf-server 2>/dev/null || true
 
 log "Drop and recreate PostgreSQL database ispf"
@@ -81,7 +81,9 @@ if docker ps --format '{{.Names}}' | grep -qx ispf-redis; then
   docker exec ispf-redis redis-cli FLUSHALL >/dev/null || true
 fi
 
-log "Start replica-1 (Flyway + bootstrap leader)"
+log "Start NATS + replica-1 (Flyway + bootstrap leader)"
+"${COMPOSE[@]}" up -d nats
+sleep 2
 "${COMPOSE[@]}" up -d ispf-server-1
 for i in $(seq 1 90); do
   login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE}/api/v1/auth/login" \
@@ -100,10 +102,10 @@ for i in $(seq 1 90); do
   sleep 3
 done
 
-log "Start replica-2 and replica-3"
-"${COMPOSE[@]}" up -d ispf-server-2 ispf-server-3
+log "Start replica-2, replica-3, worker-1, nginx"
+"${COMPOSE[@]}" up -d ispf-server-2 ispf-server-3 ispf-server-worker-1 nginx
 
-log "Wait for api pool (2 replicas via nginx) + internal replica-3"
+log "Wait for api pool (edge-api + hmi-read) + io + compute"
 declare -A SEEN=()
 for i in $(seq 1 60); do
   SEEN=()
@@ -113,9 +115,11 @@ for i in $(seq 1 60); do
     [[ -n "$RID" ]] && SEEN["$RID"]=1
   done
   R3=$(curl -sf "http://127.0.0.1:8083/api/v1/info" \
-    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaId',''), d.get('replicaRole',''))" 2>/dev/null || true)
-  if [[ ${#SEEN[@]} -ge 2 && "$R3" == *"replica-3"* ]]; then
-    log "Cluster ready: api=${!SEEN[*]} internal=$R3"
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
+  W1=$(curl -sf "http://127.0.0.1:8084/api/v1/info" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
+  if [[ ${#SEEN[@]} -ge 2 && "$R3" == "io" && "$W1" == "compute" ]]; then
+    log "Cluster ready: api=${!SEEN[*]} io=$R3 compute=$W1"
     break
   fi
   [[ "$i" -eq 60 ]] && { docker ps; exit 1; }

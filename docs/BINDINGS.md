@@ -34,10 +34,14 @@
 |------|------------|
 | `activators.onStartup` | Пересчёт при старте сервера / attach модели |
 | `activators.onVariableChange` | Список `{ objectPath, variableName }`; `"self"` + `"*"` = любая локальная переменная |
-| `activators.periodicMs` | Периодический пересчёт (0 = выкл.) |
+| `activators.periodicMs` | Периодический пересчёт (0 = выкл.); индексируется в `platform_binding_periodic_rules`, wake по `next_run_at` |
 | `condition` | CEL; пусто = всегда |
 | `expression` | CEL или одна platform function |
 | `target` | Куда записать результат (см. **Target kinds** ниже) |
+
+### Periodic runtime
+
+Правила с `periodicMs > 0` попадают в JDBC-индекс `platform_binding_periodic_rules` при сохранении `@bindingRules`. **`BindingPeriodicScheduler`** будит JVM один раз на ближайший `next_run_at` и выполняет только due-строки — без секундного обхода всего дерева. Если periodic rules нет, фоновый wake не планируется.
 
 ### Target kinds (Platform Rule)
 

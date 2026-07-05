@@ -252,7 +252,7 @@ python deploy/setup-platform-metrics-monitor.py --base-url https://ispf.iot-solu
 - Dashboard: `root.platform.dashboards.platform-metrics`
 - Синхронизирует `GET /api/v1/platform/metrics` → переменные probe (events/s, alert fires/s, heap, DB pool, queue depth)
 
-Для prod включите probe syncer на VPS или запускайте syncer из load-test скриптов (они делают это автоматически).
+**Включение sync:** Admin → System → Metrics → Load diagnostics → «Sync metrics to probe device», или `PUT /api/v1/platform/diagnostics/metrics-probe` `{ "enabled": true }`. Load-test скрипты включают probe через API автоматически; при ручном мониторинге **выключите** probe после теста (UI снимает галочку при закрытии страницы).
 
 ### 3. Platform metrics API
 

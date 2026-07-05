@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -55,6 +56,29 @@ class PlatformMetricsApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nodes").isArray())
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void diagnosticsMetricsProbeOffByDefaultAndToggleable() throws Exception {
+        String token = adminToken();
+        mockMvc.perform(get("/api/v1/platform/diagnostics/metrics-probe")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(false));
+
+        mockMvc.perform(put("/api/v1/platform/diagnostics/metrics-probe")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(true));
+
+        mockMvc.perform(put("/api/v1/platform/diagnostics/metrics-probe")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"enabled\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.enabled").value(false));
     }
 
     @Test

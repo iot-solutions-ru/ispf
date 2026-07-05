@@ -458,7 +458,7 @@ public class ObjectManager {
                 && gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
             return variable;
         }
-        if (telemetryIngressDispatcher.isEnabled()) {
+        if (telemetryIngressDispatcher.isQueueEnabled()) {
             telemetryIngressDispatcher.submit(path, name, value, observedAt);
         } else {
             telemetryCoalescer.recordUpdate(path, name, value, observedAt);

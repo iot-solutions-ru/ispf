@@ -15,7 +15,8 @@ param(
     [string]$DriverPackProfile = 'permissive',
     [switch]$KeepServiceRunning,
     [switch]$VerifyClickHouse,
-    [switch]$Cluster
+    [switch]$Cluster,
+    [switch]$ProdIdle
 )
 
 $ErrorActionPreference = "Stop"
@@ -404,6 +405,8 @@ $clusterVerifyScript = Join-Path $PSScriptRoot "vps-cluster-verify.sh"
 $clusterPruneScript = Join-Path $PSScriptRoot "vps-cluster-prune-stale.sh"
 $clusterCompose = Join-Path $PSScriptRoot "docker-compose.vps-cluster.yml"
 $clusterNginx = Join-Path $PSScriptRoot "nginx-vps-cluster.conf"
+$prodIdleEnv = Join-Path $PSScriptRoot "ispf-server.prod-idle.env"
+$prodIdleApply = Join-Path $PSScriptRoot "vps-apply-prod-idle-env.sh"
 
 $uploads = @(
     @{ Local = $applyScript; Remote = "/opt/ispf/bin/apply-platform-update.sh" }
@@ -420,6 +423,8 @@ if ($Cluster) {
         @{ Local = $clusterPruneScript; Remote = "/opt/ispf/bin/vps-cluster-prune-stale.sh" }
         @{ Local = $clusterCompose; Remote = "/opt/ispf/docker-compose.vps-cluster.yml" }
         @{ Local = $clusterNginx; Remote = "/opt/ispf/nginx-vps-cluster.conf" }
+        @{ Local = $prodIdleEnv; Remote = "/opt/ispf/ispf-server.prod-idle.env" }
+        @{ Local = $prodIdleApply; Remote = "/opt/ispf/bin/vps-apply-prod-idle-env.sh" }
     )
 }
 if (-not $SkipDriverPacks) {
@@ -431,15 +436,20 @@ Send-DeployUploads -RemoteHost $RemoteHost -Uploads $uploads
 
 Invoke-Remote "chmod +x /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh; sed -i 's/\r$//' /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh"
 if ($Cluster) {
-    Invoke-Remote "chmod +x /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh; sed -i 's/\r$//' /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh"
+    Invoke-Remote "chmod +x /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh /opt/ispf/bin/vps-apply-prod-idle-env.sh; sed -i 's/\r$//' /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh /opt/ispf/bin/vps-apply-prod-idle-env.sh"
 }
 
 Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS (prod, no demo fixtures)"
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"
+Invoke-Remote "grep -q '^ISPF_PLATFORM_METRICS_PROBE_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_PLATFORM_METRICS_PROBE_ENABLED=.*/ISPF_PLATFORM_METRICS_PROBE_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_PLATFORM_METRICS_PROBE_ENABLED=false' >> /opt/ispf/ispf-server.env"
 
 if ($Cluster) {
     Write-Host "==> Rolling out cluster on VPS (jar + UI + replica restart)"
     Invoke-Remote "bash /opt/ispf/bin/vps-cluster-rollout.sh $staging"
+    if ($ProdIdle) {
+        Write-Host "==> Applying prod-idle env tuning on VPS (-ProdIdle)"
+        Invoke-Remote "bash /opt/ispf/bin/vps-apply-prod-idle-env.sh /opt/ispf/ispf-server.prod-idle.env"
+    }
 } else {
     Write-Host "==> Applying update on VPS"
     Invoke-Remote "bash /opt/ispf/bin/apply-platform-update.sh $staging"

@@ -340,6 +340,7 @@ ispf:
       elastic-parallel-scale-up-threshold: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_SCALE_UP:32}
       elastic-parallel-scale-down-steps: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_SCALE_DOWN:6}
   platform-metrics-probe:
+    # Boot-time env ignored for scheduling; enable via PUT /api/v1/platform/diagnostics/metrics-probe (Load diagnostics UI).
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}
   redis:

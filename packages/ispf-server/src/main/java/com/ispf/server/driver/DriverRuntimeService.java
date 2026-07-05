@@ -669,6 +669,8 @@ public class DriverRuntimeService {
             driver.put("devicePath", devicePath);
             driver.put("driverId", binding.driverId());
             driver.put("pollIntervalMs", binding.pollIntervalMs());
+            driver.put("pointMappingCount", binding.pointMappings().size());
+            driver.put("timeoutMs", driverTimeoutMs(binding));
             driver.put("telemetryPublishMode", binding.telemetryPublishMode().name());
             driver.put("connected", active.driver().isConnected());
             driver.put("lastError", active.lastError());
@@ -692,6 +694,17 @@ public class DriverRuntimeService {
             score += ((Number) ingress.getOrDefault("ingressCoalesced", 0)).intValue();
             score += ((Number) ingress.getOrDefault("ingressEvicted", 0)).intValue() * 5;
         }
+        int pointCount = binding.pointMappings().size();
+        if (pointCount >= 10) {
+            score += Math.min(20, pointCount / 2);
+        }
+        long timeoutMs = driverTimeoutMs(binding);
+        if (pointCount > 0 && binding.pollIntervalMs() > 0 && timeoutMs > 0) {
+            long worstCasePollMs = pointCount * timeoutMs;
+            if (worstCasePollMs > binding.pollIntervalMs()) {
+                score += Math.min(60, (int) (worstCasePollMs / binding.pollIntervalMs()));
+            }
+        }
         if (binding.pollIntervalMs() > 0 && binding.pollIntervalMs() < 1000) {
             score += 50;
         }
@@ -702,6 +715,18 @@ public class DriverRuntimeService {
             score += 10;
         }
         return score;
+    }
+
+    private static long driverTimeoutMs(DriverBinding binding) {
+        String raw = binding.configuration().get("timeoutMs");
+        if (raw == null || raw.isBlank()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException ignored) {
+            return 0L;
+        }
     }
 
     /**

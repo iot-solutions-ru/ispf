@@ -373,9 +373,18 @@ Authorization: Bearer …
 
 Ответ diagnostics: CPU по репликам, `clusterTopSuspect`, drill-down (потоки, привязки драйверов, jobs, workflows).
 
-UI: Admin → System → Metrics → **«Диагностика нагрузки»** (CPU) и карточка «Кластер» (health).
+**Drill-down (expand ноды):**
 
-При 100% CPU: expand горячую реплику в diagnostics; если все JVM низкие — `docker stats` на хосте (Scylla/CH/Postgres).
+| Блок | Поля |
+|------|------|
+| Suspects | `kind` (subsystem/driver/thread/job/workflow), `severity`, `score` |
+| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, …; CPU Δ за окно ~20s |
+| Drivers | `ingressPending`, `pressureScore` (≥100 — горячий драйвер) |
+| Jobs / workflows | `RUNNING` на этой реплике, `runningSeconds` |
+
+UI: Admin → System → Metrics → **«Диагностика нагрузки»** (CPU) и карточка «Кластер» (health). Опционально: чекбокс **Sync metrics to probe device** — runtime probe в дерево (см. [OBSERVABILITY.md](OBSERVABILITY.md)); выключается при уходе со страницы.
+
+При 100% CPU: expand горячую реплику в diagnostics; первый sample thread CPU — warmup (~20s refresh); если все JVM низкие — `docker stats` на хосте (Scylla/CH/Postgres).
 
 ```bash
 curl -s -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8083/api/v1/platform/metrics | jq '.diagnostics'

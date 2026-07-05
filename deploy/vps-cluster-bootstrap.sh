@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Migrate prod VPS from systemd ispf-server to 3-replica Docker cluster.
+# Migrate prod VPS to full ADR-0032 Docker cluster (edge-api, hmi-read, io, compute).
 set -euo pipefail
 
 STAGING_DIR="${1:-}"
@@ -59,6 +59,17 @@ install_artifacts() {
   fi
 }
 
+upsert_env() {
+  local key="$1" value="$2"
+  touch "$INSTALL_ROOT/ispf-server.env"
+  chmod 600 "$INSTALL_ROOT/ispf-server.env"
+  if grep -q "^${key}=" "$INSTALL_ROOT/ispf-server.env" 2>/dev/null; then
+    sed -i "s|^${key}=.*|${key}=${value}|" "$INSTALL_ROOT/ispf-server.env"
+  else
+    echo "${key}=${value}" >> "$INSTALL_ROOT/ispf-server.env"
+  fi
+}
+
 log "Stopping systemd $SERVICE_NAME (cluster takes over :8080)"
 systemctl stop "$SERVICE_NAME" 2>/dev/null || true
 systemctl disable "$SERVICE_NAME" 2>/dev/null || true
@@ -68,40 +79,67 @@ if [[ -n "$STAGING_DIR" ]]; then
 fi
 
 log "Ensuring prod cluster env flags"
-grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' "$INSTALL_ROOT/ispf-server.env" 2>/dev/null \
-  && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' "$INSTALL_ROOT/ispf-server.env" \
-  || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> "$INSTALL_ROOT/ispf-server.env"
+upsert_env ISPF_BOOTSTRAP_FIXTURES_ENABLED false
+upsert_env ISPF_CLUSTER_JOB_CONSUMER_ENABLED false
 
-log "Attach Scylla/ClickHouse to ispf_default (legacy bridge mode; skipped for host-network replicas)"
+log "Remove legacy single-node / stale containers"
+docker ps -a --format '{{.Names}}' | grep -E 'ispf-vps-replica|ispf-vps-nginx|ispf-vps-worker|ispf-nats|_ispf-vps-|_ispf-nats' | while read -r c; do
+  docker rm -f "$c" 2>/dev/null || true
+done
+
+PRUNE="$INSTALL_ROOT/bin/vps-cluster-prune-stale.sh"
+if [[ -x "$PRUNE" ]]; then
+  "$PRUNE" || true
+fi
 
 log "Pulling cluster images"
 "${COMPOSE[@]}" pull --ignore-pull-failures 2>/dev/null || true
 
-log "Starting VPS cluster (3 replicas + NATS + nginx)"
-"${COMPOSE[@]}" up -d
+log "Starting NATS"
+"${COMPOSE[@]}" up -d nats
+sleep 2
 
-log "Waiting for api pool (>=2 via LB) + internal replica-3"
+log "Starting edge-api leader (replica-1)"
+"${COMPOSE[@]}" up -d ispf-server-1
+for i in $(seq 1 90); do
+  login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE}/api/v1/auth/login" \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"admin","password":"admin"}' 2>/dev/null || echo 000)"
+  if [[ "$login_code" = "200" ]]; then
+    log "replica-1 login OK"
+    break
+  fi
+  if [[ "$i" -eq 90 ]]; then
+    docker logs ispf-vps-replica-1 --tail 60
+    exit 1
+  fi
+  sleep 3
+done
+
+log "Starting hmi-read, io, compute + nginx"
+"${COMPOSE[@]}" up -d ispf-server-2 ispf-server-3 ispf-server-worker-1 nginx
+
+log "Waiting for full profile cluster"
 declare -A SEEN=()
 for i in $(seq 1 120); do
   SEEN=()
-  for _ in $(seq 1 18); do
+  for _ in $(seq 1 20); do
     RID=$(curl -sf --no-keepalive -H "Connection: close" "${BASE}/api/v1/info" \
       | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaId',''))" 2>/dev/null || true)
-    if [[ -n "$RID" ]]; then
-      SEEN["$RID"]=1
-    fi
+    [[ -n "$RID" ]] && SEEN["$RID"]=1
   done
-  UNIQUE=${#SEEN[@]}
-  R3_OK=0
-  curl -sf "http://127.0.0.1:8083/api/v1/info" >/dev/null 2>&1 && R3_OK=1
-  if [[ "$UNIQUE" -ge 2 && "$R3_OK" -eq 1 ]]; then
-    log "Cluster ready: api=${UNIQUE} (${!SEEN[*]}) + replica-3 internal (${i} attempts)"
+  R3=$(curl -sf "http://127.0.0.1:8083/api/v1/info" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
+  W1=$(curl -sf "http://127.0.0.1:8084/api/v1/info" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
+  if [[ ${#SEEN[@]} -ge 2 && "$R3" == "io" && "$W1" == "compute" ]]; then
+    log "Cluster ready: api=${!SEEN[*]} io=$R3 compute=$W1"
     break
   fi
   if [[ "$i" -eq 120 ]]; then
-    echo "ERROR: expected api pool >=2 and replica-3 on :8083, api=${UNIQUE} r3=${R3_OK}" >&2
+    echo "ERROR: expected api>=2 + io + compute, api=${#SEEN[@]} r3=$R3 w1=$W1" >&2
     "${COMPOSE[@]}" ps
-    "${COMPOSE[@]}" logs --tail 50 ispf-server-1 ispf-server-2 ispf-server-3 nginx
+    "${COMPOSE[@]}" logs --tail 40 ispf-server-1 ispf-server-2 ispf-server-3 ispf-server-worker-1 nginx
     exit 1
   fi
   sleep 3
@@ -125,4 +163,4 @@ if [[ -z "$TOKEN" ]]; then
 fi
 curl -sf -H "Authorization: Bearer ${TOKEN}" "${BASE}/api/v1/platform/cluster/health" | python3 -m json.tool
 
-log "VPS 3-node cluster bootstrap complete"
+log "VPS full cluster bootstrap complete"

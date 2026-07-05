@@ -137,7 +137,7 @@ write_topics_json() {
   local out="$1"
   local from="$2"
   local to="$3"
-  TOPIC_PREFIX="$TOPIC_PREFIX" PAD="$PAD" INTERVAL_MS="$INTERVAL_MS" NUMERIC_PAYLOAD="${NUMERIC_PAYLOAD:-false}" \
+  TOPIC_PREFIX="$TOPIC_PREFIX" PAD="$PAD" INTERVAL_MS="${EFFECTIVE_INTERVAL_MS:-$INTERVAL_MS}" NUMERIC_PAYLOAD="${NUMERIC_PAYLOAD:-false}" \
     python3 - "$out" "$from" "$to" <<'PY'
 import json, os, sys
 
@@ -183,7 +183,7 @@ resolve_publish_params() {
     'BEGIN { printf "%.6f", c * (1000 / interval) }')
   if awk -v cap="$capacity" -v rate="$rate" 'BEGIN { exit (cap > rate + 0.001) ? 0 : 1 }'; then
     RESOLVED_INTERVAL=$(awk -v rate="$rate" -v c="$RESOLVED_CLIENTS" \
-      'BEGIN { ms = (c * 1000) / rate; if (ms < 1) ms = 1; printf "%.0f", ms }')
+      'BEGIN { ms = (c * 1000) / rate; if (ms < 0.1) ms = 0.1; printf "%.3f", ms }')
   fi
   RESOLVED_RATE=$(awk -v c="$RESOLVED_CLIENTS" -v interval="$RESOLVED_INTERVAL" \
     'BEGIN { printf "%.1f", c * (1000 / interval) }')
@@ -206,10 +206,10 @@ if [[ -n "$SINGLE_TOPIC" ]]; then
 else
   PER_TOPIC_RATE=$(awk -v total="$MESSAGES_PER_SECOND" -v dev="$DEVICES" 'BEGIN { printf "%.6f", total / dev }')
 fi
-CLIENTS_PER_TOPIC=$(awk -v rate="$PER_TOPIC_RATE" -v interval="$INTERVAL_MS" \
-  'BEGIN { n = rate * interval / 1000; if (n < 1) n = 1; printf "%d", (n == int(n) ? n : int(n)+1) }')
-ACTUAL_PER_TOPIC=$(awk -v c="$CLIENTS_PER_TOPIC" -v interval="$INTERVAL_MS" \
-  'BEGIN { printf "%.1f", c * (1000 / interval) }')
+resolve_publish_params "$PER_TOPIC_RATE" "$INTERVAL_MS"
+CLIENTS_PER_TOPIC="$RESOLVED_CLIENTS"
+EFFECTIVE_INTERVAL_MS="$RESOLVED_INTERVAL"
+ACTUAL_PER_TOPIC="$RESOLVED_RATE"
 if [[ -n "$SINGLE_TOPIC" ]]; then
   if [[ "$SHARED_TOPIC_SHARDS" -gt 1 ]]; then
     shard_rate=$(awk -v total="$MESSAGES_PER_SECOND" -v shards="$SHARED_TOPIC_SHARDS" \
@@ -253,7 +253,7 @@ elif [[ "$SINGLE_CONTAINER" == "true" ]]; then
   fi
 fi
 net_label="${DOCKER_NETWORK:-host}"
-echo "emqtt-bench (${mode}, ${shard_count} docker run(s)): ${DEVICES} topics × ${CLIENTS_PER_TOPIC} clients × ${INTERVAL_MS}ms"
+echo "emqtt-bench (${mode}, ${shard_count} docker run(s)): ${DEVICES} topics × ${CLIENTS_PER_TOPIC} clients × ${EFFECTIVE_INTERVAL_MS}ms"
 echo "  configured target ~${MESSAGES_PER_SECOND} msg/s (formula estimate ~${ACTUAL_TOTAL} msg/s — not measured) for ${DURATION_SECONDS}s"
 echo "  network ${net_label}  broker ${HOST}:${PORT}  payload=${PAYLOAD_SIZE}B"
 echo "ISPF_EMQTT_FORMULA_RATE=${ACTUAL_TOTAL}"
@@ -321,7 +321,7 @@ elif [[ "$SINGLE_CONTAINER" == "true" ]]; then
       -h "$HOST" -p "$PORT" \
       -V "$MQTT_VERSION" \
       -c "$CLIENTS_PER_TOPIC" \
-      -i "$INTERVAL_MS" \
+      -i "$EFFECTIVE_INTERVAL_MS" \
       --topics-payload /topics.json \
       -q 0 \
       >/dev/null 2>&1 &

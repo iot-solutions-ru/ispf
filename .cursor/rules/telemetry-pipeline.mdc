@@ -1,6 +1,6 @@
 # Telemetry ingest & historian (prod reference)
 
-**Prod:** `ispf.iot-solutions.ru` · **0.9.31** (июнь 2026).
+**Prod:** `ispf.iot-solutions.ru` · **0.9.100** (июль 2026).
 
 ## MQTT gateway (`mqtt-gateway-v1`, fixture)
 
@@ -16,6 +16,12 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 - Env: `ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS=1` for loadtest only (default 5000)
 - `ISPF_DB_URL=...?reWriteBatchedInserts=true`
 
+## Binding periodic rules
+
+- `activators.periodicMs > 0` → JDBC index `platform_binding_periodic_rules`
+- `BindingPeriodicScheduler` — один wake на ближайший `next_run_at`, без секундного обхода дерева
+- См. [docs/BINDINGS.md](../../docs/BINDINGS.md)
+
 ## Thread pools (do not multiply blindly)
 
 | Config | Default | Notes |
@@ -24,6 +30,14 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 | `ispf.mqtt-gateway.ingress-dispatch-threads` | 8 | Gateway dispatch |
 | `ispf.variable-history.writer-threads` | 4 | JDBC batch writer |
 | `ispf.runtime-telemetry.coalesce-scheduler-threads` | 4 | Coalesce timers |
+
+## Load diagnostics & metrics probe
+
+- UI: Admin → System → Metrics → **Load diagnostics** (`DiagnosticsPressureCard`)
+- Cluster fan-out: `GET /api/v1/platform/cluster/diagnostics`
+- Metrics probe (runtime only): `PUT /api/v1/platform/diagnostics/metrics-probe` → `root.platform.devices.platform-metrics-probe`
+- Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` **не** стартует scheduler — только UI/API toggle
+- См. [docs/OBSERVABILITY.md](../../docs/OBSERVABILITY.md), [docs/CLUSTER.md](../../docs/CLUSTER.md)
 
 ## Baselines (gateway, 4 devices, ~2k msg/s)
 
@@ -36,6 +50,8 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 ## Docs
 
 - [docs/LOAD_TESTING.md](docs/LOAD_TESTING.md)
+- [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
+- [docs/CLUSTER.md](docs/CLUSTER.md)
 - [docs/decisions/0017-telemetry-ingest-pipeline.md](docs/decisions/0017-telemetry-ingest-pipeline.md)
 - [docs/VARIABLE_HISTORY.md](docs/VARIABLE_HISTORY.md)
 

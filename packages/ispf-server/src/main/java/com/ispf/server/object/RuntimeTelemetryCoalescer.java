@@ -6,7 +6,6 @@ import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.driver.ingress.ElasticWorkerScaler;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.context.annotation.Lazy;
@@ -20,9 +19,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,11 +34,10 @@ public class RuntimeTelemetryCoalescer {
     private final TelemetryHistorianFastPath historianFastPath;
     private ScheduledThreadPoolExecutor scheduler;
     private ElasticWorkerScaler schedulerScaler;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, DataRecord> lastPublished = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicBoolean> laneFlushScheduled = new ConcurrentHashMap<>();
+    private volatile boolean schedulerStarted;
 
     public RuntimeTelemetryCoalescer(
             RuntimeTelemetryProperties properties,
@@ -58,8 +53,10 @@ public class RuntimeTelemetryCoalescer {
         this.historianFastPath = historianFastPath;
     }
 
-    @PostConstruct
-    void startScheduler() {
+    public synchronized void ensureSchedulerStarted() {
+        if (schedulerStarted) {
+            return;
+        }
         int minWorkers = properties.resolvedCoalesceSchedulerThreadsMin();
         int maxWorkers = properties.resolvedCoalesceSchedulerThreadsMax();
         AtomicInteger threadIndex = new AtomicInteger();
@@ -77,18 +74,12 @@ public class RuntimeTelemetryCoalescer {
                     properties.getCoalesceSchedulerScaleUpThreshold(),
                     properties.getCoalesceSchedulerScaleDownSteps()
             );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "runtime-telemetry-coalescer-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustSchedulerWorkers,
-                    properties.getCoalesceSchedulerScaleCheckIntervalMs(),
-                    properties.getCoalesceSchedulerScaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
-            );
         }
+        schedulerStarted = true;
+    }
+
+    public boolean isSchedulerStarted() {
+        return schedulerStarted;
     }
 
     private void adjustSchedulerWorkers() {
@@ -120,10 +111,9 @@ public class RuntimeTelemetryCoalescer {
             publishIfChanged(path, variableName, value, coalesceKey, observedAt);
             return;
         }
+        ensureSchedulerStarted();
         pending.put(coalesceKey, new PendingUpdate(path, variableName, value, observedAt));
-        if (properties.isCoalesceSchedulerElastic() && pending.size() >= properties.getCoalesceSchedulerScaleUpThreshold()) {
-            adjustSchedulerWorkers();
-        }
+        adjustSchedulerWorkers();
         scheduleFlushForLane(coalesceKey, path);
     }
 
@@ -179,12 +169,6 @@ public class RuntimeTelemetryCoalescer {
     @PreDestroy
     public void shutdown() {
         flushAll();
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         if (scheduler != null) {
             scheduler.shutdown();
             try {
@@ -229,6 +213,7 @@ public class RuntimeTelemetryCoalescer {
         if (update != null) {
             publishIfChanged(update.path(), update.variableName(), update.value(), coalesceKey, update.observedAt());
         }
+        adjustSchedulerWorkers();
         if (pending.containsKey(coalesceKey)) {
             scheduleFlushForLane(coalesceKey, devicePath);
         }

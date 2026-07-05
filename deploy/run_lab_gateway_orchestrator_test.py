@@ -42,7 +42,30 @@ def run(c, cmd, timeout=7200, quiet=False):
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     devices = int(sys.argv[1]) if len(sys.argv) > 1 else 16
-    publish_rate = int(sys.argv[2]) if len(sys.argv) > 2 else 10000
+    publish_rate = int(sys.argv[2]) if len(sys.argv) > 2 else devices
+
+    shard_max = 4
+    parallel_workers = 1
+    warmup = 20
+    phase = 20
+    gate_timeout = 3600
+    cleanup_timeout = 600
+    emqtt_cpu = 2.0
+    if devices >= 1000:
+        shard_max = min(128, max(32, devices // 100))
+        parallel_workers = 48
+        warmup = 30
+        phase = 60
+        gate_timeout = 7200
+        cleanup_timeout = 1800
+        emqtt_cpu = 1.0
+    elif devices >= 100:
+        shard_max = min(32, max(8, devices // 20))
+        parallel_workers = 16
+        warmup = 25
+        phase = 30
+        gate_timeout = 5400
+        cleanup_timeout = 900
 
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -65,16 +88,23 @@ def main() -> int:
         c,
         f"cd {ROOT}/loadtest && python3 -u loadtest-cleanup.py "
         f"--base-url http://127.0.0.1:8000 --purge-mqtt --keep-background",
-        timeout=600,
+        timeout=cleanup_timeout,
     )
 
+    lazy_flag = "LAZY_INSTANCES=true " if devices >= 500 else ""
     cmd = (
         f"env LOG={log} DEVICES={devices} PUBLISH_RATE={publish_rate} "
-        f"WARMUP=20 PHASE=20 INTERVAL_MS=1 EMQTT_CPU_LIMIT=2.0 SHARD_MAX=4 "
+        f"WARMUP={warmup} PHASE={phase} INTERVAL_MS=1 EMQTT_CPU_LIMIT={emqtt_cpu} "
+        f"SHARD_MAX={shard_max} PARALLEL_WORKERS={parallel_workers} "
+        f"{lazy_flag}"
         f"bash {ROOT}/lab-gate-mqtt-gateway-orchestrator.sh"
     )
-    print(f"Running gateway orchestrator gate ({devices} children, {publish_rate}/s)...", flush=True)
-    code, out, _ = run(c, cmd, timeout=3600)
+    print(
+        f"Running gateway orchestrator gate ({devices} children, {publish_rate}/s total, "
+        f"~{publish_rate / devices:.2g}/device, shards={shard_max})...",
+        flush=True,
+    )
+    code, out, _ = run(c, cmd, timeout=gate_timeout)
     if code != 0:
         print(f"gate exit code={code}", flush=True)
 

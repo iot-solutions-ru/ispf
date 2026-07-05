@@ -206,6 +206,20 @@ FEATURE_INDEX = [
         "keywords": "event catalog subscribe websocket",
         "docRef": "MESSAGING.md",
     },
+    {
+        "id": "observability",
+        "title": "Observability and diagnostics",
+        "description": "Prometheus, load diagnostics UI, metrics probe, cluster diagnostics fan-out",
+        "keywords": "observability prometheus diagnostics metrics probe cluster cpu",
+        "docRef": "OBSERVABILITY.md",
+    },
+    {
+        "id": "cluster",
+        "title": "Cluster multi-replica",
+        "description": "Driver ownership, live variable sync ADR-0029, replica profiles",
+        "keywords": "cluster replica nats live sync driver lock",
+        "docRef": "CLUSTER.md",
+    },
 ]
 
 
@@ -359,6 +373,9 @@ def build_doc_chunks() -> list[dict]:
         ("reports", "SQL reports", "reports", DOCS / "REPORTS.md", 5000),
         ("lab-training", "Lab training exercises", "lab", DOCS / "LAB_TRAINING.md", 5000),
         ("mes-walkthrough", "MES reference walkthrough", "mes", DOCS / "REFERENCE_MES_WALKTHROUGH.md", 5000),
+        ("observability", "Observability diagnostics probe", "observability", DOCS / "OBSERVABILITY.md", 9000),
+        ("cluster", "Cluster multi-replica live sync", "cluster", DOCS / "CLUSTER.md", 12000),
+        ("load-testing", "Load testing baselines", "loadtest", DOCS / "LOAD_TESTING.md", 8000),
     ]
     chunks: list[dict] = []
     for chunk_id, title, topic, path, max_chars in slices:
@@ -456,6 +473,8 @@ def build_pack() -> dict:
             "workflowsDoc": read_text(DOCS / "WORKFLOWS.md", 6000),
             "automationDoc": read_text(DOCS / "AUTOMATION.md", 5000),
             "objectModelDoc": read_text(DOCS / "OBJECT_MODEL.md", 5000),
+            "observabilityDoc": read_text(DOCS / "OBSERVABILITY.md", 6000),
+            "clusterDoc": read_text(DOCS / "CLUSTER.md", 8000),
         },
         "examples": examples,
         "generationPolicy": {

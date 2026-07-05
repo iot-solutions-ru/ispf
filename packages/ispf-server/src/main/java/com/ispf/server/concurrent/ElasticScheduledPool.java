@@ -3,9 +3,6 @@ package com.ispf.server.concurrent;
 import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.driver.ingress.IngressElasticSettings;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,6 +10,7 @@ import java.util.function.IntSupplier;
 
 /**
  * {@link ScheduledThreadPoolExecutor} whose core/max size tracks queue depth via {@link ElasticWorkerScaler}.
+ * Scaling is event-driven via {@link #signalLoad()} and {@link #signalIdle()} — no periodic scale timer.
  */
 public final class ElasticScheduledPool implements AutoCloseable {
 
@@ -22,8 +20,6 @@ public final class ElasticScheduledPool implements AutoCloseable {
 
     private ScheduledThreadPoolExecutor executor;
     private ElasticWorkerScaler scaler;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private final AtomicInteger threadIndex = new AtomicInteger();
 
     public ElasticScheduledPool(
@@ -53,17 +49,6 @@ public final class ElasticScheduledPool implements AutoCloseable {
                     settings.scaleUpQueueThreshold(),
                     settings.scaleDownSteps()
             );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, threadNamePrefix + "-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    settings.scaleCheckIntervalMs(),
-                    settings.scaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
-            );
         }
         return executor;
     }
@@ -73,9 +58,11 @@ public final class ElasticScheduledPool implements AutoCloseable {
     }
 
     public void signalLoad() {
-        if (settings.enabled() && pendingCount.getAsInt() >= settings.scaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
+        adjustWorkers();
+    }
+
+    public void signalIdle() {
+        adjustWorkers();
     }
 
     public void adjustWorkers() {
@@ -92,12 +79,6 @@ public final class ElasticScheduledPool implements AutoCloseable {
 
     @Override
     public void close() {
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         if (executor != null) {
             executor.shutdown();
             try {

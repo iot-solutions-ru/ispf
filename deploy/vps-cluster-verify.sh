@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# VPS single unified node health + optional config-sync smoke.
+# VPS full ADR-0032 cluster health (edge-api, hmi-read, io, compute).
 set -euo pipefail
 BASE="http://127.0.0.1:8080"
 CONFIG_SYNC=0
@@ -19,29 +19,48 @@ wait_ready() {
     fi
     sleep 10
   done
-  echo "ERROR: node not ready" >&2
+  echo "ERROR: cluster not ready" >&2
   docker ps --filter name=ispf-vps
+  docker ps --filter name=ispf-nats
   docker logs ispf-vps-replica-1 2>&1 | tail -20
   exit 1
 }
 
-verify_single_node() {
-  echo "==> Single unified node verification"
-  python3 -c "
+verify_cluster() {
+  echo "==> Full cluster verification"
+  python3 <<'PY'
 import json, urllib.request
-info = json.loads(urllib.request.urlopen('${BASE}/api/v1/info').read())
-assert info.get('replicaId') == 'replica-1', info
-assert info.get('clusterEnabled') is False, info
-assert info.get('replicaRole') == 'all', info
-assert info.get('replicaProfile') == 'unified', info
-assert info.get('jobConsumerActive') is True, info
-print('unified node OK:', info.get('version'), info.get('replicaRole'))
-"
-  echo "single node PASSED"
+
+def fetch(url):
+    return json.loads(urllib.request.urlopen(url).read())
+
+info = fetch("http://127.0.0.1:8080/api/v1/info")
+assert info.get("clusterEnabled") is True, info
+assert info.get("replicaProfile") in ("edge-api", "hmi-read"), info
+print("nginx tier:", info.get("replicaId"), info.get("replicaProfile"))
+
+r3 = fetch("http://127.0.0.1:8083/api/v1/info")
+assert r3.get("replicaId") == "replica-3", r3
+assert r3.get("replicaProfile") == "io", r3
+print("io tier:", r3.get("replicaId"), r3.get("replicaProfile"))
+
+w1 = fetch("http://127.0.0.1:8084/api/v1/info")
+assert w1.get("replicaId") == "worker-1", w1
+assert w1.get("replicaProfile") == "compute", w1
+print("compute tier:", w1.get("replicaId"), w1.get("replicaProfile"))
+
+seen = set()
+for _ in range(20):
+    i = fetch("http://127.0.0.1:8080/api/v1/info")
+    seen.add(i.get("replicaId"))
+assert seen >= {"replica-1", "replica-2"}, seen
+print("api pool replicas:", sorted(seen))
+print("cluster PASSED")
+PY
 }
 
 wait_ready
-verify_single_node
+verify_cluster
 
 if [[ "$CONFIG_SYNC" -eq 1 ]]; then
   echo "==> Config-sync smoke"

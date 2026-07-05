@@ -11,8 +11,8 @@ import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.TelemetryIngressCoalesceKey;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
 import com.ispf.driver.ingress.IngressElasticSettings;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +61,7 @@ public class MqttGatewayIngressDispatchService {
     private final AtomicInteger coalescePendingCount = new AtomicInteger();
     private LinkedBlockingQueue<DispatchTask> pendingFifo;
     private ElasticWorkerLauncher workers;
+    private volatile boolean workersStarted;
 
     public MqttGatewayIngressDispatchService(
             MqttGatewayProperties properties,
@@ -78,8 +79,10 @@ public class MqttGatewayIngressDispatchService {
         this.policyService = policyService;
     }
 
-    @PostConstruct
-    void startWorkers() {
+    public synchronized void ensureWorkersStarted() {
+        if (workersStarted) {
+            return;
+        }
         pendingFifo = new LinkedBlockingQueue<>(properties.getIngressDispatchQueueCapacity());
         IngressElasticSettings elastic = properties.resolvedIngressDispatchElastic();
         workers = new ElasticWorkerLauncher(
@@ -89,6 +92,7 @@ public class MqttGatewayIngressDispatchService {
                 this::drainOneDispatch
         );
         workers.start();
+        workersStarted = true;
         log.info(
                 "MQTT gateway ingress dispatch started (capacity={}, coalesce={}, workers={}-{}, elastic={})",
                 properties.getIngressDispatchQueueCapacity(),
@@ -97,6 +101,10 @@ public class MqttGatewayIngressDispatchService {
                 elastic.resolvedMaxWorkers(),
                 elastic.enabled()
         );
+    }
+
+    public boolean isWorkersStarted() {
+        return workersStarted;
     }
 
     /**
@@ -109,6 +117,7 @@ public class MqttGatewayIngressDispatchService {
         if (!policyService.parallelIngressDispatch(gatewayPath)) {
             return false;
         }
+        ensureWorkersStarted();
         Optional<String> functionName = resolveIngressFunction(gatewayPath);
         if (functionName.isEmpty()) {
             return false;
@@ -263,9 +272,10 @@ public class MqttGatewayIngressDispatchService {
         return raw == null ? Optional.empty() : Optional.of(raw.toString());
     }
 
-    /** Drains pending gateway ingress tasks synchronously (tests, coalescer flush). */
     public void flushNow() {
-        drainAllRemaining();
+        if (workersStarted) {
+            drainAllRemaining();
+        }
     }
 
     @PreDestroy
@@ -273,7 +283,9 @@ public class MqttGatewayIngressDispatchService {
         if (workers != null) {
             workers.close();
         }
-        drainAllRemaining();
+        if (workersStarted) {
+            drainAllRemaining();
+        }
     }
 
     private void drainAllRemaining() {

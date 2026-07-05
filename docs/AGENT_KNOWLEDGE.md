@@ -462,6 +462,18 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 | [SECURITY.md](SECURITY.md) | security | RBAC, Keycloak |
 | [TESTING.md](TESTING.md) | testing | Tests |
 | [LOAD_TESTING.md](LOAD_TESTING.md) | loadtest | Throughput baselines |
+| [OBSERVABILITY.md](OBSERVABILITY.md) | observability | Prometheus, diagnostics API, metrics probe |
+| [CLUSTER.md](CLUSTER.md) | cluster | Multi-replica, ADR-0029 live sync, diagnostics fan-out |
+
+### Ops & platform runtime (для агента при load / prod triage)
+
+| Документ | Когда |
+|----------|-------|
+| [OBSERVABILITY.md](OBSERVABILITY.md) | CPU spike, queue backlog, Prometheus/OTLP, **Load diagnostics** UI |
+| [CLUSTER.md](CLUSTER.md) | Несколько реплик, desync RAM, driver locks, `cluster/diagnostics` |
+| [LOAD_TESTING.md](LOAD_TESTING.md) | Baselines, probe device, load-test scripts |
+
+**Load diagnostics (admin):** `GET /api/v1/platform/cluster/diagnostics` — все реплики; expand → threads, drivers (`pressureScore`), jobs. Metrics probe: `PUT /api/v1/platform/diagnostics/metrics-probe` — sync в `root.platform.devices.platform-metrics-probe` (включать только на время теста).
 
 ### Reference walkthroughs
 
@@ -515,6 +527,8 @@ URL: `?mode=operator&app={appId}&dashboard={path}`.
 | `semantic` | Haystack/Brick export, device metadata |
 | `timezones` | User TZ, device TZ resolve (ADR-0020) |
 | `web-console` | Admin UI, System tabs, Application lifecycle |
+| `observability` | Metrics, diagnostics, probe device, Prometheus |
+| `cluster` | Multi-replica, live sync, cluster health/diagnostics |
 | `object-model` | Tree types, variables |
 | `ai` | Agent tools, ContextPack |
 | `all` | Широкий поиск по docChunks |

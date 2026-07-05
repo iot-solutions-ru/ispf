@@ -298,7 +298,7 @@ Actuator endpoints:
 - `/actuator/prometheus` — metrics (admin role); ISPF gauges `ispf_event_history_records`, `ispf_alert_fires_total`, `ispf_object_change_queue_size`, …
 - `/actuator/metrics` — Micrometer
 
-`ISPF_PLATFORM_METRICS_PROBE_ENABLED=true` — in-process sync of `/api/v1/platform/metrics` to `root.platform.devices.platform-metrics-probe` (alternative to external Prometheus during load tests).
+**Metrics probe:** sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe`. Включение — **runtime** через Admin → System → Metrics → Load diagnostics (чекбокс) или `PUT /api/v1/platform/diagnostics/metrics-probe` с `{ "enabled": true }`. Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` не стартует scheduler (см. [OBSERVABILITY.md](OBSERVABILITY.md)). Создание device: `python deploy/setup-platform-metrics-monitor.py`.
 
 ## Логирование
 

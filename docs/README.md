@@ -56,7 +56,7 @@
 | [Тестирование](TESTING.md) | Unit, integration, smoke |
 | [Load testing](LOAD_TESTING.md) | HTTP vs internal automation throughput, baselines |
 | **[Lab event journal stress](LAB_EVENT_JOURNAL_STRESS.md)** | Scylla lab, emqtt multi-device, metrics & ~110k/s baseline |
-| [Observability](OBSERVABILITY.md) | Prometheus scrape, OTLP metrics export |
+| [Observability](OBSERVABILITY.md) | Prometheus scrape, OTLP export, load diagnostics, metrics probe |
 | [Лицензия](LICENSE.md) | Apache 2.0 ядро; коммерческие плагины отдельно |
 | [Плагины и границы](PLUGINS.md) | Что не входит в `main` |
 | [Third-party](THIRD_PARTY_NOTICES.md) | Лицензии зависимостей (bpmn-js, Spring, …) |

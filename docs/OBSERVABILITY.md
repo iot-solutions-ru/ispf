@@ -29,7 +29,20 @@
 | `ispf.drivers.active` / `connected` | gauge | Драйверы |
 | `ispf.database.connections.*` | gauge | HikariCP pool |
 
-Probe dashboard (`ISPF_PLATFORM_METRICS_PROBE_ENABLED=true`) синхронизирует subset в object tree для HMI.
+### Metrics probe (object tree sync)
+
+In-process sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe` (переменные `eventsPerSecond`, `objectChangeQueueSize`, `heapUsedMb`, …). Альтернатива внешнему Prometheus во время load test.
+
+| Endpoint | Auth | Описание |
+|----------|------|----------|
+| `GET /api/v1/platform/diagnostics/metrics-probe` | admin | `{ enabled, devicePath, devicePresent }` |
+| `PUT /api/v1/platform/diagnostics/metrics-probe` | admin | `{ "enabled": true\|false }` — вкл/выкл sync |
+
+**UI (рекомендуется):** Admin → System → Metrics → **Load diagnostics** → чекбокс «Sync metrics to probe device». При закрытии страницы probe **автоматически выключается** (не оставлять фоновую нагрузку).
+
+Env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` и boot-time `ispf.platform-metrics-probe.enabled` **не запускают** scheduler — только runtime toggle через API/UI. Интервал: `ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS` (default 5000) или Runtime settings → `metrics-probe.interval-ms`.
+
+Перед включением создайте probe device: `python deploy/setup-platform-metrics-monitor.py`.
 
 ## Metrics UI diagnostics (0.9.97+)
 

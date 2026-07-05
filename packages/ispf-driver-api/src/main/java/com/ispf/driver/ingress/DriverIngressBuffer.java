@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -37,8 +35,6 @@ public final class DriverIngressBuffer<K, V> {
     private volatile boolean running = true;
     private ExecutorService workers;
     private ElasticWorkerScaler scaler;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private volatile Thread drainWaiter;
 
     public DriverIngressBuffer(int workerThreads, int capacity, BiConsumer<K, V> handler) {
@@ -86,17 +82,6 @@ public final class DriverIngressBuffer<K, V> {
                     maxWorkers,
                     elastic.scaleUpQueueThreshold(),
                     elastic.scaleDownSteps()
-            );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, threadNamePrefix + "-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    elastic.scaleCheckIntervalMs(),
-                    elastic.scaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
             );
         }
         if (eagerDrain) {
@@ -149,17 +134,11 @@ public final class DriverIngressBuffer<K, V> {
         } else {
             unparkDrainWaiter();
         }
-        maybeScaleUp();
+        adjustWorkers();
     }
 
     public void shutdown() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         unparkDrainWaiter();
         if (workers != null) {
             workers.shutdownNow();
@@ -187,12 +166,6 @@ public final class DriverIngressBuffer<K, V> {
 
     public int pendingCount() {
         return pendingCount.get();
-    }
-
-    private void maybeScaleUp() {
-        if (scaler != null && pendingCount.get() >= elastic.scaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
     }
 
     private void adjustWorkers() {
@@ -260,6 +233,7 @@ public final class DriverIngressBuffer<K, V> {
                 }
                 List<Entry> batch = drainBatch(64);
                 if (batch.isEmpty()) {
+                    adjustWorkers();
                     drainWaiter = Thread.currentThread();
                     LockSupport.parkNanos(250_000L);
                     continue;

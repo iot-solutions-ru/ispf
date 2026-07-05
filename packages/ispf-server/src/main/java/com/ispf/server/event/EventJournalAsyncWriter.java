@@ -16,8 +16,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -46,8 +44,6 @@ public class EventJournalAsyncWriter {
 
     private BlockingQueue<PendingEntry> queue;
     private ExecutorService workers;
-    private ScheduledExecutorService scaleScheduler;
-    private ScheduledFuture<?> scaleTask;
     private ElasticWorkerScaler scaler;
     private final AtomicInteger activeWorkers = new AtomicInteger();
     private volatile boolean running;
@@ -77,17 +73,6 @@ public class EventJournalAsyncWriter {
                     properties.resolvedWriterThreadsMax(),
                     properties.getElasticScaleUpQueueThreshold(),
                     properties.getElasticScaleDownSteps()
-            );
-            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
-                Thread thread = new Thread(runnable, "event-journal-scale");
-                thread.setDaemon(true);
-                return thread;
-            });
-            scaleTask = scaleScheduler.scheduleAtFixedRate(
-                    this::adjustWorkers,
-                    properties.getElasticScaleCheckIntervalMs(),
-                    properties.getElasticScaleCheckIntervalMs(),
-                    TimeUnit.MILLISECONDS
             );
         }
         workers = Executors.newCachedThreadPool(runnable -> {
@@ -125,7 +110,7 @@ public class EventJournalAsyncWriter {
             return;
         }
         if (queue.offer(entry)) {
-            maybeScaleUp();
+            adjustWorkers();
             return;
         }
         automationMetricsRecorder.recordEventJournalSyncFallback();
@@ -136,12 +121,6 @@ public class EventJournalAsyncWriter {
                 event.eventName()
         );
         persistSync(entry);
-    }
-
-    private void maybeScaleUp() {
-        if (scaler != null && queue.size() >= properties.getElasticScaleUpQueueThreshold()) {
-            adjustWorkers();
-        }
     }
 
     private void adjustWorkers() {
@@ -192,6 +171,8 @@ public class EventJournalAsyncWriter {
                 }
                 if (!batch.isEmpty()) {
                     flushBatch(batch);
+                } else {
+                    adjustWorkers();
                 }
             }
         } catch (InterruptedException ex) {
@@ -242,12 +223,6 @@ public class EventJournalAsyncWriter {
     @PreDestroy
     void shutdown() {
         running = false;
-        if (scaleTask != null) {
-            scaleTask.cancel(false);
-        }
-        if (scaleScheduler != null) {
-            scaleScheduler.shutdownNow();
-        }
         if (workers == null) {
             return;
         }

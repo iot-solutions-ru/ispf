@@ -98,7 +98,7 @@ Legacy без `kind`:
 | `onStartup` | есть | старт / attach модели |
 | `onVariableChange` | есть | телеметрия, переменные |
 | `onEvent` | есть | имя platform event |
-| `periodicMs` | есть | периодический пересчёт |
+| `periodicMs` | есть | периодический пересчёт; индекс `platform_binding_periodic_rules`, wake по `next_run_at` ([BINDINGS.md](BINDINGS.md)) |
 | `onContextChange` | **planned** | изменение `@dashboardContext` |
 
 ---

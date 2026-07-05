@@ -31,6 +31,8 @@ export interface DriverDiagnosticsRow {
   devicePath: string;
   driverId: string;
   pollIntervalMs: number;
+  pointMappingCount?: number;
+  timeoutMs?: number;
   telemetryPublishMode?: string;
   connected: boolean;
   lastError: string | null;
@@ -56,6 +58,9 @@ export interface ThreadRow {
 export interface DiagnosticsDetail {
   threadGroups?: ThreadGroupRow[];
   topThreads?: ThreadRow[];
+  threadCpuAttributedPercent?: number;
+  threadSampleWindowSeconds?: number;
+  threadSampleReady?: boolean;
   drivers?: DriverDiagnosticsRow[];
   runningJobs?: Record<string, unknown>[];
   runningWorkflows?: Record<string, unknown>[];
@@ -103,6 +108,41 @@ export interface ClusterDiagnosticsResponse {
 export function fetchClusterDiagnostics(): Promise<ClusterDiagnosticsResponse> {
   return fetch("/api/v1/platform/cluster/diagnostics", {
     headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Request failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export interface DiagnosticsMetricsProbeStatus {
+  enabled: boolean;
+  devicePath: string;
+  devicePresent: boolean;
+}
+
+export function fetchDiagnosticsMetricsProbe(): Promise<DiagnosticsMetricsProbeStatus> {
+  return fetch("/api/v1/platform/diagnostics/metrics-probe", {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || `Request failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export function setDiagnosticsMetricsProbe(enabled: boolean): Promise<DiagnosticsMetricsProbeStatus> {
+  return fetch("/api/v1/platform/diagnostics/metrics-probe", {
+    method: "PUT",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ enabled }),
   }).then(async (response) => {
     if (!response.ok) {
       const text = await response.text();

@@ -3,6 +3,10 @@ package com.ispf.server.platform;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.driver.DriverRuntimeService;
+import com.ispf.server.function.MqttGatewayIngressDispatchService;
+import com.ispf.server.object.BindingPeriodicScheduleRegistry;
+import com.ispf.server.object.RuntimeTelemetryCoalescer;
+import com.ispf.server.object.TelemetryIngressDispatcher;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.zaxxer.hikari.HikariDataSource;
@@ -34,6 +38,7 @@ public class PlatformDiagnosticsService {
     private static final int EVENT_JOURNAL_QUEUE_WARN = 200;
     private static final int VARIABLE_HISTORY_QUEUE_WARN = 200;
     private static final int IO_POLL_QUEUE_WARN = 50;
+    private static final int DRIVER_PRESSURE_SUSPECT_MIN = 25;
     private static final long LONG_JOB_SECONDS = 300;
     private static final long LONG_WORKFLOW_SECONDS = 600;
 
@@ -46,6 +51,10 @@ public class PlatformDiagnosticsService {
     private final PlatformMetricsService platformMetricsService;
     private final ObjectMapper objectMapper;
     private final DataSource dataSource;
+    private final BindingPeriodicScheduleRegistry periodicScheduleRegistry;
+    private final TelemetryIngressDispatcher telemetryIngressDispatcher;
+    private final MqttGatewayIngressDispatchService mqttGatewayIngressDispatchService;
+    private final RuntimeTelemetryCoalescer runtimeTelemetryCoalescer;
     private final int serverPort;
 
     private final Map<Long, Long> previousThreadCpuNanos = new ConcurrentHashMap<>();
@@ -61,6 +70,10 @@ public class PlatformDiagnosticsService {
             PlatformMetricsService platformMetricsService,
             ObjectMapper objectMapper,
             DataSource dataSource,
+            BindingPeriodicScheduleRegistry periodicScheduleRegistry,
+            TelemetryIngressDispatcher telemetryIngressDispatcher,
+            MqttGatewayIngressDispatchService mqttGatewayIngressDispatchService,
+            RuntimeTelemetryCoalescer runtimeTelemetryCoalescer,
             @Value("${server.port:8080}") int serverPort
     ) {
         this.natsProperties = natsProperties;
@@ -72,6 +85,10 @@ public class PlatformDiagnosticsService {
         this.platformMetricsService = platformMetricsService;
         this.objectMapper = objectMapper;
         this.dataSource = dataSource;
+        this.periodicScheduleRegistry = periodicScheduleRegistry;
+        this.telemetryIngressDispatcher = telemetryIngressDispatcher;
+        this.mqttGatewayIngressDispatchService = mqttGatewayIngressDispatchService;
+        this.runtimeTelemetryCoalescer = runtimeTelemetryCoalescer;
         this.serverPort = serverPort;
     }
 
@@ -128,8 +145,8 @@ public class PlatformDiagnosticsService {
 
     private Map<String, Object> buildDetail(Map<String, Object> automation, Map<String, Object> drivers) {
         Map<String, Object> detail = new LinkedHashMap<>();
-        detail.put("threadGroups", threadGroups());
-        detail.put("topThreads", topThreads());
+        Map<String, Object> threadCpu = threadCpuDiagnostics();
+        detail.putAll(threadCpu);
         if (clusterProperties.hasCapability(com.ispf.server.config.ReplicaCapability.DRIVERS)) {
             detail.putAll(driverRuntimeService.driverDiagnosticsSnapshot());
         } else {
@@ -138,6 +155,12 @@ public class PlatformDiagnosticsService {
         detail.put("runningJobs", runningJobs());
         detail.put("runningWorkflows", runningWorkflows());
         detail.put("queues", queueSummary(automation, drivers));
+        detail.put("bindingPeriodicRuleCount", periodicScheduleRegistry.countEnabled());
+        Instant nextWake = periodicScheduleRegistry.nextWakeAt();
+        detail.put("bindingPeriodicNextWakeAt", nextWake != null ? nextWake.toString() : null);
+        detail.put("telemetryIngressStarted", telemetryIngressDispatcher.isStarted());
+        detail.put("mqttGatewayIngressStarted", mqttGatewayIngressDispatchService.isWorkersStarted());
+        detail.put("runtimeTelemetryCoalescerStarted", runtimeTelemetryCoalescer.isSchedulerStarted());
         return detail;
     }
 
@@ -188,27 +211,42 @@ public class PlatformDiagnosticsService {
         return row;
     }
 
-    private List<Map<String, Object>> threadGroups() {
+    private Map<String, Object> threadCpuDiagnostics() {
         ThreadMXBean threads = ManagementFactory.getThreadMXBean();
-        Map<String, ThreadGroupAccumulator> groups = new LinkedHashMap<>();
         long[] ids = threads.getAllThreadIds();
         Map<Long, Long> currentCpu = sampleThreadCpuNanos(threads, ids);
+        boolean sampleReady = previousThreadSampleAt != null;
         double elapsedSeconds = threadSampleElapsedSeconds();
+
+        Map<String, ThreadGroupAccumulator> groups = new LinkedHashMap<>();
+        List<Map<String, Object>> rankedThreads = new ArrayList<>();
         for (long id : ids) {
             ThreadInfo info = threads.getThreadInfo(id);
             if (info == null) {
                 continue;
             }
+            double cpuDelta = threadCpuPercentDelta(currentCpu, id, elapsedSeconds);
             String prefix = threadPrefix(info.getThreadName());
             ThreadGroupAccumulator group = groups.computeIfAbsent(prefix, ignored -> new ThreadGroupAccumulator(prefix));
             group.threadCount++;
-            group.cpuPercentDelta += threadCpuPercentDelta(currentCpu, id, elapsedSeconds);
+            group.cpuPercentDelta += cpuDelta;
+            if (cpuDelta > 0.1) {
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("name", info.getThreadName());
+                row.put("cpuPercentDelta", round1(cpuDelta));
+                rankedThreads.add(row);
+            }
         }
+
         previousThreadCpuNanos.clear();
         previousThreadCpuNanos.putAll(currentCpu);
         previousThreadSampleAt = Instant.now();
 
-        return groups.values().stream()
+        double attributedCpu = groups.values().stream()
+                .mapToDouble(group -> group.cpuPercentDelta)
+                .sum();
+
+        List<Map<String, Object>> threadGroups = groups.values().stream()
                 .sorted(Comparator.comparingDouble((ThreadGroupAccumulator group) -> group.cpuPercentDelta).reversed())
                 .limit(12)
                 .map(group -> {
@@ -219,30 +257,17 @@ public class PlatformDiagnosticsService {
                     return row;
                 })
                 .toList();
-    }
 
-    private List<Map<String, Object>> topThreads() {
-        ThreadMXBean threads = ManagementFactory.getThreadMXBean();
-        long[] ids = threads.getAllThreadIds();
-        Map<Long, Long> currentCpu = sampleThreadCpuNanos(threads, ids);
-        double elapsedSeconds = threadSampleElapsedSeconds();
-        List<Map<String, Object>> ranked = new ArrayList<>();
-        for (long id : ids) {
-            ThreadInfo info = threads.getThreadInfo(id);
-            if (info == null) {
-                continue;
-            }
-            double cpuDelta = threadCpuPercentDelta(currentCpu, id, elapsedSeconds);
-            if (cpuDelta <= 0.1) {
-                continue;
-            }
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("name", info.getThreadName());
-            row.put("cpuPercentDelta", round1(cpuDelta));
-            ranked.add(row);
-        }
-        ranked.sort(Comparator.comparingDouble(row -> -((Number) row.get("cpuPercentDelta")).doubleValue()));
-        return ranked.stream().limit(5).toList();
+        rankedThreads.sort(Comparator.comparingDouble(row -> -((Number) row.get("cpuPercentDelta")).doubleValue()));
+        List<Map<String, Object>> topThreads = rankedThreads.stream().limit(8).toList();
+
+        Map<String, Object> threadCpu = new LinkedHashMap<>();
+        threadCpu.put("threadGroups", threadGroups);
+        threadCpu.put("topThreads", topThreads);
+        threadCpu.put("threadCpuAttributedPercent", round1(attributedCpu));
+        threadCpu.put("threadSampleWindowSeconds", round1(elapsedSeconds));
+        threadCpu.put("threadSampleReady", sampleReady);
+        return threadCpu;
     }
 
     private Map<Long, Long> sampleThreadCpuNanos(ThreadMXBean threads, long[] ids) {
@@ -284,6 +309,15 @@ public class PlatformDiagnosticsService {
         if (threadName.startsWith("driver-ingress")) {
             return "driver-ingress";
         }
+        if (threadName.startsWith("telemetry-ingress")) {
+            return "telemetry-ingress";
+        }
+        if (threadName.startsWith("runtime-telemetry")) {
+            return "runtime-telemetry";
+        }
+        if (threadName.startsWith("binding-")) {
+            return "binding";
+        }
         if (threadName.startsWith("ispf-driver-io")) {
             return "ispf-driver-io";
         }
@@ -298,6 +332,9 @@ public class PlatformDiagnosticsService {
         }
         if (threadName.startsWith("G1")) {
             return "G1-gc";
+        }
+        if (threadName.startsWith("mqtt")) {
+            return "mqtt";
         }
         int dash = threadName.indexOf('-');
         if (dash > 0) {
@@ -368,13 +405,24 @@ public class PlatformDiagnosticsService {
         if (driverRows != null && !driverRows.isEmpty()) {
             Map<String, Object> topDriver = driverRows.getFirst();
             int pressureScore = intValue(topDriver.get("pressureScore"));
-            if (pressureScore > 0) {
+            if (pressureScore >= DRIVER_PRESSURE_SUSPECT_MIN) {
                 String devicePath = String.valueOf(topDriver.get("devicePath"));
                 String driverId = String.valueOf(topDriver.get("driverId"));
-                suspects.add(suspect("driver", pressureScore >= 100 ? "critical" : "warning", "driver_binding",
+                int pointCount = intValue(topDriver.get("pointMappingCount"));
+                int pollIntervalMs = intValue(topDriver.get("pollIntervalMs"));
+                String detailLine = "driverId=" + driverId
+                        + ", pressureScore=" + pressureScore
+                        + ", points=" + pointCount
+                        + ", pollIntervalMs=" + pollIntervalMs;
+                suspects.add(suspect(
+                        "driver",
+                        pressureScore >= 100 ? "critical" : "warning",
+                        "driver_binding",
                         "Привязка драйвера " + devicePath,
-                        "driverId=" + driverId + ", pressureScore=" + pressureScore,
-                        devicePath, 95));
+                        detailLine,
+                        devicePath,
+                        Math.min(88, 30 + pressureScore)
+                ));
             }
         }
 
@@ -388,6 +436,24 @@ public class PlatformDiagnosticsService {
                 suspects.add(suspect("thread", "warning", "thread_group",
                         "Потоки " + prefix, "cpuPercentDelta=" + round1(cpuDelta), prefix, 68));
             }
+            double pipelineCpu = pipelineThreadCpuPercent(threadGroups);
+            if (pipelineCpu >= 8.0) {
+                suspects.add(suspect("subsystem", "warning", "telemetry_pipeline",
+                        "Поток telemetry / binding / MQTT (не poll драйвера)",
+                        "pipelineCpuPercent=" + round1(pipelineCpu), null, 72));
+            }
+        }
+
+        double attributedCpu = doubleValue(detail.get("threadCpuAttributedPercent"));
+        boolean sampleReady = Boolean.TRUE.equals(detail.get("threadSampleReady"));
+        if (sampleReady && processCpuPercent >= CPU_HIGH && attributedCpu > 0
+                && processCpuPercent - attributedCpu >= 25.0) {
+            suspects.add(suspect("subsystem", "info", "cpu_unattributed_threads",
+                    "Часть CPU не разложена по JVM-потокам",
+                    "processCpuPercent=" + round1(processCpuPercent)
+                            + ", threadCpuAttributedPercent=" + round1(attributedCpu)
+                            + " (GC/JIT/native или короткий интервал сэмпла)",
+                    null, 40));
         }
 
         @SuppressWarnings("unchecked")
@@ -420,8 +486,22 @@ public class PlatformDiagnosticsService {
 
         long activeDrivers = longValue(drivers.get("activeDrivers"));
         if (activeDrivers > 0 && clusterProperties.hasCapability(com.ispf.server.config.ReplicaCapability.DRIVERS)) {
+            String nodeLabel = clusterProperties.enabled() ? "на io-ноде" : "на этой ноде";
             suspects.add(suspect("subsystem", "info", "drivers_active",
-                    "Активные драйверы на io-ноде", "activeDrivers=" + activeDrivers, null, 20));
+                    "Активные драйверы " + nodeLabel, "activeDrivers=" + activeDrivers, null, 20));
+        }
+
+        if (processCpuPercent >= CPU_HIGH) {
+            boolean hasStrongSuspect = suspects.stream()
+                    .anyMatch(row -> intValue(row.get("score")) >= 70
+                            && !"high_cpu".equals(row.get("id")));
+            if (!hasStrongSuspect) {
+                suspects.add(suspect("subsystem", "info", "cpu_unattributed",
+                        "Высокая загрузка CPU без явного виновника в pipeline",
+                        "processCpuPercent=" + round1(processCpuPercent)
+                                + "; проверьте host (docker stats), демо-объекты и фоновые сервисы",
+                        null, 42));
+            }
         }
 
         suspects.sort(Comparator.comparingInt(row -> -intValue(row.get("score"))));
@@ -493,6 +573,32 @@ public class PlatformDiagnosticsService {
             return (Map<String, Object>) map;
         }
         return Map.of();
+    }
+
+    private static double pipelineThreadCpuPercent(List<Map<String, Object>> threadGroups) {
+        double total = 0.0;
+        for (Map<String, Object> group : threadGroups) {
+            String prefix = String.valueOf(group.get("prefix"));
+            if (isTelemetryPipelinePrefix(prefix)) {
+                total += ((Number) group.getOrDefault("cpuPercentDelta", 0)).doubleValue();
+            }
+        }
+        return total;
+    }
+
+    private static boolean isTelemetryPipelinePrefix(String prefix) {
+        return switch (prefix) {
+            case "telemetry", "telemetry-ingress", "runtime-telemetry", "binding", "mqtt",
+                    "object-change", "variable", "event", "driver-ingress" -> true;
+            default -> false;
+        };
+    }
+
+    private static double doubleValue(Object value) {
+        if (value instanceof Number number) {
+            return number.doubleValue();
+        }
+        return 0.0;
     }
 
     private static int intValue(Object value) {
