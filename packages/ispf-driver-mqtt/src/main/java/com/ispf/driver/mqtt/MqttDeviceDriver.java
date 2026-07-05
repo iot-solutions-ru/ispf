@@ -27,8 +27,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * MQTT device driver — subscribes to topics and maps payloads to object variables.
  * <p>
- * Callbacks enqueue into a last-value-wins ingress buffer so Paho I/O threads never block on
- * variable updates under flood load.
+ * Callbacks enqueue into a bounded ingress lane so Paho I/O threads never block on variable
+ * updates under flood load. {@code EVENT_JOURNAL_ONLY} and {@code ingressCoalesceEnabled=false}
+ * use {@link DriverIngressFifoExecutor} (1:1 FIFO); otherwise a last-value-wins coalesce buffer.
  */
 public class MqttDeviceDriver implements DeviceDriver {
 
@@ -104,29 +105,26 @@ public class MqttDeviceDriver implements DeviceDriver {
             case "callbackThreads" -> callbackThreads = DriverIngress.resolveThreads(Map.of(key, value), callbackThreads);
             case "callbackQueueCapacity" -> callbackQueueCapacity = DriverIngress.resolveCapacity(Map.of(key, value), callbackQueueCapacity);
             case "ingressCoalesceEnabled" -> ingressCoalesceEnabled = DriverIngress.resolveCoalesceEnabled(Map.of(key, value), ingressCoalesceEnabled);
+            case DriverIngress.TELEMETRY_PUBLISH_MODE -> {
+                if ("EVENT_JOURNAL_ONLY".equalsIgnoreCase(value.trim())) {
+                    ingressCoalesceEnabled = false;
+                }
+            }
             default -> { }
         }
     }
 
+    private boolean usesFifoIngress() {
+        Map<String, String> configuration = driverObject != null ? driverObject.configuration() : Map.of();
+        return DriverIngress.resolveFifoIngress(configuration, ingressCoalesceEnabled);
+    }
+
     @Override
     public void connect() throws DriverException {
+        shutdownIngress();
+        closeClient();
         try {
-            if (ingressCoalesceEnabled) {
-                ingressBuffer = new DriverIngressBuffer<>(
-                        ingressElastic,
-                        callbackQueueCapacity,
-                        this::handleMessage,
-                        "mqtt-ingress-worker",
-                        true
-                );
-            } else {
-                ingressFifo = new DriverIngressFifoExecutor(
-                        ingressElastic,
-                        callbackQueueCapacity,
-                        "mqtt-ingress-fifo",
-                        new ThreadPoolExecutor.CallerRunsPolicy()
-                );
-            }
+            startIngress();
             client = new MqttClient(brokerUrl, "ispf-driver-" + UUID.randomUUID(), new MemoryPersistence());
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
@@ -175,8 +173,28 @@ public class MqttDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO, "Connected to MQTT broker: " + brokerUrl);
         } catch (Exception e) {
             shutdownIngress();
+            closeClient();
             throw new DriverException("MQTT connect failed", e);
         }
+    }
+
+    private void startIngress() {
+        if (usesFifoIngress()) {
+            ingressFifo = new DriverIngressFifoExecutor(
+                    ingressElastic,
+                    callbackQueueCapacity,
+                    "mqtt-ingress-fifo",
+                    new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            return;
+        }
+        ingressBuffer = new DriverIngressBuffer<>(
+                ingressElastic,
+                callbackQueueCapacity,
+                this::handleMessage,
+                "mqtt-ingress-worker",
+                true
+        );
     }
 
     private void handleMessage(String topic, byte[] payloadBytes) {
@@ -199,15 +217,24 @@ public class MqttDeviceDriver implements DeviceDriver {
     @Override
     public void disconnect() {
         disconnected = true;
-        if (client != null && client.isConnected()) {
-            try {
-                client.disconnect();
-                client.close();
-            } catch (Exception ignored) {
-                // best effort
-            }
-        }
+        closeClient();
         shutdownIngress();
+    }
+
+    private void closeClient() {
+        MqttClient existing = client;
+        client = null;
+        if (existing == null) {
+            return;
+        }
+        try {
+            if (existing.isConnected()) {
+                existing.disconnect();
+            }
+            existing.close();
+        } catch (Exception ignored) {
+            // best effort
+        }
     }
 
     private void shutdownIngress() {

@@ -15,8 +15,24 @@ public final class DriverIngress {
     public static final String CALLBACK_QUEUE_CAPACITY = "callbackQueueCapacity";
     /** When false, each MQTT callback is queued for handling (no last-value-wins coalesce on L0). */
     public static final String INGRESS_COALESCE_ENABLED = "ingressCoalesceEnabled";
+    public static final String TELEMETRY_PUBLISH_MODE = "telemetryPublishMode";
+    private static final String EVENT_JOURNAL_ONLY = "EVENT_JOURNAL_ONLY";
 
     private DriverIngress() {
+    }
+
+    /**
+     * True when push ingress must preserve every sample (FIFO), not last-value-wins coalesce.
+     * {@code EVENT_JOURNAL_ONLY} always uses FIFO; otherwise honour {@link #INGRESS_COALESCE_ENABLED}.
+     */
+    public static boolean resolveFifoIngress(Map<String, String> configuration, boolean defaultCoalesceEnabled) {
+        if (configuration != null) {
+            String mode = configuration.get(TELEMETRY_PUBLISH_MODE);
+            if (mode != null && EVENT_JOURNAL_ONLY.equalsIgnoreCase(mode.trim())) {
+                return true;
+            }
+        }
+        return !resolveCoalesceEnabled(configuration, defaultCoalesceEnabled);
     }
 
     public static int resolveThreads(Map<String, String> configuration, int fallback) {

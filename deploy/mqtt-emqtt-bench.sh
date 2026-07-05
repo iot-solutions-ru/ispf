@@ -24,6 +24,7 @@ MQTT_VERSION="${MQTT_VERSION:-4}"
 DOCKER_NETWORK="${DOCKER_NETWORK:-}"
 SINGLE_CONTAINER="${SINGLE_CONTAINER:-false}"
 SHARD_MAX="${SHARD_MAX:-4}"
+SHARED_TOPIC_SHARDS="${SHARED_TOPIC_SHARDS:-1}"
 CLEANUP_STALE="${CLEANUP_STALE:-true}"
 # Cap Erlang CPU per shard so bench cannot starve ispf-server / scylla on shared lab host.
 EMQTT_CPU_LIMIT="${EMQTT_CPU_LIMIT:-1.5}"
@@ -57,6 +58,7 @@ Usage: mqtt-emqtt-bench.sh [options]
   --docker-network NET        Attach publisher to Docker network (skip docker-proxy)
   --single-container          Few docker runs via --topics-payload (default max 4 shards)
   --shard-max N               Max emqtt docker containers when --single-container (default 4)
+  --shared-topic-shards N     Parallel publishers on --topic (default 1; use 4+ for high rate)
   --no-cleanup-stale          Do not stop orphaned emqtt-bench containers
   --pull                      docker pull before run
   -h, --help                  This help
@@ -78,6 +80,7 @@ while [[ $# -gt 0 ]]; do
     --docker-network) DOCKER_NETWORK="$2"; shift 2 ;;
     --single-container) SINGLE_CONTAINER=true; shift ;;
     --shard-max) SHARD_MAX="$2"; shift 2 ;;
+    --shared-topic-shards) SHARED_TOPIC_SHARDS="$2"; shift 2 ;;
     --no-cleanup-stale) CLEANUP_STALE=false; shift ;;
     --pull) DO_PULL=1; shift ;;
     -h | --help) usage; exit 0 ;;
@@ -166,6 +169,23 @@ PY
 }
 
 # Match mqtt_loadtest_lib: pad = max(5, len(str(DEVICES)))
+resolve_publish_params() {
+  local rate=$1
+  local interval_ms=$2
+  RESOLVED_CLIENTS=$(awk -v rate="$rate" -v interval="$interval_ms" \
+    'BEGIN { n = rate * interval / 1000; if (n < 1) n = 1; printf "%d", (n == int(n) ? n : int(n)+1) }')
+  RESOLVED_INTERVAL="$interval_ms"
+  local capacity
+  capacity=$(awk -v c="$RESOLVED_CLIENTS" -v interval="$interval_ms" \
+    'BEGIN { printf "%.6f", c * (1000 / interval) }')
+  if awk -v cap="$capacity" -v rate="$rate" 'BEGIN { exit (cap > rate + 0.001) ? 0 : 1 }'; then
+    RESOLVED_INTERVAL=$(awk -v rate="$rate" -v c="$RESOLVED_CLIENTS" \
+      'BEGIN { ms = (c * 1000) / rate; if (ms < 1) ms = 1; printf "%.0f", ms }')
+  fi
+  RESOLVED_RATE=$(awk -v c="$RESOLVED_CLIENTS" -v interval="$RESOLVED_INTERVAL" \
+    'BEGIN { printf "%.1f", c * (1000 / interval) }')
+}
+
 PAD=5
 DEVICES_LEN=${#DEVICES}
 if [[ "$DEVICES_LEN" -gt 5 ]]; then
@@ -174,7 +194,12 @@ fi
 
 if [[ -n "$SINGLE_TOPIC" ]]; then
   DEVICES=1
-  PER_TOPIC_RATE="$MESSAGES_PER_SECOND"
+  if [[ "$SHARED_TOPIC_SHARDS" -gt 1 ]]; then
+    PER_TOPIC_RATE=$(awk -v total="$MESSAGES_PER_SECOND" -v shards="$SHARED_TOPIC_SHARDS" \
+      'BEGIN { printf "%.6f", total / shards }')
+  else
+    PER_TOPIC_RATE="$MESSAGES_PER_SECOND"
+  fi
 else
   PER_TOPIC_RATE=$(awk -v total="$MESSAGES_PER_SECOND" -v dev="$DEVICES" 'BEGIN { printf "%.6f", total / dev }')
 fi
@@ -183,7 +208,16 @@ CLIENTS_PER_TOPIC=$(awk -v rate="$PER_TOPIC_RATE" -v interval="$INTERVAL_MS" \
 ACTUAL_PER_TOPIC=$(awk -v c="$CLIENTS_PER_TOPIC" -v interval="$INTERVAL_MS" \
   'BEGIN { printf "%.1f", c * (1000 / interval) }')
 if [[ -n "$SINGLE_TOPIC" ]]; then
-  ACTUAL_TOTAL="$ACTUAL_PER_TOPIC"
+  if [[ "$SHARED_TOPIC_SHARDS" -gt 1 ]]; then
+    shard_rate=$(awk -v total="$MESSAGES_PER_SECOND" -v shards="$SHARED_TOPIC_SHARDS" \
+      'BEGIN { printf "%.0f", total / shards }')
+    resolve_publish_params "$shard_rate" "$INTERVAL_MS"
+    ACTUAL_TOTAL=$(awk -v per="$RESOLVED_RATE" -v shards="$SHARED_TOPIC_SHARDS" \
+      'BEGIN { printf "%.1f", per * shards }')
+  else
+    resolve_publish_params "$MESSAGES_PER_SECOND" "$INTERVAL_MS"
+    ACTUAL_TOTAL="$RESOLVED_RATE"
+  fi
 else
   ACTUAL_TOTAL=$(awk -v per="$ACTUAL_PER_TOPIC" -v dev="$DEVICES" 'BEGIN { printf "%.1f", per * dev }')
 fi
@@ -204,7 +238,10 @@ prepare_payload_template
 
 mode="multi-container"
 shard_count="$DEVICES"
-if [[ "$SINGLE_CONTAINER" == "true" ]]; then
+if [[ -n "$SINGLE_TOPIC" && "$SHARED_TOPIC_SHARDS" -gt 1 ]]; then
+  mode="shared-topic-sharded"
+  shard_count="$SHARED_TOPIC_SHARDS"
+elif [[ "$SINGLE_CONTAINER" == "true" ]]; then
   mode="sharded-topics-payload"
   if [[ "$DEVICES" -lt "$SHARD_MAX" ]]; then
     shard_count="$DEVICES"
@@ -220,11 +257,45 @@ echo "ISPF_EMQTT_FORMULA_RATE=${ACTUAL_TOTAL}"
 echo "ISPF_EMQTT_CLIENTS_PER_TOPIC=${CLIENTS_PER_TOPIC}"
 echo "ISPF_EMQTT_SHARD_COUNT=${shard_count}"
 
+run_single_topic_pub() {
+  local topic=$1
+  local rate=$2
+  resolve_publish_params "$rate" "$INTERVAL_MS"
+  timeout "${DURATION_SECONDS}s" docker run --rm "${NET_ARGS[@]}" \
+    --label "${EMQTT_BENCH_LABEL}=1" \
+    --cpus "${EMQTT_CPU_LIMIT}" \
+    -v "${PAYLOAD_TEMPLATE}:/payload.txt:ro" \
+    "$IMAGE" pub \
+    -h "$HOST" -p "$PORT" \
+    -V "$MQTT_VERSION" \
+    -c "$RESOLVED_CLIENTS" \
+    -I "$RESOLVED_INTERVAL" \
+    -t "$topic" \
+    -m "template:///payload.txt" \
+    -s "$PAYLOAD_SIZE" \
+    -q 0 \
+    >/dev/null 2>&1 &
+  pids+=("$!")
+}
+
 docker_network_args
 started=$(date +%s)
 failed=0
+pids=()
 
-if [[ "$SINGLE_CONTAINER" == "true" ]]; then
+if [[ -n "$SINGLE_TOPIC" && "$SHARED_TOPIC_SHARDS" -gt 1 ]]; then
+  shard_rate=$(awk -v total="$MESSAGES_PER_SECOND" -v shards="$SHARED_TOPIC_SHARDS" \
+    'BEGIN { printf "%.0f", total / shards }')
+  resolve_publish_params "$shard_rate" "$INTERVAL_MS"
+  ACTUAL_TOTAL=$(awk -v per="$RESOLVED_RATE" -v shards="$SHARED_TOPIC_SHARDS" \
+    'BEGIN { printf "%.1f", per * shards }')
+  for _ in $(seq 1 "$SHARED_TOPIC_SHARDS"); do
+    run_single_topic_pub "$SINGLE_TOPIC" "$shard_rate"
+  done
+  for pid in "${pids[@]}"; do
+    wait "$pid" || true
+  done
+elif [[ "$SINGLE_CONTAINER" == "true" ]]; then
   topics_per_shard=$(( (DEVICES + shard_count - 1) / shard_count ))
   json_files=()
   pids=()
@@ -267,7 +338,6 @@ if [[ "$SINGLE_CONTAINER" == "true" ]]; then
     rm -f "$json_file"
   done
 else
-  pids=()
   for i in $(seq 1 "$DEVICES"); do
     if [[ -n "$SINGLE_TOPIC" ]]; then
       topic="$SINGLE_TOPIC"
@@ -275,21 +345,7 @@ else
       idx=$(printf "%0${PAD}d" "$i")
       topic="${TOPIC_PREFIX}/${idx}/temperature"
     fi
-    timeout "${DURATION_SECONDS}s" docker run --rm "${NET_ARGS[@]}" \
-      --label "${EMQTT_BENCH_LABEL}=1" \
-      --cpus "${EMQTT_CPU_LIMIT}" \
-      -v "${PAYLOAD_TEMPLATE}:/payload.txt:ro" \
-      "$IMAGE" pub \
-      -h "$HOST" -p "$PORT" \
-      -V "$MQTT_VERSION" \
-      -c "$CLIENTS_PER_TOPIC" \
-      -I "$INTERVAL_MS" \
-      -t "$topic" \
-      -m "template:///payload.txt" \
-      -s "$PAYLOAD_SIZE" \
-      -q 0 \
-      >/dev/null 2>&1 &
-    pids+=("$!")
+    run_single_topic_pub "$topic" "$PER_TOPIC_RATE"
   done
   for pid in "${pids[@]}"; do
     wait "$pid" || true

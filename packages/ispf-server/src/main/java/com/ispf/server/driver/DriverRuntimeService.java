@@ -631,6 +631,12 @@ public class DriverRuntimeService {
 
     private Map<String, String> effectiveDriverConfiguration(DriverBinding binding) {
         Map<String, String> configuration = new LinkedHashMap<>(binding.configuration());
+        if (binding.telemetryPublishMode() != TelemetryPublishMode.FULL) {
+            configuration.put("telemetryPublishMode", binding.telemetryPublishMode().name());
+        }
+        if (binding.telemetryPublishMode() == TelemetryPublishMode.EVENT_JOURNAL_ONLY) {
+            configuration.put(DriverIngress.INGRESS_COALESCE_ENABLED, "false");
+        }
         if (!"mqtt".equalsIgnoreCase(binding.driverId())) {
             return configuration;
         }

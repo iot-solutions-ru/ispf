@@ -84,6 +84,7 @@ public class KafkaDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             Properties consumerProps = new Properties();
             consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -106,12 +107,17 @@ public class KafkaDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO,
                     "Kafka ready (bootstrap=" + bootstrapServers + ", topic=" + topic + ")");
         } catch (Exception e) {
+            releaseResources();
             throw new DriverException("Kafka connect failed", e);
         }
     }
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         connected = false;
         if (consumer != null) {
             consumer.close();

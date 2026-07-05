@@ -132,6 +132,54 @@ class MqttDeviceDriverTest {
     }
 
     @Test
+    void eventJournalOnlyModeUsesFifoWithoutCoalesce() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/loadtest/shared/temperature";
+
+        CountingStubDriverObject driverObject = new CountingStubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "telemetryPublishMode", "EVENT_JOURNAL_ONLY"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("temperature", topic));
+
+        publish(topic, "1", port);
+        publish(topic, "2", port);
+        assertTrue(driverObject.awaitUpdates(2, 5, TimeUnit.SECONDS));
+        driver.disconnect();
+    }
+
+    @Test
+    void secondConnectShutsDownPreviousIngress() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/loadtest/00002/temperature";
+
+        CountingStubDriverObject driverObject = new CountingStubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "ingressCoalesceEnabled", "false"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("temperature", topic));
+
+        publish(topic, "first", port);
+        assertTrue(driverObject.awaitUpdates(1, 5, TimeUnit.SECONDS));
+
+        driver.connect();
+        driver.readPoints(Map.of("temperature", topic));
+        publish(topic, "second", port);
+        assertTrue(driverObject.awaitUpdates(2, 5, TimeUnit.SECONDS));
+        driver.disconnect();
+    }
+
+    @Test
     void writeRequiresConnection() {
         MqttDeviceDriver driver = new MqttDeviceDriver();
         driver.initialize(new StubDriverObject(Map.of()));

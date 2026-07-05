@@ -75,6 +75,7 @@ public class HttpServerDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             httpServer = HttpServer.create(new InetSocketAddress(listenPort), 0);
             httpServer.createContext(contextPath, new RequestHandler());
@@ -83,12 +84,17 @@ public class HttpServerDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO,
                     "HTTP server listening on port " + listenPort + " path " + contextPath);
         } catch (IOException e) {
+            releaseResources();
             throw new DriverException("HTTP server start failed", e);
         }
     }
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         connected = false;
         if (httpServer != null) {
             httpServer.stop(0);

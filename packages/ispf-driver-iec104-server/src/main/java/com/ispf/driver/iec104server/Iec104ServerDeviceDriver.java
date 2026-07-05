@@ -8,6 +8,8 @@ import com.ispf.driver.DriverException;
 import com.ispf.driver.DriverMetadata;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
+import com.ispf.driver.ingress.DriverIngressFifoExecutor;
+import com.ispf.driver.ingress.IngressElasticSettings;
 import org.openmuc.j60870.ASdu;
 import org.openmuc.j60870.Connection;
 import org.openmuc.j60870.ConnectionEventListener;
@@ -23,6 +25,7 @@ import org.openmuc.j60870.ie.InformationObject;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -53,6 +56,8 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
             .field("clientOriginatorAddress", FieldType.INTEGER)
             .build();
 
+    private static final IngressElasticSettings DEFAULT_ELASTIC = IngressElasticSettings.fixed(2);
+
     private DriverObject driverObject;
     private Server server;
     private int listenPort = 2404;
@@ -64,6 +69,7 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
     private volatile boolean clientConnected;
     private volatile boolean listening;
     private DriverIngressBuffer<String, Iec104ServerPoint> ingressBuffer;
+    private DriverIngressFifoExecutor ingressFifo;
 
     @Override
     public DriverMetadata metadata() {
@@ -91,36 +97,54 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             server = Server.builder()
                     .setPort(listenPort)
                     .build();
             server.start(serverEventListener);
             listening = true;
-            ingressBuffer = new DriverIngressBuffer<>(
-                    DriverIngress.resolveThreads(driverObject.configuration(), 2),
-                    DriverIngress.resolveCapacity(driverObject.configuration(), 10_000),
-                    (variableName, point) -> driverObject.updateVariable(variableName, readPoint(point)),
-                    "iec104-server-ingress"
-            );
+            startIngress();
             driverObject.log(DriverLogLevel.INFO, "IEC104 server listening on port " + listenPort);
         } catch (IOException e) {
-            listening = false;
-            shutdownIngressBuffer();
-            server = null;
+            releaseResources();
             throw new DriverException("IEC104 server start failed", e);
         }
     }
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         listening = false;
         clientConnected = false;
-        shutdownIngressBuffer();
+        shutdownIngress();
         if (server != null) {
             server.stop();
             server = null;
         }
+    }
+
+    private void startIngress() {
+        Map<String, String> configuration = driverObject.configuration();
+        int queueCapacity = DriverIngress.resolveCapacity(configuration, 10_000);
+        if (DriverIngress.resolveFifoIngress(configuration, true)) {
+            ingressFifo = new DriverIngressFifoExecutor(
+                    IngressElasticSettings.resolve(configuration, DEFAULT_ELASTIC),
+                    queueCapacity,
+                    "iec104-server-ingress-fifo",
+                    new ThreadPoolExecutor.CallerRunsPolicy()
+            );
+            return;
+        }
+        ingressBuffer = new DriverIngressBuffer<>(
+                DriverIngress.resolveThreads(configuration, 2),
+                queueCapacity,
+                (variableName, point) -> driverObject.updateVariable(variableName, readPoint(point)),
+                "iec104-server-ingress"
+        );
     }
 
     @Override
@@ -189,14 +213,32 @@ public class Iec104ServerDeviceDriver implements DeviceDriver {
 
     private void refreshPointsForIoa(int ioa) {
         DriverIngressBuffer<String, Iec104ServerPoint> buffer = ingressBuffer;
+        DriverIngressFifoExecutor fifo = ingressFifo;
         for (Map.Entry<String, Iec104ServerPoint> entry : points.entrySet()) {
             if (entry.getValue().ioa() == ioa) {
-                if (buffer != null) {
-                    buffer.submit(entry.getKey(), entry.getValue());
+                String variableName = entry.getKey();
+                Iec104ServerPoint point = entry.getValue();
+                if (fifo != null) {
+                    fifo.execute(() -> driverObject.updateVariable(variableName, readPoint(point)));
+                } else if (buffer != null) {
+                    buffer.submit(variableName, point);
                 } else {
-                    driverObject.updateVariable(entry.getKey(), readPoint(entry.getValue()));
+                    driverObject.updateVariable(variableName, readPoint(point));
                 }
             }
+        }
+    }
+
+    private void shutdownIngress() {
+        shutdownIngressFifo();
+        shutdownIngressBuffer();
+    }
+
+    private void shutdownIngressFifo() {
+        DriverIngressFifoExecutor fifo = ingressFifo;
+        ingressFifo = null;
+        if (fifo != null) {
+            fifo.close();
         }
     }
 

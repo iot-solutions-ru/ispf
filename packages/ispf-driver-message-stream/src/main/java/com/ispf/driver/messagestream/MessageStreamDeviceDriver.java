@@ -82,6 +82,7 @@ public class MessageStreamDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             if ("UDP".equals(protocol)) {
                 if (listen) {
@@ -103,12 +104,17 @@ public class MessageStreamDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO,
                     "Message stream ready (" + protocol + (listen ? " listen" : " client") + " port=" + port + ")");
         } catch (IOException e) {
+            releaseResources();
             throw new DriverException("Message stream connect failed", e);
         }
     }
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         connected = false;
         closeQuietly(tcpSocket);
         tcpSocket = null;

@@ -77,6 +77,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             serverSocket = new ServerSocket(listenPort);
             acceptExecutor = Executors.newCachedThreadPool(r -> {
@@ -88,6 +89,7 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
             connected = true;
             driverObject.log(DriverLogLevel.INFO, "GPS tracker listening on port " + listenPort);
         } catch (IOException e) {
+            releaseResources();
             throw new DriverException("GPS tracker listen failed on port " + listenPort, e);
         }
     }
@@ -134,6 +136,10 @@ public class GpsTrackerDeviceDriver implements DeviceDriver {
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         connected = false;
         if (serverSocket != null) {
             try {

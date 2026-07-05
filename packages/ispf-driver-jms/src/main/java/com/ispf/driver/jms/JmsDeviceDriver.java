@@ -84,6 +84,7 @@ public class JmsDeviceDriver implements DeviceDriver {
 
     @Override
     public void connect() throws DriverException {
+        releaseResources();
         try {
             connectionFactory = new ActiveMQConnectionFactory(brokerUrl);
             connection = connectionFactory.createConnection();
@@ -93,12 +94,17 @@ public class JmsDeviceDriver implements DeviceDriver {
             driverObject.log(DriverLogLevel.INFO,
                     "JMS connected (broker=" + brokerUrl + ", destination=" + destination + ")");
         } catch (JMSException e) {
+            releaseResources();
             throw new DriverException("JMS connect failed", e);
         }
     }
 
     @Override
     public void disconnect() {
+        releaseResources();
+    }
+
+    private void releaseResources() {
         connected = false;
         closeQuietly(session);
         session = null;

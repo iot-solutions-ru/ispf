@@ -21,4 +21,25 @@ class DriverIngressTest {
                 true
         ));
     }
+
+    @Test
+    void resolveFifoIngressForEventJournalOnly() {
+        assertTrue(DriverIngress.resolveFifoIngress(
+                Map.of(DriverIngress.TELEMETRY_PUBLISH_MODE, "EVENT_JOURNAL_ONLY"),
+                true
+        ));
+    }
+
+    @Test
+    void resolveFifoIngressWhenCoalesceDisabled() {
+        assertTrue(DriverIngress.resolveFifoIngress(
+                Map.of(DriverIngress.INGRESS_COALESCE_ENABLED, "false"),
+                true
+        ));
+    }
+
+    @Test
+    void resolveCoalesceBufferWhenCoalesceEnabled() {
+        assertFalse(DriverIngress.resolveFifoIngress(Map.of(), true));
+    }
 }
