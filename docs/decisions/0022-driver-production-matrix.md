@@ -41,5 +41,5 @@
 ## References
 
 - [DRIVERS.md](../DRIVERS.md)
-- [EXCELLENCE_BACKLOG.md § BL-78](../EXCELLENCE_BACKLOG.md#bl-78--adr-driver-production-matrix)
+- [ROADMAP.md § BL-78](../ROADMAP.md#часть-e--полный-реестр-bl-01139)
 - [0020-time-and-timezones.md](0020-time-and-timezones.md) — `observedAt`

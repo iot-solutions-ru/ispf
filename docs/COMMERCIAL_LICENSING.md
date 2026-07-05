@@ -73,7 +73,7 @@ CLI: [tools/license-builder/README.md](../tools/license-builder/README.md).
 | Условие | Результат |
 |---------|-----------|
 | Нет `license` | Deploy как раньше (если `require-signed-bundles=false`) |
-| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([BL-100](EXCELLENCE_BACKLOG.md#bl-100--bundle-trust-signing-optional)) |
+| Нет `license` + `require-signed-bundles=true` | HTTP 403 ([BL-100](ROADMAP.md#часть-e--полный-реестр-bl-01139)) |
 | `license` + `enforce=false` + invalid | WARN при ошибке, deploy продолжается (кроме `require-signed-bundles=true` → 403) |
 | `license` + (`enforce=true` **или** `require-signed-bundles=true`) + invalid | HTTP 403 |
 

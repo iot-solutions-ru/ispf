@@ -33,7 +33,7 @@ Manual acceptance for installed operator mode on Android. **Automated coverage (
 
 ## Sign-off
 
-- [x] Automated: Pixel 5 + preview build (`npm run test:e2e:preview`) — Sprint EX-16
+- [x] Automated: Pixel 5 + preview build (`npm run test:e2e:preview`) — Sprint S16
 - [ ] Optional: tested on physical Android device (release notes)
 - [x] Standalone manifest + SW registration OK
 - [x] Offline stale banner OK (preview + dev navigator.onLine)

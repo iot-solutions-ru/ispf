@@ -375,6 +375,9 @@ public class ObjectController {
             if (request.functionAuditEnabled() != null) {
                 node = objectManager.updateFunctionAuditEnabled(path, request.functionAuditEnabled());
             }
+            if (request.eventJournalEnabled() != null) {
+                node = objectManager.updateEventJournalEnabled(path, request.eventJournalEnabled());
+            }
             return toDto(node);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -773,7 +776,8 @@ public class ObjectController {
             String description,
             String iconId,
             Boolean bindingAuditEnabled,
-            Boolean functionAuditEnabled
+            Boolean functionAuditEnabled,
+            Boolean eventJournalEnabled
     ) {
     }
 
@@ -811,7 +815,8 @@ public class ObjectController {
                 remote.driverStatus(),
                 remote.driverConnected(),
                 remote.bindingAuditEnabled(),
-                remote.functionAuditEnabled()
+                remote.functionAuditEnabled(),
+                remote.eventJournalEnabled()
         );
     }
 

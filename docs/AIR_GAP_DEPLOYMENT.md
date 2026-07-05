@@ -108,7 +108,7 @@ bash deploy/air-gap-apply.sh /media/ispf-airgap-<new-version>.tar.gz
 
 ## Commercial licensing flow
 
-Air-gap sites typically run with strict bundle trust. Align with [BL-100](EXCELLENCE_BACKLOG.md#bl-100--bundle-trust-signing-optional):
+Air-gap sites typically run with strict bundle trust. Align with [BL-100](ROADMAP.md#часть-e--полный-реестр-bl-01139):
 
 | Step | Action |
 |------|--------|

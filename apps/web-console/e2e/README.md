@@ -68,4 +68,7 @@ When `E2E_BASE_URL` is set, Playwright does not start the dev server. The option
 
 ## CI
 
-GitHub Actions job `web-console` in [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) runs `npm test`, `npm run test:e2e`, and `npm run build`.
+GitHub Actions:
+
+- **PR (`pr-fast`):** [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) — unit tests, i18n, build (no Playwright load).
+- **Nightly / `main` push:** [`.github/workflows/ci-nightly.yml`](../../../.github/workflows/ci-nightly.yml) — full e2e, preview, JVM load gates.

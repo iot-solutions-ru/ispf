@@ -126,6 +126,6 @@ If `observedAt` is absent, `observedAt := ingestedAt` (backward compatible).
 ## Related
 
 - [ROADMAP.md § Phase 21](../ROADMAP.md#phase-21--time--timezones)
-- [CODE_AUDIT_BACKLOG.md § Wave H](../CODE_AUDIT_BACKLOG.md#wave-h--time--timezones)
-- [REQ-FW-60](../PLATFORM_DEVELOPER_BACKLOG.md#129-req-fw-60--time--timezone-contract) in platform backlog
+- [ROADMAP.md § Phase 21 (BL-66…71)](../ROADMAP.md#phase-21--time--timezones)
+- [FW-60](../ROADMAP.md#часть-b--req-fw-framework-закрыт)
 - [ADR-0013](0013-web-console-i18n.md) — locale vs timezone (orthogonal concerns)

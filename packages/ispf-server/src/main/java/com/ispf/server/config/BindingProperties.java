@@ -12,7 +12,7 @@ public class BindingProperties {
 
     public static class Audit {
         /** Master kill switch — when false, no binding audit writes regardless of per-object flags. */
-        private boolean enabled = true;
+        private boolean enabled = false;
         /** {@code errors}, {@code changes}, or {@code all}. */
         private String mode = "changes";
         /** 0.0–1.0 sampling when enabled (1.0 = every matching record). */

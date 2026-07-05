@@ -333,4 +333,4 @@ examples/demo-app/
 - [DASHBOARDS.md](DASHBOARDS.md) — виджеты
 - [WEB_CONSOLE.md](WEB_CONSOLE.md) — admin UI для настройки
 - [GLOSSARY.md](GLOSSARY.md) — термины
-- [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) — статус REQ-PF
+- [ROADMAP.md](ROADMAP.md) — статус REQ-PF

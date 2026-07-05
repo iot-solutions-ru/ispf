@@ -1,13 +1,43 @@
-name: CI
+name: CI (pr-fast)
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      web_console: ${{ steps.filter.outputs.web_console }}
+      tools: ${{ steps.filter.outputs.tools }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'packages/**'
+              - 'buildSrc/**'
+              - 'gradle/**'
+              - 'gradlew'
+              - 'settings.gradle.kts'
+              - 'tools/ai-pack/**'
+              - 'tools/license-audit/**'
+            web_console:
+              - 'apps/web-console/**'
+              - 'tools/symbol-pack-isa/**'
+            tools:
+              - 'tools/license-audit/**'
+
   backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.tools == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +59,9 @@ jobs:
         with:
           distribution: temurin
           java-version: "25"
+          cache: gradle
 
-      - name: Test core platform modules
+      - name: Test core platform modules (skip load)
         run: >
           ./gradlew
           :packages:ispf-core:test
@@ -42,27 +73,9 @@ jobs:
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
 
-      - name: Scale gate — list_devices p99 baseline
-        env:
-          ISPF_LOAD_P99_CEILING_MS: 5000
-        run: >
-          ./gradlew
-          :packages:ispf-server:test
-          --tests com.ispf.server.api.ListDevicesLoadTest
-          --no-daemon
-          -Dorg.gradle.workers.max=1
-
-      - name: Scale gate — events fire/list p99 baseline
-        env:
-          ISPF_LOAD_P99_CEILING_MS: 5000
-        run: >
-          ./gradlew
-          :packages:ispf-server:test
-          --tests com.ispf.server.api.EventFireLoadTest
-          --no-daemon
-          -Dorg.gradle.workers.max=1
-
   web-console:
+    needs: changes
+    if: needs.changes.outputs.web_console == 'true' || needs.changes.outputs.tools == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,21 +90,37 @@ jobs:
         run: node tools/license-audit/check-all.mjs
 
       - name: Build ISA P&ID symbol pack
+        if: needs.changes.outputs.web_console == 'true'
         run: |
           cd tools/symbol-pack-isa
           npm ci
           npm test
           npm run build
 
-      - name: Install, test, and build
+      - name: Unit tests, i18n gate, build
         working-directory: apps/web-console
         run: |
           npm ci
           npm test
           npm run i18n:check
-          npx playwright install chromium --with-deps
-          npm run test:e2e
           npm run build
-          npm run test:e2e:preview
           test -f dist/legal/LICENSE
           test -f dist/legal/THIRD_PARTY_NOTICES.md
+
+  pr-fast-ok:
+    needs: [changes, backend, web-console]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful pr-fast jobs
+        run: |
+          echo "backend=${{ needs.backend.result }}"
+          echo "web-console=${{ needs.web-console.result }}"
+          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.web-console.result }}" == "failure" ]]; then
+            echo "pr-fast failed"
+            exit 1
+          fi
+          if [[ "${{ needs.backend.result }}" == "cancelled" || "${{ needs.web-console.result }}" == "cancelled" ]]; then
+            exit 1
+          fi
+          echo "pr-fast passed (skipped jobs are OK for path-only changes)"

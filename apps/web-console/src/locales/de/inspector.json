@@ -117,6 +117,7 @@
   "events.add": "+ Ereignis",
   "events.empty": "Keine Ereignisse",
   "events.publish": "Veröffentlichen",
+  "events.auditEnabled": "Gefeuerte Events im Event-Journal für dieses Objekt aufzeichnen",
   "functions.add": "+ Funktion",
   "functions.auditEnabled": "Funktions-Audit für dieses Objekt aufzeichnen",
   "functions.empty": "Keine Funktionen",

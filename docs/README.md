@@ -27,12 +27,11 @@
 | [REST API](API.md) | Полный справочник endpoints |
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
-| [Backlog разработчика platform](PLATFORM_DEVELOPER_BACKLOG.md) | Статус REQ-PF, REQ-FW (§12), [gap registry](GAP_REGISTRY.md), sprint roadmap |
-| [Excellence backlog REQ-EX](EXCELLENCE_BACKLOG.md) | Phase 23: BL-78…132 — drivers, HMI, app platform, semantic, AI, scale, federation, ops, QA |
-| [Sprint backlog ускорения (8 недель)](EX_ACCELERATION_SPRINT_BACKLOG.md) | Execution plan: спринты, SP, KPI, owners, риски, Go/No-Go |
-| [Code audit backlog](CODE_AUDIT_BACKLOG.md) | BL-01…77 закрытые волны + сводка Wave J…S |
-| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0019 |
-| [Roadmap](ROADMAP.md) | Единый roadmap platform + production ops; **Phase 5** — усиление механизмов |
+| [Roadmap](ROADMAP.md) | **Единый roadmap:** Phase 0–23, REQ-PF/FW, BL-01…139, спринты S01–S23 |
+| [Acceleration program](ACCELERATION_PROGRAM.md) | S19–S23: baseline, scorecard, scope freeze, KPI |
+| [HMI quality gates](HMI_QUALITY_GATES.md) | Lighthouse, axe, bundle budget, mimic FPS (S21) |
+| [CI dashboard](CI_DASHBOARD.md) | Workflow health snapshot (S20-06) |
+| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0028 |
 | [Эволюция платформы](PLATFORM_EVOLUTION.md) | Ретроспективный чеклист: что сделано по порядку, как ISPF развивалась |
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |

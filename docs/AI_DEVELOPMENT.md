@@ -385,4 +385,4 @@ Commercial bundles: sign **after** AI edits (`contentSha256` covers manifest bod
 - [PLUGINS.md](PLUGINS.md) — LLM provider outside core (like drivers)
 - [APPLICATIONS.md](APPLICATIONS.md) — deploy API
 - [DASHBOARDS.md](DASHBOARDS.md) — widget registry for generated dashboards
-- [PLATFORM_DEVELOPER_BACKLOG.md §12.7](PLATFORM_DEVELOPER_BACKLOG.md#127-req-fw-4043--ai-development-layer)
+- [ROADMAP.md § Part B (FW-40…48)](ROADMAP.md#часть-b--req-fw-framework-закрыт)

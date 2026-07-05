@@ -461,6 +461,7 @@ class AgentGroundTruthGuardTest {
                 null,
                 null,
                 false,
+                false,
                 false
         );
     }

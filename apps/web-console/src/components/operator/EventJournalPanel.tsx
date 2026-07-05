@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { fetchEvents } from "../../api";
+import { fetchEventJournalStatus, fetchEvents } from "../../api";
 import {
   OPERATOR_SIDEBAR_EVENTS_QUERY_KEY,
   useOperatorSidebarRefresh,
@@ -50,8 +50,9 @@ export default function EventJournalPanel({
   defaultMode = "live",
   showModeToggle = true,
 }: EventJournalPanelProps) {
-  const { t } = useTranslation(["operator", "journal", "common"]);
+  const { t } = useTranslation(["operator", "runtime", "journal", "common"]);
   const operatorScoped = Boolean(appId && ui);
+  const operatorJournalPath = ui?.eventJournalObjectPath?.trim() || undefined;
   const [mode, setMode] = usePersistentTab<JournalViewMode>(
     `event-journal:${appId ?? fixedObjectPath ?? "all"}`,
     defaultMode,
@@ -64,26 +65,40 @@ export default function EventJournalPanel({
   const [searchFilter, setSearchFilter] = useState("");
 
   const objectPath = fixedObjectPath ?? (filterPath.trim() || undefined);
+  const statusObjectPath = operatorScoped
+    ? operatorJournalPath
+    : fixedObjectPath ?? (filterPath.trim() || undefined);
   const liveLimit = limit ?? LIVE_LIMIT;
   const fetchLimit = mode === "live" ? liveLimit : historyLimit;
 
   useOperatorSidebarRefresh(appId, operatorScoped ? ui : undefined);
 
+  const statusQuery = useQuery({
+    queryKey: ["event-journal-status", statusObjectPath ?? "all"],
+    queryFn: () => fetchEventJournalStatus(statusObjectPath),
+    staleTime: 30_000,
+  });
+
   const events = useQuery({
     queryKey: [
       "events",
       operatorScoped ? OPERATOR_SIDEBAR_EVENTS_QUERY_KEY : objectPath ?? "all",
+      operatorScoped ? operatorJournalPath ?? "scoped" : null,
       fetchLimit,
       mode,
     ],
     queryFn: () => {
       if (operatorScoped) {
-        return fetchEvents(undefined, Math.max(fetchLimit, mode === "live" ? 80 : fetchLimit));
+        return fetchEvents(
+          operatorJournalPath,
+          Math.max(fetchLimit, mode === "live" ? 80 : fetchLimit),
+        );
       }
       return fetchEvents(objectPath, fetchLimit);
     },
     refetchInterval: mode === "live" ? (operatorScoped ? 5000 : 8000) : false,
     staleTime: mode === "live" ? 0 : 30_000,
+    enabled: statusQuery.data?.enabled !== false,
   });
 
   const rawItems = useMemo(() => {
@@ -151,24 +166,43 @@ export default function EventJournalPanel({
     && (events.data?.length ?? 0) >= historyLimit
     && historyLimit < HISTORY_MAX;
 
-  const subtitle = operatorScoped && appId
-    ? t("eventJournal.operatorApp", { appId })
-    : !operatorScoped && objectPath
-      ? t("eventJournal.filter", { path: objectPath })
-      : undefined;
+  const journalDisabled = statusQuery.data?.enabled === false;
+  const journalHint = !statusQuery.data?.masterEnabled
+    ? t("runtime:eventJournal.masterDisabledHint")
+    : fixedObjectPath && !statusQuery.data?.objectEnabled
+      ? t("runtime:eventJournal.objectDisabledHint")
+      : mode === "history"
+        && !objectPath
+        && !operatorScoped
+        && statusQuery.data?.masterEnabled
+        && !statusQuery.data?.globalTableEnabled
+        ? t("runtime:eventJournal.globalHistoryDisabledHint")
+        : journalDisabled
+          ? t("runtime:eventJournal.disabledHint")
+          : operatorScoped && appId
+            ? t("eventJournal.operatorApp", { appId })
+            : !operatorScoped && objectPath
+              ? t("eventJournal.filter", { path: objectPath })
+              : undefined;
 
-  const emptyMessage = operatorScoped ? t("eventJournal.emptyScoped") : t("eventJournal.empty");
+  const emptyMessage = journalDisabled
+    ? (fixedObjectPath || operatorJournalPath
+      ? t("runtime:eventJournal.objectDisabledEmpty")
+      : t("runtime:eventJournal.disabledEmpty"))
+    : operatorScoped
+      ? t("eventJournal.emptyScoped")
+      : t("eventJournal.empty");
 
   return (
     <JournalViewShell
       title={t("eventJournal.title")}
-      subtitle={subtitle}
+      subtitle={journalHint}
       mode={mode}
       onModeChange={setMode}
       showModeToggle={showModeToggle}
       count={filtered.length}
-      isLoading={events.isLoading}
-      error={events.error}
+      isLoading={events.isLoading || statusQuery.isLoading}
+      error={events.error ?? statusQuery.error}
       empty={filtered.length === 0}
       emptyMessage={emptyMessage}
       compact={compact}

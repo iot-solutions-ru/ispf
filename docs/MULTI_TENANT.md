@@ -46,4 +46,4 @@ Login response включает `tenantId`, если назначен.
 - Shared `root.platform` остаётся для legacy demo
 - Federation и tenant — ортогональные механизмы
 
-См. также [FEDERATION.md](FEDERATION.md), [PLATFORM_DEVELOPER_BACKLOG.md §9](PLATFORM_DEVELOPER_BACKLOG.md).
+См. также [FEDERATION.md](FEDERATION.md), [ROADMAP.md](ROADMAP.md).

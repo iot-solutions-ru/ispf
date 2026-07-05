@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Baseline for GAP_REGISTRY scale item: p99 {@code list_devices} at 150 concurrent readers.
+ * Baseline for ROADMAP scale item: p99 {@code list_devices} at 150 concurrent readers.
  * Uses a real HTTP port and {@link HttpClient} — {@code MockMvc} is not thread-safe.
  */
 @Tag("load")

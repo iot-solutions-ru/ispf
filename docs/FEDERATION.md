@@ -2,7 +2,7 @@
 
 Spike реализации REQ-PF-13: реестр peer-инстансов, proxy read/write объектов и catalog sync.
 
-Полная vision — [PLATFORM_DEVELOPER_BACKLOG.md §9](PLATFORM_DEVELOPER_BACKLOG.md#9-распределённая-архитектура-и-федерация-roadmap-p3).
+Полная vision — [FEDERATION.md](FEDERATION.md), roadmap [ROADMAP.md § Phase 4–8](ROADMAP.md#phase-4--scale--topology-p3).
 
 ## Принцип
 
@@ -119,6 +119,52 @@ root.platform.federation.{peer-name}.devices.demo-sensor-01
 Web Console: кнопка **Sync catalog** на панели Federation peers → preview-диалог → **Sync catalog**.
 
 Повторный sync **идемпотентен** для совпадающих proxy: узлы с тем же `peerId` + `remotePath` обновляют metadata (`updated`). При loopback peer пути `root.platform.federation.*` на remote side игнорируются, чтобы не создавать вложенные зеркала каталога.
+
+### Selective subtree sync (BL-119, S22)
+
+Синхронизация **части** remote-каталога вместо полного `sync-catalog`:
+
+| Endpoint | Описание |
+|----------|----------|
+| `GET /api/v1/federation/peers/{id}/subtree-sync-preview?remoteSubtreePath=…&localParentPath=…` | Preview create/update/conflicts для поддерева |
+| `POST /api/v1/federation/peers/{id}/sync-subtree` | Применить sync поддерева |
+
+Body `sync-subtree`:
+
+```json
+{
+  "remoteSubtreePath": "root.platform.devices",
+  "localParentPath": "root.platform.federation.site-a.devices",
+  "resolutions": []
+}
+```
+
+- `remoteSubtreePath` обязателен, должен быть под `pathPrefix` peer (по умолчанию `root.platform`).
+- `localParentPath` опционален; по умолчанию зеркало строится под `root.platform.federation.{peer}.*` с тем же suffix.
+- Конфликты и resolutions — как у full catalog sync.
+
+**Web Console:**
+
+- Federation peers → **Sync devices subtree** (быстрый preset `root.platform.devices`).
+- Explorer → federation mirror folder → Federation tab → **Sync this folder from peer**.
+
+## Recovery runbook + SLO (BL-120, S22-05)
+
+| Сценарий | Симптом | Действие | SLO |
+|----------|---------|----------|-----|
+| Peer disabled | Proxy 400 «Peer is disabled» | `PUT /peers/{id}` → `enabled: true` | ≤ 5 min до re-enable |
+| Peer down (RED) | Health RED, proxy timeout | Проверить URL/tunnel/token; `refresh-token` для service account | ≤ 15 min MTTR (ops) |
+| Partial catalog | Нужны только devices | `sync-subtree` вместо full sync | — |
+| Store-forward backlog | Tunnel offline, buffered events | Дождаться reconnect или `connect` outbound agent | Replay ≤ 60 s после reconnect (lab) |
+
+**Chaos coverage:** `FederationChaosIntegrationTest` — disable peer → proxy/sync fail → re-enable → sync succeeds.
+
+**Ops checklist:**
+
+1. `GET /api/v1/federation/peers` — health badge GREEN/YELLOW.
+2. `GET /api/v1/federation/peers/{id}/health` — `lastProxyError`, latency.
+3. При деградации — disable peer (fail-fast), fix upstream, re-enable, `sync-subtree` или `sync-catalog`.
+4. Tunnel peers — `GET /api/v1/federation/tunnels`, outbound buffer stats.
 
 ## Dashboard write через proxy (BL-46)
 
@@ -253,8 +299,8 @@ Web Console: колонка health badge на панели **Federation peers** 
 
 - Write proxy — variable patch, function invoke, **dashboard layout/title**; полная двусторонняя синхронизация дерева не поддерживается.
 - Catalog sync — import + operator resolutions; без `BIND` конфликтующие local native / proxy mismatch **не перезаписываются**.
-- ~~Edge store-forward~~ — **Done (BL-117, EX-17):** in-memory buffer + replay; disk persistence — backlog.
-- ~~Peer health SLO~~ — **Done (BL-118, EX-17):** health API + UI badges; alerting integration — backlog.
+- ~~Edge store-forward~~ — **Done (BL-117, S17):** in-memory buffer + replay; disk persistence — backlog.
+- ~~Peer health SLO~~ — **Done (BL-118, S17):** health API + UI badges; alerting integration — backlog.
 - ~~Federated dashboards read-only~~ — **Done (BL-46):** layout/title write проксируется на remote.
 - ~~Catalog sync без merge конфликтов~~ — **Done (BL-45):** preview + SKIP/BIND в UI.
 - ~~Tenant scope на federation API~~ — **Done v0.3.0** (`FederationAccessService`, peer CRUD admin-only, proxy scoped).

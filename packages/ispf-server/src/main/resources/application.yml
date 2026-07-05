@@ -158,7 +158,11 @@ ispf:
       username: ${ISPF_VARIABLE_HISTORY_CASSANDRA_USERNAME:}
       password: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PASSWORD:}
       max-statements-per-partition-batch: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARTITION_BATCH:200}
-      max-parallel-partition-batches: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_BATCHES:8}
+      min-parallel-partition-batches: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_BATCHES_MIN:1}
+      max-parallel-partition-batches: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_BATCHES:32}
+      elastic-parallel-batches-enabled: ${ISPF_VARIABLE_HISTORY_CASSANDRA_ELASTIC_PARALLEL:true}
+      elastic-parallel-scale-up-threshold: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_SCALE_UP:32}
+      elastic-parallel-scale-down-steps: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_SCALE_DOWN:6}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
     enabled: true
@@ -176,7 +180,7 @@ ispf:
   binding:
     async-threads: ${ISPF_BINDING_ASYNC_THREADS:16}
     audit:
-      enabled: ${ISPF_BINDING_AUDIT_ENABLED:true}
+      enabled: ${ISPF_BINDING_AUDIT_ENABLED:false}
       mode: ${ISPF_BINDING_AUDIT_MODE:changes}
       sample-rate: ${ISPF_BINDING_AUDIT_SAMPLE_RATE:1.0}
       async-enabled: ${ISPF_BINDING_AUDIT_ASYNC_ENABLED:true}
@@ -186,7 +190,7 @@ ispf:
       retention-days: ${ISPF_BINDING_AUDIT_RETENTION_DAYS:7}
   function:
     audit:
-      enabled: ${ISPF_FUNCTION_AUDIT_ENABLED:true}
+      enabled: ${ISPF_FUNCTION_AUDIT_ENABLED:false}
       mode: ${ISPF_FUNCTION_AUDIT_MODE:errors}
       sample-rate: ${ISPF_FUNCTION_AUDIT_SAMPLE_RATE:1.0}
       async-enabled: ${ISPF_FUNCTION_AUDIT_ASYNC_ENABLED:true}
@@ -223,6 +227,7 @@ ispf:
       flush-enabled: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_ENABLED:true}
       flush-interval-ms: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_INTERVAL_MS:30000}
   event-journal:
+    enabled: ${ISPF_EVENT_JOURNAL_ENABLED:false}
     async-enabled: ${ISPF_EVENT_JOURNAL_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_EVENT_JOURNAL_QUEUE_CAPACITY:10000}
     batch-size: ${ISPF_EVENT_JOURNAL_BATCH_SIZE:200}
@@ -237,7 +242,7 @@ ispf:
     recent-cache-size: ${ISPF_EVENT_JOURNAL_RECENT_CACHE_SIZE:2000}
     retention-days: ${ISPF_EVENT_JOURNAL_RETENTION_DAYS:90}
     store: ${ISPF_EVENT_JOURNAL_STORE:jdbc}
-    cassandra-global-table-enabled: ${ISPF_EVENT_JOURNAL_CASSANDRA_GLOBAL_TABLE_ENABLED:true}
+    cassandra-global-table-enabled: ${ISPF_EVENT_JOURNAL_CASSANDRA_GLOBAL_TABLE_ENABLED:false}
     cassandra-async-counter-update: ${ISPF_EVENT_JOURNAL_CASSANDRA_ASYNC_COUNTER_UPDATE:true}
     clickhouse:
       url: ${ISPF_EVENT_JOURNAL_CLICKHOUSE_URL:http://localhost:8123}
@@ -254,7 +259,11 @@ ispf:
       username: ${ISPF_EVENT_JOURNAL_CASSANDRA_USERNAME:}
       password: ${ISPF_EVENT_JOURNAL_CASSANDRA_PASSWORD:}
       max-statements-per-partition-batch: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARTITION_BATCH:200}
-      max-parallel-partition-batches: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_BATCHES:8}
+      min-parallel-partition-batches: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_BATCHES_MIN:1}
+      max-parallel-partition-batches: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_BATCHES:32}
+      elastic-parallel-batches-enabled: ${ISPF_EVENT_JOURNAL_CASSANDRA_ELASTIC_PARALLEL:true}
+      elastic-parallel-scale-up-threshold: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_SCALE_UP:32}
+      elastic-parallel-scale-down-steps: ${ISPF_EVENT_JOURNAL_CASSANDRA_PARALLEL_SCALE_DOWN:6}
   platform-metrics-probe:
     enabled: ${ISPF_PLATFORM_METRICS_PROBE_ENABLED:false}
     interval-ms: ${ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS:5000}

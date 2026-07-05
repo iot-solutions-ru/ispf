@@ -1,7 +1,9 @@
 package com.ispf.server.platform.settings;
 
+import com.ispf.server.config.BindingProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.FunctionProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -43,6 +45,8 @@ class PlatformRuntimeSettingsServiceTest {
                 new ObjectChangeProperties(),
                 new RuntimeTelemetryProperties(),
                 new EventJournalProperties(),
+                new FunctionProperties(),
+                new BindingProperties(),
                 new VariableHistoryProperties(),
                 new DriverPackProperties(),
                 objectChangeEventBus
@@ -94,6 +98,8 @@ class PlatformRuntimeSettingsServiceTest {
                 new ObjectChangeProperties(),
                 new RuntimeTelemetryProperties(),
                 eventJournalProperties,
+                new FunctionProperties(),
+                new BindingProperties(),
                 new VariableHistoryProperties(),
                 new DriverPackProperties(),
                 objectChangeEventBus

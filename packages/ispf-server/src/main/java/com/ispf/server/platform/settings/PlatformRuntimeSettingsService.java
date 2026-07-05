@@ -1,7 +1,9 @@
 package com.ispf.server.platform.settings;
 
+import com.ispf.server.config.BindingProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.config.FunctionProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -23,6 +25,8 @@ public class PlatformRuntimeSettingsService {
     private final ObjectChangeProperties objectChangeProperties;
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final EventJournalProperties eventJournalProperties;
+    private final FunctionProperties functionProperties;
+    private final BindingProperties bindingProperties;
     private final VariableHistoryProperties variableHistoryProperties;
     private final DriverPackProperties driverPackProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
@@ -33,6 +37,8 @@ public class PlatformRuntimeSettingsService {
             ObjectChangeProperties objectChangeProperties,
             RuntimeTelemetryProperties runtimeTelemetryProperties,
             EventJournalProperties eventJournalProperties,
+            FunctionProperties functionProperties,
+            BindingProperties bindingProperties,
             VariableHistoryProperties variableHistoryProperties,
             DriverPackProperties driverPackProperties,
             ObjectChangeEventBus objectChangeEventBus
@@ -42,6 +48,8 @@ public class PlatformRuntimeSettingsService {
         this.objectChangeProperties = objectChangeProperties;
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.eventJournalProperties = eventJournalProperties;
+        this.functionProperties = functionProperties;
+        this.bindingProperties = bindingProperties;
         this.variableHistoryProperties = variableHistoryProperties;
         this.driverPackProperties = driverPackProperties;
         this.objectChangeEventBus = objectChangeEventBus;
@@ -216,10 +224,24 @@ public class PlatformRuntimeSettingsService {
                     objectChangeProperties.setAutomationWorkerThreadsMin(Integer.parseInt(value));
             case "object-change.automation-workers-max" ->
                     objectChangeProperties.setAutomationWorkerThreadsMax(Integer.parseInt(value));
+            case "event-journal.enabled" ->
+                    eventJournalProperties.setEnabled(Boolean.parseBoolean(value));
+            case "function-audit.enabled" ->
+                    functionProperties.getAudit().setEnabled(Boolean.parseBoolean(value));
+            case "binding-audit.enabled" ->
+                    bindingProperties.getAudit().setEnabled(Boolean.parseBoolean(value));
             case "event-journal.cassandra.partition-batch" ->
                     eventJournalProperties.getCassandra().setMaxStatementsPerPartitionBatch(Integer.parseInt(value));
+            case "event-journal.cassandra.parallel-batches-min" ->
+                    eventJournalProperties.getCassandra().setMinParallelPartitionBatches(Integer.parseInt(value));
             case "event-journal.cassandra.parallel-batches" ->
                     eventJournalProperties.getCassandra().setMaxParallelPartitionBatches(Integer.parseInt(value));
+            case "event-journal.cassandra.elastic-parallel" ->
+                    eventJournalProperties.getCassandra().setElasticParallelBatchesEnabled(Boolean.parseBoolean(value));
+            case "event-journal.cassandra.parallel-scale-up" ->
+                    eventJournalProperties.getCassandra().setElasticParallelScaleUpThreshold(Integer.parseInt(value));
+            case "event-journal.cassandra.parallel-scale-down" ->
+                    eventJournalProperties.getCassandra().setElasticParallelScaleDownSteps(Integer.parseInt(value));
             case "event-journal.cassandra.global-table" ->
                     eventJournalProperties.setCassandraGlobalTableEnabled(Boolean.parseBoolean(value));
             case "event-journal.cassandra.async-counter" ->
@@ -230,8 +252,16 @@ public class PlatformRuntimeSettingsService {
                     eventJournalProperties.setFlushIntervalMs(Long.parseLong(value));
             case "variable-history.cassandra.partition-batch" ->
                     variableHistoryProperties.getCassandra().setMaxStatementsPerPartitionBatch(Integer.parseInt(value));
+            case "variable-history.cassandra.parallel-batches-min" ->
+                    variableHistoryProperties.getCassandra().setMinParallelPartitionBatches(Integer.parseInt(value));
             case "variable-history.cassandra.parallel-batches" ->
                     variableHistoryProperties.getCassandra().setMaxParallelPartitionBatches(Integer.parseInt(value));
+            case "variable-history.cassandra.elastic-parallel" ->
+                    variableHistoryProperties.getCassandra().setElasticParallelBatchesEnabled(Boolean.parseBoolean(value));
+            case "variable-history.cassandra.parallel-scale-up" ->
+                    variableHistoryProperties.getCassandra().setElasticParallelScaleUpThreshold(Integer.parseInt(value));
+            case "variable-history.cassandra.parallel-scale-down" ->
+                    variableHistoryProperties.getCassandra().setElasticParallelScaleDownSteps(Integer.parseInt(value));
             case "variable-history.batch-size" ->
                     variableHistoryProperties.setBatchSize(Integer.parseInt(value));
             case "variable-history.flush-interval-ms" ->

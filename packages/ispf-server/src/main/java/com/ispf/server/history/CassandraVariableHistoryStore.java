@@ -4,9 +4,11 @@ import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.ispf.server.cassandra.CassandraClient;
+import com.ispf.server.cassandra.CassandraElasticParallelBatches;
 import com.ispf.server.cassandra.CassandraTimeSeriesSupport;
 import com.ispf.server.config.CassandraStoreProperties;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.storage.StorageStartupRetry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -36,17 +38,24 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
     private static final String DEFAULT_TABLE = "variable_samples";
 
     private final VariableHistoryProperties properties;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
     private final CassandraClient client;
+    private final CassandraElasticParallelBatches elasticParallelBatches;
     private final String tableQualified;
 
     private PreparedStatement insertSample;
     private PreparedStatement selectRange;
     private PreparedStatement selectRecent;
 
-    public CassandraVariableHistoryStore(VariableHistoryProperties properties) {
+    public CassandraVariableHistoryStore(
+            VariableHistoryProperties properties,
+            AutomationMetricsRecorder automationMetricsRecorder
+    ) {
         this.properties = properties;
+        this.automationMetricsRecorder = automationMetricsRecorder;
         CassandraStoreProperties settings = properties.getCassandra();
         this.client = new CassandraClient(settings);
+        this.elasticParallelBatches = new CassandraElasticParallelBatches(settings);
         this.tableQualified = client.qualifiedTable(settings.resolveTable(DEFAULT_TABLE));
     }
 
@@ -91,12 +100,14 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
 
         log.info(
                 "Cassandra variable history ready (keyspace={}, table={}, retentionDays={}, "
-                        + "partitionBatch={}, parallelBatches={})",
+                        + "partitionBatch={}, parallelBatches={}-{}, elasticParallel={})",
                 settings.getKeyspace(),
                 settings.resolveTable(DEFAULT_TABLE),
                 properties.getRetentionDays(),
                 settings.getMaxStatementsPerPartitionBatch(),
-                settings.getMaxParallelPartitionBatches()
+                settings.resolvedMinParallelPartitionBatches(),
+                settings.getMaxParallelPartitionBatches(),
+                settings.isElasticParallelBatchesEnabled()
         );
     }
 
@@ -108,7 +119,6 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         CassandraStoreProperties settings = properties.getCassandra();
         int ttl = CassandraTimeSeriesSupport.ttlSeconds(properties.getRetentionDays());
         int chunkSize = settings.getMaxStatementsPerPartitionBatch();
-        int maxParallel = settings.getMaxParallelPartitionBatches();
         Map<String, List<BoundStatement>> byPartition = new LinkedHashMap<>();
         for (VariableHistoryWriteRecord record : records) {
             String partitionKey = CassandraTimeSeriesSupport.variableSamplePartitionKey(
@@ -123,6 +133,11 @@ public class CassandraVariableHistoryStore implements VariableHistoryWriteStore,
         for (List<BoundStatement> partitionStatements : byPartition.values()) {
             batches.addAll(CassandraTimeSeriesSupport.chunk(partitionStatements, chunkSize));
         }
+        int maxParallel = elasticParallelBatches.resolve(
+                settings,
+                automationMetricsRecorder.variableHistoryQueueSize(),
+                batches.size()
+        );
         client.executePartitionBatches(batches, maxParallel);
     }
 

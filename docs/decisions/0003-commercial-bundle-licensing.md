@@ -25,4 +25,4 @@
 ## Связанные материалы
 
 - [0001](0001-app-platform-boundary.md)
-- REQ-FW-10, FW-11 в [PLATFORM_DEVELOPER_BACKLOG.md §12](../PLATFORM_DEVELOPER_BACKLOG.md)
+- REQ-FW-10, FW-11 в [ROADMAP.md § Part B](../ROADMAP.md#часть-b--req-fw-framework-закрыт)

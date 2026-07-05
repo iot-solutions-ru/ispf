@@ -98,6 +98,7 @@ def main() -> int:
         "lab-cluster-bootstrap.sh",
         "lab-cluster-peer-start.sh",
         "lab-cluster-test.sh",
+        "cluster-smoke-test.sh",
     ):
         upload_text(sftp, DEPLOY / name, f"{ROOT}/{name}")
     sftp.close()
@@ -113,7 +114,7 @@ def main() -> int:
     env = f"ISPF_CLUSTER_LAN_BIND={lab_lan} ISPF_LAB_CLUSTER_PORT={PORT}"
 
     steps = [
-        f"chmod +x {ROOT}/lab-cluster-bootstrap.sh {ROOT}/lab-cluster-peer-start.sh {ROOT}/lab-cluster-test.sh",
+        f"chmod +x {ROOT}/lab-cluster-bootstrap.sh {ROOT}/lab-cluster-peer-start.sh {ROOT}/lab-cluster-test.sh {ROOT}/cluster-smoke-test.sh",
         f"cd {ROOT} && {env} bash lab-cluster-bootstrap.sh 2>&1 | tee loadtest/cluster-bootstrap.log; exit ${{PIPESTATUS[0]}}",
     ]
     for step in steps:

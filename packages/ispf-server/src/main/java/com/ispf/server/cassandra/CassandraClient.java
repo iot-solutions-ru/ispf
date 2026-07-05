@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 
 /**
  * Thin wrapper around the DataStax Java driver (Cassandra and Scylla compatible).
@@ -98,16 +99,28 @@ public class CassandraClient implements AutoCloseable {
             return;
         }
         int parallelism = Math.max(1, Math.min(maxParallel, partitionBatches.size()));
+        if (parallelism == 1) {
+            for (List<BoundStatement> batch : partitionBatches) {
+                executeBatch(batch);
+            }
+            return;
+        }
+        Semaphore inFlight = new Semaphore(parallelism);
         List<CompletableFuture<Void>> futures = new ArrayList<>(partitionBatches.size());
         for (List<BoundStatement> batch : partitionBatches) {
-            futures.add(executeBatchAsync(batch));
-            if (futures.size() >= parallelism) {
-                CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
-                futures.clear();
+            try {
+                inFlight.acquire();
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted waiting for CQL batch slot", ex);
             }
+            futures.add(executeBatchAsync(batch).whenComplete((ignored, error) -> inFlight.release()));
         }
-        if (!futures.isEmpty()) {
-            CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        for (CompletableFuture<Void> future : futures) {
+            if (future.isCompletedExceptionally()) {
+                future.join();
+            }
         }
     }
 

@@ -93,4 +93,4 @@ Production VPS deploy uses **`permissive`** profile by default (excludes copylef
 
 - [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md) — RSA keys and `tools/license-builder/`
 - [DRIVERS.md](DRIVERS.md) — in-tree catalog
-- [PLATFORM_DEVELOPER_BACKLOG.md §12.8](PLATFORM_DEVELOPER_BACKLOG.md#128-req-fw-50--licensed-driver-jar-contract)
+- [ROADMAP.md § Part B (FW-50)](../ROADMAP.md#часть-b--req-fw-framework-закрыт)

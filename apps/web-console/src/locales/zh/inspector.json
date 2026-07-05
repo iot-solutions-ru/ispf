@@ -117,6 +117,7 @@
   "events.add": "+ 事件",
   "events.empty": "无事件",
   "events.publish": "发布",
+  "events.auditEnabled": "将此对象的 fired events 记录到事件日志",
   "functions.add": "+ 函数",
   "functions.auditEnabled": "记录此对象的函数调用 audit",
   "functions.empty": "无函数",

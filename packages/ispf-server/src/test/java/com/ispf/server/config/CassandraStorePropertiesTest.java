@@ -54,18 +54,23 @@ class CassandraStorePropertiesTest {
     void cassandraWriteTuningDefaultsAndClamps() {
         CassandraStoreProperties properties = new CassandraStoreProperties();
         assertEquals(200, properties.getMaxStatementsPerPartitionBatch());
-        assertEquals(8, properties.getMaxParallelPartitionBatches());
+        assertEquals(32, properties.getMaxParallelPartitionBatches());
+        assertEquals(1, properties.getMinParallelPartitionBatches());
+        assertTrue(properties.isElasticParallelBatchesEnabled());
 
         properties.setMaxStatementsPerPartitionBatch(0);
         properties.setMaxParallelPartitionBatches(-3);
+        properties.setMinParallelPartitionBatches(64);
         assertEquals(1, properties.getMaxStatementsPerPartitionBatch());
         assertEquals(1, properties.getMaxParallelPartitionBatches());
+        assertEquals(1, properties.resolvedMinParallelPartitionBatches());
     }
 
     @Test
-    void eventJournalCassandraWriteFlagsDefaultTrue() {
+    void eventJournalCassandraWriteFlagsDefaults() {
         EventJournalProperties properties = new EventJournalProperties();
-        assertTrue(properties.isCassandraGlobalTableEnabled());
+        assertFalse(properties.isEnabled());
+        assertFalse(properties.isCassandraGlobalTableEnabled());
         assertTrue(properties.isCassandraAsyncCounterUpdate());
     }
 

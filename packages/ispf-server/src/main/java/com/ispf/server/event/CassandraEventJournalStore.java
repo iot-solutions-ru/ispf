@@ -5,9 +5,11 @@ import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.Row;
 import com.ispf.server.cassandra.CassandraClient;
+import com.ispf.server.cassandra.CassandraElasticParallelBatches;
 import com.ispf.server.cassandra.CassandraTimeSeriesSupport;
 import com.ispf.server.config.CassandraStoreProperties;
 import com.ispf.server.config.EventJournalProperties;
+import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.storage.StorageStartupRetry;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -41,7 +43,9 @@ public class CassandraEventJournalStore implements EventJournalStore {
 
     private final EventJournalProperties properties;
     private final EventHistoryRecordCounter recordCounter;
+    private final AutomationMetricsRecorder automationMetricsRecorder;
     private final CassandraClient client;
+    private final CassandraElasticParallelBatches elasticParallelBatches;
     private final String tableQualified;
     private final String globalTableQualified;
     private final String metaTableQualified;
@@ -56,12 +60,15 @@ public class CassandraEventJournalStore implements EventJournalStore {
 
     public CassandraEventJournalStore(
             EventJournalProperties properties,
-            EventHistoryRecordCounter recordCounter
+            EventHistoryRecordCounter recordCounter,
+            AutomationMetricsRecorder automationMetricsRecorder
     ) {
         this.properties = properties;
         this.recordCounter = recordCounter;
+        this.automationMetricsRecorder = automationMetricsRecorder;
         CassandraStoreProperties settings = properties.getCassandra();
         this.client = new CassandraClient(settings);
+        this.elasticParallelBatches = new CassandraElasticParallelBatches(settings);
         String table = settings.resolveTable(DEFAULT_TABLE);
         this.tableQualified = client.qualifiedTable(table);
         this.globalTableQualified = client.qualifiedTable(GLOBAL_TABLE);
@@ -152,12 +159,14 @@ public class CassandraEventJournalStore implements EventJournalStore {
 
         log.info(
                 "Cassandra event journal ready (keyspace={}, table={}, retentionDays={}, "
-                        + "partitionBatch={}, parallelBatches={}, globalTable={}, asyncCounter={})",
+                        + "partitionBatch={}, parallelBatches={}-{}, elasticParallel={}, globalTable={}, asyncCounter={})",
                 settings.getKeyspace(),
                 settings.resolveTable(DEFAULT_TABLE),
                 properties.getRetentionDays(),
                 settings.getMaxStatementsPerPartitionBatch(),
+                settings.resolvedMinParallelPartitionBatches(),
                 settings.getMaxParallelPartitionBatches(),
+                settings.isElasticParallelBatchesEnabled(),
                 properties.isCassandraGlobalTableEnabled(),
                 properties.isCassandraAsyncCounterUpdate()
         );
@@ -171,7 +180,6 @@ public class CassandraEventJournalStore implements EventJournalStore {
         CassandraStoreProperties settings = properties.getCassandra();
         int ttl = CassandraTimeSeriesSupport.ttlSeconds(properties.getRetentionDays());
         int chunkSize = settings.getMaxStatementsPerPartitionBatch();
-        int maxParallel = settings.getMaxParallelPartitionBatches();
         Map<String, List<BoundStatement>> byPartition = new LinkedHashMap<>();
         for (EventJournalRecord record : records) {
             byPartition.computeIfAbsent(record.objectPath(), ignored -> new ArrayList<>())
@@ -187,6 +195,11 @@ public class CassandraEventJournalStore implements EventJournalStore {
         for (List<BoundStatement> partitionStatements : byPartition.values()) {
             batches.addAll(CassandraTimeSeriesSupport.chunk(partitionStatements, chunkSize));
         }
+        int maxParallel = elasticParallelBatches.resolve(
+                settings,
+                automationMetricsRecorder.eventJournalQueueSize(),
+                batches.size()
+        );
         client.executePartitionBatches(batches, maxParallel);
         var counterUpdate = incrementTotal.bind((long) records.size(), META_ROW_ID);
         if (properties.isCassandraAsyncCounterUpdate()) {

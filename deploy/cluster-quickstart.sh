@@ -32,9 +32,7 @@ echo "==> Waiting for replicas"
 sleep 15
 
 echo "==> Round-robin check via nginx"
-for _ in 1 2 3 4 5 6; do
-  curl -sf "http://127.0.0.1:8088/api/v1/info" | grep -o '"replicaId":"[^"]*"' || true
-done
+bash deploy/cluster-smoke-test.sh
 
 echo
 echo "Cluster quick start ready (lab / localhost only):"

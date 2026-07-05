@@ -40,5 +40,11 @@
   "invokeFunction.invoke": "Aufrufen",
   "invokeFunction.invoking": "Aufruf…",
   "invokeFunction.result": "Ergebnis",
-  "invokeFunction.title": "Funktion aufrufen"
+  "invokeFunction.title": "Funktion aufrufen",
+  "eventJournal.disabledHint": "Event-Journal am Objekt aktivieren (Register Ereignisse) oder Plattformeinstellungen prüfen",
+  "eventJournal.masterDisabledHint": "Event-Journal plattformweit deaktiviert (event-journal.enabled)",
+  "eventJournal.objectDisabledHint": "Event-Journal für dieses Objekt aus — Checkbox oben aktivieren",
+  "eventJournal.globalHistoryDisabledHint": "Plattformweite Historie erfordert event-journal.cassandra.global-table — nur Live-Feed",
+  "eventJournal.disabledEmpty": "Event-Journal ist nicht aktiv",
+  "eventJournal.objectDisabledEmpty": "Event-Journal für dieses Objekt aktivieren, um Events zu protokollieren"
 }

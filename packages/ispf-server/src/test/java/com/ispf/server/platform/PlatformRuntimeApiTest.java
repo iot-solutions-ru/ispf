@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
+        "ispf.function.audit.enabled=true",
         "ispf.function.audit.mode=errors",
         "ispf.function.audit.async-enabled=false"
 })

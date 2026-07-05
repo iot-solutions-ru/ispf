@@ -8,6 +8,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.api.dto.DataRecordPayloadResolver;
 import com.ispf.server.application.catalog.EventCatalogPayloadValidator;
+import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.persistence.ObjectEntityMapper;
 import com.ispf.server.persistence.entity.EventHistoryEntity;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,6 +36,7 @@ public class EventService {
     private final EventCatalogPayloadValidator catalogPayloadValidator;
     private final EventJournalAsyncWriter eventJournalAsyncWriter;
     private final RecentEventCache recentEventCache;
+    private final EventJournalProperties eventJournalProperties;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final EventTimestampValidator eventTimestampValidator;
 
@@ -45,6 +48,7 @@ public class EventService {
             EventCatalogPayloadValidator catalogPayloadValidator,
             EventJournalAsyncWriter eventJournalAsyncWriter,
             RecentEventCache recentEventCache,
+            EventJournalProperties eventJournalProperties,
             AutomationMetricsRecorder automationMetricsRecorder,
             EventTimestampValidator eventTimestampValidator
     ) {
@@ -55,6 +59,7 @@ public class EventService {
         this.catalogPayloadValidator = catalogPayloadValidator;
         this.eventJournalAsyncWriter = eventJournalAsyncWriter;
         this.recentEventCache = recentEventCache;
+        this.eventJournalProperties = eventJournalProperties;
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.eventTimestampValidator = eventTimestampValidator;
     }
@@ -157,10 +162,23 @@ public class EventService {
     @Transactional(readOnly = true)
     public List<ObjectEvent> list(String objectPath, int limit) {
         int capped = Math.max(1, Math.min(limit, 200));
+        boolean globalQuery = objectPath == null || objectPath.isBlank();
+        if (!eventJournalProperties.isEnabled()) {
+            return List.of();
+        }
+        if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
+            return List.of();
+        }
         List<ObjectEvent> fromCache = recentEventCache.isEnabled()
                 ? recentEventCache.query(objectPath, capped)
                 : List.of();
         if (fromCache.size() >= capped) {
+            return fromCache;
+        }
+        boolean skipGlobalStore = globalQuery
+                && eventJournalProperties.isCassandraStore()
+                && !eventJournalProperties.isCassandraGlobalTableEnabled();
+        if (skipGlobalStore) {
             return fromCache;
         }
         Set<String> seen = new HashSet<>();
@@ -180,6 +198,25 @@ public class EventService {
         }
         merged.sort((left, right) -> right.timestamp().compareTo(left.timestamp()));
         return merged;
+    }
+
+    public Map<String, Object> journalStatus(String objectPath) {
+        boolean masterEnabled = eventJournalProperties.isEnabled();
+        boolean globalTableEnabled = eventJournalProperties.isCassandraGlobalTableEnabled();
+        boolean objectEnabled = objectPath != null && !objectPath.isBlank()
+                && objectManager.isEventJournalEnabled(objectPath.trim());
+        boolean globalQuery = objectPath == null || objectPath.isBlank();
+        boolean enabled = globalQuery ? masterEnabled : masterEnabled && objectEnabled;
+        return Map.of(
+                "masterEnabled", masterEnabled,
+                "globalTableEnabled", globalTableEnabled,
+                "objectEnabled", objectEnabled,
+                "enabled", enabled
+        );
+    }
+
+    private boolean shouldPersistJournal(String objectPath) {
+        return eventJournalProperties.isEnabled() && objectManager.isEventJournalEnabled(objectPath);
     }
 
     private ObjectEvent fireInternal(
@@ -206,7 +243,9 @@ public class EventService {
                 resolvedPayload,
                 resolvedOccurredAt
         );
-        eventJournalAsyncWriter.enqueue(event, mapper.writeDataRecord(event.payload()));
+        if (shouldPersistJournal(objectPath)) {
+            eventJournalAsyncWriter.enqueue(event, mapper.writeDataRecord(event.payload()));
+        }
         automationMetricsRecorder.recordEventFired(source);
         publicationService.publishEventFired(objectPath, eventName);
         return event;

@@ -216,6 +216,27 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 2. Stop one replica: REST must not 502; WS clients on other replicas stay connected (sticky); NATS propagates variable updates.
 3. Admin → System → Metrics → cluster health card (`/api/v1/platform/cluster/health`).
 
+**Ops checklist (BL-139)**
+
+- [ ] `ISPF_CLUSTER_ENABLED=true` and unique `ISPF_REPLICA_ID` on every replica
+- [ ] Shared PostgreSQL reachable from all nodes; Flyway migrations applied once
+- [ ] NATS enabled with `ISPF_NATS_REPLICA_EVENTS=true` for cross-replica UI sync
+- [ ] Redis enabled (recommended) for correlator windows / ACL cache
+- [ ] Nginx upstream lists all healthy `ispf-server-*` backends; `/ws/` uses `ip_hash`
+- [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
+- [ ] Smoke: `bash deploy/cluster-smoke-test.sh` (round-robin, REST failover, driver reclaim)
+- [ ] Scale gate (lab/CI): `python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8`
+- [ ] Kill one replica: REST via LB stays 200; driver locks migrate within TTL + failover scan
+
+**Automated gates**
+
+| Gate | Command / workflow |
+| ---- | ------------------ |
+| JDBC ownership | `./gradlew :packages:ispf-server:test --tests com.ispf.server.driver.ClusterFailoverIntegrationTest` |
+| Compose smoke | `bash deploy/cluster-smoke-test.sh` |
+| Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
+| CI | [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) |
+
 **Rollback**
 
 1. Scale back to single node: use [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml) or prod VPS layout.
@@ -223,7 +244,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 
 ## ClickHouse variable history (prod playbook, BL-114)
 
-Historian для переменных по умолчанию пишет в PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Для высокой нагрузки telemetry включите ClickHouse backend ([BL-40](CODE_AUDIT_BACKLOG.md#bl-40--clickhouse-variable-history), [0017](decisions/0017-telemetry-ingest-pipeline.md)).
+Historian для переменных по умолчанию пишет в PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Для высокой нагрузки telemetry включите ClickHouse backend ([BL-40](ROADMAP.md#часть-e--полный-реестр-bl-01139), [0017](decisions/0017-telemetry-ingest-pipeline.md)).
 
 ### Шаги rollout
 

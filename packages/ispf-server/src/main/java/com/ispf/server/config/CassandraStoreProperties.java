@@ -15,8 +15,14 @@ public class CassandraStoreProperties {
     private String password = "";
     /** Max CQL statements per UNLOGGED batch within one partition. */
     private int maxStatementsPerPartitionBatch = 200;
-    /** Max concurrent same-partition batches (async driver requests). */
-    private int maxParallelPartitionBatches = 8;
+    /** Max concurrent same-partition batches (async driver requests). Elastic mode treats this as the ceiling. */
+    private int maxParallelPartitionBatches = 32;
+    /** Floor when {@link #elasticParallelBatchesEnabled} is true. */
+    private int minParallelPartitionBatches = 1;
+    private boolean elasticParallelBatchesEnabled = true;
+    /** Scale up when writer queue depth or pending partition batches reach this threshold. */
+    private int elasticParallelScaleUpThreshold = 32;
+    private int elasticParallelScaleDownSteps = 6;
 
     public String getContactPoints() {
         return contactPoints;
@@ -96,5 +102,41 @@ public class CassandraStoreProperties {
 
     public void setMaxParallelPartitionBatches(int maxParallelPartitionBatches) {
         this.maxParallelPartitionBatches = Math.max(1, maxParallelPartitionBatches);
+    }
+
+    public int getMinParallelPartitionBatches() {
+        return minParallelPartitionBatches;
+    }
+
+    public void setMinParallelPartitionBatches(int minParallelPartitionBatches) {
+        this.minParallelPartitionBatches = Math.max(1, minParallelPartitionBatches);
+    }
+
+    public int resolvedMinParallelPartitionBatches() {
+        return Math.min(getMaxParallelPartitionBatches(), getMinParallelPartitionBatches());
+    }
+
+    public boolean isElasticParallelBatchesEnabled() {
+        return elasticParallelBatchesEnabled;
+    }
+
+    public void setElasticParallelBatchesEnabled(boolean elasticParallelBatchesEnabled) {
+        this.elasticParallelBatchesEnabled = elasticParallelBatchesEnabled;
+    }
+
+    public int getElasticParallelScaleUpThreshold() {
+        return elasticParallelScaleUpThreshold;
+    }
+
+    public void setElasticParallelScaleUpThreshold(int elasticParallelScaleUpThreshold) {
+        this.elasticParallelScaleUpThreshold = Math.max(1, elasticParallelScaleUpThreshold);
+    }
+
+    public int getElasticParallelScaleDownSteps() {
+        return elasticParallelScaleDownSteps;
+    }
+
+    public void setElasticParallelScaleDownSteps(int elasticParallelScaleDownSteps) {
+        this.elasticParallelScaleDownSteps = Math.max(1, elasticParallelScaleDownSteps);
     }
 }

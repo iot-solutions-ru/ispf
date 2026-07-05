@@ -104,7 +104,7 @@ Out of scope: full Brick reasoner, runtime replacement of object paths.
 
 ## Related materials
 
-- [CODE_AUDIT_BACKLOG.md § BL-56…62](../CODE_AUDIT_BACKLOG.md#bl-5662--haystack--brick-schema-semantic-layer)
+- [ROADMAP.md § Wave G (BL-56…62)](../ROADMAP.md#часть-e--полный-реестр-bl-01139)
 - [MODELS.md](../MODELS.md) — RELATIVE mixins
 - [DRIVERS.md](../DRIVERS.md) — point mappings (future Haystack tag normalization)
 - [0002 Dogfooding gate](0002-dogfooding-gate.md)

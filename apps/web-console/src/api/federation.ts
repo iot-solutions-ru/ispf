@@ -253,6 +253,57 @@ export function syncFederationCatalog(
   });
 }
 
+export interface SubtreeSyncOptions {
+  remoteSubtreePath: string;
+  localParentPath?: string;
+  resolutions?: CatalogSyncResolution[];
+}
+
+export function previewFederationSubtreeSync(
+  peerId: string,
+  options: Pick<SubtreeSyncOptions, "remoteSubtreePath" | "localParentPath">
+): Promise<CatalogSyncPreview> {
+  const params = new URLSearchParams({ remoteSubtreePath: options.remoteSubtreePath });
+  if (options.localParentPath) {
+    params.set("localParentPath", options.localParentPath);
+  }
+  return fetch(
+    `/api/v1/federation/peers/${encodeURIComponent(peerId)}/subtree-sync-preview?${params.toString()}`,
+    { headers: getAuthHeaders() }
+  ).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Subtree preview failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export function syncFederationSubtree(peerId: string, options: SubtreeSyncOptions): Promise<{
+  localRoot: string;
+  created: number;
+  updated: number;
+  remoteCount: number;
+  skipped: number;
+}> {
+  return fetch(`/api/v1/federation/peers/${encodeURIComponent(peerId)}/sync-subtree`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      remoteSubtreePath: options.remoteSubtreePath,
+      localParentPath: options.localParentPath,
+      resolutions: options.resolutions,
+    }),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(parseApiError(await response.text(), `Sync subtree failed: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
 export function probeFederationObject(peerId: string, path: string): Promise<Record<string, unknown>> {
   const params = new URLSearchParams({ peerId, path });
   return fetch(`/api/v1/federation/proxy/objects/by-path?${params.toString()}`, {

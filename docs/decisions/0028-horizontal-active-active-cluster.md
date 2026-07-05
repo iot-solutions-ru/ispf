@@ -50,7 +50,7 @@ Each replica:
 | Platform schedulers | Active-passive (one leader) | `platform_leader_locks` ([PlatformLeaderLockService](../../packages/ispf-server/src/main/java/com/ispf/server/platform/PlatformLeaderLockService.java)) |
 | Device driver poll loops | **Exactly-one owner** | `platform_driver_locks` + `DriverOwnershipService` (BL-136) |
 | Binding periodic tick | Active-passive (one leader) | Existing leader lock on `binding_periodic_scheduler` |
-| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([BL-114](../EXCELLENCE_BACKLOG.md)) |
+| Event journal / historian writes | Active-active (DB) | Append to shared store; ClickHouse optional for scale ([BL-114](ROADMAP.md#часть-e--полный-реестр-bl-01139)) |
 
 ### 3. Driver ownership
 
@@ -95,13 +95,13 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 
 **Negative**
 
-- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../EXCELLENCE_BACKLOG.md)).
+- PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../ROADMAP.md#часть-e--полный-реестр-bl-01139)).
 - NATS + Redis become operational dependencies for full multi-replica UX.
 - Sticky WS required for lowest-latency presence; NATS covers cross-replica variable push.
 
 ## Related
 
 - [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven pub/sub (complements cluster; update: horizontal scale = N JVMs + shared DB, not only bigger host)
-- [BL-133…139](../EXCELLENCE_BACKLOG.md#wave-t--ex-cluster-horizontal-active-active-bl-133139) — EX-CLUSTER implementation backlog
+- [BL-133…139](../ROADMAP.md#часть-e--полный-реестр-bl-01139) — EX-CLUSTER implementation backlog
 - [DEPLOYMENT.md](../DEPLOYMENT.md) — Multi-instance cluster runbook
 - [MESSAGING.md](../MESSAGING.md) — NATS replica fan-out

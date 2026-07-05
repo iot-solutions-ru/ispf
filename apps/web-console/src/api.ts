@@ -750,6 +750,16 @@ export function fetchBindingAuditStatus(objectPath?: string): Promise<{
   return request(`/api/v1/platform/binding-audit-status${params}`);
 }
 
+export function fetchEventJournalStatus(objectPath?: string): Promise<{
+  masterEnabled: boolean;
+  globalTableEnabled: boolean;
+  objectEnabled: boolean;
+  enabled: boolean;
+}> {
+  const params = objectPath ? `?objectPath=${encodeURIComponent(objectPath)}` : "";
+  return request(`/api/v1/events/journal-status${params}`);
+}
+
 export function fetchAlertRules(): Promise<import("./types/event").AlertRule[]> {
   return request("/api/v1/alert-rules");
 }

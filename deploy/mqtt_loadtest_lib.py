@@ -419,6 +419,16 @@ def delete_device(client: Client, path: str) -> None:
         raise RuntimeError(f"delete {path}: HTTP {r.status_code} {r.text[:160]}")
 
 
+def ensure_event_journal_enabled(client: Client, path: str) -> None:
+    r = client.request(
+        "PATCH",
+        f"/api/v1/objects/by-path?path={quote(path, safe='')}",
+        json={"eventJournalEnabled": True},
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(f"enable event journal {path}: HTTP {r.status_code} {r.text[:200]}")
+
+
 def ensure_device(client: Client, index: int, pad: int, model_id: str) -> str:
     path = device_path(index, pad)
     name = device_name(index, pad)
@@ -440,6 +450,7 @@ def ensure_device(client: Client, index: int, pad: int, model_id: str) -> str:
     if r.status_code >= 400:
         raise RuntimeError(f"create device {name}: HTTP {r.status_code} {r.text[:200]}")
     apply_relative_model(client, model_id, path)
+    ensure_event_journal_enabled(client, path)
     return path
 
 

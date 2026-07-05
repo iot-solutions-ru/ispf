@@ -23,6 +23,7 @@ interface FederationPeersTabProps {
   createMutation: UseMutationResult<unknown, Error, void, unknown>;
   deleteMutation: UseMutationResult<unknown, Error, string, unknown>;
   onSyncCatalog: (peer: FederationPeer) => void;
+  onSyncSubtree: (peer: FederationPeer) => void;
   refreshTokenMutation: UseMutationResult<unknown, Error, string, unknown>;
   remoteTokenMutation: UseMutationResult<unknown, Error, void, unknown>;
   setFormError: (value: string | null) => void;
@@ -48,6 +49,7 @@ export default function FederationPeersTab({
   createMutation,
   deleteMutation,
   onSyncCatalog,
+  onSyncSubtree,
   refreshTokenMutation,
   remoteTokenMutation,
   setFormError,
@@ -150,6 +152,13 @@ export default function FederationPeersTab({
                         onClick={() => onSyncCatalog(peer)}
                       >
                         {t("peers.syncCatalog")}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn compact"
+                        onClick={() => onSyncSubtree(peer)}
+                      >
+                        {t("peers.syncSubtree")}
                       </button>
                       <button
                         type="button"

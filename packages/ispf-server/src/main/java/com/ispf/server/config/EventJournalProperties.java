@@ -5,6 +5,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "ispf.event-journal")
 public class EventJournalProperties {
 
+    /** Master kill switch — when false, no event journal writes regardless of per-object flags. */
+    private boolean enabled = false;
+
     /**
      * When true, {@link com.ispf.server.event.EventJournalAsyncWriter} persists events on a background thread.
      * When false, events are written synchronously on the fire path.
@@ -25,8 +28,8 @@ public class EventJournalProperties {
     private int retentionDays = 90;
     /** {@code jdbc} (PostgreSQL/Timescale), {@code clickhouse}, or {@code cassandra}/{@code scylla}. */
     private String store = "jdbc";
-    /** When false, skip {@code event_history_global} inserts (higher write throughput; global feed degraded). */
-    private boolean cassandraGlobalTableEnabled = true;
+    /** When false, skip {@code event_history_global} inserts (default). Enable via runtime setting when platform-wide event history is required; live UI feed uses {@link RecentEventCache}. */
+    private boolean cassandraGlobalTableEnabled = false;
     /** When true, bump {@code event_journal_meta} counter without blocking writer threads. */
     private boolean cassandraAsyncCounterUpdate = true;
     private ClickHouse clickhouse = new ClickHouse();
@@ -78,6 +81,14 @@ public class EventJournalProperties {
         public void setPassword(String password) {
             this.password = password;
         }
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public boolean isAsyncEnabled() {

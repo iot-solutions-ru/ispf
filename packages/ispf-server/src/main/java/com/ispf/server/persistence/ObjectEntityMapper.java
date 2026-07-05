@@ -41,6 +41,7 @@ public class ObjectEntityMapper {
         entity.setLastChangedAt(node.lastChangedAt());
         entity.setBindingAuditEnabled(node.bindingAuditEnabled());
         entity.setFunctionAuditEnabled(node.functionAuditEnabled());
+        entity.setEventJournalEnabled(node.eventJournalEnabled());
         return entity;
     }
 

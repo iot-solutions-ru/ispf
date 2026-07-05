@@ -40,5 +40,11 @@
   "invokeFunction.invoking": "Вызов…",
   "invokeFunction.federatedHint": "Вызов передаётся на federation peer через proxy API.",
   "invokeFunction.result": "Результат",
-  "invokeFunction.title": "Вызов функции"
+  "invokeFunction.title": "Вызов функции",
+  "eventJournal.disabledHint": "Включите журнал событий на объекте (вкладка События) или в настройках платформы",
+  "eventJournal.masterDisabledHint": "Журнал событий отключён на всей платформе (event-journal.enabled)",
+  "eventJournal.objectDisabledHint": "Журнал для этого объекта выключен — включите флажок выше",
+  "eventJournal.globalHistoryDisabledHint": "Платформенная история требует event-journal.cassandra.global-table — только live-лента",
+  "eventJournal.disabledEmpty": "Журнал событий не активен",
+  "eventJournal.objectDisabledEmpty": "Включите журнал событий для объекта, чтобы записывать fired events"
 }

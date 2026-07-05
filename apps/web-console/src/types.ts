@@ -83,6 +83,7 @@ export interface ObjectSummary {
   /** CEL/SQL binding invoke audit for this object only. */
   bindingAuditEnabled?: boolean;
   functionAuditEnabled?: boolean;
+  eventJournalEnabled?: boolean;
   appliedModels?: AppliedModelSummary[];
 }
 
@@ -212,4 +213,5 @@ export interface UpdateObjectPayload {
   iconId?: string | null;
   bindingAuditEnabled?: boolean;
   functionAuditEnabled?: boolean;
+  eventJournalEnabled?: boolean;
 }

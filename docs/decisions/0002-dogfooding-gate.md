@@ -32,5 +32,5 @@
 
 ## Связанные материалы
 
-- [PLATFORM_DEVELOPER_BACKLOG.md §0.2](../PLATFORM_DEVELOPER_BACKLOG.md)
+- [ROADMAP.md](../ROADMAP.md)
 - [0001](0001-app-platform-boundary.md)

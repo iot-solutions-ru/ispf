@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
 import type { SnapGuide } from "../../scada/elementSnap";
 import { applyFormatRules } from "../../scada/formatRules";
@@ -111,6 +111,200 @@ function ConnectionPath({
   );
 }
 
+const MemoConnectionPath = memo(ConnectionPath);
+
+interface MimicElementNodeProps {
+  el: MimicElement;
+  values: Record<string, unknown>;
+  selected?: boolean;
+  showHandles: boolean;
+  editable?: boolean;
+  editMode?: boolean;
+  connectMode?: boolean;
+  onElementClick?: (element: MimicElement) => void;
+  onElementContextMenu?: (element: MimicElement, clientX: number, clientY: number) => void;
+  onSelectElement?: (id: string, additive?: boolean) => void;
+  onElementConnectClick?: (element: MimicElement, x: number, y: number) => void;
+  onElementDragStart?: (id: string, origins: Map<string, { x: number; y: number }>) => void;
+  onElementDrag?: (id: string, x: number, y: number) => void;
+  onElementDragEnd?: () => void;
+  onElementResize?: (id: string, handle: ResizeHandle, dx: number, dy: number, aspectLock: boolean) => void;
+  onElementResizeStart?: (id: string) => void;
+  onElementResizeEnd?: () => void;
+  selectedIds?: Set<string>;
+  tooltip?: string;
+  customSymbols?: MimicCustomSymbol[];
+  buildDragOrigins: (leaderId: string, useSelection: boolean) => Map<string, { x: number; y: number }>;
+}
+
+function MimicElementNode({
+  el,
+  values,
+  selected,
+  showHandles,
+  editable,
+  editMode,
+  connectMode,
+  onElementClick,
+  onElementContextMenu,
+  onSelectElement,
+  onElementConnectClick,
+  onElementDragStart,
+  onElementDrag,
+  onElementDragEnd,
+  onElementResize,
+  onElementResizeStart,
+  onElementResizeEnd,
+  selectedIds,
+  tooltip,
+  customSymbols,
+  buildDragOrigins,
+}: MimicElementNodeProps) {
+  const symbol = resolveElementSymbol(el, customSymbols);
+  const Render = getSymbolRender(el.symbolId, customSymbols);
+  if (!symbol || !Render) return null;
+  const { width, height } = symbolSize(el, customSymbols);
+  const styleOverrides = applyFormatRules(values, el.formatRules);
+  const transform = elementTransform(el, width, height);
+  const flipTransform = elementFlipTransform(el, width, height);
+
+  return (
+    <g
+      transform={transform}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (connectMode && onElementConnectClick) {
+          const svg = e.currentTarget.ownerSVGElement;
+          if (!svg) return;
+          const local = clientToSvg(svg, e.clientX, e.clientY);
+          if (!local) return;
+          onElementConnectClick(el, local.x, local.y);
+          return;
+        }
+        if (!editMode && onElementClick) {
+          onElementClick(el);
+        }
+      }}
+      onContextMenu={(e) => {
+        if (editMode || !onElementContextMenu) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onElementContextMenu(el, e.clientX, e.clientY);
+      }}
+      onMouseDown={(e) => {
+        if (!editMode || connectMode || e.button !== 0) return;
+        if ((e.target as Element).closest(".scada-resize-handle")) return;
+        e.stopPropagation();
+        e.preventDefault();
+
+        const alreadySelected = selectedIds?.has(el.id) ?? false;
+        const additive = e.shiftKey;
+
+        if (additive) {
+          onSelectElement?.(el.id, true);
+          if (alreadySelected) return;
+        } else if (!alreadySelected) {
+          onSelectElement?.(el.id, false);
+        }
+
+        if (!onElementDrag) return;
+
+        const useGroupDrag = alreadySelected && !additive;
+        const origins = buildDragOrigins(el.id, useGroupDrag);
+        onElementDragStart?.(el.id, origins);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origX = el.x;
+        const origY = el.y;
+        let dragged = false;
+        const svg = e.currentTarget.ownerSVGElement as SVGSVGElement | null;
+        const move = (ev: MouseEvent) => {
+          if (!svg) return;
+          const delta = svgPointerDelta(svg, startX, startY, ev.clientX, ev.clientY);
+          if (!delta) return;
+          if (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5) dragged = true;
+          onElementDrag(el.id, origX + delta.dx, origY + delta.dy);
+        };
+        const up = () => {
+          window.removeEventListener("mousemove", move);
+          window.removeEventListener("mouseup", up);
+          if (dragged) onElementDragEnd?.();
+        };
+        window.addEventListener("mousemove", move);
+        window.addEventListener("mouseup", up);
+      }}
+      style={{
+        cursor: connectMode ? "crosshair" : editMode ? "move" : onElementClick ? "pointer" : undefined,
+      }}
+    >
+      {showHandles &&
+        HANDLES.map((handle) => {
+          const hx = handle.fx * width - HANDLE_SIZE / 2;
+          const hy = handle.fy * height - HANDLE_SIZE / 2;
+          return (
+            <rect
+              key={handle.id}
+              className="scada-resize-handle"
+              x={hx}
+              y={hy}
+              width={HANDLE_SIZE}
+              height={HANDLE_SIZE}
+              style={{ cursor: handle.cursor }}
+              onMouseDown={(e) => {
+                if (!onElementResize) return;
+                e.stopPropagation();
+                e.preventDefault();
+                onElementResizeStart?.(el.id);
+                const startX = e.clientX;
+                const startY = e.clientY;
+                let resized = false;
+                const svg = (e.currentTarget as SVGRectElement).ownerSVGElement;
+                const move = (ev: MouseEvent) => {
+                  if (!svg) return;
+                  const delta = svgPointerDelta(svg, startX, startY, ev.clientX, ev.clientY);
+                  if (!delta) return;
+                  if (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5) resized = true;
+                  onElementResize(el.id, handle.id, delta.dx, delta.dy, ev.shiftKey || el.lockAspectRatio === true);
+                };
+                const up = () => {
+                  window.removeEventListener("mousemove", move);
+                  window.removeEventListener("mouseup", up);
+                  if (resized) onElementResizeEnd?.();
+                };
+                window.addEventListener("mousemove", move);
+                window.addEventListener("mouseup", up);
+              }}
+            />
+          );
+        })}
+      <g transform={flipTransform}>
+        {tooltip && <title>{tooltip}</title>}
+        <Render
+          width={width}
+          height={height}
+          values={values}
+          props={elementRenderProps(el, symbol)}
+          styleOverrides={styleOverrides}
+          editable={editable}
+          selected={selected}
+        />
+      </g>
+    </g>
+  );
+}
+
+const MemoMimicElementNode = memo(MimicElementNode, (prev, next) => {
+  if (prev.el !== next.el) return false;
+  if (prev.selected !== next.selected) return false;
+  if (prev.showHandles !== next.showHandles) return false;
+  if (prev.editMode !== next.editMode) return false;
+  if (prev.connectMode !== next.connectMode) return false;
+  if (prev.editable !== next.editable) return false;
+  if (prev.tooltip !== next.tooltip) return false;
+  if (prev.values !== next.values) return false;
+  return true;
+});
+
 export default function ScadaMimicCanvas({
   document,
   valuesByElementId,
@@ -145,8 +339,14 @@ export default function ScadaMimicCanvas({
     [document.layers]
   );
 
-  const elements = document.elements.filter((el) => visibleLayers.has(el.layerId));
-  const connections = document.connections.filter((c) => visibleLayers.has(c.layerId));
+  const elements = useMemo(
+    () => document.elements.filter((el) => visibleLayers.has(el.layerId)),
+    [document.elements, visibleLayers]
+  );
+  const connections = useMemo(
+    () => document.connections.filter((c) => visibleLayers.has(c.layerId)),
+    [document.connections, visibleLayers]
+  );
   const singleSelectedId =
     selectedIds && selectedIds.size === 1 ? [...selectedIds][0] : null;
 
@@ -258,7 +458,7 @@ export default function ScadaMimicCanvas({
         )}
 
         {connections.map((conn) => (
-          <ConnectionPath
+          <MemoConnectionPath
             key={conn.id}
             connection={conn}
             elements={document.elements}
@@ -280,145 +480,34 @@ export default function ScadaMimicCanvas({
           </g>
         ))}
 
-        {elements.map((el) => {
-          const symbol = resolveElementSymbol(el, customSymbols);
-          const Render = getSymbolRender(el.symbolId, customSymbols);
-          if (!symbol || !Render) return null;
-          const { width, height } = symbolSize(el, customSymbols);
-          const values = valuesByElementId[el.id] ?? {};
-          const styleOverrides = applyFormatRules(values, el.formatRules);
-          const selected = selectedIds?.has(el.id);
-          const showHandles =
-            showResizeHandles && editMode && !connectMode && singleSelectedId === el.id;
-          const transform = elementTransform(el, width, height);
-          const flipTransform = elementFlipTransform(el, width, height);
-          return (
-            <g
-              key={el.id}
-              transform={transform}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (connectMode && onElementConnectClick) {
-                  const svg = e.currentTarget.ownerSVGElement;
-                  if (!svg) return;
-                  const local = clientToSvg(svg, e.clientX, e.clientY);
-                  if (!local) return;
-                  onElementConnectClick(el, local.x, local.y);
-                  return;
-                }
-                if (!editMode && onElementClick) {
-                  onElementClick(el);
-                }
-              }}
-              onContextMenu={(e) => {
-                if (editMode || !onElementContextMenu) return;
-                e.preventDefault();
-                e.stopPropagation();
-                onElementContextMenu(el, e.clientX, e.clientY);
-              }}
-              onMouseDown={(e) => {
-                if (!editMode || connectMode || e.button !== 0) return;
-                if ((e.target as Element).closest(".scada-resize-handle")) return;
-                e.stopPropagation();
-                e.preventDefault();
-
-                const alreadySelected = selectedIds?.has(el.id) ?? false;
-                const additive = e.shiftKey;
-
-                if (additive) {
-                  onSelectElement?.(el.id, true);
-                  if (alreadySelected) return;
-                } else if (!alreadySelected) {
-                  onSelectElement?.(el.id, false);
-                }
-
-                if (!onElementDrag) return;
-
-                const useGroupDrag = alreadySelected && !additive;
-                const origins = buildDragOrigins(el.id, useGroupDrag);
-                onElementDragStart?.(el.id, origins);
-                const startX = e.clientX;
-                const startY = e.clientY;
-                const origX = el.x;
-                const origY = el.y;
-                let dragged = false;
-                const svg = e.currentTarget.ownerSVGElement as SVGSVGElement | null;
-                const move = (ev: MouseEvent) => {
-                  if (!svg) return;
-                  const delta = svgPointerDelta(svg, startX, startY, ev.clientX, ev.clientY);
-                  if (!delta) return;
-                  if (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5) dragged = true;
-                  onElementDrag(el.id, origX + delta.dx, origY + delta.dy);
-                };
-                const up = () => {
-                  window.removeEventListener("mousemove", move);
-                  window.removeEventListener("mouseup", up);
-                  if (dragged) onElementDragEnd?.();
-                };
-                window.addEventListener("mousemove", move);
-                window.addEventListener("mouseup", up);
-              }}
-              style={{
-                cursor: connectMode ? "crosshair" : editMode ? "move" : onElementClick ? "pointer" : undefined,
-              }}
-            >
-              {showHandles &&
-                HANDLES.map((handle) => {
-                  const hx = handle.fx * width - HANDLE_SIZE / 2;
-                  const hy = handle.fy * height - HANDLE_SIZE / 2;
-                  return (
-                    <rect
-                      key={handle.id}
-                      className="scada-resize-handle"
-                      x={hx}
-                      y={hy}
-                      width={HANDLE_SIZE}
-                      height={HANDLE_SIZE}
-                      style={{ cursor: handle.cursor }}
-                      onMouseDown={(e) => {
-                        if (!onElementResize) return;
-                        e.stopPropagation();
-                        e.preventDefault();
-                        onElementResizeStart?.(el.id);
-                        const startX = e.clientX;
-                        const startY = e.clientY;
-                        let resized = false;
-                        const svg = (e.currentTarget as SVGRectElement).ownerSVGElement;
-                        const move = (ev: MouseEvent) => {
-                          if (!svg) return;
-                          const delta = svgPointerDelta(svg, startX, startY, ev.clientX, ev.clientY);
-                          if (!delta) return;
-                          if (Math.abs(delta.dx) > 0.5 || Math.abs(delta.dy) > 0.5) resized = true;
-                          onElementResize(el.id, handle.id, delta.dx, delta.dy, ev.shiftKey || el.lockAspectRatio === true);
-                        };
-                        const up = () => {
-                          window.removeEventListener("mousemove", move);
-                          window.removeEventListener("mouseup", up);
-                          if (resized) onElementResizeEnd?.();
-                        };
-                        window.addEventListener("mousemove", move);
-                        window.addEventListener("mouseup", up);
-                      }}
-                    />
-                  );
-                })}
-              <g transform={flipTransform}>
-                {elementTooltips?.[el.id] && (
-                  <title>{elementTooltips[el.id]}</title>
-                )}
-                <Render
-                  width={width}
-                  height={height}
-                  values={values}
-                  props={elementRenderProps(el, symbol)}
-                  styleOverrides={styleOverrides}
-                  editable={editable}
-                  selected={selected}
-                />
-              </g>
-            </g>
-          );
-        })}
+        {elements.map((el) => (
+          <MemoMimicElementNode
+            key={el.id}
+            el={el}
+            values={valuesByElementId[el.id] ?? {}}
+            selected={selectedIds?.has(el.id)}
+            showHandles={Boolean(
+              showResizeHandles && editMode && !connectMode && singleSelectedId === el.id
+            )}
+            editable={editable}
+            editMode={editMode}
+            connectMode={connectMode}
+            onElementClick={onElementClick}
+            onElementContextMenu={onElementContextMenu}
+            onSelectElement={onSelectElement}
+            onElementConnectClick={onElementConnectClick}
+            onElementDragStart={onElementDragStart}
+            onElementDrag={onElementDrag}
+            onElementDragEnd={onElementDragEnd}
+            onElementResize={onElementResize}
+            onElementResizeStart={onElementResizeStart}
+            onElementResizeEnd={onElementResizeEnd}
+            selectedIds={selectedIds}
+            tooltip={elementTooltips?.[el.id]}
+            customSymbols={customSymbols}
+            buildDragOrigins={buildDragOrigins}
+          />
+        ))}
       </svg>
     </div>
   );

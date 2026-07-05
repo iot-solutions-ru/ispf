@@ -186,8 +186,36 @@ export async function mockAuthConfig(page: Page, mode: "local" | "oidc" = "local
   );
 }
 
+export interface MockAuthenticatedApiOptions {
+  session?: MockAuthSession;
+  dashboardLayout?: {
+    columns?: number;
+    rowHeight?: number;
+    widgets: unknown[];
+  };
+}
+
 /** Single dispatcher avoids Playwright glob overlap (`objects?*` vs `by-path/editor`). */
-export async function mockAuthenticatedApi(page: Page, session: MockAuthSession = MOCK_ADMIN_SESSION) {
+export async function mockAuthenticatedApi(
+  page: Page,
+  options: MockAuthenticatedApiOptions | MockAuthSession = MOCK_ADMIN_SESSION,
+) {
+  const opts: MockAuthenticatedApiOptions =
+    "token" in (options as MockAuthSession)
+      ? { session: options as MockAuthSession }
+      : (options as MockAuthenticatedApiOptions);
+  const session = opts.session ?? MOCK_ADMIN_SESSION;
+  const layout = opts.dashboardLayout
+    ? { columns: 12, rowHeight: 72, ...opts.dashboardLayout }
+    : MOCK_DASHBOARD_LAYOUT;
+  const dashboardView = {
+    path: MOCK_DASHBOARD_PATH,
+    title: "Ops board",
+    refreshIntervalMs: 5000,
+    layoutJson: JSON.stringify(layout),
+    layout,
+  };
+
   await mockAuthConfig(page);
 
   await page.route("**/api/v1/**", (route) => {
@@ -429,7 +457,7 @@ export async function mockAuthenticatedApi(page: Page, session: MockAuthSession 
       case "/api/v1/dashboards/by-path": {
         const dashboardPath = searchParams.get("path");
         if (dashboardPath === MOCK_DASHBOARD_PATH) {
-          return json(route, MOCK_DASHBOARD_VIEW);
+          return json(route, dashboardView);
         }
         if (dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH) {
           return json(route, MOCK_DEMO_SENSOR_DASHBOARD_VIEW);

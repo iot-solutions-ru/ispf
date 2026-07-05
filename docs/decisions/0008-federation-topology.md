@@ -26,5 +26,5 @@
 
 ## Связанные материалы
 
-- REQ-PF-13 — [PLATFORM_DEVELOPER_BACKLOG.md §9](../PLATFORM_DEVELOPER_BACKLOG.md)
+- REQ-PF-13 — [ROADMAP.md § Part A (PF-13)](../ROADMAP.md#часть-a--req-pf-application-platform-закрыт), [FEDERATION.md](../FEDERATION.md)
 - [MESSAGING.md](../MESSAGING.md) — sync vs async

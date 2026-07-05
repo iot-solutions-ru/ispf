@@ -3,7 +3,7 @@
 Хронологический чеклист того, **что было сделано** за время существования платформы. Все пункты отмечены как выполненные — это не план, а **ретроспектива развития**.
 
 **Baseline:** `main` → `0.9.41`.  
-**Источники:** git history, [ROADMAP.md](ROADMAP.md), [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md), релизные теги.
+**Источники:** git history, [ROADMAP.md](ROADMAP.md), релизные теги.
 
 ---
 
@@ -57,7 +57,7 @@
 
 Поворот: решения живут **на платформе** через bundle deploy, а не в отраслевом Java сервера.
 
-- [x] **REQ-PF спецификация** — [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md), ADR [0001](decisions/0001-app-platform-boundary.md)
+- [x] **REQ-PF спецификация** — [ROADMAP.md § Part A](ROADMAP.md#часть-a--req-pf-application-platform-закрыт), ADR [0001](decisions/0001-app-platform-boundary.md)
 - [x] **Sprint A** — script runtime: `selectMany`, `setVar`, `when`/`if`, транзакции; изоляция app schema (PF-02)
 - [x] **Sprint B** — bundle metadata, BFF wire profile `anima-operator-v1`, `cancel_workflows` (PF-06, PF-10)
 - [x] **Sprint C** — manifest-driven operator shell через generic `POST /bff/invoke`
@@ -206,7 +206,7 @@ North star: **больше declarative в object tree**, меньше custom Jav
 ## 13. Platform evolution REQ-FW — Phase 16
 
 - [x] **ADR process** — `docs/decisions/` (18 ADR)
-- [x] **Gap registry** — [GAP_REGISTRY.md](GAP_REGISTRY.md) для sprint planning
+- [x] **Gap registry** — сводка в [ROADMAP.md § Part I](ROADMAP.md#часть-i--готовность-подсистем)
 - [x] **Commercial licensing** — RSA keys, `installationId`, LicenseBuilder ([COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md))
 - [x] **MES reference** — walkthrough + synthetic demo ([REFERENCE_MES_WALKTHROUGH.md](REFERENCE_MES_WALKTHROUGH.md))
 - [x] **Solution public API** — boundary doc + event catalog в bundle
@@ -298,7 +298,7 @@ North star: **больше declarative в object tree**, меньше custom Jav
 - [~] **Driver observedAt full matrix** — BL-74 pilots; remaining drivers demand-driven
 - [~] **Playwright live staging** — workflow + secrets; expand coverage on demand
 
-Подробный актуальный план: [ROADMAP.md § Phase 23](ROADMAP.md#phase-23--platform-excellence-req-ex), [EXCELLENCE_BACKLOG.md](EXCELLENCE_BACKLOG.md), [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md).
+Подробный актуальный план: [ROADMAP.md](ROADMAP.md).
 
 ---
 
@@ -319,9 +319,7 @@ North star: **больше declarative в object tree**, меньше custom Jav
 | Документ | Назначение |
 |----------|------------|
 | [ROADMAP.md](ROADMAP.md) | Фазы 0–20, статус по темам |
-| [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md) | REQ-PF / REQ-FW спецификация |
-| [GAP_REGISTRY.md](GAP_REGISTRY.md) | Живой реестр пробелов |
-| [CODE_AUDIT_BACKLOG.md](CODE_AUDIT_BACKLOG.md) | BL-01…65 sprint items |
+| [ROADMAP.md](ROADMAP.md) | Единый roadmap: REQ-PF/FW, BL-01…139, фазы, спринты |
 | [docs/decisions/](decisions/README.md) | ADR — ключевые архитектурные развилки |
 | [PRODUCT.md](PRODUCT.md) | Обзор продукта для заказчика |
 

@@ -61,7 +61,12 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
   const [formError, setFormError] = useState<string | null>(null);
   const [tokenPanelError, setTokenPanelError] = useState<string | null>(null);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
-  const [catalogSyncPeer, setCatalogSyncPeer] = useState<{ id: string; name: string } | null>(null);
+  const [catalogSyncPeer, setCatalogSyncPeer] = useState<{
+    id: string;
+    name: string;
+    remoteSubtreePath?: string;
+    localParentPath?: string;
+  } | null>(null);
 
   const [tokenUser, setTokenUser] = useState("admin");
   const [tokenTtlHours, setTokenTtlHours] = useState("12");
@@ -401,6 +406,13 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
           createMutation={createMutation}
           deleteMutation={deleteMutation}
           onSyncCatalog={(peer) => setCatalogSyncPeer({ id: peer.id, name: peer.name })}
+          onSyncSubtree={(peer) =>
+            setCatalogSyncPeer({
+              id: peer.id,
+              name: peer.name,
+              remoteSubtreePath: `${peer.pathPrefix?.trim() || "root.platform"}.devices`,
+            })
+          }
           refreshTokenMutation={refreshTokenMutation}
           remoteTokenMutation={remoteTokenMutation}
           setFormError={setFormError}
@@ -472,6 +484,8 @@ export default function FederationPeersPanel({ canManage }: FederationPeersPanel
         <FederationCatalogSyncDialog
           peerId={catalogSyncPeer.id}
           peerName={catalogSyncPeer.name}
+          remoteSubtreePath={catalogSyncPeer.remoteSubtreePath}
+          localParentPath={catalogSyncPeer.localParentPath}
           onClose={() => setCatalogSyncPeer(null)}
           onSynced={handleCatalogSynced}
           onError={(message) => {

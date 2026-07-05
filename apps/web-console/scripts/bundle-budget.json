@@ -1,0 +1,9 @@
+{
+  "maxTotalJsKb": 6400,
+  "maxEntryJsKb": 750,
+  "maxChunkKb": {
+    "vendor-react": 220,
+    "vendor-charts": 500,
+    "vendor-map": 1150
+  }
+}

@@ -40,5 +40,11 @@
   "bindingJournal.filter.changedYes": "yes",
   "bindingJournal.filter.changedNo": "no",
   "bindingJournal.loadError": "Failed to load journal",
-  "bindingJournal.empty": "No binding invocations recorded yet"
+  "bindingJournal.empty": "No binding invocations recorded yet",
+  "eventJournal.disabledHint": "Enable event journal on the object (Events tab) or check platform settings",
+  "eventJournal.masterDisabledHint": "Event journal is disabled platform-wide (event-journal.enabled)",
+  "eventJournal.objectDisabledHint": "Event journal is off for this object — enable the checkbox above",
+  "eventJournal.globalHistoryDisabledHint": "Platform-wide history requires event-journal.cassandra.global-table — live feed only",
+  "eventJournal.disabledEmpty": "Event journal is not active",
+  "eventJournal.objectDisabledEmpty": "Enable event journal for this object to record fired events"
 }

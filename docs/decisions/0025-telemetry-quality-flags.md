@@ -23,4 +23,4 @@
 ## References
 
 - [OBJECT_MODEL.md § Telemetry quality](../OBJECT_MODEL.md#telemetry-quality-bl-82)
-- [EXCELLENCE_BACKLOG.md § BL-82](../EXCELLENCE_BACKLOG.md#bl-82--quality-flags-good--uncertain--bad)
+- [ROADMAP.md § BL-82](../ROADMAP.md#часть-e--полный-реестр-bl-01139)

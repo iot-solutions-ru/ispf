@@ -117,6 +117,7 @@
   "events.add": "+ Событие",
   "events.empty": "Нет событий",
   "events.publish": "Опубликовать",
+  "events.auditEnabled": "Записывать fired events в журнал событий для этого объекта",
   "functions.add": "+ Функция",
   "functions.auditEnabled": "Записывать audit вызовов функций для этого объекта",
   "functions.empty": "Нет функций",

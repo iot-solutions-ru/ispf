@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   previewFederationCatalogSync,
+  previewFederationSubtreeSync,
   syncFederationCatalog,
+  syncFederationSubtree,
   type CatalogSyncConflict,
-  type CatalogSyncPreview,
   type CatalogSyncResolution,
   type CatalogSyncResolutionAction,
 } from "../../api/federation";
@@ -13,6 +14,9 @@ import {
 interface FederationCatalogSyncDialogProps {
   peerId: string;
   peerName: string;
+  /** When set, sync only this remote subtree instead of full catalog. */
+  remoteSubtreePath?: string;
+  localParentPath?: string;
   onClose: () => void;
   onSynced: (message: string) => void;
   onError: (message: string) => void;
@@ -21,16 +25,25 @@ interface FederationCatalogSyncDialogProps {
 export default function FederationCatalogSyncDialog({
   peerId,
   peerName,
+  remoteSubtreePath,
+  localParentPath,
   onClose,
   onSynced,
   onError,
 }: FederationCatalogSyncDialogProps) {
   const { t } = useTranslation(["federation", "common"]);
-  const [preview, setPreview] = useState<CatalogSyncPreview | null>(null);
+  const subtreeMode = Boolean(remoteSubtreePath?.trim());
+  const [preview, setPreview] = useState<Awaited<ReturnType<typeof previewFederationCatalogSync>> | null>(null);
   const [actions, setActions] = useState<Record<string, CatalogSyncResolutionAction>>({});
 
   const previewMutation = useMutation({
-    mutationFn: () => previewFederationCatalogSync(peerId),
+    mutationFn: () =>
+      subtreeMode
+        ? previewFederationSubtreeSync(peerId, {
+            remoteSubtreePath: remoteSubtreePath!,
+            localParentPath,
+          })
+        : previewFederationCatalogSync(peerId),
     onSuccess: (data) => {
       setPreview(data);
       const defaults: Record<string, CatalogSyncResolutionAction> = {};
@@ -43,7 +56,14 @@ export default function FederationCatalogSyncDialog({
   });
 
   const syncMutation = useMutation({
-    mutationFn: (resolutions: CatalogSyncResolution[]) => syncFederationCatalog(peerId, resolutions),
+    mutationFn: (resolutions: CatalogSyncResolution[]) =>
+      subtreeMode
+        ? syncFederationSubtree(peerId, {
+            remoteSubtreePath: remoteSubtreePath!,
+            localParentPath,
+            resolutions,
+          })
+        : syncFederationCatalog(peerId, resolutions),
     onSuccess: (result) => {
       onSynced(
         t("peers.syncResult", {
@@ -61,9 +81,11 @@ export default function FederationCatalogSyncDialog({
 
   useEffect(() => {
     previewMutation.mutate();
-  }, [peerId]);
+  }, [peerId, remoteSubtreePath, localParentPath]);
 
   const conflictRows = preview?.conflicts ?? [];
+  const titleKey = subtreeMode ? "subtreeSync.title" : "catalogSync.title";
+  const applyKey = subtreeMode ? "subtreeSync.apply" : "catalogSync.apply";
 
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -74,7 +96,7 @@ export default function FederationCatalogSyncDialog({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="modal-head">
-          <h3>{t("catalogSync.title", { peer: peerName })}</h3>
+          <h3>{t(titleKey, { peer: peerName, remotePath: remoteSubtreePath })}</h3>
           <button type="button" className="btn icon" onClick={onClose} aria-label={t("common:action.close")}>
             ×
           </button>
@@ -82,6 +104,17 @@ export default function FederationCatalogSyncDialog({
         {previewMutation.isPending && <p className="hint">{t("catalogSync.loading")}</p>}
         {preview && (
           <div className="modal-body">
+            {subtreeMode && (
+              <p className="hint">
+                <code>{remoteSubtreePath}</code>
+                {localParentPath ? (
+                  <>
+                    {" → "}
+                    <code>{localParentPath}</code>
+                  </>
+                ) : null}
+              </p>
+            )}
             <p className="hint">
               {t("catalogSync.summary", {
                 localRoot: preview.localRoot,
@@ -150,7 +183,7 @@ export default function FederationCatalogSyncDialog({
               syncMutation.mutate(resolutions);
             }}
           >
-            {t("catalogSync.apply")}
+            {t(applyKey)}
           </button>
         </footer>
       </div>

@@ -112,6 +112,56 @@ class FederationApiTest {
     }
 
     @Test
+    void subtreeSyncImportsOnlySelectedRemoteBranch() throws Exception {
+        String token = loginAdmin();
+        String baseUrl = "http://127.0.0.1:" + port;
+
+        MvcResult created = mockMvc.perform(post("/api/v1/federation/peers")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "subtree-site",
+                                  "baseUrl": "%s",
+                                  "pathPrefix": "root.platform",
+                                  "enabled": true
+                                }
+                                """.formatted(baseUrl)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String id = created.getResponse().getContentAsString()
+                .replaceAll("(?s).*\"id\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/federation/peers/" + id + "/subtree-sync-preview")
+                        .header("Authorization", "Bearer " + token)
+                        .param("remoteSubtreePath", "root.platform.devices"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.localRoot").value("root.platform.federation.subtree-site.devices"))
+                .andExpect(jsonPath("$.remoteCount").value(org.hamcrest.Matchers.greaterThan(0)));
+
+        mockMvc.perform(post("/api/v1/federation/peers/" + id + "/sync-subtree")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "remoteSubtreePath": "root.platform.devices" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.localRoot").value("root.platform.federation.subtree-site.devices"))
+                .andExpect(jsonPath("$.created").value(org.hamcrest.Matchers.greaterThan(0)));
+
+        mockMvc.perform(get("/api/v1/objects/by-path")
+                        .header("Authorization", "Bearer " + token)
+                        .param("path", "root.platform.federation.subtree-site.devices.demo-sensor-01"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/dashboards/by-path")
+                        .header("Authorization", "Bearer " + token)
+                        .param("path", "root.platform.federation.subtree-site.dashboards.demo-sensor"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     void fetchRemoteTokenViaLoopbackLogin() throws Exception {
         String token = loginAdmin();
         String baseUrl = "http://127.0.0.1:" + port;

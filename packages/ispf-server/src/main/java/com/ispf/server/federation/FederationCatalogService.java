@@ -35,9 +35,45 @@ public class FederationCatalogService {
 
     @Transactional(readOnly = true)
     public CatalogSyncPreview previewCatalogSync(UUID peerId) {
+        return previewSubtreeSync(peerId, null, null);
+    }
+
+    @Transactional(readOnly = true)
+    public CatalogSyncPreview previewSubtreeSync(UUID peerId, String remoteSubtreePath, String localParentPath) {
         FederationPeer peer = requirePeer(peerId);
-        String localRoot = FederationPaths.peerCatalogRoot(peer.name());
-        List<RemoteEntry> entries = collectRemoteEntries(peer);
+        SubtreeScope scope = resolveSubtreeScope(peer, remoteSubtreePath, localParentPath);
+        List<RemoteEntry> entries = collectRemoteEntries(peer, scope);
+        return buildPreview(scope.localRoot(), entries, peerId);
+    }
+
+    @Transactional
+    public SyncResult syncCatalog(UUID peerId) {
+        return syncCatalog(peerId, List.of());
+    }
+
+    @Transactional
+    public SyncResult syncCatalog(UUID peerId, List<CatalogSyncResolution> resolutions) {
+        return syncSubtree(peerId, null, null, resolutions);
+    }
+
+    @Transactional
+    public SyncResult syncSubtree(
+            UUID peerId,
+            String remoteSubtreePath,
+            String localParentPath,
+            List<CatalogSyncResolution> resolutions
+    ) {
+        FederationPeer peer = requirePeer(peerId);
+        SubtreeScope scope = resolveSubtreeScope(peer, remoteSubtreePath, localParentPath);
+        ensureCatalogRoot(FederationPaths.peerCatalogRoot(peer.name()), peer);
+        if (!scope.localRoot().equals(FederationPaths.peerCatalogRoot(peer.name()))) {
+            ensureSubtreeLocalRoot(scope.localRoot(), peer);
+        }
+        List<RemoteEntry> entries = collectRemoteEntries(peer, scope);
+        return applySync(peerId, scope.localRoot(), entries, resolutions);
+    }
+
+    private CatalogSyncPreview buildPreview(String localRoot, List<RemoteEntry> entries, UUID peerId) {
         List<CatalogSyncConflict> conflicts = new ArrayList<>();
         int createCount = 0;
         int updateCount = 0;
@@ -56,17 +92,12 @@ public class FederationCatalogService {
         return new CatalogSyncPreview(localRoot, entries.size(), createCount, updateCount, conflicts);
     }
 
-    @Transactional
-    public SyncResult syncCatalog(UUID peerId) {
-        return syncCatalog(peerId, List.of());
-    }
-
-    @Transactional
-    public SyncResult syncCatalog(UUID peerId, List<CatalogSyncResolution> resolutions) {
-        FederationPeer peer = requirePeer(peerId);
-        String localRoot = FederationPaths.peerCatalogRoot(peer.name());
-        ensureCatalogRoot(localRoot, peer);
-        List<RemoteEntry> entries = collectRemoteEntries(peer);
+    private SyncResult applySync(
+            UUID peerId,
+            String localRoot,
+            List<RemoteEntry> entries,
+            List<CatalogSyncResolution> resolutions
+    ) {
         Map<String, CatalogSyncResolutionAction> resolutionByPath = new HashMap<>();
         for (CatalogSyncResolution resolution : resolutions) {
             resolutionByPath.put(resolution.localPath(), resolution.action());
@@ -95,13 +126,43 @@ public class FederationCatalogService {
         return new SyncResult(localRoot, created, updated, entries.size(), skipped);
     }
 
-    private List<RemoteEntry> collectRemoteEntries(FederationPeer peer) {
+    private SubtreeScope resolveSubtreeScope(
+            FederationPeer peer,
+            String remoteSubtreePath,
+            String localParentPath
+    ) {
+        String peerPrefix = normalizePrefix(peer.pathPrefix());
+        String remoteFilter = normalizePrefix(
+                remoteSubtreePath == null || remoteSubtreePath.isBlank() ? peerPrefix : remoteSubtreePath.trim()
+        );
+        if (!remoteFilter.equals(peerPrefix) && !remoteFilter.startsWith(peerPrefix + ".")) {
+            throw new IllegalArgumentException("remoteSubtreePath must be under peer pathPrefix: " + peerPrefix);
+        }
+        String catalogRoot = FederationPaths.peerCatalogRoot(peer.name());
+        String suffix = remoteFilter.length() > peerPrefix.length()
+                ? remoteFilter.substring(peerPrefix.length())
+                : "";
+        String defaultLocalRoot = catalogRoot + suffix;
+        String localRoot = localParentPath == null || localParentPath.isBlank()
+                ? defaultLocalRoot
+                : localParentPath.trim();
+        if (!FederationPaths.isCatalogMirrorPath(localRoot)) {
+            throw new IllegalArgumentException("localParentPath must be under " + FederationPaths.FEDERATION_ROOT);
+        }
+        return new SubtreeScope(remoteFilter, localRoot);
+    }
+
+    private record SubtreeScope(String remoteFilter, String localRoot) {
+    }
+
+    private List<RemoteEntry> collectRemoteEntries(FederationPeer peer, SubtreeScope scope) {
         JsonNode remoteObjects = federationService.proxyObjectList(peer.id());
         if (!remoteObjects.isArray()) {
             throw new IllegalStateException("Remote object list is not an array");
         }
-        String localRoot = FederationPaths.peerCatalogRoot(peer.name());
         String prefix = normalizePrefix(peer.pathPrefix());
+        String remoteFilter = scope.remoteFilter();
+        String localRoot = scope.localRoot();
         List<RemoteEntry> entries = new ArrayList<>();
         for (JsonNode remote : remoteObjects) {
             String remotePath = textOrNull(remote, "path");
@@ -114,9 +175,12 @@ public class FederationCatalogService {
             if (!remotePath.equals(prefix) && !remotePath.startsWith(prefix + ".")) {
                 continue;
             }
-            String suffix = remotePath.equals(prefix)
+            if (!remotePath.equals(remoteFilter) && !remotePath.startsWith(remoteFilter + ".")) {
+                continue;
+            }
+            String suffix = remotePath.equals(remoteFilter)
                     ? ""
-                    : remotePath.substring(prefix.length());
+                    : remotePath.substring(remoteFilter.length());
             entries.add(new RemoteEntry(remotePath, localRoot + suffix, remote));
         }
         entries.sort(Comparator.comparingInt(entry -> entry.remotePath().length()));
@@ -165,6 +229,14 @@ public class FederationCatalogService {
     }
 
     private void ensureCatalogRoot(String localRoot, FederationPeer peer) {
+        ensureAgentPath(localRoot, peer, null);
+    }
+
+    private void ensureSubtreeLocalRoot(String localRoot, FederationPeer peer) {
+        ensureAgentPath(localRoot, peer, "Federated subtree from " + peer.baseUrl());
+    }
+
+    private void ensureAgentPath(String localRoot, FederationPeer peer, String defaultDescription) {
         if (objectManager.tree().findByPath(localRoot).isPresent()) {
             SystemObjectDescriptions.resolve(localRoot).ifPresent(entry ->
                     objectManager.updateInfo(localRoot, entry.displayName(), entry.description())
@@ -172,15 +244,22 @@ public class FederationCatalogService {
             return;
         }
         int lastDot = localRoot.lastIndexOf('.');
-        String parentPath = localRoot.substring(0, lastDot);
-        String name = localRoot.substring(lastDot + 1);
-        if (objectManager.tree().findByPath(parentPath).isEmpty()) {
-            throw new IllegalStateException("Missing federation parent: " + parentPath);
+        if (lastDot <= 0) {
+            throw new IllegalStateException("Invalid local path: " + localRoot);
         }
+        String parentPath = localRoot.substring(0, lastDot);
+        if (objectManager.tree().findByPath(parentPath).isEmpty()) {
+            if (FederationPaths.isCatalogMirrorPath(parentPath)) {
+                ensureAgentPath(parentPath, peer, defaultDescription);
+            } else {
+                throw new IllegalStateException("Missing federation parent: " + parentPath);
+            }
+        }
+        String name = localRoot.substring(lastDot + 1);
         SystemObjectDescriptions.Entry entry = SystemObjectDescriptions.resolve(localRoot)
                 .orElse(new SystemObjectDescriptions.Entry(
                         peer.name(),
-                        "Federated catalog from " + peer.baseUrl()
+                        defaultDescription != null ? defaultDescription : "Federated catalog from " + peer.baseUrl()
                 ));
         objectManager.create(
                 parentPath,

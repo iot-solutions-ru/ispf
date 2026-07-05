@@ -56,6 +56,7 @@
   "events.add": "+ Event",
   "events.empty": "No events",
   "events.publish": "Publish",
+  "events.auditEnabled": "Record fired events in event journal for this object",
   "functions.add": "+ Function",
   "functions.empty": "No functions",
   "functions.invoke": "Invoke",

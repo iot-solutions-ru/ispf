@@ -50,6 +50,7 @@ def main() -> int:
         "lab-cluster-bootstrap.sh",
         "lab-cluster-peer-start.sh",
         "lab-cluster-test.sh",
+        "cluster-smoke-test.sh",
     ):
         upload_text(sftp, DEPLOY / name, f"{ROOT}/{name}")
     sftp.close()
@@ -63,7 +64,7 @@ def main() -> int:
     print(f"LAB LAN bind: {lab_lan}", flush=True)
 
     steps = [
-        f"chmod +x {ROOT}/lab-cluster-bootstrap.sh {ROOT}/lab-cluster-peer-start.sh {ROOT}/lab-cluster-test.sh",
+        f"chmod +x {ROOT}/lab-cluster-bootstrap.sh {ROOT}/lab-cluster-peer-start.sh {ROOT}/lab-cluster-test.sh {ROOT}/cluster-smoke-test.sh",
         f"cd {ROOT} && ISPF_CLUSTER_LAN_BIND={lab_lan} bash lab-cluster-bootstrap.sh 2>&1 | tee loadtest/cluster-bootstrap.log",
         f"curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/login -H 'Content-Type: application/json' -d '{{\"username\":\"admin\",\"password\":\"admin\"}}'",
         f"docker compose -f {ROOT}/lab-cluster-compose.yml exec -T postgres psql -U ispf -d ispf -c "

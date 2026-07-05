@@ -949,6 +949,23 @@ export default function ObjectPropertiesEditor({
               ))}
             </ul>
           )}
+          {canManage && !ctx.federated && (
+            <label className="binding-audit-toggle panel-toolbar">
+              <input
+                type="checkbox"
+                checked={editorData.object.eventJournalEnabled ?? false}
+                onChange={async (e) => {
+                  const enabled = e.target.checked;
+                  await updateObject(path, { eventJournalEnabled: enabled }, { revision });
+                  const fresh = await fetchObjectEditor(path);
+                  setRevision(fresh.object.revision ?? revision);
+                  await reloadFromEditor();
+                  await queryClient.invalidateQueries({ queryKey: ["event-journal-status", path] });
+                }}
+              />
+              {t("events.auditEnabled")}
+            </label>
+          )}
           <EventJournalPanel
             objectPath={path}
             knownEventNames={editorData.events.map((event) => event.name)}

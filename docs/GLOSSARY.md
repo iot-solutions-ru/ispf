@@ -130,7 +130,7 @@
 
 **RBAC** — Role-Based Access Control. Роли: `admin`, `operator`.
 
-**REQ-PF** — требования к платформенному слою приложений (Application Platform). Статус: [PLATFORM_DEVELOPER_BACKLOG.md](PLATFORM_DEVELOPER_BACKLOG.md).
+**REQ-PF** — требования к платформенному слою приложений. Статус: [ROADMAP.md § Part A](ROADMAP.md#часть-a--req-pf-application-platform-закрыт).
 
 ---
 

@@ -9,7 +9,12 @@ import {
   unbindFederationObject,
 } from "../api/federation";
 import type { ObjectSummary } from "../types";
-import { isFederatedCatalogPath } from "../utils/federationPath";
+import {
+  catalogMirrorToRemoteSubtree,
+  findPeerForCatalogMirrorPath,
+  isFederatedCatalogPath,
+} from "../utils/federationPath";
+import FederationCatalogSyncDialog from "./federation/FederationCatalogSyncDialog";
 
 interface FederationBindPanelProps {
   object: ObjectSummary;
@@ -32,6 +37,7 @@ export default function FederationBindPanel({
   const [placeName, setPlaceName] = useState("");
   const [showPlaceLocally, setShowPlaceLocally] = useState(false);
   const [showUnbindConfirm, setShowUnbindConfirm] = useState(false);
+  const [syncSubtreeOpen, setSyncSubtreeOpen] = useState(false);
   const [probeResult, setProbeResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,6 +151,11 @@ export default function FederationBindPanel({
 
   const peers = peersQuery.data ?? [];
   const peerOptions = peers.filter((peer) => peer.enabled);
+  const mirrorPeer = isMirror ? findPeerForCatalogMirrorPath(object.path, peers) : undefined;
+  const mirrorRemoteSubtree =
+    mirrorPeer && isMirror
+      ? catalogMirrorToRemoteSubtree(object.path, mirrorPeer.pathPrefix ?? "root.platform")
+      : null;
 
   return (
     <section className="panel panel-card federation-bind-panel">
@@ -154,6 +165,14 @@ export default function FederationBindPanel({
 
       {isMirror && (
         <div className="federation-bind-callout">{t("bind.mirrorCallout")}</div>
+      )}
+
+      {isMirror && mirrorPeer && mirrorRemoteSubtree && (
+        <div className="form-actions" style={{ marginBottom: "1rem" }}>
+          <button type="button" className="btn" onClick={() => setSyncSubtreeOpen(true)}>
+            {t("subtreeSync.syncThisFolder")}
+          </button>
+        </div>
       )}
 
       {isMirror && !showPlaceLocally && (
@@ -301,6 +320,23 @@ export default function FederationBindPanel({
       {error && <p className="hint error">{error}</p>}
       {(bindMutation.isSuccess || rebindMutation.isSuccess || unbindMutation.isSuccess) && (
         <p className="hint success">{t("bind.updated")}</p>
+      )}
+      {syncSubtreeOpen && mirrorPeer && mirrorRemoteSubtree && (
+        <FederationCatalogSyncDialog
+          peerId={mirrorPeer.id}
+          peerName={mirrorPeer.name}
+          remoteSubtreePath={mirrorRemoteSubtree}
+          localParentPath={object.path}
+          onClose={() => setSyncSubtreeOpen(false)}
+          onSynced={() => {
+            setSyncSubtreeOpen(false);
+            invalidate();
+          }}
+          onError={(message) => {
+            setSyncSubtreeOpen(false);
+            setError(message);
+          }}
+        />
       )}
     </section>
   );

@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-07-04T23:55:31Z",
+  "program": "acceleration S19-S23",
+  "baseline_date": "2026-07-05",
+  "kpi": {
+    "ci": {
+      "source": "github actions ci.yml",
+      "sample_size": 49,
+      "success_rate_pct": 20.4,
+      "avg_wall_min": 17.3,
+      "note": "Parallel jobs: backend + web-console; avg is workflow wall time"
+    },
+    "jvm_load": {
+      "list_devices_p99_ceiling_ms": 2500,
+      "list_devices_p99_ci_ceiling_ms": 5000,
+      "events_fire_p99_ceiling_ms": 3000,
+      "source": "ListDevicesLoadTest, EventFireLoadTest"
+    },
+    "mqtt_ingress": {
+      "sustained_events_per_s": 1878,
+      "version": "0.9.87",
+      "source": "docs/LOAD_TESTING.md, HF01"
+    },
+    "cluster": {
+      "scale_factor_floor": 1.8,
+      "source": "deploy/cluster-scale-load-test.py"
+    },
+    "hmi": {
+      "lighthouse_performance": null,
+      "lighthouse_accessibility": null,
+      "mimic_fps": null,
+      "note": "Not gated yet \u2014 S21 targets"
+    },
+    "federation": {
+      "selective_sync_pct": 55,
+      "chaos_automated": false,
+      "bl": "BL-119, BL-120"
+    },
+    "semantic": {
+      "time_to_first_dashboard_min": null,
+      "note": "S23 target <= 5 min"
+    }
+  }
+}

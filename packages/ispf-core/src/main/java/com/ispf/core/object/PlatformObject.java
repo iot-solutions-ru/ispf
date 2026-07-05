@@ -26,6 +26,7 @@ public class PlatformObject {
     private volatile int sortOrder;
     private volatile boolean bindingAuditEnabled;
     private volatile boolean functionAuditEnabled;
+    private volatile boolean eventJournalEnabled;
     private final Instant createdAt;
     private volatile long revision;
     private volatile String lastChangedBy;
@@ -202,6 +203,14 @@ public class PlatformObject {
 
     public void setFunctionAuditEnabled(boolean functionAuditEnabled) {
         this.functionAuditEnabled = functionAuditEnabled;
+    }
+
+    public boolean eventJournalEnabled() {
+        return eventJournalEnabled;
+    }
+
+    public void setEventJournalEnabled(boolean eventJournalEnabled) {
+        this.eventJournalEnabled = eventJournalEnabled;
     }
 
     public Map<String, Variable> variables() {

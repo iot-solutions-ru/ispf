@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(properties = {
+        "ispf.event-journal.enabled=true",
         "ispf.event-journal.async-enabled=true",
         "ispf.event-journal.batch-size=5",
         "ispf.event-journal.flush-interval-ms=25",
@@ -44,8 +45,12 @@ class EventJournalAsyncWriterIntegrationTest {
     @Autowired
     private EventHistoryRepository eventHistoryRepository;
 
+    @Autowired
+    private com.ispf.server.object.ObjectManager objectManager;
+
     @Test
     void fireReturnsIdImmediatelyAndPersistsAsync() throws Exception {
+        objectManager.updateEventJournalEnabled(DEMO_DEVICE, true);
         DataSchema schema = DataSchema.builder("thresholdPayload")
                 .field("value", FieldType.DOUBLE)
                 .field("unit", FieldType.STRING)

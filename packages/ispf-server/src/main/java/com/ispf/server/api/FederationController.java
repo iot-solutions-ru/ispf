@@ -184,6 +184,58 @@ public class FederationController {
     public CatalogSyncPreviewResponse previewCatalogSync(Authentication authentication, @PathVariable UUID id) {
         federationAccessService.requireAdmin(authentication);
         FederationCatalogService.CatalogSyncPreview preview = federationCatalogService.previewCatalogSync(id);
+        return toCatalogSyncPreviewResponse(preview);
+    }
+
+    @GetMapping("/peers/{id}/subtree-sync-preview")
+    public CatalogSyncPreviewResponse previewSubtreeSync(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @RequestParam String remoteSubtreePath,
+            @RequestParam(required = false) String localParentPath
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        FederationCatalogService.CatalogSyncPreview preview = federationCatalogService.previewSubtreeSync(
+                id,
+                remoteSubtreePath,
+                localParentPath
+        );
+        return toCatalogSyncPreviewResponse(preview);
+    }
+
+    @PostMapping("/peers/{id}/sync-subtree")
+    public SyncCatalogResponse syncSubtree(
+            Authentication authentication,
+            @PathVariable UUID id,
+            @Valid @RequestBody SubtreeSyncRequest request
+    ) {
+        federationAccessService.requireAdmin(authentication);
+        List<FederationCatalogService.CatalogSyncResolution> resolutions = request.resolutions() != null
+                ? request.resolutions().stream()
+                .map(item -> new FederationCatalogService.CatalogSyncResolution(
+                        item.localPath(),
+                        item.action()
+                ))
+                .toList()
+                : List.of();
+        FederationCatalogService.SyncResult result = federationCatalogService.syncSubtree(
+                id,
+                request.remoteSubtreePath(),
+                request.localParentPath(),
+                resolutions
+        );
+        return new SyncCatalogResponse(
+                result.localRoot(),
+                result.created(),
+                result.updated(),
+                result.remoteCount(),
+                result.skipped()
+        );
+    }
+
+    private CatalogSyncPreviewResponse toCatalogSyncPreviewResponse(
+            FederationCatalogService.CatalogSyncPreview preview
+    ) {
         return new CatalogSyncPreviewResponse(
                 preview.localRoot(),
                 preview.remoteCount(),
@@ -420,6 +472,13 @@ public class FederationController {
     }
 
     public record CatalogSyncRequest(List<CatalogSyncResolutionRequest> resolutions) {
+    }
+
+    public record SubtreeSyncRequest(
+            String remoteSubtreePath,
+            String localParentPath,
+            List<CatalogSyncResolutionRequest> resolutions
+    ) {
     }
 
     public record CatalogSyncResolutionRequest(

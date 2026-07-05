@@ -298,6 +298,7 @@ public class ObjectManager {
         node.setAppliedModelIds(mapper.readAppliedModelIds(entity.getAppliedModelIdsJson()));
         node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
         node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
+        node.setEventJournalEnabled(entity.isEventJournalEnabled());
         for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
             node.addEvent(event);
         }
@@ -371,6 +372,27 @@ public class ObjectManager {
 
     public boolean isFunctionAuditEnabled(String path) {
         return objectTree.findByPath(path).map(PlatformObject::functionAuditEnabled).orElse(false);
+    }
+
+    @Transactional
+    public PlatformObject updateEventJournalEnabled(String path, boolean enabled) {
+        assertExpectedRevision(path);
+        PlatformObject node = objectTree.require(path);
+        long revisionBefore = node.revision();
+        boolean before = node.eventJournalEnabled();
+        node.setEventJournalEnabled(enabled);
+        persistNodeConfig(
+                node,
+                "UPDATE_EVENT_JOURNAL",
+                "eventJournalEnabled",
+                mapper.auditDiff(before, enabled)
+        );
+        publishConfigChange(ObjectChangeType.UPDATED, path, revisionBefore);
+        return node;
+    }
+
+    public boolean isEventJournalEnabled(String path) {
+        return objectTree.findByPath(path).map(PlatformObject::eventJournalEnabled).orElse(false);
     }
 
     @Transactional

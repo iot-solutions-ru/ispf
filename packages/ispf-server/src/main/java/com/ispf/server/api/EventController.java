@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/events")
@@ -33,6 +34,13 @@ public class EventController {
             @RequestParam(defaultValue = "50") int limit
     ) {
         return eventService.list(objectPath, limit);
+    }
+
+    @GetMapping("/journal-status")
+    public Map<String, Object> journalStatus(
+            @RequestParam(required = false) String objectPath
+    ) {
+        return eventService.journalStatus(objectPath);
     }
 
     @PostMapping("/fire")

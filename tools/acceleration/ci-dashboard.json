@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-07-04T23:58:16Z",
+  "workflows": [
+    {
+      "workflow": "ci.yml",
+      "label": "PR pr-fast",
+      "sample_size": 19,
+      "success_rate_pct": 15.8,
+      "avg_wall_min": 30.4,
+      "last_conclusion": "failure",
+      "last_title": "docs(deploy): VPS event-journal max-load bench and prod baseline"
+    },
+    {
+      "workflow": "ci-nightly.yml",
+      "label": "Nightly full",
+      "sample_size": 0,
+      "success_rate_pct": null,
+      "avg_wall_min": null,
+      "last_conclusion": null,
+      "last_title": null
+    },
+    {
+      "workflow": "load-test.yml",
+      "label": "Load gate",
+      "sample_size": 2,
+      "success_rate_pct": 50.0,
+      "avg_wall_min": 4.1,
+      "last_conclusion": "failure",
+      "last_title": "Load test gate"
+    },
+    {
+      "workflow": "cluster-load-test.yml",
+      "label": "Cluster gate",
+      "sample_size": 0,
+      "success_rate_pct": null,
+      "avg_wall_min": null,
+      "last_conclusion": null,
+      "last_title": null
+    },
+    {
+      "workflow": "e2e-live.yml",
+      "label": "E2E live",
+      "sample_size": 20,
+      "success_rate_pct": 0.0,
+      "avg_wall_min": 0.0,
+      "last_conclusion": "failure",
+      "last_title": "feat(server): cluster HA, storage auto-schema, and lab deploy tooling"
+    },
+    {
+      "workflow": "driver-interop.yml",
+      "label": "Driver interop",
+      "sample_size": 12,
+      "success_rate_pct": 100.0,
+      "avg_wall_min": 3.3,
+      "last_conclusion": "success",
+      "last_title": "fix(server): rebase PR #23 \u0432\u0402\u201d deps, SQL guard, transactional fixes"
+    }
+  ]
+}

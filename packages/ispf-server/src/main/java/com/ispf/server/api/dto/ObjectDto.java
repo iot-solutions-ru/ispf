@@ -42,7 +42,9 @@ public record ObjectDto(
         /** When true, CEL/SQL binding invocations for this object are written to binding_invoke_audit. */
         boolean bindingAuditEnabled,
         /** When true, function invocations for this object are written to function_invoke_audit. */
-        boolean functionAuditEnabled
+        boolean functionAuditEnabled,
+        /** When true, fired events for this object are written to event_history. */
+        boolean eventJournalEnabled
 ) {
     public static ObjectDto from(PlatformObject node) {
         return from(node, null, List.of());
@@ -98,7 +100,8 @@ public record ObjectDto(
                 null,
                 null,
                 node.bindingAuditEnabled(),
-                node.functionAuditEnabled()
+                node.functionAuditEnabled(),
+                node.eventJournalEnabled()
         );
     }
 
@@ -128,7 +131,8 @@ public record ObjectDto(
                 driverStatus,
                 driverConnected,
                 bindingAuditEnabled,
-                functionAuditEnabled
+                functionAuditEnabled,
+                eventJournalEnabled
         );
     }
 
@@ -174,7 +178,8 @@ public record ObjectDto(
                 null,
                 null,
                 member.bindingAuditEnabled(),
-                member.functionAuditEnabled()
+                member.functionAuditEnabled(),
+                member.eventJournalEnabled()
         );
     }
 
@@ -203,6 +208,7 @@ public record ObjectDto(
                 true,
                 null,
                 null,
+                false,
                 false,
                 false
         );

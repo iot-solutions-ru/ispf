@@ -60,6 +60,7 @@ public class ObjectNodeEntity {
     @Column(name = "binding_audit_enabled", nullable = false)
     private boolean bindingAuditEnabled;
     private boolean functionAuditEnabled;
+    private boolean eventJournalEnabled;
 
     public String getId() {
         return id;
@@ -187,5 +188,13 @@ public class ObjectNodeEntity {
 
     public void setFunctionAuditEnabled(boolean functionAuditEnabled) {
         this.functionAuditEnabled = functionAuditEnabled;
+    }
+
+    public boolean isEventJournalEnabled() {
+        return eventJournalEnabled;
+    }
+
+    public void setEventJournalEnabled(boolean eventJournalEnabled) {
+        this.eventJournalEnabled = eventJournalEnabled;
     }
 }

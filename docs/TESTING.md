@@ -108,12 +108,12 @@ JDBC driver ownership и failover между репликами:
 Multi-replica compose smoke (Docker):
 
 ```bash
-bash deploy/cluster-quickstart.sh
-curl -s http://127.0.0.1:8088/api/v1/info | jq .replicaId   # repeat — different replicaId (round-robin)
-docker stop deploy-ispf-server-2-1   # REST via nginx must stay 200
+bash deploy/cluster-quickstart.sh          # build + up + smoke
+bash deploy/cluster-smoke-test.sh          # round-robin, failover, driver reclaim
+python deploy/cluster-scale-load-test.py   # 1 vs 3 replica throughput (floor 1.8×)
 ```
 
-CI: workflow [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) (ownership tests + single-node baseline; full 1 vs 3 replica gate on Docker host).
+CI: workflow [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) — JDBC ownership (weekly) + compose smoke/scale (`workflow_dispatch`).
 
 ## CI (рекомендация)
 

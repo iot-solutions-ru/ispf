@@ -10,7 +10,7 @@ public class FunctionProperties {
 
     public static class Audit {
         /** Master kill switch — when false, no function audit writes regardless of per-object flags. */
-        private boolean enabled = true;
+        private boolean enabled = false;
         /** {@code errors} or {@code all}. */
         private String mode = "errors";
         /** 0.0–1.0 sampling when enabled (1.0 = every matching record). */

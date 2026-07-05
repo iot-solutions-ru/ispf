@@ -1,6 +1,6 @@
 # Драйверы устройств
 
-Каталог кандидатов на новые драйверы (roadmap): [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap) (REQ-PF-14).
+Каталог кандидатов на новые драйверы (roadmap): [ROADMAP.md § PF-14](ROADMAP.md#часть-a--req-pf-application-platform-закрыт), полный список ниже (REQ-PF-14).
 
 ## Зрелость драйверов
 
@@ -11,7 +11,7 @@
 | **stub** | TCP/session check или connectivity shell (v0.1) |
 | **simulator** | Virtual/profile-based (см. PF-09) |
 
-Многие записи каталога REQ-PF-14 помечены как stub в [PLATFORM_DEVELOPER_BACKLOG.md §10](PLATFORM_DEVELOPER_BACKLOG.md#10-каталог-драйверов-устройств-roadmap).
+Многие записи каталога REQ-PF-14 помечены как stub — см. таблицу ниже и [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).
 
 Матрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`.
 
@@ -392,7 +392,7 @@ Loopback tests (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTest`, `
 
 Отдельный хвост: native STUB promotion — см. § Stub promotion ниже.
 
-См. [ROADMAP.md § Phase 17.4](ROADMAP.md#phase-17--post-baseline-hardening-v080), [GAP_REGISTRY.md](GAP_REGISTRY.md).
+См. [ROADMAP.md § Phase 17.4](ROADMAP.md#phase-17--post-baseline-hardening).
 
 Полный список `driverId` в `DriverCatalog`:
 

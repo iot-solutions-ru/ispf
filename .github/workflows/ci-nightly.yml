@@ -1,0 +1,164 @@
+name: CI nightly (full)
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Daily 02:00 UTC — full regression (S20-01)
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-nightly
+  cancel-in-progress: false
+
+jobs:
+  backend-full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build AI context pack
+        run: ISPF_VERSION=0.9.2 python tools/ai-pack/build.py
+
+      - name: License compliance audit
+        run: node tools/license-audit/check-all.mjs
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Test core platform modules
+        run: >
+          ./gradlew
+          :packages:ispf-core:test
+          :packages:ispf-expression:test
+          :packages:ispf-plugin-model:test
+          :packages:ispf-plugin-workflow:test
+          :packages:ispf-server:test
+          --no-daemon
+          -Dorg.gradle.workers.max=1
+          -Dispf.test.skipLoad=true
+
+      - name: Scale gate — list_devices p99
+        env:
+          ISPF_LOAD_P99_CEILING_MS: 5000
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.api.ListDevicesLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee nightly-list-devices.log
+
+      - name: Scale gate — events fire/list p99
+        env:
+          ISPF_LOAD_P99_CEILING_MS: 5000
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.api.EventFireLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee nightly-event-fire.log
+
+      - name: Upload backend logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-backend-${{ github.run_id }}
+          path: nightly-*.log
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Stop Gradle daemon
+        if: always()
+        run: ./gradlew --stop || true
+
+  web-console-full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web-console/package-lock.json
+
+      - name: License compliance audit
+        run: node tools/license-audit/check-all.mjs
+
+      - name: Build ISA P&ID symbol pack
+        run: |
+          cd tools/symbol-pack-isa
+          npm ci
+          npm test
+          npm run build
+
+      - name: Unit, e2e, preview, build
+        working-directory: apps/web-console
+        run: |
+          npm ci
+          npm test
+          npm run i18n:check
+          npx playwright install chromium --with-deps
+          npm run test:e2e
+          npm run build
+          npm run test:e2e:preview
+          test -f dist/legal/LICENSE
+          test -f dist/legal/THIRD_PARTY_NOTICES.md
+
+      - name: HMI quality gates (S21)
+        working-directory: apps/web-console
+        run: |
+          npm run bundle:budget
+          npm run lighthouse:ci
+          npm run test:quality
+
+  ci-dashboard:
+    needs: [backend-full, web-console-full, cluster-ownership]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate CI dashboard
+        run: python tools/acceleration/ci-dashboard.py
+      - name: Upload CI dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-dashboard-${{ github.run_id }}
+          path: |
+            docs/CI_DASHBOARD.md
+            tools/acceleration/ci-dashboard.json
+          retention-days: 30
+
+  cluster-ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: chmod +x gradlew
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+      - name: Cluster ownership tests
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.driver.DriverOwnershipServiceTest \
+            --tests com.ispf.server.driver.ClusterFailoverIntegrationTest \
+            --no-daemon

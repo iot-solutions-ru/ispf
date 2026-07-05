@@ -115,5 +115,5 @@ Agent may add `query_haystack` delegating to `HaystackQueryService`; not require
 ## References
 
 - [ADR-0021](0021-haystack-semantic-overlay.md)
-- BL-101, BL-102, BL-103 — [EXCELLENCE_BACKLOG.md](../EXCELLENCE_BACKLOG.md)
+- BL-101, BL-102, BL-103 — [ROADMAP.md](../ROADMAP.md#часть-e--полный-реестр-bl-01139)
 - `HaystackExportService`, `HaystackFilterParser`, `HaystackQueryService`
