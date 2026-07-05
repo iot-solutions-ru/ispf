@@ -127,6 +127,18 @@ public final class FixtureBlueprintDefinitions {
                                 )
                         ),
                         BlueprintVariableDefinition.of(
+                                "instanceModelName",
+                                "INSTANCE type name for auto-created gateway child sensors",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true,
+                                DataRecord.single(
+                                        STRING_VALUE_SCHEMA,
+                                        Map.of("value", FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
+                                )
+                        ),
+                        BlueprintVariableDefinition.of(
                                 "driverId",
                                 "Attached driver plugin id",
                                 "driver",
@@ -278,6 +290,43 @@ public final class FixtureBlueprintDefinitions {
                 List.of(),
                 List.of(),
                 Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    public static BlueprintDefinition buildMqttGatewaySensorInstanceModel() {
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL,
+                "MQTT gateway child sensor — INSTANCE type (instantiate under gateway.sensors)",
+                BlueprintType.INSTANCE,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        BlueprintVariableDefinition.withHistory(
+                                "temperature",
+                                "Current temperature reading",
+                                "telemetry",
+                                TEMPERATURE_SCHEMA,
+                                true,
+                                false,
+                                DataRecord.single(TEMPERATURE_SCHEMA, Map.of("value", 22.0, "unit", "C"))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "threshold",
+                                "Alarm threshold in Celsius",
+                                "config",
+                                THRESHOLD_SCHEMA,
+                                true,
+                                true,
+                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
+                        )
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of("unit", "C"),
                 Instant.now(),
                 Instant.now()
         );

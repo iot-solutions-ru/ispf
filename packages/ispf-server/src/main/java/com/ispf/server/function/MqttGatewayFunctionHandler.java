@@ -6,6 +6,7 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectManager;
@@ -49,15 +50,18 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
     private final ObjectManager objectManager;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final ObjectChangePublicationService publicationService;
+    private final PlatformScriptBridge platformScriptBridge;
 
     public MqttGatewayFunctionHandler(
             ObjectManager objectManager,
             DeviceTelemetryPolicyService telemetryPolicyService,
-            ObjectChangePublicationService publicationService
+            ObjectChangePublicationService publicationService,
+            PlatformScriptBridge platformScriptBridge
     ) {
         this.objectManager = objectManager;
         this.telemetryPolicyService = telemetryPolicyService;
         this.publicationService = publicationService;
+        this.platformScriptBridge = platformScriptBridge;
     }
 
     @Override
@@ -105,9 +109,18 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
             return failure("topic does not match routing pattern: " + topic);
         }
 
-        String childPath = sensorParentPath + "." + sensorNamePrefix + index.get();
-        if (objectManager.tree().findByPath(childPath).isEmpty()) {
-            return failure("child sensor not found: " + childPath);
+        String instanceModelName = stringConfig(gateway, "instanceModelName")
+                .orElse(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL);
+        String instanceName = sensorNamePrefix + index.get();
+        final String childPath;
+        try {
+            childPath = platformScriptBridge.instantiateModelIfMissing(
+                    instanceModelName,
+                    sensorParentPath,
+                    instanceName
+            );
+        } catch (IllegalArgumentException ex) {
+            return failure(ex.getMessage());
         }
 
         Optional<Double> parsed = parseNumeric(raw);

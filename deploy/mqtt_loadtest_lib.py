@@ -12,6 +12,7 @@ import requests
 PREFIX = "loadtest-mqtt"
 GATEWAY_NAME = "loadtest-mqtt-gateway"
 GATEWAY_MODEL_NAME = "mqtt-gateway-v1"
+GATEWAY_SENSOR_MODEL_NAME = "mqtt-gateway-sensor-v1"
 MODEL_NAME = "mqtt-sensor-v1"
 SENSOR_NAME_PREFIX = "loadtest-mqtt-sensor-"
 TOPIC_PREFIX = "ispf/loadtest"
@@ -320,6 +321,18 @@ MQTT_GATEWAY_MODEL_BODY: dict = {
             },
         },
         {
+            "name": "instanceModelName",
+            "description": "INSTANCE type name for gateway child sensors",
+            "group": "config",
+            "schema": _STRING_VALUE_SCHEMA,
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": _STRING_VALUE_SCHEMA,
+                "rows": [{"value": GATEWAY_SENSOR_MODEL_NAME}],
+            },
+        },
+        {
             "name": "driverId",
             "description": "Attached driver plugin id",
             "group": "driver",
@@ -383,6 +396,120 @@ MQTT_GATEWAY_MODEL_BODY: dict = {
     "bindings": [],
     "parameters": {},
 }
+
+MQTT_GATEWAY_SENSOR_INSTANCE_BODY: dict = {
+    "name": GATEWAY_SENSOR_MODEL_NAME,
+    "description": "MQTT gateway child sensor — INSTANCE type (instantiate under gateway.sensors)",
+    "targetObjectType": "DEVICE",
+    "suitabilityExpression": "",
+    "variables": [
+        {
+            "name": "temperature",
+            "description": "Current temperature reading",
+            "group": "telemetry",
+            "schema": {
+                "name": "temperature",
+                "fields": [
+                    {"name": "value", "type": "DOUBLE"},
+                    {"name": "unit", "type": "STRING"},
+                ],
+            },
+            "readable": True,
+            "writable": True,
+            "historyEnabled": True,
+            "defaultValue": {
+                "schema": {
+                    "name": "temperature",
+                    "fields": [
+                        {"name": "value", "type": "DOUBLE"},
+                        {"name": "unit", "type": "STRING"},
+                    ],
+                },
+                "rows": [{"value": 22.0, "unit": "C"}],
+            },
+        },
+        {
+            "name": "threshold",
+            "description": "Alarm threshold in Celsius",
+            "group": "config",
+            "schema": {"name": "threshold", "fields": [{"name": "value", "type": "DOUBLE"}]},
+            "readable": True,
+            "writable": True,
+            "defaultValue": {
+                "schema": {"name": "threshold", "fields": [{"name": "value", "type": "DOUBLE"}]},
+                "rows": [{"value": 35.0}],
+            },
+        },
+    ],
+    "events": [],
+    "functions": [],
+    "bindings": [],
+    "parameters": {"unit": "C"},
+}
+
+
+def find_instance_type_id(client: Client, blueprint_name: str) -> str | None:
+    r = client.request("GET", f"/api/v1/instance-types/by-name/{quote(blueprint_name, safe='')}")
+    if r.status_code == 200:
+        return r.json().get("id")
+    r = client.request("GET", "/api/v1/instance-types")
+    if r.status_code == 200:
+        for item in r.json():
+            if item.get("name") == blueprint_name:
+                return item.get("id")
+    return None
+
+
+def ensure_instance_type_blueprint(client: Client, blueprint_name: str, body: dict) -> str:
+    existing = find_instance_type_id(client, blueprint_name)
+    if existing:
+        return existing
+    payload = {k: v for k, v in body.items() if k != "type"}
+    payload["name"] = blueprint_name
+    create = client.request("POST", "/api/v1/instance-types", json=payload)
+    if create.status_code == 409 or create.status_code == 403:
+        existing = find_instance_type_id(client, blueprint_name)
+        if existing:
+            return existing
+    if create.status_code >= 400:
+        raise RuntimeError(
+            f"create instance type {blueprint_name}: HTTP {create.status_code} {create.text[:200]}"
+        )
+    return create.json()["id"]
+
+
+def instantiate_instance_type(
+    client: Client,
+    instance_type_id: str,
+    parent_path: str,
+    instance_name: str,
+) -> str:
+    r = client.request(
+        "POST",
+        f"/api/v1/instance-types/{instance_type_id}/instantiate",
+        json={
+            "parentPath": parent_path,
+            "instanceName": instance_name,
+            "parameters": {},
+        },
+    )
+    if r.status_code >= 400:
+        raise RuntimeError(
+            f"instantiate {instance_name} under {parent_path}: HTTP {r.status_code} {r.text[:200]}"
+        )
+    path = r.json().get("path")
+    if not path:
+        path = f"{parent_path}.{instance_name}"
+    return path
+
+
+def ensure_mqtt_gateway_sensor_instance_type(client: Client) -> str:
+    """Register mqtt-gateway-sensor-v1 INSTANCE type when fixtures are disabled."""
+    return ensure_instance_type_blueprint(
+        client,
+        GATEWAY_SENSOR_MODEL_NAME,
+        MQTT_GATEWAY_SENSOR_INSTANCE_BODY,
+    )
 
 
 def ensure_mqtt_sensor_model(client: Client) -> str:
@@ -988,7 +1115,7 @@ def ensure_gateway_tree(
     device_count: int,
     pad: int,
     gateway_model_id: str,
-    sensor_model_id: str,
+    instance_type_id: str,
     child_coalesce_ms: int | None = None,
 ) -> tuple[str, list[str]]:
     delete_gateway_tree(client)
@@ -1006,20 +1133,12 @@ def ensure_gateway_tree(
     apply_relative_blueprint(client, gateway_model_id, gw)
     put_gateway_binding_rules(client, gw)
     _set_string_variable(client, gw, "sensorParentPath", sensors_parent)
+    _set_string_variable(client, gw, "instanceModelName", GATEWAY_SENSOR_MODEL_NAME)
 
     sensor_paths: list[str] = []
     for index in range(1, device_count + 1):
         name = sensor_name(index, pad)
-        path = _create_object(
-            client,
-            sensors_parent,
-            name,
-            "DEVICE",
-            f"MQTT loadtest sensor {index}",
-            "MQTT gateway child sensor (no driver)",
-        )
-        apply_relative_blueprint(client, sensor_model_id, path)
-        put_binding_rules(client, path)
+        path = instantiate_instance_type(client, instance_type_id, sensors_parent, name)
         configure_child_telemetry_policy(client, path, telemetry_coalesce_ms=child_coalesce_ms)
         sensor_paths.append(path)
     return gw, sensor_paths
@@ -1133,13 +1252,13 @@ def seed_mqtt_gateway_devices(
     """1× mqtt gateway + N child sensors (orchestrator load test)."""
     pad = max(5, len(str(device_count)))
     gateway_model_id = ensure_mqtt_gateway_model(client)
-    sensor_model_id = ensure_mqtt_sensor_model(client)
+    instance_type_id = ensure_mqtt_gateway_sensor_instance_type(client)
     gw, sensor_paths = ensure_gateway_tree(
         client,
         device_count,
         pad,
         gateway_model_id,
-        sensor_model_id,
+        instance_type_id,
         child_coalesce_ms=telemetry_coalesce_ms,
     )
 
@@ -1154,7 +1273,7 @@ def seed_mqtt_gateway_devices(
         poll_ms=poll_ms,
         auto_start=False,
     )
-    print(f"  gateway {gw}: 1 mqtt driver, {device_count} child sensors, orchestrator dispatchTelemetry")
+    print(f"  gateway {gw}: 1 mqtt driver, {device_count} INSTANCE child sensors under {gateway_sensors_path()}")
 
     if start_mqtt_driver(client, gw):
         print(f"  mqtt gateway driver started (broker must be reachable from ISPF server)")

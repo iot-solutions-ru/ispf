@@ -33,7 +33,10 @@ EMQTT_BENCH_LABEL="${EMQTT_BENCH_LABEL:-ispf.emqtt-bench}"
 PAYLOAD_TEMPLATE="$(mktemp /tmp/ispf-emqtt-payload.XXXXXX)"
 
 prepare_payload_template() {
-  if [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]]; then
+  if [[ "${GATEWAY_NUMERIC_TIMESTAMP:-false}" == "true" ]]; then
+    printf '%%TIMESTAMPMS%%' >"$PAYLOAD_TEMPLATE"
+    PAYLOAD_SIZE=13
+  elif [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]]; then
     printf '25.0' >"$PAYLOAD_TEMPLATE"
     PAYLOAD_SIZE=4
   else
@@ -89,7 +92,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Historian load tests: plain numeric MQTT body via multi-container template mode.
-if [[ "${NUMERIC_PAYLOAD:-false}" == "true" ]]; then
+if [[ "${NUMERIC_PAYLOAD:-false}" == "true" || "${GATEWAY_NUMERIC_TIMESTAMP:-false}" == "true" ]]; then
   SINGLE_CONTAINER=false
 fi
 

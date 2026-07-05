@@ -1,9 +1,10 @@
 package com.ispf.server.function;
 
 import com.ispf.core.model.DataRecord;
-import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.application.script.PlatformScriptBridge;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
@@ -36,6 +37,9 @@ class MqttGatewayFunctionHandlerTest {
 
     @Mock
     private ObjectChangePublicationService publicationService;
+
+    @Mock
+    private PlatformScriptBridge platformScriptBridge;
 
     @Test
     void extractIndexFromLoadtestTopic() {
@@ -89,13 +93,18 @@ class MqttGatewayFunctionHandlerTest {
     }
 
     private MqttGatewayFunctionHandler newHandlerWithTree() {
-        ObjectTree tree = new ObjectTree();
         PlatformObject gateway = new PlatformObject("gateway", GATEWAY, ObjectType.DEVICE, "Gateway", "", null);
-        PlatformObject child = new PlatformObject("child", CHILD, ObjectType.DEVICE, "Sensor", "", null);
-        tree.register(gateway);
-        tree.register(child);
         when(objectManager.require(GATEWAY)).thenReturn(gateway);
-        when(objectManager.tree()).thenReturn(tree);
-        return new MqttGatewayFunctionHandler(objectManager, telemetryPolicyService, publicationService);
+        when(platformScriptBridge.instantiateModelIfMissing(
+                eq(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL),
+                eq(GATEWAY + ".sensors"),
+                eq("loadtest-mqtt-sensor-00001")
+        )).thenReturn(CHILD);
+        return new MqttGatewayFunctionHandler(
+                objectManager,
+                telemetryPolicyService,
+                publicationService,
+                platformScriptBridge
+        );
     }
 }

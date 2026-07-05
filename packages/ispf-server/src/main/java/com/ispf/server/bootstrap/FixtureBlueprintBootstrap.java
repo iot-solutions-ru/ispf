@@ -29,6 +29,8 @@ import java.util.UUID;
 public class FixtureBlueprintBootstrap {
 
     public static final String MQTT_SENSOR_MODEL = "mqtt-sensor-v1";
+    /** INSTANCE type for MQTT gateway child sensors (instantiate under gateway.sensors). */
+    public static final String MQTT_GATEWAY_SENSOR_MODEL = "mqtt-gateway-sensor-v1";
     public static final String MQTT_GATEWAY_MODEL = "mqtt-gateway-v1";
     public static final String MQTT_METER_BUS_MODEL = "mqtt-meter-bus-v1";
     public static final String METERS_MODEL = "Meters";
@@ -59,6 +61,7 @@ public class FixtureBlueprintBootstrap {
 
     public static final List<String> FIXTURE_MODEL_NAMES = List.of(
             MQTT_SENSOR_MODEL,
+            MQTT_GATEWAY_SENSOR_MODEL,
             MQTT_GATEWAY_MODEL,
             MQTT_METER_BUS_MODEL,
             METERS_MODEL,
@@ -129,6 +132,9 @@ public class FixtureBlueprintBootstrap {
         }
         if (blueprintRegistry.findByName(MQTT_GATEWAY_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewayModel());
+        }
+        if (blueprintRegistry.findByName(MQTT_GATEWAY_SENSOR_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel());
         }
         if (blueprintRegistry.findByName(DEVICE_DRIVER_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildDeviceDriverModel());

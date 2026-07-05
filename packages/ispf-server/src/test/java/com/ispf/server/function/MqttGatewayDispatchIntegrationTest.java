@@ -4,9 +4,12 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
+import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
@@ -48,6 +51,12 @@ class MqttGatewayDispatchIntegrationTest {
     private ObjectTemplateService objectTemplateService;
 
     @Autowired
+    private BlueprintRegistry blueprintRegistry;
+
+    @Autowired
+    private BlueprintApplicationService blueprintApplicationService;
+
+    @Autowired
     private FunctionService functionService;
 
     @Autowired
@@ -61,10 +70,9 @@ class MqttGatewayDispatchIntegrationTest {
     }
 
     @Test
-    void dispatchTelemetryRoutesPayloadToChildSensor() throws Exception {
+    void dispatchTelemetryInstantiatesInstanceTypeAndRoutesPayload() throws Exception {
         ensureGatewayTree();
         objectTemplateService.applyTemplate(GATEWAY, MqttGatewayFunctionHandler.MODEL_NAME);
-        objectTemplateService.applyTemplate(SENSOR, "mqtt-sensor-v1");
 
         objectManager.setVariableValue(
                 GATEWAY,
@@ -74,6 +82,16 @@ class MqttGatewayDispatchIntegrationTest {
                         Map.of("value", SENSORS)
                 )
         );
+        objectManager.setVariableValue(
+                GATEWAY,
+                "instanceModelName",
+                DataRecord.single(
+                        DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
+                        Map.of("value", FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
+                )
+        );
+
+        assertThat(objectManager.tree().findByPath(SENSOR)).isEmpty();
 
         DataRecord result = functionService.invoke(
                 GATEWAY,
@@ -85,12 +103,50 @@ class MqttGatewayDispatchIntegrationTest {
         );
 
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
+        assertThat(result.firstRow().get("routedPath")).isEqualTo(SENSOR);
+        telemetryCoalescer.flushNow();
+        TimeUnit.MILLISECONDS.sleep(100);
+
+        var sensorNode = objectManager.require(SENSOR);
+        assertThat(sensorNode.templateId()).contains(
+                blueprintRegistry.requireByName(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id()
+        );
+        var temperature = sensorNode.getVariable("temperature").orElseThrow().value().orElseThrow();
+        assertThat(temperature.firstRow().get("value")).isEqualTo(23.7);
+        assertThat(temperature.firstRow().get("unit")).isEqualTo("C");
+    }
+
+    @Test
+    void preInstantiatedGatewaySensorAcceptsDispatch() throws Exception {
+        ensureGatewayTree();
+        objectTemplateService.applyTemplate(GATEWAY, MqttGatewayFunctionHandler.MODEL_NAME);
+        objectManager.setVariableValue(
+                GATEWAY,
+                "sensorParentPath",
+                DataRecord.single(
+                        DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
+                        Map.of("value", SENSORS)
+                )
+        );
+
+        String modelId = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id();
+        blueprintApplicationService.instantiateWithRules(modelId, SENSORS, "loadtest-mqtt-sensor-00001", Map.of());
+
+        DataRecord result = functionService.invoke(
+                GATEWAY,
+                MqttGatewayFunctionHandler.FUNCTION_NAME,
+                DataRecord.single(
+                        INGRESS_SCHEMA,
+                        Map.of("topic", "ispf/loadtest/00001/temperature", "raw", "19.5")
+                )
+        );
+
+        assertThat(result.firstRow().get("ok")).isEqualTo(true);
         telemetryCoalescer.flushNow();
         TimeUnit.MILLISECONDS.sleep(100);
 
         var temperature = objectManager.require(SENSOR).getVariable("temperature").orElseThrow().value().orElseThrow();
-        assertThat(temperature.firstRow().get("value")).isEqualTo(23.7);
-        assertThat(temperature.firstRow().get("unit")).isEqualTo("C");
+        assertThat(temperature.firstRow().get("value")).isEqualTo(19.5);
     }
 
     private void ensureGatewayTree() {
@@ -106,9 +162,6 @@ class MqttGatewayDispatchIntegrationTest {
         }
         if (objectManager.tree().findByPath(SENSORS).isEmpty()) {
             objectManager.create(GATEWAY, "sensors", ObjectType.CUSTOM, "Sensors", "", null);
-        }
-        if (objectManager.tree().findByPath(SENSOR).isEmpty()) {
-            objectManager.create(SENSORS, "loadtest-mqtt-sensor-00001", ObjectType.DEVICE, "Sensor 01", "", null);
         }
     }
 }
