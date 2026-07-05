@@ -11,6 +11,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -130,6 +132,26 @@ class ObjectChangePublicationServiceTest {
         boolean published = service.publishStructureChange(template);
 
         assertThat(published).isFalse();
+    }
+
+    @Test
+    void defersStructureChangeUntilAfterCommit() {
+        ObjectChangeEvent template = ObjectChangeEvent.of(ObjectChangeType.CREATED, PATH);
+        when(structureSubscriptionRegistry.interest(ObjectChangeType.CREATED, PATH))
+                .thenReturn(new StructureChangeInterest(false, true, false, true));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.publishStructureChangeAfterCommit(template);
+            verify(eventPublisher, never()).publishEvent(any());
+
+            for (TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
+                synchronization.afterCommit();
+            }
+            verify(eventPublisher).publishEvent(template);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     @Test

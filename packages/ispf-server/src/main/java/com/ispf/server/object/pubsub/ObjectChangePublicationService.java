@@ -6,6 +6,8 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Instant;
 
@@ -119,6 +121,23 @@ public class ObjectChangePublicationService {
         }
         eventPublisher.publishEvent(template);
         return true;
+    }
+
+    /**
+     * Defers structural fan-out until the DB transaction commits so cluster replicas can
+     * reload the node from the shared database when they receive the NATS event.
+     */
+    public void publishStructureChangeAfterCommit(ObjectChangeEvent template) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            publishStructureChange(template);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                publishStructureChange(template);
+            }
+        });
     }
 
     private boolean publishLegacyVariableChange(String objectPath, String variableName, Instant observedAt) {

@@ -172,6 +172,14 @@ public class ObjectManager {
     }
 
     public PlatformObject require(String path) {
+        Optional<PlatformObject> found = objectTree.findByPath(path);
+        if (found.isPresent()) {
+            return found.get();
+        }
+        ClusterPlatformBootstrapService cluster = clusterBootstrapService.getIfAvailable();
+        if (cluster != null && cluster.isClusterActive()) {
+            syncPathFromDatabase(path);
+        }
         return objectTree.require(path);
     }
 
@@ -989,7 +997,7 @@ public class ObjectManager {
                 }
             }
             case EVENT_FIRED -> publicationService.publishEventFired(event.path(), event.variableName());
-            case CREATED, UPDATED, DELETED -> publicationService.publishStructureChange(event);
+            case CREATED, UPDATED, DELETED -> publicationService.publishStructureChangeAfterCommit(event);
         }
     }
 
