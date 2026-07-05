@@ -73,8 +73,24 @@ export const TREE_ICON_CATALOG: TreeIconDefinition[] = [
 
 const ICON_IDS = new Set<string>(TREE_ICON_CATALOG.map((item) => item.id));
 
+/** Legacy uiIcon values persisted before Model → Blueprint rename. */
+const LEGACY_ICON_ALIASES: Record<string, TreeIconKind> = {
+  model: "blueprint",
+};
+
 export function isTreeIconId(value: string | null | undefined): value is TreeIconKind {
   return Boolean(value && ICON_IDS.has(value));
+}
+
+export function normalizeIconId(value: string | null | undefined): TreeIconKind | null {
+  if (!value) {
+    return null;
+  }
+  const aliased = LEGACY_ICON_ALIASES[value];
+  if (aliased) {
+    return aliased;
+  }
+  return isTreeIconId(value) ? value : null;
 }
 
 export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKind {
@@ -115,6 +131,16 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
   }
   if (path.endsWith(".mimics") || path.includes(".mimics.")) {
     return "mimic";
+  }
+  if (
+    path.endsWith(".relative-blueprints")
+    || path.endsWith(".absolute-blueprints")
+    || path.endsWith(".instance-types")
+    || path.includes(".relative-blueprints.")
+    || path.includes(".absolute-blueprints.")
+    || path.includes(".instance-types.")
+  ) {
+    return "blueprint";
   }
 
   switch (type) {
@@ -192,8 +218,9 @@ export function resolveObjectTreeIcon(
   type: ObjectType,
   iconId?: string | null
 ): TreeIconKind {
-  if (isTreeIconId(iconId)) {
-    return iconId;
+  const normalized = normalizeIconId(iconId);
+  if (normalized) {
+    return normalized;
   }
   return resolveTreeIconKind(path, type);
 }

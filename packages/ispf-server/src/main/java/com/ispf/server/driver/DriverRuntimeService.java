@@ -11,12 +11,14 @@ import com.ispf.driver.DriverDiscovery;
 import com.ispf.driver.DriverException;
 import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.server.bootstrap.LabTrainingBundleLayouts;
-import com.ispf.driver.ingress.DriverIngress;
 import com.ispf.driver.ingress.DriverIngressBuffer;
+import com.ispf.server.concurrent.ElasticScheduledPool;
+import com.ispf.server.concurrent.ElasticWorkerLauncher;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.TelemetryPublishMode;
 import com.ispf.server.object.ObjectManager;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +43,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class DriverRuntimeService {
@@ -67,8 +69,11 @@ public class DriverRuntimeService {
     private final RuntimeTelemetryProperties runtimeTelemetryProperties;
     private final ObjectProvider<DriverRuntimeService> self;
     private final DriverOwnershipService ownershipService;
-    private final ScheduledExecutorService scheduler;
-    private final ExecutorService ioExecutor;
+    private ElasticScheduledPool schedulerPool;
+    private ScheduledThreadPoolExecutor scheduler;
+    private ElasticWorkerLauncher ioWorkers;
+    private final ConcurrentLinkedQueue<Runnable> ioPending = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger ioPendingCount = new AtomicInteger();
     private final Map<String, ActiveDriver> activeDrivers = new ConcurrentHashMap<>();
 
     public DriverRuntimeService(
@@ -91,18 +96,39 @@ public class DriverRuntimeService {
         this.runtimeTelemetryProperties = runtimeTelemetryProperties;
         this.self = self;
         this.ownershipService = ownershipService;
-        int threads = Math.max(1, driverPackProperties.getSchedulerThreads());
-        this.scheduler = Executors.newScheduledThreadPool(threads, r -> {
-            Thread thread = new Thread(r, "ispf-driver-runtime");
-            thread.setDaemon(true);
-            return thread;
-        });
-        int ioThreads = Math.max(1, driverPackProperties.getIoThreads());
-        this.ioExecutor = Executors.newFixedThreadPool(ioThreads, r -> {
-            Thread thread = new Thread(r, "ispf-driver-io");
-            thread.setDaemon(true);
-            return thread;
-        });
+    }
+
+    @PostConstruct
+    void startExecutors() {
+        schedulerPool = new ElasticScheduledPool(
+                driverPackProperties.resolvedSchedulerElastic(),
+                () -> activeDrivers.size(),
+                "ispf-driver-runtime"
+        );
+        scheduler = schedulerPool.start();
+        ioWorkers = new ElasticWorkerLauncher(
+                driverPackProperties.resolvedIoElastic(),
+                ioPendingCount::get,
+                "ispf-driver-io",
+                this::drainOneIoPoll
+        );
+        ioWorkers.start();
+    }
+
+    private boolean drainOneIoPoll() {
+        Runnable task = ioPending.poll();
+        if (task == null) {
+            return false;
+        }
+        ioPendingCount.decrementAndGet();
+        task.run();
+        return true;
+    }
+
+    private void signalSchedulerLoad() {
+        if (schedulerPool != null) {
+            schedulerPool.signalLoad();
+        }
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -136,8 +162,17 @@ public class DriverRuntimeService {
         for (String devicePath : new ArrayList<>(activeDrivers.keySet())) {
             stopLocal(devicePath, true);
         }
-        scheduler.shutdownNow();
-        ioExecutor.shutdownNow();
+        if (schedulerPool != null) {
+            schedulerPool.close();
+        }
+        if (ioWorkers != null) {
+            ioWorkers.close();
+        }
+        Runnable task;
+        while ((task = ioPending.poll()) != null) {
+            ioPendingCount.decrementAndGet();
+            task.run();
+        }
     }
 
     private boolean shouldAutoStart(String devicePath) {
@@ -252,6 +287,7 @@ public class DriverRuntimeService {
         );
         boolean connected = driver.isConnected();
         activeDrivers.put(devicePath, new ActiveDriver(driver, binding, future, null, connected, driverObject));
+        signalSchedulerLoad();
         poll(devicePath);
         setStatus(devicePath, "RUNNING");
         return status(devicePath).orElseThrow();
@@ -263,6 +299,7 @@ public class DriverRuntimeService {
 
     public DriverRuntimeStatus stopLocal(String devicePath, boolean releaseOwnership) {
         ActiveDriver active = activeDrivers.remove(devicePath);
+        signalSchedulerLoad();
         DriverBinding binding = readBinding(devicePath).orElse(DriverBinding.virtualDemo());
         if (active != null) {
             active.future().cancel(false);
@@ -457,7 +494,9 @@ public class DriverRuntimeService {
             return;
         }
         if (driverPackProperties.isAsyncPollEnabled()) {
-            ioExecutor.submit(() -> pollOnIoThread(devicePath, active, pointId));
+            ioPendingCount.incrementAndGet();
+            ioPending.offer(() -> pollOnIoThread(devicePath, active, pointId));
+            ioWorkers.signalWork();
             return;
         }
         pollOnIoThread(devicePath, active, pointId);
@@ -611,6 +650,60 @@ public class DriverRuntimeService {
         return metrics;
     }
 
+    public Map<String, Object> driverDiagnosticsSnapshot() {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("ioPollQueueSize", ioPendingCount.get());
+        if (scheduler != null) {
+            snapshot.put("schedulerPoolSize", scheduler.getPoolSize());
+            snapshot.put("schedulerActiveCount", scheduler.getActiveCount());
+        }
+        if (ioWorkers != null) {
+            snapshot.put("ioWorkersActive", ioWorkers.activeWorkers().get());
+        }
+        List<Map<String, Object>> drivers = new ArrayList<>();
+        for (Map.Entry<String, ActiveDriver> entry : activeDrivers.entrySet()) {
+            String devicePath = entry.getKey();
+            ActiveDriver active = entry.getValue();
+            DriverBinding binding = active.binding();
+            Map<String, Object> driver = new LinkedHashMap<>();
+            driver.put("devicePath", devicePath);
+            driver.put("driverId", binding.driverId());
+            driver.put("pollIntervalMs", binding.pollIntervalMs());
+            driver.put("telemetryPublishMode", binding.telemetryPublishMode().name());
+            driver.put("connected", active.driver().isConnected());
+            driver.put("lastError", active.lastError());
+            driver.putAll(active.driverObject().ingressStats());
+            driver.put("pressureScore", driverPressureScore(binding, active));
+            drivers.add(driver);
+        }
+        drivers.sort((left, right) -> Integer.compare(
+                ((Number) right.getOrDefault("pressureScore", 0)).intValue(),
+                ((Number) left.getOrDefault("pressureScore", 0)).intValue()
+        ));
+        snapshot.put("drivers", drivers);
+        return snapshot;
+    }
+
+    private static int driverPressureScore(DriverBinding binding, ActiveDriver active) {
+        int score = 0;
+        Map<String, Object> ingress = active.driverObject().ingressStats();
+        if (Boolean.TRUE.equals(ingress.get("ingressEnabled"))) {
+            score += ((Number) ingress.getOrDefault("ingressPending", 0)).intValue() * 10;
+            score += ((Number) ingress.getOrDefault("ingressCoalesced", 0)).intValue();
+            score += ((Number) ingress.getOrDefault("ingressEvicted", 0)).intValue() * 5;
+        }
+        if (binding.pollIntervalMs() > 0 && binding.pollIntervalMs() < 1000) {
+            score += 50;
+        }
+        if (active.lastError() != null) {
+            score += 30;
+        }
+        if (!active.driver().isConnected()) {
+            score += 10;
+        }
+        return score;
+    }
+
     /**
      * High-rate ingress modes skip the server driver ingress buffer (L1) so MQTT L0 drain is not stacked
      * with platform ingress coalescing.
@@ -671,6 +764,10 @@ public class DriverRuntimeService {
         configuration.putIfAbsent(
                 DriverIngress.CALLBACK_QUEUE_CAPACITY,
                 String.valueOf(driverPackProperties.getMqttCallbackQueueCapacity())
+        );
+        configuration.putIfAbsent(
+                DriverIngress.INGRESS_COALESCE_ENABLED,
+                String.valueOf(driverPackProperties.isMqttIngressCoalesceEnabled())
         );
         return configuration;
     }

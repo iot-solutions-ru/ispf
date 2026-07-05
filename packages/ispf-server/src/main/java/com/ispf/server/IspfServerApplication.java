@@ -27,6 +27,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.BootstrapProperties.class,
         com.ispf.server.config.NotificationProperties.class,
         com.ispf.server.config.ClusterProperties.class,
+        com.ispf.server.config.WebSocketProperties.class,
         com.ispf.server.federation.FederationOutboundBufferProperties.class
 })
 public class IspfServerApplication {

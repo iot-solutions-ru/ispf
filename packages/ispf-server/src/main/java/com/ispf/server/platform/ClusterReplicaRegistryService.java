@@ -1,6 +1,7 @@
 package com.ispf.server.platform;
 
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.config.ReplicaCapabilitySet;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.driver.DriverOwnershipService;
 import com.ispf.server.platform.update.PlatformVersionSupport;
@@ -34,6 +35,7 @@ public class ClusterReplicaRegistryService {
     private final DriverOwnershipService driverOwnershipService;
     private final Optional<BuildProperties> buildProperties;
     private final String environment;
+    private final int serverPort;
 
     public ClusterReplicaRegistryService(
             JdbcTemplate jdbcTemplate,
@@ -41,7 +43,8 @@ public class ClusterReplicaRegistryService {
             NatsProperties natsProperties,
             DriverOwnershipService driverOwnershipService,
             Optional<BuildProperties> buildProperties,
-            @Value("${ispf.environment:dev}") String environment
+            @Value("${ispf.environment:dev}") String environment,
+            @Value("${server.port:8080}") int serverPort
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.clusterProperties = clusterProperties;
@@ -49,6 +52,7 @@ public class ClusterReplicaRegistryService {
         this.driverOwnershipService = driverOwnershipService;
         this.buildProperties = buildProperties;
         this.environment = environment;
+        this.serverPort = serverPort;
     }
 
     public void recordHeartbeat() {
@@ -59,15 +63,25 @@ public class ClusterReplicaRegistryService {
         String replicaId = natsProperties.replicaId();
         String version = PlatformVersionSupport.currentVersion(buildProperties);
         String javaVersion = Runtime.version().toString();
+        ReplicaCapabilitySet capabilitySet = clusterProperties.effectiveCapabilities();
+        String profile = capabilitySet.profile().externalName();
+        String capabilities = capabilitySet.serialized();
+        String legacyRole = capabilitySet.profile().legacyRoleName();
         int updated = jdbcTemplate.update(
                 """
                         UPDATE platform_cluster_replicas
-                        SET version = ?, environment = ?, java_version = ?, last_heartbeat_at = ?
+                        SET version = ?, environment = ?, java_version = ?,
+                            replica_role = ?, replica_profile = ?, replica_capabilities = ?,
+                            http_port = ?, last_heartbeat_at = ?
                         WHERE replica_id = ?
                         """,
                 version,
                 environment,
                 javaVersion,
+                legacyRole,
+                profile,
+                capabilities,
+                serverPort,
                 Timestamp.from(now),
                 replicaId
         );
@@ -75,13 +89,19 @@ public class ClusterReplicaRegistryService {
             jdbcTemplate.update(
                     """
                             INSERT INTO platform_cluster_replicas
-                                (replica_id, version, environment, java_version, started_at, last_heartbeat_at)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                                (replica_id, version, environment, java_version,
+                                 replica_role, replica_profile, replica_capabilities,
+                                 http_port, started_at, last_heartbeat_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """,
                     replicaId,
                     version,
                     environment,
                     javaVersion,
+                    legacyRole,
+                    profile,
+                    capabilities,
+                    serverPort,
                     Timestamp.from(now),
                     Timestamp.from(now)
             );
@@ -95,10 +115,12 @@ public class ClusterReplicaRegistryService {
         }
 
         Instant now = Instant.now();
-        Map<String, Integer> lockCounts = driverOwnershipService.countLocksByHolder();
+        Map<String, Integer> lockCounts = driverOwnershipService.countLocksByHolderForClusterView();
         List<ReplicaRow> rows = jdbcTemplate.query(
                 """
-                        SELECT replica_id, version, environment, java_version, started_at, last_heartbeat_at
+                        SELECT replica_id, version, environment, java_version,
+                               replica_role, replica_profile, replica_capabilities,
+                               http_port, started_at, last_heartbeat_at
                         FROM platform_cluster_replicas
                         ORDER BY replica_id
                         """,
@@ -107,6 +129,10 @@ public class ClusterReplicaRegistryService {
                         rs.getString("version"),
                         rs.getString("environment"),
                         rs.getString("java_version"),
+                        rs.getString("replica_role"),
+                        rs.getString("replica_profile"),
+                        rs.getString("replica_capabilities"),
+                        rs.getObject("http_port") != null ? rs.getInt("http_port") : null,
                         rs.getTimestamp("started_at").toInstant(),
                         rs.getTimestamp("last_heartbeat_at").toInstant()
                 )
@@ -136,6 +162,10 @@ public class ClusterReplicaRegistryService {
                     row != null ? row.version() : (replicaId.equals(selfId) ? currentVersion() : null),
                     row != null ? row.environment() : (replicaId.equals(selfId) ? environment : null),
                     row != null ? row.javaVersion() : (replicaId.equals(selfId) ? Runtime.version().toString() : null),
+                    row != null ? row.replicaRole() : selfLegacyRole(selfId, replicaId),
+                    row != null ? row.replicaProfile() : selfProfile(selfId, replicaId),
+                    row != null ? row.replicaCapabilities() : selfCapabilities(selfId, replicaId),
+                    row != null ? row.httpPort() : (replicaId.equals(selfId) ? serverPort : null),
                     row != null ? row.startedAt() : null,
                     lastHeartbeat,
                     locks,
@@ -147,17 +177,40 @@ public class ClusterReplicaRegistryService {
     }
 
     private ClusterNode singleNode(String replicaId) {
+        ReplicaCapabilitySet capabilitySet = clusterProperties.effectiveCapabilities();
         return new ClusterNode(
                 replicaId,
                 NodeStatus.UP.name(),
                 currentVersion(),
                 environment,
                 Runtime.version().toString(),
+                capabilitySet.profile().legacyRoleName(),
+                capabilitySet.profile().externalName(),
+                capabilitySet.serialized(),
+                serverPort,
                 null,
                 Instant.now(),
                 driverOwnershipService.countHeldLocks(),
                 true
         );
+    }
+
+    private String selfLegacyRole(String selfId, String replicaId) {
+        return replicaId.equals(selfId)
+                ? clusterProperties.effectiveCapabilities().profile().legacyRoleName()
+                : null;
+    }
+
+    private String selfProfile(String selfId, String replicaId) {
+        return replicaId.equals(selfId)
+                ? clusterProperties.effectiveCapabilities().profile().externalName()
+                : null;
+    }
+
+    private String selfCapabilities(String selfId, String replicaId) {
+        return replicaId.equals(selfId)
+                ? clusterProperties.effectiveCapabilities().serialized()
+                : null;
     }
 
     private String currentVersion() {
@@ -183,6 +236,10 @@ public class ClusterReplicaRegistryService {
             String version,
             String environment,
             String javaVersion,
+            String replicaRole,
+            String replicaProfile,
+            String replicaCapabilities,
+            Integer httpPort,
             Instant startedAt,
             Instant lastHeartbeatAt
     ) {
@@ -194,6 +251,10 @@ public class ClusterReplicaRegistryService {
             String version,
             String environment,
             String javaVersion,
+            String replicaRole,
+            String replicaProfile,
+            String replicaCapabilities,
+            Integer httpPort,
             Instant startedAt,
             Instant lastHeartbeatAt,
             int heldDriverLocks,

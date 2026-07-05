@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestPropertySource(properties = {
         "ispf.cluster.enabled=true",
         "ispf.cluster.replica-stale-seconds=30",
+        "ispf.cluster.replica-profile=io",
         "ispf.nats.replica-id=cluster-node-a"
 })
 class ClusterReplicaRegistryServiceTest {
@@ -54,6 +55,7 @@ class ClusterReplicaRegistryServiceTest {
         assertEquals("cluster-node-a", self.replicaId());
         assertEquals("UP", self.status());
         assertTrue(self.self());
+        assertTrue(self.httpPort() != null && self.httpPort() > 0);
     }
 
     @Test

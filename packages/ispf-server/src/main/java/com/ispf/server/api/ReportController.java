@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.server.platform.PlatformJobService;
 import com.ispf.server.report.ReportExportFormat;
 import com.ispf.server.report.ReportExportService;
 import com.ispf.server.report.ReportService;
@@ -10,8 +11,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,15 +38,18 @@ public class ReportController {
     private final ReportService reportService;
     private final ReportExportService reportExportService;
     private final YargReportService yargReportService;
+    private final PlatformJobService platformJobService;
 
     public ReportController(
             ReportService reportService,
             ReportExportService reportExportService,
-            YargReportService yargReportService
+            YargReportService yargReportService,
+            PlatformJobService platformJobService
     ) {
         this.reportService = reportService;
         this.reportExportService = reportExportService;
         this.yargReportService = yargReportService;
+        this.platformJobService = platformJobService;
     }
 
     @GetMapping("/by-path")
@@ -117,6 +124,21 @@ public class ReportController {
         return reportService.run(path, parameters);
     }
 
+    @PostMapping("/by-path/run-async")
+    public ResponseEntity<Map<String, Object>> runAsync(
+            @RequestParam String path,
+            @RequestBody(required = false) RunRequest request
+    ) {
+        Map<String, Object> parameters = request != null && request.parameters() != null
+                ? request.parameters()
+                : Map.of();
+        var jobId = platformJobService.submitReportRun(path, parameters, currentUserName());
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
+                "jobId", jobId.toString(),
+                "status", PlatformJobService.JobStatus.QUEUED.name()
+        ));
+    }
+
     @GetMapping("/by-path/export")
     public ResponseEntity<byte[]> export(
             @RequestParam String path,
@@ -188,6 +210,14 @@ public class ReportController {
             case "html" -> MediaType.parseMediaType("text/html; charset=UTF-8");
             default -> MediaType.APPLICATION_OCTET_STREAM;
         };
+    }
+
+    private static String currentUserName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        return authentication.getName();
     }
 
     private static Map<String, Object> queryParameters(HttpServletRequest request) {

@@ -3,13 +3,17 @@ package com.ispf.server.websocket;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.server.application.catalog.ApplicationEventCatalogService;
-import com.ispf.server.config.IspfRoles;
+import com.ispf.server.config.WebSocketProperties;
+import com.ispf.server.concurrent.ElasticWorkerLauncher;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
+import com.ispf.server.config.IspfRoles;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -26,8 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class ObjectWebSocketHandler extends TextWebSocketHandler {
@@ -40,11 +44,10 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final Set<WebSocketSession> broadcastSessions = ConcurrentHashMap.newKeySet();
     /** Reverse index: subscribed path → sessions interested in that path. */
     private final ConcurrentHashMap<String, Set<WebSocketSession>> pathSubscriptions = new ConcurrentHashMap<>();
-    private final ExecutorService sendExecutor = Executors.newFixedThreadPool(2, runnable -> {
-        Thread thread = new Thread(runnable, "ws-object-send");
-        thread.setDaemon(true);
-        return thread;
-    });
+    private final WebSocketProperties webSocketProperties;
+    private final ConcurrentLinkedQueue<Runnable> pendingSends = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger pendingSendCount = new AtomicInteger();
+    private ElasticWorkerLauncher sendWorkers;
     private final ObjectMapper objectMapper;
     private final FederationSubscribePollService federationSubscribePollService;
     private final ObjectPresenceService presenceService;
@@ -54,6 +57,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ClusterPathInterestStore clusterPathInterestStore;
 
     public ObjectWebSocketHandler(
+            WebSocketProperties webSocketProperties,
             ObjectMapper objectMapper,
             FederationSubscribePollService federationSubscribePollService,
             ObjectPresenceService presenceService,
@@ -62,6 +66,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             ObjectWebSocketPathInterestRegistry pathInterestRegistry,
             ClusterPathInterestStore clusterPathInterestStore
     ) {
+        this.webSocketProperties = webSocketProperties;
         this.objectMapper = objectMapper;
         this.federationSubscribePollService = federationSubscribePollService;
         this.presenceService = presenceService;
@@ -69,6 +74,42 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         this.eventCatalogService = eventCatalogService;
         this.pathInterestRegistry = pathInterestRegistry;
         this.clusterPathInterestStore = clusterPathInterestStore;
+    }
+
+    @PostConstruct
+    void startSendWorkers() {
+        sendWorkers = new ElasticWorkerLauncher(
+                webSocketProperties.resolvedSendElastic(),
+                pendingSendCount::get,
+                "ws-object-send",
+                this::drainOneSend
+        );
+        sendWorkers.start();
+    }
+
+    private boolean drainOneSend() {
+        Runnable task = pendingSends.poll();
+        if (task == null) {
+            return false;
+        }
+        try {
+            task.run();
+        } finally {
+            pendingSendCount.decrementAndGet();
+        }
+        return true;
+    }
+
+    @PreDestroy
+    void shutdownSendWorkers() {
+        if (sendWorkers != null) {
+            sendWorkers.close();
+        }
+        Runnable task;
+        while ((task = pendingSends.poll()) != null) {
+            pendingSendCount.decrementAndGet();
+            task.run();
+        }
     }
 
     @Override
@@ -244,7 +285,8 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void sendAsync(WebSocketSession session, TextMessage payload) {
-        sendExecutor.execute(() -> {
+        pendingSendCount.incrementAndGet();
+        pendingSends.offer(() -> {
             try {
                 if (!session.isOpen()) {
                     return;
@@ -258,6 +300,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 log.warn("WebSocket send failed for session {}: {}", session.getId(), e.getMessage());
             }
         });
+        sendWorkers.signalWork();
     }
 
     private Set<WebSocketSession> sessionsForEvent(String eventPath) {

@@ -62,6 +62,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-1
+      ISPF_REPLICA_PROFILE: edge-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,6 +76,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-2
+      ISPF_REPLICA_PROFILE: edge-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +90,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-3
+      ISPF_REPLICA_PROFILE: io
     depends_on:
       postgres:
         condition: service_healthy
@@ -95,6 +98,20 @@ services:
         condition: service_started
       nats:
         condition: service_started
+
+  # Optional dedicated worker (ADR-0031): uncomment for api/worker split.
+  # ispf-server-worker-1:
+  #   <<: *ispf-server-image
+  #   environment:
+  #     <<: *ispf-server-env
+  #     ISPF_REPLICA_ID: worker-1
+  #     ISPF_REPLICA_ROLE: worker
+  #     ISPF_CLUSTER_DRIVER_OWNERSHIP: "false"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     nats:
+  #       condition: service_started
 
   nginx:
     image: ${ISPF_AIRGAP_NGINX_IMAGE:-nginx:1.27.4-alpine}
@@ -106,7 +123,6 @@ services:
     depends_on:
       - ispf-server-1
       - ispf-server-2
-      - ispf-server-3
 
 volumes:
   ispf_cluster_pg:

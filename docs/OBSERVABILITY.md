@@ -31,6 +31,32 @@
 
 Probe dashboard (`ISPF_PLATFORM_METRICS_PROBE_ENABLED=true`) синхронизирует subset в object tree для HMI.
 
+## Metrics UI diagnostics (0.9.97+)
+
+Admin → **System → Metrics** — карточка **«Диагностика нагрузки»** (кластерный fan-out).
+
+| Endpoint | Auth | Описание |
+|----------|------|----------|
+| `GET /api/v1/platform/metrics` | admin | Метрики **текущей** JVM + `diagnostics` (CPU, suspects, `detail`) |
+| `GET /api/v1/platform/cluster/diagnostics` | admin | Все реплики: CPU rank, suspects, drill-down по ноде |
+
+**Уровень 1 — кластер:** какая реплика грузит CPU (`processCpuPercent`), очереди pipeline, `clusterTopSuspect`.
+
+**Уровень 2 — внутри ноды** (expand в UI):
+
+| Блок | Содержимое |
+|------|------------|
+| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, top-5 потоков по CPU Δ |
+| Driver bindings | `devicePath`, `driverId`, ingress pending/coalesced, `pressureScore` |
+| Jobs | `platform_jobs` со статусом `RUNNING` на `holder_id` |
+| Workflows | top `workflow_instances` в статусе `RUNNING` |
+
+Эвристики suspects: backlog object-change / event journal / historian, JDBC pool, heap pressure, горячая привязка драйвера.
+
+Peer fan-out: heartbeat пишет `http_port` в `platform_cluster_replicas` (V65); агрегатор опрашивает `http://127.0.0.1:{port}/api/v1/platform/metrics` на VPS host network.
+
+Если все JVM с низким CPU — виновник вне ISPF (Scylla, ClickHouse, Postgres): `docker stats` на хосте.
+
 **Grafana dashboard** (все метрики pipeline): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
 
 ## OTLP metrics export (optional, 0.9.9+)

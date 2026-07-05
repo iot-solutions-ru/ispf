@@ -49,6 +49,18 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     @Test
+    void publishesImmediatelyWhenCoalesceDisabled() {
+        coalescer = newCoalescer(true, 1_000, false, false, false);
+        DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
+
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 1.0));
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 2.0));
+        coalescer.recordUpdate("root.dev.sensor", "temperature", record(schema, 3.0));
+
+        verify(publicationService, times(3)).publishVariableChange("root.dev.sensor", "temperature", null);
+    }
+
+    @Test
     void coalescesMultipleUpdatesIntoSingleEvent() {
         coalescer = newCoalescer(true, 1_000);
         DataSchema schema = DataSchema.builder("temperature").field("value", FieldType.DOUBLE).build();
@@ -239,7 +251,7 @@ class RuntimeTelemetryCoalescerTest {
     }
 
     private RuntimeTelemetryCoalescer newCoalescer(boolean enabled, long coalesceMs) {
-        return newCoalescer(enabled, coalesceMs, false, false);
+        return newCoalescer(enabled, coalesceMs, false, false, true);
     }
 
     private RuntimeTelemetryCoalescer newCoalescer(
@@ -248,9 +260,20 @@ class RuntimeTelemetryCoalescerTest {
             boolean ingressTopicLanes,
             boolean ingressPayloadLanes
     ) {
+        return newCoalescer(enabled, coalesceMs, ingressTopicLanes, ingressPayloadLanes, true);
+    }
+
+    private RuntimeTelemetryCoalescer newCoalescer(
+            boolean enabled,
+            long coalesceMs,
+            boolean ingressTopicLanes,
+            boolean ingressPayloadLanes,
+            boolean coalesceEnabled
+    ) {
         RuntimeTelemetryProperties properties = new RuntimeTelemetryProperties();
         properties.setEnabled(enabled);
         properties.setCoalesceMs(coalesceMs);
+        properties.setCoalesceEnabled(coalesceEnabled);
         DeviceTelemetryPolicyService policyService = org.mockito.Mockito.mock(DeviceTelemetryPolicyService.class);
         org.mockito.Mockito.when(policyService.coalesceMs(org.mockito.ArgumentMatchers.anyString())).thenReturn(coalesceMs);
         org.mockito.Mockito.when(policyService.automationEligible(org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
@@ -272,7 +295,9 @@ class RuntimeTelemetryCoalescerTest {
         )).thenReturn(false);
         return new RuntimeTelemetryCoalescer(
                 properties, policyService, publicationService, gatewayIngressDispatch, historianFastPath
-        );
+        ) {{
+            startScheduler();
+        }};
     }
 
     private static DataRecord record(DataSchema schema, double value) {

@@ -66,7 +66,8 @@ public class NatsEventBridge {
                 return;
             }
             if (clusterProperties.isLiveVariableSyncActive()
-                    && event.type() == ObjectChangeType.VARIABLE_UPDATED) {
+                    && event.type() == ObjectChangeType.VARIABLE_UPDATED
+                    && event.telemetry()) {
                 return;
             }
             if (event.telemetry()) {

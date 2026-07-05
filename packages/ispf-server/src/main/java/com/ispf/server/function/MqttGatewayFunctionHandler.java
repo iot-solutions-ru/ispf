@@ -9,8 +9,10 @@ import com.ispf.core.object.Variable;
 import com.ispf.server.application.script.PlatformScriptBridge;
 import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
+import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
+import com.ispf.plugin.blueprint.BlueprintCatalogRoots;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -21,7 +23,7 @@ import java.util.regex.Pattern;
 /**
  * Routes MQTT ingress on a gateway object to child sensor devices.
  * Triggered from model binding: {@code callFunction(dispatchTelemetry, lastIngress)}
- * or {@link MqttGatewayIngressDispatchService} (parallel per-topic lanes).
+ * or {@link MqttGatewayIngressDispatchService} (parallel per-topic FIFO workers).
  */
 @Component
 public class MqttGatewayFunctionHandler implements FunctionHandler {
@@ -51,17 +53,20 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
     private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final ObjectChangePublicationService publicationService;
     private final PlatformScriptBridge platformScriptBridge;
+    private final TelemetryHistorianFastPath historianFastPath;
 
     public MqttGatewayFunctionHandler(
             ObjectManager objectManager,
             DeviceTelemetryPolicyService telemetryPolicyService,
             ObjectChangePublicationService publicationService,
-            PlatformScriptBridge platformScriptBridge
+            PlatformScriptBridge platformScriptBridge,
+            TelemetryHistorianFastPath historianFastPath
     ) {
         this.objectManager = objectManager;
         this.telemetryPolicyService = telemetryPolicyService;
         this.publicationService = publicationService;
         this.platformScriptBridge = platformScriptBridge;
+        this.historianFastPath = historianFastPath;
     }
 
     @Override
@@ -98,7 +103,7 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
 
         PlatformObject gateway = objectManager.require(gatewayPath);
         String sensorParentPath = stringConfig(gateway, "sensorParentPath")
-                .orElse(gatewayPath + ".sensors");
+                .orElse(BlueprintCatalogRoots.INSTANCES);
         String sensorNamePrefix = stringConfig(gateway, "sensorNamePrefix")
                 .orElse("loadtest-mqtt-sensor-");
         String topicPattern = stringConfig(gateway, "topicIndexPattern")
@@ -143,7 +148,9 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         boolean automationEligible = telemetryPolicyService.automationEligible(childPath);
         if (bypassChildCoalesce && !automationEligible) {
             objectManager.setDriverTelemetryValueDirect(childPath, "temperature", temperature);
-            publicationService.publishVariableChange(childPath, "temperature", null);
+            if (!historianFastPath.tryPublish(childPath, "temperature", temperature, null)) {
+                publicationService.publishVariableChange(childPath, "temperature", null);
+            }
             return;
         }
         objectManager.setDriverTelemetryValue(childPath, "temperature", temperature);

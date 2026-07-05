@@ -31,7 +31,7 @@ log() { echo "==> $*"; }
 
 install_artifacts() {
   log "Installing jar + UI from $STAGING_DIR"
-  install -d "$INSTALL_ROOT/data" "$INSTALL_ROOT/web-console"
+  install -d -m 755 "$INSTALL_ROOT/data" "$INSTALL_ROOT/web-console"
   install -m 644 "$JAR_PATH" "$INSTALL_ROOT/ispf-server.jar"
 
   TMP_UI="$(mktemp -d)"
@@ -78,9 +78,9 @@ log "Pulling cluster images"
 "${COMPOSE[@]}" pull --ignore-pull-failures 2>/dev/null || true
 
 log "Starting VPS cluster (3 replicas + NATS + nginx)"
-"${COMPOSE[@]}" up -d --force-recreate
+"${COMPOSE[@]}" up -d
 
-log "Waiting for >=3 unique replicaId via LB"
+log "Waiting for api pool (>=2 via LB) + internal replica-3"
 declare -A SEEN=()
 for i in $(seq 1 120); do
   SEEN=()
@@ -92,12 +92,14 @@ for i in $(seq 1 120); do
     fi
   done
   UNIQUE=${#SEEN[@]}
-  if [[ "$UNIQUE" -ge 3 ]]; then
-    log "Cluster ready: ${UNIQUE} replicas (${i} attempts)"
+  R3_OK=0
+  curl -sf "http://127.0.0.1:8083/api/v1/info" >/dev/null 2>&1 && R3_OK=1
+  if [[ "$UNIQUE" -ge 2 && "$R3_OK" -eq 1 ]]; then
+    log "Cluster ready: api=${UNIQUE} (${!SEEN[*]}) + replica-3 internal (${i} attempts)"
     break
   fi
   if [[ "$i" -eq 120 ]]; then
-    echo "ERROR: expected >=3 replicas, got ${UNIQUE}" >&2
+    echo "ERROR: expected api pool >=2 and replica-3 on :8083, api=${UNIQUE} r3=${R3_OK}" >&2
     "${COMPOSE[@]}" ps
     "${COMPOSE[@]}" logs --tail 50 ispf-server-1 ispf-server-2 ispf-server-3 nginx
     exit 1

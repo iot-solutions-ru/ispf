@@ -398,6 +398,10 @@ Invoke-Remote "mkdir -p $staging"
 $applyScript = Join-Path $PSScriptRoot "apply-platform-update.sh"
 $flywayRepairScript = Join-Path $PSScriptRoot "vps-flyway-repair.sh"
 $clusterBootstrapScript = Join-Path $PSScriptRoot "vps-cluster-bootstrap.sh"
+$clusterRolloutScript = Join-Path $PSScriptRoot "vps-cluster-rollout.sh"
+$clusterFactoryResetScript = Join-Path $PSScriptRoot "vps-cluster-factory-reset.sh"
+$clusterVerifyScript = Join-Path $PSScriptRoot "vps-cluster-verify.sh"
+$clusterPruneScript = Join-Path $PSScriptRoot "vps-cluster-prune-stale.sh"
 $clusterCompose = Join-Path $PSScriptRoot "docker-compose.vps-cluster.yml"
 $clusterNginx = Join-Path $PSScriptRoot "nginx-vps-cluster.conf"
 
@@ -410,6 +414,10 @@ $uploads = @(
 if ($Cluster) {
     $uploads += @(
         @{ Local = $clusterBootstrapScript; Remote = "/opt/ispf/bin/vps-cluster-bootstrap.sh" }
+        @{ Local = $clusterRolloutScript; Remote = "/opt/ispf/bin/vps-cluster-rollout.sh" }
+        @{ Local = $clusterFactoryResetScript; Remote = "/opt/ispf/bin/vps-cluster-factory-reset.sh" }
+        @{ Local = $clusterVerifyScript; Remote = "/opt/ispf/bin/vps-cluster-verify.sh" }
+        @{ Local = $clusterPruneScript; Remote = "/opt/ispf/bin/vps-cluster-prune-stale.sh" }
         @{ Local = $clusterCompose; Remote = "/opt/ispf/docker-compose.vps-cluster.yml" }
         @{ Local = $clusterNginx; Remote = "/opt/ispf/nginx-vps-cluster.conf" }
     )
@@ -423,15 +431,15 @@ Send-DeployUploads -RemoteHost $RemoteHost -Uploads $uploads
 
 Invoke-Remote "chmod +x /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh; sed -i 's/\r$//' /opt/ispf/bin/apply-platform-update.sh /opt/ispf/bin/vps-flyway-repair.sh"
 if ($Cluster) {
-    Invoke-Remote "chmod +x /opt/ispf/bin/vps-cluster-bootstrap.sh; sed -i 's/\r$//' /opt/ispf/bin/vps-cluster-bootstrap.sh"
+    Invoke-Remote "chmod +x /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh; sed -i 's/\r$//' /opt/ispf/bin/vps-cluster-bootstrap.sh /opt/ispf/bin/vps-cluster-rollout.sh /opt/ispf/bin/vps-cluster-factory-reset.sh /opt/ispf/bin/vps-cluster-verify.sh /opt/ispf/bin/vps-cluster-prune-stale.sh"
 }
 
 Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS (prod, no demo fixtures)"
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"
 
 if ($Cluster) {
-    Write-Host "==> Applying 3-node cluster on VPS"
-    Invoke-Remote "bash /opt/ispf/bin/vps-cluster-bootstrap.sh $staging"
+    Write-Host "==> Rolling out cluster on VPS (jar + UI + replica restart)"
+    Invoke-Remote "bash /opt/ispf/bin/vps-cluster-rollout.sh $staging"
 } else {
     Write-Host "==> Applying update on VPS"
     Invoke-Remote "bash /opt/ispf/bin/apply-platform-update.sh $staging"
@@ -451,7 +459,7 @@ try {
     Write-Warning "Public HTTPS check skipped: $_"
 }
 
-Write-Host "Deploy complete: $Version -> $RemoteHost$(if ($Cluster) { ' (3-node cluster)' })"
+Write-Host "Deploy complete: $Version -> $RemoteHost$(if ($Cluster) { ' (cluster)' })"
 
 Write-Host "==> Syncing nginx (agent API long timeouts)"
 & (Join-Path $PSScriptRoot "vps-nginx-sync.ps1") -RemoteHost $RemoteHost

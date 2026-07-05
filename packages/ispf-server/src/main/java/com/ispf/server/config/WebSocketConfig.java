@@ -14,17 +14,20 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final ObjectWebSocketHandler objectWebSocketHandler;
+    private final ReplicaCapabilityWebSocketHandshakeInterceptor capabilityHandshakeInterceptor;
     private final WebSocketAuthHandshakeInterceptor authHandshakeInterceptor;
     private final FederationTunnelWebSocketHandler federationTunnelWebSocketHandler;
     private final FederationTunnelHandshakeInterceptor federationTunnelHandshakeInterceptor;
 
     public WebSocketConfig(
             ObjectWebSocketHandler objectWebSocketHandler,
+            ReplicaCapabilityWebSocketHandshakeInterceptor capabilityHandshakeInterceptor,
             WebSocketAuthHandshakeInterceptor authHandshakeInterceptor,
             FederationTunnelWebSocketHandler federationTunnelWebSocketHandler,
             FederationTunnelHandshakeInterceptor federationTunnelHandshakeInterceptor
     ) {
         this.objectWebSocketHandler = objectWebSocketHandler;
+        this.capabilityHandshakeInterceptor = capabilityHandshakeInterceptor;
         this.authHandshakeInterceptor = authHandshakeInterceptor;
         this.federationTunnelWebSocketHandler = federationTunnelWebSocketHandler;
         this.federationTunnelHandshakeInterceptor = federationTunnelHandshakeInterceptor;
@@ -33,7 +36,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(objectWebSocketHandler, "/ws/objects")
-                .addInterceptors(authHandshakeInterceptor)
+                .addInterceptors(capabilityHandshakeInterceptor, authHandshakeInterceptor)
                 .setAllowedOrigins("*");
         registry.addHandler(federationTunnelWebSocketHandler, "/ws/federation/tunnel")
                 .addInterceptors(federationTunnelHandshakeInterceptor)

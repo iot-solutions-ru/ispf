@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ObjectTreeIcon, {
   TREE_ICON_CATALOG,
-  isTreeIconId,
+  normalizeIconId,
   type TreeIconKind,
 } from "./ObjectTreeIcon";
 import type { ObjectType } from "../../types";
@@ -36,7 +36,7 @@ export default function IconPicker({
     return [...map.entries()];
   }, [t]);
 
-  const effective = isTreeIconId(value) ? value : null;
+  const effective = normalizeIconId(value);
   const label = effective
     ? t(`icons.${effective}`)
     : t("icons.autoByType");

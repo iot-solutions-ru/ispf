@@ -9,8 +9,20 @@ public class DriverPackProperties {
     /** Directory scanned for licensed driver packs (`driver-pack.json` + JAR). */
     private String packsDir = "./data/drivers";
 
-    /** Threads for the shared driver poll scheduler. */
+    /** Threads for the shared driver poll scheduler (fixed when {@link #schedulerThreadsElasticEnabled} is false). */
     private int schedulerThreads = 8;
+
+    private boolean schedulerThreadsElasticEnabled = true;
+
+    private int schedulerThreadsMin = 4;
+
+    private int schedulerThreadsMax = 32;
+
+    private int schedulerScaleUpThreshold = 4;
+
+    private int schedulerScaleDownSteps = 6;
+
+    private int schedulerScaleCheckIntervalMs = 200;
 
     /**
      * When true, blocking {@link com.ispf.driver.DeviceDriver#readPoints} runs on a dedicated I/O pool
@@ -18,8 +30,20 @@ public class DriverPackProperties {
      */
     private boolean asyncPollEnabled = true;
 
-    /** Threads for async driver poll / protocol I/O. */
+    /** Threads for async driver poll / protocol I/O (fixed when {@link #ioThreadsElasticEnabled} is false). */
     private int ioThreads = 16;
+
+    private boolean ioThreadsElasticEnabled = true;
+
+    private int ioThreadsMin = 4;
+
+    private int ioThreadsMax = 32;
+
+    private int ioScaleUpQueueThreshold = 50;
+
+    private int ioScaleDownSteps = 6;
+
+    private int ioScaleCheckIntervalMs = 200;
 
     /**
      * When true, each running driver receives a last-value-wins ingress buffer before the platform
@@ -61,6 +85,9 @@ public class DriverPackProperties {
 
     private int mqttCallbackScaleCheckIntervalMs = 200;
 
+    /** Default MQTT driver L0 ingress coalesce when not set on device binding ({@code ingressCoalesceEnabled}). */
+    private boolean mqttIngressCoalesceEnabled = true;
+
     public String getPacksDir() {
         return packsDir;
     }
@@ -77,6 +104,65 @@ public class DriverPackProperties {
         this.schedulerThreads = Math.max(1, schedulerThreads);
     }
 
+    public boolean isSchedulerThreadsElasticEnabled() {
+        return schedulerThreadsElasticEnabled;
+    }
+
+    public void setSchedulerThreadsElasticEnabled(boolean schedulerThreadsElasticEnabled) {
+        this.schedulerThreadsElasticEnabled = schedulerThreadsElasticEnabled;
+    }
+
+    public int getSchedulerThreadsMin() {
+        return schedulerThreadsMin;
+    }
+
+    public void setSchedulerThreadsMin(int schedulerThreadsMin) {
+        this.schedulerThreadsMin = Math.max(1, schedulerThreadsMin);
+    }
+
+    public int getSchedulerThreadsMax() {
+        return schedulerThreadsMax;
+    }
+
+    public void setSchedulerThreadsMax(int schedulerThreadsMax) {
+        this.schedulerThreadsMax = Math.max(1, schedulerThreadsMax);
+    }
+
+    public int getSchedulerScaleUpThreshold() {
+        return schedulerScaleUpThreshold;
+    }
+
+    public void setSchedulerScaleUpThreshold(int schedulerScaleUpThreshold) {
+        this.schedulerScaleUpThreshold = Math.max(1, schedulerScaleUpThreshold);
+    }
+
+    public int getSchedulerScaleDownSteps() {
+        return schedulerScaleDownSteps;
+    }
+
+    public void setSchedulerScaleDownSteps(int schedulerScaleDownSteps) {
+        this.schedulerScaleDownSteps = Math.max(1, schedulerScaleDownSteps);
+    }
+
+    public int getSchedulerScaleCheckIntervalMs() {
+        return schedulerScaleCheckIntervalMs;
+    }
+
+    public void setSchedulerScaleCheckIntervalMs(int schedulerScaleCheckIntervalMs) {
+        this.schedulerScaleCheckIntervalMs = Math.max(50, schedulerScaleCheckIntervalMs);
+    }
+
+    public IngressElasticSettings resolvedSchedulerElastic() {
+        return new IngressElasticSettings(
+                schedulerThreadsElasticEnabled,
+                schedulerThreadsElasticEnabled ? schedulerThreadsMin : schedulerThreads,
+                schedulerThreadsElasticEnabled ? schedulerThreadsMax : schedulerThreads,
+                schedulerScaleUpThreshold,
+                schedulerScaleDownSteps,
+                schedulerScaleCheckIntervalMs
+        );
+    }
+
     public boolean isAsyncPollEnabled() {
         return asyncPollEnabled;
     }
@@ -91,6 +177,73 @@ public class DriverPackProperties {
 
     public void setIoThreads(int ioThreads) {
         this.ioThreads = Math.max(1, ioThreads);
+    }
+
+    public boolean isIoThreadsElasticEnabled() {
+        return ioThreadsElasticEnabled;
+    }
+
+    public void setIoThreadsElasticEnabled(boolean ioThreadsElasticEnabled) {
+        this.ioThreadsElasticEnabled = ioThreadsElasticEnabled;
+    }
+
+    public int getIoThreadsMin() {
+        return ioThreadsMin;
+    }
+
+    public void setIoThreadsMin(int ioThreadsMin) {
+        this.ioThreadsMin = Math.max(1, ioThreadsMin);
+    }
+
+    public int getIoThreadsMax() {
+        return ioThreadsMax;
+    }
+
+    public void setIoThreadsMax(int ioThreadsMax) {
+        this.ioThreadsMax = Math.max(1, ioThreadsMax);
+    }
+
+    public int getIoScaleUpQueueThreshold() {
+        return ioScaleUpQueueThreshold;
+    }
+
+    public void setIoScaleUpQueueThreshold(int ioScaleUpQueueThreshold) {
+        this.ioScaleUpQueueThreshold = Math.max(1, ioScaleUpQueueThreshold);
+    }
+
+    public int getIoScaleDownSteps() {
+        return ioScaleDownSteps;
+    }
+
+    public void setIoScaleDownSteps(int ioScaleDownSteps) {
+        this.ioScaleDownSteps = Math.max(1, ioScaleDownSteps);
+    }
+
+    public int getIoScaleCheckIntervalMs() {
+        return ioScaleCheckIntervalMs;
+    }
+
+    public void setIoScaleCheckIntervalMs(int ioScaleCheckIntervalMs) {
+        this.ioScaleCheckIntervalMs = Math.max(50, ioScaleCheckIntervalMs);
+    }
+
+    public int resolvedIoThreadsMin() {
+        return ioThreadsElasticEnabled ? ioThreadsMin : ioThreads;
+    }
+
+    public int resolvedIoThreadsMax() {
+        return ioThreadsElasticEnabled ? ioThreadsMax : ioThreads;
+    }
+
+    public IngressElasticSettings resolvedIoElastic() {
+        return new IngressElasticSettings(
+                ioThreadsElasticEnabled,
+                resolvedIoThreadsMin(),
+                resolvedIoThreadsMax(),
+                ioScaleUpQueueThreshold,
+                ioScaleDownSteps,
+                ioScaleCheckIntervalMs
+        );
     }
 
     public boolean isIngressBufferEnabled() {
@@ -265,5 +418,13 @@ public class DriverPackProperties {
 
     public int resolvedMqttCallbackThreadsMax() {
         return mqttCallbackElasticEnabled ? mqttCallbackThreadsMax : Math.max(1, mqttCallbackThreads);
+    }
+
+    public boolean isMqttIngressCoalesceEnabled() {
+        return mqttIngressCoalesceEnabled;
+    }
+
+    public void setMqttIngressCoalesceEnabled(boolean mqttIngressCoalesceEnabled) {
+        this.mqttIngressCoalesceEnabled = mqttIngressCoalesceEnabled;
     }
 }

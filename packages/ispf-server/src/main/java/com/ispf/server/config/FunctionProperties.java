@@ -20,6 +20,89 @@ public class FunctionProperties {
         private int batchSize = 100;
         private long flushIntervalMs = 200;
         private int retentionDays = 30;
+        /** Fixed writer count when {@link #elasticWriterEnabled} is false. */
+        private int writerThreads = 2;
+        private boolean elasticWriterEnabled = true;
+        private int writerThreadsMin = 2;
+        private int writerThreadsMax = 16;
+        private int elasticScaleUpQueueThreshold = 50;
+        private int elasticScaleDownSteps = 6;
+        private int elasticScaleCheckIntervalMs = 200;
+
+        public boolean isElasticWriterEnabled() {
+            return elasticWriterEnabled;
+        }
+
+        public void setElasticWriterEnabled(boolean elasticWriterEnabled) {
+            this.elasticWriterEnabled = elasticWriterEnabled;
+        }
+
+        public int getWriterThreads() {
+            return writerThreads;
+        }
+
+        public void setWriterThreads(int writerThreads) {
+            this.writerThreads = Math.max(1, writerThreads);
+        }
+
+        public int getWriterThreadsMin() {
+            return writerThreadsMin;
+        }
+
+        public void setWriterThreadsMin(int writerThreadsMin) {
+            this.writerThreadsMin = Math.max(1, writerThreadsMin);
+        }
+
+        public int getWriterThreadsMax() {
+            return writerThreadsMax;
+        }
+
+        public void setWriterThreadsMax(int writerThreadsMax) {
+            this.writerThreadsMax = Math.max(1, writerThreadsMax);
+        }
+
+        public int getElasticScaleUpQueueThreshold() {
+            return elasticScaleUpQueueThreshold;
+        }
+
+        public void setElasticScaleUpQueueThreshold(int elasticScaleUpQueueThreshold) {
+            this.elasticScaleUpQueueThreshold = Math.max(1, elasticScaleUpQueueThreshold);
+        }
+
+        public int getElasticScaleDownSteps() {
+            return elasticScaleDownSteps;
+        }
+
+        public void setElasticScaleDownSteps(int elasticScaleDownSteps) {
+            this.elasticScaleDownSteps = Math.max(1, elasticScaleDownSteps);
+        }
+
+        public int getElasticScaleCheckIntervalMs() {
+            return elasticScaleCheckIntervalMs;
+        }
+
+        public void setElasticScaleCheckIntervalMs(int elasticScaleCheckIntervalMs) {
+            this.elasticScaleCheckIntervalMs = Math.max(50, elasticScaleCheckIntervalMs);
+        }
+
+        public com.ispf.driver.ingress.IngressElasticSettings resolvedElastic() {
+            return new com.ispf.driver.ingress.IngressElasticSettings(
+                    elasticWriterEnabled,
+                    elasticWriterEnabled ? writerThreadsMin : writerThreads,
+                    elasticWriterEnabled ? writerThreadsMax : writerThreads,
+                    elasticScaleUpQueueThreshold,
+                    elasticScaleDownSteps,
+                    elasticScaleCheckIntervalMs
+            );
+        }
+
+        public int getRetentionDays() {
+            return retentionDays;
+        }
+
+        public void setRetentionDays(int retentionDays) {
+            this.retentionDays = retentionDays;
+        }
 
         public boolean isEnabled() {
             return enabled;
@@ -79,14 +162,6 @@ public class FunctionProperties {
 
         public void setFlushIntervalMs(long flushIntervalMs) {
             this.flushIntervalMs = flushIntervalMs;
-        }
-
-        public int getRetentionDays() {
-            return retentionDays;
-        }
-
-        public void setRetentionDays(int retentionDays) {
-            this.retentionDays = retentionDays;
         }
     }
 

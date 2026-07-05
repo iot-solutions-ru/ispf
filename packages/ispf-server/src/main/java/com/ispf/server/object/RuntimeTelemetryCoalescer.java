@@ -5,6 +5,8 @@ import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
+import com.ispf.driver.ingress.ElasticWorkerScaler;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.context.annotation.Lazy;
@@ -20,6 +22,8 @@ import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,7 +36,10 @@ public class RuntimeTelemetryCoalescer {
     private final ObjectChangePublicationService publicationService;
     private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
     private final TelemetryHistorianFastPath historianFastPath;
-    private final ScheduledExecutorService scheduler;
+    private ScheduledThreadPoolExecutor scheduler;
+    private ElasticWorkerScaler schedulerScaler;
+    private ScheduledExecutorService scaleScheduler;
+    private ScheduledFuture<?> scaleTask;
     private final ConcurrentHashMap<String, PendingUpdate> pending = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, DataRecord> lastPublished = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicBoolean> laneFlushScheduled = new ConcurrentHashMap<>();
@@ -49,13 +56,51 @@ public class RuntimeTelemetryCoalescer {
         this.publicationService = publicationService;
         this.gatewayIngressDispatch = gatewayIngressDispatch;
         this.historianFastPath = historianFastPath;
-        int schedulerThreads = Math.max(1, properties.getCoalesceSchedulerThreads());
+    }
+
+    @PostConstruct
+    void startScheduler() {
+        int minWorkers = properties.resolvedCoalesceSchedulerThreadsMin();
+        int maxWorkers = properties.resolvedCoalesceSchedulerThreadsMax();
         AtomicInteger threadIndex = new AtomicInteger();
-        this.scheduler = Executors.newScheduledThreadPool(schedulerThreads, r -> {
-            Thread thread = new Thread(r, "runtime-telemetry-coalescer-" + threadIndex.incrementAndGet());
+        scheduler = new ScheduledThreadPoolExecutor(minWorkers, runnable -> {
+            Thread thread = new Thread(runnable, "runtime-telemetry-coalescer-" + threadIndex.incrementAndGet());
             thread.setDaemon(true);
             return thread;
         });
+        scheduler.setMaximumPoolSize(maxWorkers);
+        scheduler.setRemoveOnCancelPolicy(true);
+        if (properties.isCoalesceSchedulerElastic()) {
+            schedulerScaler = new ElasticWorkerScaler(
+                    minWorkers,
+                    maxWorkers,
+                    properties.getCoalesceSchedulerScaleUpThreshold(),
+                    properties.getCoalesceSchedulerScaleDownSteps()
+            );
+            scaleScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "runtime-telemetry-coalescer-scale");
+                thread.setDaemon(true);
+                return thread;
+            });
+            scaleTask = scaleScheduler.scheduleAtFixedRate(
+                    this::adjustSchedulerWorkers,
+                    properties.getCoalesceSchedulerScaleCheckIntervalMs(),
+                    properties.getCoalesceSchedulerScaleCheckIntervalMs(),
+                    TimeUnit.MILLISECONDS
+            );
+        }
+    }
+
+    private void adjustSchedulerWorkers() {
+        if (schedulerScaler == null || scheduler == null) {
+            return;
+        }
+        schedulerScaler.adjust(pending.size());
+        int minWorkers = properties.resolvedCoalesceSchedulerThreadsMin();
+        int maxWorkers = properties.resolvedCoalesceSchedulerThreadsMax();
+        int target = Math.min(maxWorkers, Math.max(minWorkers, schedulerScaler.targetWorkers()));
+        scheduler.setMaximumPoolSize(target);
+        scheduler.setCorePoolSize(target);
     }
 
     public void recordUpdate(String path, String variableName, DataRecord value) {
@@ -64,6 +109,10 @@ public class RuntimeTelemetryCoalescer {
 
     public void recordUpdate(String path, String variableName, DataRecord value, Instant observedAt) {
         String coalesceKey = resolveCoalesceKey(path, variableName, value);
+        if (!properties.isCoalesceEnabled()) {
+            publishIfChanged(path, variableName, value, coalesceKey, observedAt);
+            return;
+        }
         if (valuesEqual(lastPublished.get(coalesceKey), value)) {
             return;
         }
@@ -72,11 +121,15 @@ public class RuntimeTelemetryCoalescer {
             return;
         }
         pending.put(coalesceKey, new PendingUpdate(path, variableName, value, observedAt));
+        if (properties.isCoalesceSchedulerElastic() && pending.size() >= properties.getCoalesceSchedulerScaleUpThreshold()) {
+            adjustSchedulerWorkers();
+        }
         scheduleFlushForLane(coalesceKey, path);
     }
 
     public void flushNow() {
         flushAll();
+        gatewayIngressDispatch.flushNow();
     }
 
     /**
@@ -126,14 +179,22 @@ public class RuntimeTelemetryCoalescer {
     @PreDestroy
     public void shutdown() {
         flushAll();
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+        if (scaleTask != null) {
+            scaleTask.cancel(false);
+        }
+        if (scaleScheduler != null) {
+            scaleScheduler.shutdownNow();
+        }
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 scheduler.shutdownNow();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            scheduler.shutdownNow();
         }
     }
 
@@ -195,20 +256,7 @@ public class RuntimeTelemetryCoalescer {
     }
 
     private String resolveCoalesceKey(String path, String variableName, DataRecord value) {
-        if (MqttGatewayIngressDispatchService.isIngressPayload(value)) {
-            Optional<String> topic = MqttGatewayIngressDispatchService.ingressTopic(value);
-            if (topic.isPresent() && !topic.get().isBlank()) {
-                String base = path + "|" + variableName + "|" + topic.get();
-                if (policyService.ingressPayloadLanes(path)) {
-                    return MqttGatewayIngressDispatchService.ingressRaw(value)
-                            .filter(raw -> !raw.isBlank())
-                            .map(raw -> base + "|" + payloadLaneSuffix(raw))
-                            .orElse(base);
-                }
-                return base;
-            }
-        }
-        return path + "|" + variableName;
+        return TelemetryIngressCoalesceKey.laneKey(path, variableName, value, policyService.ingressPayloadLanes(path));
     }
 
     static String coalesceKey(String path, String variableName, DataRecord value) {
@@ -216,24 +264,7 @@ public class RuntimeTelemetryCoalescer {
     }
 
     static String coalesceKey(String path, String variableName, DataRecord value, boolean ingressPayloadLanes) {
-        if (MqttGatewayIngressDispatchService.isIngressPayload(value)) {
-            Optional<String> topic = MqttGatewayIngressDispatchService.ingressTopic(value);
-            if (topic.isPresent() && !topic.get().isBlank()) {
-                String base = path + "|" + variableName + "|" + topic.get();
-                if (ingressPayloadLanes) {
-                    return MqttGatewayIngressDispatchService.ingressRaw(value)
-                            .filter(raw -> !raw.isBlank())
-                            .map(raw -> base + "|" + payloadLaneSuffix(raw))
-                            .orElse(base);
-                }
-                return base;
-            }
-        }
-        return path + "|" + variableName;
-    }
-
-    private static String payloadLaneSuffix(String raw) {
-        return Integer.toUnsignedString(raw.hashCode(), 36);
+        return TelemetryIngressCoalesceKey.laneKey(path, variableName, value, ingressPayloadLanes);
     }
 
     static boolean valuesEqual(DataRecord left, DataRecord right) {

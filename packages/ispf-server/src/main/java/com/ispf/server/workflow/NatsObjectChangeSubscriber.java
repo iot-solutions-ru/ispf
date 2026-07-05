@@ -3,7 +3,9 @@ package com.ispf.server.workflow;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.config.ReplicaCapability;
 import com.ispf.server.object.ClusterVariableReplicaApplier;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
@@ -31,6 +33,7 @@ public class NatsObjectChangeSubscriber {
     private static final Logger log = LoggerFactory.getLogger(NatsObjectChangeSubscriber.class);
 
     private final NatsProperties properties;
+    private final ClusterProperties clusterProperties;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
     private final Connection connection;
@@ -39,6 +42,7 @@ public class NatsObjectChangeSubscriber {
 
     public NatsObjectChangeSubscriber(
             NatsProperties properties,
+            ClusterProperties clusterProperties,
             ObjectMapper objectMapper,
             ApplicationEventPublisher eventPublisher,
             NatsEventBridge eventBridge,
@@ -46,6 +50,7 @@ public class NatsObjectChangeSubscriber {
             ClusterVariableReplicaApplier replicaApplier
     ) {
         this.properties = properties;
+        this.clusterProperties = clusterProperties;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
         this.connection = eventBridge.connection();
@@ -57,6 +62,11 @@ public class NatsObjectChangeSubscriber {
     @Order(130)
     public void subscribe() {
         if (!properties.enabled() || !properties.replicaEventsEnabled() || connection == null) {
+            return;
+        }
+        if (clusterProperties.enabled() && !clusterProperties.hasCapability(ReplicaCapability.REPLICA_SYNC)) {
+            log.info("NATS replica subscribe skipped (replica-sync capability disabled, replicaId={})",
+                    properties.replicaId());
             return;
         }
         Dispatcher dispatcher = connection.createDispatcher(this::handleMessage);

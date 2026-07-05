@@ -36,6 +36,10 @@ public class PlatformClusterHealthService {
         return new ClusterHealth(
                 clusterProperties.enabled(),
                 clusterProperties.isDriverOwnershipActive(),
+                clusterProperties.effectiveCapabilities().profile().externalName(),
+                clusterProperties.effectiveCapabilities().profile().legacyRoleName(),
+                clusterProperties.effectiveCapabilities().externalNames(),
+                clusterProperties.isJobConsumerActive(),
                 natsProperties.replicaId(),
                 driverOwnershipService.countHeldLocks(),
                 driverOwnershipService.listHeldDevicePaths(),
@@ -55,6 +59,10 @@ public class PlatformClusterHealthService {
     public record ClusterHealth(
             boolean clusterEnabled,
             boolean driverOwnershipEnabled,
+            String replicaProfile,
+            String replicaRole,
+            java.util.List<String> replicaCapabilities,
+            boolean jobConsumerActive,
             String replicaId,
             int heldDriverLocks,
             List<String> heldDevicePaths,

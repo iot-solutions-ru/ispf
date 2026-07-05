@@ -4,6 +4,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.FieldDefinition;
 import com.ispf.core.object.Variable;
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.PlatformLeaderLockService;
@@ -38,6 +39,7 @@ public class VariableHistoryService {
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
+    private final ClusterProperties clusterProperties;
     private final VariableHistoryAsyncWriter asyncWriter;
     private final VariableHistoryBatchPersister batchPersister;
     private final VariableHistoryQueryStore queryStore;
@@ -55,6 +57,7 @@ public class VariableHistoryService {
             ObjectManager objectManager,
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
+            ClusterProperties clusterProperties,
             VariableHistoryAsyncWriter asyncWriter,
             VariableHistoryBatchPersister batchPersister,
             VariableHistoryQueryStore queryStore
@@ -65,6 +68,7 @@ public class VariableHistoryService {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
+        this.clusterProperties = clusterProperties;
         this.asyncWriter = asyncWriter;
         this.batchPersister = batchPersister;
         this.queryStore = queryStore;
@@ -504,6 +508,9 @@ public class VariableHistoryService {
     @Transactional
     public void purgeExpiredSamples() {
         if (!properties.isEnabled()) {
+            return;
+        }
+        if (!clusterProperties.isSchedulerActive()) {
             return;
         }
         if (!leaderLockService.tryAcquire(RETENTION_LOCK, Duration.ofHours(1))) {

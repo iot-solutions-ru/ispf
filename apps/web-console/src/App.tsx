@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
+import { fetchOperatorApps } from "./api/operatorApps";
 import { logout } from "./auth/login";
 import { getPrimaryRole, getStoredSession, isAdminSession, setStoredSession, type AuthSession } from "./auth/session";
 import { SESSION_INVALID_EVENT, validateStoredSession } from "./auth/validateSession";
@@ -46,7 +47,7 @@ import ShellPreferences from "./components/ShellPreferences";
 import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
-import { isOperatorAppChildPath } from "./utils/operatorAppsPath";
+import { isOperatorAppChildPath, resolveOperatorAppIdFromPath } from "./utils/operatorAppsPath";
 import { APPLICATIONS_ROOT } from "./utils/createObjectMode";
 
 const OperatorView = lazy(() => import("./components/operator/OperatorView"));
@@ -494,6 +495,22 @@ function AppShell() {
     setAppMode("operator");
   };
 
+  const operatorAppsQuery = useQuery({
+    queryKey: ["operator-apps"],
+    queryFn: fetchOperatorApps,
+    enabled: Boolean(session?.token),
+  });
+
+  const openOperatorAppFromPath = useCallback(
+    (path: string) => {
+      const appId = resolveOperatorAppIdFromPath(path, operatorAppsQuery.data ?? []);
+      if (appId) {
+        selectOperatorApp(appId);
+      }
+    },
+    [operatorAppsQuery.data],
+  );
+
   const handleLoggedIn = (next: AuthSession) => {
     setSession(next);
     queryClient.invalidateQueries();
@@ -668,6 +685,7 @@ function AppShell() {
                   selectedKeys={selectedKeys}
                   onRowSelect={handleTreeRowSelect}
                   onOpenEditor={openEditor}
+                  onOpenOperatorApp={openOperatorAppFromPath}
                   canReorder={isAdmin && !treeFilter.trim()}
                   onReorder={handleTreeReorder}
                   onLoadChildren={(path) => void loadChildren(path)}
@@ -709,6 +727,7 @@ function AppShell() {
                 selectedPath={selectedPath}
                 selectedObject={selectedObject}
                 onOpenEditor={openEditor}
+                onOpenOperatorApp={openOperatorAppFromPath}
                 onDeleted={() => {
                   setSelectedPath("root");
                   if (isMobileLayout) {

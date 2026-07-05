@@ -1,5 +1,6 @@
 package com.ispf.server.object;
 
+import com.ispf.core.object.ObjectNotFoundException;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
@@ -13,6 +14,7 @@ import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.config.MqttGatewayProperties;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.function.java.JavaFunctionRuntimeService;
 import com.ispf.server.persistence.ObjectEntityMapper;
@@ -28,6 +30,7 @@ import com.ispf.server.plugin.blueprint.BlueprintPersistenceService;
 import com.ispf.server.plugin.blueprint.SystemIntrinsicBlueprintMigration;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.event.TelemetryEventJournalFastPath;
+import com.ispf.server.function.MqttGatewayIngressDispatchService;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import org.springframework.beans.factory.ObjectProvider;
@@ -75,6 +78,8 @@ public class ObjectManager {
     private final ObjectConfigAuditService configAuditService;
     private final RuntimeTelemetryCoalescer telemetryCoalescer;
     private final TelemetryIngressDispatcher telemetryIngressDispatcher;
+    private final MqttGatewayIngressDispatchService gatewayIngressDispatch;
+    private final MqttGatewayProperties mqttGatewayProperties;
     private final TelemetryHistorianFastPath historianFastPath;
     private final TelemetryEventJournalFastPath eventJournalFastPath;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
@@ -100,6 +105,8 @@ public class ObjectManager {
             ObjectConfigAuditService configAuditService,
             @org.springframework.context.annotation.Lazy RuntimeTelemetryCoalescer telemetryCoalescer,
             @org.springframework.context.annotation.Lazy TelemetryIngressDispatcher telemetryIngressDispatcher,
+            @org.springframework.context.annotation.Lazy MqttGatewayIngressDispatchService gatewayIngressDispatch,
+            @org.springframework.context.annotation.Lazy MqttGatewayProperties mqttGatewayProperties,
             @org.springframework.context.annotation.Lazy TelemetryHistorianFastPath historianFastPath,
             @org.springframework.context.annotation.Lazy TelemetryEventJournalFastPath eventJournalFastPath,
             JavaFunctionRuntimeService javaFunctionRuntimeService,
@@ -122,6 +129,8 @@ public class ObjectManager {
         this.configAuditService = configAuditService;
         this.telemetryCoalescer = telemetryCoalescer;
         this.telemetryIngressDispatcher = telemetryIngressDispatcher;
+        this.gatewayIngressDispatch = gatewayIngressDispatch;
+        this.mqttGatewayProperties = mqttGatewayProperties;
         this.historianFastPath = historianFastPath;
         this.eventJournalFastPath = eventJournalFastPath;
         this.javaFunctionRuntimeService = javaFunctionRuntimeService;
@@ -152,6 +161,7 @@ public class ObjectManager {
         } else {
             fixtureBlueprintBootstrap.ifAvailable(bootstrap -> bootstrap.removeFixtureBlueprintsIfPresent(this));
         }
+        fixtureBlueprintBootstrap.ifAvailable(FixtureBlueprintBootstrap::ensureMqttGatewaySensorInstanceModel);
         blueprintEngine.ifAvailable(engine -> {
             engine.refreshBlueprintCatalogNodes();
             cleanupLegacyBlueprintCatalog();
@@ -175,12 +185,17 @@ public class ObjectManager {
 
     public PlatformObject require(String path) {
         Optional<PlatformObject> found = objectTree.findByPath(path);
+        ClusterPlatformBootstrapService cluster = clusterBootstrapService.getIfAvailable();
         if (found.isPresent()) {
+            if (isInitialized() && cluster != null && cluster.isClusterActive()
+                    && nodeRepository.findByPath(path).isEmpty()) {
+                removePathFromMemoryIfPresent(path);
+                throw new ObjectNotFoundException(path);
+            }
             return found.get();
         }
-        ClusterPlatformBootstrapService cluster = clusterBootstrapService.getIfAvailable();
         if (cluster != null && cluster.isClusterActive()) {
-            syncPathFromDatabase(path);
+            reloadPathFromDatabase(path);
         }
         return objectTree.require(path);
     }
@@ -407,11 +422,17 @@ public class ObjectManager {
 
     @Transactional
     public void delete(String path) {
-        objectTree.delete(path);
+        if (path == null || path.isBlank() || "root".equals(path)) {
+            throw new IllegalArgumentException("Cannot delete root object");
+        }
         List<ObjectNodeEntity> toDelete = nodeRepository.findAllByOrderByPathAsc().stream()
                 .filter(e -> e.getPath().equals(path) || e.getPath().startsWith(path + "."))
                 .sorted(Comparator.comparingInt(e -> -e.getPath().length()))
                 .toList();
+        if (toDelete.isEmpty() && objectTree.findByPath(path).isEmpty()) {
+            throw new ObjectNotFoundException(path);
+        }
+        removePathFromMemoryIfPresent(path);
         for (ObjectNodeEntity entity : toDelete) {
             variableRepository.deleteByObjectPath(entity.getPath());
             nodeRepository.deleteById(entity.getId());
@@ -433,6 +454,10 @@ public class ObjectManager {
             return resolveDriverTelemetryVariable(path, name, value);
         }
         Variable variable = setDriverTelemetryValueInMemory(path, name, value);
+        if (mqttGatewayProperties.isIngressBypassL3Queue()
+                && gatewayIngressDispatch.tryScheduleDispatch(path, name, value)) {
+            return variable;
+        }
         if (telemetryIngressDispatcher.isEnabled()) {
             telemetryIngressDispatcher.submit(path, name, value, observedAt);
         } else {
@@ -819,6 +844,14 @@ public class ObjectManager {
     }
 
     public synchronized void syncPathFromDatabase(String path) {
+        reloadPathFromDatabase(path);
+    }
+
+    /**
+     * Reloads node metadata and all persisted variables from PostgreSQL (cluster follower sync).
+     * Removes RAM variables absent in PG; drops the path from RAM when the node no longer exists.
+     */
+    public synchronized void reloadPathFromDatabase(String path) {
         if (path == null || path.isBlank() || "root".equals(path)) {
             return;
         }
@@ -827,7 +860,88 @@ public class ObjectManager {
             removePathFromMemoryIfPresent(path);
             return;
         }
-        registerNodeFromEntity(entityOpt.get(), loadVariablesByPath(List.of(path)).getOrDefault(path, List.of()));
+        List<ObjectVariableEntity> variableEntities =
+                loadVariablesByPath(List.of(path)).getOrDefault(path, List.of());
+        Optional<PlatformObject> existing = objectTree.findByPath(path);
+        if (existing.isEmpty()) {
+            registerNodeFromEntity(entityOpt.get(), variableEntities);
+            return;
+        }
+        applyEntityToExistingNode(existing.get(), entityOpt.get(), variableEntities);
+    }
+
+    private void applyEntityToExistingNode(
+            PlatformObject node,
+            ObjectNodeEntity entity,
+            List<ObjectVariableEntity> variableEntities
+    ) {
+        node.setType(entity.getType());
+        node.updateInfo(entity.getDisplayName(), entity.getDescription());
+        node.setSortOrder(entity.getSortOrder());
+        node.setRevision(entity.getRevision());
+        node.setLastChangedBy(entity.getLastChangedBy());
+        node.setLastChangedAt(entity.getLastChangedAt());
+        node.setappliedBlueprintIds(mapper.readappliedBlueprintIds(entity.getappliedBlueprintIdsJson()));
+        node.setBindingAuditEnabled(entity.isBindingAuditEnabled());
+        node.setFunctionAuditEnabled(entity.isFunctionAuditEnabled());
+        node.setEventJournalEnabled(entity.isEventJournalEnabled());
+
+        for (String name : new ArrayList<>(node.events().keySet())) {
+            node.removeEvent(name);
+        }
+        for (EventDescriptor event : mapper.readEvents(entity.getEventsJson())) {
+            node.addEvent(event);
+        }
+        for (String name : new ArrayList<>(node.functions().keySet())) {
+            node.removeFunction(name);
+        }
+        for (FunctionDescriptor function : mapper.readFunctions(entity.getFunctionsJson())) {
+            node.addFunction(function);
+        }
+
+        Set<String> dbVariableNames = new LinkedHashSet<>();
+        for (ObjectVariableEntity varEntity : variableEntities) {
+            dbVariableNames.add(varEntity.getName());
+            upsertVariableFromEntity(node, varEntity);
+        }
+        for (String ramName : new ArrayList<>(node.variables().keySet())) {
+            if (!dbVariableNames.contains(ramName)) {
+                node.removeVariable(ramName);
+            }
+        }
+    }
+
+    private void upsertVariableFromEntity(PlatformObject node, ObjectVariableEntity entity) {
+        DataRecord value = mapper.readDataRecord(entity.getValueJson());
+        node.getVariable(entity.getName()).ifPresentOrElse(
+                variable -> variable.setComputedValue(value),
+                () -> node.addVariable(new Variable(
+                        entity.getName(),
+                        mapper.readSchema(entity.getSchemaJson()),
+                        entity.isReadable(),
+                        entity.isWritable(),
+                        value,
+                        entity.isHistoryEnabled(),
+                        entity.getHistoryRetentionDays()
+                ))
+        );
+    }
+
+    /** Reloads a persisted config variable from PostgreSQL (cluster follower sync). */
+    public synchronized void syncVariableFromDatabase(String path, String name) {
+        if (path == null || path.isBlank() || "root".equals(path) || name == null || name.isBlank()) {
+            return;
+        }
+        Optional<ObjectVariableEntity> entityOpt = variableRepository.findByObjectPathAndName(path, name);
+        if (entityOpt.isEmpty()) {
+            objectTree.findByPath(path).ifPresent(node -> node.removeVariable(name));
+            return;
+        }
+        if (objectTree.findByPath(path).isEmpty()) {
+            syncPathFromDatabase(path);
+            return;
+        }
+        upsertVariableFromEntity(objectTree.require(path), entityOpt.get());
     }
 
     public synchronized void removePathFromMemoryIfPresent(String path) {
@@ -1015,7 +1129,7 @@ public class ObjectManager {
         switch (event.type()) {
             case VARIABLE_UPDATED -> {
                 if (event.revision() != null || event.changedBy() != null) {
-                    publicationService.publishConfigVariableChange(event);
+                    publicationService.publishConfigVariableChangeAfterCommit(event);
                 } else {
                     publicationService.publishVariableChange(event.path(), event.variableName(), event.observedAt());
                 }

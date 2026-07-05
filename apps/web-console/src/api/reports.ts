@@ -33,6 +33,17 @@ export interface ReportRunResult {
   truncated: boolean;
 }
 
+export interface PlatformJobView {
+  jobId: string;
+  jobType?: string;
+  status: string;
+  result?: ReportRunResult;
+  errorMessage?: string;
+  createdAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
 export interface SaveReportDefinitionPayload {
   title?: string;
   dataSourcePath?: string;
@@ -118,6 +129,72 @@ export function saveReportDefinition(
 }
 
 export function runReportByPath(
+  path: string,
+  parameters?: Record<string, unknown>
+): Promise<ReportRunResult> {
+  return runReportByPathAsync(path, parameters);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function fetchPlatformJob(jobId: string): Promise<PlatformJobView> {
+  return fetch(`/api/v1/platform/jobs/${encodeURIComponent(jobId)}`, {
+    headers: getAuthHeaders(),
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(await parseError(response, `Failed to load job: ${response.status}`));
+    }
+    return response.json();
+  });
+}
+
+export async function runReportByPathAsync(
+  path: string,
+  parameters?: Record<string, unknown>,
+  options?: { maxAttempts?: number; intervalMs?: number }
+): Promise<ReportRunResult> {
+  const params = new URLSearchParams({ path });
+  const submit = await fetch(`/api/v1/reports/by-path/run-async?${params}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ parameters: parameters ?? {} }),
+  });
+  if (!submit.ok) {
+    throw new Error(await parseError(submit, `Report run failed: ${submit.status}`));
+  }
+  const payload = (await submit.json()) as { jobId: string };
+  return pollReportJob(payload.jobId, options);
+}
+
+async function pollReportJob(
+  jobId: string,
+  options?: { maxAttempts?: number; intervalMs?: number }
+): Promise<ReportRunResult> {
+  const maxAttempts = options?.maxAttempts ?? 120;
+  const intervalMs = options?.intervalMs ?? 500;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const job = await fetchPlatformJob(jobId);
+    if (job.status === "COMPLETED") {
+      if (!job.result) {
+        throw new Error("Report job completed without result");
+      }
+      return job.result;
+    }
+    if (job.status === "FAILED") {
+      throw new Error(job.errorMessage || "Report job failed");
+    }
+    await sleep(intervalMs);
+  }
+  throw new Error("Report job timed out");
+}
+
+/** Synchronous run — tests and legacy callers. */
+export function runReportByPathSync(
   path: string,
   parameters?: Record<string, unknown>
 ): Promise<ReportRunResult> {

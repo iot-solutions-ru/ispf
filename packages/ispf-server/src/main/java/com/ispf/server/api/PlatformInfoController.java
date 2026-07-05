@@ -49,6 +49,11 @@ public class PlatformInfoController {
         payload.put("environment", environment);
         payload.put("replicaId", natsProperties.replicaId());
         payload.put("clusterEnabled", clusterProperties.enabled());
+        var capabilitySet = clusterProperties.effectiveCapabilities();
+        payload.put("replicaProfile", capabilitySet.profile().externalName());
+        payload.put("replicaRole", capabilitySet.profile().legacyRoleName());
+        payload.put("replicaCapabilities", capabilitySet.externalNames());
+        payload.put("jobConsumerActive", clusterProperties.isJobConsumerActive());
         payload.put("timestamp", Instant.now().toString());
         payload.put("javaVersion", Runtime.version().toString());
         payload.put("springBootVersion", SpringBootVersion.getVersion());

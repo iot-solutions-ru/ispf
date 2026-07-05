@@ -178,6 +178,21 @@ public class DriverOwnershipService {
         if (!isEnabled()) {
             return Map.of();
         }
+        return queryLocksByHolder();
+    }
+
+    /**
+     * Cluster health/registry: read lock counts from PG even on api/worker nodes that do not
+     * participate in driver ownership locally (ADR-0031).
+     */
+    public Map<String, Integer> countLocksByHolderForClusterView() {
+        if (!clusterProperties.enabled()) {
+            return countLocksByHolder();
+        }
+        return queryLocksByHolder();
+    }
+
+    private Map<String, Integer> queryLocksByHolder() {
         Map<String, Integer> counts = new HashMap<>();
         jdbcTemplate.query(
                 """

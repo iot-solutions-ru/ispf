@@ -4,6 +4,7 @@ import com.ispf.server.config.BindingProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.FunctionProperties;
+import com.ispf.server.config.MqttGatewayProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -29,6 +30,7 @@ public class PlatformRuntimeSettingsService {
     private final BindingProperties bindingProperties;
     private final VariableHistoryProperties variableHistoryProperties;
     private final DriverPackProperties driverPackProperties;
+    private final MqttGatewayProperties mqttGatewayProperties;
     private final ObjectChangeEventBus objectChangeEventBus;
 
     public PlatformRuntimeSettingsService(
@@ -41,6 +43,7 @@ public class PlatformRuntimeSettingsService {
             BindingProperties bindingProperties,
             VariableHistoryProperties variableHistoryProperties,
             DriverPackProperties driverPackProperties,
+            MqttGatewayProperties mqttGatewayProperties,
             ObjectChangeEventBus objectChangeEventBus
     ) {
         this.environment = environment;
@@ -52,6 +55,7 @@ public class PlatformRuntimeSettingsService {
         this.bindingProperties = bindingProperties;
         this.variableHistoryProperties = variableHistoryProperties;
         this.driverPackProperties = driverPackProperties;
+        this.mqttGatewayProperties = mqttGatewayProperties;
         this.objectChangeEventBus = objectChangeEventBus;
     }
 
@@ -196,8 +200,20 @@ public class PlatformRuntimeSettingsService {
         switch (definition.id()) {
             case "runtime-telemetry.coalesce-ms" ->
                     runtimeTelemetryProperties.setCoalesceMs(Long.parseLong(value));
+            case "runtime-telemetry.coalesce-enabled" ->
+                    runtimeTelemetryProperties.setCoalesceEnabled(Boolean.parseBoolean(value));
+            case "runtime-telemetry.ingress-queue-coalesce" ->
+                    runtimeTelemetryProperties.setIngressQueueCoalesceEnabled(Boolean.parseBoolean(value));
+            case "runtime-telemetry.coalesce-scheduler-elastic" ->
+                    runtimeTelemetryProperties.setCoalesceSchedulerElastic(Boolean.parseBoolean(value));
+            case "runtime-telemetry.coalesce-scheduler-threads-max" ->
+                    runtimeTelemetryProperties.setCoalesceSchedulerThreadsMax(Integer.parseInt(value));
+            case "runtime-telemetry.ingress-elastic-workers" ->
+                    runtimeTelemetryProperties.setIngressElasticWorkers(Boolean.parseBoolean(value));
             case "runtime-telemetry.ingress-capacity" ->
                     runtimeTelemetryProperties.setIngressQueueCapacity(Integer.parseInt(value));
+            case "runtime-telemetry.ingress-workers-max" ->
+                    runtimeTelemetryProperties.setIngressWorkerThreadsMax(Integer.parseInt(value));
             case "object-change.coalesce-telemetry" ->
                     objectChangeProperties.setCoalesceTelemetryUpdates(Boolean.parseBoolean(value));
             case "object-change.worker-threads" ->
@@ -224,12 +240,24 @@ public class PlatformRuntimeSettingsService {
                     objectChangeProperties.setAutomationWorkerThreadsMin(Integer.parseInt(value));
             case "object-change.automation-workers-max" ->
                     objectChangeProperties.setAutomationWorkerThreadsMax(Integer.parseInt(value));
+            case "object-change.coalesce-scheduler-elastic" ->
+                    objectChangeProperties.setCoalesceSchedulerElastic(Boolean.parseBoolean(value));
+            case "object-change.coalesce-scheduler-threads-max" ->
+                    objectChangeProperties.setCoalesceSchedulerThreadsMax(Integer.parseInt(value));
+            case "object-change.scale-scheduler-elastic" ->
+                    objectChangeProperties.setScaleSchedulerElastic(Boolean.parseBoolean(value));
+            case "object-change.scale-scheduler-threads-max" ->
+                    objectChangeProperties.setScaleSchedulerThreadsMax(Integer.parseInt(value));
             case "event-journal.enabled" ->
                     eventJournalProperties.setEnabled(Boolean.parseBoolean(value));
             case "function-audit.enabled" ->
                     functionProperties.getAudit().setEnabled(Boolean.parseBoolean(value));
             case "binding-audit.enabled" ->
                     bindingProperties.getAudit().setEnabled(Boolean.parseBoolean(value));
+            case "binding.async-coalesce-enabled" ->
+                    bindingProperties.setAsyncCoalesceEnabled(Boolean.parseBoolean(value));
+            case "mqtt-gateway.ingress-dispatch-coalesce" ->
+                    mqttGatewayProperties.setIngressDispatchCoalesceEnabled(Boolean.parseBoolean(value));
             case "event-journal.cassandra.partition-batch" ->
                     eventJournalProperties.getCassandra().setMaxStatementsPerPartitionBatch(Integer.parseInt(value));
             case "event-journal.cassandra.parallel-batches-min" ->
@@ -266,6 +294,8 @@ public class PlatformRuntimeSettingsService {
                     variableHistoryProperties.setBatchSize(Integer.parseInt(value));
             case "variable-history.flush-interval-ms" ->
                     variableHistoryProperties.setFlushIntervalMs(Long.parseLong(value));
+            case "variable-history.writer-threads-max" ->
+                    variableHistoryProperties.setWriterThreadsMax(Integer.parseInt(value));
             case "driver.mqtt-callback-threads" ->
                     driverPackProperties.setMqttCallbackThreads(Integer.parseInt(value));
             case "driver.mqtt-callback-queue-capacity" ->

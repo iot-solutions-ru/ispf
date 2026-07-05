@@ -4,6 +4,7 @@ import com.ispf.server.config.BindingProperties;
 import com.ispf.server.config.DriverPackProperties;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.FunctionProperties;
+import com.ispf.server.config.MqttGatewayProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.config.RuntimeTelemetryProperties;
 import com.ispf.server.config.VariableHistoryProperties;
@@ -49,6 +50,7 @@ class PlatformRuntimeSettingsServiceTest {
                 new BindingProperties(),
                 new VariableHistoryProperties(),
                 new DriverPackProperties(),
+                new MqttGatewayProperties(),
                 objectChangeEventBus
         );
     }
@@ -102,6 +104,7 @@ class PlatformRuntimeSettingsServiceTest {
                 new BindingProperties(),
                 new VariableHistoryProperties(),
                 new DriverPackProperties(),
+                new MqttGatewayProperties(),
                 objectChangeEventBus
         );
 

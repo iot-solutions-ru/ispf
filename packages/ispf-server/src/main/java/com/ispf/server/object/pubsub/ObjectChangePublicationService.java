@@ -1,5 +1,6 @@
 package com.ispf.server.object.pubsub;
 
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectChangeEvent;
@@ -23,6 +24,7 @@ public class ObjectChangePublicationService {
     private final StructureChangeSubscriptionRegistry structureSubscriptionRegistry;
     private final DeviceTelemetryPolicyService telemetryPolicyService;
     private final ObjectChangeProperties objectChangeProperties;
+    private final ClusterProperties clusterProperties;
 
     public ObjectChangePublicationService(
             ApplicationEventPublisher eventPublisher,
@@ -30,7 +32,8 @@ public class ObjectChangePublicationService {
             EventFiredSubscriptionRegistry eventFiredSubscriptionRegistry,
             StructureChangeSubscriptionRegistry structureSubscriptionRegistry,
             DeviceTelemetryPolicyService telemetryPolicyService,
-            ObjectChangeProperties objectChangeProperties
+            ObjectChangeProperties objectChangeProperties,
+            ClusterProperties clusterProperties
     ) {
         this.eventPublisher = eventPublisher;
         this.variableSubscriptionRegistry = variableSubscriptionRegistry;
@@ -38,6 +41,7 @@ public class ObjectChangePublicationService {
         this.structureSubscriptionRegistry = structureSubscriptionRegistry;
         this.telemetryPolicyService = telemetryPolicyService;
         this.objectChangeProperties = objectChangeProperties;
+        this.clusterProperties = clusterProperties;
     }
 
     /**
@@ -79,9 +83,7 @@ public class ObjectChangePublicationService {
         // Config/API writes always fan out to automation (bindings, workflows) for eligible devices.
         boolean automationEligible = telemetryPolicyService.automationEligible(template.path())
                 || interest.automation();
-        if (!telemetry && !automationEligible && !interest.uiRefresh()) {
-            return false;
-        }
+        // Persisted config/API writes always publish (cluster NATS sync, explorer refresh).
         eventPublisher.publishEvent(new ObjectChangeEvent(
                 ObjectChangeType.VARIABLE_UPDATED,
                 template.path(),
@@ -115,12 +117,38 @@ public class ObjectChangePublicationService {
             eventPublisher.publishEvent(template);
             return true;
         }
+        if (shouldFanOutToClusterReplicas()) {
+            eventPublisher.publishEvent(template);
+            return true;
+        }
         StructureChangeInterest interest = structureSubscriptionRegistry.interest(template.type(), template.path());
         if (!interest.hasAny()) {
             return false;
         }
         eventPublisher.publishEvent(template);
         return true;
+    }
+
+    /** ADR-0030: cluster followers must receive structure/config writes even without local WS interest. */
+    private boolean shouldFanOutToClusterReplicas() {
+        return clusterProperties.enabled();
+    }
+
+    /**
+     * Defers config variable fan-out until the DB transaction commits so cluster replicas can
+     * reload the value from the shared database when they receive the NATS event.
+     */
+    public void publishConfigVariableChangeAfterCommit(ObjectChangeEvent template) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            publishConfigVariableChange(template);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                publishConfigVariableChange(template);
+            }
+        });
     }
 
     /**

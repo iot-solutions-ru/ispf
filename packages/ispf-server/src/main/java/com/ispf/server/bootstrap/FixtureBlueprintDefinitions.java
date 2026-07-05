@@ -3,9 +3,11 @@ package com.ispf.server.bootstrap;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.core.object.EventDescriptor;
+import com.ispf.core.object.EventLevel;
+import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.function.MqttGatewayFunctionHandler;
-import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.binding.BindingVariableRef;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.plugin.blueprint.BlueprintBindingRule;
@@ -66,6 +68,17 @@ public final class FixtureBlueprintDefinitions {
             .field("routedPath", FieldType.STRING)
             .build();
 
+    private static final DataSchema BOOLEAN_VALUE_SCHEMA = DataSchema.builder("booleanValue")
+            .field("value", FieldType.BOOLEAN)
+            .build();
+
+    private static final DataSchema FUNCTION_RESULT_SCHEMA = DataSchema.builder("functionResult")
+            .field("success", FieldType.BOOLEAN)
+            .field("message", FieldType.STRING)
+            .build();
+
+    private static final DataSchema VOID_INPUT_SCHEMA = DataSchema.builder("voidInput").build();
+
     private FixtureBlueprintDefinitions() {
     }
 
@@ -98,12 +111,15 @@ public final class FixtureBlueprintDefinitions {
                         ),
                         BlueprintVariableDefinition.of(
                                 "sensorParentPath",
-                                "Parent path for routed child sensors",
+                                "Parent path for routed child sensor instances",
                                 "config",
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 true,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                                DataRecord.single(
+                                        STRING_VALUE_SCHEMA,
+                                        Map.of("value", "root.platform.instances")
+                                )
                         ),
                         BlueprintVariableDefinition.of(
                                 "sensorNamePrefix",
@@ -299,9 +315,9 @@ public final class FixtureBlueprintDefinitions {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
                 FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL,
-                "MQTT gateway child sensor — INSTANCE type (instantiate under gateway.sensors)",
+                "MQTT temperature sensor — child of mqtt-gateway-v1 (telemetry via dispatchTelemetry, threshold alarms)",
                 BlueprintType.INSTANCE,
-                ObjectType.DEVICE,
+                ObjectType.CUSTOM,
                 "",
                 List.of(
                         BlueprintVariableDefinition.withHistory(
@@ -321,11 +337,51 @@ public final class FixtureBlueprintDefinitions {
                                 true,
                                 true,
                                 DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 35.0))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "temperaturePercent",
+                                "Temperature normalized to 0-100% (-20..50 °C)",
+                                "telemetry",
+                                THRESHOLD_SCHEMA,
+                                true,
+                                false,
+                                DataRecord.single(THRESHOLD_SCHEMA, Map.of("value", 0.0))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "alarmActive",
+                                "Whether temperature exceeds threshold",
+                                "status",
+                                DataSchema.builder("alarmActive").field("value", FieldType.BOOLEAN).build(),
+                                true,
+                                false,
+                                DataRecord.single(
+                                        DataSchema.builder("alarmActive").field("value", FieldType.BOOLEAN).build(),
+                                        Map.of("value", false)
+                                )
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "alarmAcknowledged",
+                                "Operator acknowledged the active alarm",
+                                "status",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                true,
+                                DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         )
                 ),
-                List.of(),
-                List.of(),
-                List.of(),
+                List.of(new EventDescriptor(
+                        "thresholdExceeded",
+                        "Temperature exceeded configured threshold",
+                        TEMPERATURE_SCHEMA,
+                        EventLevel.WARNING
+                )),
+                List.of(new FunctionDescriptor(
+                        "acknowledgeAlarm",
+                        "Acknowledge active temperature alarm",
+                        VOID_INPUT_SCHEMA,
+                        FUNCTION_RESULT_SCHEMA
+                )),
+                List.of(BlueprintBindingRule.of("alarm-active", "alarmActive", "hysteresis(temperature, 35, 33)")),
                 Map.of("unit", "C"),
                 Instant.now(),
                 Instant.now()

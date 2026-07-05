@@ -182,7 +182,7 @@ bash deploy/cluster-quickstart.sh
 ```
 
 Compose file: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
-Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST round-robin, `/ws/` `ip_hash` sticky, `max_fails` passive health.
+Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST и WS `ip_hash` (sticky по IP клиента), `max_fails` passive health, `proxy_next_upstream` при 502/503/504.
 
 ### Required env (each replica)
 
@@ -230,6 +230,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 - [ ] Nginx upstream lists all healthy `ispf-server-*` backends; `/ws/` uses `ip_hash`
 - [ ] `GET /api/v1/platform/cluster/health` (admin) — all nodes `UP`, driver locks visible
 - [ ] Smoke: `bash deploy/cluster-smoke-test.sh` (round-robin, REST failover, driver reclaim)
+- [ ] Config sync: `bash deploy/cluster-smoke-test.sh --config-sync` ([ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md))
 - [ ] Scale gate (lab/CI): `python deploy/cluster-scale-load-test.py --scale-factor-floor 1.8`
 - [ ] Kill one replica: REST via LB stays 200; driver locks migrate within TTL + failover scan
 
@@ -239,8 +240,26 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 | ---- | ------------------ |
 | JDBC ownership | `./gradlew :packages:ispf-server:test --tests com.ispf.server.driver.ClusterFailoverIntegrationTest` |
 | Compose smoke | `bash deploy/cluster-smoke-test.sh` |
+| Config/structure sync smoke | `bash deploy/cluster-smoke-test.sh --config-sync` |
 | Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
 | CI | [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) |
+
+### Prod VPS 3-node cluster (`ispf.iot-solutions.ru`)
+
+Prod runs **3 Docker replicas** behind nginx on `:8080` (systemd `ispf-server` disabled). Config/structure sync: [ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md).
+
+| Script | When |
+|--------|------|
+| [`vps-deploy-direct.ps1 -Cluster`](../deploy/vps-deploy-direct.ps1) | Routine jar + UI rollout |
+| [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload (no `docker-compose --force-recreate`) |
+| [`vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh) | First-time cluster install only |
+| [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis (not for desync — use after ADR-0030) |
+| [`vps-cluster-verify.sh`](../deploy/vps-cluster-verify.sh) | Post-deploy health; `--config-sync` smoke |
+
+```powershell
+.\deploy\vps-deploy-direct.ps1 -Version 0.9.93 -SkipTests -Cluster
+ssh root@ispf.iot-solutions.ru 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
+```
 
 **Rollback**
 

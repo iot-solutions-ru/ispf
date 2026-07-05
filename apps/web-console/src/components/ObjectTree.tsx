@@ -24,6 +24,7 @@ import DriverWriteDialog from "./DriverWriteDialog";
 import type { TreeBulkActionsConfig } from "../hooks/useTreeBulkActions";
 import { isTreeContainerType } from "../utils/objectTreeTypes";
 import { isSpecializedEditorObject } from "../utils/editorObject";
+import { isOperatorAppChildPath } from "../utils/operatorAppsPath";
 import { localizedSystemFolderMeta } from "../utils/systemFolderI18n";
 import { deviceDriverTreeClass } from "../utils/deviceDriverTreeTone";
 
@@ -34,6 +35,7 @@ interface ObjectTreeProps {
   selectedKeys: Set<string>;
   onRowSelect: (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => void;
   onOpenEditor?: (path: string) => void;
+  onOpenOperatorApp?: (path: string) => void;
   canReorder?: boolean;
   onReorder?: (parentPath: string, orderedPaths: string[]) => void;
   onLoadChildren?: (path: string) => void;
@@ -111,6 +113,7 @@ interface TreeRowProps {
   onRowSelect: (row: TreeRowSelection, event: { metaKey: boolean; shiftKey: boolean }) => void;
   onRowContextMenu?: (row: TreeRowSelection, event: React.MouseEvent) => void;
   onOpenEditor?: (path: string) => void;
+  onOpenOperatorApp?: (path: string) => void;
   onLoadChildren?: (path: string) => void;
 }
 
@@ -126,6 +129,7 @@ const TreeRow = memo(function TreeRow({
   onRowSelect,
   onRowContextMenu,
   onOpenEditor,
+  onOpenOperatorApp,
   onLoadChildren,
 }: TreeRowProps) {
   const { t, i18n } = useTranslation("explorer");
@@ -197,6 +201,10 @@ const TreeRow = memo(function TreeRow({
         })
       }
       onDoubleClick={() => {
+        if (isOperatorAppChildPath(path)) {
+          onOpenOperatorApp?.(path);
+          return;
+        }
         if (isSpecializedEditorObject(path, node.object.type, node.object.templateId)) {
           onOpenEditor?.(path);
         }
@@ -295,6 +303,7 @@ export default function ObjectTree({
   selectedKeys,
   onRowSelect,
   onOpenEditor,
+  onOpenOperatorApp,
   canReorder = false,
   onReorder,
   onLoadChildren,
@@ -504,6 +513,7 @@ export default function ObjectTree({
                     onRowSelect={onRowSelect}
                     onRowContextMenu={handleRowContextMenu}
                     onOpenEditor={onOpenEditor}
+                    onOpenOperatorApp={onOpenOperatorApp}
                     onLoadChildren={onLoadChildren}
                   />
                 ))}

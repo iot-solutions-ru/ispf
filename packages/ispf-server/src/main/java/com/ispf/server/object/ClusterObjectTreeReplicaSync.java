@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Keeps in-memory object trees aligned across cluster replicas by reloading structural
- * changes from the shared database when another replica publishes via NATS.
+ * and config-variable changes from the shared database when another replica publishes via NATS.
  */
 @Component
 public class ClusterObjectTreeReplicaSync {
@@ -27,19 +27,20 @@ public class ClusterObjectTreeReplicaSync {
     @EventListener
     @Order(50)
     public void onObjectChange(ObjectChangeEvent event) {
-        if (!clusterProperties.enabled() || event.telemetry()) {
+        if (!clusterProperties.enabled() || event.telemetry() || event.replicaIngress()) {
             return;
         }
         if (!objectManager.isInitialized()) {
             return;
         }
         switch (event.type()) {
-            case CREATED, UPDATED -> {
-                if (objectManager.tree().findByPath(event.path()).isEmpty()) {
-                    objectManager.syncPathFromDatabase(event.path());
+            case CREATED, UPDATED -> objectManager.reloadPathFromDatabase(event.path());
+            case DELETED -> objectManager.removePathFromMemoryIfPresent(event.path());
+            case VARIABLE_UPDATED -> {
+                if (event.variableName() != null) {
+                    objectManager.syncVariableFromDatabase(event.path(), event.variableName());
                 }
             }
-            case DELETED -> objectManager.removePathFromMemoryIfPresent(event.path());
             default -> {
             }
         }

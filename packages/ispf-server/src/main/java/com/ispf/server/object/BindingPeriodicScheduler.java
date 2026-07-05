@@ -1,6 +1,7 @@
 package com.ispf.server.object;
 
 import com.ispf.core.binding.BindingRule;
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -21,18 +22,21 @@ public class BindingPeriodicScheduler {
     private final BindingRulesService bindingRulesService;
     private final BindingRuleEngine bindingRuleEngine;
     private final PlatformLeaderLockService leaderLockService;
+    private final ClusterProperties clusterProperties;
     private final Map<String, Long> lastRunByRuleKey = new ConcurrentHashMap<>();
 
     public BindingPeriodicScheduler(
             ObjectManager objectManager,
             BindingRulesService bindingRulesService,
             BindingRuleEngine bindingRuleEngine,
-            PlatformLeaderLockService leaderLockService
+            PlatformLeaderLockService leaderLockService,
+            ClusterProperties clusterProperties
     ) {
         this.objectManager = objectManager;
         this.bindingRulesService = bindingRulesService;
         this.bindingRuleEngine = bindingRuleEngine;
         this.leaderLockService = leaderLockService;
+        this.clusterProperties = clusterProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -42,6 +46,9 @@ public class BindingPeriodicScheduler {
 
     @Scheduled(fixedDelay = 1000)
     public void tick() {
+        if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
         if (!leaderLockService.tryAcquire(LOCK_NAME, LOCK_TTL)) {
             return;
         }

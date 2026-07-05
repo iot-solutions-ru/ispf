@@ -4,6 +4,7 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
@@ -28,19 +29,22 @@ public class PlatformSchedulerService {
     private final ObjectMapper objectMapper;
     private final PlatformLeaderLockService leaderLockService;
     private final ScheduleObjectService scheduleObjectService;
+    private final ClusterProperties clusterProperties;
 
     public PlatformSchedulerService(
             JdbcTemplate jdbcTemplate,
             FunctionService functionService,
             ObjectMapper objectMapper,
             PlatformLeaderLockService leaderLockService,
-            ScheduleObjectService scheduleObjectService
+            ScheduleObjectService scheduleObjectService,
+            ClusterProperties clusterProperties
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.functionService = functionService;
         this.objectMapper = objectMapper;
         this.leaderLockService = leaderLockService;
         this.scheduleObjectService = scheduleObjectService;
+        this.clusterProperties = clusterProperties;
     }
 
     public void upsert(PlatformSchedule schedule) {
@@ -90,6 +94,9 @@ public class PlatformSchedulerService {
 
     @Scheduled(fixedDelay = 5000)
     public void tick() {
+        if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
         if (!leaderLockService.tryAcquire(SCHEDULER_LOCK, Duration.ofSeconds(30))) {
             return;
         }

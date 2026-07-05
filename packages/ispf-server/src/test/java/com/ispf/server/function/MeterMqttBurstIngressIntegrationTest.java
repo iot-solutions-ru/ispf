@@ -29,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "ispf.object-change.coalesce-telemetry-updates=false",
         "ispf.runtime-telemetry.enabled=true",
         "ispf.runtime-telemetry.coalesce-ms=10",
-        "ispf.mqtt-gateway.ingress-dispatch-threads=16"
+        "ispf.mqtt-gateway.ingress-dispatch-elastic-enabled=true",
+        "ispf.mqtt-gateway.ingress-dispatch-threads-max=16"
 })
 class MeterMqttBurstIngressIntegrationTest {
 

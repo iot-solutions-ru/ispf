@@ -1,5 +1,6 @@
 package com.ispf.server.event;
 
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,8 @@ class EventHistoryRetentionServiceTest {
     private EventJournalStore eventJournalStore;
     @Mock
     private PlatformLeaderLockService leaderLockService;
+    @Mock
+    private ClusterProperties clusterProperties;
 
     private EventJournalProperties properties;
     private EventHistoryRetentionService service;
@@ -34,7 +37,8 @@ class EventHistoryRetentionServiceTest {
         service = new EventHistoryRetentionService(
                 eventJournalStore,
                 properties,
-                leaderLockService
+                leaderLockService,
+                clusterProperties
         );
     }
 

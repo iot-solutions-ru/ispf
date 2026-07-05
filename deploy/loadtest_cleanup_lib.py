@@ -254,9 +254,13 @@ def purge_devices(client, paths: list[str]) -> int:
     return purged
 
 
-def collect_mqtt_loadtest_paths(all_paths: list[str]) -> list[str]:
+def collect_mqtt_loadtest_paths(client, all_paths: list[str]) -> list[str]:
     paths = filter_loadtest_paths(all_paths, MQTT_DEVICE_FRAGMENT)
     paths.extend(filter_loadtest_paths(all_paths, MQTT_GATEWAY_SENSOR_FRAGMENT))
+    for item in list_children(client, "root.platform.instances"):
+        path = item.get("path", "")
+        if path and MQTT_GATEWAY_SENSOR_FRAGMENT in path:
+            paths.append(path)
     if MQTT_GATEWAY_PATH in all_paths:
         paths.append(MQTT_GATEWAY_PATH)
     return sorted(set(paths), key=len, reverse=True)
@@ -275,7 +279,7 @@ def cleanup_loadtest_environment(
     """Isolate one load-test contour by stopping/deleting competing fixtures."""
     all_paths = list_all_device_paths(client)
     virtual_paths = filter_loadtest_paths(all_paths, VIRTUAL_DEVICE_FRAGMENT)
-    mqtt_paths = collect_mqtt_loadtest_paths(all_paths)
+    mqtt_paths = collect_mqtt_loadtest_paths(client, all_paths)
 
     stats = {
         "virtualDevices": len(virtual_paths),

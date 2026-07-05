@@ -94,7 +94,7 @@ public class PlatformMetricsService {
         return snapshotInternal();
     }
 
-    private Map<String, Object> snapshotInternal() {
+    Map<String, Object> snapshotInternal() {
         Map<String, Object> metrics = new LinkedHashMap<>();
         metrics.put("timestamp", Instant.now().toString());
         metrics.put("runtime", runtimeMetrics());
@@ -222,6 +222,10 @@ public class PlatformMetricsService {
     }
 
     public List<Map<String, Object>> metricSections() {
+        return metricSections(null);
+    }
+
+    public List<Map<String, Object>> metricSections(Map<String, Object> diagnostics) {
         Map<String, Object> snapshot = snapshotInternal();
         List<Map<String, Object>> sections = new java.util.ArrayList<>(List.of(
                 section("runtime", "Среда выполнения", snapshot.get("runtime")),
@@ -235,6 +239,15 @@ public class PlatformMetricsService {
         ));
         if (aiProperties.isEnabled() && snapshot.get("agent") != null) {
             sections.add(section("agent", "AI Agent SLO", snapshot.get("agent")));
+        }
+        if (diagnostics != null) {
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("processCpuPercent", diagnostics.get("processCpuPercent"));
+            summary.put("systemCpuPercent", diagnostics.get("systemCpuPercent"));
+            summary.put("heapUsedPercent", diagnostics.get("heapUsedPercent"));
+            summary.put("pressureScore", diagnostics.get("pressureScore"));
+            summary.put("topSuspect", diagnostics.get("topSuspect"));
+            sections.add(0, section("diagnostics", "Диагностика нагрузки", summary));
         }
         return sections;
     }

@@ -38,6 +38,7 @@ interface ExplorerViewProps {
   selectedPath: string | null;
   selectedObject: ObjectSummary | null;
   onOpenEditor: (path: string) => void;
+  onOpenOperatorApp?: (path: string) => void;
   onDeleted: () => void;
   onSelectPath: (path: string) => void;
   onMembersChanged?: () => void;
@@ -51,6 +52,7 @@ export default function ExplorerView({
   selectedPath,
   selectedObject,
   onOpenEditor,
+  onOpenOperatorApp,
   onDeleted,
   onSelectPath,
   onMembersChanged,
@@ -181,6 +183,7 @@ export default function ExplorerView({
           folderDescription={selectedObject?.description}
           onSelectPath={onSelectPath}
           onOpenEditor={onOpenEditor}
+          onOpenOperatorApp={onOpenOperatorApp}
         />
       ) : (
         <ObjectPropertiesEditor

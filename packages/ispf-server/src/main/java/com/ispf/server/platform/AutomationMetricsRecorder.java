@@ -68,6 +68,9 @@ public class AutomationMetricsRecorder {
     private final EnumMap<EventFireSource, AtomicLong> eventsFiredBySource = new EnumMap<>(EventFireSource.class);
     private final EnumMap<WorkflowStartTrigger, AtomicLong> workflowStartsByTrigger = new EnumMap<>(WorkflowStartTrigger.class);
     private final List<BlockingQueue<?>> objectChangeQueues = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final Map<String, BlockingQueue<?>> objectChangeQueuesByLane = new java.util.concurrent.ConcurrentHashMap<>();
+    private final Map<String, java.util.concurrent.atomic.AtomicInteger> objectChangeWorkersByLane =
+            new java.util.concurrent.ConcurrentHashMap<>();
     private volatile BlockingQueue<?> eventJournalQueue;
     private volatile BlockingQueue<?> variableHistoryQueue;
 
@@ -107,6 +110,7 @@ public class AutomationMetricsRecorder {
 
     public void bindObjectChangeQueue(String lane, BlockingQueue<?> queue) {
         objectChangeQueues.add(queue);
+        objectChangeQueuesByLane.put(lane, queue);
         meterRegistry.ifPresent(registry -> registry.gauge(
                 "ispf.object_change.queue.size",
                 Tags.of("lane", lane),
@@ -116,6 +120,7 @@ public class AutomationMetricsRecorder {
     }
 
     public void bindObjectChangeWorkers(String lane, java.util.concurrent.atomic.AtomicInteger workers) {
+        objectChangeWorkersByLane.put(lane, workers);
         meterRegistry.ifPresent(registry -> registry.gauge(
                 "ispf.object_change.workers.active",
                 Tags.of("lane", lane),
@@ -258,7 +263,14 @@ public class AutomationMetricsRecorder {
         section.put("correlatorTriggersTotal", correlatorTriggersCount.get());
         section.put("workflowStartsTotal", workflowStartsTotal());
         section.put("objectChangeQueueSize", objectChangeQueueSize());
+        section.put("objectChangeDroppedTotal", objectChangeDroppedCount.get());
         section.put("objectChangeProcessedTotal", objectChangeProcessed.get());
+        Map<String, Integer> laneQueueSizes = new LinkedHashMap<>();
+        objectChangeQueuesByLane.forEach((lane, queue) -> laneQueueSizes.put(lane, queue.size()));
+        section.put("objectChangeQueueByLane", laneQueueSizes);
+        Map<String, Integer> laneWorkers = new LinkedHashMap<>();
+        objectChangeWorkersByLane.forEach((lane, workers) -> laneWorkers.put(lane, workers.get()));
+        section.put("objectChangeWorkersByLane", laneWorkers);
         section.put("eventJournalQueueSize", eventJournalQueueSize());
         section.put("eventJournalFlushedTotal", eventJournalFlushedCount.get());
         section.put("eventJournalSyncFallbackTotal", eventJournalSyncFallbackCount.get());

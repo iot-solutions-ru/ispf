@@ -29,7 +29,7 @@ import java.util.UUID;
 public class FixtureBlueprintBootstrap {
 
     public static final String MQTT_SENSOR_MODEL = "mqtt-sensor-v1";
-    /** INSTANCE type for MQTT gateway child sensors (instantiate under gateway.sensors). */
+    /** INSTANCE type for MQTT gateway child sensors (instantiate under root.platform.instances). */
     public static final String MQTT_GATEWAY_SENSOR_MODEL = "mqtt-gateway-sensor-v1";
     public static final String MQTT_GATEWAY_MODEL = "mqtt-gateway-v1";
     public static final String MQTT_METER_BUS_MODEL = "mqtt-meter-bus-v1";
@@ -59,9 +59,9 @@ public class FixtureBlueprintBootstrap {
                     + "{\"type\":\"return\",\"fields\":{\"ok\":true,\"message\":\"ingested\",\"routedPath\":\"${instancePath}\"}}"
                     + "]}";
 
+    /** Gateway child sensor INSTANCE type — persisted separately (loadtest / gateway pattern), not purged with demo fixtures. */
     public static final List<String> FIXTURE_MODEL_NAMES = List.of(
             MQTT_SENSOR_MODEL,
-            MQTT_GATEWAY_SENSOR_MODEL,
             MQTT_GATEWAY_MODEL,
             MQTT_METER_BUS_MODEL,
             METERS_MODEL,
@@ -133,9 +133,7 @@ public class FixtureBlueprintBootstrap {
         if (blueprintRegistry.findByName(MQTT_GATEWAY_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewayModel());
         }
-        if (blueprintRegistry.findByName(MQTT_GATEWAY_SENSOR_MODEL).isEmpty()) {
-            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel());
-        }
+        ensureMqttGatewaySensorInstanceModel();
         if (blueprintRegistry.findByName(DEVICE_DRIVER_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildDeviceDriverModel());
         }
@@ -155,6 +153,34 @@ public class FixtureBlueprintBootstrap {
         if (blueprintRegistry.findByName(MQTT_METER_BUS_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttMeterBusModel());
         }
+    }
+
+    /** Creates or upgrades mqtt-gateway-sensor-v1 when the stored definition is an older minimal version. */
+    public void ensureMqttGatewaySensorInstanceModel() {
+        if (blueprintRegistry.findByName(MQTT_GATEWAY_SENSOR_MODEL).isEmpty()) {
+            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel());
+            return;
+        }
+        BlueprintDefinition existing = blueprintRegistry.requireByName(MQTT_GATEWAY_SENSOR_MODEL);
+        if (existing.variables().size() >= 5) {
+            return;
+        }
+        BlueprintDefinition fresh = FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel();
+        blueprintEngine.updateBlueprint(new BlueprintDefinition(
+                existing.id(),
+                fresh.name(),
+                fresh.description(),
+                fresh.type(),
+                fresh.targetObjectType(),
+                fresh.suitabilityExpression(),
+                fresh.variables(),
+                fresh.events(),
+                fresh.functions(),
+                fresh.bindings(),
+                fresh.parameters(),
+                existing.createdAt(),
+                java.time.Instant.now()
+        ));
     }
 
     /**

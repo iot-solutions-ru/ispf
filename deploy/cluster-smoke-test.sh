@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 # Multi-replica cluster smoke: round-robin, REST failover, driver ownership reclaim (BL-134…136).
+# Optional: --config-sync — create/delete object across replicas (ADR-0030 / BL-143).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 COMPOSE_FILE="${ISPF_CLUSTER_COMPOSE_FILE:-${ROOT}/deploy/docker-compose.cluster.yml}"
 PORT="${ISPF_CLUSTER_PORT:-8088}"
+CONFIG_SYNC=0
+for arg in "$@"; do
+  case "$arg" in
+    --config-sync) CONFIG_SYNC=1 ;;
+  esac
+done
 COMPOSE=(docker compose -f "${COMPOSE_FILE}")
 BASE="http://127.0.0.1:${PORT}"
 CURL=(curl -sf --no-keepalive -H "Connection: close")
@@ -144,5 +151,71 @@ fi
 echo "==> Restore ispf-server-2"
 docker start "$CID"
 sleep 15
+
+if [[ "$CONFIG_SYNC" -eq 1 ]]; then
+  echo "==> Config/structure sync (ADR-0030): create + delete temp device"
+  SYNC_PATH="root.platform.devices.cluster-smoke-sync-$$"
+  SYNC_NAME="cluster-smoke-sync-$$"
+  CREATE_BODY=$(cat <<EOF
+{"parentPath":"root.platform.devices","name":"${SYNC_NAME}","type":"DEVICE","displayName":"Cluster smoke sync"}
+EOF
+)
+  CREATE_CODE=$(curl -s -o /tmp/cluster-sync-create.json -w "%{http_code}" \
+    -X POST "${BASE}/api/v1/objects" \
+    -H "Authorization: Bearer ${TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "${CREATE_BODY}" || echo "000")
+  if [[ "$CREATE_CODE" != "201" && "$CREATE_CODE" != "200" ]]; then
+    echo "ERROR: create object HTTP ${CREATE_CODE}" >&2
+    cat /tmp/cluster-sync-create.json >&2 || true
+    exit 1
+  fi
+  echo "  created ${SYNC_PATH}"
+  sleep 2
+  FOUND=0
+  for _ in $(seq 1 15); do
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" --no-keepalive -H "Connection: close" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      "${BASE}/api/v1/objects/by-path?path=${SYNC_PATH}" || echo "000")
+    if [[ "$CODE" == "200" ]]; then
+      FOUND=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$FOUND" -ne 1 ]]; then
+    echo "ERROR: created object not visible across LB pool" >&2
+    exit 1
+  fi
+  DELETE_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -X DELETE "${BASE}/api/v1/objects/by-path?path=${SYNC_PATH}" \
+    -H "Authorization: Bearer ${TOKEN}" || echo "000")
+  if [[ "$DELETE_CODE" != "204" && "$DELETE_CODE" != "200" ]]; then
+    echo "ERROR: delete object HTTP ${DELETE_CODE}" >&2
+    exit 1
+  fi
+  GHOST=1
+  for attempt in $(seq 1 30); do
+    GHOST=0
+    for _ in $(seq 1 15); do
+      CODE=$(curl -s -o /dev/null -w "%{http_code}" --no-keepalive -H "Connection: close" \
+        -H "Authorization: Bearer ${TOKEN}" \
+        "${BASE}/api/v1/objects/by-path?path=${SYNC_PATH}" || echo "000")
+      if [[ "$CODE" == "200" ]]; then
+        GHOST=1
+        break
+      fi
+    done
+    if [[ "$GHOST" -eq 0 ]]; then
+      break
+    fi
+    sleep 1
+  done
+  if [[ "$GHOST" -eq 1 ]]; then
+    echo "ERROR: deleted object still visible on a replica (ghost)" >&2
+    exit 1
+  fi
+  echo "  config-sync PASSED (no ghost after delete)"
+fi
 
 echo "==> Cluster smoke PASSED"

@@ -240,6 +240,18 @@ code,
   gap: 1rem;
 }
 
+.system-settings-section-hint {
+  margin: 0 0 0.75rem;
+}
+
+.system-settings-tabs-scroll {
+  margin-bottom: 0.75rem;
+}
+
+.system-settings-tabs {
+  flex-wrap: wrap;
+}
+
 .system-settings-intro,
 .system-settings-file {
   margin: 0;
@@ -353,6 +365,18 @@ code,
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+
+.system-metrics-subtabs {
+  margin-bottom: 0.75rem;
+}
+
+.system-metrics-diagnostics-pane {
+  margin-top: 0.25rem;
+}
+
+.system-metrics-diagnostics-pane .diagnostics-pressure-card {
+  grid-column: auto;
 }
 
 .system-embedded-toolbar {
@@ -490,6 +514,182 @@ code,
 
 .cluster-node-self td:first-child {
   font-weight: 600;
+}
+
+.system-cluster-view .cluster-health-card {
+  margin-top: 0.5rem;
+}
+
+.cluster-view-intro {
+  margin: 0 0 0.75rem;
+  max-width: 52rem;
+}
+
+.cluster-role-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.diagnostics-pressure-card {
+  grid-column: 1 / -1;
+}
+
+.diagnostics-pressure-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.diagnostics-top-suspect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(210, 153, 34, 0.12);
+  border: 1px solid rgba(210, 153, 34, 0.35);
+}
+
+.diagnostics-top-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+.diagnostics-cluster-table td,
+.diagnostics-cluster-table th {
+  vertical-align: middle;
+}
+
+.diagnostics-cpu-critical {
+  color: #f85149;
+  font-weight: 600;
+}
+
+.diagnostics-cpu-warn {
+  color: #d29922;
+  font-weight: 600;
+}
+
+.diagnostics-cpu-ok {
+  color: inherit;
+}
+
+.diagnostics-expand-btn {
+  min-width: 1.75rem;
+  padding: 0.1rem 0.35rem;
+  font-weight: 700;
+}
+
+.diagnostics-node-self {
+  background: rgba(47, 129, 247, 0.06);
+}
+
+.diagnostics-self-badge {
+  color: #2f81f7;
+  font-weight: 700;
+}
+
+.diagnostics-detail-row td {
+  background: rgba(110, 118, 129, 0.06);
+  padding-top: 0.5rem;
+  padding-bottom: 0.75rem;
+}
+
+.diagnostics-node-detail section + section {
+  margin-top: 0.75rem;
+}
+
+.diagnostics-node-detail h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+}
+
+.diagnostics-detail-table {
+  font-size: 0.85rem;
+}
+
+.diagnostics-suspect-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.diagnostics-suspect-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  align-items: baseline;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(110, 118, 129, 0.25);
+}
+
+.diagnostics-suspect-kind {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+
+.diagnostics-severity-critical {
+  border-color: rgba(248, 81, 73, 0.45);
+  background: rgba(248, 81, 73, 0.08);
+}
+
+.diagnostics-severity-warning {
+  border-color: rgba(210, 153, 34, 0.45);
+  background: rgba(210, 153, 34, 0.08);
+}
+
+.diagnostics-severity-info {
+  border-color: rgba(110, 118, 129, 0.3);
+}
+
+.diagnostics-driver-hot td {
+  background: rgba(248, 81, 73, 0.06);
+}
+
+.cluster-role-api {
+  background: rgba(47, 129, 247, 0.15);
+  color: #2f81f7;
+}
+
+.cluster-role-worker {
+  background: rgba(163, 113, 247, 0.15);
+  color: #8b5cf6;
+}
+
+.cluster-role-all {
+  background: rgba(46, 160, 67, 0.15);
+  color: #2ea043;
+}
+
+.cluster-role-io {
+  background: rgba(210, 153, 34, 0.15);
+  color: #d29922;
+}
+
+.cluster-role-hmi-read {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.cluster-role-unknown {
+  background: rgba(139, 148, 158, 0.15);
+  color: var(--text-muted, #8b949e);
 }
 
 .storage-health-grid {
@@ -1094,6 +1294,7 @@ code,
 .tree-icon--user { color: #38bdf8; }
 .tree-icon--device { color: #4ade80; }
 .tree-icon--driver { color: #fb923c; }
+.tree-icon--blueprint,
 .tree-icon--model { color: #60a5fa; }
 .tree-icon--dashboard { color: #c084fc; }
 .tree-icon--mimic { color: #14b8a6; }

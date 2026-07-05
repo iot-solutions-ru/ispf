@@ -68,6 +68,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-1
+      ISPF_REPLICA_ROLE: api
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,6 +82,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-2
+      ISPF_REPLICA_ROLE: api
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +96,7 @@ services:
     environment:
       <<: *ispf-server-env
       ISPF_REPLICA_ID: replica-3
+      ISPF_REPLICA_ROLE: all
     depends_on:
       postgres:
         condition: service_healthy
@@ -112,7 +115,6 @@ services:
     depends_on:
       - ispf-server-1
       - ispf-server-2
-      - ispf-server-3
 
 volumes:
   cluster_pg_data:

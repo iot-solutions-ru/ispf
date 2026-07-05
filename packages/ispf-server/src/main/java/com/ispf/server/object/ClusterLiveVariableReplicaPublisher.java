@@ -69,6 +69,15 @@ public class ClusterLiveVariableReplicaPublisher {
         if (value == null) {
             return;
         }
+        if (!clusterProperties.liveVariableSyncCoalesceEnabled()) {
+            natsEventBridge.publishLiveVariableReplicaSync(
+                    event.path(),
+                    event.variableName(),
+                    value,
+                    event.observedAt()
+            );
+            return;
+        }
         String key = event.path() + "\0" + event.variableName();
         pending.put(key, new PendingLiveVariable(
                 event.path(),

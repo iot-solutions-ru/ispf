@@ -42,7 +42,19 @@ class PlatformMetricsApiTest {
                 .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.correlatorTriggersTotal").exists())
                 .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.workflowStartsTotal").exists())
                 .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.objectChangeQueueSize").exists())
-                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.objectChangeProcessedTotal").exists());
+                .andExpect(jsonPath("$.sections[?(@.id == 'automation')].values.objectChangeProcessedTotal").exists())
+                .andExpect(jsonPath("$.diagnostics.processCpuPercent").exists())
+                .andExpect(jsonPath("$.diagnostics.detail.threadGroups").exists())
+                .andExpect(jsonPath("$.sections[?(@.id == 'diagnostics')].values.processCpuPercent").exists());
+    }
+
+    @Test
+    void adminCanReadClusterDiagnostics() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/cluster/diagnostics")
+                        .header("Authorization", "Bearer " + adminToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nodes").isArray())
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 
     @Test

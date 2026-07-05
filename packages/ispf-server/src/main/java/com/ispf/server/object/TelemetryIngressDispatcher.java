@@ -22,6 +22,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -41,6 +42,7 @@ public class TelemetryIngressDispatcher {
 
     private final ConcurrentHashMap<String, PendingUpdate> pendingByKey = new ConcurrentHashMap<>();
     private final AtomicInteger pendingCount = new AtomicInteger();
+    private LinkedBlockingQueue<PendingUpdate> pendingFifo;
     private volatile boolean running;
     private ExecutorService workers;
     private ScheduledExecutorService scaleScheduler;
@@ -63,6 +65,7 @@ public class TelemetryIngressDispatcher {
         if (!properties.isIngressQueueEnabled()) {
             return;
         }
+        pendingFifo = new LinkedBlockingQueue<>(properties.getIngressQueueCapacity());
         running = true;
         int minWorkers = properties.resolvedIngressWorkerThreadsMin();
         int maxWorkers = properties.resolvedIngressWorkerThreadsMax();
@@ -98,8 +101,9 @@ public class TelemetryIngressDispatcher {
         automationMetricsRecorder.bindTelemetryIngressPending(pendingCount);
         automationMetricsRecorder.bindTelemetryIngressWorkers(activeWorkers);
         log.info(
-                "Telemetry ingress queue started (capacity={}, workers={}-{}, elastic={}, drainBatch={})",
+                "Telemetry ingress queue started (capacity={}, coalesce={}, workers={}-{}, elastic={}, drainBatch={})",
                 properties.getIngressQueueCapacity(),
+                properties.isIngressQueueCoalesceEnabled(),
                 minWorkers,
                 maxWorkers,
                 properties.isIngressElasticWorkers(),
@@ -116,8 +120,21 @@ public class TelemetryIngressDispatcher {
             coalescer.recordUpdate(path, variableName, value, observedAt);
             return;
         }
-        String key = RuntimeTelemetryCoalescer.coalesceKey(path, variableName, value, false);
         PendingUpdate update = new PendingUpdate(path, variableName, value, observedAt);
+        if (properties.isIngressQueueCoalesceEnabled()) {
+            submitCoalesced(update);
+        } else {
+            submitFifo(update);
+        }
+    }
+
+    private void submitCoalesced(PendingUpdate update) {
+        String key = TelemetryIngressCoalesceKey.laneKey(
+                update.path(),
+                update.variableName(),
+                update.value(),
+                false
+        );
         PendingUpdate previous = pendingByKey.put(key, update);
         if (previous == null) {
             int size = pendingCount.incrementAndGet();
@@ -126,12 +143,36 @@ public class TelemetryIngressDispatcher {
                 if (pendingCount.decrementAndGet() >= 0) {
                     automationMetricsRecorder.recordTelemetryIngressLaneEvicted();
                 }
-                coalescer.publishCoalescedUpdate(path, variableName, value, observedAt);
+                coalescer.publishCoalescedUpdate(
+                        update.path(),
+                        update.variableName(),
+                        update.value(),
+                        update.observedAt()
+                );
                 return;
             }
         } else {
             automationMetricsRecorder.recordTelemetryIngressCoalesced();
         }
+        signalWorkers();
+    }
+
+    private void submitFifo(PendingUpdate update) {
+        if (!pendingFifo.offer(update)) {
+            automationMetricsRecorder.recordTelemetryIngressLaneEvicted();
+            coalescer.publishCoalescedUpdate(
+                    update.path(),
+                    update.variableName(),
+                    update.value(),
+                    update.observedAt()
+            );
+            return;
+        }
+        pendingCount.incrementAndGet();
+        signalWorkers();
+    }
+
+    private void signalWorkers() {
         if (properties.isIngressElasticWorkers() && pendingCount.get() >= properties.getIngressScaleUpQueueThreshold()) {
             adjustWorkers();
         }
@@ -209,6 +250,13 @@ public class TelemetryIngressDispatcher {
     }
 
     private List<PendingUpdate> drainBatch(int maxBatch) {
+        if (properties.isIngressQueueCoalesceEnabled()) {
+            return drainCoalescedBatch(maxBatch);
+        }
+        return drainFifoBatch(maxBatch);
+    }
+
+    private List<PendingUpdate> drainCoalescedBatch(int maxBatch) {
         List<PendingUpdate> batch = new ArrayList<>(Math.min(maxBatch, Math.max(0, pendingCount.get())));
         Iterator<Map.Entry<String, PendingUpdate>> iterator = pendingByKey.entrySet().iterator();
         while (iterator.hasNext() && batch.size() < maxBatch) {
@@ -218,6 +266,19 @@ public class TelemetryIngressDispatcher {
                 pendingCount.decrementAndGet();
                 batch.add(removed);
             }
+        }
+        return batch;
+    }
+
+    private List<PendingUpdate> drainFifoBatch(int maxBatch) {
+        List<PendingUpdate> batch = new ArrayList<>(Math.min(maxBatch, Math.max(0, pendingCount.get())));
+        while (batch.size() < maxBatch) {
+            PendingUpdate removed = pendingFifo.poll();
+            if (removed == null) {
+                break;
+            }
+            pendingCount.decrementAndGet();
+            batch.add(removed);
         }
         return batch;
     }

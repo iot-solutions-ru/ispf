@@ -7,6 +7,9 @@ import {
   type PlatformRuntimeSetting,
   type PlatformRuntimeSettingsSection,
 } from "../api/platformRuntimeSettings";
+import { usePersistentTab } from "../hooks/usePersistentTab";
+
+const INTEGRATIONS_TAB = "integrations" as const;
 
 const QUICK_BOOLEAN_IDS = [
   "redis.enabled",
@@ -179,6 +182,9 @@ function SettingsSectionCard({
   return (
     <section className="system-metrics-card system-settings-card">
       <h3>{t(`settings.sections.${section.id}`, section.title)}</h3>
+      {section.id === "elastic" && (
+        <p className="hint system-settings-section-hint">{t("settings.sections.elasticHint")}</p>
+      )}
       <table className="op-table system-settings-table">
         <thead>
           <tr>
@@ -212,6 +218,17 @@ export default function SystemSettingsView() {
   });
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  const sectionTabs = useMemo(
+    () => settingsQuery.data?.sections.map((section) => section.id) ?? [],
+    [settingsQuery.data],
+  );
+  const allTabs = useMemo(() => [INTEGRATIONS_TAB, ...sectionTabs], [sectionTabs]);
+  const [activeTab, setActiveTab] = usePersistentTab(
+    "system-settings",
+    INTEGRATIONS_TAB,
+    allTabs,
+  );
 
   const mergedDrafts = useMemo(() => {
     const base: Record<string, string> = {};
@@ -262,6 +279,13 @@ export default function SystemSettingsView() {
     return values;
   }, [mergedDrafts, settingsQuery.data]);
 
+  const activeSection = settingsQuery.data?.sections.find((section) => section.id === activeTab);
+
+  const tabLabel = (tabId: string) =>
+    tabId === INTEGRATIONS_TAB
+      ? t("settings.tabs.integrations")
+      : t(`settings.sections.${tabId}`, tabId);
+
   return (
     <div className="system-settings-view">
       <div className="system-embedded-toolbar">
@@ -296,24 +320,40 @@ export default function SystemSettingsView() {
       )}
       {settingsQuery.isLoading && <p className="hint">{t("settings.loading")}</p>}
 
-      {settingsQuery.data && (
-        <IntegrationQuickToggles
-          sections={settingsQuery.data.sections}
-          drafts={mergedDrafts}
-          onDraftChange={(id, value) => setDrafts((prev) => ({ ...prev, [id]: value }))}
-        />
-      )}
+      {settingsQuery.data && allTabs.length > 0 && (
+        <>
+          <div className="tabs-scroll system-settings-tabs-scroll">
+            <nav className="tabs system-settings-tabs" aria-label={t("settings.tabsAria")}>
+              {allTabs.map((tabId) => (
+                <button
+                  key={tabId}
+                  type="button"
+                  className={activeTab === tabId ? "active" : ""}
+                  onClick={() => setActiveTab(tabId)}
+                >
+                  {tabLabel(tabId)}
+                </button>
+              ))}
+            </nav>
+          </div>
 
-      <div className="system-settings-sections">
-        {settingsQuery.data?.sections.map((section) => (
-          <SettingsSectionCard
-            key={section.id}
-            section={section}
-            drafts={mergedDrafts}
-            onDraftChange={(id, value) => setDrafts((prev) => ({ ...prev, [id]: value }))}
-          />
-        ))}
-      </div>
+          {activeTab === INTEGRATIONS_TAB && (
+            <IntegrationQuickToggles
+              sections={settingsQuery.data.sections}
+              drafts={mergedDrafts}
+              onDraftChange={(id, value) => setDrafts((prev) => ({ ...prev, [id]: value }))}
+            />
+          )}
+
+          {activeSection && (
+            <SettingsSectionCard
+              section={activeSection}
+              drafts={mergedDrafts}
+              onDraftChange={(id, value) => setDrafts((prev) => ({ ...prev, [id]: value }))}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }

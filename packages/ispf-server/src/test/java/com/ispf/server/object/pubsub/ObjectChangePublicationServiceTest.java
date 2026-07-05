@@ -1,5 +1,6 @@
 package com.ispf.server.object.pubsub;
 
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.ObjectChangeProperties;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.object.ObjectChangeEvent;
@@ -43,6 +44,9 @@ class ObjectChangePublicationServiceTest {
     @Mock
     private DeviceTelemetryPolicyService telemetryPolicyService;
 
+    @Mock
+    private ClusterProperties clusterProperties;
+
     private ObjectChangeProperties properties;
     private ObjectChangePublicationService service;
 
@@ -56,7 +60,8 @@ class ObjectChangePublicationServiceTest {
                 eventFiredSubscriptionRegistry,
                 structureSubscriptionRegistry,
                 telemetryPolicyService,
-                properties
+                properties,
+                clusterProperties
         );
     }
 
@@ -126,12 +131,56 @@ class ObjectChangePublicationServiceTest {
     @Test
     void skipsStructureChangeWhenNoSubscribers() {
         ObjectChangeEvent template = ObjectChangeEvent.of(ObjectChangeType.UPDATED, PATH);
+        when(clusterProperties.enabled()).thenReturn(false);
         when(structureSubscriptionRegistry.interest(ObjectChangeType.UPDATED, PATH))
                 .thenReturn(StructureChangeInterest.NONE);
 
         boolean published = service.publishStructureChange(template);
 
         assertThat(published).isFalse();
+    }
+
+    @Test
+    void publishesStructureChangeInClusterModeWithoutSubscribers() {
+        ObjectChangeEvent template = ObjectChangeEvent.of(ObjectChangeType.DELETED, PATH);
+        when(clusterProperties.enabled()).thenReturn(true);
+
+        boolean published = service.publishStructureChange(template);
+
+        assertThat(published).isTrue();
+        verify(eventPublisher).publishEvent(template);
+    }
+
+    @Test
+    void defersConfigVariableChangeUntilAfterCommit() {
+        ObjectChangeEvent template = ObjectChangeEvent.variableUpdated(PATH, "diagram", 3L, "admin");
+        when(variableSubscriptionRegistry.interest(PATH, "diagram")).thenReturn(VariableChangeInterest.NONE);
+        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(false);
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.publishConfigVariableChangeAfterCommit(template);
+            verify(eventPublisher, never()).publishEvent(any());
+
+            for (TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
+                synchronization.afterCommit();
+            }
+            verify(eventPublisher).publishEvent(any(ObjectChangeEvent.class));
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    void alwaysPublishesConfigVariableChangeEvenWithoutSubscribers() {
+        ObjectChangeEvent template = ObjectChangeEvent.variableUpdated(PATH, "diagram", 3L, "admin");
+        when(variableSubscriptionRegistry.interest(PATH, "diagram")).thenReturn(VariableChangeInterest.NONE);
+        when(telemetryPolicyService.automationEligible(PATH)).thenReturn(false);
+
+        boolean published = service.publishConfigVariableChange(template);
+
+        assertThat(published).isTrue();
+        verify(eventPublisher).publishEvent(any(ObjectChangeEvent.class));
     }
 
     @Test

@@ -185,6 +185,10 @@ public final class DriverIngressBuffer<K, V> {
         return activeWorkers.get();
     }
 
+    public int pendingCount() {
+        return pendingCount.get();
+    }
+
     private void maybeScaleUp() {
         if (scaler != null && pendingCount.get() >= elastic.scaleUpQueueThreshold()) {
             adjustWorkers();

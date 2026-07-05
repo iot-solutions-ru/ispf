@@ -9,6 +9,7 @@ import {
 } from "../utils/systemFolderConfig";
 import type { ObjectType } from "../types";
 import { isSpecializedEditorObject } from "../utils/editorObject";
+import { isOperatorAppChildPath } from "../utils/operatorAppsPath";
 
 interface SystemFolderListPanelProps {
   folderPath: string;
@@ -17,6 +18,7 @@ interface SystemFolderListPanelProps {
   folderDescription?: string;
   onSelectPath: (path: string) => void;
   onOpenEditor?: (path: string) => void;
+  onOpenOperatorApp?: (path: string) => void;
 }
 
 function sortChildren(items: ObjectSummary[]): ObjectSummary[] {
@@ -35,6 +37,7 @@ export default function SystemFolderListPanel({
   folderDescription,
   onSelectPath,
   onOpenEditor,
+  onOpenOperatorApp,
 }: SystemFolderListPanelProps) {
   const { t } = useTranslation(["explorer", "common", "objectTree"]);
   const meta: SystemFolderListMeta = getSystemFolderListMeta(
@@ -87,11 +90,18 @@ export default function SystemFolderListPanel({
               const canOpenEditor = Boolean(
                 onOpenEditor && isSpecializedEditorObject(child.path, child.type, child.templateId),
               );
+              const canOpenOperatorApp = Boolean(
+                onOpenOperatorApp && isOperatorAppChildPath(child.path),
+              );
               return (
               <tr
                 key={child.path}
-                className={canOpenEditor ? "catalog-row-openable" : undefined}
+                className={canOpenEditor || canOpenOperatorApp ? "catalog-row-openable" : undefined}
                 onDoubleClick={() => {
+                  if (canOpenOperatorApp) {
+                    onOpenOperatorApp?.(child.path);
+                    return;
+                  }
                   if (canOpenEditor) {
                     onOpenEditor?.(child.path);
                   }

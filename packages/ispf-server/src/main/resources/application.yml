@@ -121,6 +121,20 @@ ispf:
     live-variable-sync-enabled: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC:true}
     cluster-path-interest-enabled: ${ISPF_CLUSTER_PATH_INTEREST:true}
     live-variable-sync-coalesce-ms: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS:500}
+    live-variable-sync-coalesce-enabled: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_ENABLED:true}
+    replica-profile: ${ISPF_REPLICA_PROFILE:}
+    replica-capabilities: ${ISPF_REPLICA_CAPABILITIES:}
+    replica-role: ${ISPF_REPLICA_ROLE:all}
+    job-consumer-enabled: ${ISPF_CLUSTER_JOB_CONSUMER_ENABLED:true}
+    job-poll-ms: ${ISPF_CLUSTER_JOB_POLL_MS:2000}
+    job-max-concurrent: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT:2}
+    job-elastic-enabled: ${ISPF_CLUSTER_JOB_ELASTIC:true}
+    job-max-concurrent-min: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT_MIN:1}
+    job-max-concurrent-max: ${ISPF_CLUSTER_JOB_MAX_CONCURRENT_MAX:8}
+    job-elastic-scale-up-threshold: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_UP:50}
+    job-elastic-scale-down-steps: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_DOWN:6}
+    job-elastic-scale-check-interval-ms: ${ISPF_CLUSTER_JOB_ELASTIC_SCALE_CHECK_MS:500}
+    job-running-ttl-seconds: ${ISPF_CLUSTER_JOB_RUNNING_TTL_SECONDS:1800}
   federation:
     outbound-buffer:
       max-bytes: ${ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES:2097152}
@@ -129,6 +143,14 @@ ispf:
       stale-minutes: ${ISPF_FEDERATION_HEALTH_STALE_MINUTES:15}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
+  websocket:
+    send-threads: ${ISPF_WEBSOCKET_SEND_THREADS:2}
+    send-elastic-enabled: ${ISPF_WEBSOCKET_SEND_ELASTIC:true}
+    send-threads-min: ${ISPF_WEBSOCKET_SEND_THREADS_MIN:2}
+    send-threads-max: ${ISPF_WEBSOCKET_SEND_THREADS_MAX:32}
+    send-scale-up-queue-threshold: ${ISPF_WEBSOCKET_SEND_SCALE_UP:50}
+    send-scale-down-steps: ${ISPF_WEBSOCKET_SEND_SCALE_DOWN:6}
+    send-scale-check-interval-ms: ${ISPF_WEBSOCKET_SEND_SCALE_CHECK_MS:200}
   variable-history:
     enabled: ${ISPF_VARIABLE_HISTORY_ENABLED:true}
     min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
@@ -168,8 +190,15 @@ ispf:
       elastic-parallel-scale-down-steps: ${ISPF_VARIABLE_HISTORY_CASSANDRA_PARALLEL_SCALE_DOWN:6}
   runtime-telemetry:
     coalesce-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_MS:250}
+    coalesce-enabled: ${ISPF_RUNTIME_TELEMETRY_COALESCE_ENABLED:true}
     enabled: true
     coalesce-scheduler-threads: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_THREADS:4}
+    coalesce-scheduler-elastic: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_ELASTIC:true}
+    coalesce-scheduler-threads-min: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_THREADS_MIN:4}
+    coalesce-scheduler-threads-max: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_THREADS_MAX:32}
+    coalesce-scheduler-scale-up-threshold: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_SCALE_UP:50}
+    coalesce-scheduler-scale-down-steps: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_SCALE_DOWN:6}
+    coalesce-scheduler-scale-check-interval-ms: ${ISPF_RUNTIME_TELEMETRY_COALESCE_SCHEDULER_SCALE_CHECK_MS:200}
     ingress-queue-enabled: ${ISPF_RUNTIME_TELEMETRY_INGRESS_QUEUE_ENABLED:true}
     ingress-queue-capacity: ${ISPF_RUNTIME_TELEMETRY_INGRESS_QUEUE_CAPACITY:50000}
     ingress-elastic-workers: ${ISPF_RUNTIME_TELEMETRY_INGRESS_ELASTIC_WORKERS:true}
@@ -179,9 +208,17 @@ ispf:
     ingress-scale-down-steps: ${ISPF_RUNTIME_TELEMETRY_INGRESS_SCALE_DOWN_STEPS:6}
     ingress-scale-check-interval-ms: ${ISPF_RUNTIME_TELEMETRY_INGRESS_SCALE_CHECK_MS:200}
     ingress-drain-batch-size: ${ISPF_RUNTIME_TELEMETRY_INGRESS_DRAIN_BATCH:512}
+    ingress-queue-coalesce-enabled: ${ISPF_RUNTIME_TELEMETRY_INGRESS_QUEUE_COALESCE:true}
     fast-historian-path: ${ISPF_RUNTIME_TELEMETRY_FAST_HISTORIAN_PATH:true}
   binding:
     async-threads: ${ISPF_BINDING_ASYNC_THREADS:16}
+    async-elastic-enabled: ${ISPF_BINDING_ASYNC_ELASTIC:true}
+    async-threads-min: ${ISPF_BINDING_ASYNC_THREADS_MIN:4}
+    async-threads-max: ${ISPF_BINDING_ASYNC_THREADS_MAX:32}
+    async-scale-up-queue-threshold: ${ISPF_BINDING_ASYNC_SCALE_UP_THRESHOLD:50}
+    async-scale-down-steps: ${ISPF_BINDING_ASYNC_SCALE_DOWN_STEPS:6}
+    async-scale-check-interval-ms: ${ISPF_BINDING_ASYNC_SCALE_CHECK_MS:200}
+    async-coalesce-enabled: ${ISPF_BINDING_ASYNC_COALESCE:true}
     audit:
       enabled: ${ISPF_BINDING_AUDIT_ENABLED:false}
       mode: ${ISPF_BINDING_AUDIT_MODE:changes}
@@ -191,6 +228,13 @@ ispf:
       batch-size: ${ISPF_BINDING_AUDIT_BATCH_SIZE:100}
       flush-interval-ms: ${ISPF_BINDING_AUDIT_FLUSH_INTERVAL_MS:200}
       retention-days: ${ISPF_BINDING_AUDIT_RETENTION_DAYS:7}
+      writer-threads: ${ISPF_BINDING_AUDIT_WRITER_THREADS:2}
+      elastic-writer-enabled: ${ISPF_BINDING_AUDIT_ELASTIC_WRITER:true}
+      writer-threads-min: ${ISPF_BINDING_AUDIT_WRITER_THREADS_MIN:2}
+      writer-threads-max: ${ISPF_BINDING_AUDIT_WRITER_THREADS_MAX:16}
+      elastic-scale-up-queue-threshold: ${ISPF_BINDING_AUDIT_ELASTIC_SCALE_UP:50}
+      elastic-scale-down-steps: ${ISPF_BINDING_AUDIT_ELASTIC_SCALE_DOWN:6}
+      elastic-scale-check-interval-ms: ${ISPF_BINDING_AUDIT_ELASTIC_SCALE_CHECK_MS:200}
   function:
     audit:
       enabled: ${ISPF_FUNCTION_AUDIT_ENABLED:false}
@@ -201,8 +245,24 @@ ispf:
       batch-size: ${ISPF_FUNCTION_AUDIT_BATCH_SIZE:100}
       flush-interval-ms: ${ISPF_FUNCTION_AUDIT_FLUSH_INTERVAL_MS:200}
       retention-days: ${ISPF_FUNCTION_AUDIT_RETENTION_DAYS:30}
+      writer-threads: ${ISPF_FUNCTION_AUDIT_WRITER_THREADS:2}
+      elastic-writer-enabled: ${ISPF_FUNCTION_AUDIT_ELASTIC_WRITER:true}
+      writer-threads-min: ${ISPF_FUNCTION_AUDIT_WRITER_THREADS_MIN:2}
+      writer-threads-max: ${ISPF_FUNCTION_AUDIT_WRITER_THREADS_MAX:16}
+      elastic-scale-up-queue-threshold: ${ISPF_FUNCTION_AUDIT_ELASTIC_SCALE_UP:50}
+      elastic-scale-down-steps: ${ISPF_FUNCTION_AUDIT_ELASTIC_SCALE_DOWN:6}
+      elastic-scale-check-interval-ms: ${ISPF_FUNCTION_AUDIT_ELASTIC_SCALE_CHECK_MS:200}
   mqtt-gateway:
     ingress-dispatch-threads: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_THREADS:8}
+    ingress-dispatch-elastic-enabled: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_ELASTIC:true}
+    ingress-dispatch-threads-min: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_THREADS_MIN:4}
+    ingress-dispatch-threads-max: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_THREADS_MAX:32}
+    ingress-dispatch-queue-capacity: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_QUEUE_CAPACITY:50000}
+    ingress-dispatch-scale-up-queue-threshold: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_SCALE_UP:50}
+    ingress-dispatch-scale-down-steps: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_SCALE_DOWN:6}
+    ingress-dispatch-scale-check-interval-ms: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_SCALE_CHECK_MS:200}
+    ingress-dispatch-coalesce-enabled: ${ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_COALESCE:true}
+    ingress-bypass-l3-queue: ${ISPF_MQTT_GATEWAY_INGRESS_BYPASS_L3:false}
   object-change:
     async-enabled: ${ISPF_OBJECT_CHANGE_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_OBJECT_CHANGE_QUEUE_CAPACITY:10000}
@@ -224,7 +284,19 @@ ispf:
     automation-worker-threads-min: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MIN:2}
     automation-worker-threads-max: ${ISPF_OBJECT_CHANGE_AUTOMATION_WORKERS_MAX:16}
     coalesce-scheduler-threads: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_THREADS:2}
+    coalesce-scheduler-elastic: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_ELASTIC:true}
+    coalesce-scheduler-threads-min: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_THREADS_MIN:2}
+    coalesce-scheduler-threads-max: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_THREADS_MAX:16}
+    coalesce-scheduler-scale-up-threshold: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_SCALE_UP:20}
+    coalesce-scheduler-scale-down-steps: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_SCALE_DOWN:6}
+    coalesce-scheduler-scale-check-interval-ms: ${ISPF_OBJECT_CHANGE_COALESCE_SCHEDULER_SCALE_CHECK_MS:200}
     scale-scheduler-threads: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_THREADS:2}
+    scale-scheduler-elastic: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_ELASTIC:true}
+    scale-scheduler-threads-min: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_THREADS_MIN:1}
+    scale-scheduler-threads-max: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_THREADS_MAX:8}
+    scale-scheduler-scale-up-threshold: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_UP:2}
+    scale-scheduler-scale-down-steps: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_DOWN:6}
+    scale-scheduler-scale-check-interval-ms: ${ISPF_OBJECT_CHANGE_SCALE_SCHEDULER_SCALE_CHECK_MS:500}
   alert-rule:
     runtime:
       flush-enabled: ${ISPF_ALERT_RULE_RUNTIME_FLUSH_ENABLED:true}
@@ -284,8 +356,20 @@ ispf:
       object-acl-ttl: ${ISPF_REDIS_OBJECT_ACL_TTL:10m}
   driver:
     scheduler-threads: ${ISPF_DRIVER_SCHEDULER_THREADS:8}
+    scheduler-threads-elastic-enabled: ${ISPF_DRIVER_SCHEDULER_THREADS_ELASTIC:true}
+    scheduler-threads-min: ${ISPF_DRIVER_SCHEDULER_THREADS_MIN:4}
+    scheduler-threads-max: ${ISPF_DRIVER_SCHEDULER_THREADS_MAX:32}
+    scheduler-scale-up-threshold: ${ISPF_DRIVER_SCHEDULER_SCALE_UP:4}
+    scheduler-scale-down-steps: ${ISPF_DRIVER_SCHEDULER_SCALE_DOWN:6}
+    scheduler-scale-check-interval-ms: ${ISPF_DRIVER_SCHEDULER_SCALE_CHECK_MS:200}
     async-poll-enabled: ${ISPF_DRIVER_ASYNC_POLL_ENABLED:true}
     io-threads: ${ISPF_DRIVER_IO_THREADS:16}
+    io-threads-elastic-enabled: ${ISPF_DRIVER_IO_THREADS_ELASTIC:true}
+    io-threads-min: ${ISPF_DRIVER_IO_THREADS_MIN:4}
+    io-threads-max: ${ISPF_DRIVER_IO_THREADS_MAX:32}
+    io-scale-up-queue-threshold: ${ISPF_DRIVER_IO_SCALE_UP_THRESHOLD:50}
+    io-scale-down-steps: ${ISPF_DRIVER_IO_SCALE_DOWN_STEPS:6}
+    io-scale-check-interval-ms: ${ISPF_DRIVER_IO_SCALE_CHECK_MS:200}
     ingress-buffer-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ENABLED:true}
     ingress-buffer-threads: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS:2}
     ingress-buffer-capacity: ${ISPF_DRIVER_INGRESS_BUFFER_CAPACITY:10000}
@@ -303,6 +387,7 @@ ispf:
     mqtt-callback-scale-up-queue-threshold: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_UP_THRESHOLD:100}
     mqtt-callback-scale-down-steps: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_DOWN_STEPS:6}
     mqtt-callback-scale-check-interval-ms: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_CHECK_MS:200}
+    mqtt-ingress-coalesce-enabled: ${ISPF_DRIVER_MQTT_INGRESS_COALESCE:true}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}

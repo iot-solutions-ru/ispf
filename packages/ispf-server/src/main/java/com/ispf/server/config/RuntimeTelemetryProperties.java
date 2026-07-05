@@ -9,8 +9,23 @@ public class RuntimeTelemetryProperties {
 
     private long coalesceMs = 1_000;
 
-    /** Threads for scheduled per-lane telemetry coalesce flush (parallel topic lanes). */
+    /** When false, L4 publishes immediately (no pending map / coalesce-ms window). */
+    private boolean coalesceEnabled = true;
+
+    /** Fixed scheduler threads when {@link #coalesceSchedulerElastic} is false. */
     private int coalesceSchedulerThreads = 4;
+
+    private boolean coalesceSchedulerElastic = true;
+
+    private int coalesceSchedulerThreadsMin = 4;
+
+    private int coalesceSchedulerThreadsMax = 32;
+
+    private int coalesceSchedulerScaleUpThreshold = 50;
+
+    private int coalesceSchedulerScaleDownSteps = 6;
+
+    private int coalesceSchedulerScaleCheckIntervalMs = 200;
 
     /**
      * When true, driver telemetry updates are batched on an elastic ingress queue (last-value-wins per lane)
@@ -28,6 +43,9 @@ public class RuntimeTelemetryProperties {
     private int ingressScaleDownSteps = 6;
     private int ingressScaleCheckIntervalMs = 200;
     private int ingressDrainBatchSize = 512;
+
+    /** When true, L3 holds last-value-wins per lane; false = FIFO queue (no coalesce drop). */
+    private boolean ingressQueueCoalesceEnabled = true;
 
     /**
      * When true, {@code TELEMETRY_ONLY} devices with historian-only interest skip the object-change bus
@@ -51,12 +69,76 @@ public class RuntimeTelemetryProperties {
         this.coalesceMs = coalesceMs;
     }
 
+    public boolean isCoalesceEnabled() {
+        return coalesceEnabled;
+    }
+
+    public void setCoalesceEnabled(boolean coalesceEnabled) {
+        this.coalesceEnabled = coalesceEnabled;
+    }
+
     public int getCoalesceSchedulerThreads() {
         return coalesceSchedulerThreads;
     }
 
     public void setCoalesceSchedulerThreads(int coalesceSchedulerThreads) {
         this.coalesceSchedulerThreads = Math.max(1, coalesceSchedulerThreads);
+    }
+
+    public boolean isCoalesceSchedulerElastic() {
+        return coalesceSchedulerElastic;
+    }
+
+    public void setCoalesceSchedulerElastic(boolean coalesceSchedulerElastic) {
+        this.coalesceSchedulerElastic = coalesceSchedulerElastic;
+    }
+
+    public int getCoalesceSchedulerThreadsMin() {
+        return coalesceSchedulerThreadsMin;
+    }
+
+    public void setCoalesceSchedulerThreadsMin(int coalesceSchedulerThreadsMin) {
+        this.coalesceSchedulerThreadsMin = Math.max(1, coalesceSchedulerThreadsMin);
+    }
+
+    public int getCoalesceSchedulerThreadsMax() {
+        return coalesceSchedulerThreadsMax;
+    }
+
+    public void setCoalesceSchedulerThreadsMax(int coalesceSchedulerThreadsMax) {
+        this.coalesceSchedulerThreadsMax = Math.max(1, coalesceSchedulerThreadsMax);
+    }
+
+    public int getCoalesceSchedulerScaleUpThreshold() {
+        return coalesceSchedulerScaleUpThreshold;
+    }
+
+    public void setCoalesceSchedulerScaleUpThreshold(int coalesceSchedulerScaleUpThreshold) {
+        this.coalesceSchedulerScaleUpThreshold = Math.max(1, coalesceSchedulerScaleUpThreshold);
+    }
+
+    public int getCoalesceSchedulerScaleDownSteps() {
+        return coalesceSchedulerScaleDownSteps;
+    }
+
+    public void setCoalesceSchedulerScaleDownSteps(int coalesceSchedulerScaleDownSteps) {
+        this.coalesceSchedulerScaleDownSteps = Math.max(1, coalesceSchedulerScaleDownSteps);
+    }
+
+    public int getCoalesceSchedulerScaleCheckIntervalMs() {
+        return coalesceSchedulerScaleCheckIntervalMs;
+    }
+
+    public void setCoalesceSchedulerScaleCheckIntervalMs(int coalesceSchedulerScaleCheckIntervalMs) {
+        this.coalesceSchedulerScaleCheckIntervalMs = Math.max(50, coalesceSchedulerScaleCheckIntervalMs);
+    }
+
+    public int resolvedCoalesceSchedulerThreadsMin() {
+        return coalesceSchedulerElastic ? coalesceSchedulerThreadsMin : coalesceSchedulerThreads;
+    }
+
+    public int resolvedCoalesceSchedulerThreadsMax() {
+        return coalesceSchedulerElastic ? coalesceSchedulerThreadsMax : coalesceSchedulerThreads;
     }
 
     public boolean isIngressQueueEnabled() {
@@ -129,6 +211,14 @@ public class RuntimeTelemetryProperties {
 
     public void setIngressDrainBatchSize(int ingressDrainBatchSize) {
         this.ingressDrainBatchSize = Math.max(16, ingressDrainBatchSize);
+    }
+
+    public boolean isIngressQueueCoalesceEnabled() {
+        return ingressQueueCoalesceEnabled;
+    }
+
+    public void setIngressQueueCoalesceEnabled(boolean ingressQueueCoalesceEnabled) {
+        this.ingressQueueCoalesceEnabled = ingressQueueCoalesceEnabled;
     }
 
     public boolean isFastHistorianPath() {

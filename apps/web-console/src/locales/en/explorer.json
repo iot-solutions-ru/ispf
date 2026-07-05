@@ -103,6 +103,7 @@
   "icons.device": "Device",
   "icons.driver": "Driver",
   "icons.model": "Model",
+  "icons.blueprint": "Blueprint",
   "icons.dashboard": "Dashboard",
   "icons.mimic": "SCADA mimic",
   "icons.workflow": "Workflow",

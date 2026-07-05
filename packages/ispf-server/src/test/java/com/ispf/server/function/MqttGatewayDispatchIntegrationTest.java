@@ -36,8 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MqttGatewayDispatchIntegrationTest {
 
     private static final String GATEWAY = "root.platform.devices.mqtt-gateway-dispatch-test";
-    private static final String SENSORS = GATEWAY + ".sensors";
-    private static final String SENSOR = SENSORS + ".loadtest-mqtt-sensor-00001";
+    private static final String SENSOR = "root.platform.instances.loadtest-mqtt-sensor-00001";
 
     private static final DataSchema INGRESS_SCHEMA = DataSchema.builder("mqttIngress")
             .field("topic", FieldType.STRING)
@@ -65,7 +64,6 @@ class MqttGatewayDispatchIntegrationTest {
     @AfterEach
     void cleanup() {
         objectManager.tree().findByPath(SENSOR).ifPresent(node -> objectManager.delete(SENSOR));
-        objectManager.tree().findByPath(SENSORS).ifPresent(node -> objectManager.delete(SENSORS));
         objectManager.tree().findByPath(GATEWAY).ifPresent(node -> objectManager.delete(GATEWAY));
     }
 
@@ -79,7 +77,7 @@ class MqttGatewayDispatchIntegrationTest {
                 "sensorParentPath",
                 DataRecord.single(
                         DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                        Map.of("value", SENSORS)
+                        Map.of("value", "root.platform.instances")
                 )
         );
         objectManager.setVariableValue(
@@ -125,12 +123,12 @@ class MqttGatewayDispatchIntegrationTest {
                 "sensorParentPath",
                 DataRecord.single(
                         DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                        Map.of("value", SENSORS)
+                        Map.of("value", "root.platform.instances")
                 )
         );
 
         String modelId = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id();
-        blueprintApplicationService.instantiateWithRules(modelId, SENSORS, "loadtest-mqtt-sensor-00001", Map.of());
+        blueprintApplicationService.instantiateWithRules(modelId, "root.platform.instances", "loadtest-mqtt-sensor-00001", Map.of());
 
         DataRecord result = functionService.invoke(
                 GATEWAY,
@@ -159,9 +157,6 @@ class MqttGatewayDispatchIntegrationTest {
                     "",
                     null
             );
-        }
-        if (objectManager.tree().findByPath(SENSORS).isEmpty()) {
-            objectManager.create(GATEWAY, "sensors", ObjectType.CUSTOM, "Sensors", "", null);
         }
     }
 }

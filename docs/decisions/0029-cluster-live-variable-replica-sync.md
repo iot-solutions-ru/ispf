@@ -70,7 +70,7 @@ Follower RAM apply publishes `ObjectChangeEvent` with `replicaIngress=true`:
 | `BindingPropagationAsyncHandler` | Skip automation |
 | `VariableHistoryListener` | Skip (historian runs on owner only) |
 | `ObjectWebSocketHandler` | Push to local WS clients |
-| `ClusterObjectTreeReplicaSync` | Unchanged (structure only) |
+| `ClusterObjectTreeReplicaSync` | Structure/config CRUD via PG reload ([ADR-0030](0030-cluster-config-structure-replica-sync.md)); skips telemetry + `replicaIngress` |
 
 Config/API variable writes (`revision` present) also replicate value snapshots so followers stay consistent without full path reload.
 
@@ -148,6 +148,7 @@ flowchart TB
 
 - [ADR-0028](0028-horizontal-active-active-cluster.md) — cluster topology (update: live sync supersedes sticky REST requirement)
 - [ADR-0024](0024-demand-driven-variable-change-pubsub.md) — demand-driven publish + global interest extension
+- [ADR-0030](0030-cluster-config-structure-replica-sync.md) — structure/config CRUD replica sync
 - [CLUSTER.md](../CLUSTER.md) — operator guide with SNMP walkthrough and tuning
 - [MESSAGING.md](../MESSAGING.md) — NATS payload fields
 - BL-140…142 — implementation backlog

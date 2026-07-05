@@ -52,16 +52,22 @@ export function resolveObjectTreeLookup(path: string): I18nLookup | null {
   return { kind: "path", path: objectTreePathKey(path) };
 }
 
+const MISSING = "\0missing\0";
+const OT = "objectTree";
+
+function translatedWhenPresent(t: TFunction, key: string, vars?: Record<string, string>): string {
+  const value = t(`${OT}:${key}`, { defaultValue: MISSING, ...vars });
+  return value === MISSING ? "" : value;
+}
+
 function lookupTitle(t: TFunction, lookup: I18nLookup, displayName?: string): string {
   if (lookup.kind === "path") {
-    const key = `objectTree:path.${lookup.path}.title`;
-    const value = t(key, { defaultValue: "" });
+    const value = translatedWhenPresent(t, `path.${lookup.path}.title`);
     if (value) {
       return value;
     }
   } else {
-    const titleKey = `objectTree:pattern.${lookup.pattern}.title`;
-    const value = t(titleKey, { defaultValue: "", ...lookup.vars });
+    const value = translatedWhenPresent(t, `pattern.${lookup.pattern}.title`, lookup.vars);
     if (value) {
       return value;
     }
@@ -71,14 +77,12 @@ function lookupTitle(t: TFunction, lookup: I18nLookup, displayName?: string): st
 
 function lookupDescription(t: TFunction, lookup: I18nLookup, serverDescription?: string): string {
   if (lookup.kind === "path") {
-    const key = `objectTree:path.${lookup.path}.description`;
-    const value = t(key, { defaultValue: "" });
+    const value = translatedWhenPresent(t, `path.${lookup.path}.description`);
     if (value) {
       return value;
     }
   } else {
-    const key = `objectTree:pattern.${lookup.pattern}.description`;
-    const value = t(key, { defaultValue: "", ...lookup.vars });
+    const value = translatedWhenPresent(t, `pattern.${lookup.pattern}.description`, lookup.vars);
     if (value) {
       return value;
     }
@@ -88,13 +92,12 @@ function lookupDescription(t: TFunction, lookup: I18nLookup, serverDescription?:
 
 function lookupIdColumn(t: TFunction, lookup: I18nLookup, fallback: string): string {
   if (lookup.kind === "path") {
-    const key = `objectTree:path.${lookup.path}.idColumnLabel`;
-    const value = t(key, { defaultValue: "" });
+    const value = translatedWhenPresent(t, `path.${lookup.path}.idColumnLabel`);
     if (value) {
       return value;
     }
   }
-  return t(`objectTree:idColumn.${fallback}`, { defaultValue: fallback });
+  return t(`${OT}:idColumn.${fallback}`, { defaultValue: fallback });
 }
 
 export function localizedSystemObjectDescription(

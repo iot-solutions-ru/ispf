@@ -37,12 +37,16 @@ export default function MimicEditorPanel({ path, title, onClose }: MimicEditorPa
   return (
     <ScadaMimicEditor
       diagramJson={mimicQuery.data?.diagramJson ?? "{}"}
-      onSave={(diagramJson) => {
-        saveMutation.mutate(diagramJson);
-        if (displayTitle !== mimicQuery.data?.title) {
-          void saveMimicTitle(path, displayTitle);
+      onSave={async (diagramJson) => {
+        try {
+          await saveMutation.mutateAsync(diagramJson);
+          if (displayTitle !== mimicQuery.data?.title) {
+            await saveMimicTitle(path, displayTitle);
+          }
+          onClose();
+        } catch (error) {
+          console.error("Failed to save mimic diagram", error);
         }
-        onClose();
       }}
       onClose={onClose}
     />

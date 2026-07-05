@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import ClusterView from "./ClusterView";
 import SystemMetricsView from "./SystemMetricsView";
 import SystemSettingsView from "./SystemSettingsView";
 import EventJournalPanel from "./operator/EventJournalPanel";
@@ -13,6 +14,7 @@ import { usePersistentTab } from "../hooks/usePersistentTab";
 
 type SystemTab =
   | "metrics"
+  | "cluster"
   | "settings"
   | "solutions"
   | "events"
@@ -24,7 +26,7 @@ type SystemTab =
   | "backup";
 
 const SYSTEM_TABS: readonly SystemTab[] = [
-  "metrics", "settings", "solutions", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
+  "metrics", "cluster", "settings", "solutions", "events", "functions", "bindings", "changeSets", "schedules", "semanticExport", "backup",
 ];
 
 export default function SystemView() {
@@ -33,6 +35,7 @@ export default function SystemView() {
 
   const tabs: { id: SystemTab; labelKey: string }[] = [
     { id: "metrics", labelKey: "tab.metrics" },
+    { id: "cluster", labelKey: "tab.cluster" },
     { id: "settings", labelKey: "tab.settings" },
     { id: "solutions", labelKey: "tab.solutions" },
     { id: "events", labelKey: "tab.events" },
@@ -69,6 +72,7 @@ export default function SystemView() {
       </div>
 
       {tab === "metrics" && <SystemMetricsView embedded />}
+      {tab === "cluster" && <ClusterView />}
       {tab === "settings" && <SystemSettingsView />}
       {tab === "solutions" && <SolutionCatalogPanel />}
       {tab === "events" && (

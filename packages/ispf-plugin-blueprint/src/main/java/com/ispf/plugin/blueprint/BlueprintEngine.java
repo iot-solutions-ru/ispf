@@ -386,6 +386,8 @@ public class BlueprintEngine {
             return node;
         });
 
+        modelObject.updateInfo(model.name(), model.description());
+
         modelObject.addVariable(new Variable(
                 "blueprintType",
                 com.ispf.core.model.DataSchema.builder("blueprintType").field("value", com.ispf.core.model.FieldType.STRING).build(),

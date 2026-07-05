@@ -30,3 +30,15 @@ export function resolveOperatorAppId(
     pathLeaf
   );
 }
+
+/** Resolve registry app id from an operator-apps tree path. */
+export function resolveOperatorAppIdFromPath(
+  path: string,
+  apps: { appId: string }[] = [],
+): string | null {
+  const leaf = operatorAppLeafFromPath(path);
+  if (!leaf) {
+    return null;
+  }
+  return resolveOperatorAppId(leaf, apps);
+}

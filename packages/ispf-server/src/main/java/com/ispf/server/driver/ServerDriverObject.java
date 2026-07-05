@@ -6,6 +6,7 @@ import com.ispf.driver.DeviceDriver;
 import com.ispf.driver.ingress.DriverIngressBuffer;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -67,6 +68,20 @@ public class ServerDriverObject implements DeviceDriver.DriverObject {
         if (ingressBuffer != null) {
             ingressBuffer.flushNow();
         }
+    }
+
+    public Map<String, Object> ingressStats() {
+        Map<String, Object> stats = new LinkedHashMap<>();
+        if (ingressBuffer == null) {
+            stats.put("ingressEnabled", false);
+            return stats;
+        }
+        stats.put("ingressEnabled", true);
+        stats.put("ingressPending", ingressBuffer.pendingCount());
+        stats.put("ingressCoalesced", ingressBuffer.coalescedTotal());
+        stats.put("ingressEvicted", ingressBuffer.evictedTotal());
+        stats.put("ingressWorkers", ingressBuffer.activeWorkers());
+        return stats;
     }
 
     @Override

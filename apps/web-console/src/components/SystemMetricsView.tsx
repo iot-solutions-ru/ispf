@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformMetrics, type PlatformMetricSection } from "../api/platformMetrics";
+import { usePersistentTab } from "../hooks/usePersistentTab";
 import AutomationIndexStatsCard from "./AutomationIndexStatsCard";
-import ClusterHealthCard from "./ClusterHealthCard";
+import DiagnosticsPressureCard from "./DiagnosticsPressureCard";
 import RedisHealthCard from "./RedisHealthCard";
 import NatsJetStreamHealthCard from "./NatsJetStreamHealthCard";
 import YargHealthCard from "./YargHealthCard";
@@ -23,9 +24,14 @@ const METRIC_KEYS = [
   "workflowInstancesCompleted", "workflowInstancesFailed", "workflowInstancesCancelled",
   "alertRules", "eventCorrelators", "applicationFunctions", "applicationFunctionVersions",
   "platformSchedules", "platformSchedulesEnabled",
+  "processCpuPercent", "systemCpuPercent", "heapUsedPercent", "pressureScore", "topSuspect",
   "turnsStartedTotal", "turnsCompletedTotal", "turnsRateLimitedTotal", "turnsLastHour",
   "avgStepsPerTurn", "guardBlocksByType",
 ] as const;
+
+type MetricsSubTab = "overview" | "diagnostics";
+
+const METRICS_SUB_TABS: readonly MetricsSubTab[] = ["overview", "diagnostics"];
 
 function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
   const { t } = useTranslation(["system", "common"]);
@@ -76,11 +82,22 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
 
 export default function SystemMetricsView({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation("system");
+  const [subTab, setSubTab] = usePersistentTab<MetricsSubTab>(
+    "system-metrics",
+    "overview",
+    METRICS_SUB_TABS
+  );
   const metricsQuery = useQuery({
     queryKey: ["platform-metrics"],
     queryFn: fetchPlatformMetrics,
     refetchInterval: 30_000,
+    enabled: subTab === "overview",
   });
+
+  const subTabs: { id: MetricsSubTab; labelKey: string }[] = [
+    { id: "overview", labelKey: "metrics.tab.overview" },
+    { id: "diagnostics", labelKey: "metrics.tab.diagnostics" },
+  ];
 
   const content = (
     <>
@@ -90,58 +107,72 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             <h2>{t("title")}</h2>
             <p className="op-muted">{t("metrics.standaloneSubtitle")}</p>
           </div>
-          <button
-            type="button"
-            className="btn"
-            disabled={metricsQuery.isFetching}
-            onClick={() => metricsQuery.refetch()}
-          >
-            {t("metrics.refresh")}
-          </button>
         </header>
       )}
 
-      {embedded && (
-        <div className="system-embedded-toolbar">
-          <button
-            type="button"
-            className="btn"
-            disabled={metricsQuery.isFetching}
-            onClick={() => metricsQuery.refetch()}
-          >
-            {t("metrics.refreshMetrics")}
-          </button>
+      <div className="tabs-scroll system-metrics-subtabs">
+        <nav className="tabs" aria-label={t("metrics.tabsAria")}>
+          {subTabs.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={subTab === item.id ? "active" : ""}
+              onClick={() => setSubTab(item.id)}
+            >
+              {t(item.labelKey)}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {subTab === "diagnostics" && (
+        <div className="system-metrics-diagnostics-pane">
+          <DiagnosticsPressureCard />
         </div>
       )}
 
-      {metricsQuery.error && (
-        <div className="op-alert op-alert-error">{String(metricsQuery.error)}</div>
-      )}
-
-      {metricsQuery.isLoading && <p className="hint">{t("metrics.loading")}</p>}
-
-      {metricsQuery.data && (
+      {subTab === "overview" && (
         <>
-          <p className="system-metrics-updated hint">
-            {t("metrics.updatedAt", {
-              time: new Date(metricsQuery.data.timestamp).toLocaleString(),
-            })}
-          </p>
-          <AutomationIndexStatsCard />
-          <ClusterHealthCard />
-          <StorageHealthCard />
-          <div className="system-metrics-grid system-backend-health-grid">
-            <RedisHealthCard />
-            <NatsJetStreamHealthCard />
-            <YargHealthCard />
-            <McpHealthCard />
-            <PlatformLicenseCard />
+          <div className="system-embedded-toolbar">
+            <button
+              type="button"
+              className="btn"
+              disabled={metricsQuery.isFetching}
+              onClick={() => metricsQuery.refetch()}
+            >
+              {t(embedded ? "metrics.refreshMetrics" : "metrics.refresh")}
+            </button>
           </div>
-          <div className="system-metrics-grid">
-            {metricsQuery.data.sections.map((section) => (
-              <MetricSectionCard key={section.id} section={section} />
-            ))}
-          </div>
+
+          {metricsQuery.error && (
+            <div className="op-alert op-alert-error">{String(metricsQuery.error)}</div>
+          )}
+
+          {metricsQuery.isLoading && <p className="hint">{t("metrics.loading")}</p>}
+
+          {metricsQuery.data && (
+            <>
+              <p className="system-metrics-updated hint">
+                {t("metrics.updatedAt", {
+                  time: new Date(metricsQuery.data.timestamp).toLocaleString(),
+                })}
+              </p>
+              <AutomationIndexStatsCard />
+              <StorageHealthCard />
+              <div className="system-metrics-grid system-backend-health-grid">
+                <RedisHealthCard />
+                <NatsJetStreamHealthCard />
+                <YargHealthCard />
+                <McpHealthCard />
+                <PlatformLicenseCard />
+              </div>
+              <div className="system-metrics-grid">
+                {metricsQuery.data.sections.map((section) => (
+                  <MetricSectionCard key={section.id} section={section} />
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </>

@@ -523,6 +523,10 @@
 | BL-140 | ADR-0029 live variable replica sync | P1 | S19 | Done |
 | BL-141 | Redis cluster WS path interest | P1 | S19 | Done |
 | BL-142 | Cluster live-sync integration test | P2 | S19 | Done |
+| BL-143 | Cluster config/structure replica sync + smoke `--config-sync` | P1 | S19 | Done |
+| BL-144 | Cluster replica roles + platform job queue (async reports) | P1 | S19 | Done |
+| BL-145 | Replica profiles + capabilities (ADR-0032) | P1 | S19 | Done |
+| BL-146 | Metrics UI load diagnostics (cluster CPU + intra-node drill-down) | P1 | S19 | Done |
 
 **Правило:** закрытие BL-XX → обновить эту таблицу + реестр спринтов + PR.
 

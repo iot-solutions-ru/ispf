@@ -2,6 +2,7 @@ package com.ispf.server.binding;
 
 import com.ispf.core.binding.BindingRule;
 import com.ispf.server.application.data.PlatformSqlCatalog;
+import com.ispf.server.concurrent.ElasticBatchQueueWriter;
 import com.ispf.server.config.BindingProperties;
 import com.ispf.server.object.ObjectManager;
 import jakarta.annotation.PostConstruct;
@@ -17,12 +18,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class BindingInvokeAuditService {
@@ -51,9 +47,7 @@ public class BindingInvokeAuditService {
     private final ObjectManager objectManager;
     private final String auditTable;
 
-    private BlockingQueue<PendingRecord> queue;
-    private ExecutorService worker;
-    private volatile boolean running;
+    private ElasticBatchQueueWriter<PendingRecord> batchWriter;
 
     private static final RowMapper<BindingInvokeAuditEntry> ROW_MAPPER = (rs, rowNum) -> new BindingInvokeAuditEntry(
             rs.getObject("id", UUID.class),
@@ -89,35 +83,29 @@ public class BindingInvokeAuditService {
         if (!audit.isAsyncEnabled()) {
             return;
         }
-        queue = new LinkedBlockingQueue<>(audit.getQueueCapacity());
-        running = true;
-        worker = Executors.newSingleThreadExecutor(runnable -> {
-            Thread thread = new Thread(runnable, "binding-audit-writer");
-            thread.setDaemon(true);
-            return thread;
-        });
-        worker.submit(this::writerLoop);
+        batchWriter = new ElasticBatchQueueWriter<>(
+                audit.resolvedElastic(),
+                audit.getBatchSize(),
+                audit.getFlushIntervalMs(),
+                "binding-audit-writer",
+                this::persistBatch
+        );
+        batchWriter.start(audit.getQueueCapacity());
         log.info(
-                "Binding audit async writer started (enabled={}, mode={}, queueCapacity={}, batchSize={})",
+                "Binding audit async writer started (enabled={}, mode={}, queueCapacity={}, batchSize={}, elastic={})",
                 audit.isEnabled(),
                 audit.getMode(),
                 audit.getQueueCapacity(),
-                audit.getBatchSize()
+                audit.getBatchSize(),
+                audit.isElasticWriterEnabled()
         );
     }
 
     @PreDestroy
     void shutdown() {
-        running = false;
-        if (worker != null) {
-            worker.shutdown();
-            try {
-                worker.awaitTermination(2, TimeUnit.SECONDS);
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
+        if (batchWriter != null) {
+            batchWriter.shutdown();
         }
-        drainQueueSync();
     }
 
     public void recordCel(
@@ -234,8 +222,8 @@ public class BindingInvokeAuditService {
         if (!passesSampleRate(audit.getSampleRate())) {
             return;
         }
-        if (audit.isAsyncEnabled() && queue != null) {
-            if (!queue.offer(pending)) {
+        if (audit.isAsyncEnabled() && batchWriter != null) {
+            if (!batchWriter.offer(pending)) {
                 log.warn("Binding audit queue full, dropping record for {}", pending.objectPath());
             }
             return;
@@ -259,45 +247,6 @@ public class BindingInvokeAuditService {
             return false;
         }
         return ThreadLocalRandom.current().nextDouble() < sampleRate;
-    }
-
-    private void writerLoop() {
-        BindingProperties.Audit audit = properties.getAudit();
-        List<PendingRecord> batch = new ArrayList<>(audit.getBatchSize());
-        long lastFlush = System.nanoTime();
-        while (running || (queue != null && !queue.isEmpty())) {
-            try {
-                PendingRecord next = queue.poll(audit.getFlushIntervalMs(), TimeUnit.MILLISECONDS);
-                if (next != null) {
-                    batch.add(next);
-                }
-                long elapsedMs = (System.nanoTime() - lastFlush) / 1_000_000L;
-                boolean flush = !batch.isEmpty()
-                        && (batch.size() >= audit.getBatchSize() || elapsedMs >= audit.getFlushIntervalMs());
-                if (flush) {
-                    persistBatch(batch);
-                    batch.clear();
-                    lastFlush = System.nanoTime();
-                }
-            } catch (InterruptedException ex) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-        if (!batch.isEmpty()) {
-            persistBatch(batch);
-        }
-    }
-
-    private void drainQueueSync() {
-        if (queue == null) {
-            return;
-        }
-        List<PendingRecord> remaining = new ArrayList<>();
-        queue.drainTo(remaining);
-        if (!remaining.isEmpty()) {
-            persistBatch(remaining);
-        }
     }
 
     private void persistBatch(List<PendingRecord> batch) {

@@ -1,5 +1,6 @@
 package com.ispf.server.event;
 
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.platform.PlatformLeaderLockService;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,20 +19,26 @@ public class EventHistoryRetentionService {
     private final EventJournalStore eventJournalStore;
     private final EventJournalProperties properties;
     private final PlatformLeaderLockService leaderLockService;
+    private final ClusterProperties clusterProperties;
 
     public EventHistoryRetentionService(
             EventJournalStore eventJournalStore,
             EventJournalProperties properties,
-            PlatformLeaderLockService leaderLockService
+            PlatformLeaderLockService leaderLockService,
+            ClusterProperties clusterProperties
     ) {
         this.eventJournalStore = eventJournalStore;
         this.properties = properties;
         this.leaderLockService = leaderLockService;
+        this.clusterProperties = clusterProperties;
     }
 
     @Scheduled(cron = "0 30 3 * * *")
     @Transactional
     public void purgeExpiredEvents() {
+        if (!clusterProperties.isSchedulerActive()) {
+            return;
+        }
         if (!leaderLockService.tryAcquire(RETENTION_LOCK, Duration.ofHours(1))) {
             return;
         }
