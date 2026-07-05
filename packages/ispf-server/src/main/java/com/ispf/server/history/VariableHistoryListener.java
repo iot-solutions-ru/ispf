@@ -27,6 +27,9 @@ public class VariableHistoryListener implements ObjectChangeAsyncHandler {
 
     @Override
     public void handle(ObjectChangeEvent event) {
+        if (event.replicaIngress()) {
+            return;
+        }
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
             return;
         }

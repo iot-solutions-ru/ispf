@@ -171,6 +171,8 @@ Commercial bundle manifests могут содержать RSA-signed блок `l
 
 ## Multi-instance cluster (BL-134…139)
 
+Подробное руководство: **[CLUSTER.md](CLUSTER.md)** (топология, bindings в кластере, ADR-0029, SNMP-пример, tuning).
+
 Lab stack with three replicas behind nginx:
 
 ```bash
@@ -191,7 +193,10 @@ Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST ro
 | `ISPF_CLUSTER_ENABLED` | `true` | Enables driver ownership + cluster health API |
 | `ISPF_NATS_ENABLED` | `true` | Cross-replica WS/object-change fan-out |
 | `ISPF_NATS_REPLICA_EVENTS` | `true` | Required for multi-replica UI sync |
-| `ISPF_REDIS_ENABLED` | `true` | Recommended (correlator windows, ACL cache) |
+| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC` | `true` | NATS live-value RAM mirror ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)) |
+| `ISPF_CLUSTER_PATH_INTEREST` | `true` | Redis global WS interest (requires Redis) |
+| `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS` | `500` | NATS fan-out coalesce (отдельно от `ISPF_RUNTIME_TELEMETRY_COALESCE_MS`) |
+| `ISPF_REDIS_ENABLED` | `true` | Recommended (correlator windows, ACL cache, cluster path interest) |
 
 Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUSTER_DRIVER_LOCK_RENEW_MS` (default 10000).
 
@@ -213,7 +218,7 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 **Failover verify**
 
 1. `curl -sf http://127.0.0.1:8088/api/v1/info` — should succeed with any replica up.
-2. Stop one replica: REST must not 502; WS clients on other replicas stay connected (sticky); NATS propagates variable updates.
+2. Stop one replica: REST must not 502; WS clients on other replicas stay connected; NATS propagates live variable snapshots ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).
 3. Admin → System → Metrics → cluster health card (`/api/v1/platform/cluster/health`).
 
 **Ops checklist (BL-139)**

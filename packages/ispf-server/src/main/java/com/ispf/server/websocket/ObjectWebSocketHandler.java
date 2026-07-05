@@ -8,6 +8,7 @@ import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.federation.FederationSubscribePollService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private final ObjectManager objectManager;
     private final ApplicationEventCatalogService eventCatalogService;
     private final ObjectWebSocketPathInterestRegistry pathInterestRegistry;
+    private final ClusterPathInterestStore clusterPathInterestStore;
 
     public ObjectWebSocketHandler(
             ObjectMapper objectMapper,
@@ -57,7 +59,8 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
             ObjectPresenceService presenceService,
             ObjectManager objectManager,
             ApplicationEventCatalogService eventCatalogService,
-            ObjectWebSocketPathInterestRegistry pathInterestRegistry
+            ObjectWebSocketPathInterestRegistry pathInterestRegistry,
+            ClusterPathInterestStore clusterPathInterestStore
     ) {
         this.objectMapper = objectMapper;
         this.federationSubscribePollService = federationSubscribePollService;
@@ -65,6 +68,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         this.objectManager = objectManager;
         this.eventCatalogService = eventCatalogService;
         this.pathInterestRegistry = pathInterestRegistry;
+        this.clusterPathInterestStore = clusterPathInterestStore;
     }
 
     @Override
@@ -72,6 +76,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
         sessions.add(session);
         broadcastSessions.add(session);
         pathInterestRegistry.onBroadcastSessionAdded();
+        clusterPathInterestStore.onBroadcastSessionAdded();
     }
 
     @Override
@@ -280,6 +285,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
     private void updateSubscriptionIndex(WebSocketSession session, Set<String> previousPaths, Set<String> paths) {
         if (broadcastSessions.remove(session)) {
             pathInterestRegistry.onBroadcastSessionRemoved();
+            clusterPathInterestStore.onBroadcastSessionRemoved();
         }
         if (previousPaths != null) {
             for (String path : previousPaths) {
@@ -291,28 +297,33 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
                 pathInterestRegistry.unsubscribePath(path);
+                clusterPathInterestStore.unsubscribePath(path);
             }
         }
         if (paths.isEmpty()) {
             broadcastSessions.add(session);
             pathInterestRegistry.onBroadcastSessionAdded();
+            clusterPathInterestStore.onBroadcastSessionAdded();
             return;
         }
         for (String path : paths) {
             pathSubscriptions.computeIfAbsent(path, ignored -> ConcurrentHashMap.newKeySet()).add(session);
             pathInterestRegistry.subscribePath(path);
+            clusterPathInterestStore.subscribePath(path);
         }
     }
 
     private void removeSessionFromIndex(WebSocketSession session) {
         if (broadcastSessions.remove(session)) {
             pathInterestRegistry.onBroadcastSessionRemoved();
+            clusterPathInterestStore.onBroadcastSessionRemoved();
         }
         Object raw = session.getAttributes().get(SUBSCRIBE_ATTR);
         if (raw instanceof Set<?> subscribed) {
             for (Object entry : subscribed) {
                 if (entry instanceof String path) {
                     pathInterestRegistry.unsubscribePath(path);
+                    clusterPathInterestStore.unsubscribePath(path);
                 }
             }
         }

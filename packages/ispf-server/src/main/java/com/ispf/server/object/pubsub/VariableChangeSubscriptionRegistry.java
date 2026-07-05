@@ -22,6 +22,7 @@ public class VariableChangeSubscriptionRegistry {
     private final WorkflowEventTriggerIndex workflowTriggerIndex;
     private final ObjectWebSocketPathInterestRegistry webSocketPathInterest;
     private final FederationExportInterestRegistry federationExportInterest;
+    private final ClusterPathInterestStore clusterPathInterest;
 
     public VariableChangeSubscriptionRegistry(
             @Lazy ObjectManager objectManager,
@@ -29,7 +30,8 @@ public class VariableChangeSubscriptionRegistry {
             AutomationRuleIndex automationRuleIndex,
             WorkflowEventTriggerIndex workflowTriggerIndex,
             ObjectWebSocketPathInterestRegistry webSocketPathInterest,
-            FederationExportInterestRegistry federationExportInterest
+            FederationExportInterestRegistry federationExportInterest,
+            ClusterPathInterestStore clusterPathInterest
     ) {
         this.objectManager = objectManager;
         this.bindingDependencyIndex = bindingDependencyIndex;
@@ -37,6 +39,7 @@ public class VariableChangeSubscriptionRegistry {
         this.workflowTriggerIndex = workflowTriggerIndex;
         this.webSocketPathInterest = webSocketPathInterest;
         this.federationExportInterest = federationExportInterest;
+        this.clusterPathInterest = clusterPathInterest;
     }
 
     public VariableChangeInterest interest(String objectPath, String variableName) {
@@ -49,6 +52,7 @@ public class VariableChangeSubscriptionRegistry {
         boolean workflows = !workflowTriggerIndex.findVariableWorkflows(objectPath, variableName).isEmpty();
         boolean workflowIndex = isWorkflowIndexVariable(objectPath, variableName);
         boolean uiRefresh = webSocketPathInterest.hasPathInterest(objectPath)
+                || clusterPathInterest.hasPathInterest(objectPath)
                 || federationExportInterest.hasPathInterest(objectPath);
         return new VariableChangeInterest(historian, bindings, alerts, workflows, workflowIndex, uiRefresh);
     }

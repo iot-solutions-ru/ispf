@@ -1,8 +1,11 @@
 package com.ispf.server.workflow;
 
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.model.DataRecord;
+import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.object.ObjectChangeType;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.Options;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 
 @Component
@@ -23,16 +27,19 @@ public class NatsEventBridge {
     private static final Logger log = LoggerFactory.getLogger(NatsEventBridge.class);
 
     private final NatsProperties properties;
+    private final ClusterProperties clusterProperties;
     private final ObjectMapper objectMapper;
     private final Connection connection;
     private final NatsJetStreamSupport jetStreamSupport;
 
     public NatsEventBridge(
             NatsProperties properties,
+            ClusterProperties clusterProperties,
             ObjectMapper objectMapper,
             @Lazy NatsJetStreamSupport jetStreamSupport
     ) {
         this.properties = properties;
+        this.clusterProperties = clusterProperties;
         this.objectMapper = objectMapper;
         this.connection = properties.enabled() ? connect() : null;
         this.jetStreamSupport = jetStreamSupport;
@@ -44,26 +51,57 @@ public class NatsEventBridge {
 
     @EventListener
     public void onObjectChange(ObjectChangeEvent event) {
-        if (event.telemetry()) {
+        if (event.replicaIngress()) {
             return;
         }
         if (!properties.enabled() || connection == null) {
             return;
         }
         try {
-            String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase();
-            byte[] payload = buildPayload(event);
-            connection.publish(subject, payload);
-            if (properties.replicaEventsEnabled()) {
-                String replicaSubject = "ispf.events." + event.type().name().toLowerCase();
-                if (properties.jetStreamEnabled() && jetStreamSupport.isActive()) {
-                    jetStreamSupport.publishReplicaEvent(replicaSubject, payload);
-                } else {
-                    connection.publish(replicaSubject, payload);
-                }
+            if (!event.telemetry()) {
+                String subject = "ispf.object." + sanitize(event.path()) + "." + event.type().name().toLowerCase();
+                connection.publish(subject, buildPayload(event));
             }
+            if (!properties.replicaEventsEnabled()) {
+                return;
+            }
+            if (clusterProperties.isLiveVariableSyncActive()
+                    && event.type() == ObjectChangeType.VARIABLE_UPDATED) {
+                return;
+            }
+            if (event.telemetry()) {
+                return;
+            }
+            publishReplicaFanout("ispf.events." + event.type().name().toLowerCase(), buildPayload(event));
         } catch (Exception e) {
             log.warn("Failed to publish NATS event for {}: {}", event.path(), e.getMessage());
+        }
+    }
+
+    /** ADR-0029: coalesced live-value snapshot to follower replicas. */
+    public void publishLiveVariableReplicaSync(
+            String path,
+            String variableName,
+            DataRecord value,
+            Instant observedAt
+    ) {
+        if (!properties.enabled() || connection == null || !properties.replicaEventsEnabled()) {
+            return;
+        }
+        try {
+            Map<String, Object> body = new java.util.LinkedHashMap<>();
+            body.put("type", ObjectChangeType.VARIABLE_UPDATED.name());
+            body.put("path", path);
+            body.put("variableName", variableName);
+            body.put("timestamp", Instant.now().toString());
+            body.put("source", properties.replicaId());
+            body.put("value", value);
+            if (observedAt != null) {
+                body.put("observedAt", observedAt.toString());
+            }
+            publishReplicaFanout("ispf.events.variable_updated", objectMapper.writeValueAsBytes(body));
+        } catch (Exception e) {
+            log.warn("Failed to publish live variable replica sync for {}.{}: {}", path, variableName, e.getMessage());
         }
     }
 
@@ -103,6 +141,14 @@ public class NatsEventBridge {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    private void publishReplicaFanout(String replicaSubject, byte[] payload) {
+        if (properties.jetStreamEnabled() && jetStreamSupport.isActive()) {
+            jetStreamSupport.publishReplicaEvent(replicaSubject, payload);
+        } else {
+            connection.publish(replicaSubject, payload);
         }
     }
 

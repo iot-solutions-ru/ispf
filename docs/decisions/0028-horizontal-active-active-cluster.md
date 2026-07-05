@@ -97,7 +97,7 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 
 - PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../ROADMAP.md#часть-e--полный-реестр-bl-01139)).
 - NATS + Redis become operational dependencies for full multi-replica UX.
-- Sticky WS required for lowest-latency presence; NATS covers cross-replica variable push.
+- Sticky WS optional when [ADR-0029](0029-cluster-live-variable-replica-sync.md) live sync + Redis path interest are enabled; REST round-robin safe for HMI reads.
 
 ## Related
 
@@ -105,3 +105,4 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 - [BL-133…139](../ROADMAP.md#часть-e--полный-реестр-bl-01139) — EX-CLUSTER implementation backlog
 - [DEPLOYMENT.md](../DEPLOYMENT.md) — Multi-instance cluster runbook
 - [MESSAGING.md](../MESSAGING.md) — NATS replica fan-out
+- [ADR-0029](0029-cluster-live-variable-replica-sync.md) — live variable RAM mirror (closes stale-read gap)

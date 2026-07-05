@@ -35,7 +35,7 @@ class ClusterPlatformBootstrapServiceTest {
         BootstrapProperties bootstrapProperties = new BootstrapProperties();
         bootstrapProperties.setFixturesEnabled(true);
         service = new ClusterPlatformBootstrapService(
-                new ClusterProperties(true, true, 30, 10, 15, 10, 30),
+                new ClusterProperties(true, true, 30, 10, 15, 10, 30, true, true, 500),
                 bootstrapProperties,
                 leaderLockService,
                 nodeRepository
@@ -47,7 +47,7 @@ class ClusterPlatformBootstrapServiceTest {
         BootstrapProperties bootstrapProperties = new BootstrapProperties();
         bootstrapProperties.setFixturesEnabled(true);
         ClusterPlatformBootstrapService singleNode = new ClusterPlatformBootstrapService(
-                new ClusterProperties(false, true, 30, 10, 15, 10, 30),
+                new ClusterProperties(false, true, 30, 10, 15, 10, 30, true, true, 500),
                 bootstrapProperties,
                 leaderLockService,
                 nodeRepository
@@ -65,7 +65,7 @@ class ClusterPlatformBootstrapServiceTest {
         BootstrapProperties bootstrapProperties = new BootstrapProperties();
         bootstrapProperties.setFixturesEnabled(true);
         ClusterPlatformBootstrapService follower = new ClusterPlatformBootstrapService(
-                new ClusterProperties(true, true, 30, 10, 15, 10, 30),
+                new ClusterProperties(true, true, 30, 10, 15, 10, 30, true, true, 500),
                 bootstrapProperties,
                 leaderLockService,
                 nodeRepository
@@ -80,7 +80,7 @@ class ClusterPlatformBootstrapServiceTest {
         BootstrapProperties bootstrapProperties = new BootstrapProperties();
         bootstrapProperties.setFixturesEnabled(true);
         ClusterPlatformBootstrapService follower = new ClusterPlatformBootstrapService(
-                new ClusterProperties(true, true, 30, 10, 15, 10, 30),
+                new ClusterProperties(true, true, 30, 10, 15, 10, 30, true, true, 500),
                 bootstrapProperties,
                 leaderLockService,
                 nodeRepository

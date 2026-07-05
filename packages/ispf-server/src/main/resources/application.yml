@@ -118,6 +118,9 @@ ispf:
     replica-heartbeat-seconds: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_SECONDS:10}
     replica-stale-seconds: ${ISPF_CLUSTER_REPLICA_STALE_SECONDS:30}
     replica-heartbeat-ms: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_MS:10000}
+    live-variable-sync-enabled: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC:true}
+    cluster-path-interest-enabled: ${ISPF_CLUSTER_PATH_INTEREST:true}
+    live-variable-sync-coalesce-ms: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS:500}
   federation:
     outbound-buffer:
       max-bytes: ${ISPF_FEDERATION_OUTBOUND_BUFFER_MAX_BYTES:2097152}

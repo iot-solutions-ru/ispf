@@ -142,6 +142,29 @@ NATS_URL=nats://ispf-nats:4222   # тот же кластер, что ispf.nats.
 
 Поля стабильны для `NatsEventBridge`; не полагаться на недокументированные ключи.
 
+### Live variable replica sync (ADR-0029, `ispf.cluster.live-variable-sync-enabled=true`)
+
+Replica fan-out `ispf.events.variable_updated` may include a full value snapshot (coalesced on owner with `ispf.cluster.live-variable-sync-coalesce-ms`, default 500 ms):
+
+```json
+{
+  "type": "VARIABLE_UPDATED",
+  "path": "root.platform.devices.snmp-router-01",
+  "variableName": "ifInOctets",
+  "timestamp": "2026-07-05T12:00:00Z",
+  "source": "replica-2",
+  "observedAt": "2026-07-05T12:00:00.123Z",
+  "value": {
+    "schema": { "name": "ifInOctets", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+    "rows": [{ "value": 1234567890 }]
+  }
+}
+```
+
+Follower replicas apply `value` to local RAM (`ClusterVariableReplicaApplier`); messages without `value` keep legacy notify-only behaviour.
+
+Cluster-wide WebSocket path interest (Redis, `ispf.cluster.cluster-path-interest-enabled`) ensures driver owners publish when UI clients subscribe on any replica.
+
 ### Практика consumer
 
 1. Один durable consumer process на интеграцию; idempotent обработка по `(path, variableName, timestamp)`.

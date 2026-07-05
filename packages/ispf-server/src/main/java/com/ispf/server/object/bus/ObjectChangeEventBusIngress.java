@@ -21,6 +21,9 @@ public class ObjectChangeEventBusIngress {
     @EventListener
     @Order(Ordered.LOWEST_PRECEDENCE)
     public void enqueue(ObjectChangeEvent event) {
+        if (event.replicaIngress()) {
+            return;
+        }
         eventBus.submit(event);
     }
 }

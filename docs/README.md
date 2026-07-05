@@ -31,10 +31,10 @@
 | [Acceleration program](ACCELERATION_PROGRAM.md) | S19–S23: baseline, scorecard, scope freeze, KPI |
 | [HMI quality gates](HMI_QUALITY_GATES.md) | Lighthouse, axe, bundle budget, mimic FPS (S21) |
 | [CI dashboard](CI_DASHBOARD.md) | Workflow health snapshot (S20-06) |
-| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0028 |
+| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0029 |
 | [Эволюция платформы](PLATFORM_EVOLUTION.md) | Ретроспективный чеклист: что сделано по порядку, как ISPF развивалась |
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
-| [Модели (Models)](MODELS.md) | Шаблоны объектов, типы, встроенные модели |
+| [Чертежи (Blueprints)](BLUEPRINTS.md) | Шаблоны объектов, типы, встроенные чертежи |
 | [Драйверы](DRIVERS.md) | 58 встроенных драйверов — полный каталог REQ-PF-14 |
 | [Дашборды и виджеты](DASHBOARDS.md) | HMI builder, layout JSON, `objectPath` / `selectionKey` |
 | **[SCADA — мнемосхемы](SCADA.md)** | Mimic editor (align, resize, snap), символы, bindings, объект `MIMIC`, виджет `scada-mimic` |
@@ -52,6 +52,7 @@
 | [Web Console](WEB_CONSOLE.md) | Админка, operator HMI, роли |
 | [Безопасность](SECURITY.md) | RBAC, Keycloak, профили |
 | [Развёртывание](DEPLOYMENT.md) | Docker, переменные окружения, профили Spring |
+| **[Кластер (multi-replica)](CLUSTER.md)** | Driver ownership, live sync ADR-0029, SNMP-пример, tuning coalesce |
 | [Тестирование](TESTING.md) | Unit, integration, smoke |
 | [Load testing](LOAD_TESTING.md) | HTTP vs internal automation throughput, baselines |
 | **[Lab event journal stress](LAB_EVENT_JOURNAL_STRESS.md)** | Scylla lab, emqtt multi-device, metrics & ~110k/s baseline |
@@ -79,7 +80,7 @@
 | `root.platform.dashboards.demo-sensor` | DASHBOARD | `dashboard-v1` |
 | `root.platform.workflows.demo-alarm-handler` | WORKFLOW | `workflow-v1` |
 
-См. [MODELS.md](MODELS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+См. [BLUEPRINTS.md](BLUEPRINTS.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## Структура репозитория
 
@@ -92,7 +93,7 @@ packages/
   ispf-ai-openai-compatible/  # OpenAI-compatible adapter
   ispf-ai-ollama/         # Ollama adapter
   ispf-driver-*/          # 58 protocol drivers (см. DRIVERS.md)
-  ispf-plugin-model/      # Models plugin
+  ispf-plugin-blueprint/      # Blueprints plugin
   ispf-plugin-workflow/   # BPMN workflow engine (library)
   ispf-server/            # Spring Boot API
 apps/

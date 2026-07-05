@@ -23,6 +23,9 @@ export interface ClusterHealth {
   driverLockTtlSeconds: number;
   natsEnabled: boolean;
   natsReplicaEventsEnabled: boolean;
+  liveVariableSyncEnabled: boolean;
+  liveVariableSyncCoalesceMs: number;
+  clusterPathInterestEnabled: boolean;
   nodes: ClusterNode[];
   nodesUp: number;
   nodesTotal: number;

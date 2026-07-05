@@ -39,6 +39,9 @@ public class BindingPropagationAsyncHandler implements ObjectChangeAsyncHandler 
 
     @Override
     public void handle(ObjectChangeEvent event) {
+        if (event.replicaIngress()) {
+            return;
+        }
         if (!objectChangeProperties.isDemandDrivenPublication()) {
             return;
         }

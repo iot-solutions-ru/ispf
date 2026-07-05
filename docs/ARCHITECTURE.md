@@ -1,4 +1,4 @@
-# ISPF Architecture
+﻿# ISPF Architecture
 
 ## Vision
 
@@ -59,8 +59,8 @@ graph TB
 
 ### Models (Templates)
 
-`ModelDefinition` — blueprint: variables, events, functions, bindings.  
-См. [MODELS.md](MODELS.md).
+`BlueprintDefinition` — blueprint: variables, events, functions, bindings.  
+См. [BLUEPRINTS.md](BLUEPRINTS.md).
 
 ### Expressions
 
@@ -84,11 +84,11 @@ counterRate(ifInOctets)
 │  Domain Services                                        │
 │  ObjectManager │ EventService │ WorkflowService         │
 │  DashboardService │ AlertRuleService │ CorrelatorService│
-│  DriverRuntimeService │ ModelEngine                     │
+│  DriverRuntimeService │ BlueprintEngine                     │
 │  ApplicationPlatform (functions, data, BFF, scheduler)  │
 ├─────────────────────────────────────────────────────────┤
 │  Plugins & Libraries                                    │
-│  ispf-core │ ispf-expression │ ispf-plugin-model         │
+│  ispf-core │ ispf-expression │ ispf-plugin-blueprint         │
 │  ispf-plugin-workflow                                   │
 ├─────────────────────────────────────────────────────────┤
 │  Driver SPI                                             │
@@ -106,7 +106,7 @@ counterRate(ifInOctets)
 | `ispf-core` | ObjectTree, PlatformObject, DataRecord |
 | `ispf-expression` | CEL engine, BindingExpressionEvaluator |
 | `ispf-driver-*` | Device protocol adapters |
-| `ispf-plugin-model` | Model registry & engine |
+| `ispf-plugin-blueprint` | Model registry & engine |
 | `ispf-plugin-workflow` | BPMN parser & executor |
 | `ispf-server` | Spring Boot wiring, REST, JPA, security |
 
@@ -146,14 +146,14 @@ Event fire → event_history
 - Keycloak / OIDC
 - Static web-console behind CDN/ingress
 
-**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Несколько площадок / edge-агентов — см. [FEDERATION.md](FEDERATION.md), [ROADMAP.md § Phase 4–8](ROADMAP.md#phase-4--scale--topology-p3).
+**Горизонтальное масштабирование ≠ федерация:** реплики делят одну БД и одно дерево `root.platform.*`. Multi-replica: driver ownership, NATS live mirror — см. **[CLUSTER.md](CLUSTER.md)**. Несколько площадок / edge-агентов — [FEDERATION.md](FEDERATION.md), [ROADMAP.md § Phase 4–8](ROADMAP.md#phase-4--scale--topology-p3).
 
 См. [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Extension Points
 
 1. **DeviceDriver** — новый протокол ([DRIVERS.md](DRIVERS.md))
-2. **ModelDefinition** — шаблон устройства/процесса ([MODELS.md](MODELS.md))
+2. **BlueprintDefinition** — шаблон устройства/процесса ([BLUEPRINTS.md](BLUEPRINTS.md))
 3. **FunctionHandler** — бизнес-операции на объектах
 4. **Dashboard widgets** — новые типы в web-console ([DASHBOARDS.md](DASHBOARDS.md))
 5. **REST / Webhook** — внешние интеграции ([API.md](API.md))

@@ -93,6 +93,22 @@ export default function ClusterHealthCard() {
                 </td>
               </tr>
               <tr>
+                <th>{t("clusterHealth.liveVariableSync")}</th>
+                <td>
+                  {data.liveVariableSyncEnabled ? t("common:action.yes") : t("common:action.no")}
+                </td>
+              </tr>
+              <tr>
+                <th>{t("clusterHealth.liveVariableSyncCoalesce")}</th>
+                <td>{t("clusterHealth.coalesceMs", { count: data.liveVariableSyncCoalesceMs })}</td>
+              </tr>
+              <tr>
+                <th>{t("clusterHealth.clusterPathInterest")}</th>
+                <td>
+                  {data.clusterPathInterestEnabled ? t("common:action.yes") : t("common:action.no")}
+                </td>
+              </tr>
+              <tr>
                 <th>{t("clusterHealth.driverLockTtl")}</th>
                 <td>{t("clusterHealth.ttlSeconds", { count: data.driverLockTtlSeconds })}</td>
               </tr>

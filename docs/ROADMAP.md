@@ -520,6 +520,9 @@
 | BL-137 | Cluster failover tests | P2 | S18 | Done |
 | BL-138 | Scale-out load gate 1.8× | P2 | S18 | Done |
 | BL-139 | Cluster ops API + runbook | P2 | S18 | Done |
+| BL-140 | ADR-0029 live variable replica sync | P1 | S19 | Done |
+| BL-141 | Redis cluster WS path interest | P1 | S19 | Done |
+| BL-142 | Cluster live-sync integration test | P2 | S19 | Done |
 
 **Правило:** закрытие BL-XX → обновить эту таблицу + реестр спринтов + PR.
 

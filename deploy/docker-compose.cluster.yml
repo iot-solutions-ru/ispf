@@ -24,6 +24,9 @@ x-ispf-server-env: &ispf-server-env
   ISPF_NATS_REPLICA_EVENTS: "true"
   ISPF_REDIS_ENABLED: "true"
   ISPF_REDIS_HOST: redis
+  ISPF_CLUSTER_LIVE_VARIABLE_SYNC: "true"
+  ISPF_CLUSTER_PATH_INTEREST: "true"
+  ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS: "500"
 
 services:
   postgres:

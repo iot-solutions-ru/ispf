@@ -51,6 +51,9 @@ class VariableChangeSubscriptionRegistryTest {
     @Mock
     private FederationExportInterestRegistry federationExportInterest;
 
+    @Mock
+    private ClusterPathInterestStore clusterPathInterest;
+
     private ObjectTree tree;
     private VariableChangeSubscriptionRegistry registry;
 
@@ -62,13 +65,15 @@ class VariableChangeSubscriptionRegistryTest {
         when(objectManager.tree()).thenReturn(tree);
         when(webSocketPathInterest.hasPathInterest(PATH)).thenReturn(false);
         when(federationExportInterest.hasPathInterest(PATH)).thenReturn(false);
+        when(clusterPathInterest.hasPathInterest(PATH)).thenReturn(false);
         registry = new VariableChangeSubscriptionRegistry(
                 objectManager,
                 bindingDependencyIndex,
                 automationRuleIndex,
                 workflowTriggerIndex,
                 webSocketPathInterest,
-                federationExportInterest
+                federationExportInterest,
+                clusterPathInterest
         );
     }
 
@@ -87,6 +92,16 @@ class VariableChangeSubscriptionRegistryTest {
         VariableChangeInterest interest = registry.interest(PATH, VAR);
 
         assertThat(interest.historian()).isTrue();
+        assertThat(interest.hasAny()).isTrue();
+    }
+
+    @Test
+    void detectsClusterPathInterest() {
+        when(clusterPathInterest.hasPathInterest(PATH)).thenReturn(true);
+
+        VariableChangeInterest interest = registry.interest(PATH, VAR);
+
+        assertThat(interest.uiRefresh()).isTrue();
         assertThat(interest.hasAny()).isTrue();
     }
 

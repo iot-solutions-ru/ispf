@@ -15,6 +15,7 @@ final class PlatformRuntimeSettingsCatalog {
             Map.entry("drivers", "Drivers"),
             Map.entry("ai", "AI"),
             Map.entry("platform", "Platform"),
+            Map.entry("cluster", "Cluster"),
             Map.entry("license", "License")
     );
 
@@ -162,6 +163,14 @@ final class PlatformRuntimeSettingsCatalog {
             def("messaging", "redis.database", "ISPF_REDIS_DATABASE", "ispf.redis.database", PlatformRuntimeSettingType.INTEGER, "0", false, false),
             def("messaging", "redis.timeout", "ISPF_REDIS_TIMEOUT", "ispf.redis.timeout", PlatformRuntimeSettingType.DURATION, "2s", false, false),
             def("messaging", "redis.correlator-windows", "ISPF_REDIS_CORRELATOR_WINDOWS", "ispf.redis.correlator-windows-enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
+
+            def("cluster", "cluster.enabled", "ISPF_CLUSTER_ENABLED", "ispf.cluster.enabled", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
+            def("cluster", "cluster.live-variable-sync", "ISPF_CLUSTER_LIVE_VARIABLE_SYNC", "ispf.cluster.live-variable-sync-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
+            def("cluster", "cluster.path-interest", "ISPF_CLUSTER_PATH_INTEREST", "ispf.cluster.cluster-path-interest-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
+            def("cluster", "cluster.live-variable-sync-coalesce-ms", "ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS", "ispf.cluster.live-variable-sync-coalesce-ms", PlatformRuntimeSettingType.INTEGER, "500", false, true),
+            def("cluster", "cluster.driver-lock-ttl-seconds", "ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS", "ispf.cluster.driver-lock-ttl-seconds", PlatformRuntimeSettingType.INTEGER, "30", false, false),
+            def("cluster", "cluster.driver-lock-renew-seconds", "ISPF_CLUSTER_DRIVER_LOCK_RENEW_SECONDS", "ispf.cluster.driver-lock-renew-seconds", PlatformRuntimeSettingType.INTEGER, "10", false, false),
+            def("cluster", "cluster.replica-heartbeat-seconds", "ISPF_CLUSTER_REPLICA_HEARTBEAT_SECONDS", "ispf.cluster.replica-heartbeat-seconds", PlatformRuntimeSettingType.INTEGER, "10", false, false),
 
             def("drivers", "driver.scheduler-threads", "ISPF_DRIVER_SCHEDULER_THREADS", "ispf.driver.scheduler-threads", PlatformRuntimeSettingType.INTEGER, "8", false, false),
             def("drivers", "driver.async-poll-enabled", "ISPF_DRIVER_ASYNC_POLL_ENABLED", "ispf.driver.async-poll-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),

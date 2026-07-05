@@ -2,7 +2,9 @@ package com.ispf.server.workflow;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.object.ClusterVariableReplicaApplier;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import io.nats.client.Connection;
@@ -16,11 +18,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Map;
 
 /**
  * Subscribes to NATS object-change fanout and republishes locally (cross-replica WebSocket sync).
+ * ADR-0029: applies live value snapshots when present in payload.
  */
 @Component
 public class NatsObjectChangeSubscriber {
@@ -32,19 +35,22 @@ public class NatsObjectChangeSubscriber {
     private final ApplicationEventPublisher eventPublisher;
     private final Connection connection;
     private final NatsJetStreamSupport jetStreamSupport;
+    private final ClusterVariableReplicaApplier replicaApplier;
 
     public NatsObjectChangeSubscriber(
             NatsProperties properties,
             ObjectMapper objectMapper,
             ApplicationEventPublisher eventPublisher,
             NatsEventBridge eventBridge,
-            NatsJetStreamSupport jetStreamSupport
+            NatsJetStreamSupport jetStreamSupport,
+            ClusterVariableReplicaApplier replicaApplier
     ) {
         this.properties = properties;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
         this.connection = eventBridge.connection();
         this.jetStreamSupport = jetStreamSupport;
+        this.replicaApplier = replicaApplier;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -89,12 +95,29 @@ public class NatsObjectChangeSubscriber {
             String variableName = payload.get("variableName") != null
                     ? String.valueOf(payload.get("variableName"))
                     : null;
+            if (type == ObjectChangeType.VARIABLE_UPDATED && variableName != null && payload.containsKey("value")) {
+                DataRecord value = objectMapper.convertValue(payload.get("value"), DataRecord.class);
+                Instant observedAt = parseInstant(payload.get("observedAt"));
+                replicaApplier.apply(path, variableName, value, observedAt);
+                return;
+            }
             ObjectChangeEvent event = type == ObjectChangeType.VARIABLE_UPDATED && variableName != null
                     ? ObjectChangeEvent.variableUpdated(path, variableName)
                     : ObjectChangeEvent.of(type, path);
             eventPublisher.publishEvent(event);
         } catch (Exception ex) {
             log.warn("Failed to handle NATS replica event: {}", ex.getMessage());
+        }
+    }
+
+    private static Instant parseInstant(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return Instant.parse(String.valueOf(raw));
+        } catch (RuntimeException ex) {
+            return null;
         }
     }
 }

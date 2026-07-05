@@ -42,6 +42,7 @@
 | [0026](0026-elastic-telemetry-ingress.md) | Multi-level async telemetry ingress (L0–L5) | Accepted |
 | [0027](0027-event-journal-ingress-fast-path.md) | Event journal ingress fast path (`EVENT_JOURNAL_ONLY`) | Accepted |
 | [0028](0028-horizontal-active-active-cluster.md) | Horizontal active-active cluster (nginx RR, driver ownership) | Accepted |
+| [0029](0029-cluster-live-variable-replica-sync.md) | Cluster live variable RAM mirror (NATS + Redis path interest) | Accepted |
 
 ## Шаблон нового ADR
 

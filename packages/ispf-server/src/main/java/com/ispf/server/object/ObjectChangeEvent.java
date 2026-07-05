@@ -11,14 +11,15 @@ public record ObjectChangeEvent(
         String changedBy,
         boolean telemetry,
         boolean automationEligible,
-        Instant observedAt
+        Instant observedAt,
+        boolean replicaIngress
 ) {
     public static ObjectChangeEvent of(ObjectChangeType type, String path) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true, null);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, true, null, false);
     }
 
     public static ObjectChangeEvent of(ObjectChangeType type, String path, long revision, String changedBy) {
-        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true, null);
+        return new ObjectChangeEvent(type, path, null, Instant.now(), revision, changedBy, false, true, null, false);
     }
 
     public static ObjectChangeEvent variableUpdated(String path, String variableName) {
@@ -54,7 +55,28 @@ public record ObjectChangeEvent(
                 null,
                 telemetry,
                 automationEligible,
-                observedAt
+                observedAt,
+                false
+        );
+    }
+
+    /** Follower RAM mirror after NATS live-value sync (ADR-0029) — WS only, no automation/historian/NATS. */
+    public static ObjectChangeEvent variableUpdatedReplicaIngress(
+            String path,
+            String variableName,
+            Instant observedAt
+    ) {
+        return new ObjectChangeEvent(
+                ObjectChangeType.VARIABLE_UPDATED,
+                path,
+                variableName,
+                Instant.now(),
+                null,
+                null,
+                false,
+                false,
+                observedAt,
+                true
         );
     }
 
@@ -89,13 +111,14 @@ public record ObjectChangeEvent(
                 changedBy,
                 telemetry,
                 automationEligible,
-                null
+                null,
+                false
         );
     }
 
     public static ObjectChangeEvent eventFired(String path, String eventName) {
         return new ObjectChangeEvent(
-                ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null
+                ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null, false
         );
     }
 }
