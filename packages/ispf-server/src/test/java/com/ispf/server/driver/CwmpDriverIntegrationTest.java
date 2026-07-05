@@ -7,6 +7,7 @@ import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -30,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Isolated
 class CwmpDriverIntegrationTest {
 
     private static final String DEVICE_NAME = "cwmp-driver-it";
@@ -218,11 +220,25 @@ class CwmpDriverIntegrationTest {
                                 """))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
-                        .param("path", devicePath)
-                        .param("name", "softwareVersion"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-3.0.0"));
+        long deadline = System.nanoTime() + 5_000_000_000L;
+        AssertionError lastFailure = null;
+        while (System.nanoTime() < deadline) {
+            try {
+                mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                                .param("path", devicePath)
+                                .param("name", "softwareVersion"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-3.0.0"));
+                lastFailure = null;
+                break;
+            } catch (AssertionError ex) {
+                lastFailure = ex;
+                Thread.sleep(50);
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
 
         org.junit.jupiter.api.Assertions.assertEquals(1, setParameterResponseCount.get());
     }

@@ -65,6 +65,10 @@ function isIgnoredLine(line) {
   if (line.includes("console.") || line.includes("throw new Error")) {
     return true;
   }
+  // TypeScript generic types (e.g. Map<string, …>) are not user-facing copy.
+  if (/\bMap\s*</.test(line) && !line.includes("</")) {
+    return true;
+  }
   return false;
 }
 

@@ -1,8 +1,4 @@
 spring:
-  test:
-    context:
-      cache:
-        maxSize: 1
   datasource:
     # Unique DB per Spring context — avoids cross-test pollution when @TestPropertySource spins up extra contexts.
     url: jdbc:h2:mem:ispf-${random.uuid};MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
@@ -40,6 +36,7 @@ ispf:
     enabled: false
   object-change:
     async-enabled: false
+    demand-driven-publication: false
   event-journal:
     async-enabled: false
   redis:

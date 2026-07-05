@@ -115,7 +115,6 @@ public class EventJournalAsyncWriter {
     }
 
     public void enqueue(ObjectEvent event, String payloadJson) {
-        recentEventCache.append(event);
         PendingEntry entry = new PendingEntry(event, payloadJson);
         if (!properties.isAsyncEnabled()) {
             persistSync(entry);

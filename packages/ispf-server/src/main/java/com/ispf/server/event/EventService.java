@@ -163,15 +163,15 @@ public class EventService {
     public List<ObjectEvent> list(String objectPath, int limit) {
         int capped = Math.max(1, Math.min(limit, 200));
         boolean globalQuery = objectPath == null || objectPath.isBlank();
-        if (!eventJournalProperties.isEnabled()) {
-            return List.of();
-        }
-        if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
-            return List.of();
-        }
         List<ObjectEvent> fromCache = recentEventCache.isEnabled()
                 ? recentEventCache.query(objectPath, capped)
                 : List.of();
+        if (!eventJournalProperties.isEnabled()) {
+            return fromCache;
+        }
+        if (!globalQuery && !objectManager.isEventJournalEnabled(objectPath.trim())) {
+            return fromCache;
+        }
         if (fromCache.size() >= capped) {
             return fromCache;
         }
@@ -243,6 +243,7 @@ public class EventService {
                 resolvedPayload,
                 resolvedOccurredAt
         );
+        recentEventCache.append(event);
         if (shouldPersistJournal(objectPath)) {
             eventJournalAsyncWriter.enqueue(event, mapper.writeDataRecord(event.payload()));
         }

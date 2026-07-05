@@ -12,11 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mqtt_loadtest_lib import (
     Client,
     configure_mqtt_driver,
+    device_path,
     driver_status,
     ensure_device,
     mqtt_bench_ingress_configuration,
     mqtt_topic,
-    start_mqtt_driver,
+    restart_drivers_until_running,
+    start_drivers_in_batches,
 )
 
 
@@ -43,7 +45,7 @@ def seed_event_journal_devices(
     driver_cfg = {"ingressEventName": event_name, **ingress_cfg}
 
     for index in range(1, device_count + 1):
-        path = ensure_device(client, index, pad, apply_blueprint=False)
+        path = ensure_device(client, index, pad)
         topic = shared_topic if shared_topic else mqtt_topic(index, pad)
         configure_mqtt_driver(
             client,
@@ -53,7 +55,7 @@ def seed_event_journal_devices(
             telemetry_publish_mode="EVENT_JOURNAL_ONLY",
             telemetry_coalesce_ms=telemetry_coalesce_ms,
             poll_ms=poll_ms,
-            auto_start=True,
+            auto_start=False,
             configuration=driver_cfg,
         )
         seeded.append((path, topic))
@@ -85,6 +87,8 @@ def main() -> int:
         default=None,
         help="All devices subscribe to one MQTT topic (broker fan-out → N journal writes per publish)",
     )
+    parser.add_argument("--start-batch-size", type=int, default=10)
+    parser.add_argument("--start-batch-pause-s", type=float, default=1.0)
     args = parser.parse_args()
 
     coalesce = args.telemetry_coalesce_ms if args.telemetry_coalesce_ms > 0 else None
@@ -108,38 +112,27 @@ def main() -> int:
         callback_queue_capacity=args.callback_queue_capacity,
         shared_topic=args.shared_topic,
     )
-    running = sum(
-        1
-        for path, _ in paths
-        if (driver_status(client, path) or {}).get("status") == "RUNNING"
-    )
-    print(f"  drivers running: {running}/{len(paths)}")
+    pad = max(5, len(str(args.devices)))
+    all_paths = [device_path(i, pad) for i in range(1, args.devices + 1)]
     for path, topic in paths[:3]:
         print(f"  sample: {path} topic={topic}")
     if len(paths) > 3:
         print(f"  ... and {len(paths) - 3} more")
-
-    for attempt in range(1, 4):
-        failed = [
-            path
-            for path, _ in paths
-            if (driver_status(client, path) or {}).get("status") != "RUNNING"
-        ]
-        if not failed:
-            break
-        print(f"  restart pass {attempt}: {len(failed)} drivers not RUNNING")
-        for path in failed:
-            start_mqtt_driver(client, path)
-        import time
-
-        time.sleep(5)
-    running = sum(
-        1
-        for path, _ in paths
-        if (driver_status(client, path) or {}).get("status") == "RUNNING"
+    print(f"  starting drivers in batches of {args.start_batch_size} ...")
+    start_drivers_in_batches(
+        client,
+        all_paths,
+        batch_size=args.start_batch_size,
+        pause_s=args.start_batch_pause_s,
     )
-    print(f"  drivers running after restart: {running}/{len(paths)}")
-    return 0 if running == len(paths) else 1
+    running, total = restart_drivers_until_running(
+        client,
+        all_paths,
+        batch_size=args.start_batch_size,
+        pause_s=max(args.start_batch_pause_s, 1.5),
+    )
+    print(f"  drivers running after restart: {running}/{total}")
+    return 0 if running == total else 1
 
 
 if __name__ == "__main__":

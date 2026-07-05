@@ -226,7 +226,19 @@ public class ObjectBindingStatePort implements BindingStatePort {
             if (objectManager.tree().findByPath(objectPath).isEmpty()) {
                 return;
             }
-            throw new IllegalStateException("Failed to persist binding state for " + objectPath, ex);
+            try {
+                String json = objectMapper.writeValueAsString(root);
+                DataRecord record = DataRecord.single(STRING_VALUE, Map.of("value", json));
+                objectManager.upsertSystemVariable(
+                        objectPath,
+                        BindingStateVariables.BINDING_STATE,
+                        STRING_VALUE,
+                        record
+                );
+            } catch (RuntimeException retryEx) {
+                cacheByObjectPath.remove(objectPath);
+                throw new IllegalStateException("Failed to persist binding state for " + objectPath, retryEx);
+            }
         }
     }
 

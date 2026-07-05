@@ -714,13 +714,13 @@ function ModelDetail({
                 <input
                   value={theirsBlueprintId}
                   onChange={(e) => settheirsBlueprintId(e.target.value)}
-                  placeholder="UUID vendor extension model"
+                  placeholder={t("inspector:blueprint.mergeTheirsIdPlaceholder")}
                 />
               </label>
             )}
             {mergePreviewQuery.data && mergePreviewQuery.data.conflictCount > 0 && (
               <div className="model-diff-preview hint">
-                <strong>{t("model.mergeConflictsTitle")}</strong> ({mergePreviewQuery.data.conflictCount})
+                <strong>{t("inspector:blueprint.mergeConflictsTitle")}</strong> ({mergePreviewQuery.data.conflictCount})
                 <ul>
                   {mergePreviewQuery.data.variableConflicts.map((c) => (
                     <li key={c.name}>
@@ -732,7 +732,7 @@ function ModelDetail({
             )}
             {applyPath.trim() && diffQuery.data && (
               <div className="model-diff-preview hint">
-                <strong>{t("model.diffPreviewTitle")}</strong> (v{diffQuery.data.blueprintVersion} →{" "}
+                <strong>{t("inspector:blueprint.diffPreviewTitle")}</strong> (v{diffQuery.data.blueprintVersion} →{" "}
                 <code>{diffQuery.data.objectPath}</code>)
                 <ul>
                   {diffQuery.data.variablesToAdd.length > 0 && (
@@ -942,7 +942,7 @@ function ModelsCatalog({
           <tr>
             <th>{t("common:table.name")}</th>
             <th>{t("common:table.type")}</th>
-            <th>{t("model.columnObjectType")}</th>
+            <th>{t("inspector:blueprint.columnObjectType")}</th>
             <th>{t("inspector:blueprint.variablesColumn")}</th>
             <th></th>
           </tr>
@@ -1002,9 +1002,9 @@ function ModelsCatalog({
               />
               <input name="description" placeholder={t("inspector:blueprint.descriptionPlaceholder")} />
               <select name="type" defaultValue={defaultCreateType}>
-                <option value="RELATIVE">RELATIVE</option>
-                <option value="INSTANCE">INSTANCE</option>
-                <option value="ABSOLUTE">ABSOLUTE</option>
+                <option value="RELATIVE">{t("inspector:blueprint.type.RELATIVE")}</option>
+                <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
+                <option value="ABSOLUTE">{t("inspector:blueprint.type.ABSOLUTE")}</option>
               </select>
               <select name="targetObjectType" defaultValue="CUSTOM">
                 {OBJECT_TYPES.map((objectType) => (
@@ -1074,8 +1074,8 @@ function ModelsCatalog({
                 name="type"
                 defaultValue={defaultCreateType === "ABSOLUTE" ? "INSTANCE" : defaultCreateType}
               >
-                <option value="RELATIVE">RELATIVE</option>
-                <option value="INSTANCE">INSTANCE</option>
+                <option value="RELATIVE">{t("inspector:blueprint.type.RELATIVE")}</option>
+                <option value="INSTANCE">{t("inspector:blueprint.type.INSTANCE")}</option>
               </select>
               <button type="submit" className="btn" disabled={fromObjectMutation.isPending}>
                 {t("inspector:blueprint.export")}

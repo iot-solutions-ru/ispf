@@ -117,7 +117,13 @@ public class FunctionScriptValidator {
                 }
             }
             case "readVariable" -> require(step, "objectPath", "variable", "var");
-            case "instantiateModelIfMissing" -> require(step, "blueprintName", "parentPath", "instanceName", "var");
+            case "instantiateModelIfMissing" -> {
+                if ((!step.has("blueprintName") || step.get("blueprintName").asText("").isBlank())
+                        && (!step.has("modelName") || step.get("modelName").asText("").isBlank())) {
+                    throw new IllegalArgumentException("instantiateModelIfMissing step requires blueprintName or modelName");
+                }
+                require(step, "parentPath", "instanceName", "var");
+            }
             case "setDriverTelemetry" -> {
                 require(step, "objectPath");
                 if (!step.has("fields") || !step.get("fields").isObject()) {

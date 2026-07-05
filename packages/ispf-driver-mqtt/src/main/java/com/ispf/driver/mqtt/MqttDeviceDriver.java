@@ -11,7 +11,7 @@ import com.ispf.driver.ingress.DriverIngressBuffer;
 import com.ispf.driver.ingress.DriverIngressFifoExecutor;
 import com.ispf.driver.ingress.IngressElasticSettings;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -69,7 +69,7 @@ public class MqttDeviceDriver implements DeviceDriver {
     private boolean ingressCoalesceEnabled = true;
     private IngressElasticSettings ingressElastic = DEFAULT_ELASTIC;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
-    private volatile boolean connected;
+    private volatile boolean disconnected;
     private DriverIngressBuffer<String, byte[]> ingressBuffer;
     private DriverIngressFifoExecutor ingressFifo;
 
@@ -137,10 +137,18 @@ public class MqttDeviceDriver implements DeviceDriver {
                     options.setPassword(password.toCharArray());
                 }
             }
-            client.setCallback(new MqttCallback() {
+            client.setCallback(new MqttCallbackExtended() {
+                @Override
+                public void connectComplete(boolean reconnect, String serverURI) {
+                    disconnected = false;
+                    if (reconnect) {
+                        driverObject.log(DriverLogLevel.INFO, "MQTT reconnected: " + serverURI);
+                        resubscribeAll();
+                    }
+                }
+
                 @Override
                 public void connectionLost(Throwable cause) {
-                    connected = false;
                     driverObject.log(DriverLogLevel.WARNING, "MQTT connection lost: " + cause.getMessage());
                 }
 
@@ -163,7 +171,7 @@ public class MqttDeviceDriver implements DeviceDriver {
                 }
             });
             client.connect(options);
-            connected = true;
+            disconnected = false;
             driverObject.log(DriverLogLevel.INFO, "Connected to MQTT broker: " + brokerUrl);
         } catch (Exception e) {
             shutdownIngress();
@@ -190,7 +198,7 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     @Override
     public void disconnect() {
-        connected = false;
+        disconnected = true;
         if (client != null && client.isConnected()) {
             try {
                 client.disconnect();
@@ -225,7 +233,20 @@ public class MqttDeviceDriver implements DeviceDriver {
 
     @Override
     public boolean isConnected() {
-        return connected && client != null && client.isConnected();
+        return !disconnected && client != null && client.isConnected();
+    }
+
+    private void resubscribeAll() {
+        if (!isConnected() || subscriptions.isEmpty()) {
+            return;
+        }
+        for (String topic : subscriptions.keySet()) {
+            try {
+                client.subscribe(topic);
+            } catch (Exception e) {
+                driverObject.log(DriverLogLevel.WARNING, "Resubscribe failed: " + topic + " — " + e.getMessage());
+            }
+        }
     }
 
     @Override

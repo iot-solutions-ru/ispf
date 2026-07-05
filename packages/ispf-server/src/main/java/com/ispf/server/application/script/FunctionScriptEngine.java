@@ -227,8 +227,9 @@ public class FunctionScriptEngine {
                 yield null;
             }
             case "instantiateModelIfMissing" -> {
+                String blueprintName = resolveBlueprintName(step, vars);
                 String instancePath = platformScriptBridge.instantiateModelIfMissing(
-                        String.valueOf(resolveStepValue(step.get("blueprintName"), vars)),
+                        blueprintName,
                         String.valueOf(resolveStepValue(step.get("parentPath"), vars)),
                         String.valueOf(resolveStepValue(step.get("instanceName"), vars))
                 );
@@ -388,6 +389,11 @@ public class FunctionScriptEngine {
                 input.put(key, resolveStepValue(value, vars))
         );
         return input;
+    }
+
+    private String resolveBlueprintName(JsonNode step, Map<String, Object> vars) {
+        JsonNode blueprintNode = step.has("blueprintName") ? step.get("blueprintName") : step.get("modelName");
+        return String.valueOf(resolveStepValue(blueprintNode, vars));
     }
 
     private Object resolveStepValue(JsonNode valueNode, Map<String, Object> vars) {

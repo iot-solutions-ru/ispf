@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.Map;
 
@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SpringBootTest
 @ActiveProfiles("test")
 @Isolated
-@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class BindingStatePersistenceIntegrationTest {
 
     private static final String DEVICE = "root.platform.devices.binding-state-persist-test";
@@ -39,8 +39,8 @@ class BindingStatePersistenceIntegrationTest {
             .field("value", FieldType.STRING)
             .build();
 
-    /** counterRate skips samples closer than 500 ms apart. */
-    private static final long COUNTER_RATE_INTERVAL_MS = 800;
+    /** counterRate skips samples closer than 500 ms apart (uses source variable updatedAt). */
+    private static final long COUNTER_RATE_INTERVAL_MS = 1_200;
 
     @Autowired
     private ObjectManager objectManager;
@@ -89,6 +89,7 @@ class BindingStatePersistenceIntegrationTest {
     }
 
     private void resetBindingState(String path) {
+        bindingStatePort.clearForTests();
         bindingStatePort.invalidateCache(path);
         objectManager.upsertSystemVariable(
                 path,
@@ -140,9 +141,12 @@ class BindingStatePersistenceIntegrationTest {
                 "temperature",
                 DataRecord.single(TEMPERATURE, Map.of("value", 85.0, "unit", "C"))
         );
+        bindingRuleEngine.runRulesForObject(DEVICE);
         assertTrue(readBool(alarmVariable));
         objectManager.persistNodeTree(DEVICE);
         bindingStatePort.invalidateCache(DEVICE);
+        bindingRuleEngine.runRulesForObject(DEVICE);
+        assertTrue(readBool(alarmVariable), "hysteresis latch should survive cache reload");
 
         objectManager.setVariableValue(
                 DEVICE,

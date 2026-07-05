@@ -75,11 +75,10 @@ public class ObjectChangePublicationService {
             return true;
         }
         VariableChangeInterest interest = variableSubscriptionRegistry.interest(template.path(), template.variableName());
-        if (!interest.hasAny()) {
-            return false;
-        }
         boolean telemetry = interest.historian();
-        boolean automationEligible = interest.automation();
+        // Config/API writes always fan out to automation (bindings, workflows) for eligible devices.
+        boolean automationEligible = telemetryPolicyService.automationEligible(template.path())
+                || interest.automation();
         if (!telemetry && !automationEligible && !interest.uiRefresh()) {
             return false;
         }

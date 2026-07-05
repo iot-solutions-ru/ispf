@@ -80,6 +80,7 @@ class EventJournalAsyncWriterTest {
         }).when(batchPersister).persistBatch(anyList());
 
         ObjectEvent event = sampleEvent("evt-1");
+        recentEventCache.append(event);
         writer.enqueue(event, "{}");
 
         assertTrue(recentEventCache.findLatest(OBJECT_PATH, "thresholdExceeded").isPresent());
@@ -119,9 +120,12 @@ class EventJournalAsyncWriterTest {
         properties.setFlushIntervalMs(60_000);
         properties.setBatchSize(100);
         properties.setWriterThreads(1);
-        CountDownLatch releaseBatch = new CountDownLatch(1);
+        properties.setElasticWriterEnabled(false);
+        CountDownLatch persistEntered = new CountDownLatch(1);
+        CountDownLatch allowPersist = new CountDownLatch(1);
         doAnswer(invocation -> {
-            releaseBatch.await(2, TimeUnit.SECONDS);
+            persistEntered.countDown();
+            allowPersist.await(5, TimeUnit.SECONDS);
             return null;
         }).when(batchPersister).persistBatch(anyList());
 
@@ -129,13 +133,13 @@ class EventJournalAsyncWriterTest {
         writer.start();
 
         writer.enqueue(sampleEvent("evt-1"), "{}");
-        Thread.sleep(20);
+        assertTrue(persistEntered.await(5, TimeUnit.SECONDS), "worker should block on first batch flush");
         writer.enqueue(sampleEvent("evt-2"), "{}");
         writer.enqueue(sampleEvent("evt-3"), "{}");
 
         verify(batchPersister, times(1)).persistOne(any(EventHistoryEntity.class));
         verify(automationMetricsRecorder, times(1)).recordEventJournalSyncFallback();
-        releaseBatch.countDown();
+        allowPersist.countDown();
     }
 
     @Test
@@ -167,16 +171,18 @@ class EventJournalAsyncWriterTest {
 
     @Test
     void recentCacheListsNewestFirstPerObject() {
-        writer.enqueue(sampleEvent("evt-1"), "{}");
-        writer.enqueue(sampleEvent("evt-2"), "{}");
-        writer.enqueue(new ObjectEvent(
+        ObjectEvent evt1 = sampleEvent("evt-1");
+        ObjectEvent evt2 = sampleEvent("evt-2");
+        recentEventCache.append(evt1);
+        recentEventCache.append(evt2);
+        recentEventCache.append(new ObjectEvent(
                 "evt-other",
                 "root.other",
                 "otherEvent",
                 EventLevel.INFO,
                 DataRecord.empty(DataSchema.builder("payload").build()),
                 Instant.now()
-        ), "{}");
+        ));
 
         List<ObjectEvent> events = recentEventCache.query(OBJECT_PATH, 10);
         assertEquals(2, events.size());

@@ -246,7 +246,7 @@ export default function FederationBindPanel({
               <input
                 value={remotePath}
                 onChange={(e) => setRemotePath(e.target.value)}
-                placeholder="root.platform.devices.demo-sensor-01"
+                placeholder={t("common:objectPath.placeholder")}
               />
             </label>
           </div>

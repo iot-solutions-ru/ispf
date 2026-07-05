@@ -48,6 +48,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.time.Instant;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -78,6 +79,7 @@ public class ObjectManager {
     private final TelemetryEventJournalFastPath eventJournalFastPath;
     private final JavaFunctionRuntimeService javaFunctionRuntimeService;
     private final ObjectProvider<ClusterPlatformBootstrapService> clusterBootstrapService;
+    private final ConcurrentHashMap<String, Object> variablePersistLocks = new ConcurrentHashMap<>();
     private volatile boolean initialized;
 
     public ObjectManager(
@@ -732,15 +734,31 @@ public class ObjectManager {
             DataSchema schema,
             DataRecord value
     ) {
-        PlatformObject node = objectTree.require(path);
-        if (node.getVariable(name).isEmpty()) {
+        synchronized (lockForVariable(path, name)) {
+            PlatformObject node = objectTree.require(path);
+            if (node.getVariable(name).isPresent()) {
+                return setSystemVariableValue(path, name, value);
+            }
+            Optional<ObjectVariableEntity> persisted = variableRepository.findByObjectPathAndName(path, name);
+            if (persisted.isPresent()) {
+                ObjectVariableEntity entity = persisted.get();
+                node.addVariable(new Variable(
+                        name,
+                        mapper.readSchema(entity.getSchemaJson()),
+                        entity.isReadable(),
+                        entity.isWritable(),
+                        mapper.readDataRecord(entity.getValueJson()),
+                        entity.isHistoryEnabled(),
+                        entity.getHistoryRetentionDays()
+                ));
+                return setSystemVariableValue(path, name, value);
+            }
             Variable created = new Variable(name, schema, false, false, value);
             node.addVariable(created);
             persistVariable(path, created);
             publish(ObjectChangeEvent.variableUpdated(path, name));
             return created;
         }
-        return setSystemVariableValue(path, name, value);
     }
 
     @Transactional
@@ -965,21 +983,27 @@ public class ObjectManager {
                 .orElse(-1) + 1;
     }
 
+    private Object lockForVariable(String path, String name) {
+        return variablePersistLocks.computeIfAbsent(path + '\0' + name, ignored -> new Object());
+    }
+
     private void persistVariable(String path, Variable variable) {
-        ObjectVariableEntity entity = variableRepository
-                .findByObjectPathAndName(path, variable.name())
-                .orElseGet(ObjectVariableEntity::new);
-        ObjectVariableEntity mapped = mapper.toEntity(path, variable);
-        entity.setObjectPath(path);
-        entity.setName(variable.name());
-        entity.setSchemaJson(mapped.getSchemaJson());
-        entity.setValueJson(mapped.getValueJson());
-        entity.setReadable(mapped.isReadable());
-        entity.setWritable(mapped.isWritable());
-        entity.setUpdatedAt(mapped.getUpdatedAt());
-        entity.setHistoryEnabled(mapped.isHistoryEnabled());
-        entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
-        variableRepository.save(entity);
+        synchronized (lockForVariable(path, variable.name())) {
+            ObjectVariableEntity entity = variableRepository
+                    .findByObjectPathAndName(path, variable.name())
+                    .orElseGet(ObjectVariableEntity::new);
+            ObjectVariableEntity mapped = mapper.toEntity(path, variable);
+            entity.setObjectPath(path);
+            entity.setName(variable.name());
+            entity.setSchemaJson(mapped.getSchemaJson());
+            entity.setValueJson(mapped.getValueJson());
+            entity.setReadable(mapped.isReadable());
+            entity.setWritable(mapped.isWritable());
+            entity.setUpdatedAt(mapped.getUpdatedAt());
+            entity.setHistoryEnabled(mapped.isHistoryEnabled());
+            entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
+            variableRepository.save(entity);
+        }
     }
 
     @Transactional

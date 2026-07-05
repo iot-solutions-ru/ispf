@@ -433,6 +433,64 @@ def ensure_event_journal_enabled(client: Client, path: str) -> None:
         raise RuntimeError(f"enable event journal {path}: HTTP {r.status_code} {r.text[:200]}")
 
 
+def ensure_mqtt_sensor_structure(client: Client, path: str) -> None:
+    """Create mqtt-sensor-v1 variables/events when blueprint apply is forbidden (403)."""
+    for var in MQTT_SENSOR_MODEL_BODY["variables"]:
+        name = var["name"]
+        existing = client.request(
+            "GET",
+            f"/api/v1/objects/by-path/variables/detail?path={quote(path, safe='')}&name={quote(name, safe='')}",
+        )
+        if existing.status_code == 200:
+            continue
+        body = {
+            "name": name,
+            "schema": var["schema"],
+            "readable": var.get("readable", True),
+            "writable": var.get("writable", True),
+            "initialValue": var.get("defaultValue"),
+            "historyEnabled": var.get("historyEnabled", False),
+        }
+        r = client.request(
+            "POST",
+            f"/api/v1/objects/by-path/variables?path={quote(path, safe='')}",
+            json=body,
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(
+                f"create variable {name} on {path}: HTTP {r.status_code} {r.text[:200]}"
+            )
+    for event in MQTT_SENSOR_MODEL_BODY["events"]:
+        r = client.request(
+            "PUT",
+            f"/api/v1/objects/by-path/events?path={quote(path, safe='')}",
+            json=event,
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(
+                f"upsert event {event.get('name')} on {path}: HTTP {r.status_code} {r.text[:200]}"
+            )
+
+
+def apply_mqtt_sensor_model(client: Client, path: str, model_id: str | None) -> None:
+    resolved = model_id
+    if not resolved:
+        try:
+            resolved = ensure_mqtt_sensor_model(client)
+        except RuntimeError as error:
+            if "403" not in str(error):
+                raise
+            resolved = None
+    if resolved:
+        try:
+            apply_relative_blueprint(client, resolved, path)
+            return
+        except RuntimeError as error:
+            if "403" not in str(error):
+                raise
+    ensure_mqtt_sensor_structure(client, path)
+
+
 def ensure_device(
     client: Client,
     index: int,
@@ -454,14 +512,16 @@ def ensure_device(
     if r.status_code == 409:
         status = driver_status(client, path)
         if status and status.get("driverId") == "mqtt":
+            if apply_blueprint:
+                apply_mqtt_sensor_model(client, path, model_id)
             ensure_event_journal_enabled(client, path)
             return path
         delete_device(client, path)
         r = client.request("POST", "/api/v1/objects", json=body)
     if r.status_code >= 400:
         raise RuntimeError(f"create device {name}: HTTP {r.status_code} {r.text[:200]}")
-    if apply_blueprint and model_id:
-        apply_relative_blueprint(client, model_id, path)
+    if apply_blueprint:
+        apply_mqtt_sensor_model(client, path, model_id)
     ensure_event_journal_enabled(client, path)
     return path
 
@@ -566,6 +626,59 @@ def start_mqtt_driver(client: Client, path: str) -> dict | None:
     if r.status_code >= 400:
         return None
     return r.json()
+
+
+def stop_mqtt_driver(client: Client, path: str) -> None:
+    client.request("POST", f"/api/v1/drivers/runtime/stop?devicePath={quote(path, safe='')}")
+
+
+def start_drivers_in_batches(
+    client: Client,
+    paths: list[str],
+    *,
+    batch_size: int = 10,
+    pause_s: float = 1.0,
+) -> None:
+    import time
+
+    for offset in range(0, len(paths), batch_size):
+        batch = paths[offset : offset + batch_size]
+        for path in batch:
+            start_mqtt_driver(client, path)
+        time.sleep(pause_s)
+
+
+def restart_drivers_until_running(
+    client: Client,
+    paths: list[str],
+    *,
+    max_passes: int = 5,
+    batch_size: int = 10,
+    pause_s: float = 1.5,
+) -> tuple[int, int]:
+    import time
+
+    for attempt in range(1, max_passes + 1):
+        failed = [
+            path
+            for path in paths
+            if (driver_status(client, path) or {}).get("status") != "RUNNING"
+        ]
+        if not failed:
+            break
+        print(f"  restart pass {attempt}: {len(failed)} drivers not RUNNING")
+        for offset in range(0, len(failed), batch_size):
+            batch = failed[offset : offset + batch_size]
+            for path in batch:
+                stop_mqtt_driver(client, path)
+            time.sleep(0.3)
+            for path in batch:
+                start_mqtt_driver(client, path)
+            time.sleep(pause_s)
+    running = sum(
+        1 for path in paths if (driver_status(client, path) or {}).get("status") == "RUNNING"
+    )
+    return running, len(paths)
 
 
 def ensure_alert_rule(client: Client, path: str, index: int, condition_expr: str) -> None:

@@ -49,6 +49,7 @@ class VariableHistoryAsyncWriterTest {
         properties.setBatchSize(2);
         properties.setFlushIntervalMs(60_000);
         properties.setWriterThreads(1);
+        properties.setElasticWriterEnabled(false);
         writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
         writer.start();
     }
@@ -135,24 +136,28 @@ class VariableHistoryAsyncWriterTest {
         properties.setBatchSize(1);
         properties.setFlushIntervalMs(3600_000);
         properties.setOverflowCoalesceEnabled(false);
+        properties.setElasticWriterEnabled(false);
         writer = new VariableHistoryAsyncWriter(properties, batchPersister, automationMetricsRecorder);
-        CountDownLatch blockFlush = new CountDownLatch(1);
+        CountDownLatch persistEntered = new CountDownLatch(1);
+        CountDownLatch allowPersist = new CountDownLatch(1);
         doAnswer(invocation -> {
-            blockFlush.await(5, TimeUnit.SECONDS);
+            persistEntered.countDown();
+            allowPersist.await(5, TimeUnit.SECONDS);
             return null;
         }).when(batchPersister).persistBatch(anyList());
         writer.start();
 
         writer.enqueue(List.of(sample("root.a", "temperature", "value", 1.0)));
-        Thread.sleep(30);
+        assertTrue(persistEntered.await(5, TimeUnit.SECONDS), "worker should block on first batch flush");
+
         writer.enqueue(List.of(
                 sample("root.b", "temperature", "value", 2.0),
                 sample("root.c", "temperature", "value", 3.0)
         ));
 
-        verify(batchPersister, atLeastOnce()).persistOne(org.mockito.ArgumentMatchers.any());
-        verify(automationMetricsRecorder, atLeastOnce()).recordVariableHistorySyncFallback();
-        blockFlush.countDown();
+        verify(batchPersister, timeout(5000).atLeastOnce()).persistOne(org.mockito.ArgumentMatchers.any());
+        verify(automationMetricsRecorder, timeout(5000).atLeastOnce()).recordVariableHistorySyncFallback();
+        allowPersist.countDown();
     }
 
     @Test
