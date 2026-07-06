@@ -134,6 +134,10 @@ public class DriverRuntimeService {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE)
     public void startConfiguredDrivers() {
+        if (!driverPackProperties.isAutoStartOnBoot()) {
+            log.info("Driver auto-start on boot disabled (ispf.driver.auto-start-on-boot=false)");
+            return;
+        }
         for (PlatformObject node : objectManager.tree().childrenOf("root.platform.devices")) {
             if (node.type() != ObjectType.DEVICE) {
                 continue;

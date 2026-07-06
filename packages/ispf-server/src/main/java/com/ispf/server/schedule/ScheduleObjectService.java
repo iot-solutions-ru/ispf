@@ -60,9 +60,9 @@ public class ScheduleObjectService {
         SystemObjectCatalogSupport.ensureFolder(objectManager, SCHEDULES_ROOT, ObjectType.SCHEDULES, null);
     }
 
+    /** Hot path from platform scheduler tick — read-only; catalog ensured by {@link #ensureCatalog()} at bootstrap. */
     @Transactional(readOnly = true)
     public List<ScheduleDefinition> listEnabled() {
-        ensureCatalogPresentInternal();
         List<ScheduleDefinition> schedules = new ArrayList<>();
         if (objectManager.tree().findByPath(SCHEDULES_ROOT).isEmpty()) {
             return schedules;
@@ -248,16 +248,6 @@ public class ScheduleObjectService {
     public void recordTick(String path, Instant at, String error) {
         setString(path, "lastTickAt", at != null ? at.toString() : "");
         setString(path, "lastError", error != null ? error : "");
-    }
-
-    private void ensureCatalogPresent() {
-        ensureCatalogPresentInternal();
-    }
-
-    private void ensureCatalogPresentInternal() {
-        if (objectManager.tree().findByPath(SCHEDULES_ROOT).isEmpty()) {
-            ensureCatalogInternal();
-        }
     }
 
     private void ensureStructure(String path) {

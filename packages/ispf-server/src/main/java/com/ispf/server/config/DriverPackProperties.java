@@ -88,6 +88,9 @@ public class DriverPackProperties {
     /** Default MQTT driver L0 ingress coalesce when not set on device binding ({@code ingressCoalesceEnabled}). */
     private boolean mqttIngressCoalesceEnabled = true;
 
+    /** When false, skip {@link com.ispf.server.driver.DriverRuntimeService#startConfiguredDrivers()} on boot. */
+    private boolean autoStartOnBoot = true;
+
     public String getPacksDir() {
         return packsDir;
     }
@@ -426,5 +429,13 @@ public class DriverPackProperties {
 
     public void setMqttIngressCoalesceEnabled(boolean mqttIngressCoalesceEnabled) {
         this.mqttIngressCoalesceEnabled = mqttIngressCoalesceEnabled;
+    }
+
+    public boolean isAutoStartOnBoot() {
+        return autoStartOnBoot;
+    }
+
+    public void setAutoStartOnBoot(boolean autoStartOnBoot) {
+        this.autoStartOnBoot = autoStartOnBoot;
     }
 }

@@ -46,8 +46,10 @@ public class ReplicaCapabilityHttpFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if (!clusterProperties.isHttpPublicActive() && requiresHttpPublic(path, method)) {
-            reject(response, "Replica profile does not serve public HTTP API");
-            return;
+            if (!(isClusterPeerMetricsPath(path, method) && isLoopback(request))) {
+                reject(response, "Replica profile does not serve public HTTP API");
+                return;
+            }
         }
         if (!clusterProperties.isConfigWriteActive() && isConfigMutation(path, method)) {
             reject(response, "Replica profile is read-only (config-write disabled)");
@@ -60,6 +62,18 @@ public class ReplicaCapabilityHttpFilter extends OncePerRequestFilter {
         return path.equals("/api/v1/info")
                 || path.startsWith("/api/v1/auth/")
                 || path.startsWith("/actuator/health");
+    }
+
+    /** Cluster diagnostics fan-out: peer JVM polls loopback metrics (OBSERVABILITY.md). */
+    private static boolean isClusterPeerMetricsPath(String path, String method) {
+        return HttpMethod.GET.matches(method) && path.equals("/api/v1/platform/metrics");
+    }
+
+    private static boolean isLoopback(HttpServletRequest request) {
+        String remote = request.getRemoteAddr();
+        return "127.0.0.1".equals(remote)
+                || "0:0:0:0:0:0:0:1".equals(remote)
+                || "::1".equals(remote);
     }
 
     private static boolean requiresHttpPublic(String path, String method) {

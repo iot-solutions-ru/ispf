@@ -75,7 +75,7 @@ Dev: `npm run dev`, proxy на backend.
 
 Одна команда поднимает **lab / localhost** стек на Linux-хосте с Docker (PostgreSQL + Redis + `ispf-server` + nginx для UI). Не привязан к VPS `ispf.iot-solutions.ru`.
 
-**Не для internet-facing production без hardening:** порты привязаны к `127.0.0.1`, demo-fixtures выключены, дефолтные пароли БД (`ispf/ispf`) нужно сменить перед выносом в сеть. Образы — pinned tags из `deploy/air-gap-images.env`.
+**Не для internet-facing production без hardening:** порты привязаны к `127.0.0.1`, demo-fixtures выключены, дефолтные пароли БД (`ispf/ispf`) нужно сменить перед выносом в сеть. Образы — pinned tags из `deploy/air-gap-images.env`. Полный чеклист prod: [DEMOSTANDS.md § Production](DEMOSTANDS.md#профиль-production-промышленная-эксплуатация).
 
 **Требования:** Docker Engine + Compose v2, JDK 25 (для сборки), Node.js 20+ (для UI).
 
@@ -244,27 +244,49 @@ Optional tuning: `ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS` (default 30), `ISPF_CLUS
 | Scale-out 1.8× | `python deploy/cluster-scale-load-test.py` |
 | CI | [`.github/workflows/cluster-load-test.yml`](../.github/workflows/cluster-load-test.yml) |
 
-### Prod VPS 3-node cluster (`ispf.iot-solutions.ru`)
+### Prod VPS (пример single-node)
 
-Prod runs **3 Docker replicas** behind nginx on `:8080` (systemd `ispf-server` disabled). Config/structure sync: [ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md).
+Текущий публичный пример использует **single unified node**. Обобщённые профили развёртывания: **[DEMOSTANDS.md](DEMOSTANDS.md)** (production, throughput, demo-idle, edge). Ops-шаблон single-node: [VPS_DEMOSTAND.md](VPS_DEMOSTAND.md).
+
+| Script | When |
+|--------|------|
+| [`vps-single-rollout.sh`](../deploy/vps-single-rollout.sh) | Jar + UI на single-node; миграция cluster → single |
+| [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge prod-idle overlay + **recreate** container (не `docker restart`) |
+| [`vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) | После recreate: SNMP `TELEMETRY_ONLY`, demo-sensor `FULL` |
+| [`vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) | Thread CPU diagnostic (SSH) |
+| [`ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | Demo-idle overlay ([DEMOSTANDS.md](DEMOSTANDS.md)) |
+| [`vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Локальная сборка + SCP staging |
+
+```powershell
+.\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -SkipDriverPacks
+```
+
+На хосте после upload:
+
+```bash
+bash /opt/ispf/bin/vps-single-rollout.sh /opt/ispf/staging/<ver>
+bash /opt/ispf/bin/vps-demostand-tune-drivers.sh   # если нужен demo-idle profile для драйверов
+curl -sf http://127.0.0.1:8080/api/v1/info
+```
+
+**Не использовать** [`apply-platform-update.sh`](../deploy/apply-platform-update.sh) на Docker single-node — скрипт для **systemd** `:8080`.
+
+#### Multi-replica cluster (опционально)
 
 | Script | When |
 |--------|------|
 | [`vps-deploy-direct.ps1 -Cluster`](../deploy/vps-deploy-direct.ps1) | Routine jar + UI rollout |
-| [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload (no `docker-compose --force-recreate`) |
+| [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Restart replicas after staging upload |
 | [`vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh) | First-time cluster install only |
-| [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis (not for desync — use after ADR-0030) |
+| [`vps-cluster-factory-reset.sh`](../deploy/vps-cluster-factory-reset.sh) | Drop PG + reset Scylla/Redis |
 | [`vps-cluster-verify.sh`](../deploy/vps-cluster-verify.sh) | Post-deploy health; `--config-sync` smoke |
 
 ```powershell
-.\deploy\vps-deploy-direct.ps1 -Version 0.9.93 -SkipTests -Cluster
-ssh root@ispf.iot-solutions.ru 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
+.\deploy\vps-deploy-direct.ps1 -Version <ver> -SkipTests -Cluster
+ssh user@host 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
 ```
 
-**Rollback**
-
-1. Scale back to single node: use [`deploy/docker-compose.prod-stack.yml`](../deploy/docker-compose.prod-stack.yml) or prod VPS layout.
-2. Set `ISPF_CLUSTER_ENABLED=false` on remaining node if driver ownership not needed.
+**Rollback cluster → single:** [DEMOSTANDS.md](DEMOSTANDS.md), [VPS_DEMOSTAND.md](VPS_DEMOSTAND.md).
 
 ## ClickHouse variable history (prod playbook, BL-114)
 

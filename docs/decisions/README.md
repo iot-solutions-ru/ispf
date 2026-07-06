@@ -43,6 +43,10 @@
 | [0027](0027-event-journal-ingress-fast-path.md) | Event journal ingress fast path (`EVENT_JOURNAL_ONLY`) | Accepted |
 | [0028](0028-horizontal-active-active-cluster.md) | Horizontal active-active cluster (nginx RR, driver ownership) | Accepted |
 | [0029](0029-cluster-live-variable-replica-sync.md) | Cluster live variable RAM mirror (NATS + Redis path interest) | Accepted |
+| [0030](0030-cluster-config-structure-replica-sync.md) | Cluster config/structure replica sync | Accepted |
+| [0031](0031-cluster-replica-roles-platform-jobs.md) | Replica roles + platform jobs | Accepted |
+| [0032](0032-replica-profiles-and-capabilities.md) | Replica profiles and capabilities | Accepted |
+| [0033](0033-prod-idle-demostand-tuning.md) | Профили demostand (idle/edge), read-only hot paths | Accepted |
 
 ## Шаблон нового ADR
 

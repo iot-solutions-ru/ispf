@@ -259,6 +259,7 @@ North star: **больше declarative в object tree**, меньше custom Jav
 - [x] **MQTT meter-bus ingest** — historian path, coalesce sweeps
 - [x] **AGPL-3.0** — platform license; all drivers as optional packs ([0016-agpl](decisions/0016-agpl-dual-licensing.md))
 - [x] **Load testing tooling** — [LOAD_TESTING.md](LOAD_TESTING.md), VPS reports
+- [x] **Профили demostand** — throughput / idle / edge ([DEMOSTANDS.md](DEMOSTANDS.md), [ADR-0033](decisions/0033-prod-idle-demostand-tuning.md))
 
 ---
 

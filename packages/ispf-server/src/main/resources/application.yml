@@ -371,6 +371,7 @@ ispf:
     io-scale-up-queue-threshold: ${ISPF_DRIVER_IO_SCALE_UP_THRESHOLD:50}
     io-scale-down-steps: ${ISPF_DRIVER_IO_SCALE_DOWN_STEPS:6}
     io-scale-check-interval-ms: ${ISPF_DRIVER_IO_SCALE_CHECK_MS:200}
+    auto-start-on-boot: ${ISPF_DRIVER_AUTO_START_ON_BOOT:true}
     ingress-buffer-enabled: ${ISPF_DRIVER_INGRESS_BUFFER_ENABLED:true}
     ingress-buffer-threads: ${ISPF_DRIVER_INGRESS_BUFFER_THREADS:2}
     ingress-buffer-capacity: ${ISPF_DRIVER_INGRESS_BUFFER_CAPACITY:10000}

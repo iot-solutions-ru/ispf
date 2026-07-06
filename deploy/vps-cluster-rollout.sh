@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
-# Rollout staged jar+UI without docker-compose recreate (avoids ContainerConfig bug on old compose).
+# Rollout staged jar+UI to full ADR-0032 VPS cluster (edge-api, hmi-read, io, compute).
 set -euo pipefail
 STAGING="${1:-/opt/ispf/staging/0.9.92}"
 INSTALL_ROOT="${ISPF_INSTALL_ROOT:-/opt/ispf}"
+COMPOSE_FILE="${INSTALL_ROOT}/docker-compose.vps-cluster.yml"
 BASE="http://127.0.0.1:8080"
 
 log() { echo "==> $*"; }
 
 if [[ ! -f "$STAGING/ispf-server.jar" || ! -f "$STAGING/web-console.zip" ]]; then
   echo "Missing staging artifacts in $STAGING" >&2
+  exit 1
+fi
+
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose -f "$COMPOSE_FILE")
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose -f "$COMPOSE_FILE")
+else
+  echo "ERROR: docker compose required" >&2
   exit 1
 fi
 
@@ -48,50 +58,71 @@ grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' "$INSTALL_ROOT/ispf-server.env" 2>/d
   && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' "$INSTALL_ROOT/ispf-server.env" \
   || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> "$INSTALL_ROOT/ispf-server.env"
 
-log "Remove legacy multi-node containers"
+log "Remove legacy containers"
 docker ps -a --format '{{.Names}}' | grep -E 'ispf-vps-replica|ispf-vps-nginx|ispf-vps-worker|ispf-nats|_ispf-vps-|_ispf-nats' | while read -r c; do
   docker rm -f "$c" 2>/dev/null || true
 done
 
-log "Recreate single-node stack"
-COMPOSE_FILE="${INSTALL_ROOT}/docker-compose.vps-cluster.yml"
-if docker compose version >/dev/null 2>&1; then
-  docker compose -f "$COMPOSE_FILE" up -d ispf-server-1 2>/dev/null \
-    || docker-compose -f "$COMPOSE_FILE" up -d ispf-server-1
-elif command -v docker-compose >/dev/null 2>&1; then
-  docker-compose -f "$COMPOSE_FILE" up -d ispf-server-1
-else
-  echo "ERROR: docker compose required" >&2
-  exit 1
-fi
-
-log "Start nginx (docker run — compose recreate hits ContainerConfig on v1.29)"
-docker rm -f ispf-vps-nginx 2>/dev/null || true
-docker run -d --name ispf-vps-nginx --network host --restart unless-stopped \
-  -v "$INSTALL_ROOT/web-console:/usr/share/nginx/html:ro" \
-  -v "$INSTALL_ROOT/nginx-vps-cluster.conf:/etc/nginx/conf.d/default.conf:ro" \
-  nginx:1.27.4-alpine
-
-log "Prune stale cluster registry rows"
 PRUNE="$INSTALL_ROOT/bin/vps-cluster-prune-stale.sh"
 if [[ -x "$PRUNE" ]]; then
+  log "Prune stale cluster registry rows"
   "$PRUNE" || true
 fi
 
-log "Wait for unified node (nginx → replica-1)"
+log "Starting NATS"
+"${COMPOSE[@]}" up -d nats
+sleep 2
+
+log "Starting edge-api leader (replica-1)"
+"${COMPOSE[@]}" up -d ispf-server-1
 for i in $(seq 1 90); do
-  INFO=$(curl -sf --no-keepalive -H "Connection: close" "${BASE}/api/v1/info" 2>/dev/null || true)
-  RID=$(echo "$INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaId',''))" 2>/dev/null || true)
-  CLUSTER=$(echo "$INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('clusterEnabled', True))" 2>/dev/null || true)
-  ROLE=$(echo "$INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaRole',''))" 2>/dev/null || true)
-  if [[ "$RID" == "replica-1" && "$CLUSTER" == "False" && "$ROLE" == "all" ]]; then
-    log "Unified node ready: $RID role=$ROLE cluster=$CLUSTER"
+  login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:8081/api/v1/auth/login" \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"admin","password":"admin"}' 2>/dev/null || echo 000)"
+  if [[ "$login_code" = "200" ]]; then
+    log "replica-1 login OK (direct :8081)"
     break
   fi
-  [[ "$i" -eq 90 ]] && { echo "ERROR: unified node not ready (rid=$RID cluster=$CLUSTER role=$ROLE)"; docker ps; docker logs ispf-vps-replica-1 2>&1 | tail -30; exit 1; }
+  if [[ "$i" -eq 90 ]]; then
+    docker logs ispf-vps-replica-1 --tail 60
+    exit 1
+  fi
   sleep 3
 done
 
-curl -sf "${BASE}/api/v1/info" | python3 -m json.tool | head -15
+log "Starting hmi-read, io, compute + nginx"
+"${COMPOSE[@]}" up -d ispf-server-2 ispf-server-3 ispf-server-worker-1 nginx
+
+log "Waiting for full profile cluster"
+for i in $(seq 1 120); do
+  R1=$(curl -sf "http://127.0.0.1:8081/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
+  R2=$(curl -sf "http://127.0.0.1:8082/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
+  R3=$(curl -sf "http://127.0.0.1:8083/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
+  W1=$(curl -sf "http://127.0.0.1:8084/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
+  if [[ "$R1" == "edge-api" && "$R2" == "hmi-read" && "$R3" == "io" && "$W1" == "compute" ]]; then
+    log "Cluster ready: edge-api hmi-read io compute"
+    break
+  fi
+  if [[ "$i" -eq 120 ]]; then
+    echo "ERROR: cluster not ready r1=$R1 r2=$R2 r3=$R3 w1=$W1" >&2
+    "${COMPOSE[@]}" ps
+    "${COMPOSE[@]}" logs --tail 40 ispf-server-1 ispf-server-2 ispf-server-3 ispf-server-worker-1 nginx
+    exit 1
+  fi
+  sleep 3
+done
+
+INFO=$(curl -sf "${BASE}/api/v1/info")
+echo "$INFO" | python3 -m json.tool | head -15
+CLUSTER=$(echo "$INFO" | python3 -c "import json,sys; print(json.load(sys.stdin).get('clusterEnabled', False))")
+if [[ "$CLUSTER" != "True" ]]; then
+  echo "ERROR: clusterEnabled is not true" >&2
+  exit 1
+fi
+
 curl -sf -o /dev/null -w "HTTPS root: %{http_code}\n" https://ispf.iot-solutions.ru/
 log "Rollout complete"

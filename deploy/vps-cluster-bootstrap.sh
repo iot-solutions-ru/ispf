@@ -102,11 +102,11 @@ sleep 2
 log "Starting edge-api leader (replica-1)"
 "${COMPOSE[@]}" up -d ispf-server-1
 for i in $(seq 1 90); do
-  login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "${BASE}/api/v1/auth/login" \
+  login_code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:8081/api/v1/auth/login" \
     -H 'Content-Type: application/json' \
     -d '{"username":"admin","password":"admin"}' 2>/dev/null || echo 000)"
   if [[ "$login_code" = "200" ]]; then
-    log "replica-1 login OK"
+    log "replica-1 login OK (direct :8081)"
     break
   fi
   if [[ "$i" -eq 90 ]]; then
@@ -128,12 +128,16 @@ for i in $(seq 1 120); do
       | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaId',''))" 2>/dev/null || true)
     [[ -n "$RID" ]] && SEEN["$RID"]=1
   done
+  R1=$(curl -sf "http://127.0.0.1:8081/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
+  R2=$(curl -sf "http://127.0.0.1:8082/api/v1/info" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin).get('replicaProfile',''))" 2>/dev/null || true)
   R3=$(curl -sf "http://127.0.0.1:8083/api/v1/info" \
     | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
   W1=$(curl -sf "http://127.0.0.1:8084/api/v1/info" \
     | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('replicaProfile',''))" 2>/dev/null || true)
-  if [[ ${#SEEN[@]} -ge 2 && "$R3" == "io" && "$W1" == "compute" ]]; then
-    log "Cluster ready: api=${!SEEN[*]} io=$R3 compute=$W1"
+  if [[ "$R1" == "edge-api" && "$R2" == "hmi-read" && "$R3" == "io" && "$W1" == "compute" ]]; then
+    log "Cluster ready: edge-api hmi-read io compute"
     break
   fi
   if [[ "$i" -eq 120 ]]; then

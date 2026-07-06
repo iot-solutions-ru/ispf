@@ -2,6 +2,7 @@ package com.ispf.server.alert;
 
 import com.ispf.server.persistence.AlarmShelfRepository;
 import com.ispf.server.persistence.entity.AlarmShelfEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -22,17 +23,22 @@ public class AlarmShelfService {
 
     @Transactional(readOnly = true)
     public List<AlarmShelf> listActive() {
-        expireStale();
         return repository.findByActiveTrueOrderByShelvedAtDesc().stream()
                 .filter(this::stillEffective)
                 .map(this::toRecord)
                 .toList();
     }
 
+    /** Hot path from alert automation — read-only; expiry handled by {@link #expireStaleScheduled()}. */
     @Transactional(readOnly = true)
     public boolean isShelved(String objectPath, String eventName) {
-        expireStale();
         return repository.findActiveShelf(objectPath, eventName, Instant.now()).isPresent();
+    }
+
+    @Scheduled(fixedDelay = 60_000)
+    @Transactional
+    public void expireStaleScheduled() {
+        expireStale();
     }
 
     @Transactional

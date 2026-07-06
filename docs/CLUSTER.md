@@ -315,6 +315,8 @@ Mitigation: увеличить `ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS`, с
 |---------|-----|--------|--------------|---------|------|------------|
 | unified | `ISPF_REPLICA_PROFILE=unified` | да | да | да | да | да |
 | edge-api | `edge-api` (alias: `api`) | да | да | нет | нет | да |
+
+Профиль **edge-api** без локальных драйверов — см. [DEMOSTANDS.md § Edge B](DEMOSTANDS.md#b-edge-api--без-локальных-драйверов). Локальные драйверы на слабом CPU — unified + [DEMOSTANDS.md § Edge A](DEMOSTANDS.md#a-edge-gateway--локальные-драйверы).
 | hmi-read | `hmi-read` | да | нет | нет | нет | нет |
 | io | `io` | нет | нет | да | нет | да |
 | compute | `compute` (alias: `worker`) | internal | нет | нет | да | нет |
@@ -351,13 +353,25 @@ Jobs хранятся в `platform_jobs` (PostgreSQL). Worker claim: `FOR UPDATE
 
 ### VPS prod (single unified node)
 
+> **Профили:** production / throughput / demo-idle / edge — [DEMOSTANDS.md](DEMOSTANDS.md). Ниже — пример **demo-idle** single-node.
+
 ```text
-Internet → nginx :8080 → replica-1 (unified / legacy role all, :8081)
+Internet → nginx :8080 → replica-1 (unified / role all, :8081)
 ```
 
 `ISPF_CLUSTER_ENABLED=false` — одна JVM со всеми возможностями (drivers + jobs + HTTP/WS). ADR-0032 запрещает `unified` при `cluster.enabled=true`.
 
-`deploy/docker-compose.vps-cluster.yml` + `deploy/nginx-vps-cluster.conf`. Rollout: `vps-cluster-rollout.sh`. Verify: `vps-cluster-verify.sh` (`replicaRole=all`, `clusterEnabled=false`).
+| Артефакт | Путь |
+|----------|------|
+| Compose | [`deploy/docker-compose.vps-single.yml`](../deploy/docker-compose.vps-single.yml) |
+| Nginx | [`deploy/nginx-vps-single.conf`](../deploy/nginx-vps-single.conf) |
+| Rollout | [`deploy/vps-single-rollout.sh`](../deploy/vps-single-rollout.sh) |
+| Prod-idle env | [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) + [`vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) |
+| Driver tuning | [`deploy/vps-demostand-tune-drivers.sh`](../deploy/vps-demostand-tune-drivers.sh) |
+
+Проверка: `curl -sf https://ispf.iot-solutions.ru/api/v1/info` → `clusterEnabled=false`, `replicaRole=all`.
+
+**Multi-replica** (lab / высокая доступность): [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), `vps-cluster-rollout.sh`, `vps-cluster-verify.sh`.
 
 ## Операции
 
@@ -422,7 +436,11 @@ REST и WS используют один upstream с `ip_hash` — меньше 
 | Разные значения REST при refresh | Round-robin до ADR-0029 на telemetry | Убедиться что `liveVariableSyncEnabled=true` в cluster health |
 | «Всё сломано» после экспериментов | Накопившийся RAM drift | `bash /opt/ispf/bin/vps-cluster-factory-reset.sh --no-fixtures` (prod) |
 
-### VPS deploy (кластер)
+### VPS deploy
+
+**Single-node demostand (текущий prod):** см. [VPS_DEMOSTAND.md](VPS_DEMOSTAND.md). Hotfix jar: SCP + `docker-compose` recreate, не `apply-platform-update.sh`.
+
+**Multi-replica cluster:**
 
 ```powershell
 .\deploy\vps-deploy-direct.ps1 -Version 0.9.93 -SkipTests -Cluster

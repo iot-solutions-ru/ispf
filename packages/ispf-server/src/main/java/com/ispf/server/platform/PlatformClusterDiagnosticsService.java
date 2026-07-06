@@ -19,7 +19,7 @@ import java.util.Map;
 @Service
 public class PlatformClusterDiagnosticsService {
 
-    private static final Duration PEER_TIMEOUT = Duration.ofSeconds(2);
+    private static final Duration PEER_TIMEOUT = Duration.ofSeconds(15);
 
     private final ClusterReplicaRegistryService replicaRegistryService;
     private final PlatformDiagnosticsService diagnosticsService;
@@ -46,8 +46,8 @@ public class PlatformClusterDiagnosticsService {
                 nodeRows.add(nodeDiagnostics(node, diagnosticsService.snapshot(), true, null));
                 continue;
             }
-            if (!"UP".equals(node.status()) || node.httpPort() == null || node.httpPort() <= 0) {
-                nodeRows.add(unreachableNode(node, "Node not reachable (status or http_port missing)"));
+            if (!isPeerProbeCandidate(node)) {
+                nodeRows.add(unreachableNode(node, peerSkipReason(node)));
                 continue;
             }
             try {
@@ -78,6 +78,10 @@ public class PlatformClusterDiagnosticsService {
         }
         HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) {
+            String body = response.body();
+            if (body != null && body.contains("REPLICA_CAPABILITY_DENIED")) {
+                throw new IllegalStateException("HTTP 503 REPLICA_CAPABILITY_DENIED");
+            }
             throw new IllegalStateException("HTTP " + response.statusCode());
         }
         Map<String, Object> payload = objectMapper.readValue(response.body(), new TypeReference<>() {
@@ -128,6 +132,22 @@ public class PlatformClusterDiagnosticsService {
             }
         }
         return Map.of();
+    }
+
+    private static boolean isPeerProbeCandidate(ClusterReplicaRegistryService.ClusterNode node) {
+        if (node.httpPort() == null || node.httpPort() <= 0) {
+            return false;
+        }
+        String status = node.status();
+        return ClusterReplicaRegistryService.NodeStatus.UP.name().equals(status)
+                || ClusterReplicaRegistryService.NodeStatus.STALE.name().equals(status);
+    }
+
+    private static String peerSkipReason(ClusterReplicaRegistryService.ClusterNode node) {
+        if (node.httpPort() == null || node.httpPort() <= 0) {
+            return "http_port missing for " + node.replicaId();
+        }
+        return "Node status " + node.status() + " (DOWN or no heartbeat)";
     }
 
     private static Map<String, Object> unreachableNode(

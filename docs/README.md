@@ -31,7 +31,7 @@
 | [Acceleration program](ACCELERATION_PROGRAM.md) | S19–S23: baseline, scorecard, scope freeze, KPI |
 | [HMI quality gates](HMI_QUALITY_GATES.md) | Lighthouse, axe, bundle budget, mimic FPS (S21) |
 | [CI dashboard](CI_DASHBOARD.md) | Workflow health snapshot (S20-06) |
-| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0029 |
+| [ADR (архитектурные решения)](decisions/README.md) | ADR-0001…0033 |
 | [Эволюция платформы](PLATFORM_EVOLUTION.md) | Ретроспективный чеклист: что сделано по порядку, как ISPF развивалась |
 | [WebSocket](API.md#websocket) | Live-обновления объектов |
 | [Чертежи (Blueprints)](BLUEPRINTS.md) | Шаблоны объектов, типы, встроенные чертежи |
@@ -52,7 +52,9 @@
 | [Web Console](WEB_CONSOLE.md) | Админка, operator HMI, роли |
 | [Безопасность](SECURITY.md) | RBAC, Keycloak, профили |
 | [Развёртывание](DEPLOYMENT.md) | Docker, переменные окружения, профили Spring |
-| **[Кластер (multi-replica)](CLUSTER.md)** | Driver ownership, live sync ADR-0029, SNMP-пример, tuning coalesce |
+| **[Профили развёртывания](DEMOSTANDS.md)** | Production, throughput, demo-idle, edge — elastic, топология, env |
+| [Пример VPS single-node](VPS_DEMOSTAND.md) | Операционный шаблон (compose, скрипты deploy) |
+| **[Кластер (multi-replica)](CLUSTER.md)** | Driver ownership, live sync ADR-0029, throughput vs idle |
 | [Тестирование](TESTING.md) | Unit, integration, smoke |
 | [Load testing](LOAD_TESTING.md) | HTTP vs internal automation throughput, baselines |
 | **[Lab event journal stress](LAB_EVENT_JOURNAL_STRESS.md)** | Scylla lab, emqtt multi-device, metrics & ~110k/s baseline |

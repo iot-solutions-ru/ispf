@@ -2,7 +2,7 @@
 
 Нагрузочные сценарии для измерения пропускной способности **HTTP events API** и **внутреннего конвейера автоматизации** (driver → alert rule → event journal).
 
-Baseline зафиксирован на prod VPS `ispf.iot-solutions.ru`, версия **0.9.18**, июнь 2026.
+Baseline зафиксирован на prod-стенде, версия **0.9.18**, июнь 2026. **Профиль развёртывания** для load-test — throughput ([DEMOSTANDS.md](DEMOSTANDS.md#профиль-throughput-высокая-нагрузка)); не используйте idle/edge env.
 
 **Абсолютная пропускная способность** (events/s, samples/s) зависит от CPU, диска, journal/historian store и настроек coalesce — таблицы ниже **не являются SLA**; используйте их для сравнения режимов на одном стенде, а не как переносимые цифры.
 

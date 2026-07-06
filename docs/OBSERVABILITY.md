@@ -70,6 +70,17 @@ Peer fan-out: heartbeat пишет `http_port` в `platform_cluster_replicas` (V
 
 Если все JVM с низким CPU — виновник вне ISPF (Scylla, ClickHouse, Postgres): `docker stats` на хосте.
 
+### CLI (single-node, SSH)
+
+Скрипт [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — два sample `GET /api/v1/platform/metrics` с интервалом ~6s, вывод thread groups и suspects в stdout. Удобен по SSH без UI.
+
+```bash
+scp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/
+ssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py
+```
+
+Подробнее: [DEMOSTANDS.md](DEMOSTANDS.md#диагностика-edge-стенда) (раздел проверки), [VPS_DEMOSTAND.md](VPS_DEMOSTAND.md) (пример ops).
+
 **Grafana dashboard** (все метрики pipeline): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.
 
 ## OTLP metrics export (optional, 0.9.9+)

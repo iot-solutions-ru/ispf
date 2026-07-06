@@ -20,14 +20,18 @@ log_type error
 EOF
 fi
 
-if [ -f staging/ispf-server.jar ] && [ ! -f ispf-server.jar ]; then
-  cp staging/ispf-server.jar ispf-server.jar
-fi
+sync_staging_artifacts() {
+  if [ -f staging/ispf-server.jar ]; then
+    cp -f staging/ispf-server.jar ispf-server.jar
+  fi
+  if [ -d staging/web-console ]; then
+    mkdir -p web-console
+    rm -rf web-console/*
+    cp -a staging/web-console/. web-console/
+  fi
+}
 
-if [ -d staging/web-console ] && [ ! -f web-console/index.html ]; then
-  mkdir -p web-console
-  cp -a staging/web-console/. web-console/
-fi
+sync_staging_artifacts
 
 if [ -f staging/driver-packs.tar.gz ] && [ ! -f data/drivers/.extracted ]; then
   echo "=== Extract driver packs ==="
@@ -68,16 +72,11 @@ docker exec "$SCYLLA_CID" cqlsh -e \
   "CREATE KEYSPACE IF NOT EXISTS ispf WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
 
 echo "=== Stage server artifacts ==="
-if [ -f staging/ispf-server.jar ]; then
-  cp -f staging/ispf-server.jar ispf-server.jar
-fi
-if [ -d staging/web-console ] && [ ! -f web-console/index.html ]; then
-  mkdir -p web-console
-  cp -a staging/web-console/. web-console/
-fi
+sync_staging_artifacts
 
 echo "=== Start ISPF + nginx ==="
-docker compose -f "$COMPOSE_FILE" up -d ispf-server nginx
+export ISPF_BOOTSTRAP_FIXTURES_ENABLED="${ISPF_BOOTSTRAP_FIXTURES_ENABLED:-false}"
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate ispf-server nginx
 
 echo "=== Wait for ISPF (via nginx :${HTTP_PORT}) ==="
 for i in $(seq 1 90); do

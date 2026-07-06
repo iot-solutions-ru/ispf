@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,6 +70,7 @@ class AlarmShelfServiceTest {
         when(repository.findActiveShelf(eq("root.device"), eq("alarm"), any())).thenReturn(Optional.of(entity));
 
         assertTrue(service.isShelved("root.device", "alarm"));
+        verify(repository, never()).deactivateExpired(any());
     }
 
     @Test

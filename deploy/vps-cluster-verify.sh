@@ -53,8 +53,13 @@ seen = set()
 for _ in range(20):
     i = fetch("http://127.0.0.1:8080/api/v1/info")
     seen.add(i.get("replicaId"))
-assert seen >= {"replica-1", "replica-2"}, seen
-print("api pool replicas:", sorted(seen))
+# ip_hash LB: single client may stick to one upstream; verify both tiers directly
+r1 = fetch("http://127.0.0.1:8081/api/v1/info")
+r2 = fetch("http://127.0.0.1:8082/api/v1/info")
+assert r1.get("replicaProfile") == "edge-api", r1
+assert r2.get("replicaProfile") == "hmi-read", r2
+print("api tiers direct:", r1.get("replicaId"), r2.get("replicaId"))
+print("nginx sample:", sorted(seen))
 print("cluster PASSED")
 PY
 }
