@@ -24,7 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(properties = "ispf.cluster.enabled=true")
+@TestPropertySource(properties = {
+        "ispf.cluster.enabled=true",
+        "ispf.cluster.replica-profile=edge-api"
+})
 class ClusterConfigStructureReplicaSyncIntegrationTest {
 
     private static final String PARENT = "root.platform.devices";

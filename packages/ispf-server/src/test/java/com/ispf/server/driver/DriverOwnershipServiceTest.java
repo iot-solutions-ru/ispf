@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
         "ispf.cluster.enabled=true",
+        "ispf.cluster.replica-profile=io",
         "ispf.nats.replica-id=replica-a"
 })
 class DriverOwnershipServiceTest {

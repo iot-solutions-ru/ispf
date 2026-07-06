@@ -184,6 +184,7 @@
   "diagnostics.kind.job": "Job",
   "diagnostics.kind.workflow": "Workflow",
   "metrics.loadError": "Failed to load metrics",
+  "metrics.loading": "Loading metrics…",
   "metrics.standaloneSubtitle": "Platform summary metrics for administrators. External Prometheus scrape remains available at /actuator/prometheus (health-check).",
   "metrics.refresh": "Refresh",
   "metrics.refreshMetrics": "Refresh metrics",
