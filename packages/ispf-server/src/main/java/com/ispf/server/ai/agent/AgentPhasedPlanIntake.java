@@ -134,6 +134,30 @@ public final class AgentPhasedPlanIntake {
                 .formatted(stage.name());
     }
 
+    public static String litePromptSection(Stage stage) {
+        return switch (stage) {
+            case DISCOVERY -> """
+                    
+                    ### LITE plan — discovery (turn 1)
+                    Run minimal discovery (list_objects, search_platform_recipes) if paths are unknown.
+                    Next finish: plan.goal + 3–7 plan.steps — no specBrief required.
+                    """;
+            case BOOTSTRAP, CORE, AUTOMATION, HMI, SYNTHESIS, FINALIZE -> """
+                    
+                    ### LITE plan — finalize short plan
+                    Finish with phase=plan, plan.goal, plan.steps[] (3–7 items). Max 2 questions.
+                    Omit specBrief, gapMatrix, deliveryPhases unless user asked for full TZ.
+                    """;
+        };
+    }
+
+    public static String liteCompactFinishNudge(Stage stage) {
+        return """
+                Truncated JSON — reply with ONLY one compact finish: phase=plan, plan.goal, plan.steps[3-7].
+                No specBrief. Stage=%s. Max 2 questions.
+                """.formatted(stage.name());
+    }
+
     public static int maxSectionsThisTurn(Stage stage) {
         return switch (stage) {
             case DISCOVERY -> 0;

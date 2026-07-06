@@ -19,7 +19,10 @@ final class AgentPlanGuard {
     private static final Set<String> READ_ONLY_EXACT = Set.of(
             "validate_bundle",
             "dry_run_deploy",
-            "run_report"
+            "run_report",
+            "export_application_bundle",
+            "pull_application_from_tree",
+            "application_data_status"
     );
 
     private static final String[] COMPLEX_KEYWORDS = {
@@ -94,6 +97,11 @@ final class AgentPlanGuard {
         if (profile == AgentProfile.OPERATOR || runState == null) {
             return false;
         }
+        AgentInteractionMode mode = runState.interactionMode();
+        if (mode == AgentInteractionMode.ASK) {
+            runState.resetPlan();
+            return false;
+        }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
                     || runState.planPhase() == AgentPlanPhase.PLANNING) {
@@ -102,15 +110,21 @@ final class AgentPlanGuard {
             }
             return false;
         }
+        if (isExecuteIntentMessage(userMessage, runState.planPhase())) {
+            if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
+                    || runState.planPhase() == AgentPlanPhase.PLANNING) {
+                if (canApprovePlan(runState)) {
+                    runState.approvePlan(approverUsername);
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
         if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL) {
             return false;
         }
         if (runState.planPhase() == AgentPlanPhase.APPROVED) {
-            return false;
-        }
-        AgentInteractionMode mode = runState.interactionMode();
-        if (mode == AgentInteractionMode.ASK) {
-            runState.setPlanPhase(AgentPlanPhase.NONE);
             return false;
         }
         if (mode == AgentInteractionMode.EXECUTE) {
@@ -136,6 +150,7 @@ final class AgentPlanGuard {
                 && impliesPlatformMutation(userMessage)) {
             runState.setPlanPhase(AgentPlanPhase.PLANNING);
         }
+        AgentLitePlanBootstrap.seedDraftPlanIfNeeded(runState, userMessage, requireApprovalForMutate);
         return false;
     }
 
@@ -160,10 +175,10 @@ final class AgentPlanGuard {
                         + "{\"type\":\"finish\",\"result\":{\"phase\":\"plan\",\"interactive\":true,"
                         + "\"plan\":{...},\"questions\":[...],\"suggestions\":[{\"label\":\"Утвердить полный план\","
                         + "\"message\":\"Утверждаю план, начинай выполнение\",\"primary\":true}]}}.";
-        return Optional.of(new BlockDecision(
-                "Tool '" + toolName + "' is blocked during planning. Mutations require an approved plan.",
-                hint
-        ));
+        String error = runState.interactionMode() == AgentInteractionMode.ASK
+                ? "Tool '" + toolName + "' is blocked in Ask mode (read-only)."
+                : "Tool '" + toolName + "' is blocked during planning. Mutations require an approved plan.";
+        return Optional.of(new BlockDecision(error, hint));
     }
 
     static FinishOutcome evaluateFinish(
@@ -177,14 +192,30 @@ final class AgentPlanGuard {
             return FinishOutcome.ALLOW_EXECUTION;
         }
         if (runState.interactionMode() == AgentInteractionMode.ASK) {
-            if (looksLikePlanPayload(finishResult, runState)) {
-                return FinishOutcome.BLOCK_NEEDS_PLAN;
+            if (finishPayloadLooksLikePlan(finishResult)) {
+                normalizeFinishForAskMode(finishResult);
             }
             return FinishOutcome.ALLOW_EXECUTION;
         }
         if (runState.interactionMode() == AgentInteractionMode.EXECUTE) {
             if (runState.planPhase() == AgentPlanPhase.APPROVED) {
                 return FinishOutcome.ALLOW_EXECUTION;
+            }
+            if (runState.isPlanningActive()) {
+                if (isPlanFinish(finishResult)) {
+                    return hasStructuredPlanContent(finishResult, runState)
+                            ? FinishOutcome.ALLOW_PLAN
+                            : FinishOutcome.BLOCK_NEEDS_PLAN;
+                }
+                if (looksLikeExecutionResult(finishResult)) {
+                    return FinishOutcome.BLOCK_NEEDS_APPROVAL;
+                }
+                if (isInteractiveClarification(finishResult)) {
+                    return hasStructuredPlanContent(finishResult, runState)
+                            ? FinishOutcome.ALLOW_PLAN
+                            : FinishOutcome.BLOCK_NEEDS_PLAN;
+                }
+                return FinishOutcome.BLOCK_NEEDS_PLAN;
             }
             if (looksLikePlanPayload(finishResult, runState)) {
                 return FinishOutcome.BLOCK_NEEDS_PLAN;
@@ -288,10 +319,18 @@ final class AgentPlanGuard {
      * True when result.plan (or stored draft) has goal or steps for the plan panel UI.
      */
     static boolean looksLikePlanPayload(Map<String, Object> finishResult, AgentRunState runState) {
+        if (finishPayloadLooksLikePlan(finishResult)) {
+            return true;
+        }
+        return runState != null && planHasContent(runState.storedPlan());
+    }
+
+    /** Plan-shaped fields in the finish payload only (ignores session draft). */
+    static boolean finishPayloadLooksLikePlan(Map<String, Object> finishResult) {
         if (finishResult == null) {
             return false;
         }
-        if (isPlanFinish(finishResult) || hasStructuredPlanContent(finishResult, runState)) {
+        if (isPlanFinish(finishResult) || planHasContent(extractPlanMap(finishResult.get("plan")))) {
             return true;
         }
         Object questions = finishResult.get("questions");
@@ -299,6 +338,47 @@ final class AgentPlanGuard {
             return true;
         }
         return hasPrimaryApprovalSuggestion(finishResult);
+    }
+
+    /** Remove plan-panel fields so Ask mode can finish with a plain summary. */
+    static void normalizeFinishForAskMode(Map<String, Object> finishResult) {
+        if (finishResult == null || finishResult.isEmpty()) {
+            return;
+        }
+        if ("plan".equalsIgnoreCase(String.valueOf(finishResult.get("phase")))) {
+            finishResult.remove("phase");
+        }
+        finishResult.remove("plan");
+        finishResult.remove("questions");
+        finishResult.remove("planCompletenessGaps");
+        stripPrimaryApprovalSuggestions(finishResult);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void stripPrimaryApprovalSuggestions(Map<String, Object> finishResult) {
+        Object raw = finishResult.get("suggestions");
+        if (!(raw instanceof List<?> list) || list.isEmpty()) {
+            return;
+        }
+        List<Object> filtered = new java.util.ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                Map<String, Object> copy = new LinkedHashMap<>((Map<String, Object>) map);
+                if (Boolean.TRUE.equals(copy.get("primary"))) {
+                    continue;
+                }
+                Object label = copy.get("label");
+                if (label != null && isApprovalMessage(String.valueOf(label), AgentPlanPhase.AWAITING_APPROVAL)) {
+                    continue;
+                }
+                filtered.add(copy);
+            }
+        }
+        if (filtered.isEmpty()) {
+            finishResult.remove("suggestions");
+        } else {
+            finishResult.put("suggestions", filtered);
+        }
     }
 
     private static boolean hasPrimaryApprovalSuggestion(Map<String, Object> finishResult) {
@@ -461,10 +541,10 @@ final class AgentPlanGuard {
         if (runState.interactionMode() == AgentInteractionMode.ASK) {
             return true;
         }
-        if (runState.interactionMode() == AgentInteractionMode.EXECUTE) {
-            return false;
-        }
         AgentPlanPhase phase = runState.planPhase();
+        if (runState.interactionMode() == AgentInteractionMode.EXECUTE) {
+            return phase == AgentPlanPhase.PLANNING || phase == AgentPlanPhase.AWAITING_APPROVAL;
+        }
         return phase == AgentPlanPhase.PLANNING || phase == AgentPlanPhase.AWAITING_APPROVAL;
     }
 
@@ -513,6 +593,30 @@ final class AgentPlanGuard {
             }
         }
         return false;
+    }
+
+    static boolean canApprovePlan(AgentRunState runState) {
+        if (runState == null) {
+            return false;
+        }
+        Map<String, Object> plan = runState.storedPlan();
+        if (plan == null || plan.isEmpty()) {
+            return true;
+        }
+        return AgentAnalyticalIntake.readyForApproval(plan, Map.of());
+    }
+
+    static boolean isExecuteIntentMessage(String userMessage, AgentPlanPhase phase) {
+        if (userMessage == null || userMessage.isBlank() || phase != AgentPlanPhase.AWAITING_APPROVAL) {
+            return false;
+        }
+        String text = userMessage.toLowerCase(Locale.ROOT).trim();
+        return text.equals("выполнить")
+                || text.equals("выполни")
+                || text.equals("выполняй")
+                || text.equals("execute")
+                || text.startsWith("выполнить ")
+                || text.startsWith("execute ");
     }
 
     static boolean isApprovalMessage(String userMessage) {
@@ -583,16 +687,44 @@ final class AgentPlanGuard {
         return false;
     }
 
+    static String askModeContinuationHint(
+            AgentRunState runState,
+            List<Map<String, Object>> steps,
+            String lastTool
+    ) {
+        if (runState == null || runState.interactionMode() != AgentInteractionMode.ASK) {
+            return null;
+        }
+        if (lastStepBlockedInAskOrPlanning(steps) || (lastTool != null && !isReadOnlyTool(lastTool))) {
+            return """
+                    Ask mode (read-only): do NOT retry blocked or mutating tools. \
+                    Answer from playbook knowledge and successful tool results in this turn. \
+                    Finish NOW with {"type":"finish","summary":"...Markdown how-to..."}. \
+                    Optional result.suggestions: switch to Execute mode to deploy for real.""";
+        }
+        long discoveryCount = steps == null ? 0 : steps.stream().filter(AgentPlanGuard::isDiscoveryStep).count();
+        if (discoveryCount >= 1) {
+            return """
+                    Ask mode: enough discovery for this turn — finish with a plain Markdown how-to answer. \
+                    Do NOT call import_package, configure_operator_ui, or other mutations. \
+                    No phase=plan, plan, or questions in result.""";
+        }
+        return null;
+    }
+
     static String planningContinuationHint(
             AgentRunState runState,
             List<Map<String, Object>> steps,
             String lastTool
     ) {
+        if (runState != null && runState.interactionMode() == AgentInteractionMode.ASK) {
+            return null;
+        }
         if (!restrictsMutations(runState) || steps == null) {
             return null;
         }
         long discoveryCount = steps.stream().filter(AgentPlanGuard::isDiscoveryStep).count();
-        if (!isReadOnlyTool(lastTool) || lastStepPlanBlocked(steps)) {
+        if (!isReadOnlyTool(lastTool) || lastStepBlockedInAskOrPlanning(steps)) {
             return """
                     PLANNING PHASE: mutating tools are blocked until the user approves a plan. \
                     Finish NOW with {"type":"finish","summary":"1–2 sentences only","result":{"phase":"plan",\
@@ -683,7 +815,7 @@ final class AgentPlanGuard {
         return isReadOnlyTool(String.valueOf(step.get("tool")));
     }
 
-    private static boolean lastStepPlanBlocked(List<Map<String, Object>> steps) {
+    private static boolean lastStepBlockedInAskOrPlanning(List<Map<String, Object>> steps) {
         if (steps.isEmpty()) {
             return false;
         }
@@ -699,7 +831,8 @@ final class AgentPlanGuard {
             return false;
         }
         String error = String.valueOf(result.get("error"));
-        return error.contains("blocked during planning");
+        return error.contains("blocked during planning")
+                || error.contains("blocked in Ask mode");
     }
 
     private static String stringValue(Object raw) {

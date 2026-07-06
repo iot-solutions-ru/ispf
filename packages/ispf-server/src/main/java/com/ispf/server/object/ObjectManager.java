@@ -954,7 +954,7 @@ public class ObjectManager {
     }
 
     private boolean shouldApplyFixtureBlueprints() {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
             return false;
         }
         ClusterPlatformBootstrapService bootstrap = clusterBootstrapService.getIfAvailable();
@@ -979,10 +979,12 @@ public class ObjectManager {
                 continue;
             }
             if (objectTree.findByPath(entity.getPath()).isPresent()) {
+                objectTree.ensureParentLink(entity.getPath());
                 continue;
             }
             registerNodeFromEntity(entity, List.of());
         }
+        objectTree.rebuildChildIndex();
         List<String> nodePaths = nodes.stream()
                 .map(ObjectNodeEntity::getPath)
                 .filter(path -> !"root".equals(path))

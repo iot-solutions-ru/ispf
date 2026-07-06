@@ -47,6 +47,7 @@
 | [0031](0031-cluster-replica-roles-platform-jobs.md) | Replica roles + platform jobs | Accepted |
 | [0032](0032-replica-profiles-and-capabilities.md) | Replica profiles and capabilities | Accepted |
 | [0033](0033-prod-idle-demostand-tuning.md) | Профили demostand (idle/edge), read-only hot paths | Accepted |
+| [0034](0034-agent-observability-and-session-knowledge.md) | Agent trace, session RAG, metrics, plan depth | Accepted |
 
 ## Шаблон нового ADR
 

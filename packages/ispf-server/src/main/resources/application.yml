@@ -84,6 +84,7 @@ management:
 ispf:
   bootstrap:
     fixtures-enabled: ${ISPF_BOOTSTRAP_FIXTURES_ENABLED:false}
+    fixture-profile: ${ISPF_BOOTSTRAP_FIXTURE_PROFILE:full}
   platform:
     name: IoT Solutions Platform Framework
     update:

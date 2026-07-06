@@ -22,7 +22,7 @@ public final class AgentPlanPromptSection {
         String base = switch (runState.interactionMode()) {
             case ASK -> askMode();
             case PLAN -> planMode(runState);
-            case EXECUTE -> executeMode();
+            case EXECUTE -> executeMode(runState);
             case AUTO -> autoMode(runState);
         };
         if (runState.interactionMode() != AgentInteractionMode.ASK
@@ -50,7 +50,13 @@ public final class AgentPlanPromptSection {
                 """;
     }
 
-    private static String executeMode() {
+    private static String executeMode(AgentRunState runState) {
+        if (runState.planPhase() == AgentPlanPhase.APPROVED) {
+            return approvedExecution(runState);
+        }
+        if (AgentPlanGuard.restrictsMutations(runState) || runState.isPlanningActive()) {
+            return planningMode(runState);
+        }
         return """
                 
                 ## EXECUTE MODE — act immediately, do not ask first
@@ -84,6 +90,9 @@ public final class AgentPlanPromptSection {
     }
 
     private static String planningMode(AgentRunState runState) {
+        if (runState != null && runState.planDepth() == AgentPlanDepth.LITE) {
+            return litePlanningMode(runState);
+        }
         String phase = runState.planPhase().storageValue();
         Map<String, Object> draft = runState.storedPlan();
         String draftSection = "";
@@ -136,6 +145,30 @@ public final class AgentPlanPromptSection {
                 """;
     }
 
+    private static String litePlanningMode(AgentRunState runState) {
+        Map<String, Object> draft = runState != null ? runState.storedPlan() : Map.of();
+        String draftSection = draft != null && !draft.isEmpty()
+                ? "\n### Current draft (extend)\n" + formatPlanJson(draft) + "\n"
+                : "";
+        AgentPhasedPlanIntake.Stage stage = AgentPhasedPlanIntake.resolveStage(runState);
+        return """
+                
+                ## PLANNING PHASE (LITE — short decompose)
+                """
+                + draftSection
+                + AgentPhasedPlanIntake.litePromptSection(stage)
+                + """
+                
+                Finish with phase=plan and a COMPACT plan — no mandatory specBrief, gapMatrix, or 8 sections.
+                Required: plan.goal (one sentence) + plan.steps[] (3–7 concrete tool-level items).
+                Optional: ≤2 short questions with options[] only when truly blocked.
+                Do NOT mutate the platform until the user approves.
+                
+                Include primary suggestion when the plan is ready:
+                {"label":"Утвердить план","message":"Утверждаю план, начинай выполнение","primary":true}
+                """;
+    }
+
     private static String approvedExecution(AgentRunState runState) {
         Map<String, Object> plan = runState.storedPlan();
         int completed = runState.completedPlanSteps().size();
@@ -180,6 +213,13 @@ public final class AgentPlanPromptSection {
                 
                 Answer the user's question using discovery tools only (list_*, get_*, search_*, describe_*).
                 Never mutate the tree. Do NOT start demo creation or propose build scenarios unless asked.
+                
+                How-to / «как это сделать?» / «как упаковать?» follow-ups:
+                - Explain the procedure from playbook knowledge (numbered Markdown steps in summary).
+                - Optional: list_applications, get_example_bundle appId=mes-reference — NOT import_package.
+                - export_application_bundle / pull_application_from_tree are allowed to show manifest shape.
+                - If the user wants real deploy — finish with a suggestion to switch to Execute mode.
+                - Do NOT loop on failed tools (e.g. missing example bundle) — answer from docs instead.
                 
                 Finish with a plain answer in summary — FORBIDDEN in result:
                 - phase=plan

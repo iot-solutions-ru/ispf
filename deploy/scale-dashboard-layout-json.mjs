@@ -59,7 +59,7 @@ function processJavaFile(filePath) {
 const repoRoot = path.resolve(import.meta.dirname, "..");
 const targets = [
   "packages/ispf-server/src/main/java/com/ispf/server/dashboard/DashboardLayouts.java",
-  "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/MiniTecDashboardLayouts.java",
+  "packages/ispf-server/src/main/resources/bootstrap/mini-tec/dashboards",
   "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/TankFarmDashboardLayouts.java",
   "packages/ispf-server/src/main/java/com/ispf/server/bootstrap/LabTrainingBundleLayouts.java",
 ];

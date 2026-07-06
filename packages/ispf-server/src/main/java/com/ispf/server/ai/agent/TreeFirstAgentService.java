@@ -4,6 +4,7 @@ import com.ispf.ai.LlmContentPart;
 import com.ispf.ai.LlmMessage;
 import com.ispf.ai.LlmRequest;
 import com.ispf.ai.LlmResponse;
+import com.ispf.server.ai.audit.AgentAuditMetrics;
 import com.ispf.server.ai.audit.AiToolAuditService;
 import com.ispf.server.ai.context.ContextPackService;
 import com.ispf.server.ai.context.PlatformBriefingService;
@@ -26,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,6 +57,7 @@ public class TreeFirstAgentService {
     private final AgentAttachmentValidator attachmentValidator;
     private final AgentTurnRateLimiter turnRateLimiter;
     private final AgentMetricsRecorder agentMetrics;
+    private final AgentSessionDocumentService sessionDocumentService;
 
     public TreeFirstAgentService(
             LlmProviderRegistry llmProviderRegistry,
@@ -74,7 +77,8 @@ public class TreeFirstAgentService {
             OperatorAgentResultEnricher operatorResultEnricher,
             AgentAttachmentValidator attachmentValidator,
             AgentTurnRateLimiter turnRateLimiter,
-            AgentMetricsRecorder agentMetrics
+            AgentMetricsRecorder agentMetrics,
+            AgentSessionDocumentService sessionDocumentService
     ) {
         this.llmProviderRegistry = llmProviderRegistry;
         this.toolRegistry = toolRegistry;
@@ -94,6 +98,7 @@ public class TreeFirstAgentService {
         this.attachmentValidator = attachmentValidator;
         this.turnRateLimiter = turnRateLimiter;
         this.agentMetrics = agentMetrics;
+        this.sessionDocumentService = sessionDocumentService;
         this.agentRunExecutor = new DelegatingSecurityContextExecutorService(
                 Executors.newVirtualThreadPerTaskExecutor()
         );
@@ -249,10 +254,18 @@ public class TreeFirstAgentService {
             String userMessage = prepared.displayMessage();
             String llmUserText = prepared.llmText();
             cancellationRegistry.updateUserMessage(sessionId, userMessage);
+            AgentProfile profile = session.runState().agentProfile();
             if (interactionMode != null && !interactionMode.isBlank()) {
                 session.runState().setInteractionMode(AgentInteractionMode.fromString(interactionMode));
             }
-            AgentProfile profile = session.runState().agentProfile();
+            final boolean askMode = profile != AgentProfile.OPERATOR
+                    && session.runState().interactionMode() == AgentInteractionMode.ASK;
+            final String turnId = UUID.randomUUID().toString();
+            session.runState().setPlanDepth(AgentPlanDepth.resolve(
+                    llmUserText,
+                    hasTextAttachment(prepared.attachmentMetadata()),
+                    sessionDocumentService.count(sessionId) > 0
+            ));
             boolean planApprovedThisTurn = AgentPlanGuard.beginTurn(
                     session.runState(),
                     llmUserText,
@@ -261,20 +274,30 @@ public class TreeFirstAgentService {
                     actor
             );
             if (planApprovedThisTurn) {
-                auditService.record(
+                recordTurnAudit(
+                        session,
+                        turnId,
+                        0,
                         "agent_plan_approved",
-                        session.sessionId(),
                         actor,
                         userMessage,
                         "OK",
-                        llmProviderRegistry.activeProvider().providerId(),
                         null,
-                        contextPackService.contextPackVersion(),
-                        List.of()
+                        List.of(),
+                        null,
+                        null,
+                        profile
                 );
             }
             OperatorAgentScope operatorScope = resolveOperatorScope(session, profile);
-            AgentContext context = new AgentContext(actor, authentication, session.runState(), profile, operatorScope);
+            AgentContext context = new AgentContext(
+                    actor,
+                    authentication,
+                    session.runState(),
+                    profile,
+                    operatorScope,
+                    sessionId
+            );
             List<Map<String, Object>> steps = new ArrayList<>();
             List<LlmMessage> messages = buildMessagesWithHistory(
                     session,
@@ -312,12 +335,27 @@ public class TreeFirstAgentService {
                         profile == AgentProfile.OPERATOR,
                         new AgentLlmActionResolver.ResolveContext(
                                 hasTextAttachment,
-                                session.runState().isPlanningActive(),
+                                !askMode && session.runState().isPlanningActive(),
                                 session.runState().isPlanApproved(),
+                                askMode,
                                 AgentPhasedPlanIntake.resolveStage(session.runState())
                         )
                 );
                 LlmResponse response = parsed.response();
+                recordTurnAudit(
+                        session,
+                        turnId,
+                        stepNumber,
+                        "agent_llm_round",
+                        actor,
+                        userMessage,
+                        parsed.failed() ? "ERROR" : "OK",
+                        response != null ? response.model() : null,
+                        parsed.failed() && parsed.error() != null ? List.of(parsed.error()) : List.of(),
+                        parsed.llmLatencyMs(),
+                        response,
+                        profile
+                );
                 if (parsed.failed() || parsed.action() == null) {
                     boolean truncated = response != null
                             && (response.truncatedByLength()
@@ -342,16 +380,19 @@ public class TreeFirstAgentService {
                     }
                     steps.add(errorStep);
                     publishStep(session.sessionId(), errorStep);
-                    auditService.record(
+                    recordTurnAudit(
+                            session,
+                            turnId,
+                            stepNumber,
                             "agent_parse_error",
-                            session.sessionId(),
                             actor,
                             userMessage,
                             finalStatus,
-                            llmProviderRegistry.activeProvider().providerId(),
                             response != null ? response.model() : null,
-                            contextPackService.contextPackVersion(),
-                            List.of(parsed.error() != null ? parsed.error() : "parse failed")
+                            List.of(parsed.error() != null ? parsed.error() : "parse failed"),
+                            parsed.llmLatencyMs(),
+                            response,
+                            profile
                     );
                     break;
                 }
@@ -361,6 +402,36 @@ public class TreeFirstAgentService {
                     Map<String, Object> candidateResult = agentAction.result() != null
                             ? new LinkedHashMap<>(agentAction.result())
                             : new LinkedHashMap<>();
+                    if (askMode) {
+                        AgentPlanGuard.normalizeFinishForAskMode(candidateResult);
+                        finishSummary = agentAction.summary();
+                        finishResult = candidateResult;
+                        finalStatus = AgentTurnStatus.OK;
+                        Map<String, Object> finishStep = Map.of(
+                                "step", stepNumber,
+                                "type", "finish",
+                                "summary", finishSummary != null ? finishSummary : "",
+                                "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                "result", finishResult
+                        );
+                        steps.add(finishStep);
+                        publishStep(session.sessionId(), finishStep);
+                        recordTurnAudit(
+                                session,
+                                turnId,
+                                stepNumber,
+                                "agent_finish",
+                                actor,
+                                userMessage,
+                                finalStatus,
+                                response.model(),
+                                List.of(),
+                                parsed.llmLatencyMs(),
+                                response,
+                                profile
+                        );
+                        break;
+                    }
                     if (profile != AgentProfile.OPERATOR) {
                         AgentPlanGuard.FinishOutcome planOutcome = AgentPlanGuard.evaluateFinish(
                                 session.runState(),
@@ -371,7 +442,6 @@ public class TreeFirstAgentService {
                         );
                         if (planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_PLAN
                                 || planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL) {
-                            boolean askMode = session.runState().interactionMode() == AgentInteractionMode.ASK;
                             boolean executeMode = session.runState().interactionMode() == AgentInteractionMode.EXECUTE;
                             String guardLabel = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
                                     ? "Требуется утверждение плана"
@@ -390,7 +460,43 @@ public class TreeFirstAgentService {
                                                     ? "Execute mode: act with tools — no phase=plan, plan, or clarifying questions."
                                                     : runStateAntiReplanHint(session.runState(), candidateResult)
                                                             ? "Execution phase: do not emit phase=plan — execute the next approved step."
-                                                            : "Execution finish blocked: produce a plan before mutating the platform.";
+                                                            : AgentLitePlanBootstrap.PLANNING_GUARD_ERROR;
+                            if (planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_PLAN
+                                    && AgentLitePlanBootstrap.shouldRecoverFromPlanningGuardLoop(steps, guardError)) {
+                                var recovered = AgentLitePlanBootstrap.resolveFinishPlan(llmUserText, session.runState());
+                                if (recovered.isPresent()) {
+                                    finishResult = new LinkedHashMap<>(recovered.get());
+                                    AgentPlanGuard.capturePlan(session.runState(), finishResult);
+                                    syncRunPlanState(session);
+                                    finishSummary = "Подготовлен эталонный LITE-план — утвердите и начнём выполнение.";
+                                    finalStatus = AgentTurnStatus.OK;
+                                    Map<String, Object> finishStep = Map.of(
+                                            "step", stepNumber,
+                                            "type", "finish",
+                                            "summary", finishSummary,
+                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
+                                            "result", finishResult,
+                                            "litePlanRecovered", true
+                                    );
+                                    steps.add(finishStep);
+                                    publishStep(session.sessionId(), finishStep);
+                                    recordTurnAudit(
+                                            session,
+                                            turnId,
+                                            stepNumber,
+                                            "agent_finish",
+                                            actor,
+                                            userMessage,
+                                            finalStatus,
+                                            response.model(),
+                                            List.of(),
+                                            parsed.llmLatencyMs(),
+                                            response,
+                                            profile
+                                    );
+                                    break;
+                                }
+                            }
                             String guardHint = planOutcome == AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_APPROVAL
                                     ? "Wait for user approval (e.g. «Да, начинаем») before finishing with devicePath/dashboardPath."
                                     : askMode
@@ -462,63 +568,6 @@ public class TreeFirstAgentService {
                             syncRunPlanState(session);
                         }
                         if (planOutcome == AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION) {
-                            AgentJudgeService.JudgeResult judge = AgentJudgeService.evaluate(
-                                    steps, session.runState(), candidateResult, userMessage
-                            );
-                            if (judge.blocksFinish()) {
-                                Map<String, Object> guardStep = Map.of(
-                                        "step", stepNumber,
-                                        "type", "guard",
-                                        "label", "Judge: " + judge.verdict(),
-                                        "error", judge.summary(),
-                                        "hint", judge.hint() != null ? judge.hint() : ""
-                                );
-                                steps.add(guardStep);
-                                publishStep(session.sessionId(), guardStep);
-                                if (judge.verdict().requiresUserIntervention()) {
-                                    finishSummary = judge.summary();
-                                    finishResult = new LinkedHashMap<>();
-                                    finishResult.put("interactive", true);
-                                    finishResult.put("judgeVerdict", judge.verdict().name());
-                                    if (judge.hint() != null) {
-                                        finishResult.put("problemBrief", judge.hint());
-                                    }
-                                    finishResult.put("suggestions", judgeModerationSuggestions(judge.verdict()));
-                                    finalStatus = AgentTurnStatus.OK;
-                                    Map<String, Object> finishStep = Map.of(
-                                            "step", stepNumber + 1,
-                                            "type", "finish",
-                                            "summary", finishSummary,
-                                            "label", AgentStepHumanizer.label("finish", null, null, null, finishSummary),
-                                            "result", finishResult,
-                                            "judgeBlocked", true
-                                    );
-                                    steps.add(finishStep);
-                                    publishStep(session.sessionId(), finishStep);
-                                    auditService.record(
-                                            "agent_finish_judge",
-                                            session.sessionId(),
-                                            actor,
-                                            userMessage,
-                                            finalStatus,
-                                            llmProviderRegistry.activeProvider().providerId(),
-                                            response.model(),
-                                            contextPackService.contextPackVersion(),
-                                            judge.issues()
-                                    );
-                                    break;
-                                }
-                                session.runState().incrementReworkRound();
-                                messages.add(new LlmMessage("assistant", response.content()));
-                                messages.add(new LlmMessage(
-                                        "user",
-                                        "Finish blocked by judge (" + judge.verdict() + "):\n"
-                                                + judge.summary()
-                                                + (judge.hint() != null ? "\n\n" + judge.hint() : "")
-                                                + "\n\nFix ERROR tool steps with more tools — do not finish again until resolved."
-                                ));
-                                continue;
-                            }
                             var block = AgentPlatformTurnGuard.checkBeforeFinish(steps, userMessage);
                             if (block.isPresent()) {
                                 AgentPlatformTurnGuard.BlockDecision decision = block.get();
@@ -575,22 +624,26 @@ public class TreeFirstAgentService {
                     );
                     steps.add(finishStep);
                     publishStep(session.sessionId(), finishStep);
-                    auditService.record(
+                    recordTurnAudit(
+                            session,
+                            turnId,
+                            stepNumber,
                             "agent_finish",
-                            session.sessionId(),
                             actor,
                             userMessage,
                             finalStatus,
-                            llmProviderRegistry.activeProvider().providerId(),
                             response.model(),
-                            contextPackService.contextPackVersion(),
-                            List.of()
+                            List.of(),
+                            parsed.llmLatencyMs(),
+                            response,
+                            profile
                     );
                     break;
                 }
 
                 String toolName = agentAction.toolName();
                 Map<String, Object> toolArgs = agentAction.arguments() != null ? agentAction.arguments() : Map.of();
+                long toolStartNanos = System.nanoTime();
                 String executedTool = toolName;
                 Map<String, Object> toolResult;
                 if (profile == AgentProfile.OPERATOR) {
@@ -741,14 +794,15 @@ public class TreeFirstAgentService {
                         }
                     }
 
-                Map<String, Object> toolStep = Map.of(
-                        "step", stepNumber,
-                        "type", "tool",
-                        "tool", executedTool,
-                        "label", AgentStepHumanizer.label("tool", executedTool, toolArgs, toolResult, null),
-                        "arguments", toolArgs,
-                        "result", toolResult
-                );
+                Map<String, Object> toolStep = new LinkedHashMap<>();
+                long toolLatencyMs = (System.nanoTime() - toolStartNanos) / 1_000_000L;
+                toolStep.put("step", stepNumber);
+                toolStep.put("type", "tool");
+                toolStep.put("tool", executedTool);
+                toolStep.put("label", AgentStepHumanizer.label("tool", executedTool, toolArgs, toolResult, null));
+                toolStep.put("arguments", toolArgs);
+                toolStep.put("result", toolResult);
+                toolStep.put("latencyMs", toolLatencyMs);
                 steps.add(toolStep);
                 publishStep(session.sessionId(), toolStep);
                 syncRunPlanState(session);
@@ -769,16 +823,19 @@ public class TreeFirstAgentService {
                     }
                 }
 
-                auditService.record(
+                recordTurnAudit(
+                        session,
+                        turnId,
+                        stepNumber,
                         "agent_tool_" + executedTool,
-                        session.sessionId(),
                         actor,
                         writeJson(toolArgs),
                         String.valueOf(toolResult.getOrDefault("status", "UNKNOWN")),
-                        llmProviderRegistry.activeProvider().providerId(),
                         response.model(),
-                        contextPackService.contextPackVersion(),
-                        toolResult.containsKey("errors") ? (List<String>) toolResult.get("errors") : List.of()
+                        toolResult.containsKey("errors") ? (List<String>) toolResult.get("errors") : List.of(),
+                        toolLatencyMs,
+                        response,
+                        profile
                 );
 
                 messages.add(new LlmMessage("assistant", response.content()));
@@ -790,8 +847,11 @@ public class TreeFirstAgentService {
                 String continuation = profile == AgentProfile.OPERATOR
                         ? OperatorAgentTurnGuard.continuationHint(executedTool, steps, maxStepsTotal, userMessage)
                         : firstNonBlank(
-                                AgentPlanGuard.planningContinuationHint(session.runState(), steps, executedTool),
-                                AgentLoopGuard.continuationHint(executedTool, steps, maxStepsTotal)
+                                AgentPlanGuard.askModeContinuationHint(session.runState(), steps, executedTool),
+                                firstNonBlank(
+                                        AgentPlanGuard.planningContinuationHint(session.runState(), steps, executedTool),
+                                        AgentLoopGuard.continuationHint(executedTool, steps, maxStepsTotal)
+                                )
                         );
                 messages.add(new LlmMessage(
                         "user",
@@ -820,6 +880,7 @@ public class TreeFirstAgentService {
 
             return persistCompletedTurn(
                     session,
+                    turnId,
                     userMessage,
                     finishSummary,
                     finalStatus,
@@ -882,6 +943,7 @@ public class TreeFirstAgentService {
             result.put("asyncFailure", true);
             persistCompletedTurn(
                     session,
+                    UUID.randomUUID().toString(),
                     prepared.displayMessage(),
                     summary,
                     AgentTurnStatus.ERROR,
@@ -948,6 +1010,7 @@ public class TreeFirstAgentService {
 
     private Map<String, Object> persistCompletedTurn(
             AgentSession session,
+            String turnId,
             String userMessage,
             String finishSummary,
             String finalStatus,
@@ -972,7 +1035,8 @@ public class TreeFirstAgentService {
                 // keep original finish result
             }
         }
-        AgentTurn turn = AgentTurn.create(
+        AgentTurn turn = AgentTurn.createWithId(
+                turnId,
                 userMessage,
                 finishSummary,
                 finalStatus,
@@ -1130,6 +1194,21 @@ public class TreeFirstAgentService {
                     memorySection,
                     knowledgeSection
             );
+        } else if (session.runState().interactionMode() == AgentInteractionMode.ASK) {
+            String sessionDocs = sessionDocumentService.formatPromptSection(
+                    session.sessionId(),
+                    llmUserText
+            );
+            systemPrompt = AgentAskPromptBuilder.build(
+                    session.rootPath(),
+                    toolRegistry.toolCatalog(profile),
+                    briefing,
+                    prepared.hasImages(),
+                    sessionDocs
+            );
+            if (hasTextAttachment(prepared.attachmentMetadata())) {
+                systemPrompt += AgentAttachmentPromptSection.forTextAttachments();
+            }
         } else {
             systemPrompt = AgentPromptBuilder.build(
                     session.rootPath(),
@@ -1137,6 +1216,7 @@ public class TreeFirstAgentService {
                     briefing
             );
             systemPrompt += AgentPlanPromptSection.forRunState(session.runState());
+            systemPrompt += sessionDocumentService.formatPromptSection(session.sessionId(), llmUserText);
             if (prepared.hasImages()) {
                 systemPrompt += AgentPlanPromptSection.forImageAttachments(session.runState());
             }
@@ -1213,35 +1293,6 @@ public class TreeFirstAgentService {
         }
     }
 
-    private static List<Map<String, Object>> judgeModerationSuggestions(AgentJudgeService.Verdict verdict) {
-        if (verdict == AgentJudgeService.Verdict.GAP_REQUIRED) {
-            return List.of(
-                    Map.of(
-                            "label", "Уточнить GAP",
-                            "message", "Покажи Problem Brief и открытые GAP — что нужно решить или исключить из ТЗ",
-                            "primary", true
-                    ),
-                    Map.of(
-                            "label", "Утвердить полный план",
-                            "message", "Утверждаю план без отложенных GAP — начинай выполнение",
-                            "primary", false
-                    )
-            );
-        }
-        return List.of(
-                Map.of(
-                        "label", "Продолжить выполнение",
-                        "message", "Продолжай по утверждённому плану — исправь ERROR шаги (list_objects → create/get → save)",
-                        "primary", true
-                ),
-                Map.of(
-                        "label", "Показать проблему",
-                        "message", "Покажи Problem Brief и последние ERROR шаги",
-                        "primary", false
-                )
-        );
-    }
-
     private boolean applyClarificationFinish(
             AgentSession session,
             List<Map<String, Object>> steps,
@@ -1273,5 +1324,40 @@ public class TreeFirstAgentService {
                 List.of()
         );
         return true;
+    }
+
+    private void recordTurnAudit(
+            AgentSession session,
+            String turnId,
+            int stepNo,
+            String toolName,
+            String actor,
+            String body,
+            String status,
+            String modelId,
+            List<String> errors,
+            Long latencyMs,
+            LlmResponse response,
+            AgentProfile profile
+    ) {
+        auditService.record(
+                toolName,
+                session.sessionId(),
+                actor,
+                body,
+                status,
+                llmProviderRegistry.activeProvider().providerId(),
+                modelId,
+                contextPackService.contextPackVersion(),
+                errors,
+                AgentAuditMetrics.of(
+                        latencyMs,
+                        response != null ? response.usage() : null,
+                        turnId,
+                        stepNo,
+                        session.runState().interactionMode().storageValue(),
+                        AgentPromptVersions.profileFor(profile, session.runState().interactionMode())
+                )
+        );
     }
 }

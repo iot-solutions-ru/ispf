@@ -24,27 +24,32 @@
 | # | Действие | API / UI | Эффект |
 |---|----------|----------|--------|
 | 1 | Старт server | `MiniTecPlatformBootstrap` | Модели, объекты, dashboards, workflows, automation, operator UI |
-| 2 | Operator HMI | `?mode=operator&app=mini-tec` | Меню дашбордов станции |
-| 3 | Станционная сводка | dashboard `mini-tec-overview` | KPI hub + ГПУ |
-| 4 | Однолинейная схема | dashboard `mini-tec-single-line`, widget `mini-tec-sld` | Live SVG SLD по переменным устройств |
-| 5 | Запуск ГПУ | workflow `mini-tec-gpu-start-sequence` | GRPB check → user task → start |
-| 6 | Авария по газу | correlator + workflow `mini-tec-gas-emergency-trip` | Эскалация, trip |
-| 7 | SQL журнал | app schema `app_mini_tec`, `tec_daily_journal` | Эксплуатационные итоги |
-| 8 | Redeploy bundle | `POST /api/v1/applications/mini-tec/deploy` | Idempotent sync из `examples/mini-tec/bundle.json` |
+| 2 | Operator HMI | `?mode=operator&app=mini-tec` | **Интегрированная мнемосхема** `mini-tec-hmi` (по умолчанию) |
+| 3 | Зоны схемы | вкладки Генерация / Газ / Электроснабжение | Mimics `mini-tec-single-line`, `mini-tec-zone-gas`, `mini-tec-zone-electrical` |
+| 4 | Карточка узла | клик по блоку на схеме (`setSelection`) | Панель справа: статус, P, sparkline, chart |
+| 5 | Станционная сводка | dashboard `mini-tec-overview` | KPI hub + ГПУ |
+| 6 | Учебный пожар | `simulate_fire` на ГРПБ | Alarm bar, gas trip **всех** GPU, email/webhook (если relay настроен) |
+| 7 | Недомощность | нагрузка > генерации | correlator → `mini-tec-load-module-auto-unload` |
+| 8 | KPI / тренды | `mini-tec-kpi`, `mini-tec-trends` | OEE/MTBF/MTTR, historian charts |
+| 9 | Суточный журнал | schedule `mini-tec-daily-journal-etl` | `aggregate_daily_journal` → `tec_daily_journal` |
+| 10 | Redeploy bundle | `POST /api/v1/applications/mini-tec/deploy` | Idempotent sync из `examples/mini-tec/bundle.json` |
 
 ## Дашборды
 
 | Path | Назначение |
 |------|------------|
+| `root.platform.dashboards.mini-tec-hmi` | **Операторская мнемосхема** (default) |
 | `root.platform.dashboards.mini-tec-overview` | Станционная сводка |
 | `root.platform.dashboards.mini-tec-single-line` | Однолинейная схема (SLD widget) |
+| `root.platform.dashboards.mini-tec-kpi` | KPI (OEE, MTBF, MTTR) |
+| `root.platform.dashboards.mini-tec-trends` | Сравнение трендов |
 | `root.platform.dashboards.mini-tec-gpu-detail` | ГПУ — детально |
-| `root.platform.dashboards.mini-tec-grpb` | ГРПБ |
+| `root.platform.dashboards.mini-tec-grpb` | ГРПБ (+ учебные симуляции) |
 | `root.platform.dashboards.mini-tec-rumb` | РУМБ |
 | `root.platform.dashboards.mini-tec-dgu` | ДГУ |
-| `root.platform.dashboards.mini-tec-load` | Нагрузочный модуль |
+| `root.platform.dashboards.mini-tec-load-module` | Нагрузочный модуль |
 | `root.platform.dashboards.mini-tec-protections` | Защиты |
-| `root.platform.dashboards.mini-tec-exploitation` | Эксплуатация |
+| `root.platform.dashboards.mini-tec-exploitation` | Эксплуатация (все 3 ГПУ) |
 
 ## Привязка к REQ-PF / механизмам
 
@@ -53,7 +58,32 @@
 | **Models** | 6 INSTANCE-моделей + binding rules на hub |
 | **Virtual driver** | Профили `tec-*`, poll в `VirtualTecPoll.java` |
 | **Binding rules** | Cross-object агрегаты на `station-hub` (0010) |
-| **Workflow** | 4 BPMN: gas trip, load unload, GPU start, ack protection |
+| **Workflow** | 5 BPMN: gas trip, load unload, GPU start, ack protection, shift handover |
 | **Automation** | Alert rules + correlators на защитах |
 | **PF-02** | App SQL: `tec_daily_journal`, `tec_consumer_load` |
 | **Operator UI** | `root.platform.operator-apps` → mini-tec menus |
+
+## Приёмка (smoke checklist)
+
+| # | Проверка | Ожидание |
+|---|----------|----------|
+| 1 | `?mode=operator&app=mini-tec` | Интегрированный HMI `mini-tec-hmi`, alarm bar сверху |
+| 2 | Клик ГПУ-2 на схеме | Карточка справа: P, статус, sparkline 1h, пуск/стоп |
+| 3 | ГРПБ → «Пожар (учебный)» | Красная подсветка, звук, gas trip **всех** ГПУ |
+| 4 | Нагрузка > генерации | `stationUnderpower`, авто-сброс, событие в event-feed |
+| 5 | Логин `operator-gas` | `GET` variables `rumb-10kv` → 403; `grpb` → OK |
+| 6 | Экспорт PNG на mimic; CSV тренда P за 24h | Файлы сохраняются |
+
+## RBAC и смена
+
+- `operator-gas` — ACL OWNER на `grpb`; `operator-electrical` — на `rumb-10kv`, `load-module`.
+- `operator-engineer` — полный доступ к устройствам станции (без object ACL на ГПУ/hub).
+- Workflow `mini-tec-shift-handover` — user task подтверждения активных алармов + `aggregate_daily_journal`.
+
+## REST / WebSocket / OPC-UA
+
+См. [examples/mini-tec/README.md](../examples/mini-tec/README.md). OPC-UA lab: один ГПУ можно перевести на `opcua` driver profile вместо `virtual` ([DRIVERS.md](DRIVERS.md)).
+
+## NFR (production)
+
+Для промышленной эксплуатации мнемосхемы ТЭЦ см. [DEPLOYMENT.md § SCADA NFR](DEPLOYMENT.md#scada-nfr-mini-tec--production).

@@ -16,7 +16,7 @@
 | `name` | Идентификатор функции на объекте |
 | `description` | Подпись в UI |
 | `inputSchema` / `outputSchema` | `DataSchema` для invoke |
-| `sourceType` | `null` (встроенный handler), `script`, `java` |
+| `sourceType` | `null` (встроенный handler), `pulse`, `script`, `java` |
 | `sourceBody` | JSON steps (script) или Java-исходник |
 | `dataSourcePath` | Опционально: data source приложения для SQL-шагов script |
 | `version` | Произвольная строка версии |
@@ -69,7 +69,7 @@ flowchart TD
   invoke --> builtin
 ```
 
-Порядок: **java** → **script** → **application deploy** → **встроенные** (`AcknowledgeAlarm`, `VirtualLab`, `MiniTec`, `MqttGateway`, …).
+Порядок: **java** → **script** → **application deploy** → **встроенные** (`AcknowledgeAlarm`, `VirtualLab`, `PulseVariable`, `MqttGateway`, …).
 
 Если дескриптор есть, но ни один handler не подошёл → `No handler registered for function: …`.
 
@@ -114,7 +114,32 @@ Binding на том же объекте:
 callFunction(acknowledgeAlarm)
 ```
 
-### 1.2 Virtual Lab — `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow`
+### 1.2 Pulse commands (`sourceType: "pulse"`)
+
+Универсальный SCADA-паттерн «импульс команды»: запись `true` в bool-переменную (`cmdStart`, `cmdStop`, …).
+
+```json
+{
+  "name": "gpu_start",
+  "description": "Start GPU",
+  "sourceType": "pulse",
+  "sourceBody": "{\"variable\":\"cmdStart\"}",
+  "inputSchema": { "name": "voidInput", "fields": [] },
+  "outputSchema": {
+    "name": "functionResult",
+    "fields": [
+      { "name": "success", "type": "BOOLEAN" },
+      { "name": "message", "type": "STRING" }
+    ]
+  }
+}
+```
+
+Опционально: `"objectPath"` в `sourceBody` для записи на другой объект; `"value": false` для сброса.
+
+Reference app mini-TEC использует `pulse` для пуск/стоп; сложная логика — `script` + `writeVariable` ([`MiniTecFunctionScripts.java`](../packages/ispf-server/src/main/java/com/ispf/server/application/reference/minitec/MiniTecFunctionScripts.java)).
+
+### 1.3 Virtual Lab — `calculate`, `fireEvent1`, `fireEvent2`, `appendTableRow`
 
 Для объектов virtual-lab (модель с переменными `inputA`, `inputB`, `table`, событиями `event1`, `event2`).
 
@@ -314,7 +339,28 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 
 `objectPath: "self"` — объект, на котором объявлена функция.
 
-### 2.5 `invoke_function` — вложенный вызов
+### 2.5 `writeVariable` — запись переменной объекта
+
+```json
+{
+  "steps": [
+    {
+      "type": "writeVariable",
+      "objectPath": "self",
+      "variable": "cmdStart",
+      "fields": { "value": true }
+    },
+    {
+      "type": "return",
+      "fields": { "success": true, "message": "Command sent" }
+    }
+  ]
+}
+```
+
+Для типовых SCADA-команд без скрипта см. **`sourceType: "pulse"`** (§1.2).
+
+### 2.6 `invoke_function` — вложенный вызов
 
 ```json
 {
@@ -455,6 +501,7 @@ POST .../invoke?path=root.platform.mini-tec-plant.rumb-10kv&name=breaker_operate
 | `when`, `if` | Ветвление `then` / `else` |
 | `map` | Список → список с `item` в scope |
 | `readVariable` | Прочитать поле переменной объекта |
+| `writeVariable` | Записать поля переменной объекта (`fields`) |
 | `invoke_function` | Вызов другой функции |
 | `selectOne` / `selectMany` / `exec` | SQL |
 | `jsonParse` | Разбор JSON-строки |

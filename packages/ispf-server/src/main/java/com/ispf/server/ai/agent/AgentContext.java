@@ -7,10 +7,21 @@ public record AgentContext(
         Authentication authentication,
         AgentRunState runState,
         AgentProfile profile,
-        OperatorAgentScope operatorScope
+        OperatorAgentScope operatorScope,
+        String sessionId
 ) {
     public AgentContext(String actor, Authentication authentication, AgentRunState runState) {
-        this(actor, authentication, runState, AgentProfile.ADMIN, null);
+        this(actor, authentication, runState, AgentProfile.ADMIN, null, null);
+    }
+
+    public AgentContext(
+            String actor,
+            Authentication authentication,
+            AgentRunState runState,
+            AgentProfile profile,
+            OperatorAgentScope operatorScope
+    ) {
+        this(actor, authentication, runState, profile, operatorScope, null);
     }
 
     public boolean isOperator() {

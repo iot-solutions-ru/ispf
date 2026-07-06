@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
+import AgentMetricsPanel from "./agent/AgentMetricsPanel";
 import {
   fetchAiAgentTools,
   fetchAiAgentScenarios,
@@ -82,6 +83,8 @@ export default function AiStudioStatusTab() {
           </div>
         )}
       </header>
+
+      <AgentMetricsPanel />
 
       {loading && <p className="op-muted ai-studio-status-loading">{t("common:action.loading")}</p>}
 

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,6 +72,8 @@ class TreeFirstAgentServiceSessionTest {
     private OperatorAgentResultEnricher operatorResultEnricher;
     @Mock
     private AgentAttachmentValidator attachmentValidator;
+    @Mock
+    private AgentSessionDocumentService sessionDocumentService;
 
     private TreeFirstAgentService agentService;
     private AiProperties aiProperties;
@@ -105,9 +108,12 @@ class TreeFirstAgentServiceSessionTest {
                 operatorResultEnricher,
                 attachmentValidator,
                 new AgentTurnRateLimiter(aiProperties),
-                new AgentMetricsRecorder(java.util.Optional.empty())
+                new AgentMetricsRecorder(java.util.Optional.empty()),
+                sessionDocumentService
         );
 
+        lenient().when(sessionDocumentService.count(anyString())).thenReturn(0);
+        lenient().when(sessionDocumentService.formatPromptSection(anyString(), anyString())).thenReturn("");
         lenient().when(attachmentValidator.prepare(anyString(), any())).thenAnswer(invocation -> {
             String message = invocation.getArgument(0);
             return new AgentAttachmentValidator.PreparedUserMessage(
@@ -286,5 +292,40 @@ class TreeFirstAgentServiceSessionTest {
         assertEquals(AgentTurnStatus.CANCELLED, result.get("status"));
         assertTrue(String.valueOf(result.get("summary")).contains("остановлено"));
         assertEquals(1, sessionForCancel.turns().size());
+    }
+
+    @Test
+    void askModeFinishesOnceWhenLlmReturnsPlanPayload() throws Exception {
+        when(llmProviderRegistry.complete(any())).thenReturn(new LlmResponse(
+                """
+                {"type":"finish","summary":"Краткий обзор платформы: Explorer, устройства, дашборды.","result":{
+                  "phase":"plan",
+                  "plan":{"goal":"Onboarding","steps":["1. Explorer","2. Devices"]},
+                  "questions":[{"id":"q1","text":"Какой раздел интересует?"}],
+                  "suggestions":[{"label":"Утвердить полный план","message":"Утверждаю","primary":true}]
+                }}""",
+                "test-model",
+                new LlmUsage(1, 1, 2)
+        ));
+
+        AgentSession session = AgentSession.create("admin", "root");
+        var auth = new UsernamePasswordAuthenticationToken("admin", "secret");
+        Map<String, Object> result = agentService.runTurn(
+                session,
+                "Как работать в платформе?",
+                auth,
+                "admin",
+                "ask"
+        );
+
+        assertEquals("OK", result.get("status"));
+        assertEquals(
+                "Краткий обзор платформы: Explorer, устройства, дашборды.",
+                result.get("summary")
+        );
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> steps = (List<Map<String, Object>>) result.get("steps");
+        assertThat(steps.stream().filter(step -> "guard".equals(step.get("type")))).isEmpty();
+        verify(llmProviderRegistry, org.mockito.Mockito.times(1)).complete(any());
     }
 }

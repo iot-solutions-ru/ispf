@@ -21,7 +21,14 @@ public record FunctionDescriptor(
     }
 
     public boolean hasScriptBody() {
-        return sourceBody != null && !sourceBody.isBlank() && !hasJavaBody();
+        return sourceBody != null && !sourceBody.isBlank() && !hasJavaBody() && !hasPulseBody();
+    }
+
+    public boolean hasPulseBody() {
+        return sourceType != null
+                && "pulse".equalsIgnoreCase(sourceType.trim())
+                && sourceBody != null
+                && !sourceBody.isBlank();
     }
 
     public boolean hasJavaBody() {

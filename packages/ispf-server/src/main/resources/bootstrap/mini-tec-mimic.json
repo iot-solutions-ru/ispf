@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "width": 1200,
+  "width": 1000,
   "height": 400,
   "background": "var(--bg)",
   "grid": {
@@ -12,7 +12,8 @@
     {
       "id": "layer-default",
       "name": "Main",
-      "visible": true
+      "visible": true,
+      "locked": false
     }
   ],
   "elements": [
@@ -20,13 +21,9 @@
       "id": "island-banner",
       "symbolId": "custom:lib-alarm-banner",
       "layerId": "layer-default",
-      "x": 420,
-      "y": 8,
-      "props": {
-        "width": 360,
-        "height": 22,
-        "text": "Островной режим / Island mode"
-      },
+      "x": 223,
+      "y": 10,
+      "lockAspectRatio": false,
       "bindings": {
         "active": {
           "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
@@ -34,33 +31,20 @@
           "valueField": "value",
           "transform": "bool"
         }
-      }
-    },
-    {
-      "id": "label-gas",
-      "symbolId": "custom:lib-label",
-      "layerId": "layer-default",
-      "x": 28,
-      "y": 116,
-      "props": {
-        "text": "Gas",
-        "width": 40,
-        "height": 16
       },
-      "bindings": {}
+      "props": {
+        "width": 360,
+        "height": 22,
+        "text": "Островной режим / Island mode"
+      }
     },
     {
       "id": "grpb-flow",
       "symbolId": "custom:lib-data-block",
       "layerId": "layer-default",
-      "x": 120,
-      "y": 78,
-      "props": {
-        "width": 104,
-        "height": 88,
-        "line1": "GRPB",
-        "line2": "Gas"
-      },
+      "x": 29,
+      "y": 154,
+      "lockAspectRatio": false,
       "bindings": {
         "line3": {
           "objectPath": "root.platform.devices.mini-tec-plant.grpb",
@@ -68,14 +52,33 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "actions": [
+        {
+          "id": "select-grpb-flow",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.grpb"
+        }
+      ],
+      "tooltip": {
+        "template": "ГРПБ: Q={line3} m3/h. Пожар/утечка — квитировать аварию и отсечь газ."
+      },
+      "props": {
+        "width": 104,
+        "height": 88,
+        "line1": "GRPB",
+        "line2": "Gas"
       }
     },
     {
       "id": "grpb-alarm",
       "symbolId": "custom:lib-sensor-indicator",
       "layerId": "layer-default",
-      "x": 168,
-      "y": 158,
+      "x": 81,
+      "y": 186,
+      "lockAspectRatio": false,
       "bindings": {
         "state": {
           "objectPath": "root.platform.devices.mini-tec-plant.grpb",
@@ -104,12 +107,10 @@
       "id": "busbar-main",
       "symbolId": "custom:lib-busbar-horizontal",
       "layerId": "layer-default",
-      "x": 248,
-      "y": 114,
-      "props": {
-        "width": 680,
-        "height": 12
-      },
+      "x": 133,
+      "y": 192,
+      "scale": 1,
+      "lockAspectRatio": false,
       "bindings": {
         "energized": {
           "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
@@ -117,20 +118,19 @@
           "valueField": "value",
           "transform": "bool"
         }
+      },
+      "props": {
+        "width": 473,
+        "height": 16
       }
     },
     {
       "id": "hub-freq",
       "symbolId": "custom:lib-value-badge",
       "layerId": "layer-default",
-      "x": 480,
-      "y": 88,
-      "props": {
-        "unit": " Hz",
-        "decimals": 2,
-        "width": 72,
-        "height": 28
-      },
+      "x": 420,
+      "y": 162,
+      "lockAspectRatio": false,
       "bindings": {
         "value": {
           "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
@@ -138,20 +138,21 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "props": {
+        "unit": " Hz",
+        "decimals": 2,
+        "width": 72,
+        "height": 28
       }
     },
     {
       "id": "hub-power",
       "symbolId": "custom:lib-value-badge",
       "layerId": "layer-default",
-      "x": 620,
-      "y": 88,
-      "props": {
-        "unit": " kW",
-        "decimals": 0,
-        "width": 72,
-        "height": 28
-      },
+      "x": 512,
+      "y": 162,
+      "lockAspectRatio": false,
       "bindings": {
         "value": {
           "objectPath": "root.platform.devices.mini-tec-plant.station-hub",
@@ -159,20 +160,21 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "props": {
+        "unit": " kW",
+        "decimals": 0,
+        "width": 72,
+        "height": 28
       }
     },
     {
       "id": "gen-gpu1",
       "symbolId": "custom:lib-gen-block",
       "layerId": "layer-default",
-      "x": 268,
-      "y": 24,
-      "props": {
-        "label": "GPU-1",
-        "ratedKw": 1480,
-        "width": 112,
-        "height": 112
-      },
+      "x": 223,
+      "y": 64,
+      "lockAspectRatio": false,
       "bindings": {
         "running": {
           "objectPath": "root.platform.devices.mini-tec-plant.gpu-01",
@@ -186,20 +188,53 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "formatRules": [
+        {
+          "id": "alarm-overload",
+          "bindingKey": "power",
+          "operator": ">",
+          "value": 1550,
+          "style": {
+            "fill": "#f85149"
+          }
+        },
+        {
+          "id": "warn-low",
+          "bindingKey": "power",
+          "operator": "<",
+          "value": 50,
+          "style": {
+            "fill": "#d29922"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "id": "select-gen-gpu1",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-01"
+        }
+      ],
+      "tooltip": {
+        "template": "ГПУ-1: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
+      },
+      "props": {
+        "label": "GPU-1",
+        "ratedKw": 1480,
+        "width": 112,
+        "height": 112
       }
     },
     {
       "id": "gen-gpu2",
       "symbolId": "custom:lib-gen-block",
       "layerId": "layer-default",
-      "x": 418,
-      "y": 24,
-      "props": {
-        "label": "GPU-2",
-        "ratedKw": 1480,
-        "width": 112,
-        "height": 112
-      },
+      "x": 347.5,
+      "y": 64,
+      "lockAspectRatio": false,
       "bindings": {
         "running": {
           "objectPath": "root.platform.devices.mini-tec-plant.gpu-02",
@@ -213,20 +248,53 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "formatRules": [
+        {
+          "id": "alarm-overload",
+          "bindingKey": "power",
+          "operator": ">",
+          "value": 1550,
+          "style": {
+            "fill": "#f85149"
+          }
+        },
+        {
+          "id": "warn-low",
+          "bindingKey": "power",
+          "operator": "<",
+          "value": 50,
+          "style": {
+            "fill": "#d29922"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "id": "select-gen-gpu2",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-02"
+        }
+      ],
+      "tooltip": {
+        "template": "ГПУ-2: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
+      },
+      "props": {
+        "label": "GPU-2",
+        "ratedKw": 1480,
+        "width": 112,
+        "height": 112
       }
     },
     {
       "id": "gen-gpu3",
       "symbolId": "custom:lib-gen-block",
       "layerId": "layer-default",
-      "x": 568,
-      "y": 24,
-      "props": {
-        "label": "GPU-3",
-        "ratedKw": 1480,
-        "width": 112,
-        "height": 112
-      },
+      "x": 472,
+      "y": 64,
+      "lockAspectRatio": false,
       "bindings": {
         "running": {
           "objectPath": "root.platform.devices.mini-tec-plant.gpu-03",
@@ -240,20 +308,53 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "formatRules": [
+        {
+          "id": "alarm-overload",
+          "bindingKey": "power",
+          "operator": ">",
+          "value": 1550,
+          "style": {
+            "fill": "#f85149"
+          }
+        },
+        {
+          "id": "warn-low",
+          "bindingKey": "power",
+          "operator": "<",
+          "value": 50,
+          "style": {
+            "fill": "#d29922"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "id": "select-gen-gpu3",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.gpu-03"
+        }
+      ],
+      "tooltip": {
+        "template": "ГПУ-3: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
+      },
+      "props": {
+        "label": "GPU-3",
+        "ratedKw": 1480,
+        "width": 112,
+        "height": 112
       }
     },
     {
       "id": "dgu-block",
       "symbolId": "custom:lib-gen-block",
       "layerId": "layer-default",
-      "x": 488,
-      "y": 44,
-      "props": {
-        "label": "DGU",
-        "ratedKw": 500,
-        "width": 112,
-        "height": 112
-      },
+      "x": 348,
+      "y": 217,
+      "lockAspectRatio": false,
       "bindings": {
         "running": {
           "objectPath": "root.platform.devices.mini-tec-plant.dgu",
@@ -267,14 +368,34 @@
           "valueField": "value",
           "transform": "number"
         }
+      },
+      "actions": [
+        {
+          "id": "select-dgu-block",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.dgu"
+        }
+      ],
+      "tooltip": {
+        "template": "ДГУ резерв: P={power} kW. Пуск при обесточении шин."
+      },
+      "props": {
+        "label": "DGU",
+        "ratedKw": 500,
+        "width": 112,
+        "height": 112
       }
     },
     {
       "id": "breaker-rumb",
       "symbolId": "custom:lib-breaker",
       "layerId": "layer-default",
-      "x": 768,
-      "y": 90,
+      "x": 606,
+      "y": 174,
+      "rotation": 0,
+      "lockAspectRatio": false,
       "bindings": {
         "closed": {
           "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
@@ -300,15 +421,9 @@
       "id": "rumb-block",
       "symbolId": "custom:lib-data-block",
       "layerId": "layer-default",
-      "x": 792,
-      "y": 80,
-      "props": {
-        "width": 108,
-        "height": 84,
-        "line1": "RUMB",
-        "line2": "10/0.4 kV",
-        "line3": "Breaker"
-      },
+      "x": 686,
+      "y": 154,
+      "lockAspectRatio": false,
       "bindings": {
         "line4": {
           "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
@@ -316,14 +431,34 @@
           "valueField": "value",
           "transform": "bool"
         }
+      },
+      "actions": [
+        {
+          "id": "select-rumb-block",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv"
+        }
+      ],
+      "tooltip": {
+        "template": "РУМБ 10/0.4 kV: ВК {line4}."
+      },
+      "props": {
+        "width": 108,
+        "height": 84,
+        "line1": "RUMB",
+        "line2": "10/0.4 kV",
+        "line3": "Breaker"
       }
     },
     {
       "id": "xfmr-rumb",
       "symbolId": "custom:lib-transformer-two-winding",
       "layerId": "layer-default",
-      "x": 782,
-      "y": 122,
+      "x": 630,
+      "y": 180,
+      "lockAspectRatio": false,
       "bindings": {
         "loaded": {
           "objectPath": "root.platform.devices.mini-tec-plant.rumb-10kv",
@@ -341,13 +476,9 @@
       "id": "load-block",
       "symbolId": "custom:lib-load-block",
       "layerId": "layer-default",
-      "x": 944,
-      "y": 68,
-      "props": {
-        "width": 128,
-        "height": 104,
-        "label": "Load"
-      },
+      "x": 814,
+      "y": 142,
+      "lockAspectRatio": false,
       "bindings": {
         "power": {
           "objectPath": "root.platform.devices.mini-tec-plant.load-module",
@@ -355,22 +486,24 @@
           "valueField": "value",
           "transform": "number"
         }
-      }
-    },
-    {
-      "id": "legend-panel",
-      "symbolId": "custom:lib-data-block",
-      "layerId": "layer-default",
-      "x": 24,
-      "y": 300,
-      "props": {
-        "width": 1152,
-        "height": 84,
-        "line1": "Legend",
-        "line2": "● Generation  ● Gas  ● DGU reserve  — Busbar  □ Load",
-        "line3": "Rated values are nameplate; live values update from plant model"
       },
-      "bindings": {}
+      "actions": [
+        {
+          "id": "select-load-block",
+          "type": "setSelection",
+          "trigger": "primary",
+          "selectionKey": "equipment",
+          "objectPath": "root.platform.devices.mini-tec-plant.load-module"
+        }
+      ],
+      "tooltip": {
+        "template": "Нагрузочный модуль: P={power} kW. При недомощности — сброс нагрузки."
+      },
+      "props": {
+        "width": 128,
+        "height": 104,
+        "label": "Load"
+      }
     }
   ],
   "connections": [
@@ -387,12 +520,20 @@
       },
       "points": [
         {
-          "x": 52,
-          "y": 122
+          "x": 29,
+          "y": 198
         },
         {
-          "x": 118,
-          "y": 122
+          "x": 29,
+          "y": 198
+        },
+        {
+          "x": 29,
+          "y": 198
+        },
+        {
+          "x": 29,
+          "y": 198
         }
       ],
       "style": {
@@ -413,12 +554,20 @@
       },
       "points": [
         {
-          "x": 224,
-          "y": 122
+          "x": 133,
+          "y": 198
         },
         {
-          "x": 248,
-          "y": 122
+          "x": 133,
+          "y": 198
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
         }
       ],
       "style": {
@@ -439,12 +588,20 @@
       },
       "points": [
         {
-          "x": 324,
-          "y": 136
+          "x": 279,
+          "y": 176
         },
         {
-          "x": 324,
-          "y": 120
+          "x": 206,
+          "y": 176
+        },
+        {
+          "x": 206,
+          "y": 202.66666666666666
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
         }
       ],
       "style": {
@@ -465,12 +622,20 @@
       },
       "points": [
         {
-          "x": 474,
-          "y": 136
+          "x": 403.5,
+          "y": 176
         },
         {
-          "x": 474,
-          "y": 120
+          "x": 268.25,
+          "y": 176
+        },
+        {
+          "x": 268.25,
+          "y": 202.66666666666666
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
         }
       ],
       "style": {
@@ -491,12 +656,20 @@
       },
       "points": [
         {
-          "x": 624,
-          "y": 136
+          "x": 528,
+          "y": 176
         },
         {
-          "x": 624,
-          "y": 120
+          "x": 330.5,
+          "y": 176
+        },
+        {
+          "x": 330.5,
+          "y": 202.66666666666666
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
         }
       ],
       "style": {
@@ -517,12 +690,20 @@
       },
       "points": [
         {
-          "x": 544,
-          "y": 156
+          "x": 404,
+          "y": 329
         },
         {
-          "x": 544,
-          "y": 120
+          "x": 268.5,
+          "y": 329
+        },
+        {
+          "x": 268.5,
+          "y": 202.66666666666666
+        },
+        {
+          "x": 133,
+          "y": 202.66666666666666
         }
       ],
       "style": {
@@ -531,41 +712,11 @@
       }
     },
     {
-      "id": "conn-bus-breaker",
+      "id": "conn-mr95w2h9-v9anx",
       "layerId": "layer-default",
       "from": {
-        "elementId": "busbar-main",
+        "elementId": "breaker-rumb",
         "port": "e"
-      },
-      "to": {
-        "elementId": "breaker-rumb",
-        "port": "n"
-      },
-      "points": [
-        {
-          "x": 748,
-          "y": 120
-        },
-        {
-          "x": 768,
-          "y": 120
-        },
-        {
-          "x": 780,
-          "y": 90
-        }
-      ],
-      "style": {
-        "stroke": "#58a6ff",
-        "strokeWidth": 3
-      }
-    },
-    {
-      "id": "conn-breaker-xfmr",
-      "layerId": "layer-default",
-      "from": {
-        "elementId": "breaker-rumb",
-        "port": "s"
       },
       "to": {
         "elementId": "xfmr-rumb",
@@ -573,60 +724,52 @@
       },
       "points": [
         {
-          "x": 780,
-          "y": 142
+          "x": 630,
+          "y": 200
         },
         {
-          "x": 782,
-          "y": 142
+          "x": 630,
+          "y": 200
+        },
+        {
+          "x": 630,
+          "y": 200
+        },
+        {
+          "x": 630,
+          "y": 200
         }
-      ],
-      "style": {
-        "stroke": "#58a6ff",
-        "strokeWidth": 3
-      }
+      ]
     },
     {
-      "id": "conn-feed-load",
+      "id": "conn-mr95xnrn-61r5g",
       "layerId": "layer-default",
       "from": {
-        "elementId": "xfmr-rumb",
+        "elementId": "rumb-block",
         "port": "e"
       },
       "to": {
         "elementId": "load-block",
-        "port": "n"
+        "port": "w"
       },
       "points": [
         {
-          "x": 838,
-          "y": 142
+          "x": 798.1538461538462,
+          "y": 194.0909090909091
         },
         {
-          "x": 920,
-          "y": 142
+          "x": 806.0769230769231,
+          "y": 194.0909090909091
         },
         {
-          "x": 920,
-          "y": 120
+          "x": 806.0769230769231,
+          "y": 194
         },
         {
-          "x": 944,
-          "y": 120
-        },
-        {
-          "x": 1008,
-          "y": 120
-        },
-        {
-          "x": 1008,
-          "y": 68
+          "x": 814,
+          "y": 194
         }
-      ],
-      "style": {
-        "stroke": "#58a6ff",
-        "strokeWidth": 3
-      }
+      ]
     }
   ],
   "customSymbols": [
@@ -704,7 +847,7 @@
     {
       "id": "lib-data-block",
       "name": "symbols.dataBlock",
-      "svg": "<g><rect width=\"104\" height=\"88\" rx=\"4\" fill=\"#161b22\" stroke=\"#30363d\"></rect><text x=\"6\" y=\"16\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"30\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"44\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text><text x=\"6\" y=\"58\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\">Sample</text></g>",
+      "svg": "<g><rect width=\"104\" height=\"88\" rx=\"4\" fill=\"#161b22\" stroke=\"#30363d\"></rect><text id=\"ispf-line1\" x=\"6\" y=\"16\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\"></text><text id=\"ispf-line2\" x=\"6\" y=\"30\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\"></text><text id=\"ispf-line3\" x=\"6\" y=\"44\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\"></text><text id=\"ispf-line4\" x=\"6\" y=\"58\" fill=\"#e6edf3\" font-size=\"10\" font-family=\"ui-monospace, Consolas, monospace\"></text></g>",
       "width": 104,
       "height": 88,
       "viewBox": "0 0 104 88",
@@ -739,25 +882,25 @@
         {
           "bind": "line1",
           "type": "text",
-          "target": "#ispf-text",
+          "target": "#ispf-line1",
           "format": "string"
         },
         {
           "bind": "line2",
           "type": "text",
-          "target": "#ispf-text",
+          "target": "#ispf-line2",
           "format": "string"
         },
         {
           "bind": "line3",
           "type": "text",
-          "target": "#ispf-text",
+          "target": "#ispf-line3",
           "format": "string"
         },
         {
           "bind": "line4",
           "type": "text",
-          "target": "#ispf-text",
+          "target": "#ispf-line4",
           "format": "string"
         }
       ],
@@ -830,7 +973,7 @@
     {
       "id": "lib-value-badge",
       "name": "symbols.valueBadge",
-      "svg": "<g><rect width=\"72\" height=\"28\" rx=\"4\" fill=\"#0d1117\" stroke=\"#30363d\"></rect><text x=\"36\" y=\"18\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"11\" font-weight=\"600\">42.00 Hz</text></g>",
+      "svg": "<g><rect width=\"72\" height=\"28\" rx=\"4\" fill=\"#0d1117\" stroke=\"#30363d\"></rect><text id=\"ispf-value\" x=\"36\" y=\"18\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"11\" font-weight=\"600\">—</text></g>",
       "width": 72,
       "height": 28,
       "viewBox": "0 0 72 28",

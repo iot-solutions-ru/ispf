@@ -43,3 +43,7 @@ deploy/verify-if-mib-followup.py
 deploy/verify-restore-dashboard.py
 deploy/web-console.tar.gz
 deploy/web-console.zip
+
+# Local only — реестр российского ПО (не публиковать в GitHub)
+docs/RUSSIAN_SOFTWARE_REGISTRY.md
+tools/registry-techpack/

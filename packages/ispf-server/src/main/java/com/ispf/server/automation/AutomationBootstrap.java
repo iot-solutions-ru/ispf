@@ -24,7 +24,7 @@ public class AutomationBootstrap {
     @Order(90)
     public void initializeAutomationTree() {
         automationTreeService.migrateLegacyTables();
-        if (bootstrapProperties.isFixturesEnabled()) {
+        if (bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
             automationTreeService.ensureDemoAlertRule();
             automationTreeService.ensureDemoCorrelators();
         }

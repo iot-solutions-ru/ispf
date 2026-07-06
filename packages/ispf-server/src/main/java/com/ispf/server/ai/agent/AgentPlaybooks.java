@@ -2,7 +2,7 @@ package com.ispf.server.ai.agent;
 
 import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
-import com.ispf.server.bootstrap.MiniTecPaths;
+import com.ispf.server.application.reference.minitec.MiniTecPaths;
 import com.ispf.server.bootstrap.PipelineScadaPaths;
 import com.ispf.server.bootstrap.TankFarmPaths;
 import com.ispf.server.automation.AutomationTreeService;
@@ -264,7 +264,7 @@ public final class AgentPlaybooks {
                 }}
                 
                 Domain adapters (execution plugins): industrial_oil_gas, snmp_lab, mes_terminal, scada_hmi, _default.
-                docanima patterns: handoffFrame, GAP registry (blocksDev), conformance smoke, Judge pre-finish verdict.
+                docanima patterns: handoffFrame, GAP registry (blocksDev), conformance smoke.
                 
                 Approval phrases: «Да, начинаем», «Утверждаю», «OK, start», primary suggestion click.
                 """
@@ -617,7 +617,7 @@ public final class AgentPlaybooks {
                 + MiniTecPaths.GPU_01
                 + """
                 3. Operator UI: ?mode=operator&app=mini-tec&dashboard="""
-                + MiniTecPaths.DASHBOARD_OVERVIEW
+                + MiniTecPaths.DASHBOARD_HMI
                 + """
                 
                 Пути:
@@ -628,7 +628,8 @@ public final class AgentPlaybooks {
                 - Hub: """
                 + MiniTecPaths.STATION_HUB
                 + """
-                - Дашборды: mini-tec-overview, mini-tec-gpu-detail, mini-tec-grpb, mini-tec-protections
+                - Дашборды: mini-tec-hmi (default), mini-tec-overview, mini-tec-kpi, mini-tec-trends, mini-tec-protections
+                - Mimics: mini-tec-single-line, mini-tec-zone-gas, mini-tec-zone-electrical
                 - Модели: mini-tec-gpu-v1, mini-tec-grpb-v1, mini-tec-rumb-v1, mini-tec-dgu-v1, mini-tec-load-module-v1
                 - Virtual driver profiles: tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load
                 - Bundle redeploy: POST /api/v1/applications/mini-tec/deploy with examples/mini-tec/bundle.json

@@ -319,6 +319,8 @@ export default function ObjectTree({
   const [contextMenu, setContextMenu] = useState<TreeContextMenuState | null>(null);
   const [driverWritePath, setDriverWritePath] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const onLoadChildrenRef = useRef(onLoadChildren);
+  onLoadChildrenRef.current = onLoadChildren;
 
   const openContextMenu = useCallback((
     event: React.MouseEvent,
@@ -375,7 +377,7 @@ export default function ObjectTree({
     }
     const ancestors = ancestorPaths(selectedPath);
     for (const path of ancestors) {
-      onLoadChildren?.(path);
+      onLoadChildrenRef.current?.(path);
     }
     if (ancestors.length === 0) {
       return;
@@ -395,7 +397,7 @@ export default function ObjectTree({
       }
       return current;
     });
-  }, [selectedPath, onLoadChildren]);
+  }, [selectedPath]);
 
   useEffect(() => {
     const el = containerRef.current;

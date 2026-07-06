@@ -5,6 +5,7 @@ import { fetchMimic, invokeFunction, setVariable } from "../../../api";
 import type { ScadaMimicWidget } from "../../../types/dashboard";
 import type { MimicAction, MimicElement, ScadaMimicDocument } from "../../../types/scadaMimic";
 import { parseMimicDocument } from "../../../scada/document";
+import { parseSelectionJson } from "../dashboardUtils";
 import {
   collectBindingPaths,
   resolveBindingValue,
@@ -25,6 +26,7 @@ import DashWidgetShell from "../DashWidgetShell";
 import { cloneRecord, setFieldValue } from "../../../utils/record";
 import { asBool } from "../../../scada/utils";
 import ScadaMimicCanvas from "../../scada/ScadaMimicCanvas";
+import { exportMimicSvgToPng, resolveMimicExportBackground } from "../../../scada/mimicPngExport";
 
 interface ScadaMimicWidgetViewProps {
   widget: ScadaMimicWidget;
@@ -58,6 +60,16 @@ function isViewChanged(
   );
 }
 
+function resolveActionSelection(action: MimicAction): Record<string, string> | undefined {
+  if (action.selectionJson?.trim()) {
+    return parseSelectionJson(action.selectionJson);
+  }
+  if (action.selectionKey?.trim() && action.objectPath?.trim()) {
+    return { [action.selectionKey.trim()]: action.objectPath.trim() };
+  }
+  return undefined;
+}
+
 interface ContextMenuState {
   element: MimicElement;
   x: number;
@@ -73,6 +85,7 @@ export default function ScadaMimicWidgetView({
   const session = useDashboardContext();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState(() => defaultViewState(widget.defaultZoom));
   const [runtimeDoc, setRuntimeDoc] = useState<ScadaMimicDocument | null>(null);
@@ -188,10 +201,23 @@ export default function ScadaMimicWidgetView({
 
       switch (action.type) {
         case "navigate": {
+          const selection = resolveActionSelection(action);
           if (action.dashboardPath?.trim()) {
-            session.navigateToDashboard(action.dashboardPath.trim());
+            session.navigateToDashboard(action.dashboardPath.trim(), { selection });
           } else if (action.url?.trim()) {
             window.open(action.url.trim(), "_blank", "noopener,noreferrer");
+          }
+          break;
+        }
+        case "setSelection": {
+          const selection = resolveActionSelection(action);
+          if (selection) {
+            for (const [key, path] of Object.entries(selection)) {
+              session.setSelection(key, path);
+            }
+          }
+          if (action.dashboardPath?.trim()) {
+            session.navigateToDashboard(action.dashboardPath.trim(), { selection });
           }
           break;
         }
@@ -254,6 +280,28 @@ export default function ScadaMimicWidgetView({
     setView(baselineView);
   }, [baselineView]);
 
+  const exportPng = useCallback(async () => {
+    setExportError(null);
+    setMessage(null);
+    const svg = viewportRef.current?.querySelector("svg.scada-mimic-svg");
+    if (!svg || !(svg instanceof SVGSVGElement)) {
+      setExportError(t("view.scadaMimic.exportFailed"));
+      return;
+    }
+    const slug = (widget.mimicPath?.split(".").pop() || "scada-mimic").replace(/[^\w-]+/g, "-");
+    try {
+      await exportMimicSvgToPng(svg, {
+        width: document.width,
+        height: document.height,
+        filename: `${slug}.png`,
+        backgroundColor: resolveMimicExportBackground(document.background),
+      });
+      setMessage(t("view.scadaMimic.exportDone"));
+    } catch {
+      setExportError(t("view.scadaMimic.exportFailed"));
+    }
+  }, [document.background, document.height, document.width, t, widget.mimicPath]);
+
   useEffect(() => {
     const node = viewportRef.current;
     if (!node || !panEnabled) return;
@@ -297,8 +345,8 @@ export default function ScadaMimicWidgetView({
       editable={editable}
     >
       <div ref={viewportRef} className="scada-mimic-viewport">
-        {viewChanged && (
-          <div className="scada-mimic-view-controls">
+        <div className="scada-mimic-view-controls">
+          {viewChanged && (
             <button
               type="button"
               className="scada-mimic-reset-zoom btn small"
@@ -311,8 +359,22 @@ export default function ScadaMimicWidgetView({
             >
               {t("view.scadaMimic.resetZoom")}
             </button>
-          </div>
-        )}
+          )}
+          {!editable && (
+            <button
+              type="button"
+              className="scada-mimic-export-png btn small"
+              title={t("view.scadaMimic.exportPng")}
+              onClick={(e) => {
+                e.stopPropagation();
+                void exportPng();
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {t("view.scadaMimic.exportPng")}
+            </button>
+          )}
+        </div>
         <ScadaMimicCanvas
           document={document}
           valuesByElementId={resolved.byElementId}
@@ -351,6 +413,7 @@ export default function ScadaMimicWidgetView({
         )}
       </div>
       {message && <p className="widget-message success">{message}</p>}
+      {exportError && <p className="widget-message error">{exportError}</p>}
       {runServerAction.isError && (
         <p className="widget-message error">{(runServerAction.error as Error).message}</p>
       )}

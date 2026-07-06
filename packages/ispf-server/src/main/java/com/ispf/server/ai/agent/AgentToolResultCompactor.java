@@ -31,6 +31,8 @@ final class AgentToolResultCompactor {
             compactSamples(copy, "buckets", 48);
         } else if ("invoke_bff".equals(toolName) || "invoke_tree_function".equals(toolName)) {
             compactBffResult(copy);
+        } else if ("get_example_bundle".equals(toolName)) {
+            compactExampleBundle(copy);
         }
         return copy;
     }
@@ -62,6 +64,34 @@ final class AgentToolResultCompactor {
             toolResult.put(field + "TruncatedForLlm", true);
             toolResult.put(field + "Total", items.size());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void compactExampleBundle(Map<String, Object> toolResult) {
+        Object manifest = toolResult.get("manifest");
+        if (!(manifest instanceof Map<?, ?> manifestMap)) {
+            return;
+        }
+        Map<String, Object> sections = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : manifestMap.entrySet()) {
+            String section = String.valueOf(entry.getKey());
+            Object value = entry.getValue();
+            if (value instanceof List<?> list) {
+                sections.put(section, Map.of("itemCount", list.size()));
+            } else if (value instanceof Map<?, ?> map) {
+                sections.put(section, Map.of("keyCount", map.size()));
+            } else {
+                sections.put(section, "present");
+            }
+        }
+        toolResult.remove("manifest");
+        toolResult.put("manifestSections", sections);
+        toolResult.put("truncatedForLlm", true);
+        toolResult.put(
+                "llmHint",
+                "Full manifest is in the tool step UI — finish with a Markdown summary of section names and purpose only; "
+                        + "never re-dump manifest JSON in finish summary or result.plan."
+        );
     }
 
     private static void compactBffResult(Map<String, Object> toolResult) {

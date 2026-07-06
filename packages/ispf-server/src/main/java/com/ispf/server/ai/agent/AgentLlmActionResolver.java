@@ -20,6 +20,7 @@ final class AgentLlmActionResolver {
             Your last reply was not a valid agent action. Reply with ONLY one JSON object, no markdown and no explanation:
             {"type":"tool","name":"<tool>","arguments":{...}}
             or {"type":"finish","summary":"...","result":{...}}
+            Never put ```json code fences inside the summary string. Never dump large manifests in finish — summarize briefly.
             """;
 
     private static final String COMPACT_TOOL_NUDGE = """
@@ -29,6 +30,12 @@ final class AgentLlmActionResolver {
             {"type":"tool","name":"set_dashboard_layout","arguments":{"path":"<path>","template":"scada-facility-overview"}}
             Or add widgets one at a time via add_dashboard_widget. For mimics use save_mimic_diagram with a small elements array \
             or add_mimic_elements in chunks.
+            """;
+
+    private static final String ASK_ATTACHMENT_NUDGE = """
+            User attached a file in Ask mode — read-only. Reply with ONLY one JSON object:
+            {"type":"finish","summary":"Markdown summary of the document and how it relates to ISPF","result":{}}
+            Or one discovery tool if you need platform context first. No phase=plan, no mutations.
             """;
 
     private static final String ATTACHMENT_PLAN_NUDGE = """
@@ -42,10 +49,11 @@ final class AgentLlmActionResolver {
             boolean textAttachment,
             boolean planningTurn,
             boolean executionTurn,
+            boolean askTurn,
             AgentPhasedPlanIntake.Stage phasedStage
     ) {
         static ResolveContext none() {
-            return new ResolveContext(false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY);
+            return new ResolveContext(false, false, false, false, AgentPhasedPlanIntake.Stage.DISCOVERY);
         }
     }
 
@@ -53,8 +61,12 @@ final class AgentLlmActionResolver {
             LlmResponse response,
             AgentJsonProtocol.AgentAction action,
             boolean failed,
-            String error
+            String error,
+            long llmLatencyMs
     ) {
+        ParseAttempt(LlmResponse response, AgentJsonProtocol.AgentAction action, boolean failed, String error) {
+            this(response, action, failed, error, 0L);
+        }
     }
 
     private AgentLlmActionResolver() {
@@ -101,12 +113,15 @@ final class AgentLlmActionResolver {
         int attempts = Math.max(1, maxAttempts);
         LlmResponse lastResponse = null;
         String lastError = null;
+        long totalLlmLatencyMs = 0L;
         ResolveContext ctx = context != null ? context : ResolveContext.none();
         for (int attempt = 0; attempt < attempts; attempt++) {
+            long llmStart = System.nanoTime();
             lastResponse = llmProviderRegistry.complete(requestFactory.apply(messages));
+            totalLlmLatencyMs += (System.nanoTime() - llmStart) / 1_000_000L;
             try {
                 AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, lastResponse.content());
-                return new ParseAttempt(lastResponse, action, false, null);
+                return new ParseAttempt(lastResponse, action, false, null, totalLlmLatencyMs);
             } catch (Exception ex) {
                 lastError = ex.getMessage();
                 if (attempt < attempts - 1) {
@@ -120,17 +135,17 @@ final class AgentLlmActionResolver {
                     lastResponse.content()
             );
             if (plain.isPresent()) {
-                return new ParseAttempt(lastResponse, plain.get(), false, null);
+                return new ParseAttempt(lastResponse, plain.get(), false, null, totalLlmLatencyMs);
             }
         }
         if (lastResponse != null && AgentJsonProtocol.looksLikeTruncatedContent(lastResponse.content())) {
             Optional<AgentJsonProtocol.AgentAction> salvaged =
                     AgentJsonProtocol.trySalvageTruncatedFinish(objectMapper, lastResponse.content());
             if (salvaged.isPresent()) {
-                return new ParseAttempt(lastResponse, salvaged.get(), false, null);
+                return new ParseAttempt(lastResponse, salvaged.get(), false, null, totalLlmLatencyMs);
             }
         }
-        return new ParseAttempt(lastResponse, null, true, lastError);
+        return new ParseAttempt(lastResponse, null, true, lastError, totalLlmLatencyMs);
     }
 
     private static String nudgeForRetry(LlmResponse response, ResolveContext context, int attemptIndex) {
@@ -147,7 +162,13 @@ final class AgentLlmActionResolver {
             return AgentPhasedPlanIntake.compactFinishNudge(stage);
         }
         if (context.textAttachment() && attemptIndex == 0) {
+            if (context.askTurn()) {
+                return ASK_ATTACHMENT_NUDGE;
+            }
             return ATTACHMENT_PLAN_NUDGE;
+        }
+        if (context.askTurn()) {
+            return JSON_NUDGE;
         }
         if (context.planningTurn()) {
             return AgentPhasedPlanIntake.compactFinishNudge(stage);

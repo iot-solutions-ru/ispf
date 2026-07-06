@@ -69,7 +69,7 @@ public class LabPlatformBootstrap {
     public void onReady() {
         // Virtual driver Relative Blueprints — required for agent create_virtual_device on prod (not demo fixtures).
         LabBlueprintBootstrap.ensureLabModels();
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         HaystackBlueprintBootstrap.ensureHaystackModel();

@@ -112,6 +112,7 @@ public class PlatformAgentToolRegistry {
             WorkQueueService workQueueService,
             OperatorAgentMemoryService operatorAgentMemoryService,
             OperatorAppDocumentService operatorAppDocumentService,
+            AgentSessionDocumentService agentSessionDocumentService,
             HaystackExportService haystackExportService,
             MimicService mimicService,
             WorkflowInstanceCancelService workflowInstanceCancelService,
@@ -130,6 +131,7 @@ public class PlatformAgentToolRegistry {
                 applicationDataStore,
                 bundleSnapshotStore
         ));
+        tools.add(AgentSessionKnowledgeTools.searchSessionContextTool(agentSessionDocumentService));
         tools.addAll(AgentReportTools.all(
                 reportService,
                 objectManager,

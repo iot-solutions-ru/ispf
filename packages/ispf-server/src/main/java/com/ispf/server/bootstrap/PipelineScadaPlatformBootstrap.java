@@ -112,7 +112,7 @@ public class PipelineScadaPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 24)
     public void onReady() throws Exception {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         BlueprintBootstrap.ensureTankFarmModels();
@@ -137,7 +137,7 @@ public class PipelineScadaPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 3)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         startDrivers();

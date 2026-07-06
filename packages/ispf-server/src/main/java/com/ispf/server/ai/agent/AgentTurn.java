@@ -50,6 +50,29 @@ public final class AgentTurn {
         return create(userMessage, assistantSummary, status, steps, result, List.of());
     }
 
+    public static AgentTurn createWithId(
+            String turnId,
+            String userMessage,
+            String assistantSummary,
+            String status,
+            List<Map<String, Object>> steps,
+            Map<String, Object> result,
+            List<Map<String, Object>> attachments,
+            String interactionMode
+    ) {
+        return new AgentTurn(
+                turnId != null && !turnId.isBlank() ? turnId : UUID.randomUUID().toString(),
+                userMessage,
+                assistantSummary,
+                status,
+                steps,
+                result,
+                attachments,
+                interactionMode,
+                Instant.now()
+        );
+    }
+
     public static AgentTurn create(
             String userMessage,
             String assistantSummary,

@@ -117,7 +117,7 @@ public class TankFarmBlueprintBootstrap {
                 BlueprintVariableDefinition.of("driverConfigJson", "Driver config", "driver", STR, true, true,
                         DataRecord.single(STR, Map.of("value", configJson))),
                 BlueprintVariableDefinition.of("driverPointMappingsJson", "Point mappings", "driver", STR, true, true,
-                        DataRecord.single(STR, Map.of("value", MiniTecBlueprintBootstrap.TEC_POINT_MAPPINGS)))
+                        DataRecord.single(STR, Map.of("value", "{\"status\":\"sim\"}")))
         );
     }
 

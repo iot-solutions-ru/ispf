@@ -116,7 +116,28 @@ ReAct loop on the platform with a hard step cap (default 96, `ispf.ai.agent-max-
 | `POST /api/v1/ai/agent/sessions/{id}/cancel` | Request cooperative cancel of in-flight turn |
 | `DELETE /api/v1/ai/agent/sessions/{id}` | Delete session (clear context) |
 | `GET /api/v1/ai/agent/sessions/{id}/audit` | Admin-only audit export (`format=json` default, `format=csv` for compliance) |
+| `GET /api/v1/ai/agent/sessions/{id}/trace` | Turn trace: steps + audit metrics (latency, tokens) |
+| `GET /api/v1/ai/agent/metrics` | Aggregated agent metrics (`days` query param) |
+| `POST/GET/DELETE /api/v1/ai/agent/sessions/{id}/documents` | Session-scoped knowledge files |
 | `POST /api/v1/ai/agent/run` | **Deprecated** one-shot run (no session store); prefer sessions API |
+
+See [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) (FW-49…53).
+
+---
+
+## Agent observability (FW-49…53)
+
+| ID | Feature | Location |
+|----|---------|----------|
+| FW-49 | Audit metrics + trace API + `AgentTracePanel` | `AiToolAuditStore`, `AgentTraceService`, Web Console |
+| FW-50 | `agent_session_documents`, `search_session_context` | `AgentSessionDocumentService` |
+| FW-51 | Turn graph tab | `AgentTurnGraph.tsx` |
+| FW-52 | `GET /agent/metrics`, `AgentPromptVersions` | `AgentMetricsService`, AI Studio |
+| FW-53 | `PlanDepth.LITE` default | `AgentSpecPlanValidator`, `AgentPlanPromptSection` |
+
+**Ask mode** uses dedicated [`AgentAskPromptBuilder`](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentAskPromptBuilder.java) — no planning pipeline.
+
+Audit columns (migration `V67__ai_tool_audit_metrics.sql`): `latency_ms`, `prompt_tokens`, `completion_tokens`, `turn_id`, `step_no`, `interaction_mode`, `prompt_profile`.
 
 Create session:
 

@@ -1,9 +1,13 @@
 package com.ispf.server.ai.api;
 
 import com.ispf.server.ai.audit.AgentAuditExportService;
+import com.ispf.server.ai.audit.AgentMetricsService;
+import com.ispf.server.ai.audit.AgentTraceService;
 import com.ispf.server.ai.agent.AgentAttachmentValidator;
 import com.ispf.server.ai.agent.AgentInteractionMode;
 import com.ispf.server.ai.agent.AgentSession;
+import com.ispf.server.ai.agent.AgentSessionDocumentRecord;
+import com.ispf.server.ai.agent.AgentSessionDocumentService;
 import com.ispf.server.ai.agent.AgentSessionStore;
 import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.agent.TreeFirstAgentService;
@@ -27,7 +31,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -64,6 +70,9 @@ public class AiController {
     private final ObjectMapper objectMapper;
     private final AgentAttachmentValidator attachmentValidator;
     private final AgentAuditExportService agentAuditExportService;
+    private final AgentTraceService agentTraceService;
+    private final AgentMetricsService agentMetricsService;
+    private final AgentSessionDocumentService agentSessionDocumentService;
     private final ObjectAccessService objectAccessService;
 
     public AiController(
@@ -76,6 +85,9 @@ public class AiController {
             ObjectMapper objectMapper,
             AgentAttachmentValidator attachmentValidator,
             AgentAuditExportService agentAuditExportService,
+            AgentTraceService agentTraceService,
+            AgentMetricsService agentMetricsService,
+            AgentSessionDocumentService agentSessionDocumentService,
             ObjectAccessService objectAccessService
     ) {
         this.toolRegistry = toolRegistry;
@@ -87,6 +99,9 @@ public class AiController {
         this.objectMapper = objectMapper;
         this.attachmentValidator = attachmentValidator;
         this.agentAuditExportService = agentAuditExportService;
+        this.agentTraceService = agentTraceService;
+        this.agentMetricsService = agentMetricsService;
+        this.agentSessionDocumentService = agentSessionDocumentService;
         this.objectAccessService = objectAccessService;
     }
 
@@ -181,6 +196,73 @@ public class AiController {
                     .body(agentAuditExportService.exportCsv(session));
         }
         return ResponseEntity.ok(agentAuditExportService.exportJson(session));
+    }
+
+    @GetMapping("/agent/sessions/{sessionId}/trace")
+    public Map<String, Object> getAgentSessionTrace(
+            Authentication authentication,
+            @PathVariable String sessionId,
+            @RequestParam(name = "turnId", required = false) String turnId
+    ) {
+        AgentSession session = agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        if (turnId == null || turnId.isBlank()) {
+            return agentTraceService.traceAllTurns(session);
+        }
+        return agentTraceService.trace(session, turnId);
+    }
+
+    @GetMapping("/agent/metrics")
+    public Map<String, Object> getAgentMetrics(
+            Authentication authentication,
+            @RequestParam(name = "days", defaultValue = "7") int days
+    ) {
+        objectAccessService.requireAdmin(authentication);
+        return agentMetricsService.metrics(days);
+    }
+
+    @GetMapping("/agent/sessions/{sessionId}/documents")
+    public Map<String, Object> listAgentSessionDocuments(
+            Authentication authentication,
+            @PathVariable String sessionId
+    ) {
+        agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        return Map.of(
+                "sessionId", sessionId,
+                "documents", agentSessionDocumentService.listMetadata(sessionId, 50),
+                "count", agentSessionDocumentService.count(sessionId)
+        );
+    }
+
+    @PostMapping(value = "/agent/sessions/{sessionId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Object> uploadAgentSessionDocument(
+            Authentication authentication,
+            @PathVariable String sessionId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(name = "description", required = false) String description
+    ) throws Exception {
+        agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        AgentSessionDocumentRecord record = agentSessionDocumentService.upload(sessionId, file, description);
+        return Map.of(
+                "status", "OK",
+                "docId", record.docId(),
+                "filename", record.filename(),
+                "byteSize", record.byteSize()
+        );
+    }
+
+    @DeleteMapping("/agent/sessions/{sessionId}/documents/{docId}")
+    public Map<String, Object> deleteAgentSessionDocument(
+            Authentication authentication,
+            @PathVariable String sessionId,
+            @PathVariable String docId
+    ) {
+        agentSessionStore.require(sessionId, actor(authentication))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+        agentSessionDocumentService.delete(sessionId, docId);
+        return Map.of("status", "OK", "docId", docId);
     }
 
     @GetMapping("/agent/sessions/{sessionId}/progress")

@@ -49,6 +49,7 @@ export type MimicActionType =
   | "toggleVariable"
   | "invokeFunction"
   | "navigate"
+  | "setSelection"
   | "toggleLayer"
   | "cycleUnit"
   | "toggleExpand";
@@ -75,6 +76,8 @@ export interface MimicAction {
   dashboardPath?: string;
   mimicPath?: string;
   url?: string;
+  /** setSelection / navigate: JSON map of selection slot → object path. */
+  selectionJson?: string;
   /** toggleLayer: layer id in document.layers. */
   layerId?: string;
   /** cycleUnit: ordered unit keys stored in element.props.unitMode. */

@@ -1,4 +1,4 @@
-package com.ispf.server.bootstrap;
+package com.ispf.server.application.reference.minitec;
 
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingVariableRef;
@@ -15,7 +15,7 @@ import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
-import com.ispf.server.function.MiniTecFunctionHandler;
+import com.ispf.server.application.reference.minitec.MiniTecFunctionScripts;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -84,7 +84,7 @@ public class MiniTecBlueprintBootstrap {
             return;
         }
         BlueprintDefinition current = existing.get();
-        if (hasAllEvents(current, desired)) {
+        if (!needsModelRefresh(current, desired)) {
             return;
         }
         BlueprintEngine.updateBlueprint(new BlueprintDefinition(
@@ -102,6 +102,25 @@ public class MiniTecBlueprintBootstrap {
                 current.createdAt(),
                 Instant.now()
         ));
+    }
+
+    private static boolean needsModelRefresh(BlueprintDefinition current, BlueprintDefinition desired) {
+        if (!hasAllEvents(current, desired)) {
+            return true;
+        }
+        for (BlueprintVariableDefinition variable : desired.variables()) {
+            boolean found = current.variables().stream().anyMatch(v -> v.name().equals(variable.name()));
+            if (!found) {
+                return true;
+            }
+        }
+        for (FunctionDescriptor function : desired.functions()) {
+            boolean found = current.functions().stream().anyMatch(f -> f.name().equals(function.name()));
+            if (!found) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasAllEvents(BlueprintDefinition current, BlueprintDefinition desired) {
@@ -130,6 +149,17 @@ public class MiniTecBlueprintBootstrap {
                 name, desc, group, BOOL, true, writable,
                 DataRecord.single(BOOL, Map.of("value", def))
         );
+    }
+
+    private static BlueprintVariableDefinition strVar(String name, String desc, String group, String def, boolean writable) {
+        return BlueprintVariableDefinition.of(
+                name, desc, group, STR, true, writable,
+                DataRecord.single(STR, Map.of("value", def))
+        );
+    }
+
+    private static BlueprintVariableDefinition equipmentStatusVar() {
+        return strVar("equipmentStatus", "Equipment status (NORMAL/WARNING/ALARM/OFFLINE/MAINTENANCE)", "status", "NORMAL", false);
     }
 
     private static BlueprintVariableDefinition intVar(String name, String desc, String group, int def, boolean writable) {
@@ -193,9 +223,12 @@ public class MiniTecBlueprintBootstrap {
         vars.add(boolVar("protAsymmetry", "Asymmetry protection", "protection", false, false));
         vars.add(boolVar("protFrequency", "Frequency protection", "protection", false, false));
         vars.add(boolVar("protExciter", "Exciter protection", "protection", false, false));
+        vars.add(equipmentStatusVar());
         vars.addAll(driverVars(String.format(GPU_DRIVER_CONFIG_TEMPLATE, "1480", 1)));
 
         List<BlueprintBindingRule> bindings = List.of(
+                BlueprintBindingRule.of("equip-status", "equipmentStatus",
+                        "self.protOverload[\"value\"] == true || self.protFrequency[\"value\"] == true || self.detonation[\"value\"] == true ? \"ALARM\" : (self.manualMode[\"value\"] == true ? \"MAINTENANCE\" : (self.running[\"value\"] == true ? \"NORMAL\" : \"STOPPED\"))"),
                 BlueprintBindingRule.of("prot-overload", "protOverload",
                         "self.activePowerKw[\"value\"] > 1550"),
                 BlueprintBindingRule.of("prot-overvoltage", "protOvervoltage",
@@ -214,11 +247,12 @@ public class MiniTecBlueprintBootstrap {
                 ObjectType.DEVICE,
                 vars,
                 bindings,
-                List.of(boolEvent("gpuProtOverload", "GPU overload protection", EventLevel.ERROR)),
+                List.of(boolEvent("gpuProtOverload", "GPU overload protection", EventLevel.ERROR),
+                        boolEvent("gpuProtOverloadCleared", "GPU overload cleared", EventLevel.INFO)),
                 List.of(
-                        MiniTecFunctionHandler.gpuStartFn(),
-                        MiniTecFunctionHandler.gpuStopFn(),
-                        MiniTecFunctionHandler.gpuSyncFn()
+                        MiniTecFunctionScripts.gpuStartFn(),
+                        MiniTecFunctionScripts.gpuStopFn(),
+                        MiniTecFunctionScripts.gpuSyncFn()
                 )
         );
     }
@@ -240,18 +274,29 @@ public class MiniTecBlueprintBootstrap {
         vars.add(boolVar("cmdValveClose", "Close valve", "control", false, true));
         vars.add(boolVar("cmdPzkReset", "Reset PZK", "control", false, true));
         vars.add(boolVar("cmdGasTrip", "Emergency gas trip", "control", false, true));
+        vars.add(boolVar("cmdSimulateFire", "Simulate fire (training)", "control", false, true));
+        vars.add(boolVar("cmdSimulateGasLeak", "Simulate gas leak (training)", "control", false, true));
+        vars.add(equipmentStatusVar());
         vars.addAll(driverVars(GRPB_DRIVER_CONFIG));
         return model(
                 GRPB_MODEL,
                 "Gas regulating point block",
                 ObjectType.DEVICE,
                 vars,
-                List.of(),
+                List.of(BlueprintBindingRule.of("equip-status", "equipmentStatus",
+                        "self.fireAlarm[\"value\"] == true || self.gasLeak[\"value\"] == true ? \"ALARM\" : (self.pzkTripped[\"value\"] == true ? \"WARNING\" : \"NORMAL\")")),
                 List.of(
                         boolEvent("grpbFire", "GRPB fire alarm", EventLevel.ERROR),
-                        boolEvent("grpbGasLeak", "GRPB gas leak", EventLevel.ERROR)
+                        boolEvent("grpbGasLeak", "GRPB gas leak", EventLevel.ERROR),
+                        boolEvent("grpbFireCleared", "GRPB fire cleared", EventLevel.INFO),
+                        boolEvent("grpbGasLeakCleared", "GRPB gas leak cleared", EventLevel.INFO)
                 ),
-                List.of(MiniTecFunctionHandler.grpbValveFn(), MiniTecFunctionHandler.grpbPzkResetFn())
+                List.of(
+                        MiniTecFunctionScripts.grpbValveFn(),
+                        MiniTecFunctionScripts.grpbPzkResetFn(),
+                        MiniTecFunctionScripts.simulateFireFn(),
+                        MiniTecFunctionScripts.simulateGasLeakFn()
+                )
         );
     }
 
@@ -267,9 +312,17 @@ public class MiniTecBlueprintBootstrap {
         vars.add(boolVar("circuitFault", "Circuit fault", "status", false, false));
         vars.add(boolVar("cmdBreakerClose", "Close breaker", "control", false, true));
         vars.add(boolVar("cmdBreakerOpen", "Open breaker", "control", false, true));
+        vars.add(equipmentStatusVar());
         vars.addAll(driverVars(RUMB_DRIVER_CONFIG));
-        return model(RUMB_MODEL, "Switchgear 10/0.4 kV", ObjectType.DEVICE, vars, List.of(),
-                List.of(MiniTecFunctionHandler.breakerOperateFn()));
+        return model(
+                RUMB_MODEL,
+                "Switchgear 10/0.4 kV",
+                ObjectType.DEVICE,
+                vars,
+                List.of(BlueprintBindingRule.of("equip-status", "equipmentStatus",
+                        "self.emergencyStop[\"value\"] == true || self.circuitFault[\"value\"] == true ? \"ALARM\" : \"NORMAL\"")),
+                List.of(MiniTecFunctionScripts.breakerOperateFn())
+        );
     }
 
     private BlueprintDefinition buildDguModel() {
@@ -280,9 +333,18 @@ public class MiniTecBlueprintBootstrap {
         vars.add(boolVar("batteryCharging", "Battery charging", "status", true, false));
         vars.add(meas("fuelLevelPct", "Fuel level", "telemetry", "%", 85));
         vars.add(meas("coolantTemp", "Coolant temperature", "telemetry", "C", 25));
+        vars.add(meas("activePowerKw", "Active power", "telemetry", "kW", 0));
+        vars.add(equipmentStatusVar());
         vars.addAll(driverVars(DGU_DRIVER_CONFIG));
-        return model(DGU_MODEL, "Diesel generator unit", ObjectType.DEVICE, vars, List.of(),
-                List.of(MiniTecFunctionHandler.dguStartFn(), MiniTecFunctionHandler.dguStopFn()));
+        return model(
+                DGU_MODEL,
+                "Diesel generator unit",
+                ObjectType.DEVICE,
+                vars,
+                List.of(BlueprintBindingRule.of("equip-status", "equipmentStatus",
+                        "self.running[\"value\"] == true ? \"NORMAL\" : \"STOPPED\"")),
+                List.of(MiniTecFunctionScripts.dguStartFn(), MiniTecFunctionScripts.dguStopFn())
+        );
     }
 
     private BlueprintDefinition buildLoadModel() {
@@ -302,9 +364,16 @@ public class MiniTecBlueprintBootstrap {
         vars.add(meas("voltageC", "Voltage C", "telemetry", "V", 230));
         vars.add(meas("loadSetpointPct", "Load setpoint", "control", "%", 35));
         vars.add(boolVar("cmdSetLoad", "Apply load setpoint", "control", false, true));
+        vars.add(equipmentStatusVar());
         vars.addAll(driverVars(LOAD_DRIVER_CONFIG));
-        return model(LOAD_MODEL, "Resistive load module ME-1500-K3", ObjectType.DEVICE, vars, List.of(),
-                List.of(MiniTecFunctionHandler.loadModuleSetLoadFn()));
+        return model(
+                LOAD_MODEL,
+                "Resistive load module ME-1500-K3",
+                ObjectType.DEVICE,
+                vars,
+                List.of(BlueprintBindingRule.of("equip-status", "equipmentStatus", "\"NORMAL\"")),
+                List.of(MiniTecFunctionScripts.loadModuleSetLoadFn())
+        );
     }
 
     private BlueprintDefinition buildHubModel() {
@@ -330,6 +399,11 @@ public class MiniTecBlueprintBootstrap {
         vars.add(boolVar("busFrequencyHigh", "Bus frequency high", "protection", false, false));
         vars.add(boolVar("stationUnderpower", "Station underpower", "protection", false, false));
         vars.add(boolVar("gpuSyncFault", "GPU sync fault", "protection", false, false));
+        vars.add(boolVar("highlightActive", "Mimic highlight banner active", "status", false, false));
+        vars.add(meas("plantAvailabilityPct", "Plant availability", "kpi", "%", 95));
+        vars.add(meas("mtbfHours", "MTBF", "kpi", "h", 720));
+        vars.add(meas("mttrHours", "MTTR", "kpi", "h", 2));
+        vars.add(equipmentStatusVar());
 
         List<BlueprintBindingRule> bindings = List.of(
                 refRule("gen-gpu1", "gpu1Power", MiniTecPaths.GPU_01, "activePowerKw"),
@@ -341,8 +415,14 @@ public class MiniTecBlueprintBootstrap {
                         "self.consumerLoad1Kw[\"value\"] + self.consumerLoad2Kw[\"value\"] + self.consumerLoad3Kw[\"value\"]"),
                 sumRule("load-margin", "loadMarginKw", "4440 - self.totalLoadKw[\"value\"]"),
                 sumRule("bus-freq", "gridFrequencyHz", "refAt(\"" + MiniTecPaths.LOAD_MODULE + "\", frequencyHz)"),
-                sumRule("bus-10kv", "bus10kvVoltage", "10.5"),
-                sumRule("bus-04kv", "bus04kvVoltage", "0.4"),
+                sumRule("bus-10kv", "bus10kvVoltage",
+                        "10.2 + (self.totalGenPowerKw[\"value\"] / 4440.0) * 0.6"),
+                sumRule("bus-04kv", "bus04kvVoltage",
+                        "0.38 + (self.totalGenPowerKw[\"value\"] / 4440.0) * 0.04"),
+                BlueprintBindingRule.of("highlight-active", "highlightActive",
+                        "refAt(\"" + MiniTecPaths.GRPB + "\", fireAlarm)[\"value\"] == true"),
+                BlueprintBindingRule.of("equip-status", "equipmentStatus",
+                        "self.alarmLatched[\"value\"] == true || self.stationUnderpower[\"value\"] == true ? \"ALARM\" : (self.loadMarginKw[\"value\"] < 200 ? \"WARNING\" : \"NORMAL\")"),
                 BlueprintBindingRule.of("bus-overvoltage", "busOvervoltage", "self.bus10kvVoltage[\"value\"] > 11.0"),
                 BlueprintBindingRule.of("bus-undervoltage", "busUndervoltage", "self.bus10kvVoltage[\"value\"] < 9.5"),
                 BlueprintBindingRule.of("bus-freq-low", "busFrequencyLow", "self.gridFrequencyHz[\"value\"] < 49.5"),
@@ -371,9 +451,14 @@ public class MiniTecBlueprintBootstrap {
                 bindings,
                 List.of(
                         boolEvent("busProtUndervoltage", "Bus undervoltage", EventLevel.ERROR),
-                        boolEvent("stationUnderpower", "Station underpower", EventLevel.WARNING)
+                        boolEvent("stationUnderpower", "Station underpower", EventLevel.WARNING),
+                        boolEvent("busProtUndervoltageCleared", "Bus undervoltage cleared", EventLevel.INFO),
+                        boolEvent("stationUnderpowerCleared", "Station underpower cleared", EventLevel.INFO)
                 ),
-                List.of(MiniTecFunctionHandler.acknowledgeAlarmFn())
+                List.of(
+                        MiniTecFunctionScripts.acknowledgeAlarmFn(),
+                        MiniTecFunctionScripts.aggregateDailyJournalFn()
+                )
         );
     }
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useAgentChatOptional } from "../context/AgentChatContext";
+import { useAgentRunStatus } from "../utils/agentRunStatus";
 
 interface AgentChatStatusBarProps {
   workspaceTab: string;
@@ -8,9 +8,8 @@ interface AgentChatStatusBarProps {
 
 export default function AgentChatStatusBar({ workspaceTab, onOpenAiStudio }: AgentChatStatusBarProps) {
   const { t } = useTranslation("shell");
-  const chat = useAgentChatOptional();
-  const busy = chat?.isPending;
-  if (!busy) {
+  const { isPending, pendingUserMessage } = useAgentRunStatus();
+  if (!isPending) {
     return null;
   }
 
@@ -19,7 +18,7 @@ export default function AgentChatStatusBar({ workspaceTab, onOpenAiStudio }: Age
     return null;
   }
 
-  const pendingMessage = chat.pendingUserMessage ?? "";
+  const pendingMessage = pendingUserMessage ?? "";
   const truncated =
     pendingMessage.length > 48 ? `${pendingMessage.slice(0, 48)}…` : pendingMessage;
   const label = pendingMessage

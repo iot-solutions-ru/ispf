@@ -133,6 +133,11 @@
 | FW-32 | Event bus vs sync RPC | NET | 16 | Done |
 | FW-40…43 | AI Layer + Studio | AI | 16 | Done |
 | FW-44…48 | Tree-first agent + tools | AI | 16–17 | Done |
+| FW-49 | Agent trace + audit metrics | AI | 22 | Done |
+| FW-50 | Session knowledge (agent chat docs) | AI | 22 | Done |
+| FW-51 | Turn graph view (Web Console) | AI | 22 | Done |
+| FW-52 | Agent metrics + prompt version | AI | 22 | Done |
+| FW-53 | Plan depth LITE / FULL | AI | 22 | Done |
 | FW-50 | Licensed driver JAR | DRV | 16 | Done |
 | FW-60 | Time & timezone (BL-66…71) | TIME | 21 | Done |
 

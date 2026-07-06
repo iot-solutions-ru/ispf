@@ -16,7 +16,7 @@ import type {
 } from "../../utils/operatorAgentArtifacts";
 import {
   formatPlanQuestionAnswer,
-  isPlanApprovalSuggestion,
+  isExecuteIntentSuggestion,
   localizeCompletenessGaps,
 } from "../../utils/operatorAgentArtifacts";
 
@@ -297,7 +297,7 @@ function PlanPanel({
 }) {
   const hasCompletenessGaps = (planCompletenessGaps?.length ?? 0) > 0;
   const actionableSuggestions = hasCompletenessGaps
-    ? suggestions.filter((item) => !isPlanApprovalSuggestion(item))
+    ? suggestions.filter((item) => !isExecuteIntentSuggestion(item))
     : suggestions;
   const primarySuggestions = actionableSuggestions.filter((item) => item.primary);
   const secondarySuggestions = actionableSuggestions.filter((item) => !item.primary);

@@ -3,12 +3,16 @@ import { useTranslation } from "react-i18next";
 import { downloadAgentAuditCsv } from "../api/ai";
 import { useAgentChat } from "../context/AgentChatContext";
 import type { AgentInteractionMode } from "../api/ai";
-import type { AiAgentStep } from "../api/ai";
 import AgentChatArtifacts, { AgentStarterSuggestions } from "./agent/AgentChatArtifacts";
 import AgentChatComposeAttachments, {
   AgentMessageAttachmentPreview,
 } from "./agent/AgentChatComposeAttachments";
-
+import { AgentChatMessageBody } from "../utils/agentChatMarkdown";
+import AgentSessionKnowledgePanel from "./agent/AgentSessionKnowledgePanel";
+import { AgentRunDetails } from "./agent/AgentRunDetails";
+import {
+  type AgentChatAttachment,
+} from "../utils/agentChatAttachments";
 const CHAT_INPUT_MAX_HEIGHT_PX = 320;
 
 function resizeChatInput(textarea: HTMLTextAreaElement | null) {
@@ -35,13 +39,6 @@ function formatChatDate(iso: string): string {
   }
 }
 
-function dashboardLink(path: string | undefined): string | null {
-  if (!path) {
-    return null;
-  }
-  return `/?path=${encodeURIComponent(path)}`;
-}
-
 function AgentModeBadge({ mode }: { mode: AgentInteractionMode }) {
   const { t } = useTranslation("ai");
   return (
@@ -57,6 +54,9 @@ function AgentModeBadge({ mode }: { mode: AgentInteractionMode }) {
 export default function AiAgentChat() {
   const { t } = useTranslation("ai");
   const [auditExportBusy, setAuditExportBusy] = useState(false);
+  const [input, setInput] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<AgentChatAttachment[]>([]);
+  const [attachmentRejectHint, setAttachmentRejectHint] = useState<string | null>(null);
   const {
     provider,
     agentApiReady,
@@ -64,8 +64,6 @@ export default function AiAgentChat() {
     chatIndex,
     activeSessionId,
     messages,
-    input,
-    setInput,
     loadingSession,
     isPending,
     liveSteps,
@@ -77,19 +75,32 @@ export default function AiAgentChat() {
     cancelRun,
     interactionMode,
     setInteractionMode,
-    pendingAttachments,
-    setPendingAttachments,
-    attachmentRejectHint,
-    clearAttachmentRejectHint,
-    rejectAttachment,
   } = useAgentChat();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const lastScrolledToolCountRef = useRef(0);
+  const prevMessageCountRef = useRef(0);
 
-  const syncInputHeight = useCallback(() => {
-    resizeChatInput(inputRef.current);
+  const clearAttachmentRejectHint = useCallback(() => {
+    setAttachmentRejectHint(null);
   }, []);
 
+  const rejectAttachment = useCallback((reason: "unsupported" | "vision-not-supported") => {
+    setAttachmentRejectHint(
+      reason === "vision-not-supported"
+        ? t("agent.attachments.visionNotSupported")
+        : t("agent.attachments.unsupported")
+    );
+  }, [t]);
+
+  const submitMessage = useCallback(
+    (text: string) => {
+      const attachments = pendingAttachments;
+      setPendingAttachments([]);
+      void sendMessage(text, { attachments });
+    },
+    [pendingAttachments, sendMessage]
+  );
   const appendToInput = useCallback(
     (text: string) => {
       const trimmed = text.trim();
@@ -107,14 +118,24 @@ export default function AiAgentChat() {
   );
 
   useEffect(() => {
-    syncInputHeight();
-  }, [input, syncInputHeight]);
+    resizeChatInput(inputRef.current);
+  }, [input]);
 
   useEffect(() => {
-    if (isPending) {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isPending) {
+      lastScrolledToolCountRef.current = 0;
+      prevMessageCountRef.current = messages.length;
+      return;
     }
-  }, [isPending, liveSteps.length, messages.length]);
+    const toolStepCount = liveSteps.filter((step) => step.type === "tool").length;
+    const messagesChanged = messages.length !== prevMessageCountRef.current;
+    if (!messagesChanged && toolStepCount === lastScrolledToolCountRef.current) {
+      return;
+    }
+    lastScrolledToolCountRef.current = toolStepCount;
+    prevMessageCountRef.current = messages.length;
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [isPending, liveSteps, messages.length]);
 
   if (loadingSession) {
     return <p className="op-muted">{t("agent.loadingChat")}</p>;
@@ -147,7 +168,11 @@ export default function AiAgentChat() {
           type="button"
           className="btn primary ai-agent-new-chat"
           disabled={sending || !chatEnabled}
-          onClick={() => void startNewChat()}
+          onClick={() => {
+            setInput("");
+            setPendingAttachments([]);
+            void startNewChat();
+          }}
           title={t("agent.newChatTitle")}
         >
           <span className="ai-agent-new-chat-label">{t("agent.newChat")}</span>
@@ -207,6 +232,7 @@ export default function AiAgentChat() {
             );
           })}
         </div>
+        {activeSessionId && <AgentSessionKnowledgePanel sessionId={activeSessionId} />}
         {isPending && (
           <button
             type="button"
@@ -234,7 +260,7 @@ export default function AiAgentChat() {
             type="button"
             className="btn primary small"
             disabled={isPending}
-            onClick={() => void sendMessage(t("agent.approveMessage"))}
+            onClick={() => void submitMessage(t("agent.approveMessage"))}
           >
             {t("agent.approveAction")}
           </button>
@@ -253,7 +279,7 @@ export default function AiAgentChat() {
                 "agent.suggest.scada",
                 "agent.suggest.bundle",
               ]}
-              onPick={(text) => void sendMessage(text)}
+              onPick={(text) => void submitMessage(text)}
             />
           )}
           {messages.map((message) => (
@@ -266,7 +292,13 @@ export default function AiAgentChat() {
               {message.role === "user" && message.interactionMode && (
                 <AgentModeBadge mode={message.interactionMode} />
               )}
-              <div className="ai-agent-bubble-text">{message.text}</div>
+              <div className="ai-agent-bubble-text">
+                {message.role === "agent" ? (
+                  <AgentChatMessageBody text={message.text} />
+                ) : (
+                  message.text
+                )}
+              </div>
               {message.role === "user" && (
                 <AgentMessageAttachmentPreview attachments={message.attachments} />
               )}
@@ -274,7 +306,7 @@ export default function AiAgentChat() {
                 <AgentChatArtifacts
                   result={message.result}
                   i18nNs="ai"
-                  onSuggestMessage={(text) => void sendMessage(text)}
+                  onSuggestMessage={(text) => void submitMessage(text)}
                   onAppendToInput={appendToInput}
                 />
               )}
@@ -283,6 +315,8 @@ export default function AiAgentChat() {
                   steps={message.steps}
                   status={message.status}
                   result={message.result}
+                  sessionId={activeSessionId}
+                  turnId={message.turnId}
                 />
               )}
             </div>
@@ -319,9 +353,10 @@ export default function AiAgentChat() {
           className="ai-agent-chat-compose"
           onSubmit={(e) => {
             e.preventDefault();
-            void sendMessage(input);
-          }}
-        >
+            const text = input;
+            setInput("");
+            void submitMessage(text);
+          }}        >
           <label className={`ai-agent-mode-select ai-agent-mode-select--compose ai-agent-mode-select--${interactionMode}`}>
             <span className="ai-agent-mode-label">{t("agent.mode.label")}</span>
             <select
@@ -382,120 +417,5 @@ export default function AiAgentChat() {
         </form>
       </div>
     </div>
-  );
-}
-
-function stepStatusBadge(status: string | undefined): React.ReactNode {
-  if (!status) {
-    return null;
-  }
-  const ok = status === "OK" || status === "SUCCESS";
-  const running = status === "RUNNING";
-  const cancelled = status === "CANCELLED" || status === "STOPPED";
-  const badgeClass = ok ? "ok" : running || cancelled ? "hist" : "danger";
-  const label = ok ? "OK" : running ? "…" : status;
-  return <span className={`badge ${badgeClass}`}>{label}</span>;
-}
-
-export function AgentRunDetails({
-  steps,
-  status,
-  result,
-  open = false,
-  placeholder = false,
-}: {
-  steps: AiAgentStep[];
-  status?: string;
-  result?: Record<string, unknown>;
-  open?: boolean;
-  placeholder?: boolean;
-}) {
-  const { t } = useTranslation("ai");
-  const devicePath = typeof result?.devicePath === "string" ? result.devicePath : undefined;
-  const dashboardPath =
-    typeof result?.dashboardPath === "string" ? result.dashboardPath : undefined;
-  const toolSteps = steps.filter((s) => s.type === "tool");
-  const diagnosticSteps = steps.filter((s) => s.type === "error" || s.type === "guard");
-  const isRunning = status === "RUNNING";
-  const detailCount = toolSteps.length + diagnosticSteps.length;
-
-  return (
-    <details className="ai-agent-run-details" open={open || undefined}>
-      <summary>
-        {isRunning
-          ? t("agent.details.running")
-          : status === "OK"
-            ? t("agent.details.ok")
-            : t("agent.details.error")}
-        {detailCount > 0 ? ` (${detailCount})` : ""}
-      </summary>
-      {placeholder && toolSteps.length === 0 && diagnosticSteps.length === 0 && (
-        <p className="op-muted ai-agent-step-placeholder">{t("agent.details.waiting")}</p>
-      )}
-      {diagnosticSteps.length > 0 && (
-        <ul className="ai-agent-diagnostic-list">
-          {diagnosticSteps.map((step) => (
-            <li key={step.step} className="ai-agent-diagnostic-item">
-              <strong>
-                {step.label
-                  ?? (step.type === "guard" ? t("agent.details.guard") : t("agent.details.parseError"))}
-              </strong>
-              {step.truncated && (
-                <span className="badge danger"> {t("agent.details.truncated")}</span>
-              )}
-              {step.error && <p className="ai-agent-step-error">{step.error}</p>}
-              {step.hint && <p className="hint">{step.hint}</p>}
-              {step.rawPreview && (
-                <details className="ai-agent-raw-preview">
-                  <summary>{t("agent.details.rawPreview")}</summary>
-                  <pre>{step.rawPreview}</pre>
-                </details>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {toolSteps.length > 0 && (
-        <ol className="ai-agent-step-list">
-          {toolSteps.map((step) => (
-            <li key={step.step}>
-              <code>{step.tool}</code>
-              {" "}
-              {step.label || ""}
-              {" "}
-              {stepStatusBadge(
-                step.result?.status === "ERROR"
-                  ? "ERROR"
-                  : step.result?.status === "OK"
-                    ? "OK"
-                    : isRunning
-                      ? "RUNNING"
-                      : undefined
-              )}
-              {step.result?.status === "ERROR" && (
-                <span className="ai-agent-step-error">
-                  {" "}
-                  — {String(step.result.error ?? t("agent.stepError"))}
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
-      )}
-      {!isRunning && (
-        <div className="ai-agent-run-links">
-          {devicePath && (
-            <a className="btn small" href={dashboardLink(devicePath) ?? "#"}>
-              {t("agent.openDevice")}
-            </a>
-          )}
-          {dashboardPath && (
-            <a className="btn small" href={dashboardLink(dashboardPath) ?? "#"}>
-              {t("agent.openDashboard")}
-            </a>
-          )}
-        </div>
-      )}
-    </details>
   );
 }

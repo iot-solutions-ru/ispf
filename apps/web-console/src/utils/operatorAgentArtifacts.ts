@@ -1,15 +1,38 @@
-/** True when suggestion is the plan-approval primary action (must be hidden while gaps remain). */
+/** True when suggestion approves the plan (hide duplicates while gaps remain). */
 export function isPlanApprovalSuggestion(item: OperatorAgentSuggestion | undefined): boolean {
-  if (!item?.primary) {
+  if (!item) {
     return false;
   }
   const label = (item.label ?? "").toLowerCase();
   const message = (item.message ?? "").toLowerCase();
+  if (message.includes("утверждаю план") || message.includes("approve the plan")) {
+    return true;
+  }
+  if (!item.primary) {
+    return false;
+  }
+  return label.includes("утверд") || label.includes("approve");
+}
+
+/** True when suggestion tries to start execution before the plan is approved. */
+export function isExecuteIntentSuggestion(item: OperatorAgentSuggestion | undefined): boolean {
+  const label = (item?.label ?? "").toLowerCase();
+  const message = (item?.message ?? "").toLowerCase().trim();
+  if (!label && !message) {
+    return false;
+  }
+  if (label.includes("утверд") || label.includes("approve")) {
+    return false;
+  }
   return (
-    label.includes("утверд") ||
-    label.includes("approve") ||
-    message.includes("утверждаю план") ||
-    message.includes("approve the plan")
+    label.includes("выполн") ||
+    label === "execute" ||
+    message === "выполнить" ||
+    message === "выполни" ||
+    message === "выполняй" ||
+    message === "execute" ||
+    message.startsWith("выполнить ") ||
+    message.startsWith("execute ")
   );
 }
 
@@ -64,6 +87,20 @@ export function localizeCompletenessGaps(
     );
     return translated;
   });
+}
+
+/** User message for «Refine plan» — same text as the completeness gaps block in the plan panel. */
+export function formatRefinePlanMessage(
+  gaps: string[] | undefined,
+  language: string,
+  header: string,
+  fallbackMessage: string
+): string {
+  const localized = localizeCompletenessGaps(gaps, language);
+  if (!localized?.length) {
+    return fallbackMessage;
+  }
+  return [header, ...localized].join("\n");
 }
 
 export interface OperatorAgentLink {

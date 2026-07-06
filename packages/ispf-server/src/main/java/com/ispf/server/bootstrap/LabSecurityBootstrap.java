@@ -45,7 +45,7 @@ public class LabSecurityBootstrap {
     @Order(Ordered.LOWEST_PRECEDENCE - 5)
     @Transactional
     public void onReady() {
-        if (!bootstrapProperties.isFixturesEnabled()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
             removeLabFixtureUsersIfPresent();
             return;
         }

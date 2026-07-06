@@ -20,7 +20,6 @@ import {
   fetchAiProviderStatus,
   fetchNewAgentTurnWithRetry,
   sendAgentMessage,
-  subscribeAgentRunProgress,
   waitForAgentTurnCompletion,
   isAgentAcceptedResponse,
   isAgentTurnResultDeliveryError,
@@ -53,6 +52,13 @@ import {
   revokeAttachmentPreviews,
   type AgentChatAttachment,
 } from "../utils/agentChatAttachments";
+import { publishAgentRunStatus } from "../utils/agentRunStatus";
+import {
+  formatRefinePlanMessage,
+  isExecuteIntentSuggestion,
+  isPlanApprovalSuggestion,
+  type OperatorAgentSuggestion,
+} from "../utils/operatorAgentArtifacts";
 
 export interface ChatMessage {
   id: string;
@@ -63,6 +69,7 @@ export interface ChatMessage {
   steps?: AiAgentStep[];
   result?: Record<string, unknown>;
   status?: string;
+  turnId?: string;
 }
 
 interface AgentChatContextValue {
@@ -76,13 +83,6 @@ interface AgentChatContextValue {
   chatIndex: AgentChatIndex;
   activeSessionId: string | null;
   messages: ChatMessage[];
-  input: string;
-  setInput: (value: string) => void;
-  pendingAttachments: AgentChatAttachment[];
-  setPendingAttachments: (value: AgentChatAttachment[]) => void;
-  attachmentRejectHint: string | null;
-  clearAttachmentRejectHint: () => void;
-  rejectAttachment: (reason: "unsupported" | "vision-not-supported") => void;
   loadingSession: boolean;
   isPending: boolean;
   liveSteps: AiAgentStep[];
@@ -92,7 +92,7 @@ interface AgentChatContextValue {
   startNewChat: () => Promise<void>;
   switchSession: (sessionId: string) => Promise<void>;
   deleteChat: (sessionId: string) => Promise<void>;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, options?: { attachments?: AgentChatAttachment[] }) => Promise<void>;
   cancelRun: () => Promise<void>;
   clearLocalChatIndex: () => void;
   interactionMode: AgentInteractionMode;
@@ -122,37 +122,17 @@ function turnsToMessages(turns: AiAgentTurn[], sessionPlanState?: AgentPlanState
       steps: turn.steps,
       result: mergeTurnResult(turn, sessionPlanState),
       status: turn.status,
+      turnId: turn.turnId,
     });
   }
   return messages;
 }
-
-const PLAN_APPROVAL_MESSAGE = "Утверждаю план, начинай выполнение";
 
 function normalizeStringList(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
   }
   return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-}
-
-function isPlanApprovalSuggestion(item: unknown): boolean {
-  if (!item || typeof item !== "object") {
-    return false;
-  }
-  const suggestion = item as { primary?: boolean; label?: string; message?: string };
-  if (!suggestion.primary) {
-    return false;
-  }
-  const label = (suggestion.label ?? "").toLowerCase();
-  const message = (suggestion.message ?? "").toLowerCase();
-  return (
-    label.includes("утверд") ||
-    label.includes("approve") ||
-    message.includes("утверждаю план") ||
-    message.includes("approve the plan") ||
-    message === PLAN_APPROVAL_MESSAGE.toLowerCase()
-  );
 }
 
 function isTurnResultDeliveryError(error: unknown): boolean {
@@ -185,40 +165,45 @@ function mergeAgentResult(data: AiAgentChatResponse): Record<string, unknown> {
   const suggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
   const planCompletenessGaps = normalizeStringList(result.planCompletenessGaps);
   const hasCompletenessGaps = planCompletenessGaps.length > 0;
-  const filteredSuggestions = suggestions.filter((item) => !isPlanApprovalSuggestion(item));
+  const filteredSuggestions = suggestions.filter(
+    (item) =>
+      !isPlanApprovalSuggestion(item as OperatorAgentSuggestion) &&
+      !(hasCompletenessGaps && isExecuteIntentSuggestion(item as OperatorAgentSuggestion))
+  );
   const hasPrimarySuggestion = filteredSuggestions.some(
     (item) => item && typeof item === "object" && (item as { primary?: boolean }).primary
   );
   if (awaitingApproval && (result.plan || sessionPlan)) {
+    const approveSuggestion = {
+      label: hasCompletenessGaps
+        ? i18n.t("agent.approveAction", { ns: "ai" })
+        : i18n.t("agent.plan.approveFullPlan", { ns: "ai" }),
+      message: i18n.t("agent.plan.approveMessage", { ns: "ai" }),
+      primary: !hasCompletenessGaps,
+    };
+    const withoutApproval = filteredSuggestions.filter(
+      (item) => !isPlanApprovalSuggestion(item as OperatorAgentSuggestion)
+    );
     if (hasCompletenessGaps) {
-      const hasRefinePrimary = filteredSuggestions.some(
-        (item) =>
-          item &&
-          typeof item === "object" &&
-          (item as { primary?: boolean }).primary &&
-          !isPlanApprovalSuggestion(item)
-      );
-      result.suggestions = hasRefinePrimary
-        ? filteredSuggestions
-        : [
-            {
-              label: i18n.t("agent.plan.refinePlan", { ns: "ai" }),
-              message: i18n.t("agent.plan.refinePlanMessage", { ns: "ai" }),
-              primary: true,
-            },
-            ...filteredSuggestions.filter(
-              (item) => !(item && typeof item === "object" && (item as { primary?: boolean }).primary)
-            ),
-          ];
-    } else if (!hasPrimarySuggestion) {
+      const refineSuggestion = {
+        label: i18n.t("agent.plan.refinePlan", { ns: "ai" }),
+        message: formatRefinePlanMessage(
+          planCompletenessGaps,
+          i18n.language,
+          i18n.t("agent.plan.completenessGaps", { ns: "ai" }),
+          i18n.t("agent.plan.refinePlanMessage", { ns: "ai" })
+        ),
+        primary: true,
+      };
       result.suggestions = [
-        {
-          label: i18n.t("agent.plan.approveFullPlan", { ns: "ai" }),
-          message: i18n.t("agent.plan.approveMessage", { ns: "ai" }),
-          primary: true,
-        },
-        ...filteredSuggestions,
+        refineSuggestion,
+        approveSuggestion,
+        ...withoutApproval.filter(
+          (item) => !(item && typeof item === "object" && (item as { primary?: boolean }).primary)
+        ),
       ];
+    } else if (!hasPrimarySuggestion) {
+      result.suggestions = [approveSuggestion, ...withoutApproval];
     } else {
       result.suggestions = filteredSuggestions;
     }
@@ -267,11 +252,28 @@ function resolveRootPath(): string {
   return rootPath || "root";
 }
 
+function agentTurnMutatesObjectTree(result?: Record<string, unknown>): boolean {
+  if (!result) {
+    return false;
+  }
+  const keys = [
+    "devicePath",
+    "dashboardPath",
+    "mimicPath",
+    "workflowPath",
+    "objectPath",
+    "createdPath",
+    "deletedPath",
+    "bundlePath",
+  ];
+  return keys.some((key) => typeof result[key] === "string" && result[key] !== "");
+}
+
 export function AgentChatProvider({
-  children,
+  children = null,
   enabled,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   enabled: boolean;
 }) {
   const queryClient = useQueryClient();
@@ -279,9 +281,6 @@ export function AgentChatProvider({
   const [chatIndex, setChatIndex] = useState<AgentChatIndex>(() => loadAgentChatIndex());
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [pendingAttachments, setPendingAttachments] = useState<AgentChatAttachment[]>([]);
-  const [attachmentRejectHint, setAttachmentRejectHint] = useState<string | null>(null);
   const [loadingSession, setLoadingSession] = useState(enabled);
   const [isPending, setIsPending] = useState(false);
   const [liveSteps, setLiveSteps] = useState<AiAgentStep[]>([]);
@@ -364,7 +363,13 @@ export function AgentChatProvider({
 
   const handleAgentResponse = useCallback(
     (data: AiAgentChatResponse) => {
-      queryClient.invalidateQueries({ queryKey: ["objects"] });
+      const mergedResult = mergeAgentResult(data);
+      if (agentTurnMutatesObjectTree(mergedResult)) {
+        queryClient.invalidateQueries({ queryKey: ["objects"] });
+      }
+      if (typeof mergedResult.dashboardPath === "string" && mergedResult.dashboardPath) {
+        queryClient.invalidateQueries({ queryKey: ["dashboard", mergedResult.dashboardPath] });
+      }
       setLiveSteps([]);
       setLivePlanPhase(undefined);
       setMessages((prev) => [...prev, responseToAgentMessage(data)]);
@@ -525,91 +530,6 @@ export function AgentChatProvider({
     };
   }, [activeSessionId, deliverAgentTurn, enabled, handleAgentError, isPending, tryRecoverCompletedTurn]);
 
-  useEffect(() => {
-    if (!isPending || !activeSessionId) {
-      return;
-    }
-    let cancelled = false;
-
-    const pollSessionTurn = async () => {
-      if (cancelled || turnDeliveredRef.current) {
-        return;
-      }
-      try {
-        const recovered = await fetchNewAgentTurnWithRetry(
-          activeSessionId,
-          baselineTurnsAtSendRef.current,
-          8,
-          400
-        );
-        if (recovered && !cancelled && !turnDeliveredRef.current) {
-          deliverAgentTurn(recovered);
-          setIsPending(false);
-          setLivePlanPhase(undefined);
-        }
-      } catch {
-        // ignore transient fetch errors
-      }
-    };
-
-    const sessionPollTimer = window.setInterval(() => void pollSessionTurn(), 2000);
-    void pollSessionTurn();
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(sessionPollTimer);
-    };
-  }, [activeSessionId, deliverAgentTurn, isPending]);
-
-  useEffect(() => {
-    if (!isPending || !activeSessionId) {
-      return;
-    }
-    let cancelled = false;
-    let pollTimer: number | undefined;
-    let unsubscribe: (() => void) | undefined;
-
-    const applyProgress = (progress: {
-      running: boolean;
-      steps?: AiAgentStep[];
-      planState?: AgentPlanState;
-    }) => {
-      if (cancelled) {
-        return;
-      }
-      // Keep listening while isPending — an early { running: false } arrives before POST /messages
-      // registers the run and must not tear down the subscription.
-      if (progress.steps) {
-        setLiveSteps(progress.steps);
-      }
-      if (progress.planState?.planPhase) {
-        setLivePlanPhase(progress.planState.planPhase);
-      }
-    };
-
-    const poll = async () => {
-      try {
-        const progress = await fetchAgentRunProgress(activeSessionId);
-        applyProgress(progress);
-      } catch {
-        // ignore transient poll errors while run is in flight
-      }
-    };
-
-    void poll();
-    pollTimer = window.setInterval(() => void poll(), 1000);
-
-    unsubscribe = subscribeAgentRunProgress(activeSessionId, applyProgress);
-
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-      if (pollTimer !== undefined) {
-        window.clearInterval(pollTimer);
-      }
-    };
-  }, [activeSessionId, isPending]);
-
   const startNewChat = useCallback(async () => {
     pendingMessageRef.current = null;
     setIsPending(false);
@@ -618,7 +538,6 @@ export function AgentChatProvider({
     registerSession(session, loadAgentChatIndex(), session.sessionId);
     turnCountRef.current = 0;
     setMessages([]);
-    setInput("");
   }, [registerSession, interactionMode]);
 
   const switchSession = useCallback(
@@ -662,15 +581,14 @@ export function AgentChatProvider({
   );
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, options?: { attachments?: AgentChatAttachment[] }) => {
       const trimmed = text.trim();
-      const attachmentsToSend = pendingAttachments;
+      const attachmentsToSend = options?.attachments ?? [];
       if ((!trimmed && attachmentsToSend.length === 0) || isPending) {
         return;
       }
 
       pendingMessageRef.current = trimmed;
-      setInput("");
       setLiveSteps([]);
       setLivePlanPhase(interactionMode === "plan" ? "planning" : undefined);
       const attachmentMeta = attachmentsToSend.map((item) => ({
@@ -689,7 +607,6 @@ export function AgentChatProvider({
           interactionMode,
         },
       ]);
-      setPendingAttachments([]);
       revokeAttachmentPreviews(attachmentsToSend);
 
       try {
@@ -778,23 +695,10 @@ export function AgentChatProvider({
       handleAgentError,
       interactionMode,
       isPending,
-      pendingAttachments,
       registerSession,
       tryRecoverCompletedTurn,
     ]
   );
-
-  const clearAttachmentRejectHint = useCallback(() => {
-    setAttachmentRejectHint(null);
-  }, []);
-
-  const rejectAttachment = useCallback((reason: "unsupported" | "vision-not-supported") => {
-    setAttachmentRejectHint(
-      reason === "vision-not-supported"
-        ? i18n.t("agent.attachments.visionNotSupported", { ns: "ai" })
-        : i18n.t("agent.attachments.unsupported", { ns: "ai" })
-    );
-  }, []);
 
   const cancelRun = useCallback(async () => {
     const sessionId = activeSessionIdRef.current;
@@ -823,6 +727,19 @@ export function AgentChatProvider({
 
   const pendingUserMessage = isPending ? pendingMessageRef.current : null;
 
+  useEffect(() => {
+    publishAgentRunStatus({
+      isPending,
+      pendingUserMessage,
+    });
+  }, [isPending, pendingUserMessage]);
+
+  useEffect(() => {
+    if (!enabled) {
+      publishAgentRunStatus({ isPending: false, pendingUserMessage: null });
+    }
+  }, [enabled]);
+
   const value = useMemo<AgentChatContextValue>(
     () => ({
       provider: providerQuery.data,
@@ -835,13 +752,6 @@ export function AgentChatProvider({
       chatIndex,
       activeSessionId,
       messages,
-      input,
-      setInput,
-      pendingAttachments,
-      setPendingAttachments,
-      attachmentRejectHint,
-      clearAttachmentRejectHint,
-      rejectAttachment,
       loadingSession,
       isPending,
       liveSteps,
@@ -868,11 +778,6 @@ export function AgentChatProvider({
       chatIndex,
       activeSessionId,
       messages,
-      input,
-      pendingAttachments,
-      attachmentRejectHint,
-      clearAttachmentRejectHint,
-      rejectAttachment,
       loadingSession,
       isPending,
       liveSteps,

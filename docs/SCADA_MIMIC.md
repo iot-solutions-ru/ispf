@@ -85,10 +85,49 @@ Only **version 2** is supported. Legacy v1 documents are normalized to v2 on loa
 | `rotation` | `0` \| `90` \| `180` \| `270` |
 | `scale` | Optional multiplier; editor resize writes `props.width/height` and sets `scale` to `1` |
 | `bindings` | Map binding key → `MimicBinding` |
+| `actions` | Operator click handlers |
 | `formatRules` | Conditional styling by binding value |
 | `labels` | Text labels on symbol |
-| `actions` | Operator click handlers |
+| `tooltip` | Hover text (recommended actions, alarm hints) |
 | `props` | Symbol-specific props (see below) |
+
+### Mimic actions (`actions[]`)
+
+| `type` | Fields | Runtime behavior |
+|--------|--------|------------------|
+| `toggleVariable` | `objectPath`, `variableName`, optional `value` | Flip or set a boolean/command variable |
+| `invokeFunction` | `objectPath`, `functionName`, optional `paramsJson` | Call object function |
+| `navigate` | `dashboardPath`, optional `selectionJson` | Open another dashboard; optional `{"equipment":"..."}` seeds session selection |
+| `setSelection` | `selectionKey` + `objectPath`, **or** `selectionJson` | Stay on current HMI; update dashboard session selection (e.g. equipment card drill-down) |
+| `pulse` (function) | `sourceType: "pulse"`, `sourceBody: {"variable":"cmdStart"}` | Platform handler writes boolean command variable on invoke |
+| `toggleLayer` | `layerId` | Show/hide mimic layer |
+| `toggleExpand` | `elementId` | Expand/collapse symbol group |
+| `cycleUnit` | `bindingKey`, `units[]` | Cycle displayed engineering unit |
+
+**Integrated operator HMI (mini-TEC):** bind GPU/GRPB clicks to `setSelection` with `selectionKey: "equipment"` so the right-hand card panel updates without leaving `mini-tec-hmi`. Use `navigate` only when opening a separate detail dashboard.
+
+Example `setSelection`:
+
+```json
+{
+  "id": "sel-gpu2",
+  "type": "setSelection",
+  "selectionKey": "equipment",
+  "objectPath": "root.platform.devices.mini-tec-plant.gpu-02"
+}
+```
+
+Or multiple slots via `selectionJson`:
+
+```json
+{
+  "id": "sel-hub",
+  "type": "setSelection",
+  "selectionJson": "{\"equipment\":\"root.platform.devices.mini-tec-plant.station-hub\"}"
+}
+```
+
+**PNG export:** operator mimic widget toolbar → «Export PNG» (`ScadaMimicWidgetView`).
 
 **Common `props` keys (editor):**
 
@@ -151,7 +190,8 @@ Overview (RU): [SCADA.md § Редактор](SCADA.md#редактор-мнем
 |------|-------|-----------|-------|
 | Tank farm | `root.platform.mimics.tank-farm-demo` | `root.platform.dashboards.tank-farm-hmi` | `tank-farm-demo` |
 | Pipeline SCADA (РП) | `root.platform.mimics.pipeline-rp` | `root.platform.dashboards.pipeline-scada-hmi` | `pipeline-scada` |
-| Mini-TEC SLD | `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-single-line` | — |
+| Mini-TEC SLD | `root.platform.mimics.mini-tec-single-line` | `root.platform.dashboards.mini-tec-hmi` (default operator) | `mini-tec` |
+| Mini-TEC zones | `mini-tec-zone-gas`, `mini-tec-zone-electrical` | tabs on `mini-tec-hmi` | `mini-tec` |
 
 Devices (tank farm): `root.platform.devices.tank-farm-demo.tank-11` … `tank-24`, `manifold-hub`.
 Virtual driver profiles: `tank-farm-tank`, `tank-farm-hub`.

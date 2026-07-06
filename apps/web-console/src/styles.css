@@ -10288,6 +10288,55 @@ body.scada-mimic-editor-open {
   border: 1px solid rgba(110, 118, 129, 0.25);
 }
 
+.ai-agent-md {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.ai-agent-md-paragraph {
+  margin: 0;
+}
+
+.ai-agent-md-heading {
+  margin: 0.15rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: var(--text, #e6edf3);
+}
+
+.ai-agent-md-list {
+  margin: 0;
+  padding-left: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ai-agent-md-list li {
+  padding-left: 0.15rem;
+}
+
+.ai-agent-md-list li::marker {
+  font-weight: 600;
+  color: var(--text-muted, #8b949e);
+}
+
+.ai-agent-md-code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  font-size: 0.86em;
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(110, 118, 129, 0.2);
+  border: 1px solid rgba(110, 118, 129, 0.28);
+  word-break: break-word;
+}
+
+.ai-agent-bubble.agent .ai-agent-md strong {
+  font-weight: 650;
+  color: var(--text, #e6edf3);
+}
+
 .ai-agent-tools ul {
   margin: 0.5rem 0 0;
   padding-left: 1.25rem;
@@ -10340,6 +10389,116 @@ body.scada-mimic-editor-open {
 .ai-agent-run-details {
   margin-top: 0.5rem;
   font-size: 0.9rem;
+}
+
+.ai-agent-details-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.ai-agent-details-tabs button {
+  font-size: 0.82rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ai-agent-details-tabs button.active {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: rgba(88, 166, 255, 0.45);
+}
+
+.ai-agent-trace-panel {
+  margin-top: 0.35rem;
+  overflow-x: auto;
+}
+
+.ai-agent-trace-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.ai-agent-trace-table th,
+.ai-agent-trace-table td {
+  padding: 0.35rem 0.45rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.ai-agent-turn-graph {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0;
+}
+
+.ai-agent-turn-graph-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ai-agent-turn-graph-node {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+}
+
+.ai-agent-turn-graph-arrow {
+  opacity: 0.55;
+}
+
+.ai-agent-knowledge-panel {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.ai-agent-knowledge-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.ai-agent-knowledge-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.ai-agent-metrics-panel {
+  margin: 0.75rem 0 1rem;
+}
+
+.ai-agent-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ai-agent-metrics-card {
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.ai-agent-metrics-label {
+  display: block;
+  font-size: 0.78rem;
+  opacity: 0.75;
 }
 
 .ai-agent-step-list {
@@ -10414,8 +10573,10 @@ body.scada-mimic-editor-open {
   flex-direction: column;
   border: 1px solid var(--border, #30363d);
   border-radius: 12px;
-  background: var(--panel-bg, #161b22);
+  background: var(--surface-elevated, var(--surface, #161b22));
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  isolation: isolate;
+  overflow: hidden;
 }
 
 .operator-agent-drawer-head {
@@ -10424,6 +10585,7 @@ body.scada-mimic-editor-open {
   gap: 0.75rem;
   padding: 0.75rem 0.9rem;
   border-bottom: 1px solid var(--border, #30363d);
+  background: var(--surface-elevated, var(--surface, #161b22));
 }
 
 .operator-agent-drawer-sub {
@@ -10435,6 +10597,7 @@ body.scada-mimic-editor-open {
   flex: 1;
   overflow: auto;
   padding: 0.75rem;
+  background: var(--surface-elevated, var(--surface, #161b22));
 }
 
 .operator-agent-drawer-compose {
@@ -10443,12 +10606,17 @@ body.scada-mimic-editor-open {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  background: var(--surface-elevated, var(--surface, #161b22));
 }
 
 .operator-agent-drawer-compose textarea {
   width: 100%;
   resize: vertical;
   min-height: 2.5rem;
+  background: var(--surface-2, #21262d);
+  color: var(--text);
+  border: 1px solid var(--border, #30363d);
+  border-radius: 8px;
 }
 
 .operator-agent-drawer-actions {

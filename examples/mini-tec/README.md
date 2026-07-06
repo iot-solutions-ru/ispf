@@ -1,14 +1,44 @@
 # Мини-ТЭЦ (эталон) на ISPF
 
-Эталонный цифровой двойник АСУ ТП: 3×ГПУ, ГРПБ, РУМБ 10/0,4 кВ, ДГУ, нагрузочный модуль, станционный hub, защиты, operator HMI.
+Эталонный цифровой двойник АСУ ТП: 3×ГПУ, ГРПБ, РУМБ 10/0,4 кВ, ДГУ, нагрузочный модуль, станционный hub, защиты, интегрированная operator HMI (мнемосхема §5.1 требований ТЭЦ).
 
-## Быстрый старт
+## Архитектура
 
-После запуска `ispf-server` решение поднимается автоматически (`MiniTecPlatformBootstrap`).
+Логика mini-TEC живёт в **`application/reference/minitec`** (модели, bootstrap, script-функции). Платформа предоставляет только общие механизмы: `setSelection` на mimic, `pulse` / `script` functions, `writeVariable` step, virtual driver profiles `tec-*`.
 
-**Operator UI:** `?mode=operator&app=mini-tec`
+После запуска `ispf-server` с fixtures решение поднимается автоматически (`MiniTecPlatformBootstrap`).
 
-**Станционная сводка:** `?mode=operator&app=mini-tec&dashboard=root.platform.dashboards.mini-tec-overview`
+**Operator UI (главный экран):** `?mode=operator&app=mini-tec` → дашборд `mini-tec-hmi`
+
+**Зоны мнемосхемы:** Генерация / Газ / Электроснабжение (вкладки на HMI)
+
+## Демо-пользователи (RBAC по участкам)
+
+| Логин | Зона |
+|-------|------|
+| `operator-gas` / `operator-gas` | только ГРПБ |
+| `operator-electrical` / `operator-electrical` | РУМБ, нагрузочный модуль |
+| `operator` / `operator` | полный доступ (без ACL) |
+| `operator-engineer` / `operator-engineer` | диагностика всех узлов станции (без zone ACL) |
+
+## Учебные сценарии
+
+1. **Пожар на ГРПБ:** дашборд ГРПБ → «Пожар (учебный)» или `simulate_fire` → alarm bar, подсветка, gas trip всех ГПУ.
+2. **Недомощность:** поднять нагрузку на load-module → `stationUnderpower` → авто-сброс нагрузки.
+3. **Карточка оборудования:** клик по ГПУ на схеме → панель справа (P, статус, sparkline 1h).
+4. **Экспорт:** кнопка «Экспорт PNG» на виджете мнемосхемы; CSV тренда — кнопка «История» на chart.
+
+## REST API (интеграция)
+
+| Назначение | Endpoint |
+|------------|----------|
+| Телеметрия | `GET /api/v1/objects/by-path/variables?path=...` |
+| История | `GET /api/v1/objects/by-path/variables/{name}/history?from=&to=` |
+| События | `GET /api/v1/events?objectPath=...` |
+| Отчёты | `GET /api/v1/applications/mini-tec/reports/tec-daily-energy/export?format=csv` |
+| WebSocket | `WS /ws/objects` (live updates) |
+
+OPC-UA: для полевого ГПУ можно заменить virtual driver на `opcua` profile (см. [docs/DRIVERS.md](../../docs/DRIVERS.md)).
 
 ## Дерево объектов
 
@@ -20,7 +50,7 @@
 | `...rumb-10kv` | РУМБ 10/0,4 кВ |
 | `...dgu` | ДГУ |
 | `...load-module` | Нагрузочный модуль |
-| `...station-hub` | Агрегаты, островной режим, защиты шин |
+| `...station-hub` | Агрегаты, KPI, защиты шин |
 
 ## Симуляция
 
@@ -35,6 +65,21 @@ Content-Type: application/json
 <file: examples/mini-tec/bundle.json>
 ```
 
+## Синхронизация фикстур с prod (VPS)
+
+После правок на `ispf.iot-solutions.ru` выгрузите эталон обратно в репозиторий:
+
+```bash
+# на VPS
+bash /opt/ispf/bin/export-minitec-fixtures.sh /tmp/minitec-fixtures-export
+
+# локально: scp -r root@ispf...:/tmp/minitec-fixtures-export ./examples/mini-tec/vps-export
+# скопировать dashboards → packages/ispf-server/src/main/resources/bootstrap/mini-tec/dashboards/
+# mimics → bootstrap/mini-tec-*.json, bundle → examples/mini-tec/bundle.json
+```
+
+Скрипт: [`deploy/export-minitec-fixtures.sh`](../../deploy/export-minitec-fixtures.sh). Дашборды и мнемосхемы читает `MiniTecFixtureDocuments` / `MiniTecMimicDocument` при bootstrap.
+
 ## Потребители (номинальная нагрузка)
 
 | Потребитель | Переменная | кВт |
@@ -47,4 +92,6 @@ Content-Type: application/json
 
 ## Модели
 
-`mini-tec-gpu-v1`, `mini-tec-grpb-v1`, `mini-tec-rumb-v1`, `mini-tec-dgu-v1`, `mini-tec-load-module-v1`, `mini-tec-station-hub-v1` — см. `MiniTecModelBootstrap.java`.
+`mini-tec-gpu-v1`, `mini-tec-grpb-v1`, `mini-tec-rumb-v1`, `mini-tec-dgu-v1`, `mini-tec-load-module-v1`, `mini-tec-station-hub-v1` — см. `MiniTecBlueprintBootstrap.java`.
+
+См. также [docs/REFERENCE_MINI_TEC_WALKTHROUGH.md](../../docs/REFERENCE_MINI_TEC_WALKTHROUGH.md).

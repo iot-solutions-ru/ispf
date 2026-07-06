@@ -34,4 +34,26 @@ class AgentToolResultCompactorTest {
         assertEquals(50, inner.get("rowCount"));
         assertTrue(Boolean.TRUE.equals(inner.get("truncatedForLlm")));
     }
+
+    @Test
+    void compactsExampleBundleManifestForLlm() {
+        Map<String, Object> toolResult = new java.util.LinkedHashMap<>(Map.of(
+                "status", "OK",
+                "appId", "mes-reference",
+                "manifest", Map.of(
+                        "migrations", List.of(Map.of("id", "001")),
+                        "functions", Map.of("fn1", Map.of()),
+                        "objects", List.of()
+                )
+        ));
+        Map<String, Object> compact = AgentToolResultCompactor.compactForLlm("get_example_bundle", toolResult);
+        assertTrue(Boolean.TRUE.equals(compact.get("truncatedForLlm")));
+        assertTrue(compact.containsKey("llmHint"));
+        assertTrue(!compact.containsKey("manifest"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> sections = (Map<String, Object>) compact.get("manifestSections");
+        assertEquals(1, ((Map<?, ?>) sections.get("migrations")).get("itemCount"));
+        assertEquals(1, ((Map<?, ?>) sections.get("functions")).get("keyCount"));
+        assertEquals(0, ((Map<?, ?>) sections.get("objects")).get("itemCount"));
+    }
 }

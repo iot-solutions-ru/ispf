@@ -52,6 +52,10 @@ public class OperatorAppUiService {
             removeFixtureDefaultsIfPresent();
             return;
         }
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
+            removeFixtureDefaultsIfPresent();
+            return;
+        }
         if (store.findByAppId(PLATFORM_APP_ID).isPresent()) {
             return;
         }

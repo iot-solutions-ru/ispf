@@ -34,9 +34,20 @@ final class AgentMutateApprovalGuard {
             return Optional.empty();
         }
         String normalized = toolName != null ? toolName.trim().toLowerCase(Locale.ROOT) : "";
-        String hint = runState.isPlanningActive()
-                ? "Approve the plan in the chat panel, then retry mutations."
-                : "Request a plan (or switch to Plan mode), approve it, then mutations can run.";
+        String hint;
+        if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL) {
+            if (!AgentPlanGuard.canApprovePlan(runState)) {
+                hint = "Plan has optional completeness gaps — refine the plan, or approve explicitly "
+                        + "(«Утверждаю план, начинай выполнение») to start execution.";
+            } else {
+                hint = "Plan awaits approval — click «Approve full plan» or send "
+                        + "«Утверждаю план, начинай выполнение», then retry mutations.";
+            }
+        } else if (runState.isPlanningActive()) {
+            hint = "Approve the plan in the chat panel, then retry mutations.";
+        } else {
+            hint = "Request a plan (or switch to Plan mode), approve it, then mutations can run.";
+        }
         return Optional.of(new BlockDecision(
                 "Tool '" + normalized + "' requires explicit plan approval before mutating the platform.",
                 hint

@@ -48,6 +48,27 @@ public class ObjectTree {
         return Optional.ofNullable(nodesById.get(id));
     }
 
+    /** Ensures {@code childPath} appears under its parent in {@link #childrenOf(String)}. Idempotent. */
+    public void ensureParentLink(String childPath) {
+        if (childPath == null || childPath.isBlank() || "root".equals(childPath)) {
+            return;
+        }
+        if (nodesByPath.get(childPath) == null) {
+            return;
+        }
+        parentPathOf(childPath).ifPresent(parent ->
+                childPathsByParent.computeIfAbsent(parent, ignored -> ConcurrentHashMap.newKeySet()).add(childPath)
+        );
+    }
+
+    /** Rebuilds the parent→children index from registered nodes (startup / repair). */
+    public void rebuildChildIndex() {
+        childPathsByParent.clear();
+        for (PlatformObject node : nodesByPath.values()) {
+            ensureParentLink(node.path());
+        }
+    }
+
     public List<PlatformObject> childrenOf(String parentPath) {
         java.util.Set<String> childPaths = childPathsByParent.get(parentPath);
         if (childPaths == null || childPaths.isEmpty()) {

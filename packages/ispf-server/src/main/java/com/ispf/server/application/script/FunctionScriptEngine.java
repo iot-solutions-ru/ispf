@@ -226,6 +226,15 @@ public class FunctionScriptEngine {
                 vars.put(step.path("var").asText(), value);
                 yield null;
             }
+            case "writeVariable" -> {
+                String objectPath = resolveObjectPath(step.path("objectPath").asText(), context);
+                platformScriptBridge.writeVariableFields(
+                        objectPath,
+                        step.path("variable").asText(),
+                        resolveFields(step.get("fields"), vars)
+                );
+                yield null;
+            }
             case "instantiateModelIfMissing" -> {
                 String blueprintName = resolveBlueprintName(step, vars);
                 String instancePath = platformScriptBridge.instantiateModelIfMissing(

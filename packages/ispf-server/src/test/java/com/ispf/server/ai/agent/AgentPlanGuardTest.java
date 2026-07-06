@@ -84,29 +84,62 @@ class AgentPlanGuardTest {
     }
 
     @Test
-    void askModeBlocksMutations() {
+    void askModeBlocksMutationsWithClearError() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.ASK);
-        AgentPlanGuard.beginTurn(state, "Создай устройство", AgentProfile.ADMIN);
-        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
         var block = AgentPlanGuard.checkBeforeTool(state, "set_variable", AgentProfile.ADMIN);
         assertThat(block).isPresent();
+        assertThat(block.get().error()).contains("blocked in Ask mode");
     }
 
     @Test
-    void askModeBlocksPlanFinish() {
+    void askModeContinuationHintAfterDiscovery() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.ASK);
-        AgentPlanGuard.beginTurn(state, "Какие устройства и дашборды есть?", AgentProfile.ADMIN);
-        Map<String, Object> finish = Map.of(
+        String hint = AgentPlanGuard.askModeContinuationHint(
+                state,
+                List.of(toolStep("list_applications")),
+                "list_applications"
+        );
+        assertThat(hint).contains("finish");
+        assertThat(hint).contains("Ask mode");
+        assertThat(hint).contains("No phase=plan");
+    }
+
+    @Test
+    void planningContinuationHintSkippedInAskMode() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        assertThat(AgentPlanGuard.planningContinuationHint(state, List.of(toolStep("list_objects")), "list_objects"))
+                .isNull();
+    }
+
+    @Test
+    void exportApplicationBundleAllowedInAskMode() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        assertThat(AgentPlanGuard.checkBeforeTool(state, "export_application_bundle", AgentProfile.ADMIN))
+                .isEmpty();
+    }
+
+    @Test
+    void askModeStripsPlanPayloadAndAllowsFinish() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.ASK);
+        AgentPlanGuard.beginTurn(state, "Как работать в платформе?", AgentProfile.ADMIN);
+        Map<String, Object> finish = new java.util.LinkedHashMap<>(Map.of(
                 "phase", "plan",
                 "plan", Map.of("goal", "Demo", "steps", List.of("create_virtual_device")),
                 "questions", List.of(Map.of("id", "q1", "text", "Какой сценарий?"))
-        );
+        ));
+        assertThat(AgentPlanGuard.finishPayloadLooksLikePlan(finish)).isTrue();
         var outcome = AgentPlanGuard.evaluateFinish(
-                state, finish, List.of(), "Какие устройства и дашборды есть?", AgentProfile.ADMIN
+                state, finish, List.of(), "Как работать в платформе?", AgentProfile.ADMIN
         );
-        assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.BLOCK_NEEDS_PLAN);
+        assertThat(outcome).isEqualTo(AgentPlanGuard.FinishOutcome.ALLOW_EXECUTION);
+        assertThat(finish).doesNotContainKey("plan");
+        assertThat(finish).doesNotContainKey("questions");
+        assertThat(finish).doesNotContainKey("phase");
         assertThat(AgentPlanGuard.shouldCapturePlan(state, finish)).isFalse();
     }
 
@@ -179,6 +212,46 @@ class AgentPlanGuardTest {
         assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.NONE);
         var block = AgentPlanGuard.checkBeforeTool(state, "create_object", AgentProfile.ADMIN);
         assertThat(block).isEmpty();
+    }
+
+    @Test
+    void executeModeBlocksMutationsWhileAwaitingApproval() {
+        AgentRunState state = new AgentRunState();
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
+        state.setStoredPlan(Map.of("goal", "SNMP demo", "steps", List.of("create_object")));
+        var block = AgentPlanGuard.checkBeforeTool(state, "create_object", AgentProfile.ADMIN);
+        assertThat(block).isPresent();
+        assertThat(block.get().error()).contains("blocked during planning");
+    }
+
+    @Test
+    void executeIntentApprovesCompletePlan() {
+        AgentRunState state = new AgentRunState();
+        state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        AgentPlanGuard.beginTurn(state, "выполнить", AgentProfile.ADMIN);
+        assertThat(state.isPlanApproved()).isTrue();
+    }
+
+    @Test
+    void executeIntentDoesNotApproveIncompletePlan() {
+        AgentRunState state = new AgentRunState();
+        state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
+        state.setInteractionMode(AgentInteractionMode.EXECUTE);
+        state.setStoredPlan(Map.of("goal", "SNMP demo", "steps", List.of("create_object")));
+        AgentPlanGuard.beginTurn(state, "выполнить", AgentProfile.ADMIN);
+        assertThat(state.isPlanApproved()).isFalse();
+        assertThat(state.planPhase()).isEqualTo(AgentPlanPhase.AWAITING_APPROVAL);
+    }
+
+    @Test
+    void approvalMessageApprovesIncompletePlan() {
+        AgentRunState state = new AgentRunState();
+        state.setPlanPhase(AgentPlanPhase.AWAITING_APPROVAL);
+        state.setStoredPlan(Map.of("goal", "SNMP demo", "steps", List.of("create_object")));
+        AgentPlanGuard.beginTurn(state, "Утверждаю план, начинай выполнение", AgentProfile.ADMIN);
+        assertThat(state.isPlanApproved()).isTrue();
     }
 
     @Test

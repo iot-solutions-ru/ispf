@@ -4,15 +4,15 @@ import { useQuery } from "@tanstack/react-query";
 import {
   cancelOperatorAgentRun,
   createOperatorAgentSession,
-  fetchOperatorAgentProgress,
   sendOperatorAgentMessage,
   subscribeOperatorAgentProgress,
   fetchOperatorAgentStatus,
   type AiAgentStep,
 } from "../../api/operatorAgent";
-import { AgentRunDetails } from "../AiAgentChat";
+import { AgentRunDetails } from "../agent/AgentRunDetails";
 import OperatorAgentArtifactsView from "./OperatorAgentArtifacts";
 import { AgentStarterSuggestions } from "../agent/AgentChatArtifacts";
+import { AgentChatMessageBody } from "../../utils/agentChatMarkdown";
 
 interface ChatMessage {
   id: string;
@@ -74,8 +74,6 @@ export default function OperatorAgentPanel({
       return;
     }
     let cancelled = false;
-    let pollTimer: number | undefined;
-    let unsubscribe: (() => void) | undefined;
 
     const applyProgress = (progress: { steps?: AiAgentStep[] }) => {
       if (cancelled || !progress.steps) {
@@ -84,25 +82,11 @@ export default function OperatorAgentPanel({
       setLiveSteps(progress.steps);
     };
 
-    const poll = async () => {
-      try {
-        const progress = await fetchOperatorAgentProgress(appId, sessionId);
-        applyProgress(progress);
-      } catch {
-        // ignore transient errors
-      }
-    };
-
-    void poll();
-    pollTimer = window.setInterval(() => void poll(), 1000);
-    unsubscribe = subscribeOperatorAgentProgress(appId, sessionId, applyProgress);
+    const unsubscribe = subscribeOperatorAgentProgress(appId, sessionId, applyProgress);
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
-      if (pollTimer !== undefined) {
-        window.clearInterval(pollTimer);
-      }
+      unsubscribe();
     };
   }, [appId, isPending, sessionId]);
 
@@ -227,7 +211,13 @@ export default function OperatorAgentPanel({
             key={message.id}
             className={message.role === "user" ? "ai-agent-bubble user" : "ai-agent-bubble agent"}
           >
-            <div className="ai-agent-bubble-text">{message.text}</div>
+            <div className="ai-agent-bubble-text">
+              {message.role === "agent" ? (
+                <AgentChatMessageBody text={message.text} />
+              ) : (
+                message.text
+              )}
+            </div>
             {message.role === "agent" && (
               <OperatorAgentArtifactsView
                 result={message.result}

@@ -41,10 +41,12 @@ import {
   type OpenDashboardOptions,
 } from "./components/dashboard/DashboardContext";
 import AgentChatStatusBar from "./components/AgentChatStatusBar";
+import AgentChatRunBootstrap from "./components/AgentChatRunBootstrap";
 import LoginView from "./components/LoginView";
 import PlatformUpdateBanner from "./components/PlatformUpdateBanner";
 import ShellPreferences from "./components/ShellPreferences";
-import { AgentChatProvider, useAgentChatOptional } from "./context/AgentChatContext";
+import { AgentChatProvider } from "./context/AgentChatContext";
+import { useAgentRunStatus } from "./utils/agentRunStatus";
 import { ThemeProvider, useThemeController } from "./theme";
 import { isBlueprintsPath } from "./types/blueprints";
 import { isOperatorAppChildPath, resolveOperatorAppIdFromPath } from "./utils/operatorAppsPath";
@@ -77,8 +79,8 @@ function AiStudioWorkspaceTabButton({
   active: boolean;
   onClick: () => void;
 }) {
-  const chat = useAgentChatOptional();
-  const busy = chat?.isPending;
+  const chat = useAgentRunStatus();
+  const busy = chat.isPending;
   const { t } = useTranslation("shell");
   return (
     <button type="button" className={active ? "active" : ""} onClick={onClick}>
@@ -281,6 +283,13 @@ function AppShell() {
     [loadChildren, reorderMutation],
   );
 
+  const handleTreeLoadChildren = useCallback(
+    (path: string) => {
+      void loadChildren(path);
+    },
+    [loadChildren],
+  );
+
   const tree = useMemo(() => {
     if (!treeFilter.trim()) {
       return lazyTree;
@@ -472,6 +481,8 @@ function AppShell() {
   );
   const isAdmin = isAdminSession(session);
   const primaryRole = getPrimaryRole(session);
+  const agentRun = useAgentRunStatus();
+  const mountAgentChat = isAdmin && (workspaceTab === "ai-studio" || agentRun.isPending);
 
   const handleLogout = async () => {
     await logout();
@@ -577,8 +588,8 @@ function AppShell() {
   }
 
   return (
-    <AgentChatProvider enabled={isAdmin}>
     <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`} data-testid="admin-shell">
+      {isAdmin && <AgentChatRunBootstrap enabled />}
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
@@ -688,7 +699,7 @@ function AppShell() {
                   onOpenOperatorApp={openOperatorAppFromPath}
                   canReorder={isAdmin && !treeFilter.trim()}
                   onReorder={handleTreeReorder}
-                  onLoadChildren={(path) => void loadChildren(path)}
+                  onLoadChildren={handleTreeLoadChildren}
                   onVisibleRowKeysChange={setVisibleRowKeys}
                   bulkActions={
                     isAdmin
@@ -751,14 +762,18 @@ function AppShell() {
           </Suspense>
         )}
 
-        {isAdmin && (
-          <main
-            className={`main ai-studio-main${workspaceTab === "ai-studio" ? "" : " ai-studio-main-dormant"}`}
-          >
-            <Suspense fallback={<LazyFallback />}>
-              <AiStudioPanel />
-            </Suspense>
+        {mountAgentChat && workspaceTab === "ai-studio" && (
+          <main className="main ai-studio-main">
+            <AgentChatProvider enabled>
+              <Suspense fallback={<LazyFallback />}>
+                <AiStudioPanel />
+              </Suspense>
+            </AgentChatProvider>
           </main>
+        )}
+
+        {mountAgentChat && workspaceTab !== "ai-studio" && (
+          <AgentChatProvider enabled />
         )}
 
         {activeEditor && workspaceTab === activeEditor.id && !showPropertiesEditor && (
@@ -879,6 +894,5 @@ function AppShell() {
         />
       )}
     </div>
-    </AgentChatProvider>
   );
 }

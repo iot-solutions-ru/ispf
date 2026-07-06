@@ -433,3 +433,21 @@ docker compose exec postgres psql -U ispf -d postgres \
 ### H2 (local dev only)
 
 Удалите `./data/ispf-local.mv.db` или смените `spring.datasource.url`. См. [BINDINGS.md](BINDINGS.md#обновление-с-v07x-legacy-bindingexpression).
+
+## SCADA NFR (mini-TEC / production)
+
+Ориентиры из требований к мнемосхеме ТЭЦ (§4) — **операционные**, не bootstrap:
+
+| Требование | Рекомендация ISPF |
+|------------|-------------------|
+| Доступность 99,9% | Кластер `ispf-server` + health checks; см. [CLUSTER.md](CLUSTER.md) |
+| ≤50 одновременных операторов | Redis session/cache (`redis` в compose); nginx sticky sessions |
+| Архив телеметрии 7 лет | TimescaleDB retention policies + ClickHouse `store=clickhouse` для events |
+| Резервное копирование | `pg_dump` / volume snapshots; runbook в [AIR_GAP_DEPLOYMENT.md](AIR_GAP_DEPLOYMENT.md) |
+| Обновление без простоя | Blue/green через `apply-platform-update.sh` + staged jar/UI |
+| Сессии / timeout | Keycloak realm: SSO idle timeout, max session; см. [SECURITY.md](SECURITY.md) |
+| Email/SMS алармы | `ISPF_NOTIFICATIONS_EMAIL_RELAY_URL` + webhook на SMS gateway; [AUTOMATION.md](AUTOMATION.md) |
+| Offline operator HMI | PWA cache web-console static; HMI layout в `dashboard-v1.layout` |
+| OPC-UA полевой уровень | Driver pack `opcua`; mapping переменных GPU — lab note в [examples/mini-tec/README.md](../examples/mini-tec/README.md) |
+
+**Lab demo mini-TEC:** `ISPF_BOOTSTRAP_FIXTURES_ENABLED=true` (default local). **Prod VPS:** fixtures off — импорт через `POST /api/v1/applications/mini-tec/deploy` или factory-reset с `--fixtures`.

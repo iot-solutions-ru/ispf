@@ -3,9 +3,6 @@
   "displayName": "Мини-ТЭЦ (эталон)",
   "tablePrefix": "",
   "schemaName": "app_mini_tec",
-  "metadata": {
-    "description": "Эталонный цифровой двойник мини-ТЭЦ (3×ГПУ, ГРПБ, РУМБ, ДГУ, нагрузочный модуль). Объекты создаются MiniTecPlatformBootstrap при старте; bundle — для повторного деплоя SQL и operator UI."
-  },
   "migrations": [
     {
       "id": "tec_schema",
@@ -20,11 +17,26 @@
       "reportType": "sql",
       "query": "SELECT journal_date, total_energy_kwh, total_reactive_kvarh, total_running_hours, start_count FROM tec_daily_journal ORDER BY journal_date DESC",
       "columns": [
-        { "field": "journal_date", "label": "Дата" },
-        { "field": "total_energy_kwh", "label": "кВт·ч" },
-        { "field": "total_reactive_kvarh", "label": "кВАр·ч" },
-        { "field": "total_running_hours", "label": "Наработка, ч" },
-        { "field": "start_count", "label": "Пуски" }
+        {
+          "field": "journal_date",
+          "label": "Дата"
+        },
+        {
+          "field": "total_energy_kwh",
+          "label": "кВт·ч"
+        },
+        {
+          "field": "total_reactive_kvarh",
+          "label": "кВАр·ч"
+        },
+        {
+          "field": "total_running_hours",
+          "label": "Наработка, ч"
+        },
+        {
+          "field": "start_count",
+          "label": "Пуски"
+        }
       ],
       "maxRows": 365
     },
@@ -36,34 +48,147 @@
       "devicePathPattern": "root.platform.devices.mini-tec-plant.gpu-*",
       "variableName": "runningHours",
       "columns": [
-        { "field": "devicepath", "label": "Агрегат" },
-        { "field": "value", "label": "Наработка, ч" }
+        {
+          "field": "devicepath",
+          "label": "Агрегат"
+        },
+        {
+          "field": "value",
+          "label": "Наработка, ч"
+        }
       ],
       "maxRows": 10
     }
   ],
   "events": [
-    { "id": "gpuProtOverload", "roles": ["operator", "admin"] },
-    { "id": "busProtUndervoltage", "roles": ["operator", "admin"] },
-    { "id": "grpbGasLeak", "roles": ["operator", "admin"] },
-    { "id": "grpbFire", "roles": ["operator", "admin"] },
-    { "id": "stationUnderpower", "roles": ["operator", "admin"] }
+    {
+      "id": "gpuProtOverload",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "gpuProtOverloadCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "busProtUndervoltage",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "busProtUndervoltageCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbGasLeak",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbGasLeakCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbFire",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "grpbFireCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "stationUnderpower",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "stationUnderpowerCleared",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
   ],
+  "metadata": {
+    "description": "Эталонный цифровой двойник мини-ТЭЦ (3×ГПУ, ГРПБ, РУМБ, ДГУ, нагрузочный модуль). Объекты создаются MiniTecPlatformBootstrap при старте; bundle — для повторного деплоя SQL и operator UI."
+  },
   "operatorUi": {
     "appId": "mini-tec",
     "title": "Мини-ТЭЦ (эталон)",
-    "defaultDashboard": "root.platform.dashboards.mini-tec-overview",
+    "defaultDashboard": "root.platform.dashboards.mini-tec-hmi",
     "eventJournalObjectPath": "root.platform.devices.mini-tec-plant.station-hub",
     "dashboards": [
-      { "path": "root.platform.dashboards.mini-tec-overview", "title": "Сводка" },
-      { "path": "root.platform.dashboards.mini-tec-single-line", "title": "Однолинейная" },
-      { "path": "root.platform.dashboards.mini-tec-gpu-detail", "title": "ГПУ" },
-      { "path": "root.platform.dashboards.mini-tec-grpb", "title": "ГРПБ" },
-      { "path": "root.platform.dashboards.mini-tec-rumb", "title": "РУМБ" },
-      { "path": "root.platform.dashboards.mini-tec-dgu", "title": "ДГУ" },
-      { "path": "root.platform.dashboards.mini-tec-load-module", "title": "Нагрузочный модуль" },
-      { "path": "root.platform.dashboards.mini-tec-protections", "title": "Защиты" },
-      { "path": "root.platform.dashboards.mini-tec-exploitation", "title": "Эксплуатация" }
+      {
+        "path": "root.platform.dashboards.mini-tec-hmi",
+        "title": "Мнемосхема"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-overview",
+        "title": "Сводка"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-single-line",
+        "title": "Однолинейная"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-kpi",
+        "title": "KPI"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-trends",
+        "title": "Тренды"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-gpu-detail",
+        "title": "ГПУ"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-grpb",
+        "title": "ГРПБ"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-rumb",
+        "title": "РУМБ"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-dgu",
+        "title": "ДГУ"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-load-module",
+        "title": "Нагрузочный модуль"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-protections",
+        "title": "Защиты"
+      },
+      {
+        "path": "root.platform.dashboards.mini-tec-exploitation",
+        "title": "Эксплуатация"
+      }
     ]
   }
 }

@@ -45,5 +45,11 @@ class AgentPromptStartupValidator {
             }
         }
         log.info("Agent prompt validated ({} tools, {} chars)", catalog.size(), prompt.length());
+        String askPrompt = AgentAskPromptBuilder.build("root", catalog, "", false);
+        if (askPrompt.isBlank() || askPrompt.contains("PLAN-BEFORE-EXECUTE")) {
+            throw new IllegalStateException("Ask mode prompt must not contain planning instructions");
+        }
+        log.info("Ask mode prompt validated ({} read-only tools, {} chars)",
+                AgentAskPromptBuilder.readOnlyToolCatalog(catalog).size(), askPrompt.length());
     }
 }

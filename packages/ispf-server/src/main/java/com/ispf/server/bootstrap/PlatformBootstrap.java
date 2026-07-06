@@ -25,7 +25,7 @@ public class PlatformBootstrap {
 
     public void initialize(ObjectTree tree) {
         initializeCatalog(tree);
-        if (bootstrapProperties.isFixturesEnabled()) {
+        if (bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
             initializeFixtures(tree);
         }
     }

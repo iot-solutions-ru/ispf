@@ -47,7 +47,7 @@ public class AgentAuditExportService {
         List<Map<String, Object>> toolSteps = (List<Map<String, Object>>) json.get("toolInvocations");
 
         StringBuilder csv = new StringBuilder();
-        csv.append("source,createdAt,toolName,status,actor,step,argumentsJson,requestHash,errors\n");
+        csv.append("source,createdAt,toolName,status,actor,step,argumentsJson,requestHash,errors,latencyMs,promptTokens,completionTokens,turnId,stepNo,interactionMode,promptProfile\n");
 
         for (Map<String, Object> row : auditRows) {
             csv.append(csvLine(
@@ -56,10 +56,17 @@ public class AgentAuditExportService {
                     stringValue(row.get("toolName")),
                     stringValue(row.get("status")),
                     stringValue(row.get("actor")),
-                    "",
+                    stringValue(row.get("stepNo")),
                     "",
                     stringValue(row.get("requestHash")),
-                    stringValue(row.get("errors"))
+                    stringValue(row.get("errors")),
+                    stringValue(row.get("latencyMs")),
+                    stringValue(row.get("promptTokens")),
+                    stringValue(row.get("completionTokens")),
+                    stringValue(row.get("turnId")),
+                    stringValue(row.get("stepNo")),
+                    stringValue(row.get("interactionMode")),
+                    stringValue(row.get("promptProfile"))
             ));
         }
 
@@ -72,6 +79,13 @@ public class AgentAuditExportService {
                     stringValue(session.actor()),
                     stringValue(step.get("step")),
                     writeJson(step.get("arguments")),
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    stringValue(step.get("turnId")),
+                    stringValue(step.get("step")),
                     "",
                     ""
             ));

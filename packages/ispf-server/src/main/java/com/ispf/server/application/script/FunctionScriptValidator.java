@@ -24,6 +24,7 @@ public class FunctionScriptValidator {
             "failIfNotEquals",
             "jsonParse",
             "readVariable",
+            "writeVariable",
             "instantiateModelIfMissing",
             "setDriverTelemetry",
             "return"
@@ -117,6 +118,12 @@ public class FunctionScriptValidator {
                 }
             }
             case "readVariable" -> require(step, "objectPath", "variable", "var");
+            case "writeVariable" -> {
+                require(step, "objectPath", "variable");
+                if (!step.has("fields") || !step.get("fields").isObject()) {
+                    throw new IllegalArgumentException("writeVariable step requires fields object");
+                }
+            }
             case "instantiateModelIfMissing" -> {
                 if ((!step.has("blueprintName") || step.get("blueprintName").asText("").isBlank())
                         && (!step.has("modelName") || step.get("modelName").asText("").isBlank())) {

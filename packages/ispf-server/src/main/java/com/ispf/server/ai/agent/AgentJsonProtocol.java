@@ -373,6 +373,10 @@ public final class AgentJsonProtocol {
         if (redactedEnd >= 0) {
             trimmed = trimmed.substring(redactedEnd + "</think>".length()).trim();
         }
+        // Outer agent action JSON must win over ```json fences embedded in finish summary strings.
+        if (findActionJsonStart(trimmed) == 0) {
+            return trimmed;
+        }
         int fenceStart = trimmed.indexOf("```json");
         if (fenceStart >= 0) {
             int bodyStart = fenceStart + "```json".length();

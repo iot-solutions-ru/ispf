@@ -87,6 +87,13 @@ export default function ObjectTreePickerDialog({
     onClose();
   }, [onSelect, onClose, selectedPath]);
 
+  const handleTreeLoadChildren = useCallback(
+    (path: string) => {
+      void loadChildren(path);
+    },
+    [loadChildren],
+  );
+
   const handleRowSelect = useCallback(
     (row: ReturnType<typeof selectionFromObject>, event: { metaKey: boolean; shiftKey: boolean }) => {
       if (!row.path) {
@@ -155,7 +162,7 @@ export default function ObjectTreePickerDialog({
           selectedPath={selectedPath}
           selectedKeys={selectedKeys}
           onRowSelect={handleRowSelect}
-          onLoadChildren={(path) => void loadChildren(path)}
+          onLoadChildren={handleTreeLoadChildren}
         />
       </div>
       {filterTypes && filterTypes.length > 0 && (

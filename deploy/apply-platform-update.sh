@@ -60,7 +60,7 @@ fi
 
 systemctl start "$SERVICE_NAME"
 
-for i in $(seq 1 60); do
+for i in $(seq 1 90); do
   if curl -sf http://127.0.0.1:8080/actuator/health >/dev/null 2>&1; then
     echo "=== Update complete (health UP after ${i} checks) ==="
     exit 0
@@ -68,6 +68,6 @@ for i in $(seq 1 60); do
   sleep 2
 done
 
-echo "=== Update FAILED: ispf-server did not become healthy within 120s ==="
+echo "=== Update FAILED: ispf-server did not become healthy within 180s ==="
 systemctl status "$SERVICE_NAME" --no-pager -l || true
 exit 1

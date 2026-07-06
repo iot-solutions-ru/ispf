@@ -97,6 +97,13 @@ final class AgentLoopGuard {
                     Virtual device provisioned. Verify telemetryVariableCount>0; bind SCADA/dashboard using returned variable names; \
                     list_variables on each device before finish.""";
         }
+        if ("get_example_bundle".equals(lastTool)) {
+            return """
+                    Example bundle loaded — full manifest is in the tool result above and in the UI step. \
+                    Finish NOW with {"type":"finish","summary":"Markdown: section names and purpose only","result":{}}. \
+                    Do NOT embed manifest JSON in summary (no ``` fences) or in result.plan.sections. \
+                    Re-calling get_example_bundle is unnecessary unless the user asks for another appId/sections.""";
+        }
         if (isRepeatedTool(lastTool, steps)) {
             return """
                     You called the same tool repeatedly. Change strategy or emit {"type":"finish",...}. \

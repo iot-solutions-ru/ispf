@@ -191,4 +191,23 @@ class AgentJsonProtocolTest {
         assertFalse(AgentJsonProtocol.looksLikeTruncatedContent(content));
         AgentJsonProtocol.parse(objectMapper, content);
     }
+
+    @Test
+    void parsesFinishWhenSummaryContainsEmbeddedJsonCodeFence() throws Exception {
+        String content = "{\"type\":\"finish\",\"summary\":\"## Пример\\n\\n```json\\n{\\\"appId\\\": \\\"mes-reference\\\"}\\n```\","
+                + "\"result\":{}}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertTrue(action.summary().contains("mes-reference"));
+        assertTrue(action.summary().contains("```json"));
+    }
+
+    @Test
+    void doesNotTreatManifestInsideFinishSummaryAsAgentAction() throws Exception {
+        String content = "{\"type\":\"finish\",\"summary\":\"See ```json\\n{\\\"appId\\\":\\\"mes-reference\\\",\\\"version\\\":\\\"1\\\"}\\n```\","
+                + "\"result\":{}}";
+        AgentJsonProtocol.AgentAction action = AgentJsonProtocol.parse(objectMapper, content);
+        assertEquals("finish", action.type());
+        assertTrue(action.result().isEmpty());
+    }
 }

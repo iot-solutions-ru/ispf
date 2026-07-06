@@ -127,6 +127,12 @@ final class VirtualTecPoll {
         }
 
         boolean resetPzk = readBool(driver, "cmdPzkReset", false);
+        if (readBool(driver, "cmdSimulateFire", false)) {
+            state.fireAlarm = true;
+        }
+        if (readBool(driver, "cmdSimulateGasLeak", false)) {
+            state.gasLeak = true;
+        }
         if (resetPzk && !state.gasLeak && !state.fireAlarm) {
             state.pzkTripped = false;
         }
@@ -149,6 +155,8 @@ final class VirtualTecPoll {
         updateBool(driver, "cmdValveClose", false);
         updateBool(driver, "cmdPzkReset", false);
         updateBool(driver, "cmdGasTrip", false);
+        updateBool(driver, "cmdSimulateFire", false);
+        updateBool(driver, "cmdSimulateGasLeak", false);
         updateStatus(driver);
     }
 
@@ -189,6 +197,7 @@ final class VirtualTecPoll {
         updateBool(driver, "batteryCharging", !state.running);
         updateMeas(driver, "fuelLevelPct", Math.max(20, state.fuelLevel - (state.running ? 0.01 : 0)), "%");
         updateMeas(driver, "coolantTemp", state.running ? 82 : 25, "C");
+        updateMeas(driver, "activePowerKw", state.running ? 420 : 0, "kW");
         updateBool(driver, "cmdStart", false);
         updateBool(driver, "cmdStop", false);
         if (state.running) {

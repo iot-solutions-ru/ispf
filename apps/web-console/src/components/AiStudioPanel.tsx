@@ -4,14 +4,14 @@ import AiAgentChat from "./AiAgentChat";
 import AiStudioBundleTab, { defaultBundleManifest } from "./AiStudioBundleTab";
 import AiStudioPrefsTab from "./AiStudioPrefsTab";
 import AiStudioStatusTab from "./AiStudioStatusTab";
-import { useAgentChat } from "../context/AgentChatContext";
+import { useAgentRunStatus } from "../utils/agentRunStatus";
 import { loadAiStudioPrefs, saveAiStudioPrefs } from "../utils/agentChatStorage";
 
 export type StudioMode = "agent" | "bundle" | "status" | "prefs";
 
 export default function AiStudioPanel() {
   const { t } = useTranslation("ai");
-  const { isPending } = useAgentChat();
+  const { isPending } = useAgentRunStatus();
   const [mode, setMode] = useState<StudioMode>(() => loadAiStudioPrefs().lastTab);
   const [appId, setAppId] = useState(() => loadAiStudioPrefs().defaultAppId);
   const [prompt, setPrompt] = useState(
@@ -59,11 +59,9 @@ export default function AiStudioPanel() {
       </nav>
 
       <div className="ai-studio-body">
-        <div className={`ai-studio-tab-layer ${mode === "agent" ? "active" : "dormant"}`}>
-          <AiAgentChat />
-        </div>
+        {mode === "agent" && <AiAgentChat />}
 
-        <div className={`ai-studio-tab-layer ${mode === "bundle" ? "active" : "dormant"}`}>
+        {mode === "bundle" && (
           <AiStudioBundleTab
             appId={appId}
             setAppId={setAppId}
@@ -76,15 +74,11 @@ export default function AiStudioPanel() {
             dryRunText={dryRunText}
             setDryRunText={setDryRunText}
           />
-        </div>
+        )}
 
-        <div className={`ai-studio-tab-layer ${mode === "status" ? "active" : "dormant"}`}>
-          <AiStudioStatusTab />
-        </div>
+        {mode === "status" && <AiStudioStatusTab />}
 
-        <div className={`ai-studio-tab-layer ${mode === "prefs" ? "active" : "dormant"}`}>
-          <AiStudioPrefsTab />
-        </div>
+        {mode === "prefs" && <AiStudioPrefsTab />}
       </div>
     </div>
   );

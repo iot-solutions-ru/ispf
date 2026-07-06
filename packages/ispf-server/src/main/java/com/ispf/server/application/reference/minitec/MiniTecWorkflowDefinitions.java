@@ -1,4 +1,4 @@
-package com.ispf.server.bootstrap;
+package com.ispf.server.application.reference.minitec;
 
 /**
  * BPMN workflows for mini-TEC automation.
@@ -17,18 +17,30 @@ public final class MiniTecWorkflowDefinitions {
                              ispf:targetObject="%s"
                              ispf:variable="cmdGasTrip"
                              ispf:value="true"/>
-                <serviceTask id="stopGpus" name="Stop GPUs"
+                <serviceTask id="stopGpu1" name="Stop GPU-1"
+                             ispf:action="setVariable"
+                             ispf:targetObject="%s"
+                             ispf:variable="cmdStop"
+                             ispf:value="true"/>
+                <serviceTask id="stopGpu2" name="Stop GPU-2"
+                             ispf:action="setVariable"
+                             ispf:targetObject="%s"
+                             ispf:variable="cmdStop"
+                             ispf:value="true"/>
+                <serviceTask id="stopGpu3" name="Stop GPU-3"
                              ispf:action="setVariable"
                              ispf:targetObject="%s"
                              ispf:variable="cmdStop"
                              ispf:value="true"/>
                 <endEvent id="end"/>
                 <sequenceFlow sourceRef="start" targetRef="tripGas"/>
-                <sequenceFlow sourceRef="tripGas" targetRef="stopGpus"/>
-                <sequenceFlow sourceRef="stopGpus" targetRef="end"/>
+                <sequenceFlow sourceRef="tripGas" targetRef="stopGpu1"/>
+                <sequenceFlow sourceRef="stopGpu1" targetRef="stopGpu2"/>
+                <sequenceFlow sourceRef="stopGpu2" targetRef="stopGpu3"/>
+                <sequenceFlow sourceRef="stopGpu3" targetRef="end"/>
               </process>
             </definitions>
-            """.formatted(MiniTecPaths.GRPB, MiniTecPaths.GPU_01);
+            """.formatted(MiniTecPaths.GRPB, MiniTecPaths.GPU_01, MiniTecPaths.GPU_02, MiniTecPaths.GPU_03);
 
     public static final String LOAD_AUTO_UNLOAD = """
             <?xml version="1.0" encoding="UTF-8"?>
@@ -87,6 +99,26 @@ public final class MiniTecWorkflowDefinitions {
                 <endEvent id="end"/>
                 <sequenceFlow sourceRef="start" targetRef="unlatch"/>
                 <sequenceFlow sourceRef="unlatch" targetRef="end"/>
+              </process>
+            </definitions>
+            """.formatted(MiniTecPaths.STATION_HUB);
+
+    public static final String SHIFT_HANDOVER = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                         xmlns:ispf="http://ispf.io/bpmn"
+                         targetNamespace="http://ispf.io/bpmn">
+              <process id="mini-tec-shift-handover" name="Shift handover" isExecutable="true">
+                <startEvent id="start"/>
+                <userTask id="confirmAlarms" name="Confirm active alarms reviewed"/>
+                <serviceTask id="journal" name="Aggregate shift journal"
+                             ispf:action="invokeFunction"
+                             ispf:targetObject="%s"
+                             ispf:function="aggregate_daily_journal"/>
+                <endEvent id="end"/>
+                <sequenceFlow sourceRef="start" targetRef="confirmAlarms"/>
+                <sequenceFlow sourceRef="confirmAlarms" targetRef="journal"/>
+                <sequenceFlow sourceRef="journal" targetRef="end"/>
               </process>
             </definitions>
             """.formatted(MiniTecPaths.STATION_HUB);

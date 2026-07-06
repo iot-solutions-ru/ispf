@@ -91,7 +91,7 @@ public class TankFarmPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.HIGHEST_PRECEDENCE + 23)
     public void onReady() throws Exception {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         BlueprintBootstrap.ensureTankFarmModels();
@@ -113,7 +113,7 @@ public class TankFarmPlatformBootstrap {
     @EventListener(ApplicationReadyEvent.class)
     @Order(Ordered.LOWEST_PRECEDENCE - 4)
     public void startDriversAfterBootstrap() {
-        if (!bootstrapProperties.isFixturesEnabled() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
+        if (!bootstrapProperties.shouldSeedGeneralReferenceDemos() || !clusterBootstrapService.shouldRunFixtureBootstrap()) {
             return;
         }
         startDrivers();

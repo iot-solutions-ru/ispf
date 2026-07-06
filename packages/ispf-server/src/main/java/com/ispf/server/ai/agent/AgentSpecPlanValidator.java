@@ -39,6 +39,9 @@ public final class AgentSpecPlanValidator {
         if (finishResult == null || !AgentPlanGuard.isPlanFinish(finishResult)) {
             return ValidationResult.pass(List.of());
         }
+        if (runState != null && runState.planDepth() == AgentPlanDepth.LITE) {
+            return validateLitePlanFinish(finishResult, userMessage);
+        }
         AgentAssignmentClassifier.Classification classification = AgentAssignmentClassifier.classify(userMessage);
         if (classification.fastPath()) {
             return ValidationResult.pass(List.of());
@@ -242,6 +245,37 @@ public final class AgentSpecPlanValidator {
         return errors.isEmpty()
                 ? ValidationResult.pass(warnings)
                 : ValidationResult.fail(errors, warnings);
+    }
+
+    private static ValidationResult validateLitePlanFinish(
+            Map<String, Object> finishResult,
+            String userMessage
+    ) {
+        List<String> warnings = new ArrayList<>();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> plan = finishResult.get("plan") instanceof Map<?, ?> m
+                ? (Map<String, Object>) m
+                : Map.of();
+        Object goal = plan.get("goal");
+        if (goal == null || String.valueOf(goal).isBlank()) {
+            warnings.add("LITE plan: include plan.goal (one sentence)");
+        }
+        Object steps = plan.get("steps");
+        if (steps instanceof List<?> stepList) {
+            if (stepList.size() < 3) {
+                warnings.add("LITE plan: plan.steps should have 3–7 concrete items");
+            } else if (stepList.size() > 7) {
+                warnings.add("LITE plan: trim plan.steps to at most 7 items");
+            }
+        } else {
+            warnings.add("LITE plan: plan.steps[] required (3–7 items)");
+        }
+        if (finishResult.containsKey("specBrief") && userMessage != null
+                && !userMessage.toLowerCase(Locale.ROOT).contains("полный")) {
+            warnings.add("LITE plan: omit specBrief unless user requested full TZ");
+        }
+        finishResult.put("planDepth", AgentPlanDepth.LITE.name());
+        return ValidationResult.pass(warnings);
     }
 
     private static int estimateJsonSize(Map<String, Object> finishResult) {

@@ -135,6 +135,22 @@ public class PlatformScriptBridge {
         objectManager.setDriverTelemetryValue(objectPath, name, record);
     }
 
+    public void writeVariableFields(String objectPath, String variableName, Map<String, Object> fields) {
+        if (objectPath == null || objectPath.isBlank()) {
+            throw new IllegalArgumentException("writeVariable objectPath is required");
+        }
+        if (variableName == null || variableName.isBlank()) {
+            throw new IllegalArgumentException("writeVariable variable is required");
+        }
+        PlatformObject node = objectManager.require(objectPath);
+        com.ispf.core.object.Variable variable = node.getVariable(variableName)
+                .orElseThrow(() -> new IllegalArgumentException("Variable not found: " + variableName));
+        if (!variable.writable()) {
+            throw new IllegalArgumentException("Variable is not writable: " + variableName);
+        }
+        objectManager.setVariableValue(objectPath, variableName, DataRecord.single(variable.schema(), fields));
+    }
+
     static void validateInstanceName(String instanceName) {
         if (instanceName == null || instanceName.isBlank()) {
             throw new IllegalArgumentException("instance name is required");

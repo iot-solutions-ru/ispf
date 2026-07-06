@@ -61,6 +61,7 @@ public class OperatorAppObjectTreeService {
             String templateId
     ) {
         if (objectManager.tree().findByPath(path).isPresent()) {
+            objectManager.tree().ensureParentLink(path);
             objectManager.updateInfo(path, displayName, description);
             objectManager.reconcileType(path, type);
             return;

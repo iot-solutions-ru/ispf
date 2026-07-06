@@ -38,12 +38,12 @@ grep '^ISPF_VARIABLE_HISTORY_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/'
 echo "=== Restart $SERVICE_NAME ==="
 systemctl restart "$SERVICE_NAME"
 for i in $(seq 1 180); do
-  if curl -sf http://127.0.0.1:8080/actuator/health/liveness >/dev/null 2>&1; then
-    echo "ISPF liveness OK"
+  if curl -sf http://127.0.0.1:8080/actuator/health >/dev/null 2>&1; then
+    echo "ISPF health OK"
     break
   fi
   if [ "$i" -eq 180 ]; then
-    echo "WARN: liveness wait timed out — check journalctl -u $SERVICE_NAME" >&2
+    echo "WARN: health wait timed out — check journalctl -u $SERVICE_NAME" >&2
     journalctl -u "$SERVICE_NAME" -n 40 --no-pager
     exit 1
   fi

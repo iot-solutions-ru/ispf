@@ -107,6 +107,31 @@ public class ReportService {
         return REPORTS_ROOT + "." + sanitizeReportNodeName(reportId);
     }
 
+    /**
+     * Maps legacy application-scoped report paths (pre tree-first) to {@link #REPORTS_ROOT}.
+     * Example: {@code root.platform.applications.mini-tec.reports.tec-daily-energy}
+     * → {@code root.platform.reports.tec-daily-energy}.
+     */
+    public static String resolveReportPath(String rawPath) {
+        if (rawPath == null || rawPath.isBlank()) {
+            return rawPath;
+        }
+        String path = rawPath.trim();
+        if (!path.startsWith("root.platform.applications.") || !path.contains(".reports.")) {
+            return path;
+        }
+        int marker = path.indexOf(".reports.");
+        String reportId = path.substring(marker + ".reports.".length());
+        if (reportId.isBlank() || reportId.contains(".")) {
+            return path;
+        }
+        return reportPath(reportId);
+    }
+
+    private static String resolvePath(String rawPath) {
+        return resolveReportPath(rawPath);
+    }
+
     private static String sanitizeReportNodeName(String name) {
         if (name == null || name.isBlank()) {
             return "node";
@@ -247,21 +272,23 @@ public class ReportService {
     }
 
     public ReportView getReport(String path) {
-        PlatformObject node = objectManager.require(path);
+        String resolved = resolvePath(path);
+        PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
-            throw new IllegalArgumentException("Not a report object: " + path);
+            throw new IllegalArgumentException("Not a report object: " + resolved);
         }
-        return toView(path, node);
+        return toView(resolved, node);
     }
 
     @Transactional
     public ReportView saveDefinition(String path, SaveReportDefinitionRequest request) {
-        PlatformObject node = objectManager.require(path);
+        String resolved = resolvePath(path);
+        PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
-            throw new IllegalArgumentException("Not a report object: " + path);
+            throw new IllegalArgumentException("Not a report object: " + resolved);
         }
         validateSelectQuery(request.query());
-        ReportView current = toView(path, node);
+        ReportView current = toView(resolved, node);
         String dataSourcePath = resolveDataSourcePathForSave(request, current);
         validateDataSourcePath(dataSourcePath);
         ReportDefinition definition = new ReportDefinition(
@@ -275,8 +302,8 @@ public class ReportService {
                 request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs(),
                 request.layout() != null ? request.layout() : current.layout()
         );
-        saveDefinitionInternal(path, definition);
-        return getReport(path);
+        saveDefinitionInternal(resolved, definition);
+        return getReport(resolved);
     }
 
     @Transactional
@@ -284,12 +311,13 @@ public class ReportService {
             String path,
             SaveTreeVariablesDefinitionRequest request
     ) {
-        PlatformObject node = objectManager.require(path);
+        String resolved = resolvePath(path);
+        PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
-            throw new IllegalArgumentException("Not a report object: " + path);
+            throw new IllegalArgumentException("Not a report object: " + resolved);
         }
-        ensureTreeVariablesReportStructure(path);
-        ReportView current = getReport(path);
+        ensureTreeVariablesReportStructure(resolved);
+        ReportView current = getReport(resolved);
         String devicePathPattern = request.devicePathPattern() != null
                 ? request.devicePathPattern().trim()
                 : "";
@@ -304,7 +332,7 @@ public class ReportService {
                 ? request.columns()
                 : current.columns();
         saveTreeVariablesDefinitionInternal(
-                path,
+                resolved,
                 request.title() != null ? request.title() : current.title(),
                 devicePathPattern,
                 variableName,
@@ -313,14 +341,15 @@ public class ReportService {
                 request.refreshIntervalMs() != null ? request.refreshIntervalMs() : current.refreshIntervalMs(),
                 current.layout()
         );
-        return getReport(path);
+        return getReport(resolved);
     }
 
     @Transactional
     public ReportView saveLayout(String path, String layoutJson) {
-        getReport(path);
-        setString(path, "layout", layoutJson != null ? layoutJson : "");
-        return getReport(path);
+        String resolved = resolvePath(path);
+        getReport(resolved);
+        setString(resolved, "layout", layoutJson != null ? layoutJson : "");
+        return getReport(resolved);
     }
 
     @Transactional(readOnly = true)
@@ -365,8 +394,9 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public boolean hasTemplate(String path) {
-        getReport(path);
-        return templateStore.exists(path);
+        String resolved = resolvePath(path);
+        getReport(resolved);
+        return templateStore.exists(resolved);
     }
 
     @Transactional(readOnly = true)
@@ -377,31 +407,34 @@ public class ReportService {
 
     @Transactional
     public ReportView saveTemplate(String path, String format, byte[] content) {
-        PlatformObject node = objectManager.require(path);
+        String resolved = resolvePath(path);
+        PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
-            throw new IllegalArgumentException("Not a report object: " + path);
+            throw new IllegalArgumentException("Not a report object: " + resolved);
         }
         ReportTemplateStore.validateFormat(format);
-        templateStore.save(path, format, content);
-        setString(path, "templateFormat", format.trim().toLowerCase());
-        return getReport(path);
+        templateStore.save(resolved, format, content);
+        setString(resolved, "templateFormat", format.trim().toLowerCase());
+        return getReport(resolved);
     }
 
     @Transactional(readOnly = true)
     public Optional<ReportTemplateStore.StoredTemplate> getTemplate(String path) {
-        getReport(path);
-        return templateStore.find(path);
+        String resolved = resolvePath(path);
+        getReport(resolved);
+        return templateStore.find(resolved);
     }
 
     @Transactional
     public ReportView deleteTemplate(String path) {
-        PlatformObject node = objectManager.require(path);
+        String resolved = resolvePath(path);
+        PlatformObject node = objectManager.require(resolved);
         if (node.type() != ObjectType.REPORT) {
-            throw new IllegalArgumentException("Not a report object: " + path);
+            throw new IllegalArgumentException("Not a report object: " + resolved);
         }
-        templateStore.delete(path);
-        setString(path, "templateFormat", "");
-        return getReport(path);
+        templateStore.delete(resolved);
+        setString(resolved, "templateFormat", "");
+        return getReport(resolved);
     }
 
     @Transactional(readOnly = true)

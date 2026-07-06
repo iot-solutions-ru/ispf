@@ -27,6 +27,19 @@ public final class AgentRunState {
     private final AtomicInteger reworkRoundCount = new AtomicInteger();
     private volatile String lastUserMessage = "";
     private volatile String planApprovedBy;
+    private volatile String planDepth = AgentPlanDepth.LITE.name();
+
+    public AgentPlanDepth planDepth() {
+        try {
+            return AgentPlanDepth.valueOf(planDepth);
+        } catch (Exception ex) {
+            return AgentPlanDepth.LITE;
+        }
+    }
+
+    public void setPlanDepth(AgentPlanDepth depth) {
+        this.planDepth = depth != null ? depth.name() : AgentPlanDepth.LITE.name();
+    }
 
     public String lastUserMessage() {
         return lastUserMessage == null ? "" : lastUserMessage;
@@ -226,6 +239,7 @@ public final class AgentRunState {
             map.put("completedPlanSteps", Set.copyOf(completedPlanSteps));
         }
         map.put("reworkRoundCount", reworkRoundCount.get());
+        map.put("planDepth", planDepth);
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -302,6 +316,10 @@ public final class AgentRunState {
         Object reworkRaw = raw.get("reworkRoundCount");
         if (reworkRaw instanceof Number number) {
             reworkRoundCount.set(number.intValue());
+        }
+        Object depthRaw = raw.get("planDepth");
+        if (depthRaw != null && !String.valueOf(depthRaw).isBlank()) {
+            planDepth = String.valueOf(depthRaw).trim();
         }
     }
 

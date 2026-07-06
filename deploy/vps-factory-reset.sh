@@ -2,21 +2,25 @@
 # Factory reset: empty PostgreSQL + ClickHouse, then first-boot Flyway + platform bootstrap.
 #
 # Usage:
-#   vps-factory-reset.sh [--fixtures|--no-fixtures]
+#   vps-factory-reset.sh [--fixtures|--no-fixtures|--mini-tec]
 #
 # --no-fixtures (default): system catalogs + built-in models only (load-test baseline)
-# --fixtures:            demo sensor, mini-TEC, lab devices, SNMP localhost
+# --fixtures:            all reference demos (demo sensor, lab, tank-farm, pipeline, mini-TEC, …)
+# --mini-tec:            wipe DB and seed only mini-TEC reference app (prod demo policy)
 set -euo pipefail
 
 ENV_FILE="${ISPF_ENV_FILE:-/opt/ispf/ispf-server.env}"
 FIXTURES=false
+FIXTURE_PROFILE="full"
+MINI_TEC_ONLY=false
 
 for arg in "$@"; do
   case "$arg" in
     --fixtures) FIXTURES=true ;;
+    --mini-tec) FIXTURES=true; FIXTURE_PROFILE="mini-tec"; MINI_TEC_ONLY=true ;;
     --no-fixtures|--skip-fixtures) FIXTURES=false ;;
     -h|--help)
-      sed -n '2,9p' "$0"
+      sed -n '2,11p' "$0"
       exit 0
       ;;
     *)
@@ -40,8 +44,23 @@ upsert_env() {
   fi
 }
 
-echo "=== Bootstrap fixtures: $FIXTURES ==="
+wait_liveness() {
+  for i in $(seq 1 60); do
+    if curl -sf http://127.0.0.1:8080/actuator/health/liveness >/dev/null 2>&1; then
+      echo LIVENESS_OK
+      return 0
+    fi
+    if [ "$i" -eq 60 ]; then
+      journalctl -u ispf-server -n 80 --no-pager
+      return 1
+    fi
+    sleep 2
+  done
+}
+
+echo "=== Bootstrap fixtures: $FIXTURES profile: $FIXTURE_PROFILE ==="
 upsert_env ISPF_BOOTSTRAP_FIXTURES_ENABLED "$FIXTURES"
+upsert_env ISPF_BOOTSTRAP_FIXTURE_PROFILE "$FIXTURE_PROFILE"
 
 echo "=== Stop ISPF ==="
 systemctl stop ispf-server
@@ -71,17 +90,7 @@ fi
 
 echo "=== Start ISPF (Flyway + bootstrap) ==="
 systemctl start ispf-server
-for i in $(seq 1 60); do
-  if curl -sf http://127.0.0.1:8080/actuator/health/liveness >/dev/null 2>&1; then
-    echo LIVENESS_OK
-    break
-  fi
-  if [ "$i" -eq 60 ]; then
-    journalctl -u ispf-server -n 80 --no-pager
-    exit 1
-  fi
-  sleep 2
-done
+wait_liveness
 
 echo "=== Wait for bootstrap (admin login + platform tree) ==="
 for i in $(seq 1 120); do
@@ -100,6 +109,32 @@ for i in $(seq 1 120); do
   fi
   sleep 2
 done
+
+if [ "$MINI_TEC_ONLY" = true ]; then
+  echo "=== Verify mini-TEC objects ==="
+  hub_count="$(docker exec ispf-postgres psql -U ispf -d ispf -t -A -c \
+    "SELECT COUNT(*) FROM object_nodes WHERE path LIKE 'root.platform.devices.mini-tec-plant.%';" 2>/dev/null || echo 0)"
+  hmi_count="$(docker exec ispf-postgres psql -U ispf -d ispf -t -A -c \
+    "SELECT COUNT(*) FROM object_nodes WHERE path='root.platform.dashboards.mini-tec-hmi';" 2>/dev/null || echo 0)"
+  demo_count="$(docker exec ispf-postgres psql -U ispf -d ispf -t -A -c \
+    "SELECT COUNT(*) FROM object_nodes WHERE path IN (
+      'root.platform.devices.demo-sensor-01',
+      'root.platform.dashboards.demo-sensor',
+      'root.platform.dashboards.snmp-host-monitoring'
+    );" 2>/dev/null || echo 0)"
+  echo "mini-tec plant nodes: ${hub_count:-0}, mini-tec-hmi: ${hmi_count:-0}, legacy demo nodes: ${demo_count:-0}"
+  if [ "${hmi_count:-0}" -lt 1 ]; then
+    echo "ERROR: mini-tec-hmi dashboard missing after bootstrap" >&2
+    exit 1
+  fi
+  if [ "${demo_count:-0}" -gt 0 ]; then
+    echo "WARN: legacy demo objects still present (expected 0 for --mini-tec)" >&2
+  fi
+  echo "=== Prod policy: disable fixtures after mini-TEC seed ==="
+  upsert_env ISPF_BOOTSTRAP_FIXTURES_ENABLED false
+  systemctl restart ispf-server
+  wait_liveness
+fi
 
 echo "=== Post-reset counts ==="
 docker exec ispf-postgres psql -U ispf -d ispf -c \

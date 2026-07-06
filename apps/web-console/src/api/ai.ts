@@ -74,6 +74,9 @@ export interface AiAgentStep {
   hint?: string;
   rawPreview?: string;
   truncated?: boolean;
+  latencyMs?: number;
+  promptTokens?: number;
+  completionTokens?: number;
 }
 
 export interface AiAgentTurn {
@@ -400,6 +403,127 @@ export async function downloadAgentAuditCsv(sessionId: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+export interface AiAgentTraceTotals {
+  latencyMs?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  auditRowCount?: number;
+}
+
+export interface AiAgentTraceTurn {
+  sessionId: string;
+  turnId: string;
+  status?: string;
+  steps?: AiAgentStep[];
+  totals?: AiAgentTraceTotals;
+}
+
+export function fetchAgentSessionTrace(
+  sessionId: string,
+  turnId?: string,
+): Promise<AiAgentTraceTurn> {
+  const query = turnId ? `?turnId=${encodeURIComponent(turnId)}` : "";
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/trace${query}`, {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Trace fetch failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export interface AiAgentMetrics {
+  days: number;
+  since: string;
+  turnsByStatus: Record<string, number>;
+  avgStepsPerTurn: number;
+  topFailingTools: Array<{ tool: string; errorCount: number }>;
+  judgeFinishBlocks: number;
+  promptTokensSum: number;
+  completionTokensSum: number;
+  latencyMsSum: number;
+  promptVersions: string[];
+}
+
+export function fetchAgentMetrics(days = 7): Promise<AiAgentMetrics> {
+  return fetch(`/api/v1/ai/agent/metrics?days=${days}`, {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Agent metrics failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export interface AiAgentSessionDocument {
+  docId: string;
+  filename: string;
+  mimeType?: string;
+  description?: string;
+  byteSize?: number;
+  charCount?: number;
+  updatedAt?: string;
+}
+
+export function fetchAgentSessionDocuments(sessionId: string): Promise<{
+  sessionId: string;
+  documents: AiAgentSessionDocument[];
+  count: number;
+}> {
+  return fetch(`/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/documents`, {
+    headers: getAuthHeaders(),
+    cache: "no-store",
+  }).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Documents list failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
+export async function uploadAgentSessionDocument(
+  sessionId: string,
+  file: File,
+  description?: string,
+): Promise<{ status: string; docId: string; filename: string; byteSize: number }> {
+  const form = new FormData();
+  form.append("file", file);
+  if (description) {
+    form.append("description", description);
+  }
+  const response = await fetch(
+    `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/documents`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: form,
+    },
+  );
+  if (!response.ok) {
+    return throwAiHttpError(response, `Document upload failed: ${response.status}`);
+  }
+  return response.json();
+}
+
+export function deleteAgentSessionDocument(sessionId: string, docId: string): Promise<{ status: string }> {
+  return fetch(
+    `/api/v1/ai/agent/sessions/${encodeURIComponent(sessionId)}/documents/${encodeURIComponent(docId)}`,
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    },
+  ).then(async (response) => {
+    if (!response.ok) {
+      return throwAiHttpError(response, `Document delete failed: ${response.status}`);
+    }
+    return response.json();
+  });
+}
+
 export interface AiAgentAcceptedResponse {
   status: "ACCEPTED";
   sessionId: string;
@@ -550,7 +674,6 @@ export function waitForAgentTurnCompletion(
   return new Promise((resolve, reject) => {
     let settled = false;
     let finishInFlight = false;
-    let pollTimer: ReturnType<typeof setInterval> | undefined;
     let sessionPollTimer: ReturnType<typeof setInterval> | undefined;
     let unsubscribe: (() => void) | undefined;
     const waitStartedAt = Date.now();
@@ -558,10 +681,6 @@ export function waitForAgentTurnCompletion(
     let idleSince: number | null = null;
 
     const cleanup = () => {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = undefined;
-      }
       if (sessionPollTimer) {
         clearInterval(sessionPollTimer);
         sessionPollTimer = undefined;
@@ -671,20 +790,9 @@ export function waitForAgentTurnCompletion(
         considerFinish(progress.running === true);
       },
       () => {
-        // SSE errors — polling fallback continues
+        // SSE errors — session turn polling continues
       }
     );
-
-    pollTimer = setInterval(() => {
-      void fetchAgentRunProgress(sessionId)
-        .then((progress) => {
-          onProgress?.(progress);
-          considerFinish(progress.running === true);
-        })
-        .catch(() => {
-          // ignore transient poll errors while run is active
-        });
-    }, 2000);
   });
 }
 

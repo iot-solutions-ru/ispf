@@ -1,4 +1,4 @@
-package com.ispf.server.bootstrap;
+package com.ispf.server.application.reference.minitec;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -7,10 +7,12 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.application.data.ApplicationDataService;
+import com.ispf.server.application.report.ApplicationReportService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.correlator.CorrelatorActionType;
 import com.ispf.server.correlator.CorrelatorPatternType;
 import com.ispf.server.config.BootstrapProperties;
+import com.ispf.server.config.NotificationProperties;
 import com.ispf.server.platform.ClusterPlatformBootstrapService;
 import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.mimic.MimicService;
@@ -18,6 +20,7 @@ import com.ispf.server.driver.DriverRuntimeService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.operator.OperatorAppUiService;
+import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.workflow.WorkflowService;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -41,12 +44,17 @@ public class MiniTecPlatformBootstrap {
     private final DashboardService dashboardService;
     private final MimicService mimicService;
     private final WorkflowService workflowService;
+    private final ScheduleObjectService scheduleObjectService;
     private final AutomationTreeService automationTreeService;
     private final DriverRuntimeService driverRuntimeService;
     private final OperatorAppUiService operatorAppUiService;
     private final ApplicationDataService applicationDataService;
+    private final ApplicationReportService applicationReportService;
+    private static final String PLACEHOLDER_WEBHOOK = "https://hooks.example.local/mini-tec-sms";
+
     private final BootstrapProperties bootstrapProperties;
     private final ClusterPlatformBootstrapService clusterBootstrapService;
+    private final NotificationProperties notificationProperties;
 
     public MiniTecPlatformBootstrap(
             MiniTecBlueprintBootstrap BlueprintBootstrap,
@@ -55,12 +63,15 @@ public class MiniTecPlatformBootstrap {
             DashboardService dashboardService,
             MimicService mimicService,
             WorkflowService workflowService,
+            ScheduleObjectService scheduleObjectService,
             AutomationTreeService automationTreeService,
             DriverRuntimeService driverRuntimeService,
             OperatorAppUiService operatorAppUiService,
             ApplicationDataService applicationDataService,
+            ApplicationReportService applicationReportService,
             BootstrapProperties bootstrapProperties,
-            ClusterPlatformBootstrapService clusterBootstrapService
+            ClusterPlatformBootstrapService clusterBootstrapService,
+            NotificationProperties notificationProperties
     ) {
         this.BlueprintBootstrap = BlueprintBootstrap;
         this.templateService = templateService;
@@ -68,12 +79,15 @@ public class MiniTecPlatformBootstrap {
         this.dashboardService = dashboardService;
         this.mimicService = mimicService;
         this.workflowService = workflowService;
+        this.scheduleObjectService = scheduleObjectService;
         this.automationTreeService = automationTreeService;
         this.driverRuntimeService = driverRuntimeService;
         this.operatorAppUiService = operatorAppUiService;
         this.applicationDataService = applicationDataService;
+        this.applicationReportService = applicationReportService;
         this.bootstrapProperties = bootstrapProperties;
         this.clusterBootstrapService = clusterBootstrapService;
+        this.notificationProperties = notificationProperties;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -85,6 +99,7 @@ public class MiniTecPlatformBootstrap {
         BlueprintBootstrap.ensureMiniTecModels();
         registerApplication();
         ensureSqlSchema();
+        ensureReports();
         ensureFolder();
         ensureDevice("gpu-01", "ГПУ-1", MiniTecBlueprintBootstrap.GPU_MODEL, 1);
         ensureDevice("gpu-02", "ГПУ-2", MiniTecBlueprintBootstrap.GPU_MODEL, 2);
@@ -98,6 +113,7 @@ public class MiniTecPlatformBootstrap {
         ensureDashboards();
         ensureWorkflows();
         ensureAutomation();
+        ensureSchedule();
         ensureOperatorUi();
     }
 
@@ -160,6 +176,55 @@ public class MiniTecPlatformBootstrap {
         }
     }
 
+    private void ensureReports() {
+        try {
+            applicationReportService.deploy(
+                    MiniTecPaths.APP_ID,
+                    new ApplicationReportService.DeployReportRequest(
+                            "tec-daily-energy",
+                            "Суточный журнал энергии",
+                            "Учёт кВт·ч и наработки",
+                            "sql",
+                            null,
+                            null,
+                            """
+                            SELECT journal_date, total_energy_kwh, total_reactive_kvarh, \
+                            total_running_hours, start_count FROM tec_daily_journal \
+                            ORDER BY journal_date DESC""",
+                            List.of(),
+                            List.of(
+                                    new ApplicationReportService.ReportColumn("journal_date", "Дата"),
+                                    new ApplicationReportService.ReportColumn("total_energy_kwh", "кВт·ч"),
+                                    new ApplicationReportService.ReportColumn("total_reactive_kvarh", "кВАр·ч"),
+                                    new ApplicationReportService.ReportColumn("total_running_hours", "Наработка, ч"),
+                                    new ApplicationReportService.ReportColumn("start_count", "Пуски")
+                            ),
+                            365
+                    )
+            );
+            applicationReportService.deploy(
+                    MiniTecPaths.APP_ID,
+                    new ApplicationReportService.DeployReportRequest(
+                            "tec-gpu-run-hours",
+                            "Наработка ГПУ",
+                            "Показатели эксплуатации газопоршневых модулей",
+                            "tree-variables",
+                            MiniTecPaths.FOLDER + ".gpu-*",
+                            "runningHours",
+                            null,
+                            List.of(),
+                            List.of(
+                                    new ApplicationReportService.ReportColumn("devicepath", "Агрегат"),
+                                    new ApplicationReportService.ReportColumn("value", "Наработка, ч")
+                            ),
+                            10
+                    )
+            );
+        } catch (Exception ignored) {
+            // reports may already exist or SQL schema not ready yet
+        }
+    }
+
     private void ensureFolder() {
         if (objectManager.tree().findByPath(MiniTecPaths.FOLDER).isEmpty()) {
             objectManager.create(
@@ -204,6 +269,8 @@ public class MiniTecPlatformBootstrap {
 
     private void ensureMimics() {
         ensureMimic(MiniTecPaths.MIMIC_SINGLE_LINE, "Однолинейная схема Мини-ТЭЦ", MiniTecMimicDocument.DIAGRAM_JSON);
+        ensureMimic(MiniTecPaths.MIMIC_ZONE_GAS, "Зона газа", MiniTecMimicDocument.ZONE_GAS_JSON);
+        ensureMimic(MiniTecPaths.MIMIC_ZONE_ELECTRICAL, "Зона электроснабжения", MiniTecMimicDocument.ZONE_ELECTRICAL_JSON);
     }
 
     private void ensureMimic(String path, String title, String diagramJson) {
@@ -218,15 +285,18 @@ public class MiniTecPlatformBootstrap {
     }
 
     private void ensureDashboards() {
-        ensureDashboard(MiniTecPaths.DASHBOARD_OVERVIEW, "Станционная сводка", MiniTecDashboardLayouts.OVERVIEW);
-        ensureDashboard(MiniTecPaths.DASHBOARD_SINGLE_LINE, "Однолинейная схема", MiniTecDashboardLayouts.SINGLE_LINE);
-        ensureDashboard(MiniTecPaths.DASHBOARD_GPU_DETAIL, "ГПУ — детально", MiniTecDashboardLayouts.GPU_DETAIL);
-        ensureDashboard(MiniTecPaths.DASHBOARD_GRPB, "ГРПБ", MiniTecDashboardLayouts.GRPB);
-        ensureDashboard(MiniTecPaths.DASHBOARD_RUMB, "РУМБ 10/0.4 кВ", MiniTecDashboardLayouts.RUMB);
-        ensureDashboard(MiniTecPaths.DASHBOARD_DGU, "ДГУ", MiniTecDashboardLayouts.DGU);
-        ensureDashboard(MiniTecPaths.DASHBOARD_LOAD, "Нагрузочный модуль", MiniTecDashboardLayouts.LOAD_MODULE);
-        ensureDashboard(MiniTecPaths.DASHBOARD_PROTECTIONS, "Защиты", MiniTecDashboardLayouts.PROTECTIONS);
-        ensureDashboard(MiniTecPaths.DASHBOARD_EXPLOITATION, "Эксплуатация", MiniTecDashboardLayouts.EXPLOITATION);
+        ensureDashboard(MiniTecPaths.DASHBOARD_HMI, "Операторская мнемосхема", MiniTecFixtureDocuments.dashboardLayout("mini-tec-hmi"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_OVERVIEW, "Станционная сводка", MiniTecFixtureDocuments.dashboardLayout("mini-tec-overview"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_SINGLE_LINE, "Однолинейная схема", MiniTecFixtureDocuments.dashboardLayout("mini-tec-single-line"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_KPI, "KPI станции", MiniTecFixtureDocuments.dashboardLayout("mini-tec-kpi"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_TRENDS, "Тренды", MiniTecFixtureDocuments.dashboardLayout("mini-tec-trends"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_GPU_DETAIL, "ГПУ — детально", MiniTecFixtureDocuments.dashboardLayout("mini-tec-gpu-detail"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_GRPB, "ГРПБ", MiniTecFixtureDocuments.dashboardLayout("mini-tec-grpb"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_RUMB, "РУМБ 10/0.4 кВ", MiniTecFixtureDocuments.dashboardLayout("mini-tec-rumb"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_DGU, "ДГУ", MiniTecFixtureDocuments.dashboardLayout("mini-tec-dgu"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_LOAD, "Нагрузочный модуль", MiniTecFixtureDocuments.dashboardLayout("mini-tec-load-module"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_PROTECTIONS, "Защиты", MiniTecFixtureDocuments.dashboardLayout("mini-tec-protections"));
+        ensureDashboard(MiniTecPaths.DASHBOARD_EXPLOITATION, "Эксплуатация", MiniTecFixtureDocuments.dashboardLayout("mini-tec-exploitation"));
     }
 
     private void ensureDashboard(String path, String title, String layout) {
@@ -245,6 +315,7 @@ public class MiniTecPlatformBootstrap {
         ensureWorkflow(MiniTecPaths.WORKFLOW_LOAD_UNLOAD, MiniTecWorkflowDefinitions.LOAD_AUTO_UNLOAD);
         ensureWorkflow(MiniTecPaths.WORKFLOW_GPU_START, MiniTecWorkflowDefinitions.GPU_START_SEQUENCE);
         ensureWorkflow(MiniTecPaths.WORKFLOW_ACK, MiniTecWorkflowDefinitions.ACK_PROTECTION);
+        ensureWorkflow(MiniTecPaths.WORKFLOW_SHIFT_HANDOVER, MiniTecWorkflowDefinitions.SHIFT_HANDOVER);
     }
 
     private void ensureWorkflow(String path, String bpmn) throws Exception {
@@ -258,16 +329,27 @@ public class MiniTecPlatformBootstrap {
     }
 
     private void ensureAutomation() {
-        ensureAlert("Mini-TEC GPU overload", MiniTecPaths.GPU_01, "protOverload",
-                "self.protOverload[\"value\"] == true", "gpuProtOverload", "protOverload");
+        ensureAlert("Mini-TEC GPU-1 overload", MiniTecPaths.GPU_01, "protOverload",
+                "self.protOverload[\"value\"] == true", "gpuProtOverload", "protOverload", false, null);
+        ensureAlert("Mini-TEC GPU-2 overload", MiniTecPaths.GPU_02, "protOverload",
+                "self.protOverload[\"value\"] == true", "gpuProtOverload", "protOverload", false, null);
+        ensureAlert("Mini-TEC GPU-3 overload", MiniTecPaths.GPU_03, "protOverload",
+                "self.protOverload[\"value\"] == true", "gpuProtOverload", "protOverload", false, null);
         ensureAlert("Mini-TEC bus undervoltage", MiniTecPaths.STATION_HUB, "busUndervoltage",
-                "self.busUndervoltage[\"value\"] == true", "busProtUndervoltage", "busUndervoltage");
+                "self.busUndervoltage[\"value\"] == true", "busProtUndervoltage", "busUndervoltage", false, null);
+        ensureAlert("Mini-TEC bus frequency low", MiniTecPaths.STATION_HUB, "busFrequencyLow",
+                "self.busFrequencyLow[\"value\"] == true", "busProtUndervoltage", "busFrequencyLow", false, null);
+        ensureAlert("Mini-TEC bus frequency high", MiniTecPaths.STATION_HUB, "busFrequencyHigh",
+                "self.busFrequencyHigh[\"value\"] == true", "busProtUndervoltage", "busFrequencyHigh", false, null);
         ensureAlert("Mini-TEC GRPB gas leak", MiniTecPaths.GRPB, "gasLeak",
-                "self.gasLeak[\"value\"] == true", "grpbGasLeak", "gasLeak");
+                "self.gasLeak[\"value\"] == true", "grpbGasLeak", "gasLeak", false, null);
         ensureAlert("Mini-TEC GRPB fire", MiniTecPaths.GRPB, "fireAlarm",
-                "self.fireAlarm[\"value\"] == true", "grpbFire", "fireAlarm");
+                "self.fireAlarm[\"value\"] == true", "grpbFire", "fireAlarm", true,
+                "duty@plant.local|Пожар на ГРПБ|Активирован датчик пожара на ГРПБ мини-ТЭЦ");
+        ensureAlert("Mini-TEC GRPB PZK", MiniTecPaths.GRPB, "pzkTripped",
+                "self.pzkTripped[\"value\"] == true", "grpbGasLeak", "pzkTripped", false, null);
         ensureAlert("Mini-TEC station underpower", MiniTecPaths.STATION_HUB, "stationUnderpower",
-                "self.stationUnderpower[\"value\"] == true", "stationUnderpower", "stationUnderpower");
+                "self.stationUnderpower[\"value\"] == true", "stationUnderpower", "stationUnderpower", false, null);
 
         ensureCorrelator("Mini-TEC latch alarm", MiniTecPaths.STATION_HUB, "gpuProtOverload",
                 CorrelatorActionType.SET_VARIABLE, "alarmLatched=true");
@@ -277,12 +359,93 @@ public class MiniTecPlatformBootstrap {
                 CorrelatorActionType.RUN_WORKFLOW, MiniTecPaths.WORKFLOW_LOAD_UNLOAD);
     }
 
-    private void ensureAlert(String name, String objectPath, String watch, String condition, String event, String payload) {
+    @EventListener(ApplicationReadyEvent.class)
+    @Order(Ordered.HIGHEST_PRECEDENCE + 21)
+    public void reconcileMiniTecAlertsOnReady() {
+        if (!clusterBootstrapService.shouldRunFixtureBootstrap()) {
+            return;
+        }
+        if (objectManager.tree().findByPath(MiniTecPaths.FOLDER).isEmpty()) {
+            return;
+        }
+        reconcilePlaceholderNotificationChannels();
+    }
+
+    /** Clears demo placeholder webhook left from earlier bootstrap versions. */
+    private void reconcilePlaceholderNotificationChannels() {
+        String fireRulePath = AutomationTreeService.rulePathForName("Mini-TEC GRPB fire");
+        if (objectManager.tree().findByPath(fireRulePath).isEmpty()) {
+            return;
+        }
+        var rule = automationTreeService.getAlertRule(fireRulePath);
+        boolean placeholderWebhook = PLACEHOLDER_WEBHOOK.equals(rule.notificationWebhookUrl());
+        boolean emailWithoutRelay = rule.notificationEmailTarget() != null
+                && !rule.notificationEmailTarget().isBlank()
+                && !hasNotificationRelay();
+        if (!placeholderWebhook && !emailWithoutRelay) {
+            return;
+        }
+        automationTreeService.updateAlertRule(
+                fireRulePath,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                placeholderWebhook ? "" : null,
+                emailWithoutRelay ? "" : null
+        );
+    }
+
+    private boolean hasNotificationRelay() {
+        String relay = notificationProperties.getEmailRelayUrl();
+        return relay != null && !relay.isBlank();
+    }
+
+    private void ensureSchedule() {
+        scheduleObjectService.ensureCatalog();
+        String path = scheduleObjectService.pathForScheduleId(MiniTecPaths.SCHEDULE_JOURNAL_ETL);
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            scheduleObjectService.create(
+                    MiniTecPaths.SCHEDULE_JOURNAL_ETL,
+                    "Мини-ТЭЦ: суточный журнал",
+                    "Агрегация кВт·ч и наработки в tec_daily_journal",
+                    true,
+                    3_600_000L,
+                    MiniTecPaths.STATION_HUB,
+                    "aggregate_daily_journal"
+            );
+        }
+    }
+
+    private void ensureAlert(
+            String name,
+            String objectPath,
+            String watch,
+            String condition,
+            String event,
+            String payload,
+            boolean email,
+            String emailTarget
+    ) {
         String path = AutomationTreeService.rulePathForName(name);
         if (objectManager.tree().findByPath(path).isPresent()) {
             return;
         }
-        automationTreeService.createAlertRule(name, objectPath, watch, condition, event, payload, true, true, 0, false, "HIGH", false, null, null);
+        String webhook = null;
+        String target = email && hasNotificationRelay() ? emailTarget : null;
+        automationTreeService.createAlertRule(
+                name, objectPath, watch, condition, event, payload,
+                true, true, 0, false, "HIGH", false, webhook, target
+        );
     }
 
     private void ensureCorrelator(String name, String objectPath, String event, CorrelatorActionType action, String target) {
@@ -298,8 +461,11 @@ public class MiniTecPlatformBootstrap {
 
     private void ensureOperatorUi() throws Exception {
         List<Map<String, String>> dashboards = List.of(
+                entry(MiniTecPaths.DASHBOARD_HMI, "Мнемосхема"),
                 entry(MiniTecPaths.DASHBOARD_OVERVIEW, "Сводка"),
                 entry(MiniTecPaths.DASHBOARD_SINGLE_LINE, "Однолинейная"),
+                entry(MiniTecPaths.DASHBOARD_KPI, "KPI"),
+                entry(MiniTecPaths.DASHBOARD_TRENDS, "Тренды"),
                 entry(MiniTecPaths.DASHBOARD_GPU_DETAIL, "ГПУ"),
                 entry(MiniTecPaths.DASHBOARD_GRPB, "ГРПБ"),
                 entry(MiniTecPaths.DASHBOARD_RUMB, "РУМБ"),
@@ -311,7 +477,7 @@ public class MiniTecPlatformBootstrap {
         operatorAppUiService.saveUi(
                 MiniTecPaths.APP_ID,
                 MiniTecPaths.DISPLAY_NAME,
-                MiniTecPaths.DASHBOARD_OVERVIEW,
+                MiniTecPaths.DASHBOARD_HMI,
                 dashboards,
                 miniTecAlarmBarConfig()
         );
@@ -340,9 +506,9 @@ public class MiniTecPlatformBootstrap {
                         List.of("grpbGasLeak", "gasLeak"),
                         MiniTecPaths.GRPB,
                         "ERROR",
-                        "Утечка газа: {{eventName}}",
+                        "Утечка газа: {{eventName}} — отсечь газ, квитировать",
                         "#431407", "#ffedd5", "#f97316",
-                        MiniTecPaths.DASHBOARD_SINGLE_LINE,
+                        MiniTecPaths.DASHBOARD_HMI,
                         "acknowledgeAlarm"
                 ),
                 alarmRule(
@@ -352,7 +518,17 @@ public class MiniTecPlatformBootstrap {
                         "WARNING",
                         "Перегрузка: {{eventName}}",
                         "#422006", "#fef3c7", "#f59e0b",
-                        MiniTecPaths.DASHBOARD_GPU_DETAIL,
+                        MiniTecPaths.DASHBOARD_HMI,
+                        null
+                ),
+                alarmRule(
+                        "station-underpower",
+                        List.of("stationUnderpower"),
+                        MiniTecPaths.STATION_HUB,
+                        "WARNING",
+                        "Недомощность — сбросить нагрузку",
+                        "#422006", "#fef3c7", "#f59e0b",
+                        MiniTecPaths.DASHBOARD_HMI,
                         null
                 ),
                 alarmRule(
