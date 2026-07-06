@@ -604,7 +604,7 @@ public class PlatformAgentToolRegistry {
             @Override
             public String description() {
                 return "Read dashboard layout JSON. Args: path (dashboard object path) OR template "
-                        + "(snmp-host-monitoring | demo-sensor | virtual-cluster-overview | virtual-cluster-detail | empty). "
+                        + "(snmp-host-monitoring | virtual-cluster-overview | virtual-cluster-detail | empty). "
                         + "Call before editing. Returns layoutJson for set_dashboard_layout. "
                         + "Prefer template= over hand-building full layout.";
             }
@@ -662,7 +662,7 @@ public class PlatformAgentToolRegistry {
             @Override
             public String description() {
                 return "Replace dashboard layout variable. Args: path (required), layoutJson (full JSON string) "
-                        + "OR template (snmp-host-monitoring | demo-sensor | virtual-cluster-overview | "
+                        + "OR template (snmp-host-monitoring | virtual-cluster-overview | "
                         + "virtual-cluster-detail | empty). Prefer template= for standard screens. "
                         + "Requires DASHBOARD object at path. Never use set_variable for layout.";
             }

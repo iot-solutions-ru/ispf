@@ -10,7 +10,7 @@ class AgentPlaybooksTest {
     @Test
     void snmpPlaybookFormatsWithoutPlaceholderErrors() {
         String playbook = AgentPlaybooks.snmpLocalhostMonitoring();
-        assertTrue(playbook.contains(AgentPlaybooks.SNMP_DASHBOARD_PATH));
+        assertTrue(playbook.contains("search_context"));
         assertTrue(playbook.contains("set_dashboard_layout"));
         assertFalse(playbook.contains("%s"));
     }
@@ -19,7 +19,7 @@ class AgentPlaybooksTest {
     void snmpIfMibPlaybookFormatsWithoutPlaceholderErrors() {
         String playbook = AgentPlaybooks.snmpIfMibExtension();
         assertTrue(playbook.contains("ifDescr"));
-        assertTrue(playbook.contains(AgentPlaybooks.SNMP_DASHBOARD_PATH));
+        assertTrue(playbook.contains("<dashboardPath>"));
         assertFalse(playbook.contains("%s"));
     }
 

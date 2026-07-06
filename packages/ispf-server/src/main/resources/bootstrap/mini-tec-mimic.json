@@ -222,7 +222,7 @@
         "template": "ГПУ-1: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
       },
       "props": {
-        "label": "GPU-1",
+        "label": "ГПУ-1",
         "ratedKw": 1480,
         "width": 112,
         "height": 112
@@ -282,7 +282,7 @@
         "template": "ГПУ-2: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
       },
       "props": {
-        "label": "GPU-2",
+        "label": "ГПУ-2",
         "ratedKw": 1480,
         "width": 112,
         "height": 112
@@ -342,7 +342,7 @@
         "template": "ГПУ-3: P={power} kW. Перегрузка — снизить setpoint или остановить агрегат."
       },
       "props": {
-        "label": "GPU-3",
+        "label": "ГПУ-3",
         "ratedKw": 1480,
         "width": 112,
         "height": 112
@@ -382,7 +382,7 @@
         "template": "ДГУ резерв: P={power} kW. Пуск при обесточении шин."
       },
       "props": {
-        "label": "DGU",
+        "label": "ДГУ-1",
         "ratedKw": 500,
         "width": 112,
         "height": 112
@@ -997,8 +997,8 @@
     },
     {
       "id": "lib-gen-block",
-      "name": "GPU-1",
-      "svg": "<line x1=\"56\" y1=\"84\" x2=\"56\" y2=\"112\" stroke=\"#58a6ff\" stroke-width=\"3\"/><rect id=\"ispf-accent\" data-ispf-accent=\"1\" x=\"0\" y=\"0\" width=\"112\" height=\"84\" rx=\"6\" fill=\"#161b22\" stroke=\"#484f58\" stroke-width=\"2.5\"/><circle cx=\"56\" cy=\"16\" r=\"10\" fill=\"none\" stroke=\"#484f58\" stroke-width=\"1.5\"/><text x=\"56\" y=\"20\" text-anchor=\"middle\" fill=\"#484f58\" font-size=\"11\" font-weight=\"700\">G</text><text x=\"56\" y=\"38\" text-anchor=\"middle\" fill=\"#e6edf3\" font-size=\"13\" font-weight=\"600\">GPU-1</text><rect x=\"13.44\" y=\"62\" width=\"85.12\" height=\"18\" rx=\"4\" fill=\"#0d1117\" stroke=\"#30363d\"/><text id=\"ispf-power\" x=\"56\" y=\"75\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"11\" font-weight=\"600\">— kW</text><circle id=\"ispf-status\" cx=\"102\" cy=\"10\" r=\"4\" fill=\"#484f58\"/>",
+      "name": "ГПУ",
+      "svg": "<line x1=\"56\" y1=\"84\" x2=\"56\" y2=\"112\" stroke=\"#58a6ff\" stroke-width=\"3\"/><rect id=\"ispf-accent\" data-ispf-accent=\"1\" x=\"0\" y=\"0\" width=\"112\" height=\"84\" rx=\"6\" fill=\"#161b22\" stroke=\"#484f58\" stroke-width=\"2.5\"/><circle cx=\"56\" cy=\"16\" r=\"10\" fill=\"none\" stroke=\"#484f58\" stroke-width=\"1.5\"/><text x=\"56\" y=\"20\" text-anchor=\"middle\" fill=\"#484f58\" font-size=\"11\" font-weight=\"700\">G</text><text id=\"ispf-label\" x=\"56\" y=\"38\" text-anchor=\"middle\" fill=\"#e6edf3\" font-size=\"13\" font-weight=\"600\">GEN</text><rect x=\"13.44\" y=\"62\" width=\"85.12\" height=\"18\" rx=\"4\" fill=\"#0d1117\" stroke=\"#30363d\"/><text id=\"ispf-power\" x=\"56\" y=\"75\" text-anchor=\"middle\" fill=\"#8b949e\" font-size=\"11\" font-weight=\"600\">— kW</text><circle id=\"ispf-status\" cx=\"102\" cy=\"10\" r=\"4\" fill=\"#484f58\"/>",
       "width": 112,
       "height": 112,
       "viewBox": "0 0 112 112",
@@ -1035,6 +1035,12 @@
           "target": "#ispf-status",
           "trueColor": "#3fb950",
           "falseColor": "#484f58"
+        },
+        {
+          "bind": "label",
+          "type": "text",
+          "target": "#ispf-label",
+          "format": "string"
         },
         {
           "bind": "power",

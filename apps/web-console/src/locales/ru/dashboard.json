@@ -14,6 +14,7 @@
   "editor.layerZIndex": "Z-индекс",
   "editor.layerZIndexAuto": "авто",
   "editor.layoutHint": "Позицию и размер меняйте перетаскиванием на сетке.",
+  "editor.containerDropHint": "Перетащите виджет сюда или добавьте из палитры, когда контейнер выбран.",
   "editor.sampleZoneLabel": "Зона А",
   "editor.selectWidgetHint": "Выберите виджет на сетке или добавьте новый. Delete — удалить выбранный.",
   "editor.stylesHint": "Ключи элементов: {{keys}}. CSS в camelCase. Пусто — по умолчанию.",

@@ -13,7 +13,7 @@ import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.plugin.blueprint.BlueprintVariableDefinition;
-import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationRunner;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -22,22 +22,20 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Optional demo / lab Relative Blueprints — registered only when platform fixtures are enabled.
- * Solution-specific models belong in application bundles ({@code models[]} in manifest).
+ * Demo / lab fixtures — demo-only blueprint models and demo object tree.
+ * Runs only when {@code ispf.bootstrap.fixtures-enabled=true} and profile is not mini-tec.
+ * Platform reference models ({@link PlatformReferenceBlueprintBootstrap}) are registered separately.
  */
 @Component
-public class FixtureBlueprintBootstrap {
+public class DemoFixtureBootstrap {
 
     public static final String MQTT_SENSOR_MODEL = "mqtt-sensor-v1";
-    /** INSTANCE type for MQTT gateway child sensors (instantiate under root.platform.instances). */
-    public static final String MQTT_GATEWAY_SENSOR_MODEL = "mqtt-gateway-sensor-v1";
     public static final String MQTT_GATEWAY_MODEL = "mqtt-gateway-v1";
     public static final String MQTT_METER_BUS_MODEL = "mqtt-meter-bus-v1";
     public static final String METERS_MODEL = "Meters";
     public static final String DEVICE_DRIVER_MODEL = "device-driver-v1";
     public static final String BASE_SENSOR_MODEL = "base-sensor-v1";
     public static final String VENDOR_SENSOR_EXT_MODEL = "vendor-sensor-ext-v1";
-    public static final String SNMP_AGENT_MODEL = "snmp-agent-v1";
     public static final String SNMP_LOCALHOST_PATH = "root.platform.devices.snmp-localhost";
     public static final String VENDOR_SENSOR_DEMO_PATH = "root.platform.devices.vendor-sensor-demo";
     public static final String MQTT_METER_BUS_PATH = "root.platform.devices.mqtt-meter-bus";
@@ -59,22 +57,21 @@ public class FixtureBlueprintBootstrap {
                     + "{\"type\":\"return\",\"fields\":{\"ok\":true,\"message\":\"ingested\",\"routedPath\":\"${instancePath}\"}}"
                     + "]}";
 
-    /** Gateway child sensor INSTANCE type — persisted separately (loadtest / gateway pattern), not purged with demo fixtures. */
-    public static final List<String> FIXTURE_MODEL_NAMES = List.of(
+    /** Demo/lab models — not registered on bare production installs. */
+    public static final List<String> DEMO_MODEL_NAMES = List.of(
             MQTT_SENSOR_MODEL,
             MQTT_GATEWAY_MODEL,
             MQTT_METER_BUS_MODEL,
             METERS_MODEL,
             DEVICE_DRIVER_MODEL,
             BASE_SENSOR_MODEL,
-            VENDOR_SENSOR_EXT_MODEL,
-            SNMP_AGENT_MODEL
+            VENDOR_SENSOR_EXT_MODEL
     );
 
     public static final String SNMP_DRIVER_CONFIG =
             "{\"host\":\"127.0.0.1\",\"port\":\"161\",\"community\":\"public\",\"version\":\"2c\",\"timeoutMs\":\"3000\",\"retries\":\"1\"}";
 
-    /** OID mappings for {@link #SNMP_AGENT_MODEL} — must match dashboard {@code snmp-host-monitoring}. */
+    /** OID mappings for demo snmp-localhost — must match dashboard {@code snmp-host-monitoring}. */
     public static final String SNMP_POINT_MAPPINGS =
             "{\"sysName\":\"1.3.6.1.2.1.1.5.0:STRING\",\"sysDescr\":\"1.3.6.1.2.1.1.1.0:STRING\","
                     + "\"sysUpTime\":\"1.3.6.1.2.1.1.3.0\",\"sysLocation\":\"1.3.6.1.2.1.1.6.0:STRING\","
@@ -103,10 +100,6 @@ public class FixtureBlueprintBootstrap {
             .field("value", FieldType.DOUBLE)
             .build();
 
-    private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
-            .field("value", FieldType.STRING)
-            .build();
-
     private static final DataSchema BOOLEAN_VALUE_SCHEMA = DataSchema.builder("booleanValue")
             .field("value", FieldType.BOOLEAN)
             .build();
@@ -121,19 +114,25 @@ public class FixtureBlueprintBootstrap {
     private final BlueprintEngine blueprintEngine;
     private final BlueprintRegistry blueprintRegistry;
 
-    public FixtureBlueprintBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
+    public DemoFixtureBootstrap(BlueprintEngine blueprintEngine, BlueprintRegistry blueprintRegistry) {
         this.blueprintEngine = blueprintEngine;
         this.blueprintRegistry = blueprintRegistry;
     }
 
-    public void ensureFixtureBlueprints() {
+    /** Registers demo-only blueprint models and seeds demo objects + configurations. */
+    public void seedDemos(BlueprintApplicationRunner blueprintApplicationRunner) {
+        ensureDemoBlueprintModels();
+        blueprintApplicationRunner.applyDemoBlueprints();
+        blueprintApplicationRunner.ensureSnmpLocalhostDevice();
+    }
+
+    public void ensureDemoBlueprintModels() {
         if (blueprintRegistry.findByName(MQTT_SENSOR_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(buildMqttSensorModel());
         }
         if (blueprintRegistry.findByName(MQTT_GATEWAY_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewayModel());
         }
-        ensureMqttGatewaySensorInstanceModel();
         if (blueprintRegistry.findByName(DEVICE_DRIVER_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildDeviceDriverModel());
         }
@@ -144,55 +143,11 @@ public class FixtureBlueprintBootstrap {
             String baseId = blueprintRegistry.requireByName(BASE_SENSOR_MODEL).id();
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildVendorSensorExtensionModel(baseId));
         }
-        if (blueprintRegistry.findByName(SNMP_AGENT_MODEL).isEmpty()) {
-            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildSnmpAgentModel());
-        }
         if (blueprintRegistry.findByName(METERS_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMetersModel());
         }
         if (blueprintRegistry.findByName(MQTT_METER_BUS_MODEL).isEmpty()) {
             blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttMeterBusModel());
-        }
-    }
-
-    /** Creates or upgrades mqtt-gateway-sensor-v1 when the stored definition is an older minimal version. */
-    public void ensureMqttGatewaySensorInstanceModel() {
-        if (blueprintRegistry.findByName(MQTT_GATEWAY_SENSOR_MODEL).isEmpty()) {
-            blueprintEngine.createBlueprint(FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel());
-            return;
-        }
-        BlueprintDefinition existing = blueprintRegistry.requireByName(MQTT_GATEWAY_SENSOR_MODEL);
-        if (existing.variables().size() >= 5) {
-            return;
-        }
-        BlueprintDefinition fresh = FixtureBlueprintDefinitions.buildMqttGatewaySensorInstanceModel();
-        blueprintEngine.updateBlueprint(new BlueprintDefinition(
-                existing.id(),
-                fresh.name(),
-                fresh.description(),
-                fresh.type(),
-                fresh.targetObjectType(),
-                fresh.suitabilityExpression(),
-                fresh.variables(),
-                fresh.events(),
-                fresh.functions(),
-                fresh.bindings(),
-                fresh.parameters(),
-                existing.createdAt(),
-                java.time.Instant.now()
-        ));
-    }
-
-    /**
-     * Drops demo/lab model catalog nodes from the object tree and in-memory registry.
-     */
-    public void removeFixtureBlueprintsIfPresent(ObjectManager objectManager) {
-        for (String name : FIXTURE_MODEL_NAMES) {
-            blueprintRegistry.findByName(name).ifPresent(model -> {
-                String path = model.catalogObjectPath();
-                objectManager.tree().findByPath(path).ifPresent(node -> objectManager.delete(path));
-                blueprintRegistry.delete(model.id());
-            });
         }
     }
 

@@ -37,8 +37,8 @@ public final class AgentDashboardGuide {
                 
                 | Сценарий | Инструмент | Пример |
                 |----------|------------|--------|
-                | Готовый эталон (SNMP, demo, virt-cluster) | set_dashboard_layout template=... | template=snmp-host-monitoring |
-                | Один датчик, статический objectPath | template=demo-sensor или empty + 1–3 виджета | objectPath на DEVICE |
+                | Готовый layout JSON по имени шаблона | set_dashboard_layout template=... | template=snmp-host-monitoring (пути из list_variables) |
+                | Один датчик, статический objectPath | template=empty + 1–3 виджета | objectPath на DEVICE из tools |
                 | Добавить 1–2 виджета к существующему | add_dashboard_widget | после get_dashboard_layout |
                 | Полностью свой экран | get_dashboard_layout template=empty → правка → set_dashboard_layout layoutJson=... | редко |
                 
@@ -90,7 +90,7 @@ public final class AgentDashboardGuide {
                 
                 Статический value:
                 {"id":"temp","type":"value","title":"Температура","x":0,"y":0,"w":28,"h":14,
-                 "objectPath":"root.platform.devices.demo-sensor-01","variableName":"temperature","valueField":"value","decimals":1}
+                 "objectPath":"<devicePath>","variableName":"<variableName>","valueField":"value","decimals":1}
                 
                 Таблица устройств + выбор:
                 {"id":"dev-table","type":"object-table","title":"Устройства","x":0,"y":0,"w":84,"h":28,
@@ -103,7 +103,7 @@ public final class AgentDashboardGuide {
                 
                 SCADA mimic (полный экран):
                 {"id":"mimic","type":"scada-mimic","title":"Мнемосхема","x":0,"y":0,"w":84,"h":63,
-                 "mimicPath":"root.platform.mimics.tank-farm","panEnabled":true}
+                 "mimicPath":"<mimicPath>","panEnabled":true}
                 
                 Grid: columns=84, rowHeight=8. Позиция x,y и размер w,h — в ячейках fine grid (1/4 ширины ≈ w=21, 2 строки ≈ h=14).
                 НЕ используй старую сетку 12×72 — виджеты с w=4,h=2 будут крошечными. У каждого виджета уникальный id.

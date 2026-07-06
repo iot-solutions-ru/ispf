@@ -34,7 +34,7 @@ public final class AgentAssignmentClassifier {
             }
             return new Classification(AgentAssignmentType.EXPLORE_READONLY, 0.85, true, "_default");
         }
-        if (matchesAny(text, "snmp", "demo-sensor", "virtual lab", "virtual cluster", "localhost монитор",
+        if (matchesAny(text, "snmp", "virtual lab", "virtual cluster", "localhost монитор",
                 "localhost monitor")) {
             return new Classification(AgentAssignmentType.MONITORING_LAB, 0.9, true, "snmp_lab");
         }

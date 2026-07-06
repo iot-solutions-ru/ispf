@@ -4,6 +4,7 @@ import type { PanelWidget, DashboardWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { parseJsonArray } from "../dashboardUtils";
 import { useWidgetStyles } from "../widgetStyles";
+import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
 
 interface PanelWidgetViewProps {
@@ -26,6 +27,7 @@ export default function PanelWidgetView({
     () => parseJsonArray<DashboardWidget>(widget.childrenJson, []),
     [widget.childrenJson]
   );
+  const showBody = editable || !collapsed;
 
   return (
     <DashWidgetShell
@@ -34,7 +36,7 @@ export default function PanelWidgetView({
       className="dash-widget dash-widget-panel"
       editable={editable}
       headerExtra={
-        widget.collapsible ? (
+        widget.collapsible && !editable ? (
           <button
             type="button"
             className="btn small"
@@ -45,17 +47,20 @@ export default function PanelWidgetView({
         ) : undefined
       }
     >
-      {!collapsed && (
+      {showBody && (
         <div className="dash-panel-body" style={styles.body}>
-          {children.length === 0 ? (
-            <p className="hint">{t("view.addChildrenJson")}</p>
-          ) : (
-            renderWidgetList(children, {
-              refreshIntervalMs,
-              editable: editable ?? false,
-              depth: depth + 1,
-            })
-          )}
+          <ContainerChildGridOrList
+            slotRef={{ kind: "children", containerId: widget.id }}
+            children={children}
+            emptyHint={t("view.addChildrenJson")}
+            renderList={() =>
+              renderWidgetList(children, {
+                refreshIntervalMs,
+                editable: editable ?? false,
+                depth: depth + 1,
+              })
+            }
+          />
         </div>
       )}
     </DashWidgetShell>

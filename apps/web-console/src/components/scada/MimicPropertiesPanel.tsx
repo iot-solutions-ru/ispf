@@ -10,7 +10,8 @@ import type {
 } from "../../types/scadaMimic";
 import { createMimicId } from "../../scada/document";
 import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
-import CustomSvgEditor, { isCustomSvgElement } from "./CustomSvgEditor";
+import CustomSvgEditor, { supportsSvgMarkupEditor } from "./CustomSvgEditor";
+import MimicBindingSlotEditor from "./MimicBindingSlotEditor";
 
 interface MimicPropertiesPanelProps {
   document: ScadaMimicDocument;
@@ -21,6 +22,8 @@ interface MimicPropertiesPanelProps {
   onUpdateCanvasSize: (width: number, height: number) => void;
   onDeleteSelected: () => void;
   onAddCustomSymbol: (def: MimicCustomSymbol) => void;
+  onUpdateCustomSymbol?: (id: string, patch: Partial<MimicCustomSymbol>) => void;
+  onUpdateCustomSymbols?: (symbols: MimicCustomSymbol[]) => void;
 }
 
 const ACTION_TYPES: MimicAction["type"][] = [
@@ -242,6 +245,8 @@ export default function MimicPropertiesPanel({
   onUpdateCanvasSize,
   onDeleteSelected,
   onAddCustomSymbol,
+  onUpdateCustomSymbol,
+  onUpdateCustomSymbols,
 }: MimicPropertiesPanelProps) {
   const { t } = useTranslation("scada");
 
@@ -337,24 +342,6 @@ export default function MimicPropertiesPanel({
   const formatRules = selectedElement.formatRules ?? [];
   const bindingKeys = Object.keys(selectedElement.bindings);
 
-  const updateBinding = (
-    key: string,
-    field: "objectPath" | "variableName" | "valueField" | "qualityField" | "transform",
-    value: string
-  ) => {
-    const bindings = { ...selectedElement.bindings };
-    const current = bindings[key] ?? { variableName: "" };
-    if (field === "transform") {
-      bindings[key] = {
-        ...current,
-        transform: value ? (value as "bool" | "number" | "string") : undefined,
-      };
-    } else {
-      bindings[key] = { ...current, [field]: value };
-    }
-    onUpdateElement({ ...selectedElement, bindings });
-  };
-
   const updateAction = (index: number, patch: Partial<MimicAction>) => {
     const next = [...actions];
     next[index] = { ...next[index], ...patch };
@@ -414,12 +401,14 @@ export default function MimicPropertiesPanel({
 
       {canvasSection}
 
-      {isCustomSvgElement(selectedElement) && (
+      {supportsSvgMarkupEditor(selectedElement) && (
         <CustomSvgEditor
           element={selectedElement}
           customSymbols={document.customSymbols}
           onUpdateElement={onUpdateElement}
           onAddCustomSymbol={onAddCustomSymbol}
+          onUpdateCustomSymbol={onUpdateCustomSymbol}
+          onUpdateCustomSymbols={onUpdateCustomSymbols}
         />
       )}
 
@@ -555,53 +544,17 @@ export default function MimicPropertiesPanel({
         <div className="scada-props-section">
           <h3 className="scada-props-section-title">{t("props.bindings")}</h3>
           {(symbol?.bindingSchema ?? []).map((slot) => (
-            <div key={slot.key} className="scada-binding-slot">
-              <strong className="scada-binding-slot-title">{t(slot.labelKey)}</strong>
-              <label className="scada-form-field">
-                <span className="scada-form-label">objectPath</span>
-                <input
-                  type="text"
-                  className="scada-form-input mono"
-                  spellCheck={false}
-                  value={selectedElement.bindings[slot.key]?.objectPath ?? ""}
-                  onChange={(e) => updateBinding(slot.key, "objectPath", e.target.value)}
-                />
-              </label>
-              <label className="scada-form-field">
-                <span className="scada-form-label">variableName</span>
-                <input
-                  type="text"
-                  className="scada-form-input mono"
-                  spellCheck={false}
-                  value={selectedElement.bindings[slot.key]?.variableName ?? ""}
-                  onChange={(e) => updateBinding(slot.key, "variableName", e.target.value)}
-                />
-              </label>
-              <label className="scada-form-field">
-                <span className="scada-form-label">qualityField</span>
-                <input
-                  type="text"
-                  className="scada-form-input mono"
-                  spellCheck={false}
-                  placeholder="quality"
-                  value={selectedElement.bindings[slot.key]?.qualityField ?? ""}
-                  onChange={(e) => updateBinding(slot.key, "qualityField", e.target.value)}
-                />
-              </label>
-              <label className="scada-form-field">
-                <span className="scada-form-label">transform</span>
-                <select
-                  className="scada-form-input"
-                  value={selectedElement.bindings[slot.key]?.transform ?? ""}
-                  onChange={(e) => updateBinding(slot.key, "transform", e.target.value)}
-                >
-                  <option value="">—</option>
-                  <option value="bool">bool</option>
-                  <option value="number">number</option>
-                  <option value="string">string</option>
-                </select>
-              </label>
-            </div>
+            <MimicBindingSlotEditor
+              key={slot.key}
+              title={t(slot.labelKey)}
+              binding={selectedElement.bindings[slot.key]}
+              onUpdate={(patch) => {
+                const bindings = { ...selectedElement.bindings };
+                const current = bindings[slot.key] ?? { variableName: "" };
+                bindings[slot.key] = { ...current, ...patch };
+                onUpdateElement({ ...selectedElement, bindings });
+              }}
+            />
           ))}
         </div>
       )}

@@ -4,6 +4,10 @@ import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
 import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload } from "../../scada/customSvg";
 import {
+  convertDocumentToLibrarySymbols,
+  documentHasBuiltinSymbols,
+} from "../../scada/convertBuiltinToLibrary";
+import {
   createMimicId,
   DEFAULT_LAYER_ID,
   mimicDocumentToJson,
@@ -75,7 +79,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const session = useDashboardContext();
   const [document, setDocument] = useState<ScadaMimicDocument>(() => parseMimicDocument(diagramJson));
   const [tool, setTool] = useState<ScadaEditorTool>("select");
-  const [placeSymbolId, setPlaceSymbolId] = useState<string | null>("tank.vertical");
+  const [placeSymbolId, setPlaceSymbolId] = useState<string | null>("pack.ispf-pid.vertical-tank");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [connectFrom, setConnectFrom] = useState<{ elementId: string; port: string } | null>(null);
@@ -313,6 +317,31 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     [updateDocument]
   );
 
+  const handleUpdateCustomSymbol = useCallback(
+    (id: string, patch: Partial<MimicCustomSymbol>) => {
+      updateDocument((doc) => ({
+        ...doc,
+        customSymbols: (doc.customSymbols ?? []).map((sym) =>
+          sym.id === id ? { ...sym, ...patch } : sym
+        ),
+      }));
+    },
+    [updateDocument]
+  );
+
+  const handleUpdateCustomSymbols = useCallback(
+    (symbols: MimicCustomSymbol[]) => {
+      updateDocument((doc) => ({ ...doc, customSymbols: symbols }));
+    },
+    [updateDocument]
+  );
+
+  const handleConvertDocumentToLibrary = useCallback(() => {
+    updateDocument((doc) => convertDocumentToLibrarySymbols(doc));
+  }, [updateDocument]);
+
+  const hasBuiltinSymbols = useMemo(() => documentHasBuiltinSymbols(document), [document]);
+
   const handleUploadCustomSymbol = useCallback(
     (file: File) => {
       const reader = new FileReader();
@@ -327,6 +356,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
           height: parsed.height,
           viewBox: parsed.viewBox,
           ports: parsed.ports,
+          inUserLibrary: true,
         };
         updateDocument((doc) => ({
           ...doc,
@@ -381,8 +411,6 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         const def = document.customSymbols?.find((s) => s.id === placeSymbolId.slice("custom:".length));
         if (def) {
           props = {
-            svg: def.svg,
-            viewBox: def.viewBox ?? `0 0 ${def.width} ${def.height}`,
             width: def.width,
             height: def.height,
           };
@@ -398,7 +426,10 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         bindings: {},
         props,
       };
-      updateDocument((doc) => ({ ...doc, elements: [...doc.elements, el] }));
+      updateDocument((doc) => ({
+        ...doc,
+        elements: [...doc.elements, el],
+      }));
       setSelectedIds(new Set([el.id]));
       setSelectedConnectionId(null);
       return;
@@ -789,6 +820,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               }
               onDeleteSelected={handleDeleteSelected}
               onAddCustomSymbol={handleAddCustomSymbol}
+              onUpdateCustomSymbol={handleUpdateCustomSymbol}
+              onUpdateCustomSymbols={handleUpdateCustomSymbols}
               onUpdateCanvasSize={(width, height) =>
                 updateDocument((doc) => ({
                   ...doc,
@@ -799,6 +832,15 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
             />
             <details className="scada-import-export">
               <summary>{t("importExport.title")}</summary>
+              {hasBuiltinSymbols && (
+                <button
+                  type="button"
+                  className="scada-btn-ghost scada-btn-block scada-import-export-convert"
+                  onClick={handleConvertDocumentToLibrary}
+                >
+                  {t("importExport.convertToLibrary")}
+                </button>
+              )}
               <textarea rows={6} value={importText} onChange={(e) => setImportText(e.target.value)} placeholder={t("importExport.placeholder")} />
               <div className="scada-import-export-actions">
                 <button type="button" onClick={() => setImportText(mimicDocumentToJson(document))}>{t("importExport.export")}</button>

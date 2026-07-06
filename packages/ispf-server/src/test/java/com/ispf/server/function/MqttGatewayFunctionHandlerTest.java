@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.application.script.PlatformScriptBridge;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.object.ObjectManager;
@@ -116,7 +116,7 @@ class MqttGatewayFunctionHandlerTest {
         PlatformObject gateway = new PlatformObject("gateway", GATEWAY, ObjectType.DEVICE, "Gateway", "", null);
         when(objectManager.require(GATEWAY)).thenReturn(gateway);
         when(platformScriptBridge.instantiateModelIfMissing(
-                eq(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL),
+                eq(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL),
                 eq(BlueprintCatalogRoots.INSTANCES),
                 eq("loadtest-mqtt-sensor-00001")
         )).thenReturn(CHILD);

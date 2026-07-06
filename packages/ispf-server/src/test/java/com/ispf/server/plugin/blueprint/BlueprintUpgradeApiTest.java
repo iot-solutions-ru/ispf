@@ -1,7 +1,7 @@
 package com.ispf.server.plugin.blueprint;
 
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class ModelUpgradeApiTest {
 
-    private static final String VENDOR_PATH = FixtureBlueprintBootstrap.VENDOR_SENSOR_DEMO_PATH;
+    private static final String VENDOR_PATH = DemoFixtureBootstrap.VENDOR_SENSOR_DEMO_PATH;
 
     @Autowired
     private MockMvc mockMvc;
@@ -44,7 +44,7 @@ class ModelUpgradeApiTest {
     void vendorDemoDeviceExistsAndBulkUpgradeSucceeds() throws Exception {
         BlueprintApplicationRunner.applyDemoBlueprints();
 
-        var vendorModel = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL);
+        var vendorModel = blueprintRegistry.requireByName(DemoFixtureBootstrap.VENDOR_SENSOR_EXT_MODEL);
         objectManager.require(VENDOR_PATH);
 
         mockMvc.perform(get("/api/v1/blueprints/{id}/instances", vendorModel.id()))
@@ -63,7 +63,7 @@ class ModelUpgradeApiTest {
     @Test
     void singlePathUpgradeApi() throws Exception {
         BlueprintApplicationRunner.applyDemoBlueprints();
-        var vendorModel = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL);
+        var vendorModel = blueprintRegistry.requireByName(DemoFixtureBootstrap.VENDOR_SENSOR_EXT_MODEL);
 
         mockMvc.perform(post("/api/v1/blueprints/{id}/upgrade", vendorModel.id())
                         .param("targetPath", VENDOR_PATH)

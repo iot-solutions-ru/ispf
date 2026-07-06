@@ -5,7 +5,7 @@ import { applyFormatRules } from "../../scada/formatRules";
 import { connectionPolylinePoints, getElementPortPosition } from "../../scada/connectionRouting";
 import { elementRenderProps } from "../../scada/elementRenderProps";
 import { elementFlipTransform, elementTransform, type ResizeHandle } from "../../scada/layoutOps";
-import { getSymbolRender, resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
+import { resolveElementSymbol, symbolSize } from "../../scada/symbols/registry";
 import { asBool } from "../../scada/utils";
 
 const HANDLE_SIZE = 8;
@@ -161,7 +161,7 @@ function MimicElementNode({
   buildDragOrigins,
 }: MimicElementNodeProps) {
   const symbol = resolveElementSymbol(el, customSymbols);
-  const Render = getSymbolRender(el.symbolId, customSymbols);
+  const Render = symbol?.render;
   if (!symbol || !Render) return null;
   const { width, height } = symbolSize(el, customSymbols);
   const styleOverrides = applyFormatRules(values, el.formatRules);

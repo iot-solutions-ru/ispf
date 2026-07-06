@@ -31,14 +31,10 @@ async function fetchLocaleBundles(
 }
 
 async function withDomainScada(
-  locale: AppLocale,
+  _locale: AppLocale,
   bundles: Record<string, Record<string, string>>,
 ): Promise<Record<string, Record<string, string>>> {
-  if (!bundles.scada) return bundles;
-  const { buildDomainI18n } = await import("../scada/symbols/domainCatalog");
-  const domain = buildDomainI18n();
-  const extra = locale === "ru" ? domain.ru : domain.en;
-  return { ...bundles, scada: { ...bundles.scada, ...extra } };
+  return bundles;
 }
 
 export async function loadLocale(locale: AppLocale): Promise<void> {

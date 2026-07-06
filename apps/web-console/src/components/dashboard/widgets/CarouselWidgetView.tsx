@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { CarouselWidget, DashboardWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { useDashboardEditor } from "../DashboardEditorContext";
+import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
 
 interface CarouselSlide {
@@ -26,6 +28,7 @@ export default function CarouselWidgetView({
 }: CarouselWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
+  const editor = useDashboardEditor();
   const slides = useMemo(() => {
     try {
       const parsed = widget.slidesJson ? (JSON.parse(widget.slidesJson) as CarouselSlide[]) : [];
@@ -38,12 +41,26 @@ export default function CarouselWidgetView({
   const slide = slides[index];
 
   useEffect(() => {
-    if (!widget.autoplayMs || slides.length < 2) return;
+    if (!widget.autoplayMs || slides.length < 2 || editable) return;
     const id = window.setInterval(() => {
       setIndex((i) => (i + 1) % slides.length);
     }, widget.autoplayMs);
     return () => window.clearInterval(id);
-  }, [widget.autoplayMs, slides.length]);
+  }, [editable, widget.autoplayMs, slides.length]);
+
+  useEffect(() => {
+    const editorIndex = editor?.activeSlots.slideIndex[widget.id];
+    if (editor?.enabled && editorIndex != null && editorIndex >= 0 && editorIndex < slides.length) {
+      setIndex(editorIndex);
+    }
+  }, [editor?.activeSlots.slideIndex, editor?.enabled, slides.length, widget.id]);
+
+  const selectSlide = (nextIndex: number) => {
+    setIndex(nextIndex);
+    if (editor?.enabled) {
+      editor.setActiveSlide(widget.id, nextIndex);
+    }
+  };
 
   return (
     <DashWidgetShell
@@ -60,7 +77,7 @@ export default function CarouselWidgetView({
             <button
               type="button"
               className="btn small"
-              onClick={() => setIndex((i) => (i - 1 + slides.length) % slides.length)}
+              onClick={() => selectSlide((index - 1 + slides.length) % slides.length)}
             >
               ‹
             </button>
@@ -68,18 +85,24 @@ export default function CarouselWidgetView({
             <button
               type="button"
               className="btn small"
-              onClick={() => setIndex((i) => (i + 1) % slides.length)}
+              onClick={() => selectSlide((index + 1) % slides.length)}
             >
               ›
             </button>
           </div>
-          {slide?.children?.length
-            ? renderWidgetList(slide.children, {
-                refreshIntervalMs,
-                editable: editable ?? false,
-                depth: depth + 1,
-              })
-            : null}
+          <ContainerChildGridOrList
+            slotRef={{ kind: "slide", containerId: widget.id, slideIndex: index }}
+            children={slide?.children ?? []}
+            renderList={() =>
+              slide?.children?.length
+                ? renderWidgetList(slide.children, {
+                    refreshIntervalMs,
+                    editable: editable ?? false,
+                    depth: depth + 1,
+                  })
+                : null
+            }
+          />
         </div>
       )}
     </DashWidgetShell>

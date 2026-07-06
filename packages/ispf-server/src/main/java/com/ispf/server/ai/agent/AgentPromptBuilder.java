@@ -1,5 +1,7 @@
 package com.ispf.server.ai.agent;
 
+import com.ispf.server.dashboard.DashboardService;
+
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +68,7 @@ public final class AgentPromptBuilder {
             - Use result.suggestions for clickable follow-ups: each item needs "label" (button text) and \
             "message" (exact user message to send next). Set result.interactive=true when asking.
             - Example when report name is unclear:
-            {"type":"finish","summary":"Есть несколько отчётов. Какой запустить или сначала показать список?","result":{"interactive":true,"suggestions":[{"label":"Список отчётов","message":"Покажи доступные отчёты и кратко опиши каждый","primary":true},{"label":"SNMP demo dashboard","message":"Открой демо SNMP dashboard и опиши текущие метрики"}]}}
+            {"type":"finish","summary":"Есть несколько отчётов. Какой запустить или сначала показать список?","result":{"interactive":true,"suggestions":[{"label":"Список отчётов","message":"Покажи доступные отчёты и кратко опиши каждый","primary":true},{"label":"Создать SNMP дашборд","message":"Создай SNMP устройство и дашборд мониторинга по документации"}]}}
             - After list_reports: if needsClarification in tool result — finish with question + result.suggestions, do NOT run_report yet.
             - When the user picks a suggestion (same text as message field), treat it as confirmation and proceed.
             - Complex TZ / full project: analytical intake — decompose implicit user phrases into specBrief FR-* \
@@ -91,7 +93,8 @@ public final class AgentPromptBuilder {
             - GROUND TRUTH: parentPath, objectPath, modelName, templateId, profile, variableName — only from prior tool results this turn
             - create_object types: DEVICE, DASHBOARD, CUSTOM, WORKFLOW, REPORT, ALERT, CORRELATOR, ...
             - delete_object path=<full path> — remove tree node; stops device driver first
-            - SNMP device: templateId snmp-agent-v1, driverId snmp, host 127.0.0.1:161 community public
+            - BARE PLATFORM: never assume pre-seeded demo objects exist — list_objects / search_objects first; paths only from tool results
+            - SNMP device: search_context topic=drivers query=snmp — templateId, driverConfigJson, point mappings from docs
             - Modbus TCP: driverId modbus-tcp, configure driverConfigJson host/port/unitId
             - Virtual lab devices: templateId virtual-lab-v1 or virtual-unified-v1 (both are RELATIVE mixins); profile lab|meter|unified in driverConfigJson
             - Before project implementation: get_automation_schema topic=projectBlueprint
@@ -109,14 +112,15 @@ public final class AgentPromptBuilder {
             - Cross-device logic: CUSTOM hub + create_variable refAt(...) + CEL clusterError + configure_alert on hub
             - Operator HMI: configure_operator_ui (defaultDashboard + dashboards[]) — do NOT defer to manual UI setup
             - create_variable for bindings; describe_variables before set_variable on existing vars
-            - Dashboard templates: snmp-host-monitoring, demo-sensor, virtual-cluster-overview, virtual-cluster-detail,
-              monitoring-overview, scada-facility-overview, empty
+            - Dashboard layout templates (names only — bind widgets to paths from list_variables): """
+                + String.join(", ", DashboardService.layoutTemplateNames())
+                + """
             - Drill-down: object-table rowTargetDashboard + selectionKey on detail widgets (see virtual-cluster playbook)
             - Complete end-to-end projects with tools; create objects AND types (instantiate_instance_type, apply_relative_blueprint) autonomously
             - Never tell user to configure dashboards/alerts/operator/models manually in UI when agent tools exist
             - set_variable for driverConfigJson, driverPointMappingsJson, dashboard title
             - Dashboard workflow: create_object DASHBOARD → list_variables on device → set_dashboard_layout template=
-              (snmp-host-monitoring|demo-sensor|virtual-cluster-*|empty) OR add_dashboard_widget for 1–2 widgets max.
+              (snmp-host-monitoring|virtual-cluster-*|empty) OR add_dashboard_widget for 1–2 widgets max.
               Layout variable: layout (JSON {columns,rowHeight,widgets[]}). NEVER set_variable name=widgets or layout.
             - Widget binding: value/chart use objectPath OR selectionKey+variableName; object-table/card-grid/map use parentPath;
               selectionKey strings must match between table (publisher) and consumers; drill-down: rowTargetDashboard on table
@@ -216,11 +220,6 @@ public final class AgentPromptBuilder {
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.functionsGuide());
         prompt.append(RULES);
-        prompt.append("- Reuse existing demo paths when present: ")
-                .append(AgentPlaybooks.SNMP_DEVICE_PATH)
-                .append(" and ")
-                .append(AgentPlaybooks.SNMP_DASHBOARD_PATH)
-                .append("\n");
         return prompt.toString();
     }
 }

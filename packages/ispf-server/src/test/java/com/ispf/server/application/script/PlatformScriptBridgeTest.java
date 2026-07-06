@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
@@ -52,7 +52,7 @@ class PlatformScriptBridgeTest {
     @Test
     void instantiateModelIfMissingCreatesAndReusesMetersInstance() {
         String first = bridge.instantiateModelIfMissing(
-                FixtureBlueprintBootstrap.METERS_MODEL,
+                DemoFixtureBootstrap.METERS_MODEL,
                 "root.platform.instances",
                 INSTANCE_ID
         );
@@ -60,7 +60,7 @@ class PlatformScriptBridgeTest {
         assertThat(objectManager.tree().findByPath(INSTANCE_PATH)).isPresent();
 
         String second = bridge.instantiateModelIfMissing(
-                FixtureBlueprintBootstrap.METERS_MODEL,
+                DemoFixtureBootstrap.METERS_MODEL,
                 "root.platform.instances",
                 INSTANCE_ID
         );
@@ -70,7 +70,7 @@ class PlatformScriptBridgeTest {
     @Test
     void setDriverTelemetryWritesTemperature() {
         bridge.instantiateModelIfMissing(
-                FixtureBlueprintBootstrap.METERS_MODEL,
+                DemoFixtureBootstrap.METERS_MODEL,
                 "root.platform.instances",
                 INSTANCE_ID
         );

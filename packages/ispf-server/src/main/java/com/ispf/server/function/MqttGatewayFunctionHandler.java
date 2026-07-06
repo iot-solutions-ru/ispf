@@ -7,7 +7,8 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.server.application.script.PlatformScriptBridge;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.DemoFixtureBootstrap;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.driver.DeviceTelemetryPolicyService;
 import com.ispf.server.history.TelemetryHistorianFastPath;
 import com.ispf.server.object.ObjectManager;
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
 public class MqttGatewayFunctionHandler implements FunctionHandler {
 
     public static final String FUNCTION_NAME = "dispatchTelemetry";
-    public static final String MODEL_NAME = FixtureBlueprintBootstrap.MQTT_GATEWAY_MODEL;
+    public static final String MODEL_NAME = DemoFixtureBootstrap.MQTT_GATEWAY_MODEL;
 
     private static final DataSchema INGRESS_SCHEMA = DataSchema.builder("mqttIngress")
             .field("topic", FieldType.STRING)
@@ -115,7 +116,7 @@ public class MqttGatewayFunctionHandler implements FunctionHandler {
         }
 
         String instanceModelName = stringConfig(gateway, "instanceModelName")
-                .orElse(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL);
+                .orElse(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL);
         String instanceName = sensorNamePrefix + index.get();
         final String childPath;
         try {

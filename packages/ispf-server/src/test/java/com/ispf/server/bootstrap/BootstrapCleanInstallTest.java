@@ -35,11 +35,22 @@ class BootstrapCleanInstallTest {
     void registersVirtualLabModelsWithoutFixtures() {
         assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_LAB_MODEL)).isPresent();
         assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
+        assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL)).isPresent();
+        assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)).isPresent();
+    }
+
+    @Test
+    void doesNotSeedDemoObjects() {
+        assertThat(objectManager.tree().findByPath("root.platform.devices.demo-sensor-01")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.devices.snmp-localhost")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.dashboards.demo-sensor")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.dashboards.snmp-host-monitoring")).isEmpty();
+        assertThat(objectManager.tree().findByPath("root.platform.workflows.demo-alarm-handler")).isEmpty();
     }
 
     @Test
     void doesNotSeedFixtureModels() {
-        for (String name : FixtureBlueprintBootstrap.FIXTURE_MODEL_NAMES) {
+        for (String name : DemoFixtureBootstrap.DEMO_MODEL_NAMES) {
             assertThat(BlueprintRegistry.findByName(name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.relative-blueprints." + name)).isEmpty();
             assertThat(objectManager.tree().findByPath("root.platform.instance-types." + name)).isEmpty();

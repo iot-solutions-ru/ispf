@@ -50,7 +50,7 @@ export default function SymbolPalette({
   const fileRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("process");
+  const [category, setCategory] = useState<string>("pack-tanks");
   const [packReady, setPackReady] = useState(false);
 
   useEffect(() => {

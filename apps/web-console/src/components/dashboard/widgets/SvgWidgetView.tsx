@@ -10,6 +10,7 @@ import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { cloneRecord, setFieldValue } from "../../../utils/record";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
 
 interface SvgWidgetViewProps {
   widget: SvgWidget;
@@ -103,11 +104,7 @@ export default function SvgWidgetView({
     }
   };
 
-  const svgSrc = widget.svgUrl?.startsWith("/")
-    ? widget.svgUrl
-    : widget.svgUrl
-      ? `/${widget.svgUrl.replace(/^\//, "")}`
-      : "";
+  const svgSrc = resolveWidgetMediaSrc(widget.svgUrl);
 
   return (
     <DashWidgetShell

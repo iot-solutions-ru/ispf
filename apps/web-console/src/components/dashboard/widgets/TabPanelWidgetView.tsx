@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { DashboardWidget, TabPanelWidget, TabPanelTab } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { useDashboardEditor } from "../DashboardEditorContext";
+import { ContainerChildGridOrList } from "../ContainerChildGrid";
 import { renderWidgetList } from "../renderDashboardWidget";
 import { useDashboardContext } from "../DashboardContext";
 
@@ -21,6 +23,7 @@ export default function TabPanelWidgetView({
 }: TabPanelWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
+  const editor = useDashboardEditor();
   const { params: sessionParams } = useDashboardContext();
   const tabs = useMemo(() => {
     try {
@@ -46,7 +49,22 @@ export default function TabPanelWidgetView({
     }
   }, [requestedTab, tabs]);
 
+  useEffect(() => {
+    const editorTab = editor?.activeSlots.tabId[widget.id];
+    if (editor?.enabled && editorTab && tabs.some((tab) => tab.id === editorTab)) {
+      setActiveId(editorTab);
+    }
+  }, [editor?.activeSlots.tabId, editor?.enabled, tabs, widget.id]);
+
   const activeTab = tabs.find((tab) => tab.id === activeId) ?? tabs[0];
+  const activeChildren = (activeTab?.children ?? []) as DashboardWidget[];
+
+  const selectTab = (tabId: string) => {
+    setActiveId(tabId);
+    if (editor?.enabled) {
+      editor.setActiveTab(widget.id, tabId);
+    }
+  };
 
   return (
     <DashWidgetShell
@@ -65,20 +83,25 @@ export default function TabPanelWidgetView({
                 key={tab.id}
                 type="button"
                 className={`btn small ${tab.id === activeTab?.id ? "primary" : ""}`}
-                onClick={() => setActiveId(tab.id)}
+                onClick={() => selectTab(tab.id)}
               >
                 {tab.label}
               </button>
             ))}
           </nav>
           <div className="dash-tab-content">
-            {activeTab?.children?.length
-              ? renderWidgetList(activeTab.children as DashboardWidget[], {
+            <ContainerChildGridOrList
+              slotRef={{ kind: "tab", containerId: widget.id, tabId: activeTab?.id ?? tabs[0].id }}
+              children={activeChildren}
+              emptyHint={t("view.emptyTab")}
+              renderList={() =>
+                renderWidgetList(activeChildren, {
                   refreshIntervalMs,
                   editable: editable ?? false,
                   depth: depth + 1,
                 })
-              : <p className="hint">{t("view.emptyTab")}</p>}
+              }
+            />
           </div>
         </div>
       )}

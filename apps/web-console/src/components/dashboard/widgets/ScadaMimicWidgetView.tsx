@@ -26,6 +26,7 @@ import DashWidgetShell from "../DashWidgetShell";
 import { cloneRecord, setFieldValue } from "../../../utils/record";
 import { asBool } from "../../../scada/utils";
 import ScadaMimicCanvas from "../../scada/ScadaMimicCanvas";
+import { ensurePackLoaded } from "../../../scada/symbols/registry";
 import { exportMimicSvgToPng, resolveMimicExportBackground } from "../../../scada/mimicPngExport";
 
 interface ScadaMimicWidgetViewProps {
@@ -104,6 +105,10 @@ export default function ScadaMimicWidgetView({
     setRuntimeDoc(null);
     setLocalElements({});
   }, [documentKey, widget.defaultZoom]);
+
+  useEffect(() => {
+    void ensurePackLoaded();
+  }, []);
 
   const mimicQuery = useQuery({
     queryKey: ["mimic", widget.mimicPath],

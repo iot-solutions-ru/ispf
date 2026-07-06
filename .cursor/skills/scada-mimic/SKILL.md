@@ -12,7 +12,7 @@ description: >-
 
 | Topic | Location |
 |-------|----------|
-| Overview | `docs/SCADA.md` |
+| Overview | `docs/SCADA.md` (bindings, custom SVG, behaviors, palette) |
 | diagramJson v2, REST | `docs/SCADA_MIMIC.md` |
 | Agent routing | `docs/AGENT_KNOWLEDGE.md` § Bootstrap SCADA demos |
 | Server playbook | `AgentPlaybooks.scadaMimicGuide()` |

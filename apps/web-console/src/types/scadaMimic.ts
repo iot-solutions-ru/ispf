@@ -165,6 +165,8 @@ export interface MimicCustomSymbol {
   behaviors?: MimicSymbolBehavior[];
   /** Optional trace to a built-in palette symbol id (e.g. breaker). */
   sourceSymbolId?: string;
+  /** When true, shown in palette «Свои SVG»; bootstrap defs stay hidden until edited. */
+  inUserLibrary?: boolean;
 }
 
 export interface MimicTypography {

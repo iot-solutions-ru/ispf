@@ -3,8 +3,6 @@ package com.ispf.server.bootstrap;
 import com.ispf.core.object.ObjectTree;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
-import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.security.PlatformUserService;
 import org.springframework.stereotype.Component;
@@ -12,22 +10,16 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * Seeds the platform with default objects. Device structure comes from Models plugin.
+ * Seeds the platform catalog skeleton on first start. Demo objects are seeded by {@link DemoFixtureBootstrap}.
  */
 @Component
 public class PlatformBootstrap {
 
-    private final BootstrapProperties bootstrapProperties;
-
-    public PlatformBootstrap(BootstrapProperties bootstrapProperties) {
-        this.bootstrapProperties = bootstrapProperties;
+    public PlatformBootstrap() {
     }
 
     public void initialize(ObjectTree tree) {
         initializeCatalog(tree);
-        if (bootstrapProperties.shouldSeedGeneralReferenceDemos()) {
-            initializeFixtures(tree);
-        }
     }
 
     private void initializeCatalog(ObjectTree tree) {
@@ -51,50 +43,6 @@ public class PlatformBootstrap {
         register(tree, "root.platform.applications", ObjectType.APPLICATIONS, "app-folder-v1");
         registerCatalogFolder(tree, "root.platform.instances");
         register(tree, FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
-    }
-
-    private void initializeFixtures(ObjectTree tree) {
-        PlatformObject demoDevice = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.devices.demo-sensor-01",
-                ObjectType.DEVICE,
-                "Demo Sensor 01",
-                """
-                        Sample MQTT temperature device for learning the platform. \
-                        Fixture model mqtt-sensor-v1 is applied when platform fixtures are enabled.""",
-                FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL
-        );
-        tree.register(demoDevice);
-
-        PlatformObject demoDashboard = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.dashboards.demo-sensor",
-                ObjectType.DASHBOARD,
-                "Demo Sensor Dashboard",
-                "Live HMI widgets bound to demo-sensor-01 variables. Open in Dashboard editor or operator mode when linked from an Operator App.",
-                "dashboard-v1"
-        );
-        tree.register(demoDashboard);
-
-        PlatformObject snmpDashboard = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.dashboards.snmp-host-monitoring",
-                ObjectType.DASHBOARD,
-                "SNMP Host Monitoring",
-                "System monitoring dashboard for SNMP agents (Windows/Linux). Requires snmp-localhost or compatible SNMP device under Devices.",
-                "dashboard-v1"
-        );
-        tree.register(snmpDashboard);
-
-        PlatformObject demoWorkflow = new PlatformObject(
-                UUID.randomUUID().toString(),
-                "root.platform.workflows.demo-alarm-handler",
-                ObjectType.WORKFLOW,
-                "Demo Alarm Handler",
-                "Example BPMN workflow triggered when the demo sensor alarm becomes active. Link an Operator App to surface user tasks in the work queue.",
-                "workflow-v1"
-        );
-        tree.register(demoWorkflow);
     }
 
     private static void register(ObjectTree tree, String path, ObjectType type, String templateId) {

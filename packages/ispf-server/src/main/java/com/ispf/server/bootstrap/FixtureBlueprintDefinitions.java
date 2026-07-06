@@ -85,7 +85,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildMqttGatewayModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.MQTT_GATEWAY_MODEL,
+                DemoFixtureBootstrap.MQTT_GATEWAY_MODEL,
                 "MQTT ingress gateway — routes lastIngress to child sensors via dispatchTelemetry",
                 BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
@@ -151,7 +151,7 @@ public final class FixtureBlueprintDefinitions {
                                 true,
                                 DataRecord.single(
                                         STRING_VALUE_SCHEMA,
-                                        Map.of("value", FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
+                                        Map.of("value", PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
                                 )
                         ),
                         BlueprintVariableDefinition.of(
@@ -239,7 +239,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildDeviceDriverModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.DEVICE_DRIVER_MODEL,
+                DemoFixtureBootstrap.DEVICE_DRIVER_MODEL,
                 "Generic device with driver binding (driverId, config, mappings)",
                 BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
@@ -314,7 +314,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildMqttGatewaySensorInstanceModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL,
+                PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL,
                 "MQTT temperature sensor — child of mqtt-gateway-v1 (telemetry via dispatchTelemetry, threshold alarms)",
                 BlueprintType.INSTANCE,
                 ObjectType.CUSTOM,
@@ -391,7 +391,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildMetersModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.METERS_MODEL,
+                DemoFixtureBootstrap.METERS_MODEL,
                 "MQTT meter instance — temperature telemetry",
                 BlueprintType.INSTANCE,
                 ObjectType.CUSTOM,
@@ -419,7 +419,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildMqttMeterBusModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL,
+                DemoFixtureBootstrap.MQTT_METER_BUS_MODEL,
                 "MQTT meter bus — ingests JSON meter payloads and upserts Meters instances",
                 BlueprintType.RELATIVE,
                 ObjectType.DEVICE,
@@ -459,7 +459,7 @@ public final class FixtureBlueprintDefinitions {
                                 STRING_VALUE_SCHEMA,
                                 true,
                                 true,
-                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.METERS_MODEL))
+                                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DemoFixtureBootstrap.METERS_MODEL))
                         ),
                         BlueprintVariableDefinition.of(
                                 "driverId",
@@ -497,7 +497,7 @@ public final class FixtureBlueprintDefinitions {
                                 true,
                                 DataRecord.single(
                                         STRING_VALUE_SCHEMA,
-                                        Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_DRIVER_CONFIG)
+                                        Map.of("value", DemoFixtureBootstrap.METER_INGRESS_DRIVER_CONFIG)
                                 )
                         ),
                         BlueprintVariableDefinition.of(
@@ -509,18 +509,18 @@ public final class FixtureBlueprintDefinitions {
                                 true,
                                 DataRecord.single(
                                         STRING_VALUE_SCHEMA,
-                                        Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_POINT_MAPPINGS)
+                                        Map.of("value", DemoFixtureBootstrap.METER_INGRESS_POINT_MAPPINGS)
                                 )
                         )
                 ),
                 List.of(),
                 List.of(new FunctionDescriptor(
-                        FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
+                        DemoFixtureBootstrap.INGEST_METER_PAYLOAD_FUNCTION,
                         "Parse meter JSON from MQTT ingress and upsert Meters instance",
                         MQTT_INGRESS_SCHEMA,
                         DISPATCH_STATUS_SCHEMA,
                         "script",
-                        FixtureBlueprintBootstrap.METER_INGEST_SCRIPT_BODY,
+                        DemoFixtureBootstrap.METER_INGEST_SCRIPT_BODY,
                         null,
                         "1"
                 )),
@@ -537,7 +537,7 @@ public final class FixtureBlueprintDefinitions {
                                 true
                         ),
                         "",
-                        "callFunction(" + FixtureBlueprintBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", lastIngress)",
+                        "callFunction(" + DemoFixtureBootstrap.INGEST_METER_PAYLOAD_FUNCTION + ", lastIngress)",
                         "ingestStatus",
                         "ok"
                 )),
@@ -620,7 +620,7 @@ public final class FixtureBlueprintDefinitions {
     public static BlueprintDefinition buildSnmpAgentModel() {
         return new BlueprintDefinition(
                 UUID.randomUUID().toString(),
-                FixtureBlueprintBootstrap.SNMP_AGENT_MODEL,
+                PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL,
                 "SNMP agent device (MIB-II system group)",
                 BlueprintType.INSTANCE,
                 ObjectType.DEVICE,
@@ -778,7 +778,7 @@ public final class FixtureBlueprintDefinitions {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DemoFixtureBootstrap.SNMP_DRIVER_CONFIG))
                         ),
                         BlueprintVariableDefinition.of(
                                 "driverPointMappingsJson",
@@ -786,7 +786,7 @@ public final class FixtureBlueprintDefinitions {
                                 "driver",
                                 STRING_VALUE_SCHEMA,
                                 true,
-                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS))
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", DemoFixtureBootstrap.SNMP_POINT_MAPPINGS))
                         )
                 ),
                 List.of(),

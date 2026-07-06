@@ -4,7 +4,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
@@ -85,7 +85,7 @@ class MqttGatewayDispatchIntegrationTest {
                 "instanceModelName",
                 DataRecord.single(
                         DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                        Map.of("value", FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
+                        Map.of("value", PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)
                 )
         );
 
@@ -107,7 +107,7 @@ class MqttGatewayDispatchIntegrationTest {
 
         var sensorNode = objectManager.require(SENSOR);
         assertThat(sensorNode.templateId()).contains(
-                blueprintRegistry.requireByName(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id()
+                blueprintRegistry.requireByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id()
         );
         var temperature = sensorNode.getVariable("temperature").orElseThrow().value().orElseThrow();
         assertThat(temperature.firstRow().get("value")).isEqualTo(23.7);
@@ -127,7 +127,7 @@ class MqttGatewayDispatchIntegrationTest {
                 )
         );
 
-        String modelId = blueprintRegistry.requireByName(FixtureBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id();
+        String modelId = blueprintRegistry.requireByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL).id();
         blueprintApplicationService.instantiateWithRules(modelId, "root.platform.instances", "loadtest-mqtt-sensor-00001", Map.of());
 
         DataRecord result = functionService.invoke(

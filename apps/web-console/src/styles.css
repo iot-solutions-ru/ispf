@@ -2765,6 +2765,46 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   cursor: inherit;
 }
 
+.dashboard-grid-host--nested {
+  min-height: 120px;
+  width: 100%;
+}
+
+.dashboard-grid-host--nested.editable .dashboard-grid-canvas {
+  min-height: 100px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px dashed color-mix(in srgb, var(--border) 85%, var(--accent) 15%);
+  border-radius: 8px;
+}
+
+.dashboard-grid-host--nested .dashboard-grid-item {
+  min-height: 48px;
+}
+
+.dash-container-drop-zone {
+  position: relative;
+  flex: 1;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dash-container-drop-zone .dashboard-grid-host--nested {
+  flex: 1;
+}
+
+.dash-container-drop-zone--active {
+  background: rgba(47, 129, 247, 0.08);
+  box-shadow: inset 0 0 0 2px rgba(47, 129, 247, 0.45);
+}
+
+.dash-container-drop-hint {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.75rem;
+}
+
 .dashboard-grid-resize-handle {
   position: absolute;
   right: 0;
@@ -3705,6 +3745,89 @@ body.scada-mimic-editor-open {
   margin-bottom: 0.35rem;
 }
 
+.scada-props-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.scada-props-section-head .scada-props-section-title {
+  margin: 0;
+}
+
+.scada-behaviors-editor {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.scada-behavior-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.scada-behavior-card-head .scada-binding-slot-title {
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.scada-btn-compact {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+.scada-btn-danger-text {
+  color: var(--danger, #f85149);
+}
+
+.scada-props-panel .scada-object-path-field {
+  margin-bottom: 0.5rem;
+}
+
+.scada-props-panel .scada-object-path-field .field-caption {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.scada-props-panel .scada-object-path-field .object-path-field-controls input {
+  flex: 1 1 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.78rem;
+}
+
+.scada-props-panel .scada-object-path-field .object-path-browse {
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.scada-props-panel .scada-object-path-field .object-path-browse:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+.scada-binding-var-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .scada-import-export {
   margin: 0.75rem;
   padding: 0.65rem 0.75rem;
@@ -4434,6 +4557,54 @@ body.scada-mimic-editor-open {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.widget-media-upload-field {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.widget-media-file-input {
+  display: none;
+}
+
+.widget-media-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.widget-media-upload-hint {
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.widget-media-upload-error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--danger, #cf222e);
+}
+
+.widget-media-upload-preview {
+  margin-top: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  max-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.widget-media-upload-preview img {
+  max-width: 100%;
+  max-height: 100px;
+  object-fit: contain;
 }
 
 .dashboard-json-panel {
@@ -7022,6 +7193,7 @@ body.scada-mimic-editor-open {
 
 .login-card h1 {
   margin: 0;
+  text-align: center;
 }
 
 .login-sub,

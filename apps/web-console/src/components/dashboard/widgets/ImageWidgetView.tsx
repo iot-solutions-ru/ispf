@@ -2,6 +2,7 @@ import type { ImageWidget } from "../../../types/dashboard";
 import { useTranslation } from "react-i18next";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
+import { resolveWidgetMediaSrc } from "../widgetMediaUrl";
 
 interface ImageWidgetViewProps {
   widget: ImageWidget;
@@ -11,7 +12,7 @@ interface ImageWidgetViewProps {
 export default function ImageWidgetView({ widget, editable }: ImageWidgetViewProps) {
   const { t } = useTranslation("widgets");
   const styles = useWidgetStyles(widget.stylesJson);
-  const src = widget.imageUrl?.trim();
+  const src = resolveWidgetMediaSrc(widget.imageUrl);
 
   return (
     <DashWidgetShell

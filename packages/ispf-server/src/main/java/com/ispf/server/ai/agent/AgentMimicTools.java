@@ -214,7 +214,7 @@ final class AgentMimicTools {
                         "diagramJson or elements is required. Example element: "
                                 + "{\"id\":\"t1\",\"symbolId\":\"tank.vertical\",\"layerId\":\"layer-default\","
                                 + "\"x\":100,\"y\":80,\"bindings\":{\"fillLevel\":{"
-                                + "\"objectPath\":\"root.platform.devices.demo\",\"variableName\":\"level\","
+                                + "\"objectPath\":\"<devicePath>\",\"variableName\":\"<variableName>\","
                                 + "\"valueField\":\"value\",\"transform\":\"number\"}}}"
                 );
             }

@@ -3,6 +3,7 @@
   "editor.demoPreviewLabel": "demoPreviewJson (editor preview)",
   "editor.general": "General",
   "editor.layoutHint": "Change position and size by dragging on the grid.",
+  "editor.containerDropHint": "Drop widgets here or add from the palette while this container is selected.",
   "editor.layerBackward": "Backward",
   "editor.layerForward": "Forward",
   "editor.layerHint": "Higher Z-index draws on top. Overlapping widgets can stack for HMI overlays.",

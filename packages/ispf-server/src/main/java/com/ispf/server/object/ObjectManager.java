@@ -9,9 +9,10 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.bootstrap.SystemObjectDescriptions;
 import com.ispf.server.config.BootstrapProperties;
 import com.ispf.server.config.MqttGatewayProperties;
@@ -71,7 +72,8 @@ public class ObjectManager {
     private final ObjectProvider<BlueprintPersistenceService> blueprintPersistence;
     private final ObjectProvider<BlueprintEngine> blueprintEngine;
     private final ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration;
-    private final ObjectProvider<FixtureBlueprintBootstrap> fixtureBlueprintBootstrap;
+    private final ObjectProvider<DemoFixtureBootstrap> demoFixtureBootstrap;
+    private final ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ObjectChangePublicationService publicationService;
     private final ObjectProvider<ObjectManager> self;
@@ -98,7 +100,8 @@ public class ObjectManager {
             ObjectProvider<BlueprintPersistenceService> blueprintPersistence,
             ObjectProvider<BlueprintEngine> blueprintEngine,
             ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration,
-            ObjectProvider<FixtureBlueprintBootstrap> fixtureBlueprintBootstrap,
+            ObjectProvider<DemoFixtureBootstrap> demoFixtureBootstrap,
+            ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
             @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
             ObjectProvider<ObjectManager> self,
@@ -122,7 +125,8 @@ public class ObjectManager {
         this.blueprintPersistence = blueprintPersistence;
         this.blueprintEngine = blueprintEngine;
         this.intrinsicBlueprintMigration = intrinsicBlueprintMigration;
-        this.fixtureBlueprintBootstrap = fixtureBlueprintBootstrap;
+        this.demoFixtureBootstrap = demoFixtureBootstrap;
+        this.platformReferenceBlueprintBootstrap = platformReferenceBlueprintBootstrap;
         this.visualGroupService = visualGroupService;
         this.publicationService = publicationService;
         this.self = self;
@@ -154,14 +158,11 @@ public class ObjectManager {
         blueprintBootstrap.getObject().ensureBuiltInBlueprints();
         blueprintPersistence.ifAvailable(BlueprintPersistenceService::restoreCustomBlueprints);
         intrinsicBlueprintMigration.ifAvailable(SystemIntrinsicBlueprintMigration::migrate);
+        platformReferenceBlueprintBootstrap.ifAvailable(PlatformReferenceBlueprintBootstrap::ensureReferenceModels);
         if (shouldApplyFixtureBlueprints()) {
-            fixtureBlueprintBootstrap.ifAvailable(FixtureBlueprintBootstrap::ensureFixtureBlueprints);
-            blueprintApplicationRunner.getObject().applyDemoBlueprints();
-            blueprintApplicationRunner.getObject().ensureSnmpLocalhostDevice();
-        } else {
-            fixtureBlueprintBootstrap.ifAvailable(bootstrap -> bootstrap.removeFixtureBlueprintsIfPresent(this));
+            demoFixtureBootstrap.ifAvailable(demo ->
+                    demo.seedDemos(blueprintApplicationRunner.getObject()));
         }
-        fixtureBlueprintBootstrap.ifAvailable(FixtureBlueprintBootstrap::ensureMqttGatewaySensorInstanceModel);
         blueprintEngine.ifAvailable(engine -> {
             engine.refreshBlueprintCatalogNodes();
             cleanupLegacyBlueprintCatalog();
@@ -821,11 +822,6 @@ public class ObjectManager {
     private void seedPlatformStructure() {
         platformBootstrap.initialize(objectTree);
         persistAll();
-    }
-
-    private void seedPlatform() {
-        seedPlatformStructure();
-        blueprintApplicationRunner.getObject().applyDemoBlueprints();
     }
 
     private void persistAll() {

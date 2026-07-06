@@ -1,10 +1,7 @@
 package com.ispf.server.ai.agent;
 
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
-import com.ispf.server.application.reference.minitec.MiniTecPaths;
-import com.ispf.server.bootstrap.PipelineScadaPaths;
-import com.ispf.server.bootstrap.TankFarmPaths;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.dashboard.DashboardLayouts;
 
@@ -16,9 +13,8 @@ import com.ispf.server.dashboard.DashboardLayouts;
  */
 public final class AgentPlaybooks {
 
-    public static final String SNMP_DEVICE_PATH = FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH;
-    public static final String SNMP_DASHBOARD_PATH = "root.platform.dashboards.snmp-host-monitoring";
-    public static final String SNMP_MODEL = FixtureBlueprintBootstrap.SNMP_AGENT_MODEL;
+    /** Documented INSTANCE model — docs/BLUEPRINTS.md § snmp-agent-v1. */
+    public static final String SNMP_MODEL = PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL;
     public static final String SNMP_DRIVER_ID = "snmp";
 
     public static final String VIRT_CLUSTER_FOLDER = "root.platform.devices.virt-cluster";
@@ -43,50 +39,21 @@ public final class AgentPlaybooks {
                 Цель: устройство SNMP на 127.0.0.1:161, метрики CPU/RAM/сеть, дашборд.
                 
                 Шаги:
-                1. search_context query="snmp localhost monitoring dashboard" (once)
-                2. get_object path="""
-                + SNMP_DEVICE_PATH
-                + """
-                 — если OK, устройство уже есть; иначе create_object:
-                   parentPath=root.platform.devices, name=snmp-localhost, type=DEVICE,
-                   displayName=SNMP localhost, templateId="""
-                + SNMP_MODEL
-                + ", driverId="
-                + SNMP_DRIVER_ID
-                + """
-                , autoStartDriver=false
-                3. set_variable path="""
-                + SNMP_DEVICE_PATH
-                + " name=driverConfigJson value="
-                + FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG
-                + """
-                
-                4. set_variable path="""
-                + SNMP_DEVICE_PATH
-                + " name=driverPointMappingsJson value="
-                + FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS
-                + """
-                
-                5. configure_driver devicePath="""
-                + SNMP_DEVICE_PATH
-                + " driverId="
-                + SNMP_DRIVER_ID
-                + """
-                 autoStart=true (или driver_control action=start)
-                6. list_variables path="""
-                + SNMP_DEVICE_PATH
-                + """
-                 — показать метрики
-                7. get_object path="""
-                + SNMP_DASHBOARD_PATH
-                + """
-                 — дашборд; если нет — create_object parentPath=root.platform.dashboards,
-                   name=snmp-host-monitoring, type=DASHBOARD, templateId=dashboard-v1
-                8. set_dashboard_layout path="""
-                + SNMP_DASHBOARD_PATH
-                + """
-                 template=snmp-host-monitoring
-                9. finish: summary + result.devicePath + result.dashboardPath
+                1. search_context query="snmp agent device monitoring dashboard" topic=drivers — templateId (INSTANCE),
+                   driverConfigJson, driverPointMappingsJson, dashboard template из документации
+                2. list_objects parentPath=root.platform.devices — обязательно до create_object
+                3. get_object path=<devicePath из запроса или docs> — если OK, переиспользовать; иначе create_object:
+                   parentPath=root.platform.devices, name=<из запроса>, type=DEVICE,
+                   displayName=<из запроса>, templateId=<из search_context, INSTANCE>,
+                   driverId=snmp, autoStartDriver=false
+                4. set_variable path=<devicePath> name=driverConfigJson value=<из search_context>
+                5. set_variable path=<devicePath> name=driverPointMappingsJson value=<из search_context>
+                6. configure_driver devicePath=<devicePath> driverId=snmp autoStart=true
+                7. list_variables path=<devicePath> — показать метрики
+                8. get_object path=<dashboardPath из docs> — дашборд; если нет — create_object
+                   parentPath=root.platform.dashboards, name=snmp-host-monitoring, type=DASHBOARD, templateId=dashboard-v1
+                9. set_dashboard_layout path=<dashboardPath> template=snmp-host-monitoring
+                10. finish: summary + result.devicePath + result.dashboardPath
                 """;
     }
 
@@ -99,16 +66,10 @@ public final class AgentPlaybooks {
 
     public static String dashboardLayoutEditing() {
         return AgentDashboardGuide.referenceText()
-                + "\n\n### Быстрое редактирование (SNMP пример)\n\n"
-                + "1. get_dashboard_layout path="
-                + SNMP_DASHBOARD_PATH
-                + " — прочитать текущий layout\n"
-                + "2a. set_dashboard_layout path="
-                + SNMP_DASHBOARD_PATH
-                + " template=snmp-host-monitoring — восстановить эталон\n"
-                + "2b. add_dashboard_widget path="
-                + SNMP_DASHBOARD_PATH
-                + " widget={...} — добавить/заменить один виджет по id\n"
+                + "\n\n### Быстрое редактирование layout\n\n"
+                + "1. get_dashboard_layout path=<dashboardPath> — прочитать текущий layout\n"
+                + "2a. set_dashboard_layout path=<dashboardPath> template=<из search_context или get_dashboard_layout> — восстановить эталон\n"
+                + "2b. add_dashboard_widget path=<dashboardPath> widget={...} — добавить/заменить один виджет по id\n"
                 + "3. finish\n\n"
                 + snmpDashboardLayoutHint()
                 + "\nНе вызывай search_context больше 1–2 раз подряд — используй get_dashboard_layout.\n";
@@ -122,40 +83,17 @@ public final class AgentPlaybooks {
         return """
                 ## IF-MIB — дополнительные метрики интерфейса (follow-up)
                 
-                Устройство: """
-                + SNMP_DEVICE_PATH
-                + "\nДашборд: "
-                + SNMP_DASHBOARD_PATH
-                + """
+                Работай с path устройства и дашборда из list_objects / get_object в этом ходе.
                 
-                
-                Шаги (без search_context):
-                1. set_variable path="""
-                + SNMP_DEVICE_PATH
-                + """
-                 name=driverPointMappingsJson value=<JSON ниже>
-                2. configure_driver devicePath="""
-                + SNMP_DEVICE_PATH
-                + """
-                 driverId=snmp autoStart=true
-                3. driver_control devicePath="""
-                + SNMP_DEVICE_PATH
-                + """
-                 action=poll
-                4. add_dashboard_widget path="""
-                + SNMP_DASHBOARD_PATH
-                + """
-                 для ifDescr, ifSpeed, ifOperStatus, ifInErrors, ifOutErrors
-                5. list_variables path="""
-                + SNMP_DEVICE_PATH
-                + """
-                
-                6. finish
-                
-                driverPointMappingsJson:
-                """
-                + FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS
-                + "\n";
+                Шаги:
+                1. search_context query="snmp IF-MIB driverPointMappingsJson" topic=drivers
+                2. set_variable path=<devicePath> name=driverPointMappingsJson value=<из search_context>
+                3. configure_driver devicePath=<devicePath> driverId=snmp autoStart=true
+                4. driver_control devicePath=<devicePath> action=poll
+                5. add_dashboard_widget path=<dashboardPath> для ifDescr, ifSpeed, ifOperStatus, ifInErrors, ifOutErrors
+                6. list_variables path=<devicePath>
+                7. finish
+                """;
     }
 
     public static String virtualMeterLab() {
@@ -342,7 +280,8 @@ public final class AgentPlaybooks {
                 
                 | Инструмент | Назначение |
                 |------------|------------|
-                | list_relative_blueprints | Каталог mixin-моделей (virtual-lab-v1, snmp-agent-v1, …) |
+                | list_relative_blueprints | RELATIVE mixin-модели (virtual-lab-v1, …) |
+                | list_instance_types | INSTANCE шаблоны (snmp-agent-v1, … — см. docs/BLUEPRINTS.md) |
                 | get_object_blueprint | Схема: variables[], events[], functions[] |
                 | apply_relative_blueprint | Прикрепить mixin к существующему objectPath |
                 
@@ -362,17 +301,15 @@ public final class AgentPlaybooks {
 
     public static String mesReferenceLifecycle() {
         return """
-                ## MES reference (mes-reference bundle)
+                ## MES reference (application bundle)
                 
-                Reference appId: mes-reference. BFF on root.platform.devices.demo-sensor-01:
-                1. list_functions objectPath=root.platform.devices.demo-sensor-01 appId=mes-reference
-                2. get_function objectPath=... functionName=mes_listOrders
-                3. invoke_bff objectPath=... functionName=mes_listOrders
-                4. invoke_bff ... functionName=mes_startFilling inputRows=[{"orderNo":"DO-1001"}]
-                5. invoke_bff ... functionName=mes_completeFilling inputRows=[{"orderNo":"DO-1001"}]
+                Только после deploy bundle пользователем — пути из list_objects / get_example_bundle, не из памяти.
+                1. get_example_bundle appId=mes-reference sections=functions,objects
+                2. list_objects / search_objects — device path для BFF
+                3. list_functions objectPath=<devicePath> appId=mes-reference
+                4. invoke_bff по functionName из каталога
                 
-                For patterns use get_example_bundle appId=mes-reference sections=functions,objects.
-                Device rack: root.platform.devices.mes-rack-01. Alert mesRackOverTemp at temperature > 85.
+                Паттерны: search_context query="mes-reference bundle" topic=application-principles
                 """;
     }
 
@@ -606,33 +543,13 @@ public final class AgentPlaybooks {
 
     public static String miniTecReference() {
         return """
-                ## Мини-ТЭЦ (эталон) — цифровой двойник (3×ГПУ, ГРПБ, РУМБ, ДГУ, нагрузочный модуль)
+                ## Application bundle deploy (пример: mini-tec)
                 
-                Преднастроено bootstrap-ом при старте сервера. Smoke-check:
-                1. list_variables path="""
-                + MiniTecPaths.STATION_HUB
-                + """
-                 — totalGenPowerKw, gridFrequencyHz, alarmLatched
-                2. driver_control action=poll path="""
-                + MiniTecPaths.GPU_01
-                + """
-                3. Operator UI: ?mode=operator&app=mini-tec&dashboard="""
-                + MiniTecPaths.DASHBOARD_HMI
-                + """
-                
-                Пути:
-                - Папка: """
-                + MiniTecPaths.FOLDER
-                + """
-                - ГПУ: gpu-01..03, ГРПБ: grpb, РУМБ: rumb-10kv, ДГУ: dgu, нагрузка: load-module
-                - Hub: """
-                + MiniTecPaths.STATION_HUB
-                + """
-                - Дашборды: mini-tec-hmi (default), mini-tec-overview, mini-tec-kpi, mini-tec-trends, mini-tec-protections
-                - Mimics: mini-tec-single-line, mini-tec-zone-gas, mini-tec-zone-electrical
-                - Модели: mini-tec-gpu-v1, mini-tec-grpb-v1, mini-tec-rumb-v1, mini-tec-dgu-v1, mini-tec-load-module-v1
-                - Virtual driver profiles: tec-gpu, tec-grpb, tec-rumb, tec-dgu, tec-load
-                - Bundle redeploy: POST /api/v1/applications/mini-tec/deploy with examples/mini-tec/bundle.json
+                Голая платформа не содержит mini-tec — только после import_package / deploy API.
+                1. search_context query="mini-tec application bundle deploy"
+                2. get_example_bundle appId=mini-tec
+                3. validate_bundle → import_package (или POST /api/v1/applications/mini-tec/deploy)
+                4. list_objects parentPath=root.platform — пути только из ответа tools
                 """;
     }
 
@@ -648,78 +565,25 @@ public final class AgentPlaybooks {
                 - Bindings: objectPath + variableName + valueField + transform (number|bool|string)
                 - diagramJson version 2 only; symbols in apps/web-console/src/scada/symbols/
                 
-                ### Anonymization policy (demos)
-                Demo diagrams must NOT contain real company names, personal data, or geo-specific labels.
-                Use generic titles (Резервуар No11, Коллектор, ST-1...). Never use transneft-* paths or filenames.
+                ### Anonymization
+                Diagram labels: generic titles only — no real company names or personal data in user-facing text.
                 
-                ### Bootstrap demos (ispf.bootstrap.fixtures-enabled=true)
+                ### Reference applications
+                Именованные SCADA-приложения (tank-farm, pipeline-scada, …) — только после bundle deploy.
+                search_context query="<appId> scada bundle" → get_example_bundle → list_objects после import.
                 
-                **tank-farm-demo** (appId=tank-farm-demo):
-                - Devices: """
-                + TankFarmPaths.FOLDER
-                + """
-                 (tank-11..24, manifold-hub)
-                - Mimic: """
-                + TankFarmPaths.MIMIC
-                + """
-                - Dashboard: """
-                + TankFarmPaths.DASHBOARD
-                + """
-                - Models: tank-farm-tank-v1, tank-farm-hub-v1; virtual profiles: tank-farm-tank, tank-farm-hub
-                - Java bootstrap: TankFarmPlatformBootstrap, TankFarmMimicDocument
-                - Re-export JSON: cd apps/web-console && npx tsx src/scada/templates/exportTankFarmMimic.ts
-                - TS builder: apps/web-console/src/scada/templates/buildTankFarmMimic.ts
-                
-                **pipeline-scada** (appId=pipeline-scada, РД-029 screen forms):
-                - Devices: """
-                + PipelineScadaPaths.FOLDER
-                + """
-                - Main HMI: """
-                + PipelineScadaPaths.DASHBOARD
-                + """
-                 -> mimic """
-                + PipelineScadaPaths.MIMIC_RP
-                + """
-                - 15 mimics pipeline-* (MT, RP, SIKN, PSP, NPS, LU, sea terminal, pier, panels...)
-                - """
-                + PipelineScadaPaths.MIMIC_TANK_FARM_DEMO
-                + """
-                 deprecated alias to RP diagram when pipeline-scada bootstrap runs after tank-farm
-                - Re-export: cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipelineScadaMimics.ts
-                
-                **mini-tec-single-line**:
-                - Mimic: root.platform.mimics.mini-tec-single-line
-                - Dashboard: root.platform.dashboards.mini-tec-single-line
-                
-                ### Smoke-check (tank-farm)
-                1. list_variables path="""
-                + TankFarmPaths.tank(11)
-                + """
-                 levelMm, rateMmPerHour
-                2. driver_control action=poll path="""
-                + TankFarmPaths.tank(11)
-                + """
-                3. Operator: ?mode=operator&app=tank-farm-demo&dashboard="""
-                + TankFarmPaths.DASHBOARD
-                + """
-                
-                ### Agent workflow: new mimic on tree
+                ### Agent workflow: new mimic on bare platform
                 1. list_mimic_symbols — pick symbolId values (tank.vertical, valve.gate, label, pipe.segment, …)
-                2. create_object parentPath=root.platform.mimics type=MIMIC templateId=mimic-v1 name=<id>
-                3. **save_mimic_diagram** path=<mimic> elements=[...] — REQUIRED; must include at least one symbol.
-                   Shorthand element: {id, symbolId, layerId:"layer-default", x, y, bindings:{slot:{objectPath,variableName,valueField,transform}}}
-                   Or full diagramJson v2 document. Use add_mimic_elements to append more symbols later.
-                   NEVER set_variable name=diagram — diagram variable stores JSON string; use save_mimic_diagram only.
-                4. get_mimic_diagram path=<mimic> — verify elementCount > 0 before finish
-                5. create_object parentPath=root.platform.dashboards type=DASHBOARD → add_dashboard_widget type=scada-mimic mimicPath=<path>
-                6. Bind symbols to device variables (list_variables first)
+                2. list_objects parentPath=root.platform.mimics
+                3. create_object parentPath=root.platform.mimics type=MIMIC templateId=mimic-v1 name=<id>
+                4. list_variables path=<devicePath> — bindings только на реальные переменные
+                5. **save_mimic_diagram** path=<mimicPath> elements=[...] — REQUIRED; elementCount>0
+                6. get_mimic_diagram path=<mimicPath> — verify
+                7. create_object DASHBOARD → add_dashboard_widget type=scada-mimic mimicPath=<mimicPath>
                 
-                Minimal example (one tank + label):
-                  save_mimic_diagram path=root.platform.mimics.demo-tank elements=[
-                    {"id":"lbl","symbolId":"label","layerId":"layer-default","x":80,"y":40,"props":{"text":"Резервуар 1"}},
-                    {"id":"t1","symbolId":"tank.vertical","layerId":"layer-default","x":100,"y":80,
-                     "bindings":{"fillLevel":{"objectPath":"root.platform.devices.demo-sensor","variableName":"level","valueField":"value","transform":"number"}}}
-                  ]
+                Minimal element shape:
+                {"id":"t1","symbolId":"tank.vertical","layerId":"layer-default","x":100,"y":80,
+                 "bindings":{"fillLevel":{"objectPath":"<devicePath>","variableName":"<var>","valueField":"value","transform":"number"}}}
                 """;
     }
 
@@ -751,23 +615,14 @@ public final class AgentPlaybooks {
                 - **sql** (report-v1): dataSourcePath → root.platform.data-sources.*, SELECT query, ? parameters, columns
                 - **tree-variables** (tree-variables-report-v1): devicePathPattern (glob), variableName, columns
 
-                ### Lab virtual reports (bootstrap)
-                - root.platform.reports.lab-all-devices-table — variable table, columns devicepath/int/string
-                - root.platform.reports.lab-virtual-status — variable status, columns devicepath/online/lastseen
-                - root.platform.reports.lab-virtual-sine — sineWave snapshot
-                - root.platform.reports.lab-virtual-waves-sum — sumWaves
-                - root.platform.reports.lab-table-corrective — opened from table action when int sum > 100
-                - Pattern for lab devices: root.platform.devices.lab-*
-
-                ### configure_report examples
-                tree-variables:
-                  reportId=lab-device-status reportType=tree-variables title="Device status"
-                  devicePathPattern=root.platform.devices.lab-* variableName=status
+                ### Tree-variables reports
+                configure_report reportType=tree-variables devicePathPattern=root.platform.devices.* variableName=<from list_variables>
+                run_report preview перед add_dashboard_widget type=report.
                   columns=[{field:devicepath,label:"Device path"},{field:online,label:Online},{field:lastseen,label:"Last seen"}]
                 sql:
-                  reportId=ready-items reportType=sql dataSourcePath=root.platform.data-sources.demo
-                  query="SELECT item_code, status FROM demo_item WHERE status = ?"
-                  parameters=["status"] columns=[{field:item_code,label:Code},{field:status,label:Status}]
+                  reportId=<id> reportType=sql dataSourcePath=<from list_objects data-sources>
+                  query="SELECT col1, col2 FROM my_table WHERE status = ?"
+                  parameters=["status"] columns=[{field:col1,label:Code},{field:col2,label:Status}]
 
                 ### Dashboard widget type=report
                 - reportPath (required)
@@ -967,7 +822,7 @@ public final class AgentPlaybooks {
                 
                 ### Java deploy example
                 get_function_template topic=java
-                deploy_tree_function path=root.platform.devices.demo-sensor-01 functionName=checkThreshold
+                deploy_tree_function path=<devicePath> functionName=checkThreshold
                   sourceType=java
                   inputSchema={fields:[{name:value,type:DOUBLE}]}
                   outputSchema={fields:[{name:alarm,type:BOOLEAN}]}

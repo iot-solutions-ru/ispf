@@ -33,13 +33,13 @@ final class MimicSymbolCatalog {
 
     static Map<String, Object> exampleElement() {
         Map<String, Object> binding = Map.of(
-                "objectPath", "root.platform.devices.demo-sensor",
-                "variableName", "level",
+                "objectPath", "<devicePath>",
+                "variableName", "<variableName>",
                 "valueField", "value",
                 "transform", "number"
         );
         return Map.of(
-                "id", "tank-demo",
+                "id", "tank-1",
                 "symbolId", "tank.vertical",
                 "layerId", "layer-default",
                 "x", 100,

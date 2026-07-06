@@ -30,6 +30,7 @@ import {
 } from "./widgetEditorStructured";
 import ScadaMimicWidgetEditorFields from "./ScadaMimicWidgetEditorFields";
 import { ObjectPathField } from "../../ui";
+import WidgetMediaUploadField from "./WidgetMediaUploadField";
 
 type ObjectOption = { path: string; displayName: string; variableNames: string[] };
 type DashboardOption = { path: string; displayName: string };
@@ -1638,14 +1639,14 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title="SVG" />
-          <label>
-            svgUrl
-            <input
-              value={widget.svgUrl}
-              onChange={(e) => update({ svgUrl: e.target.value })}
-              placeholder="/lab-assets/button.svg"
-            />
-          </label>
+          <WidgetMediaUploadField
+            label="svgUrl"
+            value={widget.svgUrl ?? ""}
+            onChange={(svgUrl) => update({ svgUrl })}
+            accept=".svg,image/svg+xml,image/png,image/jpeg,image/webp,image/gif"
+            placeholder="/lab-assets/button.svg"
+            previewAlt={widget.title}
+          />
           <label>
             clickAction
             <select
@@ -1899,13 +1900,13 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.image")} />
-          <label>
-            imageUrl
-            <input
-              value={widget.imageUrl ?? ""}
-              onChange={(e) => update({ imageUrl: e.target.value || undefined })}
-            />
-          </label>
+          <WidgetMediaUploadField
+            label="imageUrl"
+            value={widget.imageUrl ?? ""}
+            onChange={(imageUrl) => update({ imageUrl: imageUrl || undefined })}
+            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.svg"
+            previewAlt={widget.alt ?? widget.title}
+          />
           <label>
             alt
             <input

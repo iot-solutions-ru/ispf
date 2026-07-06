@@ -4,6 +4,8 @@ import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
 import { DASHBOARD_GRID_MARGIN } from "../../types/dashboard";
 import { mergeWidgetLayout } from "../../types/dashboard";
 import renderDashboardWidget from "./renderDashboardWidget";
+import { useDashboardEditor } from "./DashboardEditorContext";
+import { parseSlotRefKey, slotRefKey, type WidgetSlotRef } from "./widgetLayoutTree";
 import {
   isWidgetVisible,
   resolveWidgetZIndex,
@@ -17,13 +19,28 @@ import {
 const SELECTED_Z_BOOST = 10_000;
 
 const GRID_MARGIN = DASHBOARD_GRID_MARGIN;
-const DRAG_CANCEL_SELECTOR =
-  "button, input, select, textarea, a, .dash-chart-body, .dash-sparkline-body, .dashboard-grid-resize-handle, .dash-object-table, .dash-event-feed-list, .dash-work-queue-list, .function-form-fields, .dashboard-link-btn, .dash-object-card, .dash-pie-chart-body, .dash-variable-editor-list, .dash-svg-widget-btn, .dash-composite-body";
+
+/** Interactive controls that must not start a grid drag. */
+const INTERACTIVE_DRAG_CANCEL_SELECTOR =
+  "button, input, select, textarea, a, .dash-chart-body, .dash-sparkline-body, .dashboard-grid-resize-handle, .dash-object-table, .dash-event-feed-list, .dash-work-queue-list, .function-form-fields, .dashboard-link-btn, .dash-object-card, .dash-pie-chart-body, .dash-variable-editor-list, .dash-svg-widget-btn";
+
+/** Container chrome on the root grid — not nested widget bodies. */
+const ROOT_CONTAINER_CHROME_SELECTOR = ".dash-tab-bar, .dash-carousel-nav, .dash-steps-bar";
+
+function shouldCancelItemDrag(target: HTMLElement, nested: boolean): boolean {
+  if (target.closest(INTERACTIVE_DRAG_CANCEL_SELECTOR)) return true;
+  if (nested) return false;
+  if (target.closest(".dashboard-grid-host--nested")) return true;
+  if (target.closest(ROOT_CONTAINER_CHROME_SELECTOR)) return true;
+  return false;
+}
 
 interface DashboardGridProps {
   layout: DashboardLayout;
   refreshIntervalMs: number;
   editable?: boolean;
+  nested?: boolean;
+  slotRef?: WidgetSlotRef;
   embeddedModal?: boolean;
   selectedWidgetId?: string | null;
   onSelectWidget?: (id: string) => void;
@@ -94,6 +111,8 @@ export default function DashboardGrid({
   layout,
   refreshIntervalMs,
   editable = false,
+  nested = false,
+  slotRef,
   embeddedModal = false,
   selectedWidgetId,
   onSelectWidget,
@@ -102,6 +121,7 @@ export default function DashboardGrid({
   contextWidgets,
 }: DashboardGridProps) {
   const { t } = useTranslation("dashboard");
+  const editor = useDashboardEditor();
   const { containerRef, width } = useContainerWidth();
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{
@@ -144,6 +164,35 @@ export default function DashboardGrid({
     [applyLayout, layout.widgets, onLayoutChange]
   );
 
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+  const slotRefRef = useRef(slotRef);
+  slotRefRef.current = slotRef;
+  const updateWidgetRef = useRef(updateWidget);
+  updateWidgetRef.current = updateWidget;
+
+  const endDrag = useCallback((event?: MouseEvent) => {
+    const drag = dragRef.current;
+    const editorNow = editorRef.current;
+    if (drag && editorNow?.enabled && event) {
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const zone = target?.closest("[data-slot-key]") as HTMLElement | null;
+      const slotKey = zone?.dataset.slotKey;
+      const slot = slotKey ? parseSlotRefKey(slotKey) : null;
+      const currentSlotKey =
+        nested && slotRefRef.current ? slotRefKey(slotRefRef.current) : "root";
+      if (slot && slotKey && slotKey !== currentSlotKey) {
+        editorNow.reparentToSlot(drag.widgetId, slot);
+      }
+    }
+    dragRef.current = null;
+    editorRef.current?.setDraggingWidgetId(null);
+    editorRef.current?.setDropTargetSlotKey(null);
+    document.body.classList.remove("dashboard-grid-dragging");
+  }, [nested]);
+
   useEffect(() => {
     if (!editable) return;
 
@@ -152,15 +201,20 @@ export default function DashboardGrid({
       const canvas = canvasRef.current;
       if (!drag || !canvas) return;
 
-      const metricsNow = computeMetrics(canvas.clientWidth, layout.columns, layout.rowHeight);
+      const layoutNow = layoutRef.current;
+      const metricsNow = computeMetrics(
+        canvas.clientWidth,
+        layoutNow.columns,
+        layoutNow.rowHeight
+      );
 
       if (drag.mode === "move") {
         const deltaX = event.clientX - drag.startClientX;
         const deltaY = event.clientY - drag.startClientY;
         const deltaCols = Math.round(deltaX / (metricsNow.colWidth + metricsNow.marginX));
         const deltaRows = Math.round(deltaY / (metricsNow.rowHeight + metricsNow.marginY));
-        const maxX = Math.max(0, layout.columns - drag.originW);
-        updateWidget(drag.widgetId, {
+        const maxX = Math.max(0, layoutNow.columns - drag.originW);
+        updateWidgetRef.current(drag.widgetId, {
           x: Math.min(maxX, Math.max(0, drag.originX + deltaCols)),
           y: Math.max(0, drag.originY + deltaRows),
         });
@@ -171,24 +225,31 @@ export default function DashboardGrid({
       const deltaY = event.clientY - drag.startClientY;
       const deltaCols = Math.round(deltaX / (metricsNow.colWidth + metricsNow.marginX));
       const deltaRows = Math.round(deltaY / (metricsNow.rowHeight + metricsNow.marginY));
-      const nextW = Math.max(1, Math.min(layout.columns - drag.originX, drag.originW + deltaCols));
+      const nextW = Math.max(
+        1,
+        Math.min(layoutNow.columns - drag.originX, drag.originW + deltaCols)
+      );
       const nextH = Math.max(1, drag.originH + deltaRows);
-      updateWidget(drag.widgetId, { w: nextW, h: nextH });
+      updateWidgetRef.current(drag.widgetId, { w: nextW, h: nextH });
     };
 
-    const onUp = () => {
-      dragRef.current = null;
-      document.body.classList.remove("dashboard-grid-dragging");
+    const onUp = (event: MouseEvent) => {
+      endDrag(event);
+    };
+    const onBlur = () => {
+      endDrag();
     };
 
     document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+    document.addEventListener("mouseup", onUp, true);
+    window.addEventListener("blur", onBlur);
     return () => {
       document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-      document.body.classList.remove("dashboard-grid-dragging");
+      document.removeEventListener("mouseup", onUp, true);
+      window.removeEventListener("blur", onBlur);
+      endDrag();
     };
-  }, [editable, layout.columns, layout.rowHeight, updateWidget]);
+  }, [editable, endDrag]);
 
   const startDrag = (event: React.MouseEvent, widget: DashboardWidget, mode: "move" | "resize") => {
     if (!editable || event.button !== 0) return;
@@ -206,6 +267,7 @@ export default function DashboardGrid({
       originH: widget.h,
     };
     document.body.classList.add("dashboard-grid-dragging");
+    editor?.setDraggingWidgetId(widget.id);
     onSelectWidget?.(widget.id);
   };
 
@@ -222,7 +284,8 @@ export default function DashboardGrid({
   return (
     <div
       ref={containerRef}
-      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}${embeddedModal ? " dashboard-grid-host--modal" : ""}`}
+      className={`dashboard-grid-host${layout.theme ? ` dashboard-theme-${layout.theme}` : ""}${editable ? " editable" : ""}${nested ? " dashboard-grid-host--nested" : ""}${embeddedModal ? " dashboard-grid-host--modal" : ""}`}
+      {...(!nested ? { "data-slot-key": "root" } : {})}
     >
       <div
         ref={canvasRef}
@@ -248,12 +311,12 @@ export default function DashboardGrid({
               }}
               onMouseDown={(event) => {
                 if (!editable) return;
-                if ((event.target as HTMLElement).closest(DRAG_CANCEL_SELECTOR)) return;
+                if (shouldCancelItemDrag(event.target as HTMLElement, nested)) return;
                 startDrag(event, widget, "move");
               }}
               onClick={(event) => {
                 if (!onSelectWidget || !editable) return;
-                if ((event.target as HTMLElement).closest(DRAG_CANCEL_SELECTOR)) return;
+                if (shouldCancelItemDrag(event.target as HTMLElement, nested)) return;
                 onSelectWidget(widget.id);
               }}
             >

@@ -52,7 +52,8 @@ public final class AgentObjectTreeGuide {
                 ### Models & templates
                 
                 - list_object_blueprints — templateId / modelName; rows include BlueprintType (RELATIVE|INSTANCE|ABSOLUTE)
-                - list_relative_blueprints — RELATIVE mixins only (virtual-lab-v1, snmp-agent-v1, …)
+                - list_relative_blueprints — RELATIVE mixins (virtual-lab-v1, …)
+                - list_instance_types — INSTANCE templates (snmp-agent-v1, … — see docs/BLUEPRINTS.md)
                 - list_instance_types — INSTANCE blueprints for instantiate_instance_type
                 - list_absolute_blueprints — ABSOLUTE blueprints for ensure_absolute_instance
                 - get_object_blueprint — variables, events, functions of a blueprint

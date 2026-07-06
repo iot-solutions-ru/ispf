@@ -20,6 +20,17 @@ import {
 } from "./DashboardContext";
 import DashboardGrid from "./DashboardGrid";
 import DashboardModal from "./DashboardModal";
+import { DashboardEditorProvider, type ContainerActiveSlots } from "./DashboardEditorContext";
+import {
+  findWidgetInLayout,
+  getChildrenAtSlot,
+  removeWidgetFromLayout,
+  reparentWidgetToSlot,
+  resolveAddTargetSlot,
+  setChildrenAtSlot,
+  updateWidgetInLayout,
+  defaultChildPosition,
+} from "./widgetLayoutTree";
 import DashboardSettingsPanel from "./DashboardSettingsPanel";
 import DashboardRulesPanel from "./DashboardRulesPanel";
 import WidgetEditorPanel from "./WidgetEditorPanel";
@@ -90,6 +101,13 @@ export default function DashboardBuilder({
   const [draftTitle, setDraftTitle] = useState<string | null>(null);
   const [draftRefreshMs, setDraftRefreshMs] = useState<number | null>(null);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
+  const [draggingWidgetId, setDraggingWidgetId] = useState<string | null>(null);
+  const [dropTargetSlotKey, setDropTargetSlotKey] = useState<string | null>(null);
+  const [activeSlots, setActiveSlots] = useState<ContainerActiveSlots>({
+    tabId: {},
+    slideIndex: {},
+    stepId: {},
+  });
   const [editorSidePanel, setEditorSidePanel] = useState<EditorSidePanel>("widget");
   const [showJson, setShowJson] = useState(false);
   const [showHaystackBind, setShowHaystackBind] = useState(false);
@@ -249,8 +267,10 @@ export default function DashboardBuilder({
     [objects.data]
   );
 
-  const selectedWidget =
-    layout.widgets.find((widget) => widget.id === selectedWidgetId) ?? null;
+  const selectedWidget = useMemo(() => {
+    if (!selectedWidgetId) return null;
+    return findWidgetInLayout(layout, selectedWidgetId)?.widget ?? null;
+  }, [layout, selectedWidgetId]);
 
   const saveMutation = useMutation({
     mutationFn: async (snapshot: {
@@ -286,12 +306,16 @@ export default function DashboardBuilder({
   });
 
   const addWidget = (type: WidgetType) => {
+    const slot = resolveAddTargetSlot(layout, selectedWidgetId, activeSlots);
+    const siblings = getChildrenAtSlot(layout, slot);
+    const position = defaultChildPosition(siblings, layout.columns);
     const widget = {
-      ...newWidget(type, layout.widgets.length),
-      zIndex: nextWidgetZIndex(layout.widgets),
+      ...newWidget(type, siblings.length),
+      ...position,
+      zIndex: nextWidgetZIndex(siblings),
       visible: true,
     };
-    const next = { ...layout, widgets: [...layout.widgets, widget] };
+    const next = setChildrenAtSlot(layout, slot, [...siblings, widget]);
     setDraftLayout(next);
     setSelectedWidgetId(widget.id);
     setEditorSidePanel("widget");
@@ -306,15 +330,20 @@ export default function DashboardBuilder({
   };
 
   const updateWidgets = (widgets: DashboardWidget[]) => {
-    setDraftLayout({ ...layout, widgets });
+    setDraftLayout(setChildrenAtSlot(layout, { kind: "root" }, widgets));
   };
 
   const updateWidget = (widget: DashboardWidget) => {
-    const next = {
-      ...layout,
-      widgets: layout.widgets.map((item) => (item.id === widget.id ? widget : item)),
-    };
-    setDraftLayout(next);
+    setDraftLayout(updateWidgetInLayout(layout, widget));
+  };
+
+  const setChildrenAtSlotDraft = (slot: import("./widgetLayoutTree").WidgetSlotRef, children: DashboardWidget[]) => {
+    setDraftLayout(setChildrenAtSlot(layout, slot, children));
+  };
+
+  const reparentToSlot = (widgetId: string, slot: import("./widgetLayoutTree").WidgetSlotRef) => {
+    setDraftLayout(reparentWidgetToSlot(layout, widgetId, slot));
+    setSelectedWidgetId(widgetId);
   };
 
   const updateLayoutSettings = (patch: Partial<DashboardLayout>) => {
@@ -325,18 +354,58 @@ export default function DashboardBuilder({
     const widgetId = selectedWidgetIdRef.current;
     if (!widgetId) return;
     const base = layoutRef.current;
-    setDraftLayout({
-      ...base,
-      widgets: base.widgets.filter((item) => item.id !== widgetId),
-    });
+    setDraftLayout(removeWidgetFromLayout(base, widgetId).layout);
     setSelectedWidgetId(null);
   }, []);
 
   const handleLayoutChange = (widgets: DashboardWidget[]) => {
-    setDraftLayout((current) => ({ ...(current ?? layout), widgets }));
+    setDraftLayout((current) =>
+      setChildrenAtSlot(current ?? layout, { kind: "root" }, widgets)
+    );
   };
 
   const isEditorWorkspace = !operatorMode && mode === "edit";
+
+  const editorContextValue = useMemo(
+    () => ({
+      enabled: isEditorWorkspace,
+      layout,
+      refreshIntervalMs,
+      selectedWidgetId,
+      draggingWidgetId,
+      dropTargetSlotKey,
+      activeSlots,
+      selectWidget: selectWidget,
+      setChildrenAtSlot: setChildrenAtSlotDraft,
+      updateWidget,
+      addWidget,
+      deleteSelectedWidget: deleteWidget,
+      setDraggingWidgetId,
+      setDropTargetSlotKey,
+      reparentToSlot,
+      setActiveTab: (containerId: string, tabId: string) =>
+        setActiveSlots((prev) => ({ ...prev, tabId: { ...prev.tabId, [containerId]: tabId } })),
+      setActiveSlide: (containerId: string, slideIndex: number) =>
+        setActiveSlots((prev) => ({
+          ...prev,
+          slideIndex: { ...prev.slideIndex, [containerId]: slideIndex },
+        })),
+      setActiveStep: (containerId: string, stepId: string) =>
+        setActiveSlots((prev) => ({ ...prev, stepId: { ...prev.stepId, [containerId]: stepId } })),
+    }),
+    [
+      activeSlots,
+      addWidget,
+      deleteWidget,
+      draggingWidgetId,
+      dropTargetSlotKey,
+      isEditorWorkspace,
+      layout,
+      refreshIntervalMs,
+      selectedWidgetId,
+      updateWidget,
+    ]
+  );
 
   const editorSession = useMemo<DashboardSession>(
     () =>
@@ -522,20 +591,22 @@ export default function DashboardBuilder({
             embeddedModal={embeddedModal}
             closeDashboardModal={handleCloseDashboardModal}
           >
-            <main className="dashboard-canvas dashboard-canvas--editor">
-              <DashboardGrid
-                layout={layout}
-                refreshIntervalMs={refreshIntervalMs}
-                editable
-                selectedWidgetId={selectedWidgetId}
-                onSelectWidget={selectWidget}
-                onLayoutChange={handleLayoutChange}
-                subDashboardDepth={subDashboardDepth}
-              />
-              {showJson && (
-                <pre className="dashboard-json-panel">{layoutToJson(layout)}</pre>
-              )}
-            </main>
+            <DashboardEditorProvider value={editorContextValue}>
+              <main className="dashboard-canvas dashboard-canvas--editor">
+                <DashboardGrid
+                  layout={layout}
+                  refreshIntervalMs={refreshIntervalMs}
+                  editable
+                  selectedWidgetId={selectedWidgetId}
+                  onSelectWidget={selectWidget}
+                  onLayoutChange={handleLayoutChange}
+                  subDashboardDepth={subDashboardDepth}
+                />
+                {showJson && (
+                  <pre className="dashboard-json-panel">{layoutToJson(layout)}</pre>
+                )}
+              </main>
+            </DashboardEditorProvider>
           </DashboardProvider>
 
           {editorSidePanel === "settings" ? (

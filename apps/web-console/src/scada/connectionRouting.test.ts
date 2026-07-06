@@ -44,10 +44,10 @@ describe("recomputeConnectionPoints", () => {
     const rerouted = recomputeConnectionPoints(connection, [tank, valve]);
     expect(rerouted).not.toEqual(connection.points);
     expect(rerouted).toEqual([
-      { x: 180, y: 140 },
-      { x: 249, y: 140 },
-      { x: 249, y: 120 },
-      { x: 318, y: 120 },
+      { x: 164, y: 112 },
+      { x: 248, y: 112 },
+      { x: 248, y: 120 },
+      { x: 332, y: 120 },
     ]);
   });
 });
@@ -55,19 +55,19 @@ describe("recomputeConnectionPoints", () => {
 describe("rerouteConnectionsForElement", () => {
   it("updates stored points when a connected element moves", () => {
     const connection = makeConnection([
-      { x: 180, y: 140 },
-      { x: 249, y: 140 },
-      { x: 249, y: 120 },
-      { x: 318, y: 120 },
+      { x: 164, y: 112 },
+      { x: 248, y: 112 },
+      { x: 248, y: 120 },
+      { x: 332, y: 120 },
     ]);
     const movedTank = { ...tank, x: 40, y: 40 };
     const [updated] = rerouteConnectionsForElement("t1", [connection], [movedTank, valve]);
 
     expect(updated.points).toEqual([
-      { x: 120, y: 100 },
-      { x: 219, y: 100 },
-      { x: 219, y: 120 },
-      { x: 318, y: 120 },
+      { x: 104, y: 72 },
+      { x: 218, y: 72 },
+      { x: 218, y: 120 },
+      { x: 332, y: 120 },
     ]);
   });
 });

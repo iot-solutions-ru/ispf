@@ -13,7 +13,7 @@
 | `diagramJson` | JSON document: elements, connections, bindings, customSymbols |
 | `grid.snap` | When `true`, placement and drag snap to `grid.size` (default **off**; toggle in editor toolbar) |
 | `grid.visible` | Show editor grid overlay (default **off**; toggle in editor toolbar) |
-| Symbol registry | Built-in SVG symbols + per-document `customSymbols` |
+| Symbol registry | Pack SVG (`pack.ispf-pid.*`) + per-document `customSymbols` |
 
 ---
 
@@ -31,7 +31,7 @@ Only **version 2** is supported. Legacy v1 documents are normalized to v2 on loa
   "layers": [{ "id": "layer-default", "name": "Main", "visible": true }],
   "elements": [{
     "id": "t1",
-    "symbolId": "tank.vertical",
+    "symbolId": "pack.ispf-pid.vertical-tank",
     "layerId": "layer-default",
     "x": 100,
     "y": 80,
@@ -80,7 +80,7 @@ Only **version 2** is supported. Legacy v1 documents are normalized to v2 on loa
 
 | Field | Description |
 |-------|-------------|
-| `symbolId` | Built-in id (`tank.vertical`) or `custom:{id}` / `custom.svg` |
+| `symbolId` | Pack id (`pack.ispf-pid.vertical-tank`), `custom:{libraryId}` or `custom.svg` |
 | `x`, `y` | Top-left position on artboard (px) |
 | `rotation` | `0` \| `90` \| `180` \| `270` |
 | `scale` | Optional multiplier; editor resize writes `props.width/height` and sets `scale` to `1` |
@@ -138,6 +138,24 @@ Or multiple slots via `selectionJson`:
 | `svg`, `viewBox`, … | Custom SVG inner markup (`custom.svg` / `custom:{id}`) |
 
 Effective render size: `symbolSize()` in `registry.ts` — `(props.width \|\| defaultWidth) * (scale ?? 1)`.
+
+### `customSymbols[]` (document library)
+
+Определения SVG-символов, на которые ссылаются элементы с `symbolId: "custom:{id}"`. Поля:
+
+| Field | Description |
+|-------|-------------|
+| `id` | Уникальный id в документе (элемент: `custom:{id}`) |
+| `name` | Подпись в редакторе |
+| `svg` | Inner SVG markup (без корневого `<svg>`) |
+| `width`, `height`, `viewBox` | Геометрия и viewport |
+| `ports` | Точки Connect |
+| `bindingSchema` | Слоты привязок для панели свойств |
+| `behaviors` | Динамика SVG на HMI (см. [SCADA.md § Custom SVG](SCADA.md#custom-svg-и-behaviors)) |
+| `sourceSymbolId` | Опционально: исходный pack/legacy id |
+| `inUserLibrary` | `true` — символ виден в палитре «Свои SVG» |
+
+Bootstrap-записи без `inUserLibrary` используются только для отрисовки (mini-TEC, pipeline).
 
 ### Connection routing
 
@@ -212,10 +230,16 @@ cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipeline
 
 ---
 
-## Symbol categories
+## Symbol catalog
 
-- **process:** tanks, valves, pumps, pipes, sensors, pipeline track, compressors, …
-- **electrical:** generators, breakers, busbars, transformers, motors, …
-- **common:** labels, tables, alarm banner, shapes
+Палитра редактора — **только SVG**:
 
-Extend the catalog in `apps/web-console/src/scada/symbols/`.
+| Category | `symbolId` prefix | Notes |
+|----------|-------------------|--------|
+| `pack-valves`, `pack-pumps`, `pack-tanks`, `pack-pipes`, `pack-sensors`, `pack-electrical`, `pack-isa`, `pack-misc` | `pack.ispf-pid.` | Standard P&ID pack (~57); see `tools/symbol-pack-isa` |
+| `common` | `custom.svg` | Inline SVG in element props |
+| Custom (palette) | `custom:` | Only defs with `inUserLibrary: true` |
+
+Dynamic symbols (labels, GPU blocks, breakers with live state): define in `customSymbols[]` with `behaviors` + `bindingSchema`. Reference: `mini-tec-mimic.json`.
+
+Full guide: [SCADA.md § Каталог символов](SCADA.md#каталог-символов), [SCADA.md § Custom SVG и behaviors](SCADA.md#custom-svg-и-behaviors).

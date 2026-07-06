@@ -9,7 +9,9 @@ import com.ispf.server.object.ObjectBindingStatePort;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.core.object.ObjectType;
-import com.ispf.server.bootstrap.FixtureBlueprintBootstrap;
+import com.ispf.server.bootstrap.DemoFixtureBootstrap;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
+import com.ispf.server.bootstrap.PlatformReferenceBlueprintBootstrap;
 import com.ispf.server.dashboard.DashboardLayouts;
 import com.ispf.server.dashboard.DashboardDemoRulesBootstrap;
 import com.ispf.server.driver.DeviceProvisioningService;
@@ -169,8 +171,8 @@ public class BlueprintApplicationRunner {
             objectManager.persistNodeTree(path);
         });
 
-        blueprintRegistry.findByName(FixtureBlueprintBootstrap.VENDOR_SENSOR_EXT_MODEL).ifPresent(model -> {
-            String path = FixtureBlueprintBootstrap.VENDOR_SENSOR_DEMO_PATH;
+        blueprintRegistry.findByName(DemoFixtureBootstrap.VENDOR_SENSOR_EXT_MODEL).ifPresent(model -> {
+            String path = DemoFixtureBootstrap.VENDOR_SENSOR_DEMO_PATH;
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 blueprintApplicationService.instantiateWithRules(
                         model.id(),
@@ -199,7 +201,7 @@ public class BlueprintApplicationRunner {
 
     private void ensureDemoFixtures(boolean provisionDriver) {
         ensurePlatformDemoNodes();
-        blueprintRegistry.findByName(FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL)
+        blueprintRegistry.findByName(DemoFixtureBootstrap.MQTT_SENSOR_MODEL)
                 .ifPresent(model -> restoreDemoSensorFixture(model, provisionDriver));
     }
 
@@ -231,8 +233,8 @@ public class BlueprintApplicationRunner {
     }
 
     private void ensureMeterMqttBusDevice() {
-        blueprintRegistry.findByName(FixtureBlueprintBootstrap.MQTT_METER_BUS_MODEL).ifPresent(model -> {
-            String path = FixtureBlueprintBootstrap.MQTT_METER_BUS_PATH;
+        blueprintRegistry.findByName(DemoFixtureBootstrap.MQTT_METER_BUS_MODEL).ifPresent(model -> {
+            String path = DemoFixtureBootstrap.MQTT_METER_BUS_PATH;
             if (objectManager.tree().findByPath(path).isEmpty()) {
                 objectManager.create(
                         "root.platform.devices",
@@ -257,7 +259,7 @@ public class BlueprintApplicationRunner {
         if (!mappings.contains("\"ingress\"") || !mappings.contains("meter")) {
             device.setVariableValue(
                     "driverPointMappingsJson",
-                    DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_POINT_MAPPINGS))
+                    DataRecord.single(stringSchema, Map.of("value", DemoFixtureBootstrap.METER_INGRESS_POINT_MAPPINGS))
             );
         }
         String config = readVariableStringField(device, "driverConfigJson", "value");
@@ -265,7 +267,7 @@ public class BlueprintApplicationRunner {
                 || !config.contains("ingressPayloadLanes")) {
             device.setVariableValue(
                     "driverConfigJson",
-                    DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.METER_INGRESS_DRIVER_CONFIG))
+                    DataRecord.single(stringSchema, Map.of("value", DemoFixtureBootstrap.METER_INGRESS_DRIVER_CONFIG))
             );
         }
         if (device.getVariable("driverId").isPresent()) {
@@ -287,7 +289,7 @@ public class BlueprintApplicationRunner {
 
     private void ensurePlatformDemoNodes() {
         ensureNode("root.platform.devices", ObjectType.DEVICES, "Devices", "Connected devices");
-        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor (fixture)", FixtureBlueprintBootstrap.MQTT_SENSOR_MODEL);
+        ensureNode("root.platform.devices.demo-sensor-01", ObjectType.DEVICE, "Demo Sensor 01", "Simulated MQTT temperature sensor (fixture)", DemoFixtureBootstrap.MQTT_SENSOR_MODEL);
         ensureNode("root.platform.dashboards", ObjectType.DASHBOARDS, "Dashboards", "HMI dashboards");
         ensureNode("root.platform.dashboards.demo-sensor", ObjectType.DASHBOARD, "Demo Sensor Dashboard", "Live HMI for demo MQTT temperature sensor", "dashboard-v1");
         ensureNode("root.platform.dashboards.snmp-host-monitoring", ObjectType.DASHBOARD, "SNMP Host Monitoring", "System monitoring dashboard for SNMP agents (Windows/Linux)", "dashboard-v1");
@@ -314,8 +316,8 @@ public class BlueprintApplicationRunner {
     }
 
     public void ensureSnmpLocalhostDevice() {
-        blueprintRegistry.findByName(FixtureBlueprintBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
-            if (objectManager.tree().findByPath(FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
+        blueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL).ifPresent(model -> {
+            if (objectManager.tree().findByPath(DemoFixtureBootstrap.SNMP_LOCALHOST_PATH).isEmpty()) {
                 blueprintApplicationService.instantiateWithRules(
                         model.id(),
                         "root.platform.devices",
@@ -323,9 +325,9 @@ public class BlueprintApplicationRunner {
                         Map.of()
                 );
             } else {
-                syncSnmpAgentDevice(model, FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH);
+                syncSnmpAgentDevice(model, DemoFixtureBootstrap.SNMP_LOCALHOST_PATH);
             }
-            objectManager.persistNodeTree(FixtureBlueprintBootstrap.SNMP_LOCALHOST_PATH);
+            objectManager.persistNodeTree(DemoFixtureBootstrap.SNMP_LOCALHOST_PATH);
         });
     }
 
@@ -413,7 +415,7 @@ public class BlueprintApplicationRunner {
         DataSchema stringSchema = DataSchema.builder("stringValue").field("value", FieldType.STRING).build();
         device.setVariableValue(
                 "driverPointMappingsJson",
-                DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.SNMP_POINT_MAPPINGS))
+                DataRecord.single(stringSchema, Map.of("value", DemoFixtureBootstrap.SNMP_POINT_MAPPINGS))
         );
         if (device.getVariable("driverId").isPresent()) {
             device.setVariableValue(
@@ -426,7 +428,7 @@ public class BlueprintApplicationRunner {
             if (config.isBlank() || config.equals("{}")) {
                 device.setVariableValue(
                         "driverConfigJson",
-                        DataRecord.single(stringSchema, Map.of("value", FixtureBlueprintBootstrap.SNMP_DRIVER_CONFIG))
+                        DataRecord.single(stringSchema, Map.of("value", DemoFixtureBootstrap.SNMP_DRIVER_CONFIG))
                 );
             }
         }

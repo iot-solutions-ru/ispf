@@ -89,6 +89,7 @@ function normalizeCustomSymbols(raw: MimicCustomSymbol[] | undefined): MimicCust
       bindingSchema: normalizeBindingSchema(s.bindingSchema),
       behaviors: normalizeBehaviors(s.behaviors),
       sourceSymbolId: typeof s.sourceSymbolId === "string" ? s.sourceSymbolId : undefined,
+      inUserLibrary: s.inUserLibrary === true ? true : undefined,
     }));
   return out.length > 0 ? out : undefined;
 }

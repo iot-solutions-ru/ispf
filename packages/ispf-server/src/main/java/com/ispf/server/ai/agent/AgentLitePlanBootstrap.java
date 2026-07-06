@@ -171,18 +171,12 @@ final class AgentLitePlanBootstrap {
         if (containsAny(text, "virtual", "насос", "pump", "lab-pump")) {
             return "Virtual lab device with telemetry";
         }
-        if (containsAny(text, "demo-sensor", "demo sensor")) {
-            return "Demo sensor device and dashboard";
-        }
-        return "SNMP localhost monitoring dashboard";
+        return "SNMP monitoring per user request";
     }
 
     private static List<String> monitoringLabSteps(String text) {
         if (containsAny(text, "virtual", "насос", "pump", "lab-pump", "давлен")) {
             return virtualPumpSteps();
-        }
-        if (containsAny(text, "demo-sensor", "demo sensor")) {
-            return demoSensorSteps();
         }
         return snmpLocalhostSteps();
     }
@@ -230,17 +224,13 @@ final class AgentLitePlanBootstrap {
 
     private static List<String> snmpLocalhostSteps() {
         return List.of(
-                "1. search_context query=snmp localhost monitoring (once)",
-                "2. get_object path=" + AgentPlaybooks.SNMP_DEVICE_PATH + " — create_object если отсутствует",
-                "3. set_variable path=" + AgentPlaybooks.SNMP_DEVICE_PATH + " name=driverConfigJson",
-                "4. set_variable path=" + AgentPlaybooks.SNMP_DEVICE_PATH + " name=driverPointMappingsJson",
-                "5. configure_driver devicePath=" + AgentPlaybooks.SNMP_DEVICE_PATH
-                        + " driverId=" + AgentPlaybooks.SNMP_DRIVER_ID + " autoStart=true",
-                "6. list_variables path=" + AgentPlaybooks.SNMP_DEVICE_PATH,
-                "7. get_object path=" + AgentPlaybooks.SNMP_DASHBOARD_PATH
-                        + " — create_object DASHBOARD если отсутствует",
-                "8. set_dashboard_layout path=" + AgentPlaybooks.SNMP_DASHBOARD_PATH
-                        + " template=snmp-host-monitoring"
+                "1. search_context query=snmp agent monitoring topic=drivers — templateId, driverConfigJson, mappings",
+                "2. list_objects parentPath=root.platform.devices",
+                "3. get_object path=<devicePath> — create_object с templateId из docs если отсутствует",
+                "4. set_variable driverConfigJson / driverPointMappingsJson — значения из search_context",
+                "5. configure_driver driverId=snmp autoStart=true",
+                "6. list_variables path=<devicePath>",
+                "7. get_object path=<dashboardPath> — create_object DASHBOARD + set_dashboard_layout template=snmp-host-monitoring"
         );
     }
 
@@ -254,14 +244,6 @@ final class AgentLitePlanBootstrap {
         );
     }
 
-    private static List<String> demoSensorSteps() {
-        return List.of(
-                "1. get_object path=root.platform.devices.demo-sensor-01",
-                "2. list_variables path=root.platform.devices.demo-sensor-01",
-                "3. get_object path=root.platform.dashboards.demo-sensor",
-                "4. set_dashboard_layout template=demo-sensor"
-        );
-    }
 
     private static List<String> pumpStationScadaSteps() {
         return List.of(
@@ -309,7 +291,7 @@ final class AgentLitePlanBootstrap {
                 "2. validate_bundle appId=mes-reference",
                 "3. dry_run_deploy appId=mes-reference",
                 "4. import_package / register_application — deploy bundle",
-                "5. list_functions objectPath=root.platform.devices.demo-sensor-01 appId=mes-reference"
+                "5. list_functions objectPath=<devicePath> appId=mes-reference"
         );
     }
 
