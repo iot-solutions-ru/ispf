@@ -1,9 +1,11 @@
 package com.ispf.server.tenant;
 
 import com.ispf.server.config.IspfRoles;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +44,18 @@ public class TenantScopeService {
                 || path.equals(TenantPaths.TENANTS_ROOT)
                 || path.equals(scopedPrefix)
                 || path.startsWith(scopedPrefix + ".");
+    }
+
+    public void requirePathInScope(String path, Authentication authentication) {
+        if (!isPathVisible(path, authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Tenant scope denied for " + path);
+        }
+    }
+
+    public void invalidateUserCache(String username) {
+        if (username != null && !username.isBlank()) {
+            tenantIdByUser.remove(username);
+        }
     }
 
     private static boolean isAdmin(Authentication authentication) {

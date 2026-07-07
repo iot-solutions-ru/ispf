@@ -73,6 +73,22 @@ jobs:
             -Dorg.gradle.workers.max=1 \
             2>&1 | tee nightly-event-fire.log
 
+      - name: Federation integration gate (S27)
+        env:
+          CI: true
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.federation.FederationChaosIntegrationTest \
+            --tests com.ispf.server.federation.FederationTunnelIntegrationTest \
+            --tests com.ispf.server.federation.FederationStoreForwardIntegrationTest \
+            --tests com.ispf.server.federation.FederationApiTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            -Dispf.test.skipLoad=true \
+            2>&1 | tee nightly-federation.log
+
       - name: Upload backend logs
         if: always()
         uses: actions/upload-artifact@v4

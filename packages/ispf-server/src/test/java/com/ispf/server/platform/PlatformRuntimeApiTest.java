@@ -1,12 +1,14 @@
 package com.ispf.server.platform;
 
+import com.ispf.server.config.FunctionProperties;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,17 +20,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@TestPropertySource(properties = {
-        "ispf.function.audit.enabled=true",
-        "ispf.function.audit.mode=errors",
-        "ispf.function.audit.async-enabled=false"
-})
 class PlatformRuntimeApiTest {
 
     private static final String DEVICE = "root.platform.devices.demo-sensor-01";
 
     @Autowired
     MockMvc mockMvc;
+
+    @Autowired
+    FunctionProperties functionProperties;
+
+    private boolean auditEnabledBefore;
+    private boolean auditAsyncBefore;
+
+    @BeforeEach
+    void enableSyncFunctionAudit() {
+        FunctionProperties.Audit audit = functionProperties.getAudit();
+        auditEnabledBefore = audit.isEnabled();
+        auditAsyncBefore = audit.isAsyncEnabled();
+        audit.setEnabled(true);
+        audit.setAsyncEnabled(false);
+    }
+
+    @AfterEach
+    void restoreFunctionAudit() {
+        FunctionProperties.Audit audit = functionProperties.getAudit();
+        audit.setEnabled(auditEnabledBefore);
+        audit.setAsyncEnabled(auditAsyncBefore);
+    }
 
     @Test
     void listsFunctionInvocationAudit() throws Exception {

@@ -1,5 +1,6 @@
 package com.ispf.server.mes;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -24,6 +25,29 @@ class MesPlatformApiTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @AfterEach
+    void restoreDemoDeviceDriver() throws Exception {
+        mockMvc.perform(post("/api/v1/drivers/runtime/stop").param("devicePath", DEMO_DEVICE))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/drivers/runtime/configure")
+                        .param("devicePath", DEMO_DEVICE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "driverId": "virtual",
+                                  "pollIntervalMs": 2000,
+                                  "configuration": {
+                                    "baseTemperature": "22.0",
+                                    "amplitude": "15.0",
+                                    "periodSec": "60"
+                                  },
+                                  "pointMappings": {"temperature": "sim"},
+                                  "autoStart": false
+                                }
+                                """))
+                .andExpect(status().isOk());
+    }
 
     @Test
     void listsVirtualDriver() throws Exception {
@@ -184,7 +208,10 @@ class MesPlatformApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("RUNNING"));
 
-        Thread.sleep(2000);
+        Thread.sleep(1500);
+
+        mockMvc.perform(post("/api/v1/drivers/runtime/poll").param("devicePath", DEMO_DEVICE))
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/drivers/runtime/status").param("devicePath", DEMO_DEVICE))
                 .andExpect(status().isOk())

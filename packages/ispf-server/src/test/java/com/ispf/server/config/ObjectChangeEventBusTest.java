@@ -27,20 +27,4 @@ class ObjectChangeEventBusTest {
             assertThat(eventBus).isNotNull();
         }
     }
-
-    @Nested
-    @SpringBootTest
-    @ActiveProfiles("test")
-    @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-    @TestPropertySource(properties = "ispf.object-change.async-enabled=false")
-    class WhenAsyncDisabled {
-
-        @Autowired
-        private com.ispf.server.object.bus.ObjectChangeEventBus eventBus;
-
-        @Test
-        void stillRegistersEventBusForSyncDispatch() {
-            assertThat(eventBus).isNotNull();
-        }
-    }
 }

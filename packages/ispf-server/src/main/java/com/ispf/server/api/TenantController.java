@@ -2,6 +2,8 @@ package com.ispf.server.api;
 
 import com.ispf.server.tenant.Tenant;
 import com.ispf.server.tenant.TenantDraft;
+import com.ispf.server.tenant.TenantQuotas;
+import com.ispf.server.tenant.TenantQuotaService;
 import com.ispf.server.tenant.TenantService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -31,7 +33,9 @@ public class TenantController {
 
     @GetMapping
     public List<TenantDto> list() {
-        return tenantService.listTenants().stream().map(TenantDto::from).toList();
+        return tenantService.listTenants().stream()
+                .map(tenant -> TenantDto.from(tenant, tenantService.usage(tenant.tenantId())))
+                .toList();
     }
 
     @PostMapping
@@ -41,7 +45,7 @@ public class TenantController {
                 request.displayName().trim(),
                 request.enabled() == null || request.enabled()
         ));
-        return TenantDto.from(tenant);
+        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()));
     }
 
     @DeleteMapping("/{tenantId}")
@@ -65,22 +69,54 @@ public class TenantController {
         tenantService.clearUserTenant(username.trim().toLowerCase());
     }
 
+    @PutMapping("/{tenantId}/quotas")
+    public TenantDto updateQuotas(
+            @PathVariable String tenantId,
+            @Valid @RequestBody UpdateTenantQuotasRequest request
+    ) {
+        Tenant tenant = tenantService.updateQuotas(
+                tenantId.trim().toLowerCase(),
+                new TenantQuotas(request.maxDevices(), request.maxObjects())
+        );
+        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()));
+    }
+
+    @GetMapping("/{tenantId}/usage")
+    public TenantUsageDto usage(@PathVariable String tenantId) {
+        TenantQuotaService.TenantUsage usage = tenantService.usage(tenantId.trim().toLowerCase());
+        return new TenantUsageDto(usage.tenantId(), usage.devices(), usage.objects());
+    }
+
     public record TenantDto(
             String tenantId,
             String displayName,
             boolean enabled,
             String objectPath,
-            String platformPath
+            String platformPath,
+            Integer maxDevices,
+            Integer maxObjects,
+            Integer deviceCount,
+            Integer objectCount
     ) {
-        static TenantDto from(Tenant tenant) {
+        static TenantDto from(Tenant tenant, TenantQuotaService.TenantUsage usage) {
             return new TenantDto(
                     tenant.tenantId(),
                     tenant.displayName(),
                     tenant.enabled(),
                     tenant.objectPath(),
-                    tenant.platformPath()
+                    tenant.platformPath(),
+                    tenant.maxDevices(),
+                    tenant.maxObjects(),
+                    usage.devices(),
+                    usage.objects()
             );
         }
+    }
+
+    public record TenantUsageDto(String tenantId, int devices, int objects) {
+    }
+
+    public record UpdateTenantQuotasRequest(Integer maxDevices, Integer maxObjects) {
     }
 
     public record CreateTenantRequest(

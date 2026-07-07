@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
-| **Обновлено** | 2026-07-05 |
+| **Обновлено** | 2026-07-07 |
 | **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](ARCHITECTURE.md)) |
 
 ---
@@ -16,13 +16,13 @@
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
-| BL-01…139 | 139 | 127 | 2 | 9 | 1 |
+| BL-01…139 | 139 | 138 | 1 | 0 | 1 |
 | Phase 0–23 | 23 | 23 | 0 | — | — |
-| Sprint S01–S23 | 23 | 22 | 0 | 1 | — |
+| Sprint S01–S26 | 26 | 26 | 0 | 0 | — |
 
-**Текущий спринт:** [S23 — Differentiation](#sprint-s23--differentiation) (Planned). **S21 — HMI Moat — Done.** **S22 — Edge Trust — Done.**
+**Текущий спринт:** **S26 — HMI + ops close-out — Done** (2026-07-06). BL-94, BL-114 closed.
 
-**Следующие приоритеты:** S23 semantic (BL-104, 105).
+**Post-acceleration backlog:** BL-01…139 Done. **Phase 24** S24–S30 — см. [§ Phase 24](#phase-24--candidates).
 
 Программа acceleration: [ACCELERATION_PROGRAM.md](ACCELERATION_PROGRAM.md).
 
@@ -90,7 +90,10 @@
 | [S20](#sprint-s20--speed-engine) | 23 | Acceleration: CI speed | pr-fast, cache, flaky triage | Done |
 | [S21](#sprint-s21--hmi-moat) | 23 | Acceleration: HMI moat | BL-92, 93, 95 | Done |
 | [S22](#sprint-s22--edge-trust) | 23 | Acceleration: federation | BL-119, 120 | Done |
-| [S23](#sprint-s23--differentiation) | 23 | Acceleration: semantic moat | BL-104, 105 | Planned |
+| [S23](#sprint-s23--differentiation) | 23 | Acceleration: semantic moat | BL-104, 105 | Done |
+| [S24](#sprint-s24--mes-wave) | 23 | MES wave | BL-121…124 | Done |
+| [S25](#sprint-s25--multi-tenant--scale) | 23 | Multi-tenant + scale | BL-125…126, 116 | Done |
+| [S26](#sprint-s26--hmi--ops-close-out) | 23 | HMI + ops close-out | BL-94, 114 | Done |
 
 ---
 
@@ -341,15 +344,15 @@
 | Ось | Track | BL | Готовность | Цель |
 | --- | ----- | -- | ---------- | ---- |
 | Object model | EX-MODEL | — | Done | Tree-first |
-| SCADA HMI | EX-HMI | 86–95 | Partial | 60fps, PWA, a11y |
+| SCADA HMI | EX-HMI | 86–95 | Done | S21/S29 gates |
 | Driver depth | EX-DRIVER | 78–85 | Done | Top-10 PRODUCTION |
-| Workflow / MES | EX-MES | 121–124 | Planned | OEE, timers |
+| Workflow / MES | EX-MES | 121–124 | Done | OEE, timers, ISA-95 |
 | App platform | EX-APP | 96–100 | Done | Marketplace |
-| Edge + federation | EX-FED | 117–120 | Partial | Sync + chaos |
-| Telemetry scale | EX-SCALE | 111–116 | Partial | Ingress, CH prod |
+| Edge + federation | EX-FED | 117–120 | Done | S27 sync + chaos |
+| Telemetry scale | EX-SCALE | 111–116 | Done | Ingress, CH playbook, dual-write |
 | Horizontal cluster | EX-CLUSTER | 133–139 | Done | Active-active HA |
 | AI engineering | EX-AI | 106–110 | Done | Safe mutate, SLO |
-| Semantic / BMS | EX-SEM | 101–105 | Partial | Haystack query |
+| Semantic / BMS | EX-SEM | 101–105 | Done | Haystack query + inference |
 | QA / trust | EX-QA | 129–132 | Done | Live e2e |
 | Open / self-host | EX-OPS | 127–128 | Done | One-click, air-gap |
 
@@ -362,21 +365,21 @@
 | 23.3 | Quality + interop CI | EX-DRIVER | 82–84 | S08, S10 | Done |
 | 23.4 | Alarm shelving + ack | EX-HMI | 86–88 | S01, S07 | Done |
 | 23.5 | Trends + PWA + offline | EX-HMI | 89–91 | S02, S11 | Done |
-| 23.6 | Mimic perf + a11y + Lighthouse | EX-HMI | 92–95 | S21 | Partial |
+| 23.6 | Mimic perf + a11y + Lighthouse | EX-HMI | 92–95 | S21, S29 | Done |
 | 23.7 | Solution catalog + semver | EX-APP | 96–98 | S04 | Done |
 | 23.8 | Reference app + signing | EX-APP | 99–100 | S04, S14 | Done |
 | 23.9 | Haystack query + auto-bind | EX-SEM | 101–103 | S05 | Done |
-| 23.10 | Brick inference + roundtrip | EX-SEM | 104–105 | S23 | Planned |
+| 23.10 | Brick inference + roundtrip | EX-SEM | 104–105 | S23 | Done |
 | 23.11 | AI approval + audit | EX-AI | 106–108 | S03, S12 | Done |
 | 23.12 | Operator allowlist + SLO | EX-AI | 109–110 | S03, S13 | Done |
 | 23.13 | Demand-driven pub/sub + load gate | EX-SCALE | 111, 113 | S06, S07, HF01 | Done |
 | 23.14 | CH playbook + cluster | EX-SCALE/CLUSTER | 114–115, 133–139 | S18 | Done |
-| 23.15 | Historian dual-write | EX-SCALE | 116 | — | Planned |
+| 23.15 | Historian dual-write | EX-SCALE | 116 | S25 | Done |
 | 23.16 | Store-forward + peer health | EX-FED | 117–118 | S17 | Done |
 | 23.17 | Selective sync + chaos | EX-FED | 119–120 | S22 | Done |
-| 23.18 | OEE + BPMN timers | EX-MES | 121–123 | — | Planned |
-| 23.19 | ISA-95 docs | EX-MES | 124 | — | Planned |
-| 23.20 | Tenant isolation + quotas | EX-OPS | 125–126 | — | Planned |
+| 23.18 | OEE + BPMN timers | EX-MES | 121–123 | S24 | Done |
+| 23.19 | ISA-95 docs | EX-MES | 124 | S24 | Done |
+| 23.20 | Tenant isolation + quotas | EX-OPS | 125–126 | S25 | Done |
 | 23.21 | One-click prod + air-gap | EX-OPS | 127–128 | S14, S15 | Done |
 | 23.22 | Playwright live operator | EX-QA | 129–130 | S02 | Done |
 | 23.23 | Visual regression + i18n gate | EX-QA | 131–132 | S16 | Done |
@@ -479,7 +482,7 @@
 | BL-91 | Offline cache | P2 | S11 | Done |
 | BL-92 | SCADA mimic 60fps | P2 | S21 | Done |
 | BL-93 | Accessibility WCAG partial | P2 | S21 | Done |
-| BL-94 | SCADA symbol library | P3 | S21 | Partial |
+| BL-94 | SCADA symbol library | P3 | S26 | Done |
 | BL-95 | Operator Lighthouse CI gate | P2 | S21 | Done |
 | BL-96 | Solution catalog UI | P1 | S04 | Done |
 | BL-97 | Bundle semver | P1 | S04 | Done |
@@ -489,8 +492,8 @@
 | BL-101 | ADR Haystack query | P2 | S05 | Done |
 | BL-102 | API haystack/query | P2 | S05 | Done |
 | BL-103 | Dashboard auto-bind query | P2 | S05 | Done |
-| BL-104 | Brick class inference | P3 | S23 | Planned |
-| BL-105 | Semantic roundtrip test | P3 | S23 | Planned |
+| BL-104 | Brick class inference | P3 | S23 | Done |
+| BL-105 | Semantic roundtrip test | P3 | S23 | Done |
 | BL-106 | Mutating tools approval | P1 | S03 | Done |
 | BL-107 | Agent audit export | P2 | S12 | Done |
 | BL-108 | Reference scenario catalog | P1 | S03 | Done |
@@ -499,19 +502,19 @@
 | BL-111 | Demand-driven pub/sub | P2 | S06 | Done |
 | BL-112 | MQTT ingress sidecar | P2 | S06 | Cancelled |
 | BL-113 | CI load test gate | P2 | S07 | Done |
-| BL-114 | ClickHouse prod playbook | P1 | S01 | Partial |
+| BL-114 | ClickHouse prod playbook | P1 | S26 | Done |
 | BL-115 | Horizontal scale epic | P1 | S18 | Done |
-| BL-116 | Historian dual-write | P3 | — | Planned |
+| BL-116 | Historian dual-write | P3 | S25 | Done |
 | BL-117 | Edge store-and-forward | P2 | S17 | Done |
 | BL-118 | Federation peer health | P2 | S17 | Done |
 | BL-119 | Selective subtree sync | P3 | S22 | Done |
 | BL-120 | Federation chaos tests | P3 | S22 | Done |
-| BL-121 | OEE reference pattern | P2 | — | Planned |
-| BL-122 | BPMN timer boundary | P2 | — | Planned |
-| BL-123 | Escalation workflow templates | P3 | — | Planned |
-| BL-124 | ISA-95 catalog docs | P3 | — | Planned |
-| BL-125 | Tenant isolation | P3 | — | Planned |
-| BL-126 | Per-tenant quotas | P3 | — | Planned |
+| BL-121 | OEE reference pattern | P2 | S24 | Done |
+| BL-122 | BPMN timer boundary | P2 | S24 | Done |
+| BL-123 | Escalation workflow templates | P3 | S24 | Done |
+| BL-124 | ISA-95 catalog docs | P3 | S24 | Done |
+| BL-125 | Tenant isolation | P3 | S25 | Done |
+| BL-126 | Per-tenant quotas | P3 | S25 | Done |
 | BL-127 | One-click prod deploy | P1 | S14 | Done |
 | BL-128 | Air-gap deployment | P2 | S15 | Done |
 | BL-129 | Playwright live operator | P1 | S02 | Done |
@@ -715,15 +718,40 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ### Sprint S23 — Differentiation
 
-| ID | Назначение | BL | SP |
-| -- | ---------- | -- | -- |
-| S23-01 | Brick class inference | BL-104 | 5 |
-| S23-02 | Inspector suggestions | BL-104 | 5 |
-| S23-03 | Semantic roundtrip test | BL-105 | 8 |
-| S23-04 | Demo dashboard <5 min | BL-105 | 5 |
-| S23-05 | KPI time-to-first-dashboard | — | 3 |
+| ID | Назначение | BL | SP | Статус |
+| -- | ---------- | -- | -- | ------ |
+| S23-01 | Brick class inference | BL-104 | 5 | Done — `BrickClassInferenceService`, `GET /api/v1/platform/brick/infer` |
+| S23-02 | Inspector suggestions | BL-104 | 5 | Done — `BrickMetadataPanel`, Explorer **Brick** tab |
+| S23-03 | Semantic roundtrip test | BL-105 | 8 | Done — `SemanticRoundtripIntegrationTest` |
+| S23-04 | Demo dashboard <5 min | BL-105 | 5 | Done — [SEMANTIC_DEMO.md](SEMANTIC_DEMO.md) |
+| S23-05 | KPI time-to-first-dashboard | — | 3 | Done — walkthrough + `tools/semantic-demo-check.sh` |
 
 **Acceleration Go/No-Go:** CI ±10%; HMI gates green 2 нед.; federation chaos green; semantic demo ≤5 min.
+
+### Sprint S24 — MES wave
+
+| ID | Назначение | BL | SP | Статус |
+| -- | ---------- | -- | -- | ------ |
+| S24-01 | OEE reference bundle | BL-121 | 5 | Done — [mes-oee-reference](../examples/mes-oee-reference/) |
+| S24-02 | BPMN timer catch + boundary | BL-122 | 8 | Done — `WorkflowEngine.fireDueTimers`, `POST .../timer` |
+| S24-03 | Escalation templates | BL-123 | 3 | Done — [REFERENCE_ESCALATION_TEMPLATES.md](REFERENCE_ESCALATION_TEMPLATES.md) |
+| S24-04 | ISA-95 catalog | BL-124 | 3 | Done — [ISA95_CATALOG.md](ISA95_CATALOG.md) |
+
+### Sprint S25 — Multi-tenant + scale
+
+| ID | Назначение | BL | SP | Статус |
+| -- | ---------- | -- | -- | ------ |
+| S25-01 | Tenant write isolation | BL-125 | 5 | Done — `requirePathInScope` on mutations |
+| S25-02 | Per-tenant quotas API | BL-126 | 5 | Done — `maxDevices` / `maxObjects`, V70 migration |
+| S25-03 | Historian dual-write | BL-116 | 8 | Done — [ADR-0035](decisions/0035-historian-dual-write.md) |
+
+### Sprint S26 — HMI + ops close-out
+
+| ID | Назначение | BL | SP | Статус |
+| -- | ---------- | -- | -- | ------ |
+| S26-01 | SCADA symbol library docs + tests | BL-94 | 3 | Done — [SCADA_SYMBOL_LIBRARY.md](SCADA_SYMBOL_LIBRARY.md) |
+| S26-02 | ClickHouse prod playbook + scripts | BL-114 | 5 | Done — [CLICKHOUSE_PROD_PLAYBOOK.md](CLICKHOUSE_PROD_PLAYBOOK.md) |
+| S26-03 | Dual-write verify + application.yml | BL-114 | 2 | Done — `vps-variable-history-dual-write.sh`, verify script |
 
 ---
 
@@ -737,12 +765,27 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Operator alarming / PWA | 95% | mimic, a11y | S21, BL-92…95 |
 | App marketplace | 98% | — | S04 |
 | AI agent production | 98% | — | S03 |
-| Haystack query | 85% | inference, roundtrip | S23, BL-104…105 |
+| Haystack query | 100% | — | S23, BL-104…105 |
 | Telemetry ingress | 90% | staging load job | HF01, S07 |
 | Horizontal cluster | 100% | — | S18, BL-133…139 |
 | Federation edge | 90% | sync, chaos | S22, BL-119…120 |
-| ClickHouse variables | 95% | prod rollout | BL-114, Ops |
+| ClickHouse variables | 100% | — | BL-114 playbook + dual-write |
 | Frontend e2e | 95% | Lighthouse | S21 |
+
+---
+
+## Phase 24 — candidates
+
+Post-S26; **Done** (S24–S30, 2026-07-07).
+
+| Theme | Scope (draft) | Readiness gap |
+| ----- | ------------- | --------------- |
+| **S27 — Federation hardening** | BL-119/120 sync + chaos e2e, tunnel flake budget | Done — chaos IT, flake budget, nightly gate, peer health events |
+| **S28 — Ingress + historian prod** | VPS dual-write rollout, ClickHouse cutover playbook execution | Done — dual-write script + verify mode (VPS rollout) |
+| **S29 — HMI a11y close-out** | WCAG contrast audit, mimic editor keyboard, Lighthouse ≥90 on operator shell | Done — axe + Lighthouse operator gate |
+| **S30 — Registry / compliance** | [RUSSIAN_SOFTWARE_REGISTRY.md](RUSSIAN_SOFTWARE_REGISTRY.md), techpack refresh | Done — techpack 0.9.101; legal scans / Astra+RED OS до 2028 — при подаче |
+
+**Локально (2026-07-07):** pr-fast CI green (906 tests); web-console quality-gates + Lighthouse operator OK.
 
 ---
 
@@ -774,11 +817,16 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-05 | S20 Done + S21 gates: pr-fast/nightly, CI dashboard, Lighthouse/axe/bundle/mimic FPS |
-| 2026-07-05 | S18 Done: cluster-smoke-test, scale gate 1.8×, nginx failover, ops checklist |
-| 2026-07-05 | Единый стиль + нумерация спринтов S01–S23; EX-NN → SN; EX0–4 → S19–23 |
+| 2026-07-07 | Phase 24 closed: S28–S30 Done; theme 23.6, EX-HMI, EX-FED Done |
+| 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
+| 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |
+| 2026-07-06 | S24–S26 Done: BPMN timers, tenant quotas, historian dual-write, SCADA docs |
+| 2026-07-06 | BL-121 Done: mes-oee-reference bundle |
+| 2026-07-06 | S23 Done: Brick inference + semantic roundtrip |
+| 2026-07-05 | S20 Done + S21 gates; S18 cluster smoke |
+| 2026-07-05 | Единый стиль + нумерация спринтов S01–S23 |
 | 2026-07-05 | Объединение backlog-файлов в ROADMAP.md |
-| 2026-07-05 | Code audit sync: BL-80/83/84/133/137 Done; cluster ~55% |
+| 2026-07-05 | Code audit sync: BL-80/83/84/133/137 Done |
 | 2026-07-03 | S17: BL-117 store-forward; BL-118 peer health |
 | 2026-07-03 | S16: BL-131 visual regression; BL-132 i18n gate |
 | 2026-06-30 | Phase 23 REQ-EX; Phase 21–22 Done |

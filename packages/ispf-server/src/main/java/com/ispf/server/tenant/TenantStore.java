@@ -24,7 +24,7 @@ public class TenantStore {
 
     public List<Tenant> listAll() {
         return jdbcTemplate.query("""
-                SELECT tenant_id, display_name, enabled, created_at, updated_at
+                SELECT tenant_id, display_name, enabled, max_devices, max_objects, created_at, updated_at
                 FROM %s
                 ORDER BY tenant_id
                 """.formatted(tenantsTable),
@@ -34,7 +34,7 @@ public class TenantStore {
 
     public Optional<Tenant> findById(String tenantId) {
         List<Tenant> rows = jdbcTemplate.query("""
-                SELECT tenant_id, display_name, enabled, created_at, updated_at
+                SELECT tenant_id, display_name, enabled, max_devices, max_objects, created_at, updated_at
                 FROM %s
                 WHERE tenant_id = ?
                 """.formatted(tenantsTable),
@@ -47,12 +47,14 @@ public class TenantStore {
     public Tenant insert(TenantDraft draft) {
         Instant now = Instant.now();
         jdbcTemplate.update("""
-                INSERT INTO %s (tenant_id, display_name, enabled, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO %s (tenant_id, display_name, enabled, max_devices, max_objects, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """.formatted(tenantsTable),
                 draft.tenantId(),
                 draft.displayName(),
                 draft.enabled(),
+                draft.maxDevices(),
+                draft.maxObjects(),
                 Timestamp.from(now),
                 Timestamp.from(now)
         );
@@ -94,11 +96,26 @@ public class TenantStore {
         );
     }
 
+    public void updateQuotas(String tenantId, TenantQuotas quotas) {
+        jdbcTemplate.update("""
+                UPDATE %s
+                SET max_devices = ?, max_objects = ?, updated_at = ?
+                WHERE tenant_id = ?
+                """.formatted(tenantsTable),
+                quotas.maxDevices(),
+                quotas.maxObjects(),
+                Timestamp.from(Instant.now()),
+                tenantId
+        );
+    }
+
     private static Tenant mapRow(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new Tenant(
                 rs.getString("tenant_id"),
                 rs.getString("display_name"),
                 rs.getBoolean("enabled"),
+                (Integer) rs.getObject("max_devices"),
+                (Integer) rs.getObject("max_objects"),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant()
         );

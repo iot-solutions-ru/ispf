@@ -37,6 +37,9 @@ public class VariableHistoryProperties {
      */
     private boolean overflowCoalesceEnabled = true;
 
+    /** When true with {@code store=jdbc}, samples are written to PostgreSQL and ClickHouse (BL-116). */
+    private boolean dualWriteEnabled = false;
+
     /**
      * Write backend: {@code jdbc} (batched JDBC insert, default), {@code jpa} (legacy {@code saveAll}),
      * {@code clickhouse} (column store; BL-40 backend), or {@code cassandra}/{@code scylla}.
@@ -268,6 +271,14 @@ public class VariableHistoryProperties {
 
     public boolean isExternalTimeSeriesStore() {
         return isClickHouseStore() || isCassandraStore();
+    }
+
+    public boolean isDualWriteEnabled() {
+        return dualWriteEnabled;
+    }
+
+    public void setDualWriteEnabled(boolean dualWriteEnabled) {
+        this.dualWriteEnabled = dualWriteEnabled;
     }
 
     public List<String> getExcludedVariables() {

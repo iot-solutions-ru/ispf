@@ -1,0 +1,14 @@
+{
+  "name": "Recurring threshold escalation",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "patternType": "COUNT",
+  "eventName": "thresholdExceeded",
+  "windowSeconds": 300,
+  "minOccurrences": 3,
+  "cooldownSeconds": 120,
+  "sequenceGapSeconds": 0,
+  "actionType": "RUN_WORKFLOW",
+  "actionTarget": "root.platform.workflows.demo-alarm-handler",
+  "enabled": true,
+  "description": "Template: N threshold events in window → start alarm handler workflow (see REFERENCE_ESCALATION_TEMPLATES.md)"
+}

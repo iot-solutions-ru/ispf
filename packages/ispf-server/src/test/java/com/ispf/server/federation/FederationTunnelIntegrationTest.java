@@ -37,12 +37,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class FederationTunnelIntegrationTest {
 
-    private static final long TUNNEL_CONNECT_TIMEOUT_SECONDS =
-            System.getenv("CI") != null ? 120 : 60;
-    private static final long PROXY_READY_TIMEOUT_SECONDS =
-            System.getenv("CI") != null ? 60 : 30;
-    private static final long CONNECT_RETRY_INTERVAL_MS = 5_000;
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -57,7 +51,7 @@ class FederationTunnelIntegrationTest {
 
     @Test
     void outboundAgentConnectsAndProxiesThroughTunnel() throws Exception {
-        String token = loginAdmin();
+        String token = FederationIntegrationTestSupport.loginAdmin(mockMvc);
         String baseUrl = "http://127.0.0.1:" + port;
         String siteName = "tunnel-edge-" + System.nanoTime();
 
@@ -74,7 +68,7 @@ class FederationTunnelIntegrationTest {
                 .andExpect(jsonPath("$.registrationCode").exists())
                 .andReturn();
 
-        String registrationCode = extractJsonField(
+        String registrationCode = FederationIntegrationTestSupport.extractJsonField(
                 registration.getResponse().getContentAsString(),
                 "registrationCode"
         );
@@ -93,7 +87,10 @@ class FederationTunnelIntegrationTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String agentId = extractJsonField(agentCreated.getResponse().getContentAsString(), "id");
+        String agentId = FederationIntegrationTestSupport.extractJsonField(
+                agentCreated.getResponse().getContentAsString(),
+                "id"
+        );
 
         String peerId = waitForConnectedTunnelPeer(token, agentId, siteName);
 
@@ -124,7 +121,8 @@ class FederationTunnelIntegrationTest {
     }
 
     private String waitForConnectedTunnelPeer(String token, String agentId, String siteName) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TUNNEL_CONNECT_TIMEOUT_SECONDS);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
+                FederationIntegrationTestSupport.TUNNEL_CONNECT_TIMEOUT_SECONDS);
         long nextConnectRetryAt = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         String lastAgentStatus = null;
         String lastError = null;
@@ -142,7 +140,8 @@ class FederationTunnelIntegrationTest {
                 lastError = agent.path("lastError").asString(null);
                 if (shouldRetryConnect(lastAgentStatus) && System.nanoTime() >= nextConnectRetryAt) {
                     triggerOutboundConnect(token, agentId);
-                    nextConnectRetryAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(CONNECT_RETRY_INTERVAL_MS);
+                    nextConnectRetryAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(
+                            FederationIntegrationTestSupport.CONNECT_RETRY_INTERVAL_MS);
                 }
                 JsonNode linkedPeerIdNode = agent.get("linkedPeerId");
                 if ("CONNECTED".equals(lastAgentStatus)
@@ -167,7 +166,8 @@ class FederationTunnelIntegrationTest {
 
     private void waitForProxyObject(String token, String peerId, String path) throws Exception {
         UUID peerUuid = UUID.fromString(peerId);
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROXY_READY_TIMEOUT_SECONDS);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
+                FederationIntegrationTestSupport.PROXY_READY_TIMEOUT_SECONDS);
         Integer lastStatus = null;
         String lastBody = null;
         while (System.nanoTime() < deadline) {
@@ -202,20 +202,5 @@ class FederationTunnelIntegrationTest {
         return "FAILED".equals(status)
                 || "DISCONNECTED".equals(status)
                 || "RECONNECTING".equals(status);
-    }
-
-    private String loginAdmin() throws Exception {
-        MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "username": "admin", "password": "admin" }
-                                """))
-                .andExpect(status().isOk())
-                .andReturn();
-        return extractJsonField(login.getResponse().getContentAsString(), "token");
-    }
-
-    private static String extractJsonField(String json, String field) {
-        return json.replaceAll("(?s).*\\\"" + field + "\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*", "$1");
     }
 }

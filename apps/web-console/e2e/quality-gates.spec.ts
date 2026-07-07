@@ -3,30 +3,59 @@ import AxeBuilder from "@axe-core/playwright";
 import { mockAuthConfig, mockAuthenticatedApi, seedAuthSession } from "./fixtures/apiMocks";
 import { buildStressMimicDocument } from "./fixtures/stressMimic";
 
+const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
 const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 55);
 const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 120);
+
+async function openOperatorE2e(page: import("@playwright/test").Page) {
+  await Promise.all([
+    page.waitForResponse((response) => response.url().includes("/api/v1/auth/me") && response.ok(), {
+      timeout: 15_000,
+    }),
+    page.goto(OPERATOR_E2E_URL),
+  ]);
+  await expect(page.getByTestId("operator-shell")).toBeVisible({ timeout: 15_000 });
+}
+
+function axeForShell(page: import("@playwright/test").Page) {
+  return new AxeBuilder({ page })
+    .exclude('[disabled]')
+    .exclude('[aria-disabled="true"]')
+    .exclude('.btn:disabled')
+    .exclude('.tree-context-menu-item:disabled');
+}
 
 test.describe("a11y baseline", () => {
   test("login page has no critical axe violations", async ({ page }) => {
     await mockAuthConfig(page);
     await page.goto("/");
-    const results = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    const results = await axeForShell(page).analyze();
     const critical = results.violations.filter((v) => v.impact === "critical");
     expect(critical, JSON.stringify(critical, null, 2)).toEqual([]);
+  });
+
+  test("login page passes color-contrast (WCAG AA)", async ({ page }) => {
+    await mockAuthConfig(page);
+    await page.goto("/");
+    const results = await axeForShell(page).withRules(["color-contrast"]).analyze();
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 
   test("operator shell has no critical axe violations", async ({ page }) => {
     await mockAuthenticatedApi(page);
     await seedAuthSession(page);
-    await page.goto("/?mode=operator");
-    await expect(page.getByText("Ops board")).toBeVisible({ timeout: 15_000 });
-    const results = await new AxeBuilder({ page })
-      .disableRules(["color-contrast"])
-      .analyze();
+    await openOperatorE2e(page);
+    const results = await axeForShell(page).analyze();
     const critical = results.violations.filter((v) => v.impact === "critical");
     expect(critical, JSON.stringify(critical, null, 2)).toEqual([]);
+  });
+
+  test("operator shell passes color-contrast (WCAG AA)", async ({ page }) => {
+    await mockAuthenticatedApi(page);
+    await seedAuthSession(page);
+    await openOperatorE2e(page);
+    const results = await axeForShell(page).withRules(["color-contrast"]).analyze();
+    expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
   });
 });
 
@@ -50,7 +79,8 @@ test.describe("mimic runtime FPS", () => {
       },
     });
     await seedAuthSession(page);
-    await page.goto("/?mode=operator");
+    await openOperatorE2e(page);
+    await expect(page.locator(".dashboard-shell")).toBeVisible({ timeout: 20_000 });
     await expect(page.locator(".dash-widget-scada-mimic")).toBeVisible({ timeout: 20_000 });
 
     const fps = await page.evaluate(async () => {

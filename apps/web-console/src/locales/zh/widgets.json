@@ -413,5 +413,13 @@
   "view.multiPenTrend.noDataExport": "无数据可导出",
   "view.wizardBack": "返回",
   "view.wizardNext": "下一步 →",
-  "view.loadingReport": "加载中…"
+  "view.loadingReport": "加载中…",
+  "editor.mediaUpload": "Upload file",
+  "editor.mediaClear": "Remove upload",
+  "editor.mediaEmbeddedHint": "Image is embedded in dashboard layout (data URL).",
+  "editor.mediaTooLarge": "File is too large (max {{maxMb}} MB).",
+  "editor.mediaReadFailed": "Could not read file.",
+  "view.scadaMimic.exportPng": "Export PNG",
+  "view.scadaMimic.exportDone": "PNG downloaded",
+  "view.scadaMimic.exportFailed": "PNG export failed"
 }

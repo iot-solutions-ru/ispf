@@ -8,6 +8,7 @@ CH_PASSWORD_FILE="${ISPF_CLICKHOUSE_PASSWORD_FILE:-$INSTALL_ROOT/clickhouse-pass
 CLICKHOUSE_URL="${ISPF_EVENT_JOURNAL_CLICKHOUSE_URL:-http://127.0.0.1:8123}"
 EXPECTED_VERSION="${1:-}"
 SMOKE_WRITE="${ISPF_CLICKHOUSE_VERIFY_WRITE:-true}"
+VERIFY_MODE="${ISPF_CLICKHOUSE_VERIFY_MODE:-full}"
 API_BASE="${ISPF_VERIFY_API_BASE:-http://127.0.0.1:8080}"
 ADMIN_USER="${ISPF_VERIFY_ADMIN_USER:-admin}"
 ADMIN_PASS="${ISPF_VERIFY_ADMIN_PASS:-admin}"
@@ -39,12 +40,18 @@ curl -sf "${API_BASE}/actuator/health" || fail "actuator/health failed"
 echo
 
 echo "=== event journal env ==="
-grep '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" || fail "ISPF_EVENT_JOURNAL_STORE not set"
-STORE=$(grep '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" | cut -d= -f2-)
-if [ "$STORE" != "clickhouse" ]; then
-  fail "ISPF_EVENT_JOURNAL_STORE=$STORE (expected clickhouse)"
+if [ "$VERIFY_MODE" = "dual-write-only" ]; then
+  echo "verify mode: dual-write-only (historian secondary; event journal may stay jdbc)"
+  grep '^ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=' "$ENV_FILE" | grep -q '=true' \
+    || fail "ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED must be true for dual-write-only verify"
+else
+  grep '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" || fail "ISPF_EVENT_JOURNAL_STORE not set"
+  STORE=$(grep '^ISPF_EVENT_JOURNAL_STORE=' "$ENV_FILE" | cut -d= -f2-)
+  if [ "$STORE" != "clickhouse" ]; then
+    fail "ISPF_EVENT_JOURNAL_STORE=$STORE (expected clickhouse)"
+  fi
+  grep '^ISPF_EVENT_JOURNAL_CLICKHOUSE_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/' || true
 fi
-grep '^ISPF_EVENT_JOURNAL_CLICKHOUSE_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/' || true
 
 echo "=== ClickHouse container ==="
 docker ps --filter name=ispf-clickhouse --format '{{.Names}} {{.Status}}' | grep -q ispf-clickhouse \
@@ -58,9 +65,10 @@ COUNT_BEFORE=$(docker exec ispf-clickhouse clickhouse-client --password "$PASS" 
 echo "$COUNT_BEFORE"
 
 VAR_STORE=$(grep '^ISPF_VARIABLE_HISTORY_STORE=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "jdbc")
-if [ "$VAR_STORE" = "clickhouse" ]; then
-  echo "=== variable history env (clickhouse) ==="
-  grep '^ISPF_VARIABLE_HISTORY_CLICKHOUSE_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/' || true
+DUAL_WRITE=$(grep '^ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- || echo "false")
+if [ "$VAR_STORE" = "clickhouse" ] || [ "$DUAL_WRITE" = "true" ]; then
+  echo "=== variable history env (store=$VAR_STORE dual-write=$DUAL_WRITE) ==="
+  grep '^ISPF_VARIABLE_HISTORY_' "$ENV_FILE" | sed 's/PASSWORD=.*/PASSWORD=***/' || true
   echo "=== variable_samples count (before) ==="
   VAR_COUNT_BEFORE=$(docker exec ispf-clickhouse clickhouse-client --password "$PASS" -q "SELECT count() FROM ispf.variable_samples")
   echo "$VAR_COUNT_BEFORE"
@@ -68,10 +76,10 @@ fi
 
 echo "=== Startup log (ClickHouse journal) ==="
 journalctl -u ispf-server -n 300 --no-pager \
-  | grep -E 'ClickHouse event journal ready|ClickHouse variable history ready|TimescaleDB hypertable skipped for event_history|TimescaleDB hypertable skipped for variable_samples' \
-  | tail -5 || echo "(no matching log lines — check journalctl -u ispf-server)"
+  | grep -E 'ClickHouse event journal ready|ClickHouse variable history ready|ClickHouse dual-write secondary ready|TimescaleDB hypertable skipped for event_history|TimescaleDB hypertable skipped for variable_samples' \
+  | tail -8 || echo "(no matching log lines — check journalctl -u ispf-server)"
 
-if [ "$SMOKE_WRITE" = "true" ]; then
+if [ "$SMOKE_WRITE" = "true" ] && [ "$VERIFY_MODE" != "dual-write-only" ]; then
   echo "=== Write smoke (POST /api/v1/events/fire → ClickHouse) ==="
   TOKEN=$(curl -sf -X POST "${API_BASE}/api/v1/auth/login" \
     -H 'Content-Type: application/json' \
@@ -94,7 +102,7 @@ if [ "$SMOKE_WRITE" = "true" ]; then
   fi
 fi
 
-if [ "$VAR_STORE" = "clickhouse" ] && [ "$SMOKE_WRITE" = "true" ] && [ -n "${TOKEN:-}" ]; then
+if { [ "$VAR_STORE" = "clickhouse" ] || [ "$DUAL_WRITE" = "true" ]; } && [ "$SMOKE_WRITE" = "true" ] && [ -n "${TOKEN:-}" ]; then
   echo "=== Variable history smoke (setVariable → ClickHouse) ==="
   UNIQUE=$(date +%s)
   SET_STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X PUT \

@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class BindingRulesService {
@@ -34,6 +35,7 @@ public class BindingRulesService {
     private final ObjectMapper objectMapper;
     private final BindingPeriodicScheduleRegistry periodicScheduleRegistry;
     private final BindingPeriodicScheduler periodicScheduler;
+    private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
 
     public BindingRulesService(
             ObjectManager objectManager,
@@ -53,14 +55,16 @@ public class BindingRulesService {
     }
 
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
-        List<BindingRule> normalized = normalizeRules(rules);
-        for (BindingRule rule : normalized) {
-            validateRule(objectPath, rule);
+        synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
+            List<BindingRule> normalized = normalizeRules(rules);
+            for (BindingRule rule : normalized) {
+                validateRule(objectPath, rule);
+            }
+            writeRules(objectPath, normalized);
+            periodicScheduleRegistry.syncObject(objectPath, normalized);
+            periodicScheduler.reschedule();
+            return normalized;
         }
-        writeRules(objectPath, normalized);
-        periodicScheduleRegistry.syncObject(objectPath, normalized);
-        periodicScheduler.reschedule();
-        return normalized;
     }
 
     public BindingRule upsertRule(String objectPath, BindingRule rule) {

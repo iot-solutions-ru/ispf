@@ -51,7 +51,7 @@ test.skip(true, "ci-flake #1234 — quarantine until 2026-07-20");
 | ---- | ------- | ---------- |
 | Load tests in PR | Slow + H2/Flyway flakes on Windows | Moved to nightly (S20-01) |
 | Playwright preview | Mobile viewport timing | Nightly only |
-| Driver ownership IT | H2 case sensitivity locally | CI Linux + Testcontainers path |
+| Federation tunnel IT | WS connect / buffer drain timeout on slow runners | `@Isolated`, budgets in `FederationIntegrationTestSupport` (S27); nightly if &gt;2×/week |
 
 ## Metrics
 

@@ -17,10 +17,19 @@ public class TenantService {
 
     private final TenantStore tenantStore;
     private final ObjectManager objectManager;
+    private final TenantQuotaService tenantQuotaService;
+    private final TenantScopeService tenantScopeService;
 
-    public TenantService(TenantStore tenantStore, ObjectManager objectManager) {
+    public TenantService(
+            TenantStore tenantStore,
+            ObjectManager objectManager,
+            TenantQuotaService tenantQuotaService,
+            TenantScopeService tenantScopeService
+    ) {
         this.tenantStore = tenantStore;
         this.objectManager = objectManager;
+        this.tenantQuotaService = tenantQuotaService;
+        this.tenantScopeService = tenantScopeService;
     }
 
     public List<Tenant> listTenants() {
@@ -59,11 +68,27 @@ public class TenantService {
         } catch (IllegalArgumentException ex) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
         }
+        tenantScopeService.invalidateUserCache(username);
+    }
+
+    @Transactional
+    public Tenant updateQuotas(String tenantId, TenantQuotas quotas) {
+        tenantStore.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        tenantStore.updateQuotas(tenantId, quotas);
+        return tenantStore.findById(tenantId).orElseThrow();
+    }
+
+    public TenantQuotaService.TenantUsage usage(String tenantId) {
+        tenantStore.findById(tenantId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Tenant not found"));
+        return tenantQuotaService.usage(tenantId);
     }
 
     @Transactional
     public void clearUserTenant(String username) {
         tenantStore.clearUserTenant(username);
+        tenantScopeService.invalidateUserCache(username);
     }
 
     public void ensureTenantsRoot() {

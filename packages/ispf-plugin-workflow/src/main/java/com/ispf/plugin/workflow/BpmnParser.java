@@ -43,6 +43,8 @@ public class BpmnParser {
             Map<String, UserTaskDefinition> userTasks = new HashMap<>();
             Map<String, MessageTaskDefinition> messageTasks = new HashMap<>();
             Map<String, SignalCatchDefinition> signalCatchEvents = new HashMap<>();
+            Map<String, TimerCatchDefinition> timerCatchEvents = new HashMap<>();
+            Map<String, BoundaryTimerDefinition> boundaryTimers = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
             String startNodeId = null;
 
@@ -89,7 +91,26 @@ public class BpmnParser {
             for (Element catchEvent : elements(process, "intermediateCatchEvent")) {
                 String id = catchEvent.getAttribute("id");
                 nodeTypes.put(id, "intermediateCatchEvent");
-                signalCatchEvents.put(id, parseSignalCatch(catchEvent));
+                Integer durationSeconds = readDurationSeconds(catchEvent);
+                if (durationSeconds != null) {
+                    Map<String, String> parameters = new HashMap<>();
+                    parameters.put("durationSeconds", String.valueOf(durationSeconds));
+                    timerCatchEvents.put(id, new TimerCatchDefinition(
+                            id,
+                            catchEvent.getAttribute("name"),
+                            durationSeconds,
+                            Map.copyOf(parameters)
+                    ));
+                } else {
+                    signalCatchEvents.put(id, parseSignalCatch(catchEvent));
+                }
+            }
+
+            for (Element boundary : elements(process, "boundaryEvent")) {
+                BoundaryTimerDefinition boundaryTimer = parseBoundaryTimer(boundary);
+                if (boundaryTimer != null) {
+                    boundaryTimers.put(boundaryTimer.attachedToRef(), boundaryTimer);
+                }
             }
 
             for (Element flow : elements(process, "sequenceFlow")) {
@@ -109,6 +130,8 @@ public class BpmnParser {
                     userTasks,
                     messageTasks,
                     signalCatchEvents,
+                    timerCatchEvents,
+                    boundaryTimers,
                     List.copyOf(sequenceFlows)
             );
         } catch (WorkflowException e) {
@@ -128,6 +151,48 @@ public class BpmnParser {
         }
         boolean defaultFlow = "true".equalsIgnoreCase(readIspfAttribute(flow, "default"));
         return new SequenceFlowDefinition(id, source, target, condition, defaultFlow);
+    }
+
+    private BoundaryTimerDefinition parseBoundaryTimer(Element boundary) throws WorkflowException {
+        Integer durationSeconds = readDurationSeconds(boundary);
+        if (durationSeconds == null) {
+            return null;
+        }
+        String attachedToRef = boundary.getAttribute("attachedToRef");
+        if (attachedToRef == null || attachedToRef.isBlank()) {
+            throw new WorkflowException("Boundary timer requires attachedToRef: " + boundary.getAttribute("id"));
+        }
+        boolean interrupting = !"false".equalsIgnoreCase(boundary.getAttribute("cancelActivity"));
+        Map<String, String> parameters = new HashMap<>();
+        parameters.put("durationSeconds", String.valueOf(durationSeconds));
+        parameters.put("attachedToRef", attachedToRef);
+        return new BoundaryTimerDefinition(
+                boundary.getAttribute("id"),
+                boundary.getAttribute("name"),
+                attachedToRef,
+                durationSeconds,
+                interrupting,
+                Map.copyOf(parameters)
+        );
+    }
+
+    private static Integer readDurationSeconds(Element element) {
+        String raw = readIspfAttribute(element, "durationSeconds");
+        if (raw == null || raw.isBlank()) {
+            Element timerDef = firstChildElement(element, "timerEventDefinition");
+            if (timerDef != null) {
+                raw = readIspfAttribute(timerDef, "durationSeconds");
+            }
+        }
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            int seconds = Integer.parseInt(raw.trim());
+            return seconds >= 0 ? seconds : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private SignalCatchDefinition parseSignalCatch(Element catchEvent) throws WorkflowException {

@@ -18,7 +18,10 @@ export function emptyServerContext(): DashboardContextPatch {
   return { selection: {}, params: {}, widgets: {} };
 }
 
-export function sessionFromServerContext(context: Record<string, unknown>): DashboardSession {
+export function sessionFromServerContext(context: Record<string, unknown> | null | undefined): DashboardSession {
+  if (!context || typeof context !== "object") {
+    return { selection: {}, params: {}, widgets: {} };
+  }
   const selection =
     context.selection && typeof context.selection === "object"
       ? (context.selection as Record<string, string>)

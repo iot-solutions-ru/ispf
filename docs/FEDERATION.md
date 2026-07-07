@@ -157,7 +157,20 @@ Body `sync-subtree`:
 | Partial catalog | Нужны только devices | `sync-subtree` вместо full sync | — |
 | Store-forward backlog | Tunnel offline, buffered events | Дождаться reconnect или `connect` outbound agent | Replay ≤ 60 s после reconnect (lab) |
 
-**Chaos coverage:** `FederationChaosIntegrationTest` — disable peer → proxy/sync fail → re-enable → sync succeeds.
+**Chaos coverage:** `FederationChaosIntegrationTest` — disable peer → proxy/sync fail → re-enable → sync succeeds; subtree variant (`disabledPeerBlocksSubtreeSyncAndRecoversAfterReEnable`) — `sync-subtree` only imports devices, not dashboards.
+
+### Integration test flake budget (S27)
+
+Tunnel and store-forward ITs poll async connect/replay; budgets live in `FederationIntegrationTestSupport`:
+
+| Constant | Local | CI | Used by |
+| -------- | ----- | -- | ------- |
+| `TUNNEL_CONNECT_TIMEOUT_SECONDS` | 60 | 120 | `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest` |
+| `PROXY_READY_TIMEOUT_SECONDS` | 30 | 60 | `FederationTunnelIntegrationTest` |
+| `BUFFER_DRAIN_TIMEOUT_SECONDS` | 90 | 120 | `FederationStoreForwardIntegrationTest` |
+| `CONNECT_RETRY_INTERVAL_MS` | 5000 | 5000 | tunnel connect retry |
+
+Tests marked `@Isolated` (`FederationChaosIntegrationTest`, `FederationTunnelIntegrationTest`, `FederationStoreForwardIntegrationTest`) — no parallel execution with other IT classes. Nightly gate: [ci-nightly.yml](../.github/workflows/ci-nightly.yml) job **Federation integration gate (S27)**. On timeout failure, triage per [CI_FLAKY_TRIAGE.md](CI_FLAKY_TRIAGE.md) (P1 if &lt;1×/week).
 
 **Ops checklist:**
 
@@ -279,7 +292,9 @@ Per-peer диагностика для оператора и алертинга:
 | Last proxy success / latency / error | `FederationPeerHealthService` (HTTP + tunnel proxy) |
 | Pending buffered events | outbound buffer registry |
 
-**Limits (v1):** proxy snapshots and buffer stats are in-memory only (reset on server restart). No automated alerting — operator sees badges in UI only.
+**Limits (v1):** proxy snapshots and buffer stats are in-memory only (reset on server restart).
+
+**Automated alerting (S27):** `FederationPeerHealthMonitor` fires `peerHealthDegraded` / `peerHealthRecovered` on `root.platform.federation` when an enabled peer transitions RED ↔ GREEN. Configure alert rules on those events for webhook/email.
 
 **API:**
 
@@ -300,7 +315,7 @@ Web Console: колонка health badge на панели **Federation peers** 
 - Write proxy — variable patch, function invoke, **dashboard layout/title**; полная двусторонняя синхронизация дерева не поддерживается.
 - Catalog sync — import + operator resolutions; без `BIND` конфликтующие local native / proxy mismatch **не перезаписываются**.
 - ~~Edge store-forward~~ — **Done (BL-117, S17):** in-memory buffer + replay; disk persistence — backlog.
-- ~~Peer health SLO~~ — **Done (BL-118, S17):** health API + UI badges; alerting integration — backlog.
+- ~~Peer health SLO~~ — **Done (BL-118, S17):** health API + UI badges; **alerting (S27):** `peerHealthDegraded` / `peerHealthRecovered` events.
 - ~~Federated dashboards read-only~~ — **Done (BL-46):** layout/title write проксируется на remote.
 - ~~Catalog sync без merge конфликтов~~ — **Done (BL-45):** preview + SKIP/BIND в UI.
 - ~~Tenant scope на federation API~~ — **Done v0.3.0** (`FederationAccessService`, peer CRUD admin-only, proxy scoped).

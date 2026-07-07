@@ -509,6 +509,19 @@ export async function mockAuthenticatedApi(
       });
     }
 
+    if (pathname === "/api/v1/dashboards/by-path/context") {
+      const dashboardPath = searchParams.get("path");
+      if (dashboardPath === MOCK_DASHBOARD_PATH || dashboardPath === MOCK_DEMO_SENSOR_DASHBOARD_PATH) {
+        const emptyCtx = { selection: {}, params: {}, widgets: {} };
+        return json(route, {
+          path: dashboardPath,
+          context: emptyCtx,
+          contextJson: JSON.stringify(emptyCtx),
+        });
+      }
+      return json(route, { message: "not found" }, 404);
+    }
+
     if (pathname.startsWith("/api/v1/objects/leases")) {
       return json(route, []);
     }

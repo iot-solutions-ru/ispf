@@ -2,6 +2,7 @@ package com.ispf.server.federation;
 
 import com.ispf.server.object.ObjectChangeEvent;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Isolated
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @TestPropertySource(properties = {
         "ispf.security.rbac-enabled=true",
@@ -33,9 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "ispf.federation.outbound-buffer.max-bytes=65536"
 })
 class FederationStoreForwardIntegrationTest {
-
-    private static final long TUNNEL_CONNECT_TIMEOUT_SECONDS =
-            System.getenv("CI") != null ? 120 : 60;
 
     @Autowired
     private MockMvc mockMvc;
@@ -80,10 +79,11 @@ class FederationStoreForwardIntegrationTest {
         assertThat(bufferRegistry.stats(agentUuid).count()).isGreaterThan(0);
 
         tunnelAgentService.scheduleConnect(agentUuid);
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TUNNEL_CONNECT_TIMEOUT_SECONDS);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
+                FederationIntegrationTestSupport.BUFFER_DRAIN_TIMEOUT_SECONDS);
         while (System.nanoTime() < deadline) {
             if (bufferRegistry.stats(agentUuid).count() == 0) {
-                break;
+                return;
             }
             Thread.sleep(500);
         }
@@ -92,14 +92,7 @@ class FederationStoreForwardIntegrationTest {
     }
 
     private String loginAdmin() throws Exception {
-        MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"username":"admin","password":"admin"}
-                                """))
-                .andExpect(status().isOk())
-                .andReturn();
-        return objectMapper.readTree(login.getResponse().getContentAsString()).path("token").asString();
+        return FederationIntegrationTestSupport.loginAdmin(mockMvc);
     }
 
     private String createRegistration(String token, String siteName) throws Exception {
@@ -138,7 +131,8 @@ class FederationStoreForwardIntegrationTest {
     }
 
     private void waitForConnected(String token, String agentId) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TUNNEL_CONNECT_TIMEOUT_SECONDS);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
+                FederationIntegrationTestSupport.TUNNEL_CONNECT_TIMEOUT_SECONDS);
         while (System.nanoTime() < deadline) {
             MvcResult agentsResult = mockMvc.perform(get("/api/v1/federation/outbound/agents")
                             .header("Authorization", "Bearer " + token))

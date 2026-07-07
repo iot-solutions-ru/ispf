@@ -6,6 +6,8 @@ public record Tenant(
         String tenantId,
         String displayName,
         boolean enabled,
+        Integer maxDevices,
+        Integer maxObjects,
         Instant createdAt,
         Instant updatedAt
 ) {

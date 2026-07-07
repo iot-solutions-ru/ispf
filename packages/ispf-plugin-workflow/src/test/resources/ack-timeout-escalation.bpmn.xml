@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:ispf="http://ispf.io/bpmn"
+             targetNamespace="http://ispf.io/bpmn">
+  <process id="ack-timeout-escalation" name="Ack timeout escalation" isExecutable="true">
+    <startEvent id="start" name="Start"/>
+    <userTask id="operatorAck" name="Operator acknowledgment"
+              ispf:title="Подтвердите тревогу"
+              ispf:instructions="Проверьте показания и подтвердите алarm"
+              ispf:assigneeRole="operator"
+              ispf:targetObject="root.platform.devices.demo-sensor-01"
+              ispf:function="acknowledgeAlarm"/>
+    <serviceTask id="normalClose" name="Normal close"
+                 ispf:action="log"
+                 ispf:message="alarm acknowledged in time"/>
+    <endEvent id="endNormal" name="End normal"/>
+    <boundaryEvent id="ackTimeout" name="Ack timeout"
+                   attachedToRef="operatorAck" cancelActivity="true"
+                   ispf:durationSeconds="300"/>
+    <serviceTask id="escalate" name="Escalate"
+                 ispf:action="publishNats"
+                 ispf:subject="ispf.ops.alarm.escalated"
+                 ispf:message="Operator ack timeout — escalation"/>
+    <serviceTask id="supervisorTask" name="Supervisor log"
+                 ispf:action="log"
+                 ispf:message="supervisor notified"/>
+    <endEvent id="endEscalated" name="End escalated"/>
+    <sequenceFlow sourceRef="start" targetRef="operatorAck"/>
+    <sequenceFlow sourceRef="operatorAck" targetRef="normalClose"/>
+    <sequenceFlow sourceRef="normalClose" targetRef="endNormal"/>
+    <sequenceFlow sourceRef="ackTimeout" targetRef="escalate"/>
+    <sequenceFlow sourceRef="escalate" targetRef="supervisorTask"/>
+    <sequenceFlow sourceRef="supervisorTask" targetRef="endEscalated"/>
+  </process>
+</definitions>

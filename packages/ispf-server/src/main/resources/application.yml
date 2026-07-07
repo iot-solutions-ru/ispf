@@ -142,6 +142,8 @@ ispf:
       drop-policy: ${ISPF_FEDERATION_OUTBOUND_BUFFER_DROP_POLICY:DROP_OLDEST}
     health:
       stale-minutes: ${ISPF_FEDERATION_HEALTH_STALE_MINUTES:15}
+      monitor-enabled: ${ISPF_FEDERATION_HEALTH_MONITOR_ENABLED:true}
+      monitor-interval-ms: ${ISPF_FEDERATION_HEALTH_MONITOR_INTERVAL_MS:60000}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
   websocket:
@@ -157,6 +159,7 @@ ispf:
     min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
     retention-days: ${ISPF_VARIABLE_HISTORY_RETENTION_DAYS:90}
     store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}
+    dual-write-enabled: ${ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED:false}
     async-enabled: ${ISPF_VARIABLE_HISTORY_ASYNC_ENABLED:true}
     queue-capacity: ${ISPF_VARIABLE_HISTORY_QUEUE_CAPACITY:50000}
     batch-size: ${ISPF_VARIABLE_HISTORY_BATCH_SIZE:1000}

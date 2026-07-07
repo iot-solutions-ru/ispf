@@ -7,6 +7,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -24,11 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class ReportApiTest {
 
     private static final String PACKAGE_ID = "platform-test";
     private static final String DATA_SOURCE_PATH = "root.platform.data-sources.platform-test";
     private static final String REPORT_PATH = "root.platform.reports.platform-test-report";
+    private static final String MIGRATION_PATH = "root.platform.migrations.platform_item";
 
     @Autowired
     private MockMvc mockMvc;
@@ -52,6 +55,11 @@ class ReportApiTest {
                                   ]
                                 }
                                 """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/migrations/by-path/apply")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", MIGRATION_PATH))
                 .andExpect(status().isOk());
     }
 

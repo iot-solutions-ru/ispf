@@ -8,7 +8,12 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -20,10 +25,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Isolated
+@Execution(ExecutionMode.SAME_THREAD)
 class CrossObjectBindingIntegrationTest {
 
     private static final String HUB = "root.platform.devices.test-virt-cluster.hub";
     private static final String DEV = "root.platform.devices.test-virt-cluster.dev-01";
+    private static final DataSchema SINE_WAVE = DataSchema.builder("sineWave")
+            .field("value", FieldType.DOUBLE)
+            .build();
 
     @Autowired
     private ObjectManager objectManager;
@@ -33,6 +43,29 @@ class CrossObjectBindingIntegrationTest {
 
     @Autowired
     private BindingDependencyIndex dependencyIndex;
+
+    @Autowired
+    private BindingRuleEngine bindingRuleEngine;
+
+    @BeforeEach
+    void resetHubRules() {
+        clearHubRules();
+    }
+
+    @AfterEach
+    void cleanupHubRules() {
+        clearHubRules();
+    }
+
+    private void clearHubRules() {
+        if (objectManager.tree().findByPath(HUB).isEmpty()) {
+            return;
+        }
+        for (BindingRule rule : bindingRulesService.listRules(HUB)) {
+            bindingRulesService.deleteRule(HUB, rule.id());
+        }
+        dependencyIndex.rebuild(HUB);
+    }
 
     @Test
     void crossObjectRuleUpdatesHubWhenRemoteTelemetryChanges() {
@@ -56,11 +89,9 @@ class CrossObjectBindingIntegrationTest {
         objectManager.setDriverTelemetryValue(
                 DEV,
                 "sineWave",
-                DataRecord.single(
-                        DataSchema.builder("sineWave").field("value", FieldType.DOUBLE).build(),
-                        Map.of("value", 3.14)
-                )
+                DataRecord.single(SINE_WAVE, Map.of("value", 3.14))
         );
+        bindingRuleEngine.onVariableChanged(HUB, DEV, "sineWave");
 
         assertThat(objectManager.require(HUB).getVariable("member1Sine"))
                 .isPresent()

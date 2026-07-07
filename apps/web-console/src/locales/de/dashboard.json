@@ -67,5 +67,6 @@
   "haystackBind.searching": "Suche…",
   "haystackBind.error": "Haystack-Suche fehlgeschlagen.",
   "haystackBind.results": "{{count}} Punkt(e) gefunden",
-  "haystackBind.addWidgets": "{{count}} Value-Widget(s) hinzufügen"
+  "haystackBind.addWidgets": "{{count}} Value-Widget(s) hinzufügen",
+  "editor.containerDropHint": "Drop widgets here or add from the palette while this container is selected."
 }

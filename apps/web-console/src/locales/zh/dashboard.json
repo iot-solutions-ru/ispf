@@ -67,5 +67,6 @@
   "haystackBind.searching": "搜索中…",
   "haystackBind.error": "Haystack 搜索失败。",
   "haystackBind.results": "匹配 {{count}} 个点位",
-  "haystackBind.addWidgets": "添加 {{count}} 个 value 组件"
+  "haystackBind.addWidgets": "添加 {{count}} 个 value 组件",
+  "editor.containerDropHint": "Drop widgets here or add from the palette while this container is selected."
 }

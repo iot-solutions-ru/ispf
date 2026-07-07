@@ -45,6 +45,7 @@ import FireEventDialog from "./runtime/FireEventDialog";
 import ObjectFederationBindSection from "./ObjectFederationBindSection";
 import DeviceDriverPanel from "./DeviceDriverPanel";
 import HaystackMetadataPanel from "./HaystackMetadataPanel";
+import BrickMetadataPanel from "./BrickMetadataPanel";
 import ResolvedTimeZoneBadge from "./ResolvedTimeZoneBadge";
 import ApplicationDeployPanel from "./ApplicationDeployPanel";
 import TreeSubtreeExportPanel from "./TreeSubtreeExportPanel";
@@ -75,6 +76,7 @@ type Tab =
   | "federation"
   | "driver"
   | "haystack"
+  | "brick"
   | "deploy"
   | "export"
   | "access"
@@ -89,6 +91,7 @@ const OBJECT_PROPERTY_TABS: readonly Tab[] = [
   "federation",
   "driver",
   "haystack",
+  "brick",
   "deploy",
   "export",
   "access",
@@ -460,6 +463,9 @@ export default function ObjectPropertiesEditor({
   const hasHaystackMetadata = Boolean(
     editorQuery.data?.variables?.some((variable) => variable.name === "haystackTags")
   );
+  const hasBrickMetadata = Boolean(
+    editorQuery.data?.variables?.some((variable) => variable.name === "brickClass")
+  );
   const isApplicationPreview = ctxPreview?.type === "APPLICATION";
   const showFederationTab = canManage && path !== "root" && !isRootPath;
   const showAccessTab = canManage && !isDevicePreview && !isApplicationPreview;
@@ -474,6 +480,9 @@ export default function ObjectPropertiesEditor({
       if (hasHaystackMetadata) {
         list.push("haystack");
       }
+      if (hasBrickMetadata) {
+        list.push("brick");
+      }
     }
     if (isApplicationPreview) {
       list.push("deploy");
@@ -486,7 +495,7 @@ export default function ObjectPropertiesEditor({
     }
     list.push("variables", "bindings", "events", "functions", "history");
     return list;
-  }, [canManage, ctxPreview, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
+  }, [canManage, ctxPreview, hasBrickMetadata, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
 
   useEffect(() => {
     if (editorData && !tabs.includes(tab)) {
@@ -528,6 +537,8 @@ export default function ObjectPropertiesEditor({
         return t("tab.driver");
       case "haystack":
         return t("tab.haystack");
+      case "brick":
+        return t("tab.brick");
       case "deploy":
         return t("tab.deploy");
       case "export":
@@ -757,6 +768,12 @@ export default function ObjectPropertiesEditor({
       {tab === "haystack" && isDevice && (
         <section className="panel">
           <HaystackMetadataPanel devicePath={path} canManage={canManage} />
+        </section>
+      )}
+
+      {tab === "brick" && isDevice && (
+        <section className="panel">
+          <BrickMetadataPanel devicePath={path} canManage={canManage} />
         </section>
       )}
 

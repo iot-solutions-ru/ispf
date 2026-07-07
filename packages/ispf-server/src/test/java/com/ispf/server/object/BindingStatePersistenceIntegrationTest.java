@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Map;
 
@@ -24,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @SpringBootTest
 @ActiveProfiles("test")
 @Isolated
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@TestPropertySource(properties = "ispf.object-change.demand-driven-publication=true")
 class BindingStatePersistenceIntegrationTest {
 
     private static final String DEVICE = "root.platform.devices.binding-state-persist-test";
@@ -89,7 +91,6 @@ class BindingStatePersistenceIntegrationTest {
     }
 
     private void resetBindingState(String path) {
-        bindingStatePort.clearForTests();
         bindingStatePort.invalidateCache(path);
         objectManager.upsertSystemVariable(
                 path,

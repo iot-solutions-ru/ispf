@@ -136,6 +136,21 @@ public class WorkflowInstance {
                 .toList();
     }
 
+    public boolean hasDueTimers(long nowEpochMs) {
+        return waitingTokens().stream()
+                .anyMatch(token -> token.timerDeadlineEpochMs() > 0L && nowEpochMs >= token.timerDeadlineEpochMs());
+    }
+
+    public List<ExecutionToken> dueTimerTokens(long nowEpochMs) {
+        List<ExecutionToken> due = new ArrayList<>();
+        for (ExecutionToken token : waitingTokens()) {
+            if (token.timerDeadlineEpochMs() > 0L && nowEpochMs >= token.timerDeadlineEpochMs()) {
+                due.add(token);
+            }
+        }
+        return due;
+    }
+
     public Optional<String> assignee() {
         return Optional.ofNullable(assignee);
     }
@@ -206,6 +221,17 @@ public class WorkflowInstance {
         recomputeStatus();
     }
 
+    public void waitTokenAtTimer(ExecutionToken token, String catchNodeId, long deadlineEpochMs) {
+        token.waitAtTimerCatch(catchNodeId, deadlineEpochMs);
+        history.add("TIMER_WAIT@" + catchNodeId + "#" + token.tokenId());
+        recomputeStatus();
+    }
+
+    public void scheduleBoundaryTimer(ExecutionToken token, String boundaryNodeId, long deadlineEpochMs) {
+        token.scheduleBoundaryTimer(boundaryNodeId, deadlineEpochMs);
+        history.add("BOUNDARY_TIMER@" + boundaryNodeId + "#" + token.tokenId());
+    }
+
     public void claim(String operatorId) {
         assignee = operatorId;
         history.add("CLAIMED@" + operatorId);
@@ -234,6 +260,34 @@ public class WorkflowInstance {
         }
         if (resumed.isEmpty()) {
             throw new IllegalStateException("No waiting token for signal: " + signalName);
+        }
+        recomputeStatus();
+        return resumed;
+    }
+
+    public ExecutionToken resumeBoundaryTimer(String boundaryNodeId) {
+        for (ExecutionToken token : waitingTokens()) {
+            if (boundaryNodeId.equals(token.pendingBoundaryTimerNodeId())) {
+                token.resumeAfterBoundaryTimer(boundaryNodeId);
+                history.add("BOUNDARY_TIMER@" + boundaryNodeId + "#" + token.tokenId());
+                recomputeStatus();
+                return token;
+            }
+        }
+        throw new IllegalStateException("No waiting token for boundary timer: " + boundaryNodeId);
+    }
+
+    public List<ExecutionToken> resumeTimerCatch(String catchNodeId) {
+        List<ExecutionToken> resumed = new ArrayList<>();
+        for (ExecutionToken token : waitingTokens()) {
+            if (catchNodeId.equals(token.pendingTimerCatchNodeId())) {
+                token.resumeAfterTimerCatch();
+                history.add("TIMER@" + catchNodeId + "#" + token.tokenId());
+                resumed.add(token);
+            }
+        }
+        if (resumed.isEmpty()) {
+            throw new IllegalStateException("No waiting token for timer catch: " + catchNodeId);
         }
         recomputeStatus();
         return resumed;
@@ -308,6 +362,15 @@ public class WorkflowInstance {
                     if (token.pendingSignalName() != null) {
                         map.put("pendingSignalName", token.pendingSignalName());
                     }
+                    if (token.pendingTimerCatchNodeId() != null) {
+                        map.put("pendingTimerCatchNodeId", token.pendingTimerCatchNodeId());
+                    }
+                    if (token.pendingBoundaryTimerNodeId() != null) {
+                        map.put("pendingBoundaryTimerNodeId", token.pendingBoundaryTimerNodeId());
+                    }
+                    if (token.timerDeadlineEpochMs() > 0L) {
+                        map.put("timerDeadlineEpochMs", String.valueOf(token.timerDeadlineEpochMs()));
+                    }
                     if (token.arrivedJoinNodeId() != null) {
                         map.put("arrivedJoinNodeId", token.arrivedJoinNodeId());
                     }
@@ -334,6 +397,11 @@ public class WorkflowInstance {
             }
             String currentNodeId = stringValue(map.get("currentNodeId"));
             TokenState tokenState = TokenState.valueOf(stringValue(map.get("state")));
+            long timerDeadline = 0L;
+            String deadlineRaw = stringValue(map.get("timerDeadlineEpochMs"));
+            if (deadlineRaw != null && !deadlineRaw.isBlank()) {
+                timerDeadline = Long.parseLong(deadlineRaw);
+            }
             restored.add(ExecutionToken.restore(
                     id,
                     currentNodeId,
@@ -341,6 +409,9 @@ public class WorkflowInstance {
                     stringValue(map.get("pendingUserTaskId")),
                     stringValue(map.get("pendingSignalCatchNodeId")),
                     stringValue(map.get("pendingSignalName")),
+                    stringValue(map.get("pendingTimerCatchNodeId")),
+                    stringValue(map.get("pendingBoundaryTimerNodeId")),
+                    timerDeadline,
                     stringValue(map.get("arrivedJoinNodeId"))
             ));
         }

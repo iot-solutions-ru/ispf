@@ -242,4 +242,4 @@ cd apps/web-console && npx tsx src/scada/templates/pipeline-scada/exportPipeline
 
 Dynamic symbols (labels, GPU blocks, breakers with live state): define in `customSymbols[]` with `behaviors` + `bindingSchema`. Reference: `mini-tec-mimic.json`.
 
-Full guide: [SCADA.md § Каталог символов](SCADA.md#каталог-символов), [SCADA.md § Custom SVG и behaviors](SCADA.md#custom-svg-и-behaviors).
+Full guide: [SCADA.md § Каталог символов](SCADA.md#каталог-символов), [SCADA_SYMBOL_LIBRARY.md](SCADA_SYMBOL_LIBRARY.md).

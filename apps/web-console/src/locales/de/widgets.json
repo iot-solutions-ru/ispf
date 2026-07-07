@@ -413,5 +413,13 @@
   "view.multiPenTrend.noDataExport": "Keine Daten zum Export",
   "view.wizardBack": "Zurück",
   "view.wizardNext": "Weiter →",
-  "view.loadingReport": "Laden…"
+  "view.loadingReport": "Laden…",
+  "editor.mediaUpload": "Upload file",
+  "editor.mediaClear": "Remove upload",
+  "editor.mediaEmbeddedHint": "Image is embedded in dashboard layout (data URL).",
+  "editor.mediaTooLarge": "File is too large (max {{maxMb}} MB).",
+  "editor.mediaReadFailed": "Could not read file.",
+  "view.scadaMimic.exportPng": "Export PNG",
+  "view.scadaMimic.exportDone": "PNG downloaded",
+  "view.scadaMimic.exportFailed": "PNG export failed"
 }

@@ -246,7 +246,7 @@ export default function OperatorDashboardApp({
   }, [ui, viewKind, dashboardPath, reportPath, navigateDashboard, navigateReport]);
 
   if (uiQuery.isLoading) {
-    return <div className="operator-shell op-loading">{t("operator:loadingUi")}</div>;
+    return <div className="operator-shell op-loading" data-testid="operator-shell">{t("operator:loadingUi")}</div>;
   }
 
   const hasDashboards = Boolean(ui?.dashboards?.length);
@@ -254,7 +254,7 @@ export default function OperatorDashboardApp({
 
   if (uiQuery.error || !ui || (!hasDashboards && !hasReports)) {
     return (
-      <div className="operator-shell op-loading">
+      <div className="operator-shell op-loading" data-testid="operator-shell">
         {uiQuery.error
           ? String(uiQuery.error)
           : t("operator:uiNotFound", { appId })}
@@ -264,7 +264,7 @@ export default function OperatorDashboardApp({
 
   if (!activePath) {
     return (
-      <div className="operator-shell op-loading">
+      <div className="operator-shell op-loading" data-testid="operator-shell">
         {t("operator:uiNoDashboards", { appId })}
       </div>
     );

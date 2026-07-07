@@ -146,6 +146,69 @@ public class WorkflowEngine {
         }
     }
 
+    public void fireDueTimers(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        fireDueTimers(instance, process, executor, messageExecutor, evaluator, System.currentTimeMillis());
+    }
+
+    public void fireDueTimers(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator,
+            long nowEpochMs
+    ) throws WorkflowException {
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting for timer");
+        }
+        if (!instance.hasDueTimers(nowEpochMs)) {
+            throw new WorkflowException("No due timers for instance");
+        }
+
+        List<ExecutionToken> dueTokens = new ArrayList<>(instance.dueTimerTokens(nowEpochMs));
+        for (ExecutionToken token : dueTokens) {
+            if (token.pendingBoundaryTimerNodeId() != null) {
+                String boundaryNodeId = token.pendingBoundaryTimerNodeId();
+                BoundaryTimerDefinition boundary = findBoundaryTimer(process, boundaryNodeId);
+                if (boundary == null) {
+                    instance.fail("Boundary timer definition missing: " + boundaryNodeId);
+                    return;
+                }
+                ExecutionToken resumed = instance.resumeBoundaryTimer(boundaryNodeId);
+                advanceToken(instance, process, resumed, boundaryNodeId, executor, messageExecutor, evaluator);
+            } else if (token.pendingTimerCatchNodeId() != null) {
+                String catchNodeId = token.pendingTimerCatchNodeId();
+                List<ExecutionToken> resumed = instance.resumeTimerCatch(catchNodeId);
+                for (ExecutionToken resumedToken : resumed) {
+                    advanceToken(instance, process, resumedToken, catchNodeId, executor, messageExecutor, evaluator);
+                }
+            }
+        }
+
+        while (instance.status() == InstanceStatus.RUNNING) {
+            step(instance, process, executor, messageExecutor, evaluator);
+        }
+    }
+
+    private static BoundaryTimerDefinition findBoundaryTimer(BpmnProcess process, String boundaryNodeId) {
+        for (BoundaryTimerDefinition boundary : process.boundaryTimers().values()) {
+            if (boundaryNodeId.equals(boundary.id())) {
+                return boundary;
+            }
+        }
+        return null;
+    }
+
+    private static long deadlineFromNow(int durationSeconds) {
+        return System.currentTimeMillis() + Math.max(0, durationSeconds) * 1000L;
+    }
+
     private void stepToken(
             WorkflowInstance instance,
             BpmnProcess process,
@@ -203,11 +266,20 @@ public class WorkflowEngine {
                     return;
                 }
                 instance.waitTokenAt(token, nodeId);
+                BoundaryTimerDefinition boundary = process.boundaryTimers().get(nodeId);
+                if (boundary != null) {
+                    instance.scheduleBoundaryTimer(token, boundary.id(), deadlineFromNow(boundary.durationSeconds()));
+                }
             }
             case "intermediateCatchEvent" -> {
+                TimerCatchDefinition timerCatch = process.timerCatchEvents().get(nodeId);
+                if (timerCatch != null) {
+                    instance.waitTokenAtTimer(token, nodeId, deadlineFromNow(timerCatch.durationSeconds()));
+                    return;
+                }
                 SignalCatchDefinition catchDef = process.signalCatchEvents().get(nodeId);
                 if (catchDef == null) {
-                    instance.fail("Signal catch definition missing: " + nodeId);
+                    instance.fail("Catch event definition missing: " + nodeId);
                     return;
                 }
                 instance.waitTokenAtSignal(token, nodeId, catchDef.signalName());

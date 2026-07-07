@@ -7,6 +7,8 @@
 | [demo-app](demo-app/) | SQL-отчёты: bundle + operator manifest для `appId=demo` |
 | [mini-tec](mini-tec/) | Эталон мини-ТЭЦ: bundle + auto-bootstrap на старте server |
 | [mes-reference](mes-reference/) | MES walkthrough: наряд → резервуар → эстакада |
+| [mes-oee-reference](mes-oee-reference/) | BL-121: OEE KPI reference (A×P×Q) |
+| [escalation-templates](escalation-templates/) | BL-123: BPMN ack-timeout + correlator templates |
 | [warehouse-app](warehouse-app/) | Reference app #2 (dogfooding REQ-PF) |
 | [lab-training](lab-training/) | Importable lab package (Phase 15) |
 | [spreadsheet-demo](spreadsheet-demo/) | Эталон: объект с `sheetValues` + виджет spreadsheet |

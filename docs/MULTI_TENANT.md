@@ -1,6 +1,6 @@
-# Multi-tenant namespaces (PF spike)
+# Multi-tenant namespaces (BL-125, BL-126)
 
-Spike для Phase 4.2: логическое разделение деревьев по арендаторам в одном ISPF-инстансе.
+Logical separation of object trees by tenant in a single ISPF instance.
 
 ## Структура путей
 
@@ -24,26 +24,42 @@ root
 | POST | `/api/v1/tenants` | Создать tenant + bootstrap поддерева |
 | DELETE | `/api/v1/tenants/{tenantId}` | Удалить tenant и subtree |
 | PUT | `/api/v1/tenants/{tenantId}/users/{username}` | Назначить tenant пользователю |
+| PUT | `/api/v1/tenants/{tenantId}/quotas` | Квоты: `maxDevices`, `maxObjects` (null = без лимита) |
+| GET | `/api/v1/tenants/{tenantId}/usage` | Текущее использование (devices / objects) |
 
 Login response включает `tenantId`, если назначен.
 
-## Scope для operator
+## Scope для operator (BL-125)
 
-Пользователь с `tenant_id` в `platform_users` и **без** роли admin при `GET /api/v1/objects` видит только:
+Пользователь с `tenant_id` в `platform_users` и **без** роли admin:
 
-- `root`, `root.tenant`, `root.tenant.{id}.*`
+- **Read:** `GET /api/v1/objects` — только `root`, `root.tenant`, `root.tenant.{id}.*`
+- **Write:** create/update/delete блокируются с `403` для путей вне tenant (в т.ч. `root.platform.*`)
 
-`root.platform.*` скрыт. Admin видит всё.
+Admin видит и пишет всё.
+
+## Quotas (BL-126)
+
+| Quota | Enforcement |
+|-------|-------------|
+| `maxObjects` | Объекты под `root.tenant.{id}.platform.*` |
+| `maxDevices` | Объекты типа `DEVICE` в том же subtree |
+
+Превышение → `409 Conflict` при `POST /api/v1/objects`.
+
+```http
+PUT /api/v1/tenants/acme/quotas
+{"maxDevices": 50, "maxObjects": 500}
+```
 
 ## Web Console
 
 Узел **`root.tenant`** → панель **Tenants**: создание tenant, назначение пользователю.
 
-## Ограничения spike
+## Ограничения
 
-- Нет billing/quota
-- Нет автоматического OIDC tenant mapping
-- Shared `root.platform` остаётся для legacy demo
+- Нет billing / OIDC tenant mapping
+- Shared `root.platform` остаётся для legacy demo (admin-only для tenant users)
 - Federation и tenant — ортогональные механизмы
 
 См. также [FEDERATION.md](FEDERATION.md), [ROADMAP.md](ROADMAP.md).

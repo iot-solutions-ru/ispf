@@ -89,6 +89,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [activeLayerId, setActiveLayerId] = useState(DEFAULT_LAYER_ID);
   const documentRef = useRef(document);
+  const editorRef = useRef<HTMLDivElement>(null);
   const dragOriginsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const resizeOriginRef = useRef<MimicElement | null>(null);
   documentRef.current = document;
@@ -216,6 +217,23 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       return next;
     },
     []
+  );
+
+  const handleNudgeSelected = useCallback(
+    (dx: number, dy: number) => {
+      if (selectedIds.size === 0 || tool !== "select") return;
+      updateDocument((doc) => {
+        const elements = doc.elements.map((el) =>
+          selectedIds.has(el.id) ? { ...el, x: el.x + dx, y: el.y + dy } : el
+        );
+        return {
+          ...doc,
+          elements,
+          connections: rerouteElements(doc.connections, elements, selectedIds, doc.customSymbols),
+        };
+      });
+    },
+    [rerouteElements, selectedIds, tool, updateDocument]
   );
 
   const handleAlign = useCallback(
@@ -554,6 +572,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
 
   useEffect(() => {
     globalThis.document.body.classList.add("scada-mimic-editor-open");
+    editorRef.current?.focus();
     return () => {
       globalThis.document.body.classList.remove("scada-mimic-editor-open");
     };
@@ -565,6 +584,11 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if ((e.target as HTMLElement | null)?.isContentEditable) return;
 
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
         handleDeleteSelected();
@@ -583,13 +607,35 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         }
         return;
       }
+      if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        if (selectedIds.size === 0 || tool !== "select") return;
+        e.preventDefault();
+        const base = document.grid?.snap ? (document.grid?.size ?? 1) : 1;
+        const step = e.shiftKey ? base * 10 : base;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        handleNudgeSelected(dx, dy);
+        return;
+      }
       if (e.key === "v" || e.key === "V") setTool("select");
       if (e.key === "p" || e.key === "P") setTool("place");
       if (e.key === "c" || e.key === "C") setTool("connect");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [document, handleDeleteSelected, historyIndex, history.length, onSave, redo, undo]);
+  }, [
+    document,
+    handleDeleteSelected,
+    handleNudgeSelected,
+    historyIndex,
+    history.length,
+    onClose,
+    onSave,
+    redo,
+    selectedIds.size,
+    tool,
+    undo,
+  ]);
 
   const layoutDisabled = tool === "connect" || selectedIds.size === 0;
   const alignDisabled = layoutDisabled || selectedIds.size < 2;
@@ -599,7 +645,14 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
 
   const overlay = (
     <div className="scada-mimic-editor-overlay">
-      <div className="scada-mimic-editor">
+      <div
+        ref={editorRef}
+        className="scada-mimic-editor"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("editor.title")}
+        tabIndex={-1}
+      >
         <header className="scada-mimic-editor-toolbar">
           <div className="scada-toolbar-brand">
             <span className="scada-toolbar-logo" aria-hidden />
@@ -617,6 +670,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               className={`scada-tool-btn${tool === "select" ? " active" : ""}`}
               onClick={() => setTool("select")}
               title={`${t("tools.select")} (V)`}
+              aria-pressed={tool === "select"}
             >
               <IconSelect className="scada-tool-icon" />
               <span>{t("tools.select")}</span>
@@ -626,6 +680,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               className={`scada-tool-btn${tool === "place" ? " active" : ""}`}
               onClick={() => setTool("place")}
               title={`${t("tools.place")} (P)`}
+              aria-pressed={tool === "place"}
             >
               <IconPlace className="scada-tool-icon" />
               <span>{t("tools.place")}</span>
@@ -635,6 +690,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               className={`scada-tool-btn${tool === "connect" ? " active" : ""}`}
               onClick={() => setTool("connect")}
               title={`${t("tools.connect")} (C)`}
+              aria-pressed={tool === "connect"}
             >
               <IconConnect className="scada-tool-icon" />
               <span>{t("tools.connect")}</span>
@@ -644,16 +700,16 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
           <span className="scada-toolbar-divider" aria-hidden />
 
           <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.transform")}>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("h")} title={t("tools.flipH")}>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("h")} title={t("tools.flipH")} aria-label={t("tools.flipH")}>
               <IconFlipH className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("v")} title={t("tools.flipV")}>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleFlip("v")} title={t("tools.flipV")} aria-label={t("tools.flipV")}>
               <IconFlipV className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(90)} title={t("tools.rotateCw")}>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(90)} title={t("tools.rotateCw")} aria-label={t("tools.rotateCw")}>
               <IconRotateCw className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(-90)} title={t("tools.rotateCcw")}>
+            <button type="button" className="scada-icon-btn" disabled={layoutDisabled} onClick={() => handleRotate(-90)} title={t("tools.rotateCcw")} aria-label={t("tools.rotateCcw")}>
               <IconRotateCcw className="scada-tool-icon" />
             </button>
           </div>
@@ -661,28 +717,28 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
           <span className="scada-toolbar-divider" aria-hidden />
 
           <div className="scada-toolbar-segment scada-toolbar-group" role="toolbar" aria-label={t("tools.align")}>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("left")} title={t("tools.alignLeft")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("left")} title={t("tools.alignLeft")} aria-label={t("tools.alignLeft")}>
               <IconAlignLeft className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerX")} title={t("tools.alignCenterH")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerX")} title={t("tools.alignCenterH")} aria-label={t("tools.alignCenterH")}>
               <IconAlignCenterH className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("right")} title={t("tools.alignRight")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("right")} title={t("tools.alignRight")} aria-label={t("tools.alignRight")}>
               <IconAlignRight className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("top")} title={t("tools.alignTop")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("top")} title={t("tools.alignTop")} aria-label={t("tools.alignTop")}>
               <IconAlignTop className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerY")} title={t("tools.alignMiddleV")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("centerY")} title={t("tools.alignMiddleV")} aria-label={t("tools.alignMiddleV")}>
               <IconAlignMiddleV className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("bottom")} title={t("tools.alignBottom")}>
+            <button type="button" className="scada-icon-btn" disabled={alignDisabled} onClick={() => handleAlign("bottom")} title={t("tools.alignBottom")} aria-label={t("tools.alignBottom")}>
               <IconAlignBottom className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("horizontal")} title={t("tools.distributeH")}>
+            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("horizontal")} title={t("tools.distributeH")} aria-label={t("tools.distributeH")}>
               <IconDistributeH className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("vertical")} title={t("tools.distributeV")}>
+            <button type="button" className="scada-icon-btn" disabled={distributeDisabled} onClick={() => handleDistribute("vertical")} title={t("tools.distributeV")} aria-label={t("tools.distributeV")}>
               <IconDistributeV className="scada-tool-icon" />
             </button>
           </div>
@@ -695,6 +751,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               className={`scada-icon-btn${document.grid?.visible ? " active" : ""}`}
               onClick={toggleGridVisible}
               title={t("tools.gridVisible")}
+              aria-label={t("tools.gridVisible")}
+              aria-pressed={document.grid?.visible === true}
             >
               <IconGrid className="scada-tool-icon" />
             </button>
@@ -703,19 +761,21 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               className={`scada-icon-btn${document.grid?.snap ? " active" : ""}`}
               onClick={toggleGridSnap}
               title={t("tools.gridSnap")}
+              aria-label={t("tools.gridSnap")}
+              aria-pressed={document.grid?.snap === true}
             >
               <IconSnapGrid className="scada-tool-icon" />
             </button>
           </div>
 
           <div className="scada-toolbar-actions">
-            <button type="button" className="scada-icon-btn" onClick={undo} disabled={historyIndex <= 0} title={`${t("tools.undo")} (Ctrl+Z)`}>
+            <button type="button" className="scada-icon-btn" onClick={undo} disabled={historyIndex <= 0} title={`${t("tools.undo")} (Ctrl+Z)`} aria-label={t("tools.undo")}>
               <IconUndo className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" onClick={redo} disabled={historyIndex >= history.length - 1} title={`${t("tools.redo")} (Ctrl+Y)`}>
+            <button type="button" className="scada-icon-btn" onClick={redo} disabled={historyIndex >= history.length - 1} title={`${t("tools.redo")} (Ctrl+Y)`} aria-label={t("tools.redo")}>
               <IconRedo className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={`${t("tools.delete")} (Del)`}>
+            <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={`${t("tools.delete")} (Del)`} aria-label={t("tools.delete")}>
               <IconTrash className="scada-tool-icon" />
             </button>
           </div>

@@ -71,7 +71,7 @@
 | KPI | Baseline | Источник | Target (S23) |
 | --- | -------- | -------- | ------------ |
 | Haystack query | Done (BL-101–103) | S05 | — |
-| Brick inference | Planned (BL-104) | — | Inspector hints |
+| Brick inference | Done (BL-104) | S23 | Inspector hints |
 | Time-to-first-dashboard (semantic) | Not measured | — | ≤5 min demo |
 
 ---

@@ -24,7 +24,7 @@ export default function OperatorAppLauncher({ onOpenApp, onSwitchAdmin }: Operat
   });
 
   return (
-    <div className="operator-shell">
+    <div className="operator-shell" data-testid="operator-shell">
       <header className="operator-topbar">
         <div>
           <strong>{t("operator:launcher.title")}</strong>

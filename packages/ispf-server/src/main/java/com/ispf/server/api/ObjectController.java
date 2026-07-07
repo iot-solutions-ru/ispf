@@ -38,6 +38,7 @@ import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.security.acl.ObjectAccessService;
+import com.ispf.server.tenant.TenantQuotaService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.workflow.WorkflowService;
 import jakarta.validation.Valid;
@@ -85,6 +86,7 @@ public class ObjectController {
     private final AutomationTreeService automationTreeService;
     private final ObjectAccessService objectAccessService;
     private final TenantScopeService tenantScopeService;
+    private final TenantQuotaService tenantQuotaService;
     private final FederationProxyService federationProxyService;
     private final FederationBindService federationBindService;
     private final ObjectMapper objectMapper;
@@ -108,6 +110,7 @@ public class ObjectController {
             AutomationTreeService automationTreeService,
             ObjectAccessService objectAccessService,
             TenantScopeService tenantScopeService,
+            TenantQuotaService tenantQuotaService,
             FederationProxyService federationProxyService,
             FederationBindService federationBindService,
             ObjectMapper objectMapper,
@@ -130,6 +133,7 @@ public class ObjectController {
         this.automationTreeService = automationTreeService;
         this.objectAccessService = objectAccessService;
         this.tenantScopeService = tenantScopeService;
+        this.tenantQuotaService = tenantQuotaService;
         this.federationProxyService = federationProxyService;
         this.federationBindService = federationBindService;
         this.objectMapper = objectMapper;
@@ -165,6 +169,7 @@ public class ObjectController {
     }
 
     private void beginWrite(String path, Authentication authentication, HttpHeaders headers) {
+        tenantScopeService.requirePathInScope(path, authentication);
         objectAccessService.requireWrite(path, authentication);
         editLeaseService.assertWritable(path, authentication != null ? authentication.getName() : "system");
         ObjectCollaborationSupport.bindWriteContext(authentication, headers);
@@ -292,6 +297,8 @@ public class ObjectController {
 
     @PostMapping
     public ObjectDto create(@Valid @RequestBody CreateObjectRequest request, Authentication authentication) {
+        tenantScopeService.requirePathInScope(request.parentPath(), authentication);
+        tenantQuotaService.assertCanCreate(request.parentPath(), request.type());
         objectAccessService.requireWrite(request.parentPath(), authentication);
         federationBindService.assertParentAllowsChildren(request.parentPath());
         String fullPath = objectManager.tree().resolveChildPath(request.parentPath(), request.name());
@@ -396,6 +403,7 @@ public class ObjectController {
         }
         for (String path : request.paths()) {
             if (path != null && !path.isBlank()) {
+                tenantScopeService.requirePathInScope(path.trim(), authentication);
                 objectAccessService.requireWrite(path.trim(), authentication);
             }
         }

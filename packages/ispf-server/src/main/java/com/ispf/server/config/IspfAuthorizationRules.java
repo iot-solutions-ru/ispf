@@ -96,6 +96,9 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/signal")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/timer")
+                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+
         auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/signal")
                 .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
 

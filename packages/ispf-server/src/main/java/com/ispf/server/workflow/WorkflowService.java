@@ -317,6 +317,48 @@ public class WorkflowService {
     }
 
     @Transactional
+    public Map<String, Object> fireDueTimers(String instanceId, String operatorId) throws WorkflowException {
+        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
+        WorkflowInstance instance = stored.instance();
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting: " + instanceId);
+        }
+        if (!instance.hasDueTimers(System.currentTimeMillis())) {
+            throw new WorkflowException("No due timers for instance: " + instanceId);
+        }
+
+        String workflowPath = instance.workflowPath();
+        BpmnProcess process = workflowEngine.parse(
+                readString(objectManager.require(workflowPath), "bpmnXml")
+                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        );
+
+        if (operatorId != null && !operatorId.isBlank()) {
+            instance.claim(operatorId);
+        }
+        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
+        workflowEngine.fireDueTimers(
+                instance,
+                process,
+                this::executeTask,
+                this::executeMessageTask,
+                evaluator
+        );
+
+        UserTaskDefinition nextPending = instance.pendingUserTaskId()
+                .map(id -> process.userTasks().get(id))
+                .orElse(null);
+        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
+        persistInstanceSnapshot(workflowPath, instance);
+        publishInstanceEvent(workflowPath, instance);
+
+        return Map.of(
+                "instanceId", instanceId,
+                "status", instance.status().name()
+        );
+    }
+
+    @Transactional
     public Map<String, Object> deliverSignalByWorkflowPath(String workflowPath, String signalName, String operatorId)
             throws WorkflowException {
         if (signalName == null || signalName.isBlank()) {

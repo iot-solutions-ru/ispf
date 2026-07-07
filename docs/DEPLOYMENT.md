@@ -290,27 +290,9 @@ ssh user@host 'bash /opt/ispf/bin/vps-cluster-verify.sh --config-sync'
 
 ## ClickHouse variable history (prod playbook, BL-114)
 
-Historian для переменных по умолчанию пишет в PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Для высокой нагрузки telemetry включите ClickHouse backend ([BL-40](ROADMAP.md#часть-e--полный-реестр-bl-01139), [0017](decisions/0017-telemetry-ingest-pipeline.md)).
+Full ops guide: **[CLICKHOUSE_PROD_PLAYBOOK.md](CLICKHOUSE_PROD_PLAYBOOK.md)** — install, event journal, historian cutover, **dual-write** (BL-116), verify, rollback.
 
-### Шаги rollout
-
-1. Поднять ClickHouse (пример: `deploy/docker-compose.clickhouse.yml` или `deploy/vps-clickhouse-setup.sh` на VPS).
-2. Выставить переменные окружения `ispf-server`:
-
-| Переменная | Пример | Описание |
-|------------|--------|----------|
-| `ISPF_VARIABLE_HISTORY_STORE` | `clickhouse` | Переключение store |
-| `ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL` | `http://127.0.0.1:8123` | HTTP endpoint |
-| `ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE` | `ispf` | База |
-| `ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE` | `variable_samples` | Таблица MergeTree |
-| `ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME` | `default` | Пользователь |
-| `ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD` | — | Пароль |
-
-3. Перезапустить `ispf-server`; Flyway не требуется (CH schema создаётся при первой записи).
-4. Проверка: `bash /opt/ispf/vps-clickhouse-verify.sh` (ping, `store=clickhouse`, optional write smoke) или System → Metrics → variable history card.
-5. Откат: `ISPF_VARIABLE_HISTORY_STORE=jdbc` + restart (данные в CH остаются для архива).
-
-**Примечание:** event journal ClickHouse — отдельный контур (`ISPF_EVENT_JOURNAL_STORE`); см. [0016](decisions/0016-clickhouse-event-journal.md).
+Historian по умолчанию: PostgreSQL/Timescale (`ISPF_VARIABLE_HISTORY_STORE=jdbc`). Dual-write: `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true` + CH credentials (reads остаются в PG).
 
 ## Мониторинг
 

@@ -1,0 +1,119 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES OEE Reference (BL-121)",
+  "tablePrefix": "",
+  "schemaName": "app_mes_oee",
+  "migrations": [
+    {
+      "id": "mes_oee_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-oee-hub-01",
+      "type": "DEVICE",
+      "displayName": "MES OEE Hub",
+      "description": "OEE KPI hub for BL-121 reference (demo line LINE-A01)"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_oee_listShifts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "shift_row",
+                "fields": [
+                  { "name": "shiftId", "type": "STRING" },
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "shiftLabel", "type": "STRING" },
+                  { "name": "plannedMinutes", "type": "INTEGER" },
+                  { "name": "downtimeMinutes", "type": "INTEGER" },
+                  { "name": "totalUnits", "type": "INTEGER" },
+                  { "name": "goodUnits", "type": "INTEGER" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"SELECT id::text AS shift_id, line_code, shift_label, planned_minutes, downtime_minutes, total_units, good_units FROM mes_oee_shift ORDER BY line_code, shift_label\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_oee_getKpi",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [{ "name": "shiftId", "type": "STRING" }]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "lineCode", "type": "STRING" },
+            { "name": "shiftLabel", "type": "STRING" },
+            { "name": "availabilityPct", "type": "INTEGER" },
+            { "name": "performancePct", "type": "INTEGER" },
+            { "name": "qualityPct", "type": "INTEGER" },
+            { "name": "oeePct", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.demo-sensor-01",
+      "functionName": "mes_oee_addDowntime",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "shiftId", "type": "STRING" },
+            { "name": "minutes", "type": "INTEGER" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "downtimeMinutes", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"SELECT id, downtime_minutes, planned_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = ?\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}"
+      }
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-oee-reference",
+    "title": "MES OEE Reference",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform.devices.demo-sensor-01"
+  }
+}
