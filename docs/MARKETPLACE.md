@@ -57,7 +57,23 @@ Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace)
 - `GET /api/v1/catalog/{slug}/download` (free)
 - `POST /api/v1/entitlements/activate` (paid)
 
-Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorContactEmail`, `vendorContactUrl`, `priceCents`, `latestVersion`, `minIspfVersion`.
+Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`.
+
+## Troubleshooting
+
+### `ENOENT ... warehouse-reference__1.0.0.json` on download / ISPF install 502
+
+Catalog (`GET /api/v1/catalog`) works, but **Скачать bundle** or ISPF **Установить** fails — bundle JSON is missing on the marketplace server (host path vs Docker volume mismatch).
+
+On the **marketplace VPS** (`ispf-marketplace.iot-solutions.ru`):
+
+```bash
+cd /opt/ispf-marketplace
+git pull origin main
+bash deploy/vps-reseed-artifacts.sh
+```
+
+ISPF only proxies the download; fix is always on the marketplace host. See [ispf-marketplace/deploy/README.md](https://github.com/Michaael/ispf-marketplace/blob/main/deploy/README.md).
 
 ## Related
 
