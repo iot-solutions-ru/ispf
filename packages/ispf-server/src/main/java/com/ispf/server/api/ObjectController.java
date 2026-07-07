@@ -60,9 +60,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -319,16 +316,6 @@ public class ObjectController {
         if (autoApplyRelative) {
             blueprintApplicationService.applyRelativeBlueprintsWithRules(node.path());
         }
-        // #region agent log
-        if (request.type() == ObjectType.DEVICE) {
-            agentLogCreate("ObjectController.java:create:afterRelativeModels", "after applyRelativeModelsWithRules", "H1", Map.of(
-                    "path", node.path(),
-                    "requestedDriverId", request.driverId() != null ? request.driverId() : "(null)",
-                    "autoApplyRelative", autoApplyRelative,
-                    "existingDriverId", driverRuntimeService.debugReadDriverId(node.path()).orElse("(none)")
-            ));
-        }
-        // #endregion
         if (request.type() == ObjectType.DASHBOARD) {
             dashboardService.ensureDashboardStructure(node.path());
         }
@@ -836,22 +823,4 @@ public class ObjectController {
             );
         }
     }
-
-    // #region agent log
-    private static void agentLogCreate(String location, String message, String hypothesisId, Map<String, Object> data) {
-        try {
-            String json = "{\"sessionId\":\"c91425\",\"timestamp\":" + System.currentTimeMillis()
-                    + ",\"location\":\"" + location + "\",\"message\":\"" + message + "\",\"hypothesisId\":\""
-                    + hypothesisId + "\",\"data\":" + new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(data) + "}\n";
-            for (String rel : new String[]{"debug-c91425.log", "../../debug-c91425.log", "../../../debug-c91425.log"}) {
-                Path p = Path.of(rel);
-                if (Files.exists(p.getParent() == null ? Path.of(".") : p.getParent()) || rel.equals("debug-c91425.log")) {
-                    Files.writeString(p, json, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                    break;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-    }
-    // #endregion
 }

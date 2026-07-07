@@ -6,9 +6,9 @@ import paramiko
 import re
 import sys
 import time
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 # (rate_per_device msg/s, callback_threads)
 SWEEP = [
@@ -54,7 +54,7 @@ def parse_metrics(log: str) -> dict[str, str]:
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     run(c, f"bash {ROOT}/lab-emqtt-cleanup.sh")
     results: list[dict] = []

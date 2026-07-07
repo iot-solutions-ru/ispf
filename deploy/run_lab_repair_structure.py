@@ -2,9 +2,9 @@
 import sys
 from pathlib import Path
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 DEPLOY = Path(__file__).resolve().parent
 UPLOADS = [
     (DEPLOY / "repair-loadtest-device-structure.py", f"{ROOT}/loadtest/repair-loadtest-device-structure.py"),
@@ -14,7 +14,7 @@ UPLOADS = [
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect(HOST, PORT, USER, PW, timeout=60)
+c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 sftp = c.open_sftp()
 for local, remote in UPLOADS:
     with sftp.file(remote, "w") as f:

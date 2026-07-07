@@ -3,9 +3,8 @@ import paramiko
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-c = paramiko.SSHClient()
-c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect("84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV", timeout=60)
+c = connect_ssh(timeout=60)
+
 
 remote = r"""
 TOKEN=$(curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/login \

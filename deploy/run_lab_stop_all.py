@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 PEER = "192.168.100.10"
 
 
@@ -25,7 +25,7 @@ def run(c, cmd, timeout=300):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     print("=== BEFORE: containers ===", flush=True)
     run(c, 'docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"')

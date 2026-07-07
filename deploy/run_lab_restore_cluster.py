@@ -3,11 +3,11 @@
 import json
 import paramiko
 from pathlib import Path
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 REPO = Path(__file__).resolve().parents[1]
 ROOT = "/home/iot-solutions/ispf"
 PEER = "192.168.100.10"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c, cmd, timeout=300):
@@ -25,7 +25,7 @@ def run(c, cmd, timeout=300):
 def main():
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     _, lan, _ = run(c, "ip -4 route get 192.168.100.10 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i==\"src\") print $(i+1)}'")
     lab_lan = lan.strip()

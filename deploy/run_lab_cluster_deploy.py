@@ -8,13 +8,13 @@ import tarfile
 import tempfile
 import paramiko
 from pathlib import Path
+from lab_ssh import HOST, PORT as SSH_PORT, USER, lab_password
 
 REPO = Path(__file__).resolve().parents[1]
 DEPLOY = REPO / "deploy"
 ROOT = "/home/iot-solutions/ispf"
 PEER = "192.168.100.10"
-PORT = 8000
-HOST, SSH_PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
+HTTP_PORT = 8000
 
 
 def run(c, cmd, timeout=900):
@@ -84,7 +84,7 @@ def main() -> int:
 
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, SSH_PORT, USER, PW, timeout=60)
+    c.connect(HOST, SSH_PORT, USER, lab_password(), timeout=60)
     sftp = c.open_sftp()
 
     run(c, f"mkdir -p {ROOT}/cluster-staging {ROOT}/web-console {ROOT}/loadtest {ROOT}/data/drivers")
@@ -109,9 +109,9 @@ def main() -> int:
         timeout=30,
     )
     lab_lan = lan_ip.strip() or "0.0.0.0"
-    print(f"LAB LAN: {lab_lan}, PORT: {PORT}", flush=True)
+    print(f"LAB LAN: {lab_lan}, HTTP_PORT: {HTTP_PORT}", flush=True)
 
-    env = f"ISPF_CLUSTER_LAN_BIND={lab_lan} ISPF_LAB_CLUSTER_PORT={PORT}"
+    env = f"ISPF_CLUSTER_LAN_BIND={lab_lan} ISPF_LAB_CLUSTER_HTTP_PORT={HTTP_PORT}"
 
     steps = [
         f"chmod +x {ROOT}/lab-cluster-bootstrap.sh {ROOT}/lab-cluster-peer-start.sh {ROOT}/lab-cluster-test.sh {ROOT}/cluster-smoke-test.sh",
@@ -143,14 +143,14 @@ def main() -> int:
 
     seen = set()
     for _ in range(24):
-        _, out, _ = run(c, f"curl -sf http://127.0.0.1:{PORT}/api/v1/info", timeout=30)
+        _, out, _ = run(c, f"curl -sf http://127.0.0.1:{HTTP_PORT}/api/v1/info", timeout=30)
         try:
             seen.add(json.loads(out).get("replicaId"))
         except json.JSONDecodeError:
             pass
 
     print(f"\n=== Replicas in LB pool: {sorted(seen)} ===", flush=True)
-    run(c, f"curl -sf http://127.0.0.1:{PORT}/api/v1/info | python3 -m json.tool | head -20")
+    run(c, f"curl -sf http://127.0.0.1:{HTTP_PORT}/api/v1/info | python3 -m json.tool | head -20")
     run(
         c,
         f"docker compose -f {ROOT}/lab-cluster-compose.yml exec -T postgres psql -U ispf -d ispf -c "
@@ -160,11 +160,11 @@ def main() -> int:
         f"docker compose -f {ROOT}/lab-cluster-compose.yml exec -T postgres psql -U ispf -d ispf -c "
         f"\"SELECT holder_id, COUNT(*) FROM platform_driver_locks GROUP BY holder_id ORDER BY 1;\"",
     )
-    run(c, f"ISPF_LAB_CLUSTER_PORT={PORT} bash {ROOT}/lab-cluster-test.sh 2>&1 | tee {ROOT}/loadtest/cluster-8000.log", timeout=900)
+    run(c, f"ISPF_LAB_CLUSTER_HTTP_PORT={HTTP_PORT} bash {ROOT}/lab-cluster-test.sh 2>&1 | tee {ROOT}/loadtest/cluster-8000.log", timeout=900)
 
     c.close()
     if len(seen) >= 4:
-        print(f"\nOK: cluster on :{PORT} with {len(seen)} nodes", flush=True)
+        print(f"\nOK: cluster on :{HTTP_PORT} with {len(seen)} nodes", flush=True)
         return 0
     print(f"\nWARN: expected 4 replicas, got {sorted(seen)}", flush=True)
     return 1 if len(seen) < 3 else 0

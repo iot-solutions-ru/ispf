@@ -6,17 +6,17 @@ import sys
 from pathlib import Path
 
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
 REPO = Path(__file__).resolve().parents[1]
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
     sftp = c.open_sftp()
     local = REPO / "deploy" / "_lab_diag_16_subscribers_remote.py"
     remote = f"{ROOT}/loadtest/_diag_16_subscribers.py"

@@ -34,9 +34,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -340,14 +337,6 @@ public class DriverRuntimeService {
     @Transactional
     public DriverRuntimeStatus configure(String devicePath, DriverBinding binding) {
         Optional<DriverBinding> existing = readBinding(devicePath);
-        // #region agent log
-        agentLog("DriverRuntimeService.java:configure", "configure invoked", "H4", Map.of(
-                "devicePath", devicePath,
-                "requestedDriverId", binding.driverId(),
-                "existingDriverId", existing.map(DriverBinding::driverId).orElse("(none)"),
-                "willReject", existing.isPresent() && !existing.get().driverId().equals(binding.driverId())
-        ));
-        // #endregion
         if (existing.isPresent() && !existing.get().driverId().equals(binding.driverId())) {
             throw new IllegalStateException(
                     "Driver already configured as " + existing.get().driverId()
@@ -746,7 +735,7 @@ public class DriverRuntimeService {
                 && mode == TelemetryPublishMode.TELEMETRY_ONLY;
     }
 
-    /** Debug-only helper for agent instrumentation session c91425. */
+    /** Test helper: read configured driver id for a device path. */
     public java.util.Optional<String> debugReadDriverId(String devicePath) {
         return readBinding(devicePath).map(DriverBinding::driverId);
     }
@@ -801,21 +790,4 @@ public class DriverRuntimeService {
         return configuration;
     }
 
-    // #region agent log
-    private static void agentLog(String location, String message, String hypothesisId, Map<String, Object> data) {
-        try {
-            String json = "{\"sessionId\":\"c91425\",\"timestamp\":" + System.currentTimeMillis()
-                    + ",\"location\":\"" + location + "\",\"message\":\"" + message + "\",\"hypothesisId\":\""
-                    + hypothesisId + "\",\"data\":" + new ObjectMapper().writeValueAsString(data) + "}\n";
-            for (String rel : new String[]{"debug-c91425.log", "../../debug-c91425.log", "../../../debug-c91425.log"}) {
-                Path p = Path.of(rel);
-                if (Files.exists(p.getParent() == null ? Path.of(".") : p.getParent()) || rel.equals("debug-c91425.log")) {
-                    Files.writeString(p, json, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                    break;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-    }
-    // #endregion
 }

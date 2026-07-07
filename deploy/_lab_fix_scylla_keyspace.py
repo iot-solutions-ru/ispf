@@ -5,9 +5,9 @@ from __future__ import annotations
 import paramiko
 import sys
 import time
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 CQL = (
     "CREATE KEYSPACE IF NOT EXISTS ispf WITH replication = "
     "{'class': 'SimpleStrategy', 'replication_factor': 1};"
@@ -33,7 +33,7 @@ def main() -> int:
 
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     run(c, f'{compose} exec -T scylla cqlsh -e "{CQL}"')
     run(c, f'{compose} exec -T scylla cqlsh -e "DESCRIBE KEYSPACE ispf;"')

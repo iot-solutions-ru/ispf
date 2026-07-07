@@ -8,7 +8,6 @@ from pathlib import Path
 ROOT = "/home/iot-solutions/ispf"
 REPO = Path(__file__).resolve().parents[1]
 DEPLOY = REPO / "deploy"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 FILES = [
     "lab-test-host-compose.yml",
@@ -32,7 +31,7 @@ def run(c, cmd, timeout=14400):
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect(HOST, PORT, USER, PW, timeout=60)
+c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 sftp = c.open_sftp()
 for name in FILES:
     local = DEPLOY / name
@@ -58,6 +57,7 @@ c.close()
 result = out + ("\n--- stderr ---\n" + err if err.strip() else "")
 Path(REPO / "tmp_sweep_result.txt").write_text(result, encoding="utf-8")
 import sys
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 sys.stdout.buffer.write(result[-8000:].encode("utf-8", errors="replace"))
 sys.stdout.buffer.write(f"\nexit {code}\n".encode())
 raise SystemExit(code)

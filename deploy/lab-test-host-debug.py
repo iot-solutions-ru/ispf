@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import paramiko
 
-c = paramiko.SSHClient()
-c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect("84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV", timeout=30)
+c = connect_ssh(timeout=30)
+
 cmd = r"""
 TOKEN=$(curl -sf -X POST http://127.0.0.1:18080/api/v1/auth/login \
   -H 'Content-Type: application/json' \

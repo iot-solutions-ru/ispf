@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import paramiko
 
-c = paramiko.SSHClient()
-c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-c.connect("84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV", timeout=30)
+c = connect_ssh(timeout=30)
+
 cmd = r"""
 COMPOSE=/home/iot-solutions/ispf/lab-test-host-compose.yml
 CID=$(docker compose -f $COMPOSE ps -q ispf-server)

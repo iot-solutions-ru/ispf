@@ -6,9 +6,9 @@ import sys
 import time
 
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c: paramiko.SSHClient, cmd: str, timeout: int = 120, quiet: bool = False) -> str:
@@ -39,7 +39,7 @@ def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     print("Cooldown 60s...", flush=True)
     time.sleep(60)

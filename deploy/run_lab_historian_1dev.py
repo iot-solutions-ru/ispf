@@ -5,9 +5,9 @@ from __future__ import annotations
 import paramiko
 import re
 import sys
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 LOG = f"{ROOT}/loadtest/historian-1dev.log"
 
 
@@ -28,7 +28,7 @@ def run(c, cmd, timeout=7200):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
     cmd = (
         f"cd {ROOT} && set -a && . lab-stress.env && set +a && "
         f"bash {ROOT}/lab-emqtt-cleanup.sh && "

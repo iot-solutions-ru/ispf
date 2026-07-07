@@ -36,6 +36,7 @@ export default function ApplicationBundlePanel({
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [manifestText, setManifestText] = useState("");
+  const [manifestDirty, setManifestDirty] = useState(false);
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [addParentPath, setAddParentPath] = useState("root.platform.devices");
   const [addName, setAddName] = useState("");
@@ -54,18 +55,21 @@ export default function ApplicationBundlePanel({
   const hasActiveDeploy = Boolean(exportQuery.data?.manifest);
 
   useEffect(() => {
+    setManifestDirty(false);
     setValidationMessage(null);
     setPullMessage(null);
-    setManifestText(
-      defaultApplicationManifestText({ appId, displayName })
-    );
-  }, [appId, displayName]);
+  }, [appId]);
 
   useEffect(() => {
     if (exportQuery.data?.manifest) {
       setManifestText(JSON.stringify(exportQuery.data.manifest, null, 2));
+      setManifestDirty(false);
+      return;
     }
-  }, [exportQuery.data]);
+    if (!manifestDirty) {
+      setManifestText(defaultApplicationManifestText({ appId, displayName }));
+    }
+  }, [appId, displayName, exportQuery.data, manifestDirty]);
 
   const parsedManifest = useMemo(() => {
     try {
@@ -107,6 +111,7 @@ export default function ApplicationBundlePanel({
       pullApplicationBundleFromTree(appId, { ...options, mergeActive: true }),
     onSuccess: (result) => {
       setManifestText(JSON.stringify(result.manifest, null, 2));
+      setManifestDirty(true);
       const pulled = result.pulled ?? {};
       const totalPulled = Object.values(pulled).reduce((sum, count) => sum + count, 0);
       const summary = Object.entries(pulled)
@@ -140,6 +145,7 @@ export default function ApplicationBundlePanel({
       try {
         const parsed = JSON.parse(String(reader.result));
         setManifestText(JSON.stringify(parsed, null, 2));
+        setManifestDirty(true);
         setValidationMessage(null);
         setPullMessage(null);
       } catch {
@@ -159,6 +165,7 @@ export default function ApplicationBundlePanel({
     }
     const next = removeBundleSectionItem(parsedManifest, section, index);
     setManifestText(JSON.stringify(next, null, 2));
+    setManifestDirty(true);
   };
 
   const addObject = () => {
@@ -171,6 +178,7 @@ export default function ApplicationBundlePanel({
       type: addType.trim(),
     });
     setManifestText(JSON.stringify(next, null, 2));
+    setManifestDirty(true);
     setAddName("");
   };
 
@@ -292,7 +300,10 @@ export default function ApplicationBundlePanel({
           className="mono application-bundle-editor"
           rows={22}
           value={manifestText}
-          onChange={(event) => setManifestText(event.target.value)}
+          onChange={(event) => {
+            setManifestDirty(true);
+            setManifestText(event.target.value);
+          }}
           spellCheck={false}
           readOnly={!canManage}
         />

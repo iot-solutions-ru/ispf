@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import paramiko
 import sys
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c, cmd, timeout=120):
@@ -24,7 +24,7 @@ def run(c, cmd, timeout=120):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     run(c, 'docker ps --format "table {{.Names}}\t{{.Status}}"')
     run(c, f"tail -100 {ROOT}/loadtest/stress-run.log 2>/dev/null || echo NO_LOG")

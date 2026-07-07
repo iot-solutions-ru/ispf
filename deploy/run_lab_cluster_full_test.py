@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 import paramiko
 from pathlib import Path
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 REPO = Path(__file__).resolve().parents[1]
 DEPLOY = REPO / "deploy"
 ROOT = "/home/iot-solutions/ispf"
 PEER = "192.168.100.10"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c, cmd, timeout=900):
@@ -40,7 +40,7 @@ def main() -> int:
 
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
     sftp = c.open_sftp()
     run(c, f"mkdir -p {ROOT}/cluster-staging {ROOT}/loadtest")
     sftp.put(str(jar), f"{ROOT}/cluster-staging/ispf-server.jar")

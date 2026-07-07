@@ -6,7 +6,8 @@ from pathlib import Path
 HOST = "84.42.21.226"
 PORT = 5031
 USER = "iot-solutions"
-PASSWORD = "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
+from lab_ssh import lab_password
+PASSWORD = lab_password()
 ROOT = "/home/iot-solutions/ispf"
 HTTP_PORT = 8000
 DEPLOY = Path(__file__).resolve().parent

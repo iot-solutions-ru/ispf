@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c, cmd, timeout=300):
@@ -26,7 +26,7 @@ def run(c, cmd, timeout=300):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     print("=== INSPECT ===", flush=True)
     run(c, "ps aux | grep -iE 'paperclip|openclaw|ollama' | grep -v grep || true")
@@ -66,7 +66,7 @@ def main() -> int:
         run(c, s)
 
     print("\n=== DISABLE ollama (sudo) ===", flush=True)
-    pw = PW.replace("'", "'\"'\"'")
+    pw = lab_password().replace("'", "'\"'\"'")
     ollama_steps = [
         f"echo '{pw}' | sudo -S systemctl stop ollama 2>&1",
         f"echo '{pw}' | sudo -S systemctl disable ollama 2>&1",

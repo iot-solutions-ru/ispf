@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import paramiko
 import sys
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
 ROOT = "/home/iot-solutions/ispf"
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 
 
 def run(c, cmd, timeout=7200):
@@ -26,7 +26,7 @@ def run(c, cmd, timeout=7200):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     log = f"{ROOT}/loadtest/peak-confirm.log"
     steps = [

@@ -2,8 +2,8 @@
 """Rebind cluster LAN ports and restart replica-4."""
 import json
 import paramiko
+from lab_ssh import HOST, PORT, USER, lab_password, connect_ssh, API_BASE
 
-HOST, PORT, USER, PW = "84.42.21.226", 5031, "iot-solutions", "REDACTED_USE_ISPF_LAB_PASSWORD_ENV"
 ROOT = "/home/iot-solutions/ispf"
 PEER = "192.168.100.10"
 
@@ -24,7 +24,7 @@ def run(c, cmd, timeout=600):
 def main() -> int:
     c = paramiko.SSHClient()
     c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    c.connect(HOST, PORT, USER, PW, timeout=60)
+    c.connect(HOST, PORT, USER, lab_password(), timeout=60)
 
     _, lan_ip, _ = run(
         c,

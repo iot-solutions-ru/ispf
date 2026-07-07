@@ -43,6 +43,17 @@ deploy/verify-if-mib-followup.py
 deploy/verify-restore-dashboard.py
 deploy/web-console.tar.gz
 deploy/web-console.zip
+apps/web-console/web-console.zip
+deploy/__pycache__/
+deploy/**/__pycache__/
+deploy/_lab_*.py
+deploy/_tmp_*.py
+deploy/_vps_*.sql
+deploy/_vps_*.sh
+deploy/events-*-report-*.json
+deploy/load-test-report-*.json
+deploy/mqtt-*-report-*.json
+deploy/staging/
 
 # Local only — реестр российского ПО (не публиковать в GitHub)
 docs/RUSSIAN_SOFTWARE_REGISTRY.md
