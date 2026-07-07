@@ -78,13 +78,13 @@ async function parseJson<T>(response: Response): Promise<T> {
 export function fetchSolutionCatalog(): Promise<SolutionCatalogResponse> {
   return fetch("/api/v1/solutions/catalog", {
     headers: getAuthHeaders(),
-  }).then(parseJson);
+  }).then((r) => parseJson<SolutionCatalogResponse>(r));
 }
 
 export function fetchMarketplaces(): Promise<{ enabled: boolean; defaultId: string; endpoints: MarketplaceEndpoint[] }> {
   return fetch("/api/v1/solutions/marketplaces", {
     headers: getAuthHeaders(),
-  }).then(parseJson);
+  }).then((r) => parseJson<{ enabled: boolean; defaultId: string; endpoints: MarketplaceEndpoint[] }>(r));
 }
 
 export function fetchMarketplaceCatalog(
@@ -98,14 +98,14 @@ export function fetchMarketplaceCatalog(
   return fetch(
     `/api/v1/solutions/marketplaces/${encodeURIComponent(marketplaceId)}/catalog${qs ? `?${qs}` : ""}`,
     { headers: getAuthHeaders() }
-  ).then(parseJson);
+  ).then((r) => parseJson<MarketplaceListingsResponse>(r));
 }
 
 export function installReferenceSolution(exampleId: string): Promise<Record<string, unknown>> {
   return fetch(`/api/v1/solutions/reference/${encodeURIComponent(exampleId)}/install`, {
     method: "POST",
     headers: getAuthHeaders(),
-  }).then(parseJson);
+  }).then((r) => parseJson<Record<string, unknown>>(r));
 }
 
 export function installMarketplaceListing(
@@ -115,7 +115,7 @@ export function installMarketplaceListing(
   return fetch(
     `/api/v1/solutions/marketplaces/${encodeURIComponent(marketplaceId)}/listings/${encodeURIComponent(slug)}/install`,
     { method: "POST", headers: getAuthHeaders() }
-  ).then(parseJson);
+  ).then((r) => parseJson<Record<string, unknown>>(r));
 }
 
 export function activateMarketplaceListing(
@@ -130,5 +130,5 @@ export function activateMarketplaceListing(
       headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify({ activationCode }),
     }
-  ).then(parseJson);
+  ).then((r) => parseJson<Record<string, unknown>>(r));
 }
