@@ -9336,6 +9336,78 @@ body.scada-mimic-editor-open {
   margin-top: 0.65rem;
 }
 
+.marketplace-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+
+.marketplace-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 10rem;
+}
+
+.marketplace-field.grow {
+  flex: 1 1 14rem;
+}
+
+.marketplace-field input,
+.marketplace-field select {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+}
+
+.solution-catalog-card--marketplace {
+  border-color: #99f6e4;
+}
+
+.solution-catalog-version-pill.free {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.solution-catalog-version-pill.paid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.solution-catalog-meta {
+  font-size: 0.8rem;
+  margin: 0.35rem 0 0;
+}
+
+.marketplace-activate-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: center;
+}
+
+.marketplace-activate-inline input {
+  flex: 1 1 12rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.op-alert.compact {
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.85rem;
+}
+
 .ai-studio-tools-panel-head {
   display: flex;
   flex-wrap: wrap;

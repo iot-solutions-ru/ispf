@@ -6,6 +6,7 @@ import {
   type SolutionCatalogInstalled,
   type SolutionReferenceExample,
 } from "../../api/solutions";
+import MarketplaceBrowser from "./MarketplaceBrowser";
 
 function InstalledAppCard({ app }: { app: SolutionCatalogInstalled }) {
   const { t } = useTranslation("system");
@@ -104,8 +105,14 @@ export default function SolutionCatalogPanel() {
     mutationFn: installReferenceSolution,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["solution-catalog"] });
+      void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
     },
   });
+
+  const refreshAll = () => {
+    void catalogQuery.refetch();
+    void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
+  };
 
   const installed = catalogQuery.data?.installed ?? [];
   const references = catalogQuery.data?.referenceExamples ?? [];
@@ -121,7 +128,7 @@ export default function SolutionCatalogPanel() {
           type="button"
           className="btn"
           disabled={catalogQuery.isFetching}
-          onClick={() => catalogQuery.refetch()}
+          onClick={refreshAll}
         >
           {t("metrics.refresh")}
         </button>
@@ -136,6 +143,17 @@ export default function SolutionCatalogPanel() {
       {installMutation.isSuccess && (
         <div className="op-alert op-alert-success">{t("solutions.installOk")}</div>
       )}
+
+      <section className="solution-catalog-section">
+        <h4>{t("solutions.marketplace.title")}</h4>
+        <p className="op-muted">{t("solutions.marketplace.subtitle")}</p>
+        <MarketplaceBrowser
+          onInstalled={() => {
+            void queryClient.invalidateQueries({ queryKey: ["solution-catalog"] });
+            void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
+          }}
+        />
+      </section>
 
       {catalogQuery.isLoading && <p className="hint">{t("solutions.loading")}</p>}
 

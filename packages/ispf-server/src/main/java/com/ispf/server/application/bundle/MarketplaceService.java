@@ -1,0 +1,333 @@
+package com.ispf.server.application.bundle;
+
+import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.config.MarketplaceProperties;
+import com.ispf.server.license.InstallationIdService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import tools.jackson.databind.ObjectMapper;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+public class MarketplaceService {
+
+    private final MarketplaceProperties properties;
+    private final ApplicationDataStore dataStore;
+    private final ApplicationBundleSnapshotStore snapshotStore;
+    private final ApplicationBundleDeployService deployService;
+    private final InstallationIdService installationIdService;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
+
+    @Autowired
+    public MarketplaceService(
+            MarketplaceProperties properties,
+            ApplicationDataStore dataStore,
+            ApplicationBundleSnapshotStore snapshotStore,
+            ApplicationBundleDeployService deployService,
+            InstallationIdService installationIdService,
+            ObjectMapper objectMapper
+    ) {
+        this(
+                properties,
+                dataStore,
+                snapshotStore,
+                deployService,
+                installationIdService,
+                objectMapper,
+                HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(15))
+                        .followRedirects(HttpClient.Redirect.NORMAL)
+                        .build()
+        );
+    }
+
+    MarketplaceService(
+            MarketplaceProperties properties,
+            ApplicationDataStore dataStore,
+            ApplicationBundleSnapshotStore snapshotStore,
+            ApplicationBundleDeployService deployService,
+            InstallationIdService installationIdService,
+            ObjectMapper objectMapper,
+            HttpClient httpClient
+    ) {
+        this.properties = properties;
+        this.dataStore = dataStore;
+        this.snapshotStore = snapshotStore;
+        this.deployService = deployService;
+        this.installationIdService = installationIdService;
+        this.objectMapper = objectMapper;
+        this.httpClient = httpClient;
+    }
+
+    public Map<String, Object> listMarketplaces() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("enabled", properties.isEnabled());
+        response.put("defaultId", properties.getDefaultId());
+        List<Map<String, Object>> endpoints = new ArrayList<>();
+        for (MarketplaceProperties.Endpoint endpoint : properties.getEndpoints()) {
+            if (endpoint.getBaseUrl() == null || endpoint.getBaseUrl().isBlank()) {
+                continue;
+            }
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", endpoint.getId());
+            row.put("name", endpoint.getName());
+            row.put("baseUrl", normalizeBaseUrl(endpoint.getBaseUrl()));
+            row.put("contactUrl", endpoint.getContactUrl());
+            row.put("default", endpoint.isDefaultEndpoint()
+                    || endpoint.getId().equals(properties.getDefaultId()));
+            endpoints.add(row);
+        }
+        response.put("endpoints", endpoints);
+        return response;
+    }
+
+    public Map<String, Object> browseCatalog(String marketplaceId, String query, String pricingFilter)
+            throws Exception {
+        MarketplaceProperties.Endpoint endpoint = requireEndpoint(marketplaceId);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> remote = fetchJson(
+                normalizeBaseUrl(endpoint.getBaseUrl()) + "/api/v1/catalog",
+                Map.class
+        );
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> listings = remote.get("listings") instanceof List<?> raw
+                ? (List<Map<String, Object>>) raw
+                : List.of();
+
+        List<Map<String, Object>> enriched = new ArrayList<>();
+        for (Map<String, Object> listing : listings) {
+            Map<String, Object> row = new LinkedHashMap<>(listing);
+            String appId = stringValue(listing.get("appId"));
+            if (appId != null) {
+                row.put("installed", dataStore.findApp(appId).isPresent());
+                snapshotStore.findActive(appId).ifPresent(active ->
+                        row.put("activeVersion", active.bundleVersion())
+                );
+            }
+            if (endpoint.getContactUrl() != null && !endpoint.getContactUrl().isBlank()) {
+                row.putIfAbsent("marketplaceContactUrl", endpoint.getContactUrl());
+            }
+            enriched.add(row);
+        }
+
+        List<Map<String, Object>> filtered = filterListings(enriched, query, pricingFilter);
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("marketplaceId", endpoint.getId());
+        response.put("marketplaceName", endpoint.getName());
+        response.put("contactUrl", endpoint.getContactUrl());
+        response.put("listings", filtered);
+        response.put("total", filtered.size());
+        return response;
+    }
+
+    public Map<String, Object> installFreeListing(String marketplaceId, String slug) throws Exception {
+        MarketplaceProperties.Endpoint endpoint = requireEndpoint(marketplaceId);
+        Map<String, Object> detail = fetchListingDetail(endpoint, slug);
+        if (!"free".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
+            throw new IllegalArgumentException("Listing is not free — use activation with entitlement key");
+        }
+        String appId = requireAppId(detail);
+        String manifestJson = httpGet(normalizeBaseUrl(endpoint.getBaseUrl())
+                + "/api/v1/catalog/" + encodeSlug(slug) + "/download");
+        return deployManifest(appId, manifestJson, marketplaceId, slug, "free-download");
+    }
+
+    public Map<String, Object> activatePaidListing(
+            String marketplaceId,
+            String slug,
+            String activationCode
+    ) throws Exception {
+        if (activationCode == null || activationCode.isBlank()) {
+            throw new IllegalArgumentException("activationCode is required");
+        }
+        MarketplaceProperties.Endpoint endpoint = requireEndpoint(marketplaceId);
+        Map<String, Object> detail = fetchListingDetail(endpoint, slug);
+        if (!"paid".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
+            throw new IllegalArgumentException("Listing is not paid — use free install");
+        }
+        String appId = requireAppId(detail);
+        String installationId = installationIdService.ensureInstallationId();
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("activationCode", activationCode.trim());
+        body.put("installationId", installationId);
+        body.put("slug", slug);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> activated = postJson(
+                normalizeBaseUrl(endpoint.getBaseUrl()) + "/api/v1/entitlements/activate",
+                body,
+                Map.class
+        );
+
+        Object bundle = activated.get("bundle");
+        if (bundle == null) {
+            throw new IllegalStateException("Marketplace did not return signed bundle");
+        }
+        String manifestJson = objectMapper.writeValueAsString(bundle);
+        Map<String, Object> result = deployManifest(appId, manifestJson, marketplaceId, slug, "paid-activation");
+        result.put("installationId", installationId);
+        return result;
+    }
+
+    private Map<String, Object> deployManifest(
+            String appId,
+            String manifestJson,
+            String marketplaceId,
+            String slug,
+            String source
+    ) throws Exception {
+        ApplicationBundleDeployService.BundleManifest manifest =
+                BundleManifestJsonSupport.parse(objectMapper, manifestJson);
+        Map<String, Object> deployResult = deployService.deploy(appId, manifest);
+        Map<String, Object> result = new LinkedHashMap<>(deployResult);
+        result.put("marketplaceId", marketplaceId);
+        result.put("listingSlug", slug);
+        result.put("installedFrom", source);
+        return result;
+    }
+
+    private Map<String, Object> fetchListingDetail(MarketplaceProperties.Endpoint endpoint, String slug)
+            throws Exception {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> detail = fetchJson(
+                normalizeBaseUrl(endpoint.getBaseUrl()) + "/api/v1/catalog/" + encodeSlug(slug),
+                Map.class
+        );
+        return detail;
+    }
+
+    private String requireAppId(Map<String, Object> detail) {
+        String appId = stringValue(detail.get("appId"));
+        if (appId == null || appId.isBlank()) {
+            throw new IllegalStateException("Listing has no appId");
+        }
+        return appId;
+    }
+
+    private MarketplaceProperties.Endpoint requireEndpoint(String marketplaceId) {
+        if (!properties.isEnabled()) {
+            throw new IllegalStateException("Marketplace integration is disabled");
+        }
+        String normalized = marketplaceId == null ? "" : marketplaceId.trim();
+        Optional<MarketplaceProperties.Endpoint> match = properties.getEndpoints().stream()
+                .filter(e -> e.getId().equals(normalized))
+                .findFirst();
+        if (match.isEmpty() || match.get().getBaseUrl() == null || match.get().getBaseUrl().isBlank()) {
+            throw new IllegalArgumentException("Unknown marketplace: " + marketplaceId);
+        }
+        return match.get();
+    }
+
+    private List<Map<String, Object>> filterListings(
+            List<Map<String, Object>> listings,
+            String query,
+            String pricingFilter
+    ) {
+        String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        String pricing = pricingFilter == null ? "all" : pricingFilter.trim().toLowerCase(Locale.ROOT);
+        return listings.stream()
+                .filter(row -> matchesPricing(row, pricing))
+                .filter(row -> matchesQuery(row, q))
+                .toList();
+    }
+
+    private static boolean matchesPricing(Map<String, Object> row, String pricing) {
+        if ("all".equals(pricing) || pricing.isBlank()) {
+            return true;
+        }
+        String rowPricing = stringValue(row.get("pricing"));
+        return rowPricing != null && pricing.equalsIgnoreCase(rowPricing);
+    }
+
+    private static boolean matchesQuery(Map<String, Object> row, String q) {
+        if (q.isBlank()) {
+            return true;
+        }
+        return containsIgnoreCase(row.get("title"), q)
+                || containsIgnoreCase(row.get("description"), q)
+                || containsIgnoreCase(row.get("slug"), q)
+                || containsIgnoreCase(row.get("appId"), q)
+                || containsIgnoreCase(row.get("vendorName"), q);
+    }
+
+    private static boolean containsIgnoreCase(Object value, String q) {
+        return value != null && String.valueOf(value).toLowerCase(Locale.ROOT).contains(q);
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static String normalizeBaseUrl(String baseUrl) {
+        String trimmed = baseUrl.trim();
+        if (trimmed.endsWith("/")) {
+            return trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private static String encodeSlug(String slug) {
+        return slug;
+    }
+
+    private <T> T fetchJson(String url, Class<T> type) throws Exception {
+        String body = httpGet(url);
+        return objectMapper.readValue(body, type);
+    }
+
+    private <T> T postJson(String url, Object payload, Class<T> type) throws Exception {
+        String json = objectMapper.writeValueAsString(payload);
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(60))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new MarketplaceRemoteException(response.statusCode(), response.body());
+        }
+        return objectMapper.readValue(response.body(), type);
+    }
+
+    private String httpGet(String url) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(60))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new MarketplaceRemoteException(response.statusCode(), response.body());
+        }
+        return response.body();
+    }
+
+    public static class MarketplaceRemoteException extends RuntimeException {
+        private final int statusCode;
+
+        public MarketplaceRemoteException(int statusCode, String body) {
+            super("Marketplace HTTP " + statusCode + ": " + body);
+            this.statusCode = statusCode;
+        }
+
+        public int statusCode() {
+            return statusCode;
+        }
+    }
+}

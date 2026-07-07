@@ -400,6 +400,15 @@ ispf:
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
     enforce: ${ISPF_LICENSE_ENFORCE:false}
     require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:false}
+  marketplace:
+    enabled: ${ISPF_MARKETPLACE_ENABLED:true}
+    default-id: ${ISPF_MARKETPLACE_DEFAULT_ID:iot-solutions}
+    endpoints:
+      - id: iot-solutions
+        name: IoT Solutions Marketplace
+        base-url: ${ISPF_MARKETPLACE_DEFAULT_URL:https://marketplace.iot-solutions.ru}
+        contact-url: ${ISPF_MARKETPLACE_CONTACT_URL:https://iot-solutions.ru}
+        default-endpoint: true
   ai:
     enabled: ${ISPF_AI_ENABLED:true}
     provider: ${ISPF_AI_PROVIDER:noop}
