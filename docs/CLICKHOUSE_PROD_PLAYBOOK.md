@@ -113,8 +113,8 @@ Checks:
 - `ISPF_EVENT_JOURNAL_STORE=clickhouse`
 - Tables `ispf.event_history`, optional `ispf.variable_samples`
 - Startup log markers
-- Smoke: `POST /api/v1/events/fire` → row count increase
-- If `store=clickhouse` or dual-write: variable sample smoke via setVariable
+- Smoke: `POST /api/v1/events/fire` → row count increase (skipped with WARN on 404/403 when prod has no demo fixtures — `ISPF_BOOTSTRAP_FIXTURES_ENABLED=false`)
+- If `store=clickhouse` or dual-write: variable sample smoke via setVariable (same fixture caveat)
 
 From Windows deploy:
 

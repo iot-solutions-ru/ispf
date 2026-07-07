@@ -16,13 +16,13 @@
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
-| BL-01…139 | 139 | 138 | 1 | 0 | 1 |
+| BL-01…139 | 139 | 138 | 0 | 0 | 1 |
 | Phase 0–23 | 23 | 23 | 0 | — | — |
 | Sprint S01–S26 | 26 | 26 | 0 | 0 | — |
 
-**Текущий спринт:** **S26 — HMI + ops close-out — Done** (2026-07-06). BL-94, BL-114 closed.
+**Текущий спринт:** нет активного — **Phase 24 (S24–S30) Done** (2026-07-07).
 
-**Post-acceleration backlog:** BL-01…139 Done. **Phase 24** S24–S30 — см. [§ Phase 24](#phase-24--candidates).
+**Post-acceleration backlog:** BL-01…139 Done (BL-112 Cancelled). Phase 24 закрыт — см. [§ Phase 24](#phase-24--closed).
 
 Программа acceleration: [ACCELERATION_PROGRAM.md](ACCELERATION_PROGRAM.md).
 
@@ -328,7 +328,7 @@
 | 22.4 | AI rate limits | BL-75 | Done |
 | 22.5 | i18n tails | BL-76 | Done |
 | 22.6 | Playwright live docs | BL-77 | Done |
-| 22.7 | ClickHouse prod rollout | — | Ops |
+| 22.7 | ClickHouse prod rollout | BL-114 | Done — VPS 0.9.101, dual-write |
 | 22.8 | Doc sync | — | Done |
 
 </details>
@@ -383,7 +383,7 @@
 | 23.21 | One-click prod + air-gap | EX-OPS | 127–128 | S14, S15 | Done |
 | 23.22 | Playwright live operator | EX-QA | 129–130 | S02 | Done |
 | 23.23 | Visual regression + i18n gate | EX-QA | 131–132 | S16 | Done |
-| 23.24 | Horizontal active-active | EX-CLUSTER | 133–139 | S18 | In progress |
+| 23.24 | Horizontal active-active | EX-CLUSTER | 133–139 | S18 | Done |
 
 ### Горизонты инвестиций
 
@@ -762,19 +762,19 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | REQ-PF / REQ-FW | 100% | — | — |
 | UI ↔ API parity | 100% | — | Phase 20 |
 | Driver top-10 PRODUCTION | 100% | stub promotion по demand | BL-26 |
-| Operator alarming / PWA | 95% | mimic, a11y | S21, BL-92…95 |
+| Operator alarming / PWA | 98% | — | S21, S29, BL-92…95 |
 | App marketplace | 98% | — | S04 |
 | AI agent production | 98% | — | S03 |
 | Haystack query | 100% | — | S23, BL-104…105 |
 | Telemetry ingress | 90% | staging load job | HF01, S07 |
 | Horizontal cluster | 100% | — | S18, BL-133…139 |
-| Federation edge | 90% | sync, chaos | S22, BL-119…120 |
-| ClickHouse variables | 100% | — | BL-114 playbook + dual-write |
-| Frontend e2e | 95% | Lighthouse | S21 |
+| Federation edge | 95% | field soak | S22, S27, BL-119…120 |
+| ClickHouse variables | 100% | — | BL-114, S28 dual-write on VPS |
+| Frontend e2e | 98% | — | S21, S29 quality gates |
 
 ---
 
-## Phase 24 — candidates
+## Phase 24 — closed
 
 Post-S26; **Done** (S24–S30, 2026-07-07).
 
@@ -817,7 +817,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-07 | Phase 24 closed: S28–S30 Done; theme 23.6, EX-HMI, EX-FED Done |
+| 2026-07-07 | Tail cleanup: ROADMAP sync (BL 0 Partial, 23.24 Done); CH verify prod-safe smoke |
 | 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
 | 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |
 | 2026-07-06 | S24–S26 Done: BPMN timers, tenant quotas, historian dual-write, SCADA docs |
