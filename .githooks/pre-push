@@ -1,0 +1,15 @@
+#!/bin/sh
+# Block accidental push of Cursor agent branches (cursor/*).
+# Enable: git config core.hooksPath .githooks
+
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/cursor/*)
+      echo "pre-push: refusing to push Cursor branch $remote_ref"
+      echo "Use a feature/* or fix/* branch and open a PR from main."
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
