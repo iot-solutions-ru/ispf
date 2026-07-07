@@ -21,7 +21,7 @@ public final class IspfAuthorizationRules {
         ).permitAll();
 
         auth.requestMatchers("/actuator/prometheus")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/platform/metrics", "/api/v1/platform/function-invocations",
                         "/api/v1/platform/function-audit-status",
@@ -35,103 +35,106 @@ public final class IspfAuthorizationRules {
                         "/api/v1/platform/reports/yarg/**", "/api/v1/platform/mcp/**",
                         "/api/v1/platform/backup/**",
                         "/api/v1/platform/runtime-settings")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/ai/provider")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers("/api/v1/ai/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_CONFIG);
 
         auth.requestMatchers("/api/v1/operator-apps/*/agent/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers("/api/v1/platform/update/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/alert-rules/**", "/api/v1/correlators/**",
                         "/api/v1/data-sources/**", "/api/v1/migrations/**", "/api/v1/sql-bindings/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_CONFIG);
 
         auth.requestMatchers("/api/v1/work-queue/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/objects/by-path/functions/invoke")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/bff/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/operator-ui")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
         auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/hmi-ui")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
         auth.requestMatchers(HttpMethod.GET, "/api/v1/applications/*/operator-manifest")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/operator-apps")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
         auth.requestMatchers(HttpMethod.GET, "/api/v1/operator-apps/*/ui")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
         auth.requestMatchers(HttpMethod.POST, "/api/v1/operator-apps/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_CONFIG);
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/operator-apps/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_CONFIG);
 
         auth.requestMatchers("/api/v1/alarm-shelves/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/events/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/by-path/run")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/cancel")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/signal")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/timer")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
-
-        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/signal")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers("/api/v1/security/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/federation/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/tenants/**")
-                .hasRole(IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+
+        auth.requestMatchers(HttpMethod.GET, "/api/v1/**")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/events/**")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/by-path/run")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/cancel")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/signal")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/instances/*/timer")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/workflows/signal")
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/applications/*/reports/*/run")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/reports/by-path/run")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/reports/by-path/run-async")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/jobs/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/objects/by-path/acl")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         // Object variable writes: operators allowed at HTTP layer; per-object ACL enforced in ObjectController.
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/objects/by-path/variables")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
         auth.requestMatchers(HttpMethod.PATCH, "/api/v1/objects/by-path/variables/**")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/auth/me/timezone")
-                .hasAnyRole(IspfRoles.OPERATOR, IspfRoles.ADMIN);
+                .hasAnyRole(IspfRoles.ROLES_READ);
 
-        auth.requestMatchers("/api/v1/**").hasRole(IspfRoles.ADMIN);
+        auth.requestMatchers("/api/v1/**").hasAnyRole(IspfRoles.ROLES_CONFIG);
     }
 }

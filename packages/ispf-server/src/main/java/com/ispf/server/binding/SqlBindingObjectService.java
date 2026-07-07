@@ -6,13 +6,11 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.datasource.DataSourcePathResolver;
-import com.ispf.server.application.data.ApplicationSchemaSession;
+import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,22 +43,16 @@ public class SqlBindingObjectService {
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
-    private final ApplicationSchemaSession schemaSession;
-    private final DataSourcePathResolver dataSourcePathResolver;
-    private final JdbcTemplate jdbcTemplate;
+    private final DataSourceSqlSession dataSourceSqlSession;
 
     public SqlBindingObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
-            ApplicationSchemaSession schemaSession,
-            DataSourcePathResolver dataSourcePathResolver,
-            JdbcTemplate jdbcTemplate
+            DataSourceSqlSession dataSourceSqlSession
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
-        this.schemaSession = schemaSession;
-        this.dataSourcePathResolver = dataSourcePathResolver;
-        this.jdbcTemplate = jdbcTemplate;
+        this.dataSourceSqlSession = dataSourceSqlSession;
     }
 
     @Transactional
@@ -222,11 +214,10 @@ public class SqlBindingObjectService {
     }
 
     private void executeRefresh(BindingDefinition binding) {
-        String schemaName = dataSourcePathResolver.resolveSchemaName(binding.dataSourcePath());
         Object[] extracted = new Object[1];
-        schemaSession.runInSchema(schemaName, () -> {
+        dataSourceSqlSession.runWithDataSource(binding.dataSourcePath(), jdbc -> {
             ApplicationSchemaSupport.validateSelectQuery(binding.query(), "Binding query");
-            List<Map<String, Object>> rows = jdbcTemplate.queryForList(binding.query());
+            List<Map<String, Object>> rows = jdbc.queryForList(binding.query());
             if (rows.isEmpty()) {
                 extracted[0] = null;
                 return;

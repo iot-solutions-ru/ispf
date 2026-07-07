@@ -2,7 +2,7 @@
 
 Базовый URL: `http://localhost:8080`
 
-Авторизация: JWT (Keycloak) или заголовок `X-ISPF-Role: admin|operator` (профиль `local`).  
+Авторизация: JWT (Keycloak) или заголовок `X-ISPF-Role: admin|developer|operator` (профиль `local`).  
 Матрица ролей: [SECURITY.md](SECURITY.md).
 
 ## Платформа

@@ -2,8 +2,8 @@ package com.ispf.server.api;
 
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
+import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
-import com.ispf.server.security.acl.ObjectAccessService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,11 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class FunctionController {
 
     private final FunctionService functionService;
-    private final ObjectAccessService objectAccessService;
+    private final FunctionInvokeAccessService invokeAccessService;
 
-    public FunctionController(FunctionService functionService, ObjectAccessService objectAccessService) {
+    public FunctionController(
+            FunctionService functionService,
+            FunctionInvokeAccessService invokeAccessService
+    ) {
         this.functionService = functionService;
-        this.objectAccessService = objectAccessService;
+        this.invokeAccessService = invokeAccessService;
     }
 
     @PostMapping("/invoke")
@@ -30,7 +33,7 @@ public class FunctionController {
             @RequestBody(required = false) DataRecordPayloadRequest input,
             Authentication authentication
     ) {
-        objectAccessService.requireInvoke(path, authentication);
+        invokeAccessService.requireDirectInvoke(path, name, authentication);
         return functionService.invoke(path, name, input);
     }
 }

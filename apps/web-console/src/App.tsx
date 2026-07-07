@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { fetchPlatformInfo, reorderObjectChildren } from "./api";
 import { fetchOperatorApps } from "./api/operatorApps";
 import { logout } from "./auth/login";
-import { getPrimaryRole, getStoredSession, isAdminSession, setStoredSession, type AuthSession } from "./auth/session";
+import { getPrimaryRole, getStoredSession, isAdminSession, isConfiguratorSession, setStoredSession, type AuthSession } from "./auth/session";
 import { SESSION_INVALID_EVENT, validateStoredSession } from "./auth/validateSession";
 import {
   clearOidcCallbackParams,
@@ -209,7 +209,7 @@ function AppShell() {
       return;
     }
     const params = new URLSearchParams(window.location.search);
-    if (params.get("mode") === "admin" && isAdminSession(session)) {
+    if (params.get("mode") === "admin" && isConfiguratorSession(session)) {
       return;
     }
     if (!params.get("app")) {
@@ -488,9 +488,10 @@ function AppShell() {
     [objectList, selectedPath]
   );
   const isAdmin = isAdminSession(session);
+  const canConfigure = isConfiguratorSession(session);
   const primaryRole = getPrimaryRole(session);
   const agentRun = useAgentRunStatus();
-  const mountAgentChat = isAdmin && (workspaceTab === "ai-studio" || agentRun.isPending);
+  const mountAgentChat = canConfigure && (workspaceTab === "ai-studio" || agentRun.isPending);
 
   const handleLogout = async () => {
     await logout();
@@ -552,7 +553,7 @@ function AppShell() {
       url.searchParams.delete("screen");
       window.history.replaceState({}, "", url.toString());
       setAppMode("operator");
-    } else if (!isAdminSession(next)) {
+    } else if (!isConfiguratorSession(next)) {
       const url = new URL(window.location.href);
       url.searchParams.set("mode", "operator");
       url.searchParams.delete("app");
@@ -587,7 +588,7 @@ function AppShell() {
           appId={operatorAppId}
           operatorId={session.username}
           onSelectApp={selectOperatorApp}
-          onSwitchAdmin={isAdmin ? () => setAppMode("admin") : undefined}
+          onSwitchAdmin={canConfigure ? () => setAppMode("admin") : undefined}
           session={session}
           onLogout={() => void handleLogout()}
         />
@@ -597,7 +598,7 @@ function AppShell() {
 
   return (
     <div className={`admin-shell${isMobileLayout ? " admin-shell--mobile" : ""}`} data-testid="admin-shell">
-      {isAdmin && <AgentChatRunBootstrap enabled />}
+      {canConfigure && <AgentChatRunBootstrap enabled />}
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">ISPF</span>
@@ -645,7 +646,7 @@ function AppShell() {
             {t("shell:admin.tab.system")}
           </button>
         )}
-        {isAdmin && (
+        {canConfigure && (
           <AiStudioWorkspaceTabButton
             active={workspaceTab === "ai-studio"}
             onClick={() => setWorkspaceTab("ai-studio")}
@@ -705,12 +706,12 @@ function AppShell() {
                   onRowSelect={handleTreeRowSelect}
                   onOpenEditor={openEditor}
                   onOpenOperatorApp={openOperatorAppFromPath}
-                  canReorder={isAdmin && !treeFilter.trim()}
+                  canReorder={canConfigure && !treeFilter.trim()}
                   onReorder={handleTreeReorder}
                   onLoadChildren={handleTreeLoadChildren}
                   onVisibleRowKeysChange={setVisibleRowKeys}
                   bulkActions={
-                    isAdmin
+                    canConfigure
                       ? {
                           visibleRowKeys,
                           selectedKeys,
@@ -756,7 +757,8 @@ function AppShell() {
                 onSelectPath={selectPathInExplorer}
                 onMembersChanged={() => void invalidateAll()}
                 allObjects={objectList}
-                isAdmin={isAdmin}
+                canConfigure={canConfigure}
+                isPlatformAdmin={isAdmin}
                 onCreateApplication={openCreateApplication}
                 showBackToTree={isMobileLayout}
                 onBackToTree={() => setMobileExplorerPane("tree")}
@@ -817,7 +819,7 @@ function AppShell() {
               ) : activeEditor.objectType === "BLUEPRINT" || isBlueprintsPath(activeEditor.path) ? (
                 <BlueprintEditorPanel
                   selectedPath={activeEditor.path}
-                  canManage={isAdmin}
+                  canManage={canConfigure}
                   title={activeEditor.title}
                   onClose={() => closeEditor(activeEditor.id)}
                   onSelectPath={(path) => {
@@ -861,7 +863,7 @@ function AppShell() {
                   title={activeEditor.title}
                   onClose={() => closeEditor(activeEditor.id)}
                   onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
-                  canManage={isAdmin}
+                  canManage={canConfigure}
                 />
               ) : null}
             </Suspense>
@@ -873,7 +875,8 @@ function AppShell() {
             <ObjectPropertiesEditor
               key={activeEditor.path}
               path={activeEditor.path}
-              canManage={isAdmin}
+              canManage={canConfigure}
+              canManageAcl={isAdmin}
               onClose={() => {
                 setPropertiesTabPath(null);
               }}

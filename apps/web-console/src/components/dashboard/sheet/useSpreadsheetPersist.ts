@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { SpreadsheetWidget } from "../../../types/dashboard";
 import { setVariable } from "../../../api";
-import { getStoredSession, isAdminSession } from "../../../auth/session";
+import { getStoredSession, isConfiguratorSession } from "../../../auth/session";
 import { validateStoredSession } from "../../../auth/validateSession";
 import { useBoundVariable } from "../../../hooks/useBoundVariable";
 import { useDashboardContext } from "../DashboardContext";
@@ -413,7 +413,7 @@ export function useSpreadsheetPersist(
         })
         .catch(async (error) => {
           if (isVariableAclDenied(error)) {
-            if (!isAdminSession(activeSession)) {
+            if (!isConfiguratorSession(activeSession)) {
               variableWriteBlockedRef.current = true;
             }
             setPersistWarning("spreadsheet.variablePersistDenied");

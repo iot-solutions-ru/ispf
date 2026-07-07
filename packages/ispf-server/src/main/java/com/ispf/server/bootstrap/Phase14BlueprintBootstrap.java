@@ -5,6 +5,7 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
+import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
@@ -69,10 +70,16 @@ public class Phase14BlueprintBootstrap {
                 "",
                 List.of(
                         varDef("displayName", "Display name", "info", ""),
-                        varDef("schemaName", "PostgreSQL schema name", "config", "public")
+                        varDef("connectionMode", "Connection mode (internal|external)", "config", "internal"),
+                        varDef("schemaName", "PostgreSQL schema name (internal)", "config", "public"),
+                        varDef("jdbcUrl", "JDBC URL (external)", "config", ""),
+                        varDef("jdbcDriverClass", "JDBC driver class (external)", "config", ""),
+                        varDef("jdbcUsername", "JDBC username (external)", "config", ""),
+                        varDef("jdbcPassword", "JDBC password (external)", "config", ""),
+                        intDef("poolSize", "Connection pool size (external)", 5)
                 ),
                 List.of(),
-                List.of(),
+                List.of(DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION),
                 List.of(),
                 SystemIntrinsicBlueprints.parameters(),
                 Instant.now(),

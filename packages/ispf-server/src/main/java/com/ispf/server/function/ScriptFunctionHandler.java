@@ -7,7 +7,7 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.script.FunctionScriptEngine;
 import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
-import com.ispf.server.datasource.DataSourcePathResolver;
+import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
@@ -23,7 +23,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     private final ObjectManager objectManager;
     private final FunctionScriptEngine scriptEngine;
     private final ApplicationSchemaSession schemaSession;
-    private final DataSourcePathResolver dataSourcePathResolver;
+    private final DataSourceSqlSession dataSourceSqlSession;
     private final FunctionService functionService;
     private final BindingRefreshAfterCommit bindingRefreshAfterCommit;
 
@@ -31,14 +31,14 @@ public class ScriptFunctionHandler implements FunctionHandler {
             ObjectManager objectManager,
             FunctionScriptEngine scriptEngine,
             ApplicationSchemaSession schemaSession,
-            DataSourcePathResolver dataSourcePathResolver,
+            DataSourceSqlSession dataSourceSqlSession,
             @Lazy FunctionService functionService,
             BindingRefreshAfterCommit bindingRefreshAfterCommit
     ) {
         this.objectManager = objectManager;
         this.scriptEngine = scriptEngine;
         this.schemaSession = schemaSession;
-        this.dataSourcePathResolver = dataSourcePathResolver;
+        this.dataSourceSqlSession = dataSourceSqlSession;
         this.functionService = functionService;
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
     }
@@ -64,9 +64,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
             }
             return fn;
         });
-        String schemaName = descriptor.dataSourcePath() != null && !descriptor.dataSourcePath().isBlank()
-                ? dataSourcePathResolver.resolveSchemaName(descriptor.dataSourcePath())
-                : null;
+        String dataSourcePath = descriptor.dataSourcePath();
         DataRecord[] outputHolder = new DataRecord[1];
         Runnable execute = () -> outputHolder[0] = scriptEngine.execute(
                 descriptor.sourceBody(),
@@ -74,8 +72,8 @@ public class ScriptFunctionHandler implements FunctionHandler {
                 descriptor.outputSchema(),
                 nestedContext(objectPath, functionName, 0)
         );
-        if (schemaName != null) {
-            schemaSession.runInSchema(schemaName, execute);
+        if (dataSourcePath != null && !dataSourcePath.isBlank()) {
+            dataSourceSqlSession.runWithDataSource(dataSourcePath, ignored -> execute.run());
         } else {
             schemaSession.runWithPlatformCatalog(execute);
         }
@@ -101,7 +99,8 @@ public class ScriptFunctionHandler implements FunctionHandler {
                                 nestedInput
                         ))
                         : null;
-                return functionService.invoke(nestedPath, nestedName, nestedRecord);
+                return FunctionInvocationScope.callNested(
+                        () -> functionService.invoke(nestedPath, nestedName, nestedRecord));
             }
         };
     }

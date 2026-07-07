@@ -5,6 +5,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.Variable;
+import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.plugin.blueprint.BlueprintEngine;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
@@ -36,10 +37,22 @@ public class SystemObjectStructureService {
 
     @Transactional
     public void ensureDataSourceStructure(String path) {
-        if (objectManager.require(path).getVariable("schemaName").isPresent()) {
+        PlatformObject node = objectManager.require(path);
+        if (node.getVariable("schemaName").isEmpty()
+                && node.getVariable("connectionMode").isEmpty()
+                && node.getVariable("jdbcUrl").isEmpty()) {
+            applyIntrinsic("data-source-v1", path);
+        }
+        ensureExecuteQueryFunction(path);
+    }
+
+    private void ensureExecuteQueryFunction(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.functions().containsKey(DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION_NAME)) {
             return;
         }
-        applyIntrinsic("data-source-v1", path);
+        node.addFunction(DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION);
+        objectManager.persistNodeTree(path);
     }
 
     @Transactional

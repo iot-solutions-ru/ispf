@@ -103,7 +103,8 @@ public class ApplicationEventCatalogService {
     }
 
     private boolean hasAdminRole(List<String> userRoles) {
-        return userRoles != null && userRoles.stream().anyMatch(IspfRoles.ADMIN::equalsIgnoreCase);
+        return userRoles != null && userRoles.stream().anyMatch(role ->
+                IspfRoles.ADMIN.equalsIgnoreCase(role) || IspfRoles.DEVELOPER.equalsIgnoreCase(role));
     }
 
     private boolean rolesAllow(String rolesJson, List<String> userRoles) {

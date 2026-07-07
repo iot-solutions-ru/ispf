@@ -6,13 +6,11 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
-import com.ispf.server.application.data.ApplicationSchemaSession;
+import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.application.data.ApplicationSchemaSupport;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
-import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,22 +34,16 @@ public class MigrationObjectService {
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
-    private final ApplicationSchemaSession schemaSession;
-    private final DataSourcePathResolver dataSourcePathResolver;
-    private final JdbcTemplate jdbcTemplate;
+    private final DataSourceSqlSession dataSourceSqlSession;
 
     public MigrationObjectService(
             ObjectManager objectManager,
             SystemObjectStructureService structureService,
-            ApplicationSchemaSession schemaSession,
-            DataSourcePathResolver dataSourcePathResolver,
-            JdbcTemplate jdbcTemplate
+            DataSourceSqlSession dataSourceSqlSession
     ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
-        this.schemaSession = schemaSession;
-        this.dataSourcePathResolver = dataSourcePathResolver;
-        this.jdbcTemplate = jdbcTemplate;
+        this.dataSourceSqlSession = dataSourceSqlSession;
     }
 
     @Transactional
@@ -138,12 +130,11 @@ public class MigrationObjectService {
     public void applyOne(MigrationDefinition migration) {
         String checksum = checksum(migration.sql());
         ApplicationSchemaSupport.validateMigrationSql(migration.sql(), "");
-        String schemaName = dataSourcePathResolver.resolveSchemaName(migration.dataSourcePath());
-        schemaSession.ensureSchemaExists(schemaName);
-        schemaSession.runInSchema(schemaName, () -> {
+        dataSourceSqlSession.ensureWritable(migration.dataSourcePath());
+        dataSourceSqlSession.runWithDataSource(migration.dataSourcePath(), jdbc -> {
             for (String statement : splitStatements(migration.sql())) {
                 if (!statement.isBlank()) {
-                    jdbcTemplate.execute(statement);
+                    jdbc.execute(statement);
                 }
             }
         });

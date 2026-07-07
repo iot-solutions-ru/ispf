@@ -24,6 +24,7 @@ import com.ispf.plugin.workflow.WorkflowLifecycleStatus;
 import com.ispf.server.persistence.WorkflowInstanceRepository;
 import com.ispf.server.persistence.entity.WorkflowInstanceEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.event.EventService;
@@ -434,7 +435,8 @@ public class WorkflowService {
             return;
         }
         try {
-            functionService.invoke(targetObject, functionName);
+            FunctionInvocationScope.runSystemTrusted(() ->
+                    functionService.invoke(targetObject, functionName));
         } catch (Exception e) {
             log.warn("User task function {} on {} failed: {}", functionName, targetObject, e.getMessage());
         }
@@ -521,7 +523,8 @@ public class WorkflowService {
         String functionName = required(params, "functionName");
         String inputMap = params.getOrDefault("inputMap", "");
         DataRecord input = buildWorkflowFunctionInput(inputMap, instance);
-        DataRecord output = functionService.invoke(objectPath, functionName, input);
+        DataRecord output = FunctionInvocationScope.callSystemTrusted(() ->
+                functionService.invoke(objectPath, functionName, input));
         applyWorkflowFunctionOutput(params.get("outputMap"), output, instance);
         bindingRefreshAfterCommit.refreshNow(objectPath, functionName);
         if (output != null && output.rowCount() > 0) {

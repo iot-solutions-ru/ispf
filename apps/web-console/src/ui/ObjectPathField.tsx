@@ -20,6 +20,7 @@ export interface ObjectPathFieldProps {
   disabled?: boolean;
   allowManual?: boolean;
   className?: string;
+  pickerTitle?: string;
 }
 
 export default function ObjectPathField({
@@ -34,6 +35,7 @@ export default function ObjectPathField({
   disabled = false,
   allowManual = true,
   className = "",
+  pickerTitle,
 }: ObjectPathFieldProps) {
   const { t } = useTranslation("common");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -81,6 +83,7 @@ export default function ObjectPathField({
       </label>
       <ObjectTreePickerDialog
         open={pickerOpen}
+        title={pickerTitle}
         onClose={() => setPickerOpen(false)}
         onSelect={onChange}
         filterTypes={filterTypes}

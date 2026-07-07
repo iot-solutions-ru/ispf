@@ -340,6 +340,42 @@ code,
   font-size: 0.82rem;
 }
 
+.system-settings-database-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.system-settings-database-subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.system-settings-database-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.system-settings-database-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.system-settings-database-notice {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--warning, #b8860b) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning, #b8860b) 8%, transparent);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .automation-index-card {
   margin-bottom: 0.75rem;
 }
@@ -9265,11 +9301,17 @@ body.scada-mimic-editor-open {
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
 }
 
+.solution-catalog-grid > * {
+  min-width: 0;
+}
+
 .solution-catalog-card {
   padding: 0.85rem 1rem;
   border-radius: 10px;
   border: 1px solid rgba(110, 118, 129, 0.28);
   background: rgba(0, 0, 0, 0.1);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .solution-catalog-card--reference {
@@ -9328,6 +9370,9 @@ body.scada-mimic-editor-open {
 .solution-catalog-kv dd {
   margin: 0;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .bundle-license-info {
@@ -9356,12 +9401,36 @@ body.scada-mimic-editor-open {
 }
 
 .marketplace-installation-id-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
   margin: 0 0 0.5rem;
   font-size: 0.82rem;
+  max-width: 100%;
+  color: var(--text-muted);
 }
 
-.solution-catalog-kv dd {
-  margin: 0;
+.marketplace-installation-id-label {
+  line-height: 1.35;
+}
+
+.marketplace-installation-id-value {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.marketplace-installation-id-copy {
+  font-size: 0.82rem;
 }
 
 .solution-catalog-card-actions {
@@ -9425,6 +9494,9 @@ body.scada-mimic-editor-open {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  flex: 1 1 100%;
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
   align-items: center;
 }

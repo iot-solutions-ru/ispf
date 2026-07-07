@@ -2,6 +2,9 @@ package com.ispf.server.history;
 
 import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
+import com.ispf.server.relational.RelationalDbKind;
+import com.ispf.server.relational.RelationalDialect;
+import com.ispf.server.relational.store.VariableSampleBucketQuery;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,13 +24,19 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
     private static final int MAX_AGGREGATE_SAMPLE_ROWS = 100_000;
 
     private final VariableSampleRepository sampleRepository;
+    private final VariableSampleBucketQuery bucketQuery;
+    private final RelationalDialect relationalDialect;
     private final TimescaleHypertableInitializer timescaleHypertableInitializer;
 
     JdbcVariableHistoryQueryStore(
             VariableSampleRepository sampleRepository,
+            VariableSampleBucketQuery bucketQuery,
+            RelationalDialect relationalDialect,
             TimescaleHypertableInitializer timescaleHypertableInitializer
     ) {
         this.sampleRepository = sampleRepository;
+        this.bucketQuery = bucketQuery;
+        this.relationalDialect = relationalDialect;
         this.timescaleHypertableInitializer = timescaleHypertableInitializer;
     }
 
@@ -84,7 +93,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
             Duration bucket,
             int maxBuckets
     ) {
-        if (timescaleHypertableInitializer.isPostgreSql()) {
+        if (relationalDialect.kind() == RelationalDbKind.POSTGRESQL) {
             return aggregateWithSql(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
         }
         return aggregateWithJvm(objectPath, variableName, fieldName, from, to, bucket, maxBuckets);
@@ -105,7 +114,7 @@ class JdbcVariableHistoryQueryStore implements VariableHistoryQueryStore {
             int maxBuckets
     ) {
         long bucketSeconds = bucket.getSeconds();
-        return sampleRepository.aggregateBuckets(
+        return bucketQuery.aggregateBuckets(
                         objectPath,
                         variableName,
                         fieldName,

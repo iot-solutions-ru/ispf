@@ -49,6 +49,16 @@ public class ObjectAccessService {
         }
     }
 
+    public void requireConfigurator(Authentication authentication) {
+        if (!isConfigurator(authentication)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Configurator access required");
+        }
+    }
+
+    public boolean isConfigurator(Authentication authentication) {
+        return IspfRoles.isConfigurator(authentication);
+    }
+
     public void requireGrantAcl(String objectPath, Authentication authentication) {
         if (isAdmin(authentication) || canGrant(objectPath, authentication)) {
             return;
@@ -122,7 +132,7 @@ public class ObjectAccessService {
     }
 
     private static boolean isAdmin(Authentication authentication) {
-        return extractRoles(authentication).contains(IspfRoles.ADMIN);
+        return IspfRoles.isAdmin(authentication);
     }
 
     private static Set<String> extractRoles(Authentication authentication) {

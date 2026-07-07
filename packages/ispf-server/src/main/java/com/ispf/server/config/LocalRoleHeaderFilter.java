@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Simulates Keycloak roles in local profile via {@code X-ISPF-Role: admin|operator}.
+ * Simulates Keycloak roles in local profile via {@code X-ISPF-Role: admin|developer|operator}.
  */
 public class LocalRoleHeaderFilter extends OncePerRequestFilter {
 
@@ -49,7 +49,9 @@ public class LocalRoleHeaderFilter extends OncePerRequestFilter {
             return;
         }
         role = role.trim().toLowerCase();
-        if (IspfRoles.ADMIN.equals(role) || IspfRoles.OPERATOR.equals(role)) {
+        if (IspfRoles.ADMIN.equals(role)
+                || IspfRoles.DEVELOPER.equals(role)
+                || IspfRoles.OPERATOR.equals(role)) {
             var authentication = new UsernamePasswordAuthenticationToken(
                     role,
                     null,

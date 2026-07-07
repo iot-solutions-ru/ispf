@@ -1,5 +1,6 @@
 package com.ispf.server.application.data;
 
+import com.ispf.server.relational.RelationalDialect;
 import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
 
@@ -13,9 +14,11 @@ import java.util.function.Supplier;
 public class ApplicationSchemaSession {
 
     private final DataSource dataSource;
+    private final RelationalDialect dialect;
 
-    public ApplicationSchemaSession(DataSource dataSource) {
+    public ApplicationSchemaSession(DataSource dataSource, RelationalDialect dialect) {
         this.dataSource = dataSource;
+        this.dialect = dialect;
     }
 
     /** Creates application schema if missing — call from writable transactions (migrations/deploy). */
@@ -85,7 +88,7 @@ public class ApplicationSchemaSession {
                 try {
                     rollbackIfNeeded(connection, actionError);
                     if (previousSchema != null && !previousSchema.isBlank()
-                            && !"PUBLIC".equalsIgnoreCase(previousSchema)) {
+                            && !dialect.defaultPlatformSchema().equalsIgnoreCase(previousSchema)) {
                         activateSchema(connection, previousSchema);
                     }
                 } catch (SQLException ex) {
@@ -111,22 +114,17 @@ public class ApplicationSchemaSession {
         }
     }
 
-    private static void activateSchema(Connection connection, String schemaName) throws SQLException {
+    private void activateSchema(Connection connection, String schemaName) throws SQLException {
         String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
-            // PostgreSQL report/function paths use read-only transactions — never run DDL there.
-            if (!isPostgreSql(connection)) {
+            if (dialect.requiresSchemaDdlBeforeSwitch()) {
                 createSchemaIfMissing(connection, schemaName);
             }
-            if (isPostgreSql(connection)) {
-                statement.execute("SET search_path TO " + quoted);
-            } else {
-                statement.execute("SET SCHEMA " + quoted);
-            }
+            statement.execute(dialect.activateSchemaSql(quoted));
         }
     }
 
-    private static void restoreSchema(Connection connection, String previousSchema) throws SQLException {
+    private void restoreSchema(Connection connection, String previousSchema) throws SQLException {
         if (previousSchema != null && !previousSchema.isBlank()) {
             activateSchema(connection, previousSchema);
         } else {
@@ -134,20 +132,16 @@ public class ApplicationSchemaSession {
         }
     }
 
-    private static void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
+    private void createSchemaIfMissing(Connection connection, String schemaName) throws SQLException {
         String quoted = ApplicationSchemaSupport.quoteIdentifier(schemaName);
         try (Statement statement = connection.createStatement()) {
-            statement.execute("CREATE SCHEMA IF NOT EXISTS " + quoted);
+            statement.execute(dialect.createSchemaIfNotExistsSql(quoted));
         }
     }
 
-    private static void resetSchema(Connection connection) throws SQLException {
+    private void resetSchema(Connection connection) throws SQLException {
         try (Statement statement = connection.createStatement()) {
-            if (isPostgreSql(connection)) {
-                statement.execute("SET search_path TO public");
-            } else {
-                statement.execute("SET SCHEMA PUBLIC");
-            }
+            statement.execute(dialect.resetPlatformSchemaSql());
         }
     }
 
@@ -162,10 +156,5 @@ public class ApplicationSchemaSession {
         } catch (SQLException ignored) {
             // Best effort — restore may still fail on a broken connection.
         }
-    }
-
-    private static boolean isPostgreSql(Connection connection) throws SQLException {
-        String product = connection.getMetaData().getDatabaseProductName().toLowerCase();
-        return product.contains("postgresql");
     }
 }

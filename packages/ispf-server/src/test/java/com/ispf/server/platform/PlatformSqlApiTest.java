@@ -7,6 +7,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@TestPropertySource(properties = "ispf.security.rbac-enabled=true")
 class PlatformSqlApiTest {
 
     private static final String PACKAGE_ID = "sql-editor-test";
@@ -68,6 +70,156 @@ class PlatformSqlApiTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.description").value("Updated"));
+    }
+
+    @Test
+    void internalDataSourceTestConnection() throws Exception {
+        mockMvc.perform(post("/api/v1/data-sources/by-path/test-connection")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.connected").value(true));
+    }
+
+    @Test
+    void externalDataSourceTestConnectionRejectsBadPassword() throws Exception {
+        String path = "root.platform.data-sources.ext-probe-test";
+        mockMvc.perform(post("/api/v1/data-sources")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "ext-probe-test",
+                                  "displayName": "External probe",
+                                  "connectionMode": "external",
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:1/none",
+                                  "jdbcUsername": "ispf",
+                                  "jdbcPassword": "wrong"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/test-connection")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:1/none",
+                                  "jdbcUsername": "ispf",
+                                  "jdbcPassword": "wrong-password"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.connected").value(false))
+                .andExpect(jsonPath("$.message").isString());
+    }
+
+    @Test
+    void executeQuerySelectAndWrite() throws Exception {
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "CREATE TABLE IF NOT EXISTS ds_exec_test (id INT PRIMARY KEY, val VARCHAR(32))"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("update"));
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "DELETE FROM ds_exec_test"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("update"));
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "INSERT INTO ds_exec_test (id, val) VALUES (?, ?)",
+                                  "params": [1, "hello"]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("update"))
+                .andExpect(jsonPath("$.updateCount").value(1));
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "SELECT val FROM ds_exec_test WHERE id = ?",
+                                  "params": [1]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("rows"))
+                .andExpect(jsonPath("$.rows[0].val").value("hello"));
+    }
+
+    @Test
+    void executeQueryRejectsMultiStatement() throws Exception {
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "SELECT 1; SELECT 2"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void executeQueryDirectInvokeForbiddenForOperator() throws Exception {
+        mockMvc.perform(post("/api/v1/objects/by-path/functions/invoke")
+                        .header("X-ISPF-Role", "operator")
+                        .param("path", DATA_SOURCE_PATH)
+                        .param("name", "executeQuery")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "rows": [{
+                                    "query": "SELECT 1 AS n"
+                                  }]
+                                }
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void executeQueryFunctionInvoke() throws Exception {
+        mockMvc.perform(post("/api/v1/objects/by-path/functions/invoke")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", DATA_SOURCE_PATH)
+                        .param("name", "executeQuery")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "rows": [{
+                                    "query": "SELECT 2 AS n"
+                                  }]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[0].kind").value("rows"))
+                .andExpect(jsonPath("$.rows[0].rowCount").value(1));
     }
 
     @Test

@@ -67,6 +67,8 @@ interface ObjectPropertiesEditorProps {
   onClose?: () => void;
   onDeleted: () => void;
   canManage?: boolean;
+  /** Per-object ACL editor — platform admin only. */
+  canManageAcl?: boolean;
   /** Render inside Explorer detail pane (no breadcrumb). */
   embedded?: boolean;
 }
@@ -250,6 +252,7 @@ export default function ObjectPropertiesEditor({
   onClose,
   onDeleted,
   canManage = false,
+  canManageAcl = false,
   embedded = false,
 }: ObjectPropertiesEditorProps) {
   const { t } = useTranslation(["inspector", "common", "objectTree"]);
@@ -468,7 +471,7 @@ export default function ObjectPropertiesEditor({
   );
   const isApplicationPreview = ctxPreview?.type === "APPLICATION";
   const showFederationTab = canManage && path !== "root" && !isRootPath;
-  const showAccessTab = canManage && !isDevicePreview && !isApplicationPreview;
+  const showAccessTab = canManageAcl && !isDevicePreview && !isApplicationPreview;
 
   const tabs = useMemo((): Tab[] => {
     const list: Tab[] = ["general"];
@@ -795,7 +798,7 @@ export default function ObjectPropertiesEditor({
 
       {tab === "access" && (
         <section className="panel">
-          <ObjectAclPanel objectPath={path} canManage={canManage} />
+          <ObjectAclPanel objectPath={path} canManage={canManageAcl} />
         </section>
       )}
 

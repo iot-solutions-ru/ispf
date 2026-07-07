@@ -33,13 +33,15 @@ function MarketplaceInstallationIdHint() {
   };
 
   return (
-    <p className="op-muted marketplace-installation-id-hint">
-      {t("solutions.marketplace.installationIdHint")}{" "}
-      <code className="mono">{licenseQuery.data.installationId}</code>{" "}
-      <button type="button" className="btn-link" onClick={() => void copy()}>
+    <div className="marketplace-installation-id-hint">
+      <span className="marketplace-installation-id-label">
+        {t("solutions.marketplace.installationIdHint")}
+      </span>
+      <code className="mono marketplace-installation-id-value">{licenseQuery.data.installationId}</code>
+      <button type="button" className="btn-link marketplace-installation-id-copy" onClick={() => void copy()}>
         {t("solutions.marketplace.installationIdCopy")}
       </button>
-    </p>
+    </div>
   );
 }
 

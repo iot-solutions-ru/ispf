@@ -4,6 +4,7 @@
   "roles": {
     "realm": [
       { "name": "admin" },
+      { "name": "developer" },
       { "name": "operator" }
     ]
   },
@@ -40,6 +41,15 @@
       "lastName": "Operator",
       "credentials": [{ "type": "password", "value": "operator", "temporary": false }],
       "realmRoles": ["operator"]
+    },
+    {
+      "username": "developer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Solution",
+      "lastName": "Developer",
+      "credentials": [{ "type": "password", "value": "developer", "temporary": false }],
+      "realmRoles": ["developer"]
     }
   ]
 }

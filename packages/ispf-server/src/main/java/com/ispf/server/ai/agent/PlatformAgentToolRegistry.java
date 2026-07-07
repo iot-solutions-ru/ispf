@@ -26,6 +26,7 @@ import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.event.EventService;
 import com.ispf.server.federation.FederationBindService;
+import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.operator.OperatorAgentMemoryService;
 import com.ispf.server.operator.OperatorAppDocumentService;
@@ -80,6 +81,7 @@ public class PlatformAgentToolRegistry {
             ApplicationDataStore applicationDataStore,
             ApplicationBundleSnapshotStore bundleSnapshotStore,
             FunctionService functionService,
+            FunctionInvokeAccessService functionInvokeAccessService,
             ApplicationFunctionStore applicationFunctionStore,
             ApplicationEventCatalogService eventCatalogService,
             EventService eventService,
@@ -211,6 +213,7 @@ public class PlatformAgentToolRegistry {
                 applicationFunctionStore,
                 objectManager,
                 objectAccessService,
+                functionInvokeAccessService,
                 tenantScopeService,
                 eventService,
                 BlueprintRegistry,

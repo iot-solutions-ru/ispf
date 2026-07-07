@@ -2,6 +2,7 @@ package com.ispf.server.history;
 
 import com.ispf.server.config.EventJournalProperties;
 import com.ispf.server.config.VariableHistoryProperties;
+import com.ispf.server.relational.RelationalDialect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -11,7 +12,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -24,6 +24,7 @@ public class TimescaleHypertableInitializer {
     private static final Logger log = LoggerFactory.getLogger(TimescaleHypertableInitializer.class);
 
     private final JdbcTemplate jdbcTemplate;
+    private final RelationalDialect relationalDialect;
     private final EventJournalProperties eventJournalProperties;
     private final VariableHistoryProperties variableHistoryProperties;
     private final AtomicBoolean variableSamplesTimescaleActive = new AtomicBoolean(false);
@@ -31,10 +32,12 @@ public class TimescaleHypertableInitializer {
 
     public TimescaleHypertableInitializer(
             DataSource dataSource,
+            RelationalDialect relationalDialect,
             EventJournalProperties eventJournalProperties,
             VariableHistoryProperties variableHistoryProperties
     ) {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.relationalDialect = relationalDialect;
         this.eventJournalProperties = eventJournalProperties;
         this.variableHistoryProperties = variableHistoryProperties;
     }
@@ -56,7 +59,7 @@ public class TimescaleHypertableInitializer {
     @EventListener(ApplicationReadyEvent.class)
     @Order(120)
     public void ensureHypertables() {
-        if (!isPostgreSql()) {
+        if (!relationalDialect.supportsTimescaleHypertables()) {
             return;
         }
         if (!timescaleExtensionPresent()) {
@@ -194,11 +197,6 @@ public class TimescaleHypertableInitializer {
     }
 
     public boolean isPostgreSql() {
-        try (Connection connection = jdbcTemplate.getDataSource().getConnection()) {
-            String product = connection.getMetaData().getDatabaseProductName();
-            return product != null && product.toLowerCase().contains("postgresql");
-        } catch (Exception ex) {
-            return false;
-        }
+        return relationalDialect.supportsTimescaleHypertables();
     }
 }

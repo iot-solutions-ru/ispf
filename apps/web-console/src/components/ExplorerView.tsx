@@ -46,7 +46,8 @@ interface ExplorerViewProps {
   onSelectPath: (path: string) => void;
   onMembersChanged?: () => void;
   allObjects?: ObjectSummary[];
-  isAdmin: boolean;
+  canConfigure: boolean;
+  isPlatformAdmin: boolean;
   onCreateApplication?: () => void;
   showBackToTree?: boolean;
   onBackToTree?: () => void;
@@ -61,7 +62,8 @@ export default function ExplorerView({
   onSelectPath,
   onMembersChanged,
   allObjects = [],
-  isAdmin,
+  canConfigure,
+  isPlatformAdmin,
   onCreateApplication,
   showBackToTree = false,
   onBackToTree,
@@ -136,7 +138,7 @@ export default function ExplorerView({
       )}
       {!hideToolbar && !opensInEditor && (
         <div className="explorer-toolbar explorer-toolbar-hint-only">
-          {isDevice && isAdmin && (
+          {isDevice && canConfigure && (
             <button
               type="button"
               className="btn"
@@ -150,34 +152,34 @@ export default function ExplorerView({
       )}
 
       {isOperatorAppChild ? (
-        <OperatorAppsPanel canManage={isAdmin} selectedPath={selectedPath} />
+        <OperatorAppsPanel canManage={canConfigure} selectedPath={selectedPath} />
       ) : isUsersRoot ? (
-        <SecurityUsersPanel canManage={isAdmin} onSelectUser={onSelectPath} />
+        <SecurityUsersPanel canManage={isPlatformAdmin} onSelectUser={onSelectPath} />
       ) : isUserObject ? (
-        <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+        <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={isPlatformAdmin} onDeleted={onDeleted} />
       ) : isRolesRoot ? (
-        <SecurityRolesPanel canManage={isAdmin} onSelectRole={onSelectPath} />
+        <SecurityRolesPanel canManage={isPlatformAdmin} onSelectRole={onSelectPath} />
       ) : isRoleObject ? (
-        <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} onDeleted={onDeleted} />
+        <SecurityRoleInspector key={selectedPath} path={selectedPath} canManage={isPlatformAdmin} onDeleted={onDeleted} />
       ) : isAlertRulesFolder ? (
-        <AutomationRulesListPanel kind="alert-rules" canManage={isAdmin} onSelectPath={onSelectPath} />
+        <AutomationRulesListPanel kind="alert-rules" canManage={canConfigure} onSelectPath={onSelectPath} />
       ) : isCorrelatorsFolder ? (
-        <AutomationRulesListPanel kind="correlators" canManage={isAdmin} onSelectPath={onSelectPath} />
+        <AutomationRulesListPanel kind="correlators" canManage={canConfigure} onSelectPath={onSelectPath} />
       ) : isAlertRule ? (
-        <AlertRuleInspector key={selectedPath} path={selectedPath} canManage={isAdmin} />
+        <AlertRuleInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isCorrelator ? (
-        <CorrelatorInspector key={selectedPath} path={selectedPath} canManage={isAdmin} />
+        <CorrelatorInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isFederation ? (
-        <FederationPeersPanel canManage={isAdmin} />
+        <FederationPeersPanel canManage={isPlatformAdmin} />
       ) : isTenants ? (
-        <TenantsPanel canManage={isAdmin} onSelectPath={onSelectPath} />
+        <TenantsPanel canManage={isPlatformAdmin} onSelectPath={onSelectPath} />
       ) : isPlatformSqlObject ? (
         <PlatformSqlObjectPanel key={selectedPath} path={selectedPath} onOpenEditor={onOpenEditor} />
       ) : isVisualGroup ? (
         <VisualGroupInspector
           key={selectedPath}
           path={selectedPath}
-          canManage={isAdmin}
+          canManage={canConfigure}
           allObjects={allObjects}
           onSelectPath={onSelectPath}
           onMembersChanged={onMembersChanged}
@@ -188,7 +190,7 @@ export default function ExplorerView({
           path={selectedPath}
           displayName={selectedObject?.displayName}
           description={selectedObject?.description}
-          canManage={isAdmin}
+          canManage={canConfigure}
         />
       ) : isCatalogFolder ? (
         <SystemFolderListPanel
@@ -201,23 +203,24 @@ export default function ExplorerView({
           onOpenEditor={onOpenEditor}
           onOpenOperatorApp={onOpenOperatorApp}
           onCreateApplication={
-            selectedPath === APPLICATIONS_ROOT && isAdmin ? onCreateApplication : undefined
+            selectedPath === APPLICATIONS_ROOT && canConfigure ? onCreateApplication : undefined
           }
-          canManage={isAdmin}
+          canManage={canConfigure}
         />
       ) : (
         <ObjectPropertiesEditor
           key={selectedPath}
           path={selectedPath}
           embedded
-          canManage={isAdmin}
+          canManage={canConfigure}
+          canManageAcl={isPlatformAdmin}
           onDeleted={onDeleted}
         />
       )}
       {driverWriteOpen && isDevice && selectedPath && (
         <DriverWriteDialog
           devicePath={selectedPath}
-          canManage={isAdmin}
+          canManage={canConfigure}
           onClose={() => setDriverWriteOpen(false)}
         />
       )}

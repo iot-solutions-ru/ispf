@@ -66,12 +66,13 @@ public class PlatformUserService {
 
     @Transactional
     public void ensureDefaultUsers() {
-        if (userStore.exists()) {
-            objectTreeService.syncAll();
-            return;
+        if (!userStore.exists()) {
+            createUser("admin", "Administrator", "admin", List.of(IspfRoles.ADMIN));
+            createUser("developer", "Developer", "developer", List.of(IspfRoles.DEVELOPER));
+            createUser("operator", "Operator", "operator", List.of(IspfRoles.OPERATOR));
+        } else {
+            ensureUser("developer", "Developer", "developer", List.of(IspfRoles.DEVELOPER));
         }
-        createUser("admin", "Administrator", "admin", List.of(IspfRoles.ADMIN));
-        createUser("operator", "Operator", "operator", List.of(IspfRoles.OPERATOR));
         objectTreeService.syncAll();
     }
 

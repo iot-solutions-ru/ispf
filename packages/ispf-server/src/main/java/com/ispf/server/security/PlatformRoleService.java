@@ -37,12 +37,13 @@ public class PlatformRoleService {
 
     @Transactional
     public void ensureDefaultRoles() {
-        if (roleStore.exists()) {
-            objectTreeService.syncRoles();
-            return;
+        if (!roleStore.exists()) {
+            upsertBuiltIn(IspfRoles.ADMIN, "Full platform administration");
+            upsertBuiltIn(IspfRoles.DEVELOPER, "Solution development — objects, apps, SQL tools");
+            upsertBuiltIn(IspfRoles.OPERATOR, "Operator HMI and read-only automation");
+        } else {
+            upsertBuiltIn(IspfRoles.DEVELOPER, "Solution development — objects, apps, SQL tools");
         }
-        upsertBuiltIn(IspfRoles.ADMIN, "Full platform administration");
-        upsertBuiltIn(IspfRoles.OPERATOR, "Operator HMI and read-only automation");
         objectTreeService.syncRoles();
     }
 

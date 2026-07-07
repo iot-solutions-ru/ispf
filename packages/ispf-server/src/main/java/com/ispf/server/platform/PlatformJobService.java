@@ -2,6 +2,7 @@ package com.ispf.server.platform;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.relational.RelationalDialect;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,17 +36,20 @@ public class PlatformJobService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final ClusterProperties clusterProperties;
+    private final RelationalDialect relationalDialect;
     private final String instanceId;
 
     public PlatformJobService(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
             ClusterProperties clusterProperties,
-            NatsProperties natsProperties
+            NatsProperties natsProperties,
+            RelationalDialect relationalDialect
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.clusterProperties = clusterProperties;
+        this.relationalDialect = relationalDialect;
         this.instanceId = natsProperties.replicaId();
     }
 
@@ -114,14 +118,7 @@ public class PlatformJobService {
         Instant expiresAt = now.plus(runningTtl);
 
         List<UUID> candidates = jdbcTemplate.query(
-                """
-                        SELECT job_id
-                        FROM platform_jobs
-                        WHERE status = ?
-                        ORDER BY priority DESC, created_at
-                        LIMIT 1
-                        FOR UPDATE SKIP LOCKED
-                        """,
+                relationalDialect.queuedPlatformJobSelectSql(),
                 (rs, rowNum) -> (UUID) rs.getObject("job_id"),
                 JobStatus.QUEUED.name()
         );

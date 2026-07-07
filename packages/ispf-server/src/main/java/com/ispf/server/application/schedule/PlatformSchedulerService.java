@@ -5,6 +5,7 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.function.FunctionInvocationScope;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.platform.PlatformLeaderLockService;
@@ -176,7 +177,9 @@ public class PlatformSchedulerService {
             }
             input = DataRecord.single(schemaBuilder.build(), row);
         }
-        functionService.invoke(objectPath, functionName, input);
+        final DataRecord invokeInput = input;
+        FunctionInvocationScope.runSystemTrusted(() ->
+                functionService.invoke(objectPath, functionName, invokeInput));
     }
 
     private static Instant toInstant(Object value) {

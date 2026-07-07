@@ -56,17 +56,27 @@ export function getAuthHeaders(): Record<string, string> {
   return {};
 }
 
-export function getPrimaryRole(session: AuthSession | null): "admin" | "operator" | null {
+export function getPrimaryRole(session: AuthSession | null): "admin" | "developer" | "operator" | null {
   if (!session) {
     return null;
   }
   if (session.roles.includes("admin")) {
     return "admin";
   }
+  if (session.roles.includes("developer")) {
+    return "developer";
+  }
   if (session.roles.includes("operator")) {
     return "operator";
   }
   return null;
+}
+
+export function isConfiguratorSession(session: AuthSession | null): boolean {
+  if (!session) {
+    return false;
+  }
+  return session.roles.includes("admin") || session.roles.includes("developer");
 }
 
 export function isAdminSession(session: AuthSession | null): boolean {

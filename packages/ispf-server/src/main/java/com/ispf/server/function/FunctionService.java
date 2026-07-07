@@ -1,6 +1,7 @@
 package com.ispf.server.function;
 
 import com.ispf.core.object.FunctionDescriptor;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
@@ -10,7 +11,9 @@ import com.ispf.server.application.data.ApplicationSchemaSession;
 import com.ispf.server.application.function.ApplicationFunctionHandler;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.application.function.FunctionInvokeAuditService;
+import com.ispf.server.datasource.DataSourceFunctionSupport;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,19 +26,25 @@ public class FunctionService {
     private final ApplicationFunctionStore applicationFunctionStore;
     private final FunctionInvokeAuditService auditService;
     private final ApplicationSchemaSession schemaSession;
+    private final SystemObjectStructureService structureService;
+    private final FunctionInvokeAccessService invokeAccessService;
 
     public FunctionService(
             ObjectManager objectManager,
             List<FunctionHandler> handlers,
             ApplicationFunctionStore applicationFunctionStore,
             FunctionInvokeAuditService auditService,
-            ApplicationSchemaSession schemaSession
+            ApplicationSchemaSession schemaSession,
+            SystemObjectStructureService structureService,
+            FunctionInvokeAccessService invokeAccessService
     ) {
         this.objectManager = objectManager;
         this.handlers = handlers;
         this.applicationFunctionStore = applicationFunctionStore;
         this.auditService = auditService;
         this.schemaSession = schemaSession;
+        this.structureService = structureService;
+        this.invokeAccessService = invokeAccessService;
     }
 
     public DataRecord invoke(String objectPath, String functionName) {
@@ -43,6 +52,8 @@ public class FunctionService {
     }
 
     public DataRecord invoke(String objectPath, String functionName, DataRecordPayloadRequest input) {
+        invokeAccessService.guardScriptOnlyFunction(objectPath, functionName, null);
+        ensureBuiltinFunctionStructure(objectPath, functionName);
         ResolvedInvocation resolved = schemaSession.callWithPlatformCatalog(() -> {
             FunctionDescriptor descriptor = objectManager.tree().findByPath(objectPath)
                     .map(node -> node.functions().get(functionName))
@@ -101,6 +112,16 @@ public class FunctionService {
                 ex.getMessage()
         );
         throw ex;
+    }
+
+    private void ensureBuiltinFunctionStructure(String objectPath, String functionName) {
+        PlatformObject node = objectManager.tree().findByPath(objectPath).orElse(null);
+        if (node == null || node.type() != ObjectType.DATA_SOURCE) {
+            return;
+        }
+        if (DataSourceFunctionSupport.EXECUTE_QUERY_FUNCTION_NAME.equals(functionName)) {
+            structureService.ensureDataSourceStructure(objectPath);
+        }
     }
 
     private record ResolvedInvocation(

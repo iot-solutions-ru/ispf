@@ -1,6 +1,7 @@
 #!/bin/bash
-# Sync flyway_schema_history.checksum with migrations embedded in the server jar.
-# Safe to run before every rollout when migration files were edited after prod apply.
+# Reconcile flyway_schema_history after migration squash or edited scripts.
+# 1) Squash history to V1 when incremental migrations were removed (ADR-0037 greenfield).
+# 2) Flyway repair — sync checksums with migrations embedded in the server jar.
 set -euo pipefail
 
 JAR_PATH="${1:-}"
@@ -35,23 +36,59 @@ read_env_var() {
 URL="$(read_env_var SPRING_DATASOURCE_URL || true)"
 USER="$(read_env_var SPRING_DATASOURCE_USERNAME || true)"
 PASS="$(read_env_var SPRING_DATASOURCE_PASSWORD || true)"
+METADATA_KIND="$(read_env_var ISPF_METADATA_DB_KIND || true)"
+METADATA_KIND="${METADATA_KIND:-postgresql}"
 
 if [ -z "$URL" ] || [ -z "$USER" ] || [ -z "$PASS" ]; then
   echo "SPRING_DATASOURCE_URL/USERNAME/PASSWORD required in $ENV_FILE" >&2
   exit 1
 fi
 
+case "$METADATA_KIND" in
+  ""|postgresql|postgres|pg) MIG_SUBDIR="postgresql" ;;
+  h2) MIG_SUBDIR="h2" ;;
+  mssql|sqlserver|sql-server) MIG_SUBDIR="mssql" ;;
+  mysql|mariadb) MIG_SUBDIR="mysql" ;;
+  oracle) MIG_SUBDIR="oracle" ;;
+  *)
+    echo "Unsupported ISPF_METADATA_DB_KIND for repair: $METADATA_KIND" >&2
+    exit 1
+    ;;
+esac
+
 TMP_MIG="$(mktemp -d)"
 trap 'rm -rf "$TMP_MIG"' EXIT
 
-unzip -j -qo "$JAR_PATH" 'BOOT-INF/classes/db/migration/*.sql' -d "$TMP_MIG"
+unzip -j -qo "$JAR_PATH" "BOOT-INF/classes/db/migration/${MIG_SUBDIR}/*.sql" -d "$TMP_MIG"
 
 if [ -z "$(find "$TMP_MIG" -maxdepth 1 -name 'V*.sql' -print -quit)" ]; then
-  echo "No migrations found in $JAR_PATH" >&2
+  echo "No migrations found in $JAR_PATH (db/migration/${MIG_SUBDIR})" >&2
   exit 1
 fi
 
-echo "Flyway repair: $(find "$TMP_MIG" -maxdepth 1 -name 'V*.sql' | wc -l) migrations from $(basename "$JAR_PATH")"
+echo "Flyway repair: $(find "$TMP_MIG" -maxdepth 1 -name 'V*.sql' | wc -l) migration(s) from $(basename "$JAR_PATH") (${MIG_SUBDIR})"
+
+# Squash legacy incremental history (V2+) when only V1 baseline remains in the jar.
+if [ "$MIG_SUBDIR" = "postgresql" ] && [ "$(find "$TMP_MIG" -maxdepth 1 -name 'V*.sql' | wc -l)" -eq 1 ]; then
+  echo "Squashing flyway_schema_history to V1 baseline (if legacy rows exist)..."
+  docker run --rm --network host \
+    -e PGPASSWORD="$PASS" \
+    postgres:16-alpine \
+    psql "$URL" -U "$USER" -v ON_ERROR_STOP=1 -c "
+      DO \$\$
+      BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.tables
+          WHERE table_schema = current_schema() AND table_name = 'flyway_schema_history'
+        ) THEN
+          DELETE FROM flyway_schema_history WHERE version IS DISTINCT FROM '1';
+          UPDATE flyway_schema_history
+          SET script = 'V1__baseline.sql', description = 'baseline'
+          WHERE version = '1';
+        END IF;
+      END \$\$;
+    "
+fi
 
 docker run --rm --network host \
   -v "$TMP_MIG:/flyway/sql:ro" \

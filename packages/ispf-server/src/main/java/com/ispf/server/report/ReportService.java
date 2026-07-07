@@ -16,6 +16,7 @@ import com.ispf.server.application.report.ApplicationReportStore;
 import com.ispf.server.bootstrap.LabBlueprintBootstrap;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
+import com.ispf.server.datasource.DataSourceSqlSession;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformCalendarParameterEnricher;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
@@ -69,6 +70,7 @@ public class ReportService {
     private final ApplicationSchemaSession schemaSession;
     private final ApplicationReportStore reportStore;
     private final ReportTemplateStore templateStore;
+    private final DataSourceSqlSession dataSourceSqlSession;
     private final DataSourcePathResolver dataSourcePathResolver;
     private final DataSourceObjectService dataSourceObjectService;
     private final JdbcTemplate jdbcTemplate;
@@ -84,6 +86,7 @@ public class ReportService {
             ApplicationReportStore reportStore,
             ReportTemplateStore templateStore,
             DataSourcePathResolver dataSourcePathResolver,
+            DataSourceSqlSession dataSourceSqlSession,
             DataSourceObjectService dataSourceObjectService,
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
@@ -97,6 +100,7 @@ public class ReportService {
         this.reportStore = reportStore;
         this.templateStore = templateStore;
         this.dataSourcePathResolver = dataSourcePathResolver;
+        this.dataSourceSqlSession = dataSourceSqlSession;
         this.dataSourceObjectService = dataSourceObjectService;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
@@ -467,16 +471,21 @@ public class ReportService {
                 calendarParameterEnricher.enrich(parameters)
         );
         List<Object> paramValues = bindQueryParameters(report.query(), report.parameters(), effective);
-        String schemaName = dataSourcePathResolver.resolveSchemaForReport(
-                report.dataSourcePath(),
-                report.legacyAppId()
-        );
 
         validateSelectQuery(report.query());
         List<Map<String, Object>>[] result = new List[1];
-        schemaSession.runInSchema(schemaName, () ->
-                result[0] = jdbcTemplate.queryForList(report.query(), paramValues.toArray())
-        );
+        if (report.dataSourcePath() != null && !report.dataSourcePath().isBlank()
+                && dataSourcePathResolver.isExternal(report.dataSourcePath())) {
+            dataSourceSqlSession.runWithDataSource(report.dataSourcePath(), jdbc ->
+                    result[0] = jdbc.queryForList(report.query(), paramValues.toArray()));
+        } else {
+            String schemaName = dataSourcePathResolver.resolveSchemaForReport(
+                    report.dataSourcePath(),
+                    report.legacyAppId()
+            );
+            schemaSession.runInSchema(schemaName, () ->
+                    result[0] = jdbcTemplate.queryForList(report.query(), paramValues.toArray()));
+        }
 
         List<Map<String, Object>> rows = result[0];
         boolean truncated = rows.size() > report.maxRows();

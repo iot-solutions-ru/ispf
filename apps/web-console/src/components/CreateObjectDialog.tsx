@@ -12,6 +12,10 @@ import {
   createMigration,
   createSqlBinding,
 } from "../api/platformSql";
+import DataSourceConnectionFields, {
+  isDataSourceConnectionValid,
+  type DataSourceConnectionMode,
+} from "./platform/DataSourceConnectionFields";
 import { createSchedule } from "../api/platformSchedules";
 import { fetchDrivers } from "../api/drivers";
 import { formatDriverConfigJson } from "../utils/driverDefaults";
@@ -23,6 +27,8 @@ import {
   operatorAppObjectPath,
   resolveCreateDialogMode,
 } from "../utils/createObjectMode";
+import { DATA_SOURCES_ROOT } from "../utils/platformSqlPath";
+import { ObjectPathField } from "../ui";
 import type { BlueprintDto } from "../types/blueprints";
 import type { ObjectType } from "../types";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
@@ -78,6 +84,12 @@ export default function CreateObjectDialog({
   const [configPreview, setConfigPreview] = useState("{}");
   const [reportDataSourcePath, setReportDataSourcePath] = useState("root.platform.data-sources.demo");
   const [schemaName, setSchemaName] = useState("");
+  const [dataSourceConnectionMode, setDataSourceConnectionMode] = useState<DataSourceConnectionMode>("internal");
+  const [dataSourceJdbcUrl, setDataSourceJdbcUrl] = useState("");
+  const [dataSourceJdbcDriverClass, setDataSourceJdbcDriverClass] = useState("");
+  const [dataSourceJdbcUsername, setDataSourceJdbcUsername] = useState("");
+  const [dataSourceJdbcPassword, setDataSourceJdbcPassword] = useState("");
+  const [dataSourcePoolSize, setDataSourcePoolSize] = useState(5);
   const [scriptId, setScriptId] = useState("");
   const [migrationVersion, setMigrationVersion] = useState("1.0.0");
   const [migrationDataSourcePath, setMigrationDataSourcePath] = useState("");
@@ -220,7 +232,13 @@ export default function CreateObjectDialog({
         const created = await createDataSource({
           name,
           displayName: displayName || name,
+          connectionMode: dataSourceConnectionMode,
           schemaName: schemaName.trim(),
+          jdbcUrl: dataSourceJdbcUrl.trim(),
+          jdbcDriverClass: dataSourceJdbcDriverClass.trim(),
+          jdbcUsername: dataSourceJdbcUsername.trim(),
+          jdbcPassword: dataSourceJdbcPassword.trim() || undefined,
+          poolSize: dataSourcePoolSize,
           description,
         });
         return created.path;
@@ -392,15 +410,22 @@ export default function CreateObjectDialog({
             </label>
 
             {mode === "data-source" && (
-              <label className="full">
-                PostgreSQL schema *
-                <input
-                  value={schemaName}
-                  onChange={(e) => setSchemaName(e.target.value)}
-                  required
-                  placeholder="app_myapp"
-                />
-              </label>
+              <DataSourceConnectionFields
+                connectionMode={dataSourceConnectionMode}
+                schemaName={schemaName}
+                jdbcUrl={dataSourceJdbcUrl}
+                jdbcDriverClass={dataSourceJdbcDriverClass}
+                jdbcUsername={dataSourceJdbcUsername}
+                jdbcPassword={dataSourceJdbcPassword}
+                poolSize={dataSourcePoolSize}
+                onConnectionModeChange={setDataSourceConnectionMode}
+                onSchemaNameChange={setSchemaName}
+                onJdbcUrlChange={setDataSourceJdbcUrl}
+                onJdbcDriverClassChange={setDataSourceJdbcDriverClass}
+                onJdbcUsernameChange={setDataSourceJdbcUsername}
+                onJdbcPasswordChange={setDataSourceJdbcPassword}
+                onPoolSizeChange={setDataSourcePoolSize}
+              />
             )}
 
             {mode === "migration" && (
@@ -440,30 +465,30 @@ export default function CreateObjectDialog({
 
             {mode === "sql-binding" && (
               <>
-                <label className="full">
-                  Target object path *
-                  <input
-                    value={bindingTargetPath}
-                    onChange={(e) => setBindingTargetPath(e.target.value)}
-                    placeholder="root.platform.devices.demo-sensor-01"
-                    required
-                  />
-                </label>
+                <ObjectPathField
+                  className="full"
+                  label={t("dialog.sqlBindingTargetPath")}
+                  pickerTitle={t("dialog.sqlBindingPickTarget")}
+                  value={bindingTargetPath}
+                  onChange={setBindingTargetPath}
+                  placeholder="root.platform.devices.demo-sensor-01"
+                />
                 <label>
-                  Variable
+                  {t("dialog.sqlBindingVariable")}
                   <input value={bindingVariable} onChange={(e) => setBindingVariable(e.target.value)} />
                 </label>
+                <ObjectPathField
+                  className="full"
+                  label={t("dialog.sqlBindingDataSourcePath")}
+                  pickerTitle={t("dialog.sqlBindingPickDataSource")}
+                  value={bindingDataSourcePath}
+                  onChange={setBindingDataSourcePath}
+                  filterTypes={["DATA_SOURCE"]}
+                  rootPath={DATA_SOURCES_ROOT}
+                  placeholder="root.platform.data-sources.myapp"
+                />
                 <label className="full">
-                  Data source path *
-                  <input
-                    value={bindingDataSourcePath}
-                    onChange={(e) => setBindingDataSourcePath(e.target.value)}
-                    placeholder="root.platform.data-sources.myapp"
-                    required
-                  />
-                </label>
-                <label className="full">
-                  SQL query
+                  {t("dialog.sqlBindingQuery")}
                   <textarea
                     className="mono"
                     rows={3}
@@ -619,7 +644,18 @@ export default function CreateObjectDialog({
               <button
                 type="submit"
                 className="btn primary"
-                disabled={mutation.isPending || !nameValid || (mode === "data-source" && !schemaName.trim())}
+                disabled={
+                  mutation.isPending
+                  || !nameValid
+                  || (mode === "data-source"
+                    && !isDataSourceConnectionValid({
+                      connectionMode: dataSourceConnectionMode,
+                      schemaName,
+                      jdbcUrl: dataSourceJdbcUrl,
+                    }))
+                  || (mode === "sql-binding"
+                    && (!bindingTargetPath.trim() || !bindingDataSourcePath.trim()))
+                }
               >
                 {t("common:action.create")}
               </button>

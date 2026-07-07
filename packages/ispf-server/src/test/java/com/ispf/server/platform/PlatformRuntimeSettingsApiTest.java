@@ -36,9 +36,10 @@ class PlatformRuntimeSettingsApiTest {
                         .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.sections.length()").value(greaterThan(0)))
-                .andExpect(jsonPath("$.sections[*].id", hasItem("automation")))
-                .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("event-journal.store")))
-                .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("variable-history.store")))
+                .andExpect(jsonPath("$.sections[*].id", hasItem("database")))
+                .andExpect(jsonPath("$.sections[?(@.id=='database')].settings[*].id", hasItem("event-journal.store")))
+                .andExpect(jsonPath("$.sections[?(@.id=='database')].settings[*].id", hasItem("variable-history.store")))
+                .andExpect(jsonPath("$.sections[?(@.id=='database')].settings[*].id", hasItem("event-journal.clickhouse.url")))
                 .andExpect(jsonPath("$.sections[*].settings[*].id", hasItem("mcp.enabled")));
     }
 

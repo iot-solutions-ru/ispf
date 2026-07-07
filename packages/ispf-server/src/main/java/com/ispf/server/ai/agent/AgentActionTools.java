@@ -10,6 +10,7 @@ import com.ispf.server.api.dto.DataRecordPayloadRequest;
 import com.ispf.server.application.bff.BffWireMapper;
 import com.ispf.server.application.function.ApplicationFunctionStore;
 import com.ispf.server.event.EventService;
+import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.HaystackExportService;
@@ -39,6 +40,7 @@ final class AgentActionTools {
             ApplicationFunctionStore functionStore,
             ObjectManager objectManager,
             ObjectAccessService objectAccessService,
+            FunctionInvokeAccessService invokeAccessService,
             TenantScopeService tenantScopeService,
             EventService eventService,
             BlueprintRegistry blueprintRegistry,
@@ -46,8 +48,8 @@ final class AgentActionTools {
             ObjectMapper objectMapper
     ) {
         return List.of(
-                invokeBffTool(functionService, functionStore, objectAccessService, objectMapper),
-                invokeTreeFunctionTool(functionService, objectAccessService, objectMapper),
+                invokeBffTool(functionService, functionStore, invokeAccessService, objectMapper),
+                invokeTreeFunctionTool(functionService, invokeAccessService, objectMapper),
                 searchObjectsTool(objectManager, objectAccessService, tenantScopeService),
                 searchHaystackTagsTool(haystackExportService, objectAccessService, tenantScopeService),
                 listObjectBlueprintsTool(blueprintRegistry),
@@ -59,7 +61,7 @@ final class AgentActionTools {
     private static PlatformAgentTool invokeBffTool(
             FunctionService functionService,
             ApplicationFunctionStore functionStore,
-            ObjectAccessService objectAccessService,
+            FunctionInvokeAccessService invokeAccessService,
             ObjectMapper objectMapper
     ) {
         return new PlatformAgentTool() {
@@ -84,7 +86,7 @@ final class AgentActionTools {
                 if (objectPath.isBlank() || functionName.isBlank()) {
                     return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
                 }
-                objectAccessService.requireInvoke(objectPath, context.authentication());
+                invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
                 DataRecord output = functionService.invoke(
                         objectPath,
                         functionName,
@@ -105,7 +107,7 @@ final class AgentActionTools {
 
     private static PlatformAgentTool invokeTreeFunctionTool(
             FunctionService functionService,
-            ObjectAccessService objectAccessService,
+            FunctionInvokeAccessService invokeAccessService,
             ObjectMapper objectMapper
     ) {
         return new PlatformAgentTool() {
@@ -130,7 +132,7 @@ final class AgentActionTools {
                 if (objectPath.isBlank() || functionName.isBlank()) {
                     return Map.of("status", "ERROR", "error", "objectPath and functionName are required");
                 }
-                objectAccessService.requireInvoke(objectPath, context.authentication());
+                invokeAccessService.requireDirectInvoke(objectPath, functionName, context.authentication());
                 DataRecord output = functionService.invoke(
                         objectPath,
                         functionName,

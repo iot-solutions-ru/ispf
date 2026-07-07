@@ -11,7 +11,18 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    let detail = text || `Request failed: ${response.status}`;
+    try {
+      const parsed = JSON.parse(text) as { detail?: string; title?: string };
+      if (parsed.detail) {
+        detail = parsed.detail;
+      } else if (parsed.title && response.status === 403) {
+        detail = "Admin role required for this operation";
+      }
+    } catch {
+      // keep raw text
+    }
+    throw new Error(detail);
   }
   return response.json();
 }
@@ -21,7 +32,13 @@ export interface DataSourceDefinition {
   displayName: string;
   description: string;
   variableDisplayName: string;
+  connectionMode: string;
   schemaName: string;
+  jdbcUrl: string;
+  jdbcDriverClass: string;
+  jdbcUsername: string;
+  jdbcPassword: string;
+  poolSize: number;
 }
 
 export interface MigrationDefinition {
@@ -58,7 +75,13 @@ export function fetchDataSource(path: string): Promise<DataSourceDefinition> {
 export function createDataSource(payload: {
   name: string;
   displayName?: string;
-  schemaName: string;
+  connectionMode?: string;
+  schemaName?: string;
+  jdbcUrl?: string;
+  jdbcDriverClass?: string;
+  jdbcUsername?: string;
+  jdbcPassword?: string;
+  poolSize?: number;
   description?: string;
 }): Promise<DataSourceDefinition> {
   return request("/api/v1/data-sources", {
@@ -69,10 +92,58 @@ export function createDataSource(payload: {
 
 export function updateDataSource(
   path: string,
-  payload: { displayName?: string; schemaName?: string; description?: string }
+  payload: {
+    displayName?: string;
+    connectionMode?: string;
+    schemaName?: string;
+    jdbcUrl?: string;
+    jdbcDriverClass?: string;
+    jdbcUsername?: string;
+    jdbcPassword?: string;
+    poolSize?: number;
+    description?: string;
+  },
 ): Promise<DataSourceDefinition> {
   return request(`/api/v1/data-sources/by-path?path=${encodeURIComponent(path)}`, {
     method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function testDataSourceConnection(
+  path: string,
+  probe?: {
+    jdbcUrl?: string;
+    jdbcDriverClass?: string;
+    jdbcUsername?: string;
+    jdbcPassword?: string;
+    poolSize?: number;
+  },
+): Promise<{ path: string; connected: boolean; message?: string }> {
+  return request(`/api/v1/data-sources/by-path/test-connection?path=${encodeURIComponent(path)}`, {
+    method: "POST",
+    body: JSON.stringify(probe ?? {}),
+  });
+}
+
+export interface DataSourceQueryResult {
+  kind: string;
+  rows: Array<Record<string, unknown>>;
+  columns: string[];
+  rowCount: number;
+  updateCount: number;
+}
+
+export function executeDataSourceQuery(
+  path: string,
+  payload: {
+    query: string;
+    params?: unknown[];
+    maxRows?: number;
+  },
+): Promise<DataSourceQueryResult> {
+  return request(`/api/v1/data-sources/by-path/execute-query?path=${encodeURIComponent(path)}`, {
+    method: "POST",
     body: JSON.stringify(payload),
   });
 }

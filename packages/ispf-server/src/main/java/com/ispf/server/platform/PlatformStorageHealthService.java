@@ -9,6 +9,7 @@ import com.ispf.server.config.VariableHistoryProperties;
 import com.ispf.server.event.EventHistoryRecordCounter;
 import com.ispf.server.event.EventJournalStore;
 import com.ispf.server.persistence.VariableSampleRepository;
+import com.ispf.server.relational.RelationalDialect;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class PlatformStorageHealthService {
 
     private final DataSource dataSource;
+    private final RelationalDialect relationalDialect;
     private final EventJournalProperties eventJournalProperties;
     private final VariableHistoryProperties variableHistoryProperties;
     private final EventJournalStore eventJournalStore;
@@ -47,6 +49,7 @@ public class PlatformStorageHealthService {
 
     public PlatformStorageHealthService(
             DataSource dataSource,
+            RelationalDialect relationalDialect,
             EventJournalProperties eventJournalProperties,
             VariableHistoryProperties variableHistoryProperties,
             EventJournalStore eventJournalStore,
@@ -56,6 +59,7 @@ public class PlatformStorageHealthService {
             @Autowired(required = false) StringRedisTemplate redisTemplate
     ) {
         this.dataSource = dataSource;
+        this.relationalDialect = relationalDialect;
         this.eventJournalProperties = eventJournalProperties;
         this.variableHistoryProperties = variableHistoryProperties;
         this.eventJournalStore = eventJournalStore;
@@ -79,7 +83,7 @@ public class PlatformStorageHealthService {
         boolean connected = false;
         String connectionError = null;
         String endpoint = null;
-        String engine = "postgresql";
+        String engine = relationalDialect.kind().configValue();
 
         if (dataSource instanceof HikariDataSource hikari) {
             endpoint = sanitizeJdbcUrl(hikari.getJdbcUrl());
@@ -89,12 +93,12 @@ public class PlatformStorageHealthService {
             } catch (Exception ex) {
                 connectionError = ex.getMessage();
             }
-            HikariDataSource pool = hikari;
-            if (pool.getHikariPoolMXBean() != null) {
-                details.put("poolName", pool.getPoolName());
-                details.put("activeConnections", pool.getHikariPoolMXBean().getActiveConnections());
-                details.put("totalConnections", pool.getHikariPoolMXBean().getTotalConnections());
-                details.put("maxPoolSize", pool.getMaximumPoolSize());
+            details.put("metadataDbKind", relationalDialect.kind().configValue());
+            if (hikari.getHikariPoolMXBean() != null) {
+                details.put("poolName", hikari.getPoolName());
+                details.put("activeConnections", hikari.getHikariPoolMXBean().getActiveConnections());
+                details.put("totalConnections", hikari.getHikariPoolMXBean().getTotalConnections());
+                details.put("maxPoolSize", hikari.getMaximumPoolSize());
             }
         } else {
             try (Connection connection = dataSource.getConnection()) {
@@ -104,6 +108,7 @@ public class PlatformStorageHealthService {
             } catch (Exception ex) {
                 connectionError = ex.getMessage();
             }
+            details.put("metadataDbKind", relationalDialect.kind().configValue());
             details.put("poolAvailable", false);
         }
 

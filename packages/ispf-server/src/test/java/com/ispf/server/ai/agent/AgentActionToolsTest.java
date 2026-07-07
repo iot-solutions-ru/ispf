@@ -9,6 +9,7 @@ import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.plugin.blueprint.BlueprintType;
 import com.ispf.server.event.EventService;
 import com.ispf.server.api.dto.DataRecordPayloadRequest;
+import com.ispf.server.function.FunctionInvokeAccessService;
 import com.ispf.server.function.FunctionService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.HaystackExportService;
@@ -46,6 +47,8 @@ class AgentActionToolsTest {
     @Mock
     private ObjectAccessService objectAccessService;
     @Mock
+    private FunctionInvokeAccessService invokeAccessService;
+    @Mock
     private TenantScopeService tenantScopeService;
     @Mock
     private EventService eventService;
@@ -65,6 +68,7 @@ class AgentActionToolsTest {
                 functionStore,
                 objectManager,
                 objectAccessService,
+                invokeAccessService,
                 tenantScopeService,
                 eventService,
                 BlueprintRegistry,
@@ -130,7 +134,7 @@ class AgentActionToolsTest {
                 "functionName", "mes_listOrders"
         ), new AgentContext("admin", null, null));
 
-        verify(objectAccessService).requireInvoke(eq("root.platform.devices.demo-sensor-01"), any());
+        verify(invokeAccessService).requireDirectInvoke(eq("root.platform.devices.demo-sensor-01"), eq("mes_listOrders"), any());
     }
 
     @Test
