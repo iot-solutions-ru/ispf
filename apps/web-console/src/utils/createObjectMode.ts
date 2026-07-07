@@ -52,6 +52,9 @@ function isPlatformCatalogContainer(path: string): boolean {
 }
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
+  if (parentPath === APPLICATIONS_ROOT) {
+    return "application";
+  }
   if (parentPath === OPERATOR_APPS_ROOT) {
     return "operator-app";
   }
@@ -178,7 +181,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     return true;
   }
   if (path === APPLICATIONS_ROOT) {
-    return false;
+    return objectType === "APPLICATIONS";
   }
   if (isOperatorAppChildPath(path)) {
     return false;

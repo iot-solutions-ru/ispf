@@ -79,6 +79,21 @@ CLI: [tools/license-builder/README.md](../tools/license-builder/README.md).
 
 Property: `ispf.license.require-signed-bundles` / env `ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES`. См. [DEPLOYMENT.md § Bundle signing](DEPLOYMENT.md#bundle-signing-bl-100).
 
+## Защита IP после deploy (сбалансированная политика)
+
+RSA-лицензия защищает **артефакт доставки** (manifest), не содержимое дерева после install. Админ установки может видеть и дорабатывать объекты bundle; теоретически может воспроизвести конфигурацию по частям.
+
+**Принятая политика (ADR [0036](decisions/0036-bundle-ip-balanced-protection.md)):**
+
+| Делаем | Не делаем |
+|--------|-----------|
+| Привязка deploy к `installationId` | Блокировка export / pull-from-tree |
+| EULA, маркетплейс, activation | Шифрование JSON в дереве |
+| Ценность в обновлениях и поддержке | Запрет доработки под объект |
+| UI: installation ID, подсказки при ошибке лицензии | Жёсткий DRM для operator/admin |
+
+Копирование declarative-конфигурации on-prem **полностью не предотвратить** без ущерба для кастомизации; контроль — договор + лицензия на доставку + recurring value.
+
 ## Production key rotation (ops)
 
 Ротация RSA-ключей поставщика **без** смены installation ID:

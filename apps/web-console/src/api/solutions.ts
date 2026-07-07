@@ -58,7 +58,12 @@ export interface MarketplaceListing {
   appId: string;
   vendorSlug?: string | null;
   vendorName?: string | null;
+  vendorLegalName?: string | null;
+  vendorInn?: string | null;
+  vendorSellerKind?: "company" | "individual" | null;
+  vendorContactPerson?: string | null;
   vendorContactEmail?: string | null;
+  vendorContactPhone?: string | null;
   vendorContactUrl?: string | null;
   marketplaceContactUrl?: string | null;
   latestVersion?: string | null;

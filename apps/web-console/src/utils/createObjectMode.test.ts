@@ -27,6 +27,19 @@ describe("canCreateChildAt", () => {
   it("blocks create on model definition leaves", () => {
     expect(canCreateChildAt("root.platform.instance-types.sensor-v1", "BLUEPRINT")).toBe(false);
   });
+
+  it("allows create application under applications catalog", () => {
+    expect(canCreateChildAt("root.platform.applications", "APPLICATIONS")).toBe(true);
+    expect(canCreateChildAt("root.platform.applications.warehouse", "APPLICATION")).toBe(false);
+  });
+});
+
+describe("resolveCreateDialogMode", () => {
+  it("maps applications catalog to application mode", async () => {
+    const { resolveCreateDialogMode } = await import("./createObjectMode");
+    expect(resolveCreateDialogMode("root.platform.applications")).toBe("application");
+    expect(resolveCreateDialogMode("root.platform.operator-apps")).toBe("operator-app");
+  });
 });
 
 describe("resolveCreateLabelKind", () => {
@@ -37,6 +50,7 @@ describe("resolveCreateLabelKind", () => {
     expect(resolveCreateLabelKind("root.platform.mimics")).toBe("mimic");
     expect(resolveCreateLabelKind("root.platform.workflows")).toBe("workflow");
     expect(resolveCreateLabelKind("root.platform.alert-rules")).toBe("alert-rule");
+    expect(resolveCreateLabelKind("root.platform.applications")).toBe("application");
     expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("blueprint");
     expect(resolveCreateLabelKind("root.platform.instances")).toBe("instance");
     expect(resolveCreateLabelKind("root.platform.my-folder")).toBe("object");

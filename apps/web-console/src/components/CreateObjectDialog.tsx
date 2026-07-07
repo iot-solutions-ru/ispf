@@ -165,6 +165,7 @@ export default function CreateObjectDialog({
         await registerApplication({
           appId: name,
           displayName: displayName || name,
+          schemaName: schemaName.trim() || undefined,
         });
         return applicationObjectPath(name);
       }
@@ -311,7 +312,17 @@ export default function CreateObjectDialog({
             {t("dialog.parent")} <code>{parentPath}</code>
           </p>
           {mode === "application" && (
-            <p className="hint">{t("dialog.deployAppHint")}</p>
+            <>
+              <p className="hint">{t("dialog.deployAppHint")}</p>
+              <label className="full">
+                PostgreSQL schema
+                <input
+                  value={schemaName}
+                  onChange={(e) => setSchemaName(e.target.value)}
+                  placeholder={`app_${name || "myapp"}`}
+                />
+              </label>
+            </>
           )}
           {mode === "operator-app" && (
             <p className="hint">{t("dialog.operatorAppHint")}</p>

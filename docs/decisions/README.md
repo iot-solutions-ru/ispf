@@ -48,6 +48,7 @@
 | [0032](0032-replica-profiles-and-capabilities.md) | Replica profiles and capabilities | Accepted |
 | [0033](0033-prod-idle-demostand-tuning.md) | Профили demostand (idle/edge), read-only hot paths | Accepted |
 | [0034](0034-agent-observability-and-session-knowledge.md) | Agent trace, session RAG, metrics, plan depth | Accepted |
+| [0036](0036-bundle-ip-balanced-protection.md) | Bundle IP protection — soft policy, no tree DRM | Accepted |
 
 ## Шаблон нового ADR
 

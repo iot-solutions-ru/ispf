@@ -209,11 +209,14 @@ export interface BundleValidationResult {
 export async function exportApplicationBundle(
   appId: string,
   version?: string
-): Promise<ApplicationBundleExport> {
+): Promise<ApplicationBundleExport | null> {
   const params = version ? `?version=${encodeURIComponent(version)}` : "";
   const response = await fetch(`/api/v1/applications/${encodeURIComponent(appId)}/export${params}`, {
     headers: getAuthHeaders(),
   });
+  if (response.status === 404) {
+    return null;
+  }
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || `Bundle export failed: ${response.status}`);

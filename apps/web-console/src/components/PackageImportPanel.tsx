@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { importPackage } from "../api/packages";
+import BundleLicenseInfoPanel from "./platform/BundleLicenseInfoPanel";
+import BundleLicenseErrorAlert from "./platform/BundleLicenseErrorAlert";
 
 interface PackageImportPanelProps {
   defaultPackageId?: string;
@@ -18,6 +20,14 @@ export default function PackageImportPanel({ defaultPackageId = "demo" }: Packag
   "migrations": []
 }`);
 
+  const parsedManifest = useMemo(() => {
+    try {
+      return JSON.parse(manifestText) as unknown;
+    } catch {
+      return null;
+    }
+  }, [manifestText]);
+
   const importMutation = useMutation({
     mutationFn: () => {
       const manifest = JSON.parse(manifestText) as unknown;
@@ -32,6 +42,11 @@ export default function PackageImportPanel({ defaultPackageId = "demo" }: Packag
     <div className="package-import-panel">
       <h3>{t("packageImport.title")}</h3>
       <p className="op-muted">{t("packageImport.subtitle")}</p>
+      <BundleLicenseInfoPanel
+        appId={packageId.trim() || undefined}
+        manifest={parsedManifest ?? undefined}
+        compact
+      />
       <label>
         packageId
         <input value={packageId} onChange={(e) => setPackageId(e.target.value)} />
@@ -56,9 +71,7 @@ export default function PackageImportPanel({ defaultPackageId = "demo" }: Packag
           {t("packageImport.import")}
         </button>
       </div>
-      {importMutation.error && (
-        <div className="op-alert op-alert-error">{(importMutation.error as Error).message}</div>
-      )}
+      {importMutation.error && <BundleLicenseErrorAlert error={importMutation.error} />}
       {importMutation.data && (
         <pre className="mono small">{JSON.stringify(importMutation.data, null, 2)}</pre>
       )}

@@ -10,6 +10,7 @@ import {
 import type { ObjectType } from "../types";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isOperatorAppChildPath } from "../utils/operatorAppsPath";
+import { APPLICATIONS_ROOT } from "../utils/createObjectMode";
 
 interface SystemFolderListPanelProps {
   folderPath: string;
@@ -19,6 +20,8 @@ interface SystemFolderListPanelProps {
   onSelectPath: (path: string) => void;
   onOpenEditor?: (path: string) => void;
   onOpenOperatorApp?: (path: string) => void;
+  onCreateApplication?: () => void;
+  canManage?: boolean;
 }
 
 function sortChildren(items: ObjectSummary[]): ObjectSummary[] {
@@ -38,6 +41,8 @@ export default function SystemFolderListPanel({
   onSelectPath,
   onOpenEditor,
   onOpenOperatorApp,
+  onCreateApplication,
+  canManage = false,
 }: SystemFolderListPanelProps) {
   const { t } = useTranslation(["explorer", "common", "objectTree"]);
   const meta: SystemFolderListMeta = getSystemFolderListMeta(
@@ -54,6 +59,7 @@ export default function SystemFolderListPanel({
   });
 
   const children = sortChildren(childrenQuery.data ?? []);
+  const isApplicationsFolder = folderPath === APPLICATIONS_ROOT;
 
   return (
     <section className="security-users-panel">
@@ -62,6 +68,11 @@ export default function SystemFolderListPanel({
           <h3>{meta.title}</h3>
           <p className="op-muted">{meta.description}</p>
         </div>
+        {isApplicationsFolder && canManage && onCreateApplication && (
+          <button type="button" className="btn primary" onClick={onCreateApplication}>
+            {t("contextMenu.create.application")}
+          </button>
+        )}
       </header>
 
       {childrenQuery.isLoading && <p className="op-muted">{t("common:action.loading")}</p>}

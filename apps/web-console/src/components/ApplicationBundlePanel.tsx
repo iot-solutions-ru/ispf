@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,16 +14,27 @@ import {
   removeBundleSectionItem,
   type BundleSectionKey,
 } from "../utils/bundleManifestSections";
+import { defaultApplicationManifestText } from "../utils/defaultApplicationManifest";
 import { ObjectPathField } from "../ui";
+import BundleLicenseInfoPanel from "./platform/BundleLicenseInfoPanel";
+import BundleLicenseErrorAlert from "./platform/BundleLicenseErrorAlert";
 
 interface ApplicationBundlePanelProps {
   appId: string;
+  displayName?: string;
   canManage: boolean;
+  embedded?: boolean;
 }
 
-export default function ApplicationBundlePanel({ appId, canManage }: ApplicationBundlePanelProps) {
+export default function ApplicationBundlePanel({
+  appId,
+  displayName,
+  canManage,
+  embedded = false,
+}: ApplicationBundlePanelProps) {
   const { t } = useTranslation("platform");
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [manifestText, setManifestText] = useState("");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [addParentPath, setAddParentPath] = useState("root.platform.devices");
@@ -31,6 +42,7 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
   const [addType, setAddType] = useState("DEVICE");
   const [pullPath, setPullPath] = useState("");
   const [pullMessage, setPullMessage] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const exportQuery = useQuery({
     queryKey: ["application-bundle-export", appId],
@@ -38,6 +50,16 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
     enabled: Boolean(appId),
     retry: false,
   });
+
+  const hasActiveDeploy = Boolean(exportQuery.data?.manifest);
+
+  useEffect(() => {
+    setValidationMessage(null);
+    setPullMessage(null);
+    setManifestText(
+      defaultApplicationManifestText({ appId, displayName })
+    );
+  }, [appId, displayName]);
 
   useEffect(() => {
     if (exportQuery.data?.manifest) {
@@ -85,13 +107,19 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
       pullApplicationBundleFromTree(appId, { ...options, mergeActive: true }),
     onSuccess: (result) => {
       setManifestText(JSON.stringify(result.manifest, null, 2));
-      const summary = Object.entries(result.pulled ?? {})
+      const pulled = result.pulled ?? {};
+      const totalPulled = Object.values(pulled).reduce((sum, count) => sum + count, 0);
+      const summary = Object.entries(pulled)
         .map(([section, count]) => `${section}: ${count}`)
         .join(", ");
       const warnings = (result.warnings ?? []).join("\n");
-      setPullMessage(
-        [t("bundle.pullSuccess", { summary }), warnings].filter(Boolean).join("\n")
-      );
+      const lines = [
+        totalPulled === 0
+          ? t("bundle.pullEmptyHint")
+          : t("bundle.pullSuccess", { summary }),
+        warnings,
+      ].filter(Boolean);
+      setPullMessage(lines.join("\n"));
     },
     onError: (error) => setPullMessage(String(error)),
   });
@@ -104,6 +132,21 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
     anchor.download = `${appId}-bundle.json`;
     anchor.click();
     URL.revokeObjectURL(url);
+  };
+
+  const importFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        setManifestText(JSON.stringify(parsed, null, 2));
+        setValidationMessage(null);
+        setPullMessage(null);
+      } catch {
+        setValidationMessage(t("bundle.importInvalid"));
+      }
+    };
+    reader.readAsText(file);
   };
 
   const reloadFromServer = () => {
@@ -132,32 +175,79 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
   };
 
   return (
-    <div className="application-bundle-panel">
-      <h3>{t("bundle.title")}</h3>
-      <p className="op-muted">{t("bundle.subtitle", { appId })}</p>
-
-      {exportQuery.isLoading && <p className="op-muted">{t("bundle.loading")}</p>}
-      {exportQuery.error && (
-        <div className="op-alert op-alert-error">{String(exportQuery.error)}</div>
+    <div className={`application-bundle-panel${embedded ? " application-bundle-panel--embedded" : ""}`}>
+      {!embedded && (
+        <header className="application-bundle-header">
+          <h3>{t("bundle.title")}</h3>
+          <p className="op-muted">{t("bundle.subtitle", { appId })}</p>
+        </header>
       )}
-      {exportQuery.data && (
-        <p className="op-muted">
+
+      {exportQuery.isLoading && (
+        <p className="op-muted application-bundle-status">{t("bundle.loading")}</p>
+      )}
+
+      {!exportQuery.isLoading && !hasActiveDeploy && (
+        <div className="op-alert op-alert-info application-bundle-status">
+          {t("bundle.noDeployYet")}
+        </div>
+      )}
+
+      {hasActiveDeploy && (
+        <p className="op-muted application-bundle-status">
           {t("bundle.activeVersion", {
-            version: exportQuery.data.version,
-            deployedAt: exportQuery.data.deployedAt,
+            version: exportQuery.data!.version,
+            deployedAt: exportQuery.data!.deployedAt,
           })}
         </p>
       )}
 
-      <div className="form-actions">
-        <button type="button" className="btn" onClick={reloadFromServer} disabled={exportQuery.isFetching}>
-          {t("bundle.reload")}
-        </button>
-        <button type="button" className="btn" onClick={downloadManifest} disabled={!manifestText.trim()}>
-          {t("bundle.download")}
-        </button>
-        {canManage && (
-          <>
+      <BundleLicenseInfoPanel appId={appId} manifest={parsedManifest ?? undefined} compact />
+
+      <div className="application-bundle-toolbar">
+        <div className="application-bundle-toolbar-group">
+          <span className="application-bundle-toolbar-label">{t("bundle.toolbarSource")}</span>
+          <button
+            type="button"
+            className="btn"
+            onClick={reloadFromServer}
+            disabled={exportQuery.isFetching}
+          >
+            {t("bundle.reload")}
+          </button>
+          {canManage && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="sr-only"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    importFromFile(file);
+                  }
+                  event.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {t("bundle.importJson")}
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="btn"
+            onClick={downloadManifest}
+            disabled={!manifestText.trim()}
+          >
+            {t("bundle.download")}
+          </button>
+          {canManage && (
             <button
               type="button"
               className="btn"
@@ -166,6 +256,11 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
             >
               {pullMutation.isPending ? t("bundle.pulling") : t("bundle.pullFromTree")}
             </button>
+          )}
+        </div>
+
+        {canManage && (
+          <div className="application-bundle-toolbar-group application-bundle-toolbar-group--actions">
             <button
               type="button"
               className="btn"
@@ -187,15 +282,15 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
             >
               {deployMutation.isPending ? t("bundle.deploying") : t("bundle.deploy")}
             </button>
-          </>
+          </div>
         )}
       </div>
 
-      <label className="full">
-        manifest JSON
+      <label className="application-bundle-editor-label">
+        <span>{t("bundle.manifestLabel")}</span>
         <textarea
-          className="mono"
-          rows={14}
+          className="mono application-bundle-editor"
+          rows={22}
           value={manifestText}
           onChange={(event) => setManifestText(event.target.value)}
           spellCheck={false}
@@ -203,98 +298,114 @@ export default function ApplicationBundlePanel({ appId, canManage }: Application
         />
       </label>
 
-      {validationMessage && <pre className="mono small validation-output">{validationMessage}</pre>}
-      {pullMessage && <pre className="mono small validation-output">{pullMessage}</pre>}
-      {deployMutation.error && (
-        <div className="op-alert op-alert-error">{String(deployMutation.error)}</div>
+      {validationMessage && (
+        <pre className="mono small application-bundle-output">{validationMessage}</pre>
       )}
+      {validateMutation.error && <BundleLicenseErrorAlert error={validateMutation.error} />}
+      {pullMessage && (
+        <pre className="mono small application-bundle-output">{pullMessage}</pre>
+      )}
+      {deployMutation.error && <BundleLicenseErrorAlert error={deployMutation.error} />}
       {deployMutation.data && (
-        <pre className="mono small">{JSON.stringify(deployMutation.data, null, 2)}</pre>
+        <pre className="mono small application-bundle-output">
+          {JSON.stringify(deployMutation.data, null, 2)}
+        </pre>
       )}
 
       {canManage && parsedManifest && (
-        <>
-          <hr />
-          <h4>{t("bundle.sectionsTitle")}</h4>
-          <p className="op-muted">{t("bundle.sectionsHint")}</p>
-          {sectionRows.length === 0 ? (
-            <p className="op-muted">{t("bundle.sectionsEmpty")}</p>
-          ) : (
-            <table className="data-table compact">
-              <thead>
-                <tr>
-                  <th>{t("bundle.sectionColumn")}</th>
-                  <th>{t("bundle.itemColumn")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {sectionRows.map((row) => (
-                  <tr key={`${row.section}-${row.index}-${row.label}`}>
-                    <td><code>{row.section}</code></td>
-                    <td><code>{row.label}</code></td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => {
-                          if (window.confirm(t("bundle.removeConfirm", { item: row.label }))) {
-                            removeRow(row.section, row.index);
-                          }
-                        }}
-                      >
-                        {t("bundle.remove")}
-                      </button>
-                    </td>
+        <details
+          className="application-bundle-advanced"
+          open={showAdvanced}
+          onToggle={(event) => setShowAdvanced((event.target as HTMLDetailsElement).open)}
+        >
+          <summary>{t("bundle.advancedTitle")}</summary>
+
+          <section className="application-bundle-advanced-section">
+            <h4>{t("bundle.sectionsTitle")}</h4>
+            <p className="op-muted">{t("bundle.sectionsHint")}</p>
+            {sectionRows.length === 0 ? (
+              <p className="op-muted">{t("bundle.sectionsEmpty")}</p>
+            ) : (
+              <table className="data-table compact">
+                <thead>
+                  <tr>
+                    <th>{t("bundle.sectionColumn")}</th>
+                    <th>{t("bundle.itemColumn")}</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {sectionRows.map((row) => (
+                    <tr key={`${row.section}-${row.index}-${row.label}`}>
+                      <td><code>{row.section}</code></td>
+                      <td><code>{row.label}</code></td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            if (window.confirm(t("bundle.removeConfirm", { item: row.label }))) {
+                              removeRow(row.section, row.index);
+                            }
+                          }}
+                        >
+                          {t("bundle.remove")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
 
-          <h4>{t("bundle.addObjectTitle")}</h4>
-          <div className="bundle-add-object-form">
-            <label>
-              parentPath
-              <input value={addParentPath} onChange={(event) => setAddParentPath(event.target.value)} />
-            </label>
-            <label>
-              name
-              <input value={addName} onChange={(event) => setAddName(event.target.value)} />
-            </label>
-            <label>
-              type
-              <input value={addType} onChange={(event) => setAddType(event.target.value)} />
-            </label>
-            <button type="button" className="btn" disabled={!addName.trim()} onClick={addObject}>
-              {t("bundle.addObject")}
-            </button>
-          </div>
+          <section className="application-bundle-advanced-section">
+            <h4>{t("bundle.addObjectTitle")}</h4>
+            <div className="bundle-add-object-form">
+              <label>
+                parentPath
+                <input value={addParentPath} onChange={(event) => setAddParentPath(event.target.value)} />
+              </label>
+              <label>
+                name
+                <input value={addName} onChange={(event) => setAddName(event.target.value)} />
+              </label>
+              <label>
+                type
+                <input value={addType} onChange={(event) => setAddType(event.target.value)} />
+              </label>
+              <button type="button" className="btn" disabled={!addName.trim()} onClick={addObject}>
+                {t("bundle.addObject")}
+              </button>
+            </div>
+          </section>
 
-          <h4>{t("bundle.pullPathTitle")}</h4>
-          <p className="op-muted">{t("bundle.pullPathHint")}</p>
-          <div className="bundle-add-object-form">
-            <ObjectPathField
-              className="full"
-              label="objectPath"
-              value={pullPath}
-              onChange={setPullPath}
-              placeholder="root.platform.dashboards.my-dashboard"
-            />
-            <button
-              type="button"
-              className="btn"
-              disabled={pullMutation.isPending || !pullPath.trim()}
-              onClick={() => {
-                const path = pullPath.trim();
-                const section = inferSectionFromPath(path);
-                pullMutation.mutate({ sections: [section], paths: [path] });
-              }}
-            >
-              {t("bundle.pullPath")}
-            </button>
-          </div>
-        </>
+          <section className="application-bundle-advanced-section">
+            <h4>{t("bundle.pullPathTitle")}</h4>
+            <p className="op-muted">{t("bundle.pullPathHint")}</p>
+            <div className="bundle-add-object-form">
+              <ObjectPathField
+                className="full"
+                label="objectPath"
+                value={pullPath}
+                onChange={setPullPath}
+                placeholder="root.platform.dashboards.my-dashboard"
+              />
+              <button
+                type="button"
+                className="btn"
+                disabled={pullMutation.isPending || !pullPath.trim()}
+                onClick={() => {
+                  const path = pullPath.trim();
+                  const section = inferSectionFromPath(path);
+                  pullMutation.mutate({ sections: [section], paths: [path] });
+                }}
+              >
+                {t("bundle.pullPath")}
+              </button>
+            </div>
+          </section>
+        </details>
       )}
     </div>
   );

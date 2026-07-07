@@ -57,7 +57,7 @@ Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace)
 - `GET /api/v1/catalog/{slug}/download` (free)
 - `POST /api/v1/entitlements/activate` (paid)
 
-Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`.
+Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`.
 
 ## Troubleshooting
 

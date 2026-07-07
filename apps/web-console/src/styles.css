@@ -9327,6 +9327,41 @@ body.scada-mimic-editor-open {
 
 .solution-catalog-kv dd {
   margin: 0;
+  flex: 1;
+}
+
+.bundle-license-info {
+  margin: 0.75rem 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.bundle-license-info h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+}
+
+.bundle-license-info-compact .solution-catalog-kv {
+  margin-top: 0.5rem;
+}
+
+.bundle-license-warn {
+  color: var(--danger, #f87171);
+}
+
+.bundle-license-error-hint {
+  margin: 0.5rem 0 0;
+}
+
+.marketplace-installation-id-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+}
+
+.solution-catalog-kv dd {
+  margin: 0;
 }
 
 .solution-catalog-card-actions {
@@ -9400,6 +9435,18 @@ body.scada-mimic-editor-open {
   border: 1px solid var(--border, #cbd5e1);
   border-radius: 8px;
   font: inherit;
+}
+
+.marketplace-vendor-contact-modal {
+  width: min(28rem, 92vw);
+}
+
+.marketplace-vendor-contact-listing {
+  margin: 0 0 1rem;
+}
+
+.marketplace-vendor-contact-kv {
+  margin: 0;
 }
 
 .op-alert.compact {
@@ -12014,3 +12061,143 @@ html {
   transform: scale(0.96);
   transition: transform 0.12s var(--ui-ease);
 }
+
+/* Application bundle / deploy manager */
+.application-deploy-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.application-deploy-tabs-scroll {
+  margin-bottom: 0.25rem;
+}
+
+.application-bundle-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 0;
+}
+
+.application-bundle-panel--embedded {
+  gap: 0.65rem;
+}
+
+.application-bundle-header h3 {
+  margin: 0 0 0.25rem;
+}
+
+.application-bundle-status {
+  margin: 0;
+}
+
+.application-bundle-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-raised, rgba(255, 255, 255, 0.02));
+}
+
+.application-bundle-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.application-bundle-toolbar-group--actions {
+  margin-left: auto;
+}
+
+.application-bundle-toolbar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+}
+
+.application-bundle-editor-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.application-bundle-editor-label > span {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.application-bundle-editor {
+  width: 100%;
+  min-height: 22rem;
+  resize: vertical;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  padding: 0.75rem;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  background: var(--surface-inset, rgba(0, 0, 0, 0.2));
+  box-sizing: border-box;
+}
+
+.application-bundle-output {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-inset, rgba(0, 0, 0, 0.15));
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.application-bundle-advanced {
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-md, 8px);
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.application-bundle-advanced > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.35rem 0;
+  user-select: none;
+}
+
+.application-bundle-advanced-section {
+  margin-top: 0.75rem;
+}
+
+.application-bundle-advanced-section h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.application-operations-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.application-operations-section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.application-object-panel .application-deploy-panel {
+  margin-top: 0.5rem;
+}
+

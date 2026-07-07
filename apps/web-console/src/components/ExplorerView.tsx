@@ -31,8 +31,11 @@ import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../utils/platformSqlPath";
 import VisualGroupInspector from "./VisualGroupInspector";
 import PlatformSqlObjectPanel from "./platform/PlatformSqlObjectPanel";
+import ApplicationObjectPanel from "./platform/ApplicationObjectPanel";
+import { isApplicationObjectPath } from "../utils/applicationPath";
 import { isFederationRoot } from "../utils/federationPath";
 import { isTenantsRoot } from "../utils/tenantPath";
+import { APPLICATIONS_ROOT } from "../utils/createObjectMode";
 
 interface ExplorerViewProps {
   selectedPath: string | null;
@@ -44,6 +47,7 @@ interface ExplorerViewProps {
   onMembersChanged?: () => void;
   allObjects?: ObjectSummary[];
   isAdmin: boolean;
+  onCreateApplication?: () => void;
   showBackToTree?: boolean;
   onBackToTree?: () => void;
 }
@@ -58,6 +62,7 @@ export default function ExplorerView({
   onMembersChanged,
   allObjects = [],
   isAdmin,
+  onCreateApplication,
   showBackToTree = false,
   onBackToTree,
 }: ExplorerViewProps) {
@@ -81,6 +86,9 @@ export default function ExplorerView({
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
   const isPlatformSqlObject = isPlatformSqlObjectPath(selectedPath);
+  const isApplicationObject =
+    selectedObject?.type === "APPLICATION"
+    && isApplicationObjectPath(selectedPath);
   const opensInEditor = Boolean(
     selectedObject
     && isSpecializedEditorObject(selectedPath, selectedObject.type, selectedObject.templateId),
@@ -174,6 +182,14 @@ export default function ExplorerView({
           onSelectPath={onSelectPath}
           onMembersChanged={onMembersChanged}
         />
+      ) : isApplicationObject ? (
+        <ApplicationObjectPanel
+          key={selectedPath}
+          path={selectedPath}
+          displayName={selectedObject?.displayName}
+          description={selectedObject?.description}
+          canManage={isAdmin}
+        />
       ) : isCatalogFolder ? (
         <SystemFolderListPanel
           key={selectedPath}
@@ -184,6 +200,10 @@ export default function ExplorerView({
           onSelectPath={onSelectPath}
           onOpenEditor={onOpenEditor}
           onOpenOperatorApp={onOpenOperatorApp}
+          onCreateApplication={
+            selectedPath === APPLICATIONS_ROOT && isAdmin ? onCreateApplication : undefined
+          }
+          canManage={isAdmin}
         />
       ) : (
         <ObjectPropertiesEditor

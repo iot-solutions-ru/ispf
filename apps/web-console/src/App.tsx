@@ -65,6 +65,7 @@ const SqlBindingEditor = lazy(() => import("./components/platform/SqlBindingEdit
 const ScheduleEditor = lazy(() => import("./components/platform/ScheduleEditor"));
 const MimicEditorPanel = lazy(() => import("./components/scada/MimicEditorPanel"));
 const BlueprintEditorPanel = lazy(() => import("./components/BlueprintEditorPanel"));
+const ApplicationEditorPanel = lazy(() => import("./components/platform/ApplicationEditorPanel"));
 
 function LazyFallback() {
   return <div className="loading" />;
@@ -424,6 +425,12 @@ function AppShell() {
     setWorkspaceTab(tab.id);
   };
 
+  const openCreateApplication = () => {
+    setCreatePresetType(null);
+    setCreateParentPath(APPLICATIONS_ROOT);
+    setShowCreate(true);
+  };
+
   const closeEditor = (tabId: string) => {
     const tab = editorTabs.find((t) => t.id === tabId);
     setEditorTabs((tabs) => tabs.filter((t) => t.id !== tabId));
@@ -454,6 +461,7 @@ function AppShell() {
     || activeEditor.objectType === "BINDING"
     || activeEditor.objectType === "SCHEDULE"
     || activeEditor.objectType === "MIMIC"
+    || activeEditor.objectType === "APPLICATION"
     || isBlueprintsPath(activeEditor.path)
   );
   const showPropertiesEditor =
@@ -749,6 +757,7 @@ function AppShell() {
                 onMembersChanged={() => void invalidateAll()}
                 allObjects={objectList}
                 isAdmin={isAdmin}
+                onCreateApplication={openCreateApplication}
                 showBackToTree={isMobileLayout}
                 onBackToTree={() => setMobileExplorerPane("tree")}
               />
@@ -845,6 +854,14 @@ function AppShell() {
                   path={activeEditor.path}
                   title={activeEditor.title}
                   onClose={() => closeEditor(activeEditor.id)}
+                />
+              ) : activeEditor.objectType === "APPLICATION" ? (
+                <ApplicationEditorPanel
+                  path={activeEditor.path}
+                  title={activeEditor.title}
+                  onClose={() => closeEditor(activeEditor.id)}
+                  onOpenProperties={() => setPropertiesTabPath(activeEditor.path)}
+                  canManage={isAdmin}
                 />
               ) : null}
             </Suspense>

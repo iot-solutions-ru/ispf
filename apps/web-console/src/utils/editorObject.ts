@@ -1,5 +1,6 @@
 import { isBlueprintsPath } from "../types/blueprints";
 import type { ObjectType } from "../types";
+import { isApplicationObjectPath } from "./applicationPath";
 import { isPlatformSqlObjectPath } from "./platformSqlPath";
 
 /** Objects edited in a dedicated builder (dashboard / report / workflow / model / platform SQL). */
@@ -18,6 +19,7 @@ export function isSpecializedEditorObject(
     || type === "BINDING"
     || type === "SCHEDULE"
     || type === "MIMIC"
+    || (type === "APPLICATION" && isApplicationObjectPath(path))
   ) {
     return true;
   }
@@ -60,6 +62,7 @@ export function resolveEditorObjectType(
     || type === "BINDING"
     || type === "SCHEDULE"
     || type === "MIMIC"
+    || (type === "APPLICATION" && isApplicationObjectPath(path))
   ) {
     return type;
   }

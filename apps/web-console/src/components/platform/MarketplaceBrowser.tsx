@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -8,31 +8,55 @@ import {
   installMarketplaceListing,
   type MarketplaceListing,
 } from "../../api/solutions";
+import { fetchPlatformLicense } from "../../api/platformLicense";
+import BundleLicenseErrorAlert from "./BundleLicenseErrorAlert";
+import VendorContactModal, { hasMarketplaceVendorContact } from "./VendorContactModal";
 
-function vendorContactUrl(listing: MarketplaceListing, marketplaceContact?: string): string | null {
+function MarketplaceInstallationIdHint() {
+  const { t } = useTranslation("system");
+  const licenseQuery = useQuery({
+    queryKey: ["platform-license"],
+    queryFn: fetchPlatformLicense,
+    staleTime: 60_000,
+  });
+
+  if (licenseQuery.isLoading || !licenseQuery.data?.installationId) {
+    return null;
+  }
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(licenseQuery.data.installationId);
+    } catch {
+      // ignore
+    }
+  };
+
   return (
-    listing.vendorContactUrl
-    ?? (listing.vendorContactEmail ? `mailto:${listing.vendorContactEmail}` : null)
-    ?? marketplaceContact
-    ?? null
+    <p className="op-muted marketplace-installation-id-hint">
+      {t("solutions.marketplace.installationIdHint")}{" "}
+      <code className="mono">{licenseQuery.data.installationId}</code>{" "}
+      <button type="button" className="btn-link" onClick={() => void copy()}>
+        {t("solutions.marketplace.installationIdCopy")}
+      </button>
+    </p>
   );
 }
 
 function MarketplaceListingCard({
   listing,
   marketplaceId,
-  marketplaceContact,
   onInstalled,
 }: {
   listing: MarketplaceListing;
   marketplaceId: string;
-  marketplaceContact?: string;
   onInstalled: () => void;
 }) {
   const { t } = useTranslation("system");
   const [activationCode, setActivationCode] = useState("");
   const [showActivate, setShowActivate] = useState(false);
-  const contactUrl = vendorContactUrl(listing, marketplaceContact);
+  const [showContact, setShowContact] = useState(false);
+  const canContactVendor = hasMarketplaceVendorContact(listing);
 
   const installMutation = useMutation({
     mutationFn: () => installMarketplaceListing(marketplaceId, listing.slug),
@@ -52,102 +76,122 @@ function MarketplaceListingCard({
   const busy = installMutation.isPending || activateMutation.isPending;
 
   return (
-    <article className="solution-catalog-card solution-catalog-card--marketplace">
-      <header className="solution-catalog-card-head">
-        <div>
-          <strong>{listing.title}</strong>
-          <p className="op-muted solution-catalog-app-id">
-            <code>{listing.slug}</code> → <code>{listing.appId}</code>
-          </p>
-        </div>
-        <span className={`solution-catalog-version-pill ${isPaid ? "paid" : "free"}`}>
-          {isPaid
-            ? t("solutions.marketplace.paid", { price: listing.priceCents ? listing.priceCents / 100 : "—" })
-            : t("solutions.marketplace.free")}
-        </span>
-      </header>
-      <p>{listing.description}</p>
-      <p className="op-muted solution-catalog-meta">
-        {listing.vendorName && <span>{listing.vendorName}</span>}
-        {listing.latestVersion && <span> · v{listing.latestVersion}</span>}
-        {listing.minIspfVersion && <span> · ISPF ≥ {listing.minIspfVersion}</span>}
-        {listing.installed && listing.activeVersion && (
-          <span> · {t("solutions.marketplace.installedVersion", { version: listing.activeVersion })}</span>
-        )}
-      </p>
-
-      <footer className="solution-catalog-card-actions">
-        {!isPaid && (
-          <button
-            type="button"
-            className="btn primary small"
-            disabled={busy}
-            onClick={() => installMutation.mutate()}
-          >
-            {listing.installed ? t("solutions.reinstall") : t("solutions.marketplace.installFree")}
-          </button>
-        )}
-        {isPaid && !showActivate && (
-          <>
-            <button
-              type="button"
-              className="btn primary small"
-              onClick={() => setShowActivate(true)}
-            >
-              {t("solutions.marketplace.haveKey")}
-            </button>
-            {contactUrl && (
-              <a className="btn small" href={contactUrl} target="_blank" rel="noreferrer">
-                {t("solutions.marketplace.contactVendor")}
-              </a>
-            )}
-          </>
-        )}
-        {isPaid && showActivate && (
-          <div className="marketplace-activate-inline">
-            <input
-              type="text"
-              value={activationCode}
-              placeholder={t("solutions.marketplace.activationPlaceholder")}
-              onChange={(e) => setActivationCode(e.target.value)}
-            />
-            <button
-              type="button"
-              className="btn primary small"
-              disabled={busy || !activationCode.trim()}
-              onClick={() => activateMutation.mutate()}
-            >
-              {t("solutions.marketplace.activateInstall")}
-            </button>
-            <button type="button" className="btn small" onClick={() => setShowActivate(false)}>
-              {t("solutions.marketplace.cancel")}
-            </button>
+    <>
+      <article className="solution-catalog-card solution-catalog-card--marketplace">
+        <header className="solution-catalog-card-head">
+          <div>
+            <strong>{listing.title}</strong>
+            <p className="op-muted solution-catalog-app-id">
+              <code>{listing.slug}</code> → <code>{listing.appId}</code>
+            </p>
           </div>
-        )}
-        {listing.installed && (
-          <a
-            className="btn small"
-            href={`/?mode=operator&app=${encodeURIComponent(listing.appId)}`}
-          >
-            {t("solutions.openOperator")}
-          </a>
-        )}
-      </footer>
+          <span className={`solution-catalog-version-pill ${isPaid ? "paid" : "free"}`}>
+            {isPaid
+              ? t("solutions.marketplace.paid", { price: listing.priceCents ? listing.priceCents / 100 : "—" })
+              : t("solutions.marketplace.free")}
+          </span>
+        </header>
+        <p>{listing.description}</p>
+        <p className="op-muted solution-catalog-meta">
+          {listing.vendorName && <span>{listing.vendorName}</span>}
+          {listing.latestVersion && <span> · v{listing.latestVersion}</span>}
+          {listing.minIspfVersion && <span> · ISPF ≥ {listing.minIspfVersion}</span>}
+          {listing.installed && listing.activeVersion && (
+            <span> · {t("solutions.marketplace.installedVersion", { version: listing.activeVersion })}</span>
+          )}
+        </p>
 
-      {installMutation.error && (
-        <p className="op-alert op-alert-error compact">{String(installMutation.error)}</p>
-      )}
-      {activateMutation.error && (
-        <div className="op-alert op-alert-error compact">
-          <p>{String(activateMutation.error)}</p>
-          {contactUrl && (
-            <a href={contactUrl} target="_blank" rel="noreferrer">
+        <footer className="solution-catalog-card-actions">
+          {!isPaid && (
+            <button
+              type="button"
+              className="btn primary small"
+              disabled={busy}
+              onClick={() => installMutation.mutate()}
+            >
+              {listing.installed ? t("solutions.reinstall") : t("solutions.marketplace.installFree")}
+            </button>
+          )}
+          {isPaid && !showActivate && (
+            <>
+              <button
+                type="button"
+                className="btn primary small"
+                onClick={() => setShowActivate(true)}
+              >
+                {t("solutions.marketplace.haveKey")}
+              </button>
+              {canContactVendor && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => setShowContact(true)}
+                >
+                  {t("solutions.marketplace.contactVendor")}
+                </button>
+              )}
+            </>
+          )}
+          {isPaid && showActivate && (
+            <div className="marketplace-activate-inline">
+              <MarketplaceInstallationIdHint />
+              <input
+                type="text"
+                value={activationCode}
+                placeholder={t("solutions.marketplace.activationPlaceholder")}
+                onChange={(e) => setActivationCode(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn primary small"
+                disabled={busy || !activationCode.trim()}
+                onClick={() => activateMutation.mutate()}
+              >
+                {t("solutions.marketplace.activateInstall")}
+              </button>
+              <button type="button" className="btn small" onClick={() => setShowActivate(false)}>
+                {t("solutions.marketplace.cancel")}
+              </button>
+            </div>
+          )}
+          {!isPaid && canContactVendor && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => setShowContact(true)}
+            >
               {t("solutions.marketplace.contactVendor")}
+            </button>
+          )}
+          {listing.installed && (
+            <a
+              className="btn small"
+              href={`/?mode=operator&app=${encodeURIComponent(listing.appId)}`}
+            >
+              {t("solutions.openOperator")}
             </a>
           )}
-        </div>
+        </footer>
+
+        {installMutation.error && (
+          <BundleLicenseErrorAlert error={installMutation.error} />
+        )}
+        {activateMutation.error && (
+          <div className="op-alert op-alert-error compact">
+            <BundleLicenseErrorAlert error={activateMutation.error} />
+            {canContactVendor && (
+              <button type="button" className="btn-link" onClick={() => setShowContact(true)}>
+                {t("solutions.marketplace.contactVendor")}
+              </button>
+            )}
+          </div>
+        )}
+      </article>
+
+      {showContact && (
+        <VendorContactModal listing={listing} onClose={() => setShowContact(false)} />
       )}
-    </article>
+    </>
   );
 }
 
@@ -173,10 +217,6 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: () =>
   });
 
   const listings = catalogQuery.data?.listings ?? [];
-  const activeEndpoint = useMemo(
-    () => endpoints.find((e) => e.id === activeId),
-    [endpoints, activeId]
-  );
 
   function applySearch() {
     setDebouncedQuery(query.trim());
@@ -240,7 +280,6 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: () =>
             key={listing.slug}
             listing={listing}
             marketplaceId={activeId}
-            marketplaceContact={catalogQuery.data?.contactUrl ?? activeEndpoint?.contactUrl}
             onInstalled={onInstalled}
           />
         ))}
