@@ -1,13 +1,13 @@
 [
   {
     "file": "components/AiStudioStatusTab.tsx",
-    "line": 152,
+    "line": 155,
     "kind": "jsx-text",
     "text": "scripts/run-local-with-ai.ps1"
   },
   {
     "file": "components/ApplicationBundlePanel.tsx",
-    "line": 282,
+    "line": 392,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.my-dashboard"
   },
@@ -114,16 +114,10 @@
     "text": "params.mode"
   },
   {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 414,
+    "file": "components/BrickMetadataPanel.tsx",
+    "line": 143,
     "kind": "ui-attr",
-    "text": "root.platform.data-sources.myapp"
-  },
-  {
-    "file": "components/CreateObjectDialog.tsx",
-    "line": 437,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
+    "text": "https://brickschema.org/schema/Brick#Sensor"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
@@ -133,7 +127,19 @@
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 485,
+    "line": 474,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 488,
+    "kind": "ui-attr",
+    "text": "root.platform.data-sources.myapp"
+  },
+  {
+    "file": "components/CreateObjectDialog.tsx",
+    "line": 521,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
@@ -157,91 +163,91 @@
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1016,
+    "line": 1017,
     "kind": "ui-attr",
     "text": "gpu-*"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1030,
+    "line": 1031,
     "kind": "jsx-text",
     "text": "DEVICE"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1031,
+    "line": 1032,
     "kind": "jsx-text",
     "text": "FOLDER"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1032,
+    "line": 1033,
     "kind": "jsx-text",
     "text": "DASHBOARD"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1033,
+    "line": 1034,
     "kind": "jsx-text",
     "text": "CUSTOM"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1054,
+    "line": 1055,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1077,
+    "line": 1078,
     "kind": "ui-attr",
     "text": "count>10 && name contains abc"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1352,
+    "line": 1353,
     "kind": "ui-attr",
     "text": "root.platform.reports.ready-items"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1640,
+    "line": 1641,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1646,
+    "line": 1647,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1863,
+    "line": 1864,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1922,
+    "line": 1923,
     "kind": "ui-attr",
     "text": "HTML"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 405,
+    "line": 406,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.detail"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 530,
+    "line": 531,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 888,
+    "line": 889,
     "kind": "ui-attr",
     "text": "root.platform.workflows..."
   },
@@ -256,6 +262,12 @@
     "line": 768,
     "kind": "ui-attr",
     "text": "0.88rem"
+  },
+  {
+    "file": "components/dashboard/widgets/CarouselWidgetView.tsx",
+    "line": 53,
+    "kind": "jsx-text",
+    "text": "= 0 && editorIndex"
   },
   {
     "file": "components/dashboard/widgets/ChartRadarWidgetView.tsx",
@@ -316,12 +328,6 @@
     "line": 339,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.app_myapp"
-  },
-  {
-    "file": "components/FederationBindPanel.tsx",
-    "line": 230,
-    "kind": "ui-attr",
-    "text": "root.platform.devices.demo-sensor-01"
   },
   {
     "file": "components/functionScript/FunctionScriptStepsEditor.tsx",
@@ -418,42 +424,6 @@
     "line": 22,
     "kind": "ui-attr",
     "text": "Language"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 1005,
-    "kind": "jsx-text",
-    "text": "RELATIVE"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 1006,
-    "kind": "jsx-text",
-    "text": "INSTANCE"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 1007,
-    "kind": "jsx-text",
-    "text": "ABSOLUTE"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 1077,
-    "kind": "jsx-text",
-    "text": "RELATIVE"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 1078,
-    "kind": "jsx-text",
-    "text": "INSTANCE"
-  },
-  {
-    "file": "components/ModelEditorPanel.tsx",
-    "line": 717,
-    "kind": "ui-attr",
-    "text": "UUID vendor extension model"
   },
   {
     "file": "components/MultiPenTrendModal.tsx",
@@ -565,9 +535,15 @@
   },
   {
     "file": "components/scada/MimicPropertiesPanel.tsx",
-    "line": 207,
+    "line": 210,
     "kind": "ui-attr",
     "text": "mm, m3, t"
+  },
+  {
+    "file": "components/scada/SymbolBehaviorsEditor.tsx",
+    "line": 127,
+    "kind": "ui-attr",
+    "text": "#ispf-label"
   },
   {
     "file": "components/TenantsPanel.tsx",
@@ -586,24 +562,6 @@
     "line": 193,
     "kind": "jsx-text",
     "text": "ISPF task properties"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 130,
-    "kind": "cyrillic",
-    "text": "const PLAN_APPROVAL_MESSAGE = \"Утверждаю план, начинай выполнение\";"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 150,
-    "kind": "cyrillic",
-    "text": "label.includes(\"утверд\") ||"
-  },
-  {
-    "file": "context/AgentChatContext.tsx",
-    "line": 152,
-    "kind": "cyrillic",
-    "text": "message.includes(\"утверждаю план\") ||"
   },
   {
     "file": "context/AgentChatContext.tsx",
@@ -642,27 +600,9 @@
     "text": "Promise"
   },
   {
-    "file": "scada/symbols/extra.tsx",
-    "line": 97,
-    "kind": "jsx-text",
-    "text": "INV"
-  },
-  {
-    "file": "scada/symbols/industrial.tsx",
-    "line": 440,
-    "kind": "jsx-text",
-    "text": "UPS"
-  },
-  {
-    "file": "scada/symbols/industrial.tsx",
-    "line": 451,
-    "kind": "jsx-text",
-    "text": "MCC"
-  },
-  {
-    "file": "scada/symbols/industrial.tsx",
-    "line": 462,
-    "kind": "jsx-text",
-    "text": "PLC"
+    "file": "utils/agentChatMarkdown.tsx",
+    "line": 19,
+    "kind": "cyrillic",
+    "text": "normalized = normalized.replace(/(?<=[^\\n])\\s+(?=\\*\\*Пример)/gi, \"\\n\\n\");"
   }
 ]
