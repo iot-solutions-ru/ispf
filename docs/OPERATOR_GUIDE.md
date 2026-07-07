@@ -206,6 +206,60 @@ http://<host>:5173?mode=admin
 
 ---
 
+## Operator agent (AI copilot)
+
+В Operator HMI доступен **встроенный AI-ассистент** — read-only copilot для смены: тренды, отчёты, журнал событий, очередь задач. Не изменяет конфигурацию платформы.
+
+Подробнее: [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md), BL-179.
+
+### Как открыть
+
+- Панель чата в Operator HMI (иконка ассистента).
+- URL тот же, что у operator app: `?mode=operator&app=<appId>`.
+
+Администратор задаёт инструкции и загружает документы в **operator app** (`root.platform.operator-apps` → Agent instructions / Knowledge base).
+
+### Язык
+
+Ассистент отвечает **на языке оператора** (русский / English). Память приложения (`remember_app_memory`) использует ru/en заголовки в промпте автоматически.
+
+### Доступные инструменты (read-only)
+
+| Инструмент | Назначение |
+|------------|------------|
+| `get_operator_scope` | Разрешённые префиксы путей приложения |
+| `list_objects` / `get_object` / `search_objects` | Обзор объектов в scope |
+| `list_variables` / `describe_variables` | Текущие значения и схема |
+| `get_variable_history` / `get_variable_trend` | Historian и агрегаты |
+| `list_events` / `list_event_catalog` | Журнал и каталог событий |
+| `list_reports` / `run_report` | Отчёты, разрешённые для приложения |
+| `invoke_bff` / `invoke_tree_function` | Операционные функции (только чтение данных) |
+| `list_work_queue` | Открытые задачи BPMN |
+| `list_app_memory` / `remember_app_memory` | Долговременная память смены (глоссарий, нормы) |
+| `list_app_documents` / `read_app_document` / `search_app_documents` | Загруженные SOP/инструкции |
+| `get_operator_link` | Ссылка на дашборд или отчёт в HMI |
+| `get_dashboard_layout` / `list_automation` | Просмотр layout и automation (без записи) |
+
+**Запрещено в operator mode:** `create_object`, `configure_driver`, `import_package`, `configure_alert`, `set_dashboard_layout` и любые mutating tools.
+
+### Типичные запросы
+
+| Запрос оператора | Что делает агент |
+|------------------|------------------|
+| «Какая температура на линии 2?» | `list_variables` → ответ с текущим значением |
+| «Покажи тренд давления за сутки» | `get_variable_trend` |
+| «Запусти сменный отчёт» | `list_reports` → `run_report` → краткое резюме цифр |
+| «Что в очереди задач?» | `list_work_queue` |
+| «Запомни: GPU-03 — линия 2» | `remember_app_memory` |
+
+### Память приложения
+
+- Общая для всех операторов одного `appId`.
+- Типы: `fact`, `glossary`, `preference`, `playbook`, `correction`.
+- Фразы «запомни…», исправления — агент сохраняет через `remember_app_memory`.
+
+---
+
 ## Связанные документы
 
 - [PRODUCT.md](PRODUCT.md) — обзор продукта

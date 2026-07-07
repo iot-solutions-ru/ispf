@@ -1,0 +1,12 @@
+{
+  "id": "scada-solution-generator",
+  "version": "1",
+  "domain": "scada",
+  "title": "Factory spec solution generator",
+  "description": "BL-180 factory spec to tree + dashboards + alerts.",
+  "prompt": "From plant spec: 2 pumps, 1 flow meter, overview dashboard, high pressure alert.",
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "set_dashboard_layout", "configure_alert", "list_variables"]
+  }
+}

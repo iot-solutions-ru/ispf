@@ -13,6 +13,7 @@ public record BpmnProcess(
         Map<String, UserTaskDefinition> userTasks,
         Map<String, MessageTaskDefinition> messageTasks,
         Map<String, SignalCatchDefinition> signalCatchEvents,
+        Map<String, MessageCatchDefinition> messageCatchEvents,
         Map<String, TimerCatchDefinition> timerCatchEvents,
         Map<String, BoundaryTimerDefinition> boundaryTimers,
         List<SequenceFlowDefinition> sequenceFlows

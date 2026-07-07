@@ -96,7 +96,7 @@ class PlatformAuthApiTest {
         String federationToken = issued.getResponse().getContentAsString()
                 .replaceAll("(?s).*\"token\"\\s*:\\s*\"([^\"]+)\".*", "$1");
 
-        mockMvc.perform(get("/api/v1/security/users")
+        mockMvc.perform(get("/api/v1/objects")
                         .header("Authorization", "Bearer " + federationToken))
                 .andExpect(status().isOk());
     }

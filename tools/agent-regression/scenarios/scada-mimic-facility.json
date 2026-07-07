@@ -1,0 +1,12 @@
+{
+  "id": "scada-mimic-facility",
+  "version": "1",
+  "domain": "scada",
+  "title": "SCADA mimic facility overview",
+  "description": "Agent creates MIMIC diagram and embeds in dashboard.",
+  "prompt": "Create a tank-farm SCADA mimic with valve bindings and a facility overview dashboard.",
+  "playbook": "scadaMimicGuide",
+  "acceptance": {
+    "requiredTools": ["create_object", "save_mimic_diagram", "set_dashboard_layout"]
+  }
+}

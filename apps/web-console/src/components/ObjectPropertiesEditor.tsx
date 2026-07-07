@@ -55,6 +55,7 @@ import BindingRulesPanel from "./BindingRulesPanel";
 import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
+import ExpressionDebuggerPanel from "./ExpressionDebuggerPanel";
 import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
@@ -84,6 +85,7 @@ type Tab =
   | "access"
   | "variables"
   | "bindings"
+  | "expressions"
   | "events"
   | "functions"
   | "history";
@@ -99,6 +101,7 @@ const OBJECT_PROPERTY_TABS: readonly Tab[] = [
   "access",
   "variables",
   "bindings",
+  "expressions",
   "events",
   "functions",
   "history",
@@ -181,6 +184,16 @@ function VariableEditorRow({
           <span className="property-badges">
             {variable.readable && <span className="badge">R</span>}
             {variable.writable && <span className="badge w">W</span>}
+            {(variable.readRoles?.length ?? 0) > 0 && (
+              <span className="badge acl" title={variable.readRoles?.join(", ")}>
+                ACL-R
+              </span>
+            )}
+            {(variable.writeRoles?.length ?? 0) > 0 && (
+              <span className="badge acl" title={variable.writeRoles?.join(", ")}>
+                ACL-W
+              </span>
+            )}
             {history.historyEnabled && (
               <span className="badge hist" title={formatHistoryRetention(history.historyRetentionDays)}>
                 H
@@ -496,7 +509,7 @@ export default function ObjectPropertiesEditor({
     if (showAccessTab) {
       list.push("access");
     }
-    list.push("variables", "bindings", "events", "functions", "history");
+    list.push("variables", "bindings", "expressions", "events", "functions", "history");
     return list;
   }, [canManage, ctxPreview, hasBrickMetadata, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
 
@@ -552,6 +565,8 @@ export default function ObjectPropertiesEditor({
         return t("tab.variables");
       case "bindings":
         return t("tab.bindings");
+      case "expressions":
+        return t("tab.expressions");
       case "events":
         return t("tab.events");
       case "functions":
@@ -829,6 +844,16 @@ export default function ObjectPropertiesEditor({
             </label>
           )}
           <BindingInvokeJournalPanel objectPath={path} compact scrollMaxHeight={360} />
+        </section>
+      )}
+
+      {tab === "expressions" && (
+        <section className="panel">
+          <ExpressionDebuggerPanel
+            objectPath={path}
+            variables={editorData.variables}
+            functionNames={editorData.functions.map((fn) => fn.name)}
+          />
         </section>
       )}
 

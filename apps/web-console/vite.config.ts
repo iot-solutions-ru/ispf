@@ -42,6 +42,36 @@ export default defineConfig({
         navigateFallback: "index.html",
         runtimeCaching: [
           {
+            urlPattern: /^\/api\/v1\/dashboards\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "ispf-dashboards",
+              expiration: {
+                maxEntries: 48,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^\/api\/v1\/mimics\//,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "ispf-mimics",
+              expiration: {
+                maxEntries: 32,
+                maxAgeSeconds: 60 * 60 * 24 * 7,
+              },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
             urlPattern: /^\/api\//,
             handler: "NetworkOnly",
           },

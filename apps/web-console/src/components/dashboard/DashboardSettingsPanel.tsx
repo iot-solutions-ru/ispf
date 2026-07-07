@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import type { DashboardLayout } from "../../types/dashboard";
+import type { DashboardLayout, DashboardLayoutPreset } from "../../types/dashboard";
 import { DASHBOARD_COLUMNS, DASHBOARD_ROW_HEIGHT } from "../../types/dashboard";
+import { applyLayoutPreset, clearLayoutPreset } from "./dashboardLayoutPresets";
 
 interface DashboardSettingsPanelProps {
   layout: DashboardLayout;
@@ -8,6 +9,7 @@ interface DashboardSettingsPanelProps {
   dashboardPath: string;
   onLayoutChange: (patch: Partial<DashboardLayout>) => void;
   onRefreshIntervalChange: (ms: number) => void;
+  onApplyPreset?: (preset: DashboardLayoutPreset) => void;
 }
 
 const THEME_OPTIONS: Array<{ id: string; labelKey?: string; label?: string }> = [
@@ -20,6 +22,7 @@ export default function DashboardSettingsPanel({
   refreshIntervalMs,
   onLayoutChange,
   onRefreshIntervalChange,
+  onApplyPreset,
 }: DashboardSettingsPanelProps) {
   const { t } = useTranslation("dashboard");
 
@@ -29,6 +32,28 @@ export default function DashboardSettingsPanel({
         <h4>{t("settings.title")}</h4>
       </header>
       <div className="form-grid compact">
+        <label>
+          {t("settings.layoutPreset")}
+          <select
+            value={layout.layoutPreset ?? ""}
+            onChange={(e) => {
+              const value = e.target.value as DashboardLayoutPreset | "";
+              if (!value) {
+                onLayoutChange(clearLayoutPreset(layout));
+                return;
+              }
+              if (onApplyPreset) {
+                onApplyPreset(value);
+              } else {
+                onLayoutChange(applyLayoutPreset(value, layout));
+              }
+            }}
+          >
+            <option value="">{t("settings.layoutPresetDefault")}</option>
+            <option value="video-wall-2x2">{t("settings.layoutPresetVideoWall2x2")}</option>
+          </select>
+          <span className="hint">{t("settings.layoutPresetHint")}</span>
+        </label>
         <label>
           {t("settings.refreshInterval")}
           <input

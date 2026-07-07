@@ -6,7 +6,7 @@ export type CorrelatorActionType =
   | "SEND_WEBHOOK"
   | "SEND_EMAIL";
 
-export type CorrelatorPatternType = "COUNT" | "SEQUENCE" | "EVENT_CHAIN";
+export type CorrelatorPatternType = "COUNT" | "SEQUENCE" | "EVENT_CHAIN" | "WINDOW";
 
 export interface CreateAlertRulePayload {
   name: string;

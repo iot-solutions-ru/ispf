@@ -2492,6 +2492,30 @@ body.dashboard-editor-fullscreen {
   background: var(--bg);
 }
 
+.dashboard-shell--video-wall-2x2 {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.dashboard-shell--video-wall-2x2 .dashboard-body,
+.dashboard-shell--video-wall-2x2 .dashboard-canvas,
+.dashboard-shell--video-wall-2x2 .dashboard-grid-host {
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-shell--video-wall-2x2 .dashboard-grid-host {
+  padding: 0;
+}
+
+.dashboard-shell--video-wall-2x2 .dashboard-grid-item {
+  border-radius: 0;
+}
+
+.operator-dashboard-shell.dashboard-shell--video-wall-2x2 .dash-widget-shell {
+  border-radius: 0;
+}
+
 .dashboard-shell {
   display: flex;
   flex-direction: column;

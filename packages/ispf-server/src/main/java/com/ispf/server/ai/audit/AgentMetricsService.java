@@ -94,6 +94,33 @@ public class AgentMetricsService {
                 sinceTs
         );
 
+        List<Map<String, Object>> toolLatencyBreakdown = jdbcTemplate.query("""
+                SELECT
+                    tool_name AS tool,
+                    COUNT(*) AS call_count,
+                    AVG(latency_ms) AS avg_latency_ms,
+                    MAX(latency_ms) AS max_latency_ms,
+                    SUM(CASE WHEN status = 'ERROR' THEN 1 ELSE 0 END) AS error_count
+                FROM %s
+                WHERE created_at >= ?
+                  AND tool_name LIKE 'agent_tool_%%'
+                  AND latency_ms IS NOT NULL
+                GROUP BY tool_name
+                ORDER BY avg_latency_ms DESC
+                LIMIT 30
+                """.formatted(auditTable),
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("tool", rs.getString("tool"));
+                    row.put("callCount", rs.getLong("call_count"));
+                    row.put("avgLatencyMs", round1(rs.getDouble("avg_latency_ms")));
+                    row.put("maxLatencyMs", rs.getLong("max_latency_ms"));
+                    row.put("errorCount", rs.getLong("error_count"));
+                    return row;
+                },
+                sinceTs
+        );
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("days", windowDays);
         payload.put("since", since.toString());
@@ -104,11 +131,16 @@ public class AgentMetricsService {
         payload.put("promptTokensSum", tokenTotals.get("prompt_tokens"));
         payload.put("completionTokensSum", tokenTotals.get("completion_tokens"));
         payload.put("latencyMsSum", tokenTotals.get("latency_ms"));
+        payload.put("toolLatencyBreakdown", toolLatencyBreakdown);
         payload.put("promptVersions", List.of(
                 com.ispf.server.ai.agent.AgentPromptVersions.ADMIN_AGENT,
                 com.ispf.server.ai.agent.AgentPromptVersions.ASK_AGENT,
                 com.ispf.server.ai.agent.AgentPromptVersions.OPERATOR_AGENT
         ));
         return payload;
+    }
+
+    private static double round1(double value) {
+        return Math.round(value * 10.0) / 10.0;
     }
 }

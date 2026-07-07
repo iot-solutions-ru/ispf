@@ -1,0 +1,12 @@
+{
+  "id": "scada-historian-trends",
+  "version": "1",
+  "domain": "scada",
+  "title": "Historian trend dashboard",
+  "description": "Configure variable history and chart widgets.",
+  "prompt": "Enable historian on sineWave and add chart widget to virt-cluster overview.",
+  "playbook": "virtualClusterMonitoring",
+  "acceptance": {
+    "requiredTools": ["configure_variable_history", "add_dashboard_widget", "get_variable_history"]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "hvac-e2e-deploy",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC end-to-end agent deploy",
+  "description": "Full BL-177 pipeline on HVAC domain.",
+  "prompt": "From spec: deploy building HVAC reference with validate, dry-run, import, operator UI — no manual tree edits.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "building-hvac",
+    "manifestPath": "examples/building-hvac-app/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"]
+  }
+}

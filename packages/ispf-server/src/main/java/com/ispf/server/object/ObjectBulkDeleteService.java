@@ -99,6 +99,7 @@ public class ObjectBulkDeleteService {
     private static boolean isProtectedCatalogFolder(PlatformObject node) {
         return switch (node.type()) {
             case ROOT, TENANT, PLATFORM, DEVICES, DASHBOARDS, WORKFLOWS, ALERT_RULES, CORRELATORS,
+                 QUERIES, EVENT_FILTERS,
                  APPLICATIONS, OPERATOR_APPS, SECURITY, USERS, ROLES, DATA_SOURCES, REPORTS,
                  FUNCTIONS, SCHEDULES, BINDINGS, MIGRATIONS, SCREENS -> true;
             default -> false;

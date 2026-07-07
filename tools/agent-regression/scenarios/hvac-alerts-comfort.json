@@ -1,0 +1,12 @@
+{
+  "id": "hvac-alerts-comfort",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC comfort alerts",
+  "description": "Zone temperature thresholds and alert rules.",
+  "prompt": "Configure HVAC zone comfort dashboard with high temperature alert.",
+  "playbook": "hvacZoneComfort",
+  "acceptance": {
+    "requiredTools": ["configure_alert", "set_dashboard_layout", "invoke_bff"]
+  }
+}

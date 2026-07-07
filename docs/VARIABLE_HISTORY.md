@@ -70,6 +70,26 @@ ispf:
     enabled: true
     min-interval-ms: 5000
     retention-days: 90   # default, если у переменной retention = null
+    slo:
+      aggregate-max-points: 1000000
+      aggregate-max-latency-ms: 2000
+      raw-query-max-points: 10000
+      raw-query-max-latency-ms: 500
+      export-max-points: 10000
 ```
+
+## Query SLO (BL-161)
+
+Documented service-level objectives for historian REST queries. Defaults bind via `VariableHistorySloProperties` (`ispf.variable-history.slo`).
+
+| Query | Scope | Target (p95) |
+|-------|-------|--------------|
+| **Aggregate** | ≤ 1M raw samples bucketed (`GET .../history/aggregate`) | **< 2 s** |
+| **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
+| **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
+
+Lab gate (Phase 28): `deploy/run_lab_historian_*.py` scripts should assert aggregate latency against `aggregate-max-latency-ms` at `aggregate-max-points` load.
+
+Multi-tier retention and deploy profiles: [HISTORIAN_TIERS.md](./HISTORIAN_TIERS.md).
 
 См. также [OBJECT_MODEL.md](./OBJECT_MODEL.md), [API.md](./API.md).

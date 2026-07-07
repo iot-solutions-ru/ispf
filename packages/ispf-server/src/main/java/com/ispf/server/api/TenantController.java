@@ -1,7 +1,9 @@
 package com.ispf.server.api;
 
+import com.ispf.server.config.TenantIsolationProperties;
 import com.ispf.server.tenant.Tenant;
 import com.ispf.server.tenant.TenantDraft;
+import com.ispf.server.tenant.TenantIsolationValidator;
 import com.ispf.server.tenant.TenantQuotas;
 import com.ispf.server.tenant.TenantQuotaService;
 import com.ispf.server.tenant.TenantService;
@@ -26,26 +28,39 @@ import java.util.Map;
 public class TenantController {
 
     private final TenantService tenantService;
+    private final TenantIsolationProperties tenantIsolationProperties;
+    private final TenantIsolationValidator tenantIsolationValidator;
 
-    public TenantController(TenantService tenantService) {
+    public TenantController(
+            TenantService tenantService,
+            TenantIsolationProperties tenantIsolationProperties,
+            TenantIsolationValidator tenantIsolationValidator
+    ) {
         this.tenantService = tenantService;
+        this.tenantIsolationProperties = tenantIsolationProperties;
+        this.tenantIsolationValidator = tenantIsolationValidator;
     }
 
     @GetMapping
     public List<TenantDto> list() {
         return tenantService.listTenants().stream()
-                .map(tenant -> TenantDto.from(tenant, tenantService.usage(tenant.tenantId())))
+                .map(tenant -> TenantDto.from(tenant, tenantService.usage(tenant.tenantId()), null))
                 .toList();
     }
 
     @PostMapping
     public TenantDto create(@Valid @RequestBody CreateTenantRequest request) {
+        String tenantId = request.tenantId().trim().toLowerCase();
+        tenantIsolationValidator.validateTenantIdForCreate(tenantId);
         Tenant tenant = tenantService.createTenant(new TenantDraft(
-                request.tenantId().trim().toLowerCase(),
+                tenantId,
                 request.displayName().trim(),
                 request.enabled() == null || request.enabled()
         ));
-        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()));
+        String schemaName = tenantIsolationProperties.isHardMode()
+                ? tenantIsolationValidator.resolveSchemaName(tenantId)
+                : null;
+        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()), schemaName);
     }
 
     @DeleteMapping("/{tenantId}")
@@ -78,7 +93,7 @@ public class TenantController {
                 tenantId.trim().toLowerCase(),
                 new TenantQuotas(request.maxDevices(), request.maxObjects())
         );
-        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()));
+        return TenantDto.from(tenant, tenantService.usage(tenant.tenantId()), null);
     }
 
     @GetMapping("/{tenantId}/usage")
@@ -96,9 +111,10 @@ public class TenantController {
             Integer maxDevices,
             Integer maxObjects,
             Integer deviceCount,
-            Integer objectCount
+            Integer objectCount,
+            String schemaName
     ) {
-        static TenantDto from(Tenant tenant, TenantQuotaService.TenantUsage usage) {
+        static TenantDto from(Tenant tenant, TenantQuotaService.TenantUsage usage, String schemaName) {
             return new TenantDto(
                     tenant.tenantId(),
                     tenant.displayName(),
@@ -108,7 +124,8 @@ public class TenantController {
                     tenant.maxDevices(),
                     tenant.maxObjects(),
                     usage.devices(),
-                    usage.objects()
+                    usage.objects(),
+                    schemaName
             );
         }
     }

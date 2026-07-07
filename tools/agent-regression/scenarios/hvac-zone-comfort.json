@@ -1,0 +1,17 @@
+{
+  "id": "hvac-zone-comfort",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC zone comfort dashboard",
+  "description": "Post-deploy dashboard for zone temperatures.",
+  "prompt": "After building-hvac deploy, add dashboard with zone comfort widgets bound to hvac_listZones.",
+  "playbook": "dashboardGuide",
+  "bundle": {
+    "appId": "building-hvac",
+    "manifestPath": "examples/building-hvac-app/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["add_dashboard_widget", "invoke_bff"]
+  }
+}

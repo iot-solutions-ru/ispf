@@ -1,0 +1,12 @@
+{
+  "id": "scada-modbus-device",
+  "version": "1",
+  "domain": "scada",
+  "title": "Modbus TCP device",
+  "description": "Modbus device configuration and variable polling.",
+  "prompt": "Add Modbus TCP device with holding registers and status dashboard.",
+  "playbook": "modbusTcpDevice",
+  "acceptance": {
+    "requiredTools": ["create_object", "configure_driver", "list_variables"]
+  }
+}

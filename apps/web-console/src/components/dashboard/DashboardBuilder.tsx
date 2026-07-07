@@ -8,7 +8,7 @@ import {
   saveDashboardTitle,
   saveDashboardRefreshInterval,
 } from "../../api";
-import type { DashboardLayout, DashboardView, DashboardWidget, WidgetType } from "../../types/dashboard";
+import type { DashboardLayout, DashboardLayoutPreset, DashboardView, DashboardWidget, WidgetType } from "../../types/dashboard";
 import { layoutToJson, newWidget, resolveDashboardLayout } from "../../types/dashboard";
 import WidgetPalette from "./WidgetPalette";
 import { WIDGET_SAMPLE_PATHS } from "./widgetSamples";
@@ -43,6 +43,7 @@ import {
   cacheDashboardView,
   readCachedDashboardView,
 } from "../../utils/operatorOfflineCache";
+import { applyLayoutPreset } from "./dashboardLayoutPresets";
 
 interface DashboardBuilderProps {
   path: string;
@@ -350,6 +351,15 @@ export default function DashboardBuilder({
     setDraftLayout({ ...layout, ...patch });
   };
 
+  const handleApplyLayoutPreset = useCallback(
+    (preset: DashboardLayoutPreset) => {
+      setDraftLayout(applyLayoutPreset(preset, layout));
+      setMode("edit");
+      setEditorSidePanel("settings");
+    },
+    [layout]
+  );
+
   const deleteWidget = useCallback(() => {
     const widgetId = selectedWidgetIdRef.current;
     if (!widgetId) return;
@@ -462,11 +472,14 @@ export default function DashboardBuilder({
     );
   }
 
+  const videoWallClass =
+    layout.layoutPreset === "video-wall-2x2" ? " dashboard-shell--video-wall-2x2" : "";
+
   return (
     <div
       className={`dashboard-shell ${operatorMode ? "operator-dashboard-shell" : ""}${
         embeddedModal ? " dashboard-shell--embedded-modal" : ""
-      }${isEditorWorkspace ? " dashboard-shell--editor-fullscreen" : ""}`}
+      }${isEditorWorkspace ? " dashboard-shell--editor-fullscreen" : ""}${videoWallClass}`}
     >
       {!operatorMode && (
         <header className="dashboard-toolbar">
@@ -616,6 +629,7 @@ export default function DashboardBuilder({
               dashboardPath={path}
               onLayoutChange={updateLayoutSettings}
               onRefreshIntervalChange={setDraftRefreshMs}
+              onApplyPreset={handleApplyLayoutPreset}
             />
           ) : editorSidePanel === "rules" ? (
             <DashboardRulesPanel path={path} widgets={layout.widgets} />

@@ -152,6 +152,13 @@ ispf:
       monitor-interval-ms: ${ISPF_FEDERATION_HEALTH_MONITOR_INTERVAL_MS:60000}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
+    mfa:
+      enabled: ${ISPF_MFA_ENABLED:false}
+  tenant:
+    isolation-mode: ${ISPF_TENANT_ISOLATION_MODE:logical}
+    schema-prefix: ${ISPF_TENANT_SCHEMA_PREFIX:tenant_}
+  alarm-shelf:
+    approval-required: ${ISPF_ALARM_SHELF_APPROVAL_REQUIRED:false}
   websocket:
     send-threads: ${ISPF_WEBSOCKET_SEND_THREADS:2}
     send-elastic-enabled: ${ISPF_WEBSOCKET_SEND_ELASTIC:true}
@@ -160,8 +167,49 @@ ispf:
     send-scale-up-queue-threshold: ${ISPF_WEBSOCKET_SEND_SCALE_UP:50}
     send-scale-down-steps: ${ISPF_WEBSOCKET_SEND_SCALE_DOWN:6}
     send-scale-check-interval-ms: ${ISPF_WEBSOCKET_SEND_SCALE_CHECK_MS:200}
+  historian:
+    deploy-profile: ${ISPF_HISTORIAN_DEPLOY_PROFILE:three-tier}
+    tiers:
+      hot:
+        store: ${ISPF_HISTORIAN_TIER_HOT_STORE:jdbc}
+        retention-days: ${ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS:7}
+        min-interval-ms: ${ISPF_HISTORIAN_TIER_HOT_MIN_INTERVAL_MS:5000}
+        dual-write-enabled: ${ISPF_HISTORIAN_TIER_HOT_DUAL_WRITE:true}
+        clickhouse:
+          url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
+          database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
+          table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
+          username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
+          password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
+      warm:
+        store: ${ISPF_HISTORIAN_TIER_WARM_STORE:clickhouse}
+        retention-days: ${ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS:90}
+        clickhouse:
+          url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
+          database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
+          table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
+          username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
+          password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
+      cold:
+        store: ${ISPF_HISTORIAN_TIER_COLD_STORE:cold}
+        retention-days: ${ISPF_HISTORIAN_TIER_COLD_RETENTION_DAYS:3650}
+        cold:
+          provider: ${ISPF_HISTORIAN_TIER_COLD_PROVIDER:s3}
+          bucket: ${ISPF_HISTORIAN_TIER_COLD_BUCKET:ispf-historian-archive}
+          prefix: ${ISPF_HISTORIAN_TIER_COLD_PREFIX:variable-samples/}
+          format: ${ISPF_HISTORIAN_TIER_COLD_FORMAT:parquet}
+  ml:
+    anomaly:
+      enabled: ${ISPF_ML_ANOMALY_ENABLED:false}
+      default-threshold: ${ISPF_ML_ANOMALY_DEFAULT_THRESHOLD:0.85}
   variable-history:
     enabled: ${ISPF_VARIABLE_HISTORY_ENABLED:true}
+    slo:
+      aggregate-max-points: ${ISPF_VARIABLE_HISTORY_SLO_AGGREGATE_MAX_POINTS:1000000}
+      aggregate-max-latency-ms: ${ISPF_VARIABLE_HISTORY_SLO_AGGREGATE_MAX_LATENCY_MS:2000}
+      raw-query-max-points: ${ISPF_VARIABLE_HISTORY_SLO_RAW_QUERY_MAX_POINTS:10000}
+      raw-query-max-latency-ms: ${ISPF_VARIABLE_HISTORY_SLO_RAW_QUERY_MAX_LATENCY_MS:500}
+      export-max-points: ${ISPF_VARIABLE_HISTORY_SLO_EXPORT_MAX_POINTS:10000}
     min-interval-ms: ${ISPF_VARIABLE_HISTORY_MIN_INTERVAL_MS:5000}
     retention-days: ${ISPF_VARIABLE_HISTORY_RETENTION_DAYS:90}
     store: ${ISPF_VARIABLE_HISTORY_STORE:jdbc}

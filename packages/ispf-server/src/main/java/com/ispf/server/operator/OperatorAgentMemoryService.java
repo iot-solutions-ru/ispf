@@ -66,17 +66,23 @@ public class OperatorAgentMemoryService {
 
     /**
      * Relevant memories for the current user message — injected into the operator agent prompt.
+     * Locale is inferred from Cyrillic in the user message (ru) vs default en.
      */
     public String formatPromptSection(String appId, String userMessage) {
+        return formatPromptSection(appId, userMessage, detectLocale(userMessage));
+    }
+
+    /**
+     * Relevant memories with explicit ru/en prompt header (BL-179).
+     */
+    public String formatPromptSection(String appId, String userMessage, Locale locale) {
         List<OperatorAgentMemoryRecord> relevant = selectForPrompt(appId, userMessage);
         if (relevant.isEmpty()) {
             return "";
         }
         store.incrementUseCount(relevant.stream().map(OperatorAgentMemoryRecord::memoryId).toList());
         StringBuilder sb = new StringBuilder();
-        sb.append("\n--- Application memory (learned from past operators) ---\n");
-        sb.append("Use these notes when answering; prefer them over guessing. ");
-        sb.append("Call remember_app_memory when the user teaches something new.\n");
+        sb.append(promptHeader(locale));
         for (OperatorAgentMemoryRecord item : relevant) {
             sb.append("- [").append(item.kind()).append("] ")
                     .append(item.topic()).append(": ")
@@ -84,6 +90,35 @@ public class OperatorAgentMemoryService {
                     .append('\n');
         }
         return sb.toString();
+    }
+
+    static Locale detectLocale(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return Locale.ENGLISH;
+        }
+        for (int i = 0; i < userMessage.length(); i++) {
+            if (Character.UnicodeBlock.of(userMessage.charAt(i)) == Character.UnicodeBlock.CYRILLIC) {
+                return Locale.forLanguageTag("ru");
+            }
+        }
+        return Locale.ENGLISH;
+    }
+
+    private static String promptHeader(Locale locale) {
+        if (locale != null && "ru".equalsIgnoreCase(locale.getLanguage())) {
+            return """
+                    
+                    --- Память приложения (из прошлых смен операторов) ---
+                    Используй эти заметки при ответах; предпочитай их догадкам.
+                    Вызывай remember_app_memory, когда оператор учит что-то новому.
+                    """;
+        }
+        return """
+                
+                --- Application memory (learned from past operators) ---
+                Use these notes when answering; prefer them over guessing.
+                Call remember_app_memory when the user teaches something new.
+                """;
     }
 
     private List<OperatorAgentMemoryRecord> selectForPrompt(String appId, String userMessage) {

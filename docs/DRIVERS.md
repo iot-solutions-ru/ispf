@@ -13,7 +13,18 @@
 
 Многие записи каталога REQ-PF-14 помечены как stub — см. таблицу ниже и [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).
 
-Матрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`.
+Матрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [DRIVER_INTEROP_LAB.md](DRIVER_INTEROP_LAB.md) (BL-141).
+
+### Top-20 industrial (BL-140, Phase 25)
+
+19 драйверов **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+
+| `driverId` | Maturity | Interop module |
+| ---------- | -------- | -------------- |
+| `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | см. interop lab |
+| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab |
+| `iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker` | PRODUCTION | см. interop lab |
+| `iec104-server` | BETA | interop partner для `iec104` |
 
 ### observedAt (source timestamps, BL-79)
 
@@ -382,9 +393,6 @@ Loopback test: `CoapDeviceDriverTest` (in-process Californium CoAP server).
 | `driverId` | Maturity | Заметка |
 |------------|----------|---------|
 | `corba` | BETA | CORBA IIOP TCP shell |
-| `ethernet-ip` | BETA | EtherNet/IP session stub |
-| `opc-da` | BETA | OPC DA (DCOM/native) |
-| `opc-bridge` | BETA | OPC/LON bridge TCP |
 | `vmware` | BETA | vSphere SOAP stub |
 | `smi-s` | BETA | SMI-S CIM-XML stub |
 
@@ -412,14 +420,14 @@ Loopback tests (BL-26): `EthernetIpDeviceDriverTest`, `OpcDaDeviceDriverTest`, `
 | `coap` | `ispf-driver-coap` | CoAP GET |
 | `opcua` | `ispf-driver-opcua` | OPC UA client (Milo) |
 | `opcua-server` | `ispf-driver-opcua-server` | OPC UA server (Milo) |
-| `opc-da` | `ispf-driver-opc-da` | OPC DA stub (DCOM/native) |
-| `opc-bridge` | `ispf-driver-opc-bridge` | OPC/LON bridge TCP stub |
+| `opc-da` | `ispf-driver-opc-da` | OPC DA (DCOM/native bridge) |
+| `opc-bridge` | `ispf-driver-opc-bridge` | OPC/LON bridge TCP |
 | `s7` | `ispf-driver-s7` | Siemens S7 |
 | `iec104` | `ispf-driver-iec104` | IEC 104 client |
 | `iec104-server` | `ispf-driver-iec104-server` | IEC 104 server/slave |
 | `bacnet` | `ispf-driver-bacnet` | BACnet/IP |
 | `dnp3` | `ispf-driver-dnp3` | DNP3 TCP master (Class 0/1/2/3 poll) |
-| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP session stub |
+| `ethernet-ip` | `ispf-driver-ethernet-ip` | EtherNet/IP CIP session + tag path |
 | `dlms` | `ispf-driver-dlms` | DLMS/COSEM master (Gurux read/write) |
 | `jmx` | `ispf-driver-jmx` | JMX local/remote |
 | `jdbc` | `ispf-driver-jdbc` | SQL JDBC |
@@ -524,6 +532,8 @@ Point mapping: `ioa:dataType` (например `2001:BOOL`, `3001:FLOAT`, `1001
 
 Loopback test: `Iec104DeviceDriverTest` против `iec104-server`.
 
+Maturity: **production** (BL-140).
+
 ### bacnet (`ispf-driver-bacnet`)
 
 BACnet/IP read/write property (`present-value`). Конfig:
@@ -557,7 +567,7 @@ Point mapping: `index:dataType` — `BINARY_INPUT`, `BINARY_OUTPUT`, `ANALOG_INP
 
 На каждый `readPoints` выполняется `Request.classRequest(0,1,2,3)`; значения и DNP3 flags (`status`) обновляются в переменных объекта.
 
-Maturity: **beta** (read-only; loopback test `Dnp3DeviceDriverTest`).
+Maturity: **production** (Class 0/1/2/3 poll; loopback test `Dnp3DeviceDriverTest`, BL-140).
 
 ### dlms (`ispf-driver-dlms`)
 
@@ -570,7 +580,7 @@ Point mapping: `logicalDevice:obis[:objectType[:attribute]]` — по умолч
 
 `readPoints` / `writePoint`: SNRM + AARQ association, Gurux GET/SET. Write: поля `value` или `raw` (numeric для REGISTER).
 
-Maturity: **beta** (auth NONE; loopback `DlmsDeviceDriverTest`).
+Maturity: **production** (auth NONE; loopback `DlmsDeviceDriverTest`, BL-140).
 
 ### jmx (`ispf-driver-jmx`)
 

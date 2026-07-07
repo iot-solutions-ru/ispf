@@ -191,6 +191,7 @@ public class EventCorrelatorService {
                 case COUNT -> processCountPattern(correlator, objectPath, eventName, now);
                 case SEQUENCE -> processSequencePattern(correlator, objectPath, eventName, now);
                 case EVENT_CHAIN -> processEventChainPattern(correlator, objectPath, eventName, now);
+                case WINDOW -> processWindowPattern(correlator, objectPath, eventName, now);
             };
             if (triggered) {
                 automationMetricsRecorder.recordCorrelatorTrigger();
@@ -282,6 +283,44 @@ public class EventCorrelatorService {
                 since
         );
         return matchesEventChainWithGap(chain, hits, correlator.sequenceGapSeconds());
+    }
+
+    private boolean processWindowPattern(
+            EventCorrelator correlator,
+            String objectPath,
+            String eventName,
+            Instant now
+    ) {
+        List<String> requiredEvents = windowEventSet(correlator);
+        if (!requiredEvents.contains(eventName)) {
+            return false;
+        }
+        recordHit(correlator.id(), objectPath, eventName, now);
+        Instant since = now.minusSeconds(correlator.windowSeconds());
+        List<CorrelatorHit> hits = windowStore.listHitsSince(correlator.id(), objectPath, since);
+        java.util.Set<String> seen = new java.util.LinkedHashSet<>();
+        for (CorrelatorHit hit : hits) {
+            if (requiredEvents.contains(hit.eventName())) {
+                seen.add(hit.eventName());
+            }
+        }
+        return seen.size() >= requiredEvents.size();
+    }
+
+    private static List<String> windowEventSet(EventCorrelator correlator) {
+        List<String> events = new ArrayList<>();
+        if (correlator.eventName() != null && !correlator.eventName().isBlank()) {
+            events.add(correlator.eventName());
+        }
+        if (correlator.secondEventName() != null && !correlator.secondEventName().isBlank()) {
+            for (String part : correlator.secondEventName().split(",")) {
+                String trimmed = part.trim();
+                if (!trimmed.isBlank() && !events.contains(trimmed)) {
+                    events.add(trimmed);
+                }
+            }
+        }
+        return events;
     }
 
     private static List<String> eventChain(EventCorrelator correlator) {
@@ -553,6 +592,14 @@ public class EventCorrelatorService {
         if (patternType == CorrelatorPatternType.EVENT_CHAIN) {
             if (secondEventName == null || secondEventName.isBlank()) {
                 throw new IllegalArgumentException("secondEventName chain (comma-separated) is required for EVENT_CHAIN");
+            }
+        }
+        if (patternType == CorrelatorPatternType.WINDOW) {
+            if (secondEventName == null || secondEventName.isBlank()) {
+                throw new IllegalArgumentException("secondEventName (comma-separated event set) is required for WINDOW");
+            }
+            if (windowSeconds <= 0) {
+                throw new IllegalArgumentException("windowSeconds must be > 0 for WINDOW pattern");
             }
         }
     }

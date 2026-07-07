@@ -29,4 +29,28 @@ class BpmnParserTest {
         assertThat(process.nextNode("start")).isEqualTo("task");
         assertThat(process.serviceTasks().get("task").action()).isEqualTo(WorkflowActionType.LOG);
     }
+
+    @Test
+    void parsesMessageCatchEvent() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="msg" name="Message" isExecutable="true">
+                    <startEvent id="start"/>
+                    <intermediateCatchEvent id="waitMsg" name="Wait ERP ack">
+                      <messageEventDefinition messageRef="erpAck"/>
+                    </intermediateCatchEvent>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="waitMsg"/>
+                    <sequenceFlow sourceRef="waitMsg" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.messageCatchEvents()).containsKey("waitMsg");
+        assertThat(process.messageCatchEvents().get("waitMsg").messageName()).isEqualTo("erpAck");
+    }
 }

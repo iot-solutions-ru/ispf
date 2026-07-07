@@ -32,6 +32,7 @@ import {
   sheetMetaSessionKey,
   type SheetRuntimeMeta,
 } from "./sheetRuntimeMeta";
+import { resolveSpreadsheetRefreshInterval } from "./spreadsheetLiveRefresh";
 
 const PERSIST_DEBOUNCE_MS = 400;
 
@@ -150,6 +151,7 @@ export function useSpreadsheetPersist(
   const sheetConfig = useMemo(() => resolveSheetConfig(widget), [widget]);
   const sheetMode = resolveSheetMode(widget);
   const persistMode = widget.persistMode ?? "session";
+  const bindingRefreshMs = resolveSpreadsheetRefreshInterval(widget, refreshIntervalMs);
   const sessionKey = defaultSessionKey(widget);
   const metaSessionKey = sheetMetaSessionKey(sessionKey);
   const valuesVarName = widget.valuesVariable?.trim() ?? "";
@@ -158,7 +160,7 @@ export function useSpreadsheetPersist(
     persistMode === "variable" && valuesVarName ? objectPath : "",
     persistMode === "variable" ? valuesVarName : "",
     widget.valueField,
-    refreshIntervalMs
+    bindingRefreshMs === false ? false : bindingRefreshMs
   );
   const valuesVariableRef = useRef(valuesVariable);
   valuesVariableRef.current = valuesVariable;
@@ -641,5 +643,6 @@ export function useSpreadsheetPersist(
     getWorkbookSnapshot,
     commitWorkbook,
     workbook,
+    bindingRefreshMs,
   };
 }

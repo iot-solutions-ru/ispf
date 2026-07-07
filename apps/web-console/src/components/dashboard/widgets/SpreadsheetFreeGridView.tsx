@@ -86,6 +86,7 @@ export default function SpreadsheetFreeGridView({
     replaceWorkbook,
     getWorkbookSnapshot,
     commitWorkbook,
+    bindingRefreshMs,
   } = useSpreadsheetPersist(widget, objectPath, refreshIntervalMs);
 
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -118,10 +119,11 @@ export default function SpreadsheetFreeGridView({
   const { externalByAddr, ispfContext } = useSheetBindings(
     effectiveConfig,
     objectPath,
-    refreshIntervalMs,
+    bindingRefreshMs,
     localContents
   );
-  const { regionContents } = useSheetDataRegion(sheetConfig, objectPath, refreshIntervalMs);
+  const dataRegionRefreshMs = bindingRefreshMs === false ? false : bindingRefreshMs;
+  const { regionContents } = useSheetDataRegion(sheetConfig, objectPath, dataRegionRefreshMs);
 
   const workbookFormulaContext = useMemo((): WorkbookFormulaContext | undefined => {
     if (sheetTabs.length <= 1) {

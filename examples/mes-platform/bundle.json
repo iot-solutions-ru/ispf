@@ -1,0 +1,227 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-170)",
+  "tablePrefix": "",
+  "schemaName": "app_mes_platform",
+  "migrations": [
+    {
+      "id": "mes_platform_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_platform_line (line_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, area_path VARCHAR(256)); INSERT INTO mes_platform_line (line_code, display_name, area_path) SELECT 'LINE-A01', 'Assembly Line A01', 'root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01' WHERE NOT EXISTS (SELECT 1 FROM mes_platform_line WHERE line_code = 'LINE-A01'); CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-platform-hub",
+      "type": "DEVICE",
+      "displayName": "MES Platform Hub",
+      "description": "OEE + MES BFF hub for mes-platform certification bundle"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_oee_listShifts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "shift_row",
+                "fields": [
+                  { "name": "shiftId", "type": "STRING" },
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "shiftLabel", "type": "STRING" },
+                  { "name": "plannedMinutes", "type": "INTEGER" },
+                  { "name": "downtimeMinutes", "type": "INTEGER" },
+                  { "name": "totalUnits", "type": "INTEGER" },
+                  { "name": "goodUnits", "type": "INTEGER" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"SELECT id::text AS shift_id, line_code, shift_label, planned_minutes, downtime_minutes, total_units, good_units FROM mes_oee_shift ORDER BY line_code, shift_label\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_oee_getKpi",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [{ "name": "shiftId", "type": "STRING" }]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "lineCode", "type": "STRING" },
+            { "name": "shiftLabel", "type": "STRING" },
+            { "name": "availabilityPct", "type": "INTEGER" },
+            { "name": "performancePct", "type": "INTEGER" },
+            { "name": "qualityPct", "type": "INTEGER" },
+            { "name": "oeePct", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_oee_addDowntime",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "shiftId", "type": "STRING" },
+            { "name": "minutes", "type": "INTEGER" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "downtimeMinutes", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"SELECT id, downtime_minutes, planned_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = ?\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_platform_listLines",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "line_row",
+                "fields": [
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "displayName", "type": "STRING" },
+                  { "name": "areaPath", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lines\",\"sql\":\"SELECT line_code, display_name, area_path FROM mes_platform_line ORDER BY line_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lines}\",\"fields\":{\"lineCode\":\"${item.line_code}\",\"displayName\":\"${item.display_name}\",\"areaPath\":\"${item.area_path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "models": [
+    {
+      "name": "quality-record-v1",
+      "description": "Quality inspection record with defect traceability (BL-167)",
+      "type": "RELATIVE",
+      "targetObjectType": "QUALITY_RECORD",
+      "variables": [
+        {
+          "name": "defectCode",
+          "description": "Defect / NCR code",
+          "group": "info",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+        },
+        {
+          "name": "severity",
+          "description": "Severity label (minor, major, critical)",
+          "group": "info",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "minor" }] }
+        },
+        {
+          "name": "lotId",
+          "description": "Material lot / batch id",
+          "group": "traceability",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.mes-work-order-dispatch",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.devices.mes-platform-hub\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "mes-platform"
+    }
+  ],
+  "correlators": [
+    {
+      "name": "MES work order dispatch",
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "patternType": "COUNT",
+      "eventName": "workOrderDispatched",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 5,
+      "sequenceGapSeconds": 0,
+      "actionType": "RUN_WORKFLOW",
+      "actionTarget": "root.platform.workflows.mes-work-order-dispatch",
+      "enabled": false
+    }
+  ],
+  "events": [
+    { "id": "workOrderDispatched", "roles": ["operator", "admin"] }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-platform-dispatch",
+      "title": "MES Dispatch",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":5,\"h\":6,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":5,\"y\":0,\"w\":7,\"h\":3,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":5,\"y\":3,\"w\":7,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-platform",
+    "title": "MES Platform",
+    "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
+    "dashboards": [
+      { "path": "root.platform.dashboards.mes-platform-dispatch", "title": "Dispatch" }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.mes-platform-hub"
+  }
+}

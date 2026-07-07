@@ -5,7 +5,7 @@ export function useBoundVariable(
   objectPath: string,
   variableName: string,
   valueField?: string,
-  refreshIntervalMs = 5000
+  refreshIntervalMs: number | false = 5000
 ) {
   const query = useVariablesQuery(
     objectPath,

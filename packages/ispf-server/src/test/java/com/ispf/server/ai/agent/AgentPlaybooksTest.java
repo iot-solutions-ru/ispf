@@ -51,4 +51,21 @@ class AgentPlaybooksTest {
         assertFalse(playbook.contains("pump-station type=CUSTOM"));
         assertTrue(playbook.contains("list_objects"));
     }
+
+    @Test
+    void endToEndDeployPlaybookFormatsWithoutPlaceholderErrors() {
+        String playbook = AgentDeployPlaybook.referenceText();
+        assertTrue(playbook.contains("validate_bundle"));
+        assertTrue(playbook.contains("import_package"));
+        assertFalse(playbook.contains("%s"));
+    }
+
+    @Test
+    void solutionGeneratorPlaybookCoversTreeDashboardsAlerts() {
+        String playbook = AgentSolutionGeneratorPlaybook.referenceText();
+        assertTrue(playbook.contains("configure_alert"));
+        assertTrue(playbook.contains("set_dashboard_layout"));
+        assertTrue(playbook.contains("list_variables"));
+        assertFalse(playbook.contains("%s"));
+    }
 }

@@ -4,6 +4,7 @@ import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 
 import java.time.Instant;
+import java.util.List;
 
 public record VariableDto(
         String name,
@@ -12,7 +13,9 @@ public record VariableDto(
         boolean writable,
         Instant updatedAt,
         boolean historyEnabled,
-        Integer historyRetentionDays
+        Integer historyRetentionDays,
+        List<String> readRoles,
+        List<String> writeRoles
 ) {
     public static VariableDto from(Variable variable) {
         return new VariableDto(
@@ -22,7 +25,9 @@ public record VariableDto(
                 variable.writable(),
                 variable.updatedAt().orElse(null),
                 variable.historyEnabled(),
-                variable.historyRetentionDays().orElse(null)
+                variable.historyRetentionDays().orElse(null),
+                variable.readRoles(),
+                variable.writeRoles()
         );
     }
 }

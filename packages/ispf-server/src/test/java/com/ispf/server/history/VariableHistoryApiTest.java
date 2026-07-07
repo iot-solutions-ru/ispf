@@ -127,6 +127,16 @@ class VariableHistoryApiTest {
     }
 
     @Test
+    void parquetExportReturnsNotImplemented() throws Exception {
+        mockMvc.perform(get("/api/v1/objects/by-path/variables/history/export")
+                        .param("path", DEVICE)
+                        .param("name", "temperature")
+                        .param("field", "value")
+                        .param("format", "parquet"))
+                .andExpect(status().isNotImplemented());
+    }
+
+    @Test
     void aggregatesHistoryIntoBuckets() throws Exception {
         double base = 10.0 + (System.nanoTime() % 20);
         for (int i = 0; i < 5; i++) {

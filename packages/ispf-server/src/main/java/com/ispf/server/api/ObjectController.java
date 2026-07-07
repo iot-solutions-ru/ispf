@@ -34,6 +34,7 @@ import com.ispf.server.dashboard.DashboardService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.driver.DeviceProvisioningService;
 import com.ispf.server.driver.DriverRuntimeService;
+import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.automation.AutomationTreeService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
@@ -93,6 +94,7 @@ public class ObjectController {
     private final VisualGroupService visualGroupService;
     private final ObjectBulkDeleteService objectBulkDeleteService;
     private final DriverRuntimeService driverRuntimeService;
+    private final AuditEventService auditEventService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -116,7 +118,8 @@ public class ObjectController {
             BlueprintApplicationService blueprintApplicationService,
             VisualGroupService visualGroupService,
             ObjectBulkDeleteService objectBulkDeleteService,
-            DriverRuntimeService driverRuntimeService
+            DriverRuntimeService driverRuntimeService,
+            AuditEventService auditEventService
     ) {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
@@ -140,6 +143,7 @@ public class ObjectController {
         this.visualGroupService = visualGroupService;
         this.objectBulkDeleteService = objectBulkDeleteService;
         this.driverRuntimeService = driverRuntimeService;
+        this.auditEventService = auditEventService;
     }
 
     private void requireObjectTreeReady() {
@@ -474,7 +478,11 @@ public class ObjectController {
             return objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { });
         }
         PlatformObject node = objectManager.require(path);
-        return node.variables().values().stream().map(VariableDto::from).toList();
+        return node.variables().values().stream()
+                .filter(variable -> objectAccessService.canVariableRead(
+                        path, variable.name(), variable.readRoles(), authentication))
+                .map(VariableDto::from)
+                .toList();
     }
 
     @GetMapping("/variables/batch")
@@ -505,7 +513,11 @@ public class ObjectController {
                     result.put(path, objectMapper.convertValue(json, new TypeReference<List<VariableDto>>() { }));
                 } else {
                     PlatformObject node = objectManager.require(path);
-                    result.put(path, node.variables().values().stream().map(VariableDto::from).toList());
+                    result.put(path, node.variables().values().stream()
+                            .filter(variable -> objectAccessService.canVariableRead(
+                                    path, variable.name(), variable.readRoles(), authentication))
+                            .map(VariableDto::from)
+                            .toList());
                 }
             } catch (ObjectNotFoundException e) {
                 // omit paths that do not exist
@@ -524,6 +536,7 @@ public class ObjectController {
         PlatformObject node = objectManager.require(path);
         Variable variable = node.getVariable(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
+        objectAccessService.requireVariableRead(path, name, variable.readRoles(), authentication);
         return VariableDto.from(variable);
     }
 
@@ -550,6 +563,10 @@ public class ObjectController {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
                 }
             }
+            PlatformObject node = objectManager.require(path);
+            Variable existing = node.getVariable(name)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Variable: " + name));
+            objectAccessService.requireVariableWrite(path, name, existing.writeRoles(), authentication);
             Variable variable = objectManager.setVariableValue(path, name, value);
             if (platformUserService.isSecurityUserPath(path)) {
                 platformUserService.syncVariableFromObject(path, name, value);
@@ -604,7 +621,9 @@ public class ObjectController {
                     request.writable(),
                     request.initialValue(),
                     request.historyEnabled(),
-                    request.historyRetentionDays()
+                    request.historyRetentionDays(),
+                    request.readRoles() != null ? request.readRoles() : List.of(),
+                    request.writeRoles() != null ? request.writeRoles() : List.of()
             );
             return VariableDto.from(variable);
         } catch (IllegalArgumentException | IllegalStateException e) {
@@ -628,8 +647,19 @@ public class ObjectController {
                     path,
                     name,
                     request.readable(),
-                    request.writable()
+                    request.writable(),
+                    request.readRoles(),
+                    request.writeRoles()
             );
+            if (request.readRoles() != null || request.writeRoles() != null) {
+                auditEventService.logVariableAclChange(
+                        authentication != null ? authentication.getName() : "system",
+                        path,
+                        name,
+                        request.readRoles(),
+                        request.writeRoles()
+                );
+            }
             return VariableDto.from(variable);
         } catch (IllegalArgumentException | IllegalStateException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -729,7 +759,9 @@ public class ObjectController {
             boolean writable,
             DataRecord initialValue,
             boolean historyEnabled,
-            Integer historyRetentionDays
+            Integer historyRetentionDays,
+            List<String> readRoles,
+            List<String> writeRoles
     ) {
         public CreateVariableRequest {
             if (schema == null) {
@@ -742,7 +774,9 @@ public class ObjectController {
 
     public record UpdateVariableDefinitionRequest(
             Boolean readable,
-            Boolean writable
+            Boolean writable,
+            List<String> readRoles,
+            List<String> writeRoles
     ) {
     }
 

@@ -56,7 +56,28 @@ public class ObjectEntityMapper {
         entity.setUpdatedAt(variable.updatedAt().orElse(null));
         entity.setHistoryEnabled(variable.historyEnabled());
         entity.setHistoryRetentionDays(variable.historyRetentionDays().orElse(null));
+        entity.setReadRolesJson(writeStringList(variable.readRoles()));
+        entity.setWriteRolesJson(writeStringList(variable.writeRoles()));
         return entity;
+    }
+
+    public List<String> readStringList(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            String[] values = objectMapper.readValue(json, String[].class);
+            return List.of(values);
+        } catch (JacksonException e) {
+            return List.of();
+        }
+    }
+
+    private String writeStringList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return null;
+        }
+        return writeJson(values.toArray(new String[0]));
     }
 
     public DataSchema readSchema(String json) {

@@ -27,7 +27,8 @@
 | [REST API](API.md) | Полный справочник endpoints |
 | [Приложения (REQ-PF)](APPLICATIONS.md) | Deploy функций, миграций, bundle, BFF, scheduler |
 | [Отчёты (REQ-PF-12)](REPORTS.md) | SQL reports, CSV export, operator manifest |
-| [Roadmap](ROADMAP.md) | **Единый roadmap:** Phase 0–23, REQ-PF/FW, BL-01…139, спринты S01–S23 |
+| [Roadmap](ROADMAP.md) | **Единый roadmap:** Phase 0–24, REQ-PF/FW, BL-01…139, спринты S01–S30 |
+| **[Roadmap Phase 25+](ROADMAP_PHASE25.md)** | Excellence Program → 10/10: Phase 25–32, BL-140…190, S31–S46 |
 | [Acceleration program](ACCELERATION_PROGRAM.md) | S19–S23: baseline, scorecard, scope freeze, KPI |
 | [HMI quality gates](HMI_QUALITY_GATES.md) | Lighthouse, axe, bundle budget, mimic FPS (S21) |
 | [CI dashboard](CI_DASHBOARD.md) | Workflow health snapshot (S20-06) |

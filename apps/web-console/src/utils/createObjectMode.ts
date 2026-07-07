@@ -265,6 +265,24 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   if (parentPath.endsWith(".devices")) {
     return "DEVICE";
   }
+  if (parentPath.endsWith(".work-orders")) {
+    return "WORK_ORDER";
+  }
+  if (parentPath.endsWith(".operations")) {
+    return "OPERATION";
+  }
+  if (parentPath.endsWith(".lots")) {
+    return "LOT";
+  }
+  if (parentPath.endsWith(".shifts")) {
+    return "SHIFT";
+  }
+  if (parentPath.endsWith(".quality-records")) {
+    return "QUALITY_RECORD";
+  }
+  if (parentPath.endsWith(".process-programs")) {
+    return "PROCESS_PROGRAM";
+  }
   if (
     parentPath.endsWith(".relative-blueprints")
     || parentPath.endsWith(".instance-types")

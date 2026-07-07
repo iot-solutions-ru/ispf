@@ -214,6 +214,10 @@ public final class AgentPromptBuilder {
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.applicationLifecycleGuide());
         prompt.append("\n\n");
+        prompt.append(AgentDeployPlaybook.referenceText());
+        prompt.append("\n\n");
+        prompt.append(AgentSolutionGeneratorPlaybook.referenceText());
+        prompt.append("\n\n");
         prompt.append(AgentPlaybooks.platformRuleGuide());
         prompt.append("\n\n");
         prompt.append(AgentPlaybooks.scheduleGuide());

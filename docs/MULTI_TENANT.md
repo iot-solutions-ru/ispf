@@ -62,4 +62,17 @@ PUT /api/v1/tenants/acme/quotas
 - Shared `root.platform` остаётся для legacy demo (admin-only для tenant users)
 - Federation и tenant — ортогональные механизмы
 
+## Isolation mode (BL-155)
+
+| Property | Default | Описание |
+|----------|---------|----------|
+| `ispf.tenant.isolation-mode` | `logical` | `logical` — path namespaces; `hard` — per-tenant PostgreSQL schema (stub) |
+| `ispf.tenant.schema-prefix` | `tenant_` | Schema prefix when `hard` (`tenant_acme` for tenant `acme`) |
+
+Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenant_`.
+
+**Logical (default):** один shared schema; tenant data under `root.tenant.{id}.platform.*`.
+
+**Hard (stub):** при `POST /api/v1/tenants` проверяется, что `tenantId` допустим как суффикс PostgreSQL schema (`[a-z][a-z0-9_]{0,62}`). Ответ включает `schemaName`. Provisioning schema и routing datasource — follow-up.
+
 См. также [FEDERATION.md](FEDERATION.md), [ROADMAP.md](ROADMAP.md).

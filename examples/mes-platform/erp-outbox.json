@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "description": "ERP outbox idempotent sync pattern (BL-169) — SAP / 1C connector stub",
+  "schemaName": "app_mes_platform",
+  "outboxTable": "mes_erp_outbox",
+  "ddl": "CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), processed_at TIMESTAMPTZ NULL);",
+  "enqueue": {
+    "functionName": "mes_erp_enqueueOutbox",
+    "inputFields": ["entityType", "entityId", "payloadJson"],
+    "idempotencyKeyTemplate": "${entityType}:${entityId}:${payloadHash}"
+  },
+  "poll": {
+    "scheduleIntervalMs": 5000,
+    "functionName": "mes_erp_pollOutbox",
+    "batchSize": 50,
+    "statusFlow": ["pending", "processing", "sent", "failed"]
+  },
+  "connectorNotes": {
+    "sap": "Map entityType=WORK_ORDER to BAPI_PRODORD_CREATE or IDoc ORDERS05",
+    "1c": "Map entityType=WORK_ORDER to HTTP exchange document via published BFF"
+  }
+}

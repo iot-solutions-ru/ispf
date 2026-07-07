@@ -8,6 +8,7 @@
 | [mini-tec](mini-tec/) | Эталон мини-ТЭЦ: bundle + auto-bootstrap на старте server |
 | [mes-reference](mes-reference/) | MES walkthrough: наряд → резервуар → эстакада |
 | [mes-oee-reference](mes-oee-reference/) | BL-121: OEE KPI reference (A×P×Q) |
+| [mes-platform](mes-platform/) | BL-165/170: MES platform certification bundle + OEE BFF |
 | [escalation-templates](escalation-templates/) | BL-123: BPMN ack-timeout + correlator templates |
 | [warehouse-app](warehouse-app/) | Reference app #2 (dogfooding REQ-PF) |
 | [lab-training](lab-training/) | Importable lab package (Phase 15) |

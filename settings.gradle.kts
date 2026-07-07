@@ -8,6 +8,7 @@ include(
     "packages:ispf-core",
     "packages:ispf-expression",
     "packages:ispf-driver-api",
+    "packages:ispf-driver-ddk",
     "packages:ispf-server",
     "packages:ispf-driver-mqtt",
     "packages:ispf-driver-modbus",

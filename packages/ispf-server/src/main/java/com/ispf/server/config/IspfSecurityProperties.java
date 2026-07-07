@@ -32,6 +32,8 @@ public class IspfSecurityProperties {
      */
     private String secretsKey = "";
 
+    private final Mfa mfa = new Mfa();
+
     public boolean isRbacEnabled() {
         return rbacEnabled;
     }
@@ -70,5 +72,24 @@ public class IspfSecurityProperties {
 
     public void setSecretsKey(String secretsKey) {
         this.secretsKey = secretsKey;
+    }
+
+    public Mfa getMfa() {
+        return mfa;
+    }
+
+    public static class Mfa {
+        /**
+         * When true, TOTP enrollment endpoints are active ({@code /api/v1/security/mfa/**}).
+         */
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
     }
 }

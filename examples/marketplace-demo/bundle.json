@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "displayName": "Marketplace Demo",
+  "tablePrefix": "",
+  "schemaName": "app_marketplace_demo",
+  "metadata": {
+    "changelog": "Marketplace GA demo bundle (BL-183)",
+    "domain": "marketplace-demo"
+  },
+  "migrations": [
+    {
+      "id": "demo_note",
+      "sql": "CREATE TABLE IF NOT EXISTS demo_note (id UUID PRIMARY KEY, message VARCHAR(256) NOT NULL); INSERT INTO demo_note (id, message) SELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Installed from marketplace' WHERE NOT EXISTS (SELECT 1 FROM demo_note);"
+    }
+  ],
+  "operatorUi": {
+    "appId": "marketplace-demo",
+    "title": "Marketplace Demo",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

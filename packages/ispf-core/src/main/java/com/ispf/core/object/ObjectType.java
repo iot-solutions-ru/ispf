@@ -49,6 +49,12 @@ public enum ObjectType {
     /** Application reports folder. */
     REPORTS,
     REPORT,
+    /** Cross-object query catalog folder (Phase 30). */
+    QUERIES,
+    QUERY,
+    /** Reusable event log filter catalog folder (Phase 30). */
+    EVENT_FILTERS,
+    EVENT_FILTER,
     /** Application functions folder. */
     FUNCTIONS,
     FUNCTION,
@@ -67,5 +73,33 @@ public enum ObjectType {
     AGENT,
     /** Visual-only grouping node; members stored in {@code @groupMembers}. */
     VISUAL_GROUP,
+    /** MES catalog root ({@code root.platform.mes}). */
+    MES,
+    /** Work order catalog folder. */
+    WORK_ORDERS,
+    /** Manufacturing work order instance. */
+    WORK_ORDER,
+    /** Operation catalog folder. */
+    OPERATIONS,
+    /** Manufacturing operation instance. */
+    OPERATION,
+    /** Material lot catalog folder. */
+    LOTS,
+    /** Material lot / batch instance. */
+    LOT,
+    /** Production shift catalog folder. */
+    SHIFTS,
+    /** Production shift instance. */
+    SHIFT,
+    /** Quality record catalog folder. */
+    QUALITY_RECORDS,
+    /** Quality inspection / defect record. */
+    QUALITY_RECORD,
+    /** ISA-95 site/area/line instance hierarchy folder. */
+    MES_INSTANCES,
+    /** Cyclic process-control program catalog folder (Phase 30). */
+    PROCESS_PROGRAMS,
+    /** Cyclic control loop program instance. */
+    PROCESS_PROGRAM,
     CUSTOM
 }

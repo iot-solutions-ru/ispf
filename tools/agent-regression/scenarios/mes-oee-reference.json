@@ -1,0 +1,17 @@
+{
+  "id": "mes-oee-reference",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES OEE reference deploy",
+  "description": "OEE walkthrough bundle.",
+  "prompt": "Deploy mes-oee-reference and configure operator UI for OEE screens.",
+  "playbook": "applicationLifecycleGuide",
+  "bundle": {
+    "appId": "mes-oee-reference",
+    "manifestPath": "examples/mes-oee-reference/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package"]
+  }
+}

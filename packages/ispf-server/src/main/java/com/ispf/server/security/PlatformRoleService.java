@@ -15,6 +15,9 @@ import java.util.Map;
 @Service
 public class PlatformRoleService {
 
+    public static final String OPERATOR_READONLY = "operator-readonly";
+    public static final String MES_SUPERVISOR = "mes-supervisor";
+
     private final PlatformRoleStore roleStore;
     private final PlatformUserStore userStore;
     private final PlatformUserObjectTreeService objectTreeService;
@@ -44,7 +47,21 @@ public class PlatformRoleService {
         } else {
             upsertBuiltIn(IspfRoles.DEVELOPER, "Solution development — objects, apps, SQL tools");
         }
+        ensureRoleTemplates();
         objectTreeService.syncRoles();
+    }
+
+    private void ensureRoleTemplates() {
+        upsertTemplate(
+                OPERATOR_READONLY,
+                "Operator (read-only)",
+                "Read-only operator — HMI, trends, and events without write access to variables or objects."
+        );
+        upsertTemplate(
+                MES_SUPERVISOR,
+                "MES Supervisor",
+                "MES supervisor — OEE dashboards, work-queue oversight, and ISA-95 scoped read access."
+        );
     }
 
     @Transactional
@@ -139,6 +156,21 @@ public class PlatformRoleService {
                 name,
                 description,
                 true,
+                Instant.now(),
+                Instant.now()
+        ));
+    }
+
+    private void upsertTemplate(String name, String displayName, String description) {
+        if (roleStore.findByName(name).isPresent()) {
+            roleStore.updateProfile(name, displayName, description);
+            return;
+        }
+        roleStore.upsert(new PlatformRoleStore.PlatformRole(
+                name,
+                displayName,
+                description,
+                false,
                 Instant.now(),
                 Instant.now()
         ));

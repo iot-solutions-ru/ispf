@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import BindingRulesPanel from "../BindingRulesPanel";
+import ExpressionDebuggerPanel from "../ExpressionDebuggerPanel";
+import { useVariablesQuery } from "../../hooks/useVariablesQuery";
 import { dashboardRuleTemplates } from "./dashboardRuleTemplates";
 import type { DashboardWidget } from "../../types/dashboard";
 
@@ -18,6 +20,7 @@ export default function DashboardRulesPanel({
   const { t } = useTranslation("dashboard");
   const widgetIds = useMemo(() => widgets.map((widget) => widget.id), [widgets]);
   const templates = useMemo(() => dashboardRuleTemplates(widgetIds), [widgetIds]);
+  const variablesQuery = useVariablesQuery(path, 5000, Boolean(path));
 
   return (
     <aside className="dashboard-rules-sidebar panel">
@@ -34,6 +37,11 @@ export default function DashboardRulesPanel({
           label: t(template.labelKey),
           rule: template.rule,
         }))}
+      />
+      <ExpressionDebuggerPanel
+        objectPath={path}
+        variables={variablesQuery.data ?? []}
+        compact
       />
     </aside>
   );

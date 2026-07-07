@@ -43,6 +43,7 @@ public class BpmnParser {
             Map<String, UserTaskDefinition> userTasks = new HashMap<>();
             Map<String, MessageTaskDefinition> messageTasks = new HashMap<>();
             Map<String, SignalCatchDefinition> signalCatchEvents = new HashMap<>();
+            Map<String, MessageCatchDefinition> messageCatchEvents = new HashMap<>();
             Map<String, TimerCatchDefinition> timerCatchEvents = new HashMap<>();
             Map<String, BoundaryTimerDefinition> boundaryTimers = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
@@ -101,6 +102,8 @@ public class BpmnParser {
                             durationSeconds,
                             Map.copyOf(parameters)
                     ));
+                } else if (firstChildElement(catchEvent, "messageEventDefinition") != null) {
+                    messageCatchEvents.put(id, parseMessageCatch(catchEvent));
                 } else {
                     signalCatchEvents.put(id, parseSignalCatch(catchEvent));
                 }
@@ -130,6 +133,7 @@ public class BpmnParser {
                     userTasks,
                     messageTasks,
                     signalCatchEvents,
+                    messageCatchEvents,
                     timerCatchEvents,
                     boundaryTimers,
                     List.copyOf(sequenceFlows)
@@ -193,6 +197,31 @@ public class BpmnParser {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private MessageCatchDefinition parseMessageCatch(Element catchEvent) throws WorkflowException {
+        Map<String, String> parameters = new HashMap<>();
+        readIspfAttribute(catchEvent, parameters, "message");
+        String messageName = parameters.get("message");
+        if (messageName == null || messageName.isBlank()) {
+            Element messageDef = firstChildElement(catchEvent, "messageEventDefinition");
+            if (messageDef != null) {
+                messageName = messageDef.getAttribute("messageRef");
+                if (messageName == null || messageName.isBlank()) {
+                    messageName = readIspfAttribute(messageDef, "message");
+                }
+            }
+        }
+        if (messageName == null || messageName.isBlank()) {
+            throw new WorkflowException("Message catch event requires ispf:message or messageRef: "
+                    + catchEvent.getAttribute("id"));
+        }
+        return new MessageCatchDefinition(
+                catchEvent.getAttribute("id"),
+                catchEvent.getAttribute("name"),
+                messageName,
+                Map.copyOf(parameters)
+        );
     }
 
     private SignalCatchDefinition parseSignalCatch(Element catchEvent) throws WorkflowException {

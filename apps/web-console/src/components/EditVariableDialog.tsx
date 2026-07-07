@@ -52,6 +52,8 @@ export default function EditVariableDialog({
   );
   const [readable, setReadable] = useState(variable.readable);
   const [writable, setWritable] = useState(variable.writable);
+  const [readRolesText, setReadRolesText] = useState((variable.readRoles ?? []).join(", "));
+  const [writeRolesText, setWriteRolesText] = useState((variable.writeRoles ?? []).join(", "));
   const [history, setHistory] = useState<VariableHistoryState>(() => historyFromVariable(variable));
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState("{}");
@@ -66,8 +68,24 @@ export default function EditVariableDialog({
     [variable]
   );
 
+  const parseRoles = (text: string) =>
+    text
+      .split(",")
+      .map((role) => role.trim())
+      .filter(Boolean);
+
+  const initialReadRoles = (variable.readRoles ?? []).join(", ");
+  const initialWriteRoles = (variable.writeRoles ?? []).join(", ");
+  const readRolesDirty = canEditDefinition && readRolesText.trim() !== initialReadRoles.trim();
+  const writeRolesDirty = canEditDefinition && writeRolesText.trim() !== initialWriteRoles.trim();
+
   const canEditValue = variable.writable;
-  const definitionDirty = canEditDefinition && (readable !== variable.readable || writable !== variable.writable);
+  const definitionDirty =
+    canEditDefinition &&
+    (readable !== variable.readable ||
+      writable !== variable.writable ||
+      readRolesDirty ||
+      writeRolesDirty);
   const historyDirty = canManageHistory && !historyEqual(history, initialHistory);
   const jsonDirty = showJson && jsonText !== JSON.stringify(initialRecord, null, 2);
   const valueDirty = canEditValue && (!recordsEqual(record, initialRecord) || jsonDirty);
@@ -80,6 +98,8 @@ export default function EditVariableDialog({
     setJsonText(JSON.stringify(next, null, 2));
     setReadable(variable.readable);
     setWritable(variable.writable);
+    setReadRolesText((variable.readRoles ?? []).join(", "));
+    setWriteRolesText((variable.writeRoles ?? []).join(", "));
     setHistory(historyFromVariable(variable));
   }, [variable]);
 
@@ -108,7 +128,12 @@ export default function EditVariableDialog({
   const mutation = useMutation({
     mutationFn: async () => {
       if (canEditDefinition && definitionDirty) {
-        await updateVariableDefinition(objectPath, variable.name, { readable, writable });
+        await updateVariableDefinition(objectPath, variable.name, {
+          readable,
+          writable,
+          readRoles: parseRoles(readRolesText),
+          writeRoles: parseRoles(writeRolesText),
+        });
       }
       if (canManageHistory && historyDirty) {
         await updateVariableHistory(objectPath, variable.name, history);
@@ -157,6 +182,16 @@ export default function EditVariableDialog({
           <span className="property-badges">
             {variable.readable && <span className="badge">R</span>}
             {variable.writable && <span className="badge w">W</span>}
+            {(variable.readRoles?.length ?? 0) > 0 && (
+              <span className="badge acl" title={variable.readRoles?.join(", ")}>
+                ACL-R
+              </span>
+            )}
+            {(variable.writeRoles?.length ?? 0) > 0 && (
+              <span className="badge acl" title={variable.writeRoles?.join(", ")}>
+                ACL-W
+              </span>
+            )}
             {variable.historyEnabled && <span className="badge hist">H</span>}
           </span>
           {!variable.writable && (
@@ -184,6 +219,25 @@ export default function EditVariableDialog({
               {t("variables.writable")}
             </label>
             <p className="hint full">{t("variables.schemaReadOnlyHint")}</p>
+            <label className="full">
+              <span>{t("variables.readRoles")}</span>
+              <input
+                type="text"
+                value={readRolesText}
+                placeholder={t("variables.rolesPlaceholder")}
+                onChange={(e) => setReadRolesText(e.target.value)}
+              />
+            </label>
+            <label className="full">
+              <span>{t("variables.writeRoles")}</span>
+              <input
+                type="text"
+                value={writeRolesText}
+                placeholder={t("variables.rolesPlaceholder")}
+                onChange={(e) => setWriteRolesText(e.target.value)}
+              />
+            </label>
+            <p className="hint full">{t("variables.rolesHint")}</p>
           </section>
         )}
 

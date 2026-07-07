@@ -1,0 +1,16 @@
+{
+  "id": "mes-dispatch-workflow",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES dispatch workflow",
+  "description": "Work order dispatch with BFF and workflow.",
+  "prompt": "Verify mes_listOrders BFF and user task appears in work queue.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-reference",
+    "manifestPath": "examples/mes-reference/bundle.json"
+  },
+  "acceptance": {
+    "requiredTools": ["invoke_bff", "list_work_queue"]
+  }
+}

@@ -80,6 +80,7 @@ public class PlatformUserObjectTreeService {
                 role.description(),
                 "platform-role-v1"
         );
+        setStringVariable(role.objectPath(), "description", role.description(), true);
     }
 
     private void pruneRoles(Set<String> expectedRoleNames) {

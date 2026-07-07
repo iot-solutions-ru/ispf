@@ -1,0 +1,111 @@
+# ISPF Helm values skeleton (BL-186). Wire subcharts / templates in follow-up PRs.
+# Prod reference: deploy/vps-deploy-direct.ps1 + deploy/docker-compose.*.yml
+
+global:
+  imageRegistry: ""
+  storageClass: ""
+
+replicaCount: 1
+
+image:
+  server:
+    repository: eclipse-temurin
+    tag: "25-jre-jammy"
+    pullPolicy: IfNotPresent
+  nginx:
+    repository: nginx
+    tag: "1.27.4-alpine"
+    pullPolicy: IfNotPresent
+
+ispf:
+  version: "0.9.32"
+  cluster:
+    enabled: false
+    replicaId: replica-1
+    role: all
+  server:
+    port: 8080
+    javaOpts: "-Xms512m -Xmx1024m -XX:+UseG1GC"
+    profiles: local
+  bootstrap:
+    fixturesEnabled: false
+  driverPacksDir: /opt/ispf/drivers
+  license:
+    enforce: false
+    requireSignedBundles: false
+  nats:
+    enabled: false
+  redis:
+    enabled: true
+    host: ispf-redis
+    port: 6379
+  clickhouse:
+    enabled: false
+  historian:
+    store: postgres
+
+postgresql:
+  enabled: true
+  auth:
+    database: ispf
+    username: ispf
+    password: ispf
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+    - host: ispf.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  server:
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+    requests:
+      cpu: 500m
+      memory: 768Mi
+  nginx:
+    limits:
+      cpu: 200m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+persistence:
+  data:
+    enabled: true
+    size: 10Gi
+  drivers:
+    enabled: true
+    size: 2Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Edge / ARM profile hints — see deploy/docker-compose.edge-arm.yml
+edge:
+  enabled: false
+  arm64: false
+  federation:
+    outboundTunnel: true

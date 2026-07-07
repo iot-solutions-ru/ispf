@@ -1,0 +1,12 @@
+{
+  "id": "scada-virtual-cluster",
+  "version": "1",
+  "domain": "scada",
+  "title": "Virtual cluster monitoring",
+  "description": "Full virt-cluster project with alerts and operator UI.",
+  "prompt": "Deploy virtual cluster monitoring with three lab devices, hub bindings, alert rule, and operator app.",
+  "playbook": "virtualClusterMonitoring",
+  "acceptance": {
+    "requiredTools": ["create_object", "configure_alert", "configure_operator_ui"]
+  }
+}

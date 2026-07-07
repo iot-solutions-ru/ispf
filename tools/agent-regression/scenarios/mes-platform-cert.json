@@ -1,0 +1,17 @@
+{
+  "id": "mes-platform-cert",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES platform certification bundle",
+  "description": "BL-170 mes-platform bundle deploy scenario.",
+  "prompt": "Deploy mes-platform bundle and verify OEE dashboard paths.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-platform",
+    "manifestPath": "examples/mes-platform/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package"]
+  }
+}

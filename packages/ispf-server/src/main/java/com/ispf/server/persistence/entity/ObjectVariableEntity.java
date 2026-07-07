@@ -48,6 +48,12 @@ public class ObjectVariableEntity {
     @Column(name = "history_retention_days")
     private Integer historyRetentionDays;
 
+    @Column(name = "read_roles_json", columnDefinition = "TEXT")
+    private String readRolesJson;
+
+    @Column(name = "write_roles_json", columnDefinition = "TEXT")
+    private String writeRolesJson;
+
     public Long getId() {
         return id;
     }
@@ -126,5 +132,21 @@ public class ObjectVariableEntity {
 
     public void setHistoryRetentionDays(Integer historyRetentionDays) {
         this.historyRetentionDays = historyRetentionDays;
+    }
+
+    public String getReadRolesJson() {
+        return readRolesJson;
+    }
+
+    public void setReadRolesJson(String readRolesJson) {
+        this.readRolesJson = readRolesJson;
+    }
+
+    public String getWriteRolesJson() {
+        return writeRolesJson;
+    }
+
+    public void setWriteRolesJson(String writeRolesJson) {
+        this.writeRolesJson = writeRolesJson;
     }
 }

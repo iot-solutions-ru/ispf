@@ -1,0 +1,17 @@
+{
+  "id": "mes-defect-demo",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES defect distribution workflow",
+  "description": "Defect demo with BPMN workflow.",
+  "prompt": "Deploy mes-defect-demo bundle with defect workflow and operator work queue.",
+  "playbook": "workflowGuide",
+  "bundle": {
+    "appId": "mes-defect-demo",
+    "manifestPath": "examples/mes-defect-demo/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["import_package", "list_work_queue"]
+  }
+}

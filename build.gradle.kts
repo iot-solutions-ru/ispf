@@ -24,7 +24,7 @@ allprojects {
 subprojects {
     apply(plugin = "java")
 
-    if (name.startsWith("ispf-driver-") && name != "ispf-driver-api") {
+    if (name.startsWith("ispf-driver-") && name != "ispf-driver-api" && name != "ispf-driver-ddk") {
         apply(plugin = "ispf-driver-pack")
     }
 
@@ -59,7 +59,9 @@ gradle.projectsEvaluated {
     }
 }
 
-val driverPackProjects = subprojects.filter { it.name.startsWith("ispf-driver-") && it.name != "ispf-driver-api" }
+val driverPackProjects = subprojects.filter {
+    it.name.startsWith("ispf-driver-") && it.name != "ispf-driver-api" && it.name != "ispf-driver-ddk"
+}
 
 tasks.register("assembleAllDriverPacks") {
     group = "driver packs"

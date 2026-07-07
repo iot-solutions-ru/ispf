@@ -6,5 +6,10 @@ public enum CorrelatorPatternType {
     /** Event A followed by event B on the same object within a window. */
     SEQUENCE,
     /** Ordered chain of 3+ events (comma-separated in secondEventName slot after first). */
-    EVENT_CHAIN
+    EVENT_CHAIN,
+    /**
+     * Unordered window: each event in {@code eventName} and comma-separated {@code secondEventName}
+     * must occur at least once within {@code windowSeconds}.
+     */
+    WINDOW
 }

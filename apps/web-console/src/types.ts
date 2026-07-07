@@ -39,6 +39,10 @@ export type ObjectType =
   | "ROLE"
   | "REPORTS"
   | "REPORT"
+  | "QUERIES"
+  | "QUERY"
+  | "EVENT_FILTERS"
+  | "EVENT_FILTER"
   | "FUNCTIONS"
   | "FUNCTION"
   | "SCHEDULES"
@@ -51,6 +55,20 @@ export type ObjectType =
   | "SCREEN"
   | "MIMICS"
   | "MIMIC"
+  | "MES"
+  | "WORK_ORDERS"
+  | "WORK_ORDER"
+  | "OPERATIONS"
+  | "OPERATION"
+  | "LOTS"
+  | "LOT"
+  | "SHIFTS"
+  | "SHIFT"
+  | "QUALITY_RECORDS"
+  | "QUALITY_RECORD"
+  | "MES_INSTANCES"
+  | "PROCESS_PROGRAMS"
+  | "PROCESS_PROGRAM"
   | "AGENT"
   | "VISUAL_GROUP"
   | "CUSTOM";
@@ -118,6 +136,8 @@ export interface VariableDto {
   updatedAt: string | null;
   historyEnabled: boolean;
   historyRetentionDays: number | null;
+  readRoles?: string[];
+  writeRoles?: string[];
 }
 
 export interface BindingVariableRef {

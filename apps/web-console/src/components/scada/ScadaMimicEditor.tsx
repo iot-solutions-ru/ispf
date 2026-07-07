@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, MimicLayer, ScadaMimicDocument } from "../../types/scadaMimic";
+import { useMimicHistory } from "../../hooks/useMimicHistory";
 import { DEFAULT_CUSTOM_SVG_INNER, parseSvgUpload } from "../../scada/customSvg";
 import {
   convertDocumentToLibrarySymbols,
@@ -77,14 +78,20 @@ interface ScadaMimicEditorProps {
 export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: ScadaMimicEditorProps) {
   const { t } = useTranslation("scada");
   const session = useDashboardContext();
-  const [document, setDocument] = useState<ScadaMimicDocument>(() => parseMimicDocument(diagramJson));
+  const {
+    present: document,
+    setPresent: setDocumentState,
+    reset: resetDocumentHistory,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useMimicHistory<ScadaMimicDocument>(parseMimicDocument(diagramJson));
   const [tool, setTool] = useState<ScadaEditorTool>("select");
   const [placeSymbolId, setPlaceSymbolId] = useState<string | null>("pack.ispf-pid.vertical-tank");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedConnectionId, setSelectedConnectionId] = useState<string | null>(null);
   const [connectFrom, setConnectFrom] = useState<{ elementId: string; port: string } | null>(null);
-  const [history, setHistory] = useState<ScadaMimicDocument[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const [importText, setImportText] = useState("");
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [activeLayerId, setActiveLayerId] = useState(DEFAULT_LAYER_ID);
@@ -104,18 +111,12 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     }
   }, [tool]);
 
-  const pushHistory = useCallback((next: ScadaMimicDocument) => {
-    setHistory((h) => [...h.slice(0, historyIndex + 1), next]);
-    setHistoryIndex((i) => i + 1);
-  }, [historyIndex]);
-
-  const updateDocument = useCallback((updater: (doc: ScadaMimicDocument) => ScadaMimicDocument, recordHistory = true) => {
-    setDocument((current) => {
-      const next = updater(current);
-      if (recordHistory) pushHistory(next);
-      return next;
-    });
-  }, [pushHistory]);
+  const updateDocument = useCallback(
+    (updater: (doc: ScadaMimicDocument) => ScadaMimicDocument, recordHistory = true) => {
+      setDocumentState(updater(documentRef.current), recordHistory);
+    },
+    [setDocumentState]
+  );
 
   const selectedElement = useMemo(
     () => document.elements.find((el) => selectedIds.has(el.id)) ?? null,
@@ -137,13 +138,11 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   );
 
   useEffect(() => {
-    setDocument(parseMimicDocument(diagramJson));
-    setHistory([]);
-    setHistoryIndex(-1);
+    resetDocumentHistory(parseMimicDocument(diagramJson));
     setSelectedIds(new Set());
     setSelectedConnectionId(null);
     setConnectFrom(null);
-  }, [diagramJson]);
+  }, [diagramJson, resetDocumentHistory]);
 
   const applyConnectHit = useCallback(
     (hit: { element: MimicElement; port: { id: string }; x: number; y: number } | null) => {
@@ -205,8 +204,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const handleElementDragEnd = useCallback(() => {
     dragOriginsRef.current = new Map();
     setSnapGuides([]);
-    pushHistory(documentRef.current);
-  }, [pushHistory]);
+    setDocumentState(documentRef.current, true);
+  }, [setDocumentState]);
 
   const rerouteElements = useCallback(
     (connections: MimicConnection[], elements: MimicElement[], ids: Iterable<string>, customSymbols?: MimicCustomSymbol[]) => {
@@ -533,8 +532,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
 
   const handleElementResizeEnd = useCallback(() => {
     resizeOriginRef.current = null;
-    pushHistory(documentRef.current);
-  }, [pushHistory]);
+    setDocumentState(documentRef.current, true);
+  }, [setDocumentState]);
 
   const handleDeleteSelected = useCallback(() => {
     if (selectedConnectionId) {
@@ -555,20 +554,6 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     }));
     setSelectedIds(new Set());
   }, [selectedConnectionId, selectedIds, updateDocument]);
-
-  const undo = () => {
-    if (historyIndex <= 0) return;
-    const nextIndex = historyIndex - 1;
-    setHistoryIndex(nextIndex);
-    setDocument(history[nextIndex]);
-  };
-
-  const redo = () => {
-    if (historyIndex >= history.length - 1) return;
-    const nextIndex = historyIndex + 1;
-    setHistoryIndex(nextIndex);
-    setDocument(history[nextIndex]);
-  };
 
   useEffect(() => {
     globalThis.document.body.classList.add("scada-mimic-editor-open");
@@ -627,8 +612,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
     document,
     handleDeleteSelected,
     handleNudgeSelected,
-    historyIndex,
-    history.length,
+    canRedo,
+    canUndo,
     onClose,
     onSave,
     redo,
@@ -769,10 +754,10 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
           </div>
 
           <div className="scada-toolbar-actions">
-            <button type="button" className="scada-icon-btn" onClick={undo} disabled={historyIndex <= 0} title={`${t("tools.undo")} (Ctrl+Z)`} aria-label={t("tools.undo")}>
+            <button type="button" className="scada-icon-btn" onClick={undo} disabled={!canUndo} title={`${t("tools.undo")} (Ctrl+Z)`} aria-label={t("tools.undo")}>
               <IconUndo className="scada-tool-icon" />
             </button>
-            <button type="button" className="scada-icon-btn" onClick={redo} disabled={historyIndex >= history.length - 1} title={`${t("tools.redo")} (Ctrl+Y)`} aria-label={t("tools.redo")}>
+            <button type="button" className="scada-icon-btn" onClick={redo} disabled={!canRedo} title={`${t("tools.redo")} (Ctrl+Y)`} aria-label={t("tools.redo")}>
               <IconRedo className="scada-tool-icon" />
             </button>
             <button type="button" className="scada-icon-btn scada-icon-btn-danger" onClick={handleDeleteSelected} title={`${t("tools.delete")} (Del)`} aria-label={t("tools.delete")}>
@@ -907,8 +892,8 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                 <button
                   type="button"
                   onClick={() => {
-                    setDocument(parseMimicDocument(importText));
-                    pushHistory(parseMimicDocument(importText));
+                    const imported = parseMimicDocument(importText);
+                    resetDocumentHistory(imported);
                   }}
                 >
                   {t("importExport.import")}

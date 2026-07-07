@@ -340,6 +340,45 @@ def build_example_summaries(examples: list[dict]) -> list[dict]:
     return summaries
 
 
+def parse_competitive_scorecard(path: Path) -> list[dict]:
+    """Parse COMPETITIVE_SCORECARD.md into readiness gap index (BL-182)."""
+    if not path.exists():
+        return []
+    gaps: list[dict] = []
+    in_matrix = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("| # | Dimension"):
+            in_matrix = True
+            continue
+        if not in_matrix:
+            continue
+        if not stripped.startswith("|") or re.match(r"^\|\s*-+\s*\|", stripped):
+            continue
+        parts = [p.strip() for p in stripped.strip("|").split("|")]
+        if len(parts) < 4 or not parts[0].isdigit():
+            if gaps:
+                break
+            continue
+        try:
+            baseline = float(parts[2])
+            target = float(parts[3].replace("*", "").strip())
+        except ValueError:
+            continue
+        gaps.append(
+            {
+                "rank": int(parts[0]),
+                "dimension": parts[1],
+                "baseline": baseline,
+                "target": target,
+                "gap": round(target - baseline, 1),
+                "phaseRef": parts[4] if len(parts) > 4 else "",
+                "keywords": f"{parts[1]} competitive gap scorecard",
+            }
+        )
+    return gaps
+
+
 def build_doc_chunks() -> list[dict]:
     slices = [
         ("application-principles", "Application creation principles P1-P10", "application-principles", DOCS / "APPLICATION_PRINCIPLES.md", 8000),
@@ -455,6 +494,7 @@ def build_pack() -> dict:
         "scriptSteps": SCRIPT_STEPS,
         "widgetTypes": WIDGET_TYPES,
         "featureIndex": FEATURE_INDEX,
+        "competitiveGapIndex": parse_competitive_scorecard(DOCS / "COMPETITIVE_SCORECARD.md"),
         "driverCatalog": parse_driver_catalog(drivers_doc_full),
         "exampleSummaries": build_example_summaries(examples),
         "docChunks": build_doc_chunks(),
@@ -513,7 +553,7 @@ def main() -> None:
     SERVER_RESOURCE.write_text(json.dumps(pack, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Wrote {out_path}")
     print(f"Wrote {SERVER_RESOURCE}")
-    print(f"contextPackVersion={pack['contextPackVersion']} drivers={len(pack['driverCatalog'])}")
+    print(f"contextPackVersion={pack['contextPackVersion']} drivers={len(pack['driverCatalog'])} gaps={len(pack.get('competitiveGapIndex', []))}")
 
 
 if __name__ == "__main__":

@@ -127,6 +127,10 @@ public class VariableHistoryController {
                         .body(variableHistoryService.exportJson(
                                 path, name, field, range.from(), range.to(), limit
                         ));
+                case "parquet" -> throw new ResponseStatusException(
+                        HttpStatus.NOT_IMPLEMENTED,
+                        "Parquet export is planned for Phase 28 cold-tier historian (BL-163); use csv or json today"
+                );
                 default -> throw new IllegalArgumentException("Unsupported export format: " + format);
             };
         } catch (IllegalArgumentException e) {

@@ -1,0 +1,12 @@
+{
+  "id": "scada-pump-station",
+  "version": "1",
+  "domain": "scada",
+  "title": "Oil & gas pump station",
+  "description": "Domain adapter industrial_oil_gas full TZ.",
+  "prompt": "Build pump station SCADA from spec: gate valves, pumps, flow meters, mimic, dashboards.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"]
+  }
+}

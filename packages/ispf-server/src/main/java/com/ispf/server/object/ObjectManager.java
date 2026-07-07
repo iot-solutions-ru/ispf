@@ -569,6 +569,33 @@ public class ObjectManager {
             boolean historyEnabled,
             Integer historyRetentionDays
     ) {
+        return createVariable(
+                path,
+                name,
+                schema,
+                readable,
+                writable,
+                initialValue,
+                historyEnabled,
+                historyRetentionDays,
+                List.of(),
+                List.of()
+        );
+    }
+
+    @Transactional
+    public Variable createVariable(
+            String path,
+            String name,
+            DataSchema schema,
+            boolean readable,
+            boolean writable,
+            DataRecord initialValue,
+            boolean historyEnabled,
+            Integer historyRetentionDays,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Variable name is required");
         }
@@ -588,7 +615,9 @@ public class ObjectManager {
                 writable,
                 initialValue,
                 historyEnabled,
-                historyRetentionDays
+                historyRetentionDays,
+                readRoles,
+                writeRoles
         );
         node.addVariable(variable);
         persistVariable(path, variable);
@@ -612,6 +641,18 @@ public class ObjectManager {
             Boolean readable,
             Boolean writable
     ) {
+        return updateVariableDefinition(path, name, readable, writable, null, null);
+    }
+
+    @Transactional
+    public Variable updateVariableDefinition(
+            String path,
+            String name,
+            Boolean readable,
+            Boolean writable,
+            List<String> readRoles,
+            List<String> writeRoles
+    ) {
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
         long revisionBefore = node.revision();
@@ -623,11 +664,15 @@ public class ObjectManager {
         Map<String, Object> before = variableDefinitionSnapshot(variable);
         boolean nextReadable = readable != null ? readable : variable.readable();
         boolean nextWritable = writable != null ? writable : variable.writable();
+        List<String> nextReadRoles = readRoles != null ? readRoles : variable.readRoles();
+        List<String> nextWriteRoles = writeRoles != null ? writeRoles : variable.writeRoles();
         Variable updated = variable.withDefinition(
                 nextReadable,
                 nextWritable,
                 variable.historyEnabled(),
-                variable.historyRetentionDays().orElse(null)
+                variable.historyRetentionDays().orElse(null),
+                nextReadRoles,
+                nextWriteRoles
         );
         node.addVariable(updated);
         persistVariable(path, updated);
@@ -801,6 +846,9 @@ public class ObjectManager {
         ensureBootstrapNode("root.platform.operator-apps", ObjectType.OPERATOR_APPS, "app-folder-v1");
         ensureBootstrapNode("root.platform.alert-rules", ObjectType.ALERT_RULES, null);
         ensureBootstrapNode("root.platform.correlators", ObjectType.CORRELATORS, null);
+        ensureBootstrapNode("root.platform.queries", ObjectType.QUERIES, null);
+        ensureBootstrapNode("root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
+        ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
         ensureBootstrapNode(FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
         ensureBootstrapNode("root.tenant", ObjectType.TENANT, null);
     }
@@ -918,7 +966,9 @@ public class ObjectManager {
                         entity.isWritable(),
                         value,
                         entity.isHistoryEnabled(),
-                        entity.getHistoryRetentionDays()
+                        entity.getHistoryRetentionDays(),
+                        mapper.readStringList(entity.getReadRolesJson()),
+                        mapper.readStringList(entity.getWriteRolesJson())
                 ))
         );
     }
@@ -1114,6 +1164,8 @@ public class ObjectManager {
             entity.setUpdatedAt(mapped.getUpdatedAt());
             entity.setHistoryEnabled(mapped.isHistoryEnabled());
             entity.setHistoryRetentionDays(mapped.getHistoryRetentionDays());
+            entity.setReadRolesJson(mapped.getReadRolesJson());
+            entity.setWriteRolesJson(mapped.getWriteRolesJson());
             variableRepository.save(entity);
         }
     }
@@ -1254,6 +1306,12 @@ public class ObjectManager {
         Map<String, Object> snapshot = new HashMap<>();
         snapshot.put("readable", variable.readable());
         snapshot.put("writable", variable.writable());
+        if (!variable.readRoles().isEmpty()) {
+            snapshot.put("readRoles", variable.readRoles());
+        }
+        if (!variable.writeRoles().isEmpty()) {
+            snapshot.put("writeRoles", variable.writeRoles());
+        }
         return snapshot;
     }
 

@@ -1,0 +1,17 @@
+{
+  "id": "mes-lab-training",
+  "version": "1",
+  "domain": "mes",
+  "title": "Lab training bundle",
+  "description": "Deploy lab-training virtual meter exercise.",
+  "prompt": "Deploy lab-training bundle and verify virtual meter variables.",
+  "playbook": "virtualMeterLab",
+  "bundle": {
+    "appId": "lab-training",
+    "manifestPath": "examples/lab-training/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "list_variables"]
+  }
+}

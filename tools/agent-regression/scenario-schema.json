@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ispf.iot-solutions.ru/schemas/agent-regression-scenario-v1.json",
+  "title": "AgentRegressionScenario",
+  "type": "object",
+  "required": ["id", "version", "domain", "title", "prompt"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "version": { "type": "string" },
+    "domain": { "type": "string", "enum": ["scada", "mes", "hvac"] },
+    "title": { "type": "string", "minLength": 3 },
+    "description": { "type": "string" },
+    "prompt": { "type": "string", "minLength": 10 },
+    "playbook": { "type": "string" },
+    "bundle": {
+      "type": "object",
+      "required": ["appId", "manifestPath"],
+      "additionalProperties": false,
+      "properties": {
+        "appId": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "manifestPath": { "type": "string", "minLength": 5 }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "validateBundle": { "type": "boolean" },
+        "requiredTools": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "requiredObjectPaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

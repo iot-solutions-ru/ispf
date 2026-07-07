@@ -853,7 +853,7 @@ final class AgentAutomationTools {
                 "parentPath", AutomationTreeService.CORRELATORS_ROOT,
                 "objectType", "CORRELATOR",
                 "model", "correlator-v1",
-                "patternTypes", List.of("COUNT", "SEQUENCE", "EVENT_CHAIN"),
+                "patternTypes", List.of("COUNT", "SEQUENCE", "EVENT_CHAIN", "WINDOW"),
                 "actionTypes", List.of("RUN_WORKFLOW", "FIRE_EVENT", "SET_VARIABLE", "OPEN_OPERATOR_REPORT"),
                 "variables", List.of(
                         "targetObjectPath", "patternType", "eventName", "secondEventName",

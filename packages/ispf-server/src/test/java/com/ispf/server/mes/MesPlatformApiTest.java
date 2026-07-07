@@ -56,12 +56,12 @@ class MesPlatformApiTest {
                 .andExpect(jsonPath("$[?(@.id=='virtual')]").exists())
                 .andExpect(jsonPath("$[?(@.id=='virtual')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='snmp')]").exists())
-                .andExpect(jsonPath("$[?(@.id=='dnp3')].maturity").value("BETA"))
-                .andExpect(jsonPath("$[?(@.id=='ethernet-ip')].maturity").value("BETA"))
+                .andExpect(jsonPath("$[?(@.id=='dnp3')].maturity").value("PRODUCTION"))
+                .andExpect(jsonPath("$[?(@.id=='ethernet-ip')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='corba')].maturity").value("BETA"))
-                .andExpect(jsonPath("$[?(@.id=='opc-da')].maturity").value("BETA"))
+                .andExpect(jsonPath("$[?(@.id=='opc-da')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("BETA"))
-                .andExpect(jsonPath("$[?(@.id=='dlms')].maturity").value("BETA"));
+                .andExpect(jsonPath("$[?(@.id=='dlms')].maturity").value("PRODUCTION"));
     }
 
     @Test

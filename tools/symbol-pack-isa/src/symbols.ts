@@ -759,6 +759,172 @@ function conveyor(): IsaSymbolDef {
   });
 }
 
+function angleValve(): IsaSymbolDef {
+  return sym({
+    slug: "angle-valve",
+    category: "pack-valves",
+    nameEn: "Angle valve",
+    nameRu: "Угловой клапан",
+    tags: ["valve", "isa"],
+    ports: [
+      { id: "w", x: 0, y: 40 },
+      { id: "s", x: 40, y: 64 },
+    ],
+    svg: wrap(`${line(0, 40, 36, 40)}${line(36, 40, 36, 64)}${poly("36,40 44,32 44,48")}`),
+  });
+}
+
+function pinchValve(): IsaSymbolDef {
+  return sym({
+    slug: "pinch-valve",
+    category: "pack-valves",
+    nameEn: "Pinch valve",
+    nameRu: "Зажимной клапан",
+    tags: ["valve", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${line(24, 22, 40, 22)}${line(24, 42, 40, 42)}${line(32, 14, 32, 22)}${line(32, 42, 32, 50)}`),
+  });
+}
+
+function rotaryValve(): IsaSymbolDef {
+  return sym({
+    slug: "rotary-valve",
+    category: "pack-valves",
+    nameEn: "Rotary valve",
+    nameRu: "Роторный клапан",
+    tags: ["valve", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(24, 24, 16, 16)}${line(32, 24, 32, 40)}${line(24, 32, 40, 32)}`),
+  });
+}
+
+function reciprocatingPump(): IsaSymbolDef {
+  return sym({
+    slug: "reciprocating-pump",
+    category: "pack-pumps",
+    nameEn: "Reciprocating pump",
+    nameRu: "Поршневой насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${rect(18, 24, 28, 16)}${line(46, 32, 58, 32)}${rect(22, 28, 10, 8)}${line(32, 28, 32, 36)}`),
+  });
+}
+
+function submersiblePump(): IsaSymbolDef {
+  return sym({
+    slug: "submersible-pump",
+    category: "pack-pumps",
+    nameEn: "Submersible pump",
+    nameRu: "Погружной насос",
+    tags: ["pump", "isa"],
+    ports: [{ id: "n", x: 32, y: 0 }],
+    svg: wrap(`${circle(32, 38, 14)}${line(32, 24, 32, 10)}${poly("32,10 28,18 36,18")}`),
+  });
+}
+
+function silo(): IsaSymbolDef {
+  return sym({
+    slug: "silo",
+    category: "pack-tanks",
+    nameEn: "Silo",
+    nameRu: "Силос",
+    tags: ["tank", "vessel", "isa"],
+    ports: [
+      { id: "n", x: 32, y: 8 },
+      { id: "s", x: 32, y: 58 },
+    ],
+    svg: wrap(`${poly("20,12 44,12 48,54 16,54")}${line(16, 54, 48, 54)}`),
+  });
+}
+
+function orificePlate(): IsaSymbolDef {
+  return sym({
+    slug: "orifice-plate",
+    category: "pack-pipes",
+    nameEn: "Orifice plate",
+    nameRu: "Диафрагма (отверстие)",
+    tags: ["pipe", "instrument", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${line(30, 20, 30, 44)}${line(34, 20, 34, 44)}`),
+  });
+}
+
+function agitator(): IsaSymbolDef {
+  return sym({
+    slug: "agitator",
+    category: "pack-misc",
+    nameEn: "Agitator",
+    nameRu: "Мешалка",
+    tags: ["equipment", "isa"],
+    ports: [{ id: "n", x: 32, y: 0 }],
+    svg: wrap(`${line(32, 8, 32, 48)}${poly("32,48 26,40 38,40")}${line(20, 32, 44, 32)}${line(24, 38, 40, 26)}${line(24, 26, 40, 38)}`),
+  });
+}
+
+function separator(): IsaSymbolDef {
+  return sym({
+    slug: "separator",
+    category: "pack-misc",
+    nameEn: "Separator",
+    nameRu: "Сепаратор",
+    tags: ["equipment", "isa"],
+    ports: [
+      { id: "w", x: 0, y: 28 },
+      { id: "e", x: 64, y: 28 },
+      { id: "s", x: 32, y: 64 },
+    ],
+    svg: wrap(`${rect(16, 16, 32, 32, 4)}${line(0, 28, 16, 28)}${line(48, 28, 64, 28)}${line(32, 48, 32, 64)}`),
+  });
+}
+
+function burner(): IsaSymbolDef {
+  return sym({
+    slug: "burner",
+    category: "pack-misc",
+    nameEn: "Burner",
+    nameRu: "Горелка",
+    tags: ["equipment", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${rect(22, 28, 20, 20)}${poly("32,12 26,28 38,28")}${line(28, 48, 32, 58)}${line(36, 48, 32, 58)}`),
+  });
+}
+
+function damper(): IsaSymbolDef {
+  return sym({
+    slug: "damper",
+    category: "pack-misc",
+    nameEn: "Damper",
+    nameRu: "Заслонка",
+    tags: ["equipment", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${line(32, 18, 32, 46)}${poly("32,18 26,26 38,26")}`),
+  });
+}
+
+function pressureController(): IsaSymbolDef {
+  return sym({
+    slug: "pressure-controller",
+    category: "pack-isa",
+    nameEn: "Pressure controller (PC)",
+    nameRu: "Регулятор давления (PC)",
+    tags: ["isa", "control"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "PC")}`),
+  });
+}
+
+function temperatureController(): IsaSymbolDef {
+  return sym({
+    slug: "temperature-controller",
+    category: "pack-isa",
+    nameEn: "Temperature controller (TC)",
+    nameRu: "Регулятор температуры (TC)",
+    tags: ["isa", "control"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "TC")}`),
+  });
+}
+
 export const ALL_ISA_SYMBOLS: IsaSymbolDef[] = [
   gateValve(),
   globeValve(),
@@ -817,4 +983,17 @@ export const ALL_ISA_SYMBOLS: IsaSymbolDef[] = [
   column(),
   fan(),
   conveyor(),
+  angleValve(),
+  pinchValve(),
+  rotaryValve(),
+  reciprocatingPump(),
+  submersiblePump(),
+  silo(),
+  orificePlate(),
+  agitator(),
+  separator(),
+  burner(),
+  damper(),
+  pressureController(),
+  temperatureController(),
 ];

@@ -72,6 +72,74 @@ public class ObjectAccessService {
         }
     }
 
+    public void requireVariableRead(
+            String objectPath,
+            String variableName,
+            List<String> readRoles,
+            Authentication authentication
+    ) {
+        if (!canVariableRead(objectPath, variableName, readRoles, authentication)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Read access denied for variable " + variableName + " on " + objectPath
+            );
+        }
+    }
+
+    public void requireVariableWrite(
+            String objectPath,
+            String variableName,
+            List<String> writeRoles,
+            Authentication authentication
+    ) {
+        if (!canVariableWrite(objectPath, variableName, writeRoles, authentication)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Write access denied for variable " + variableName + " on " + objectPath
+            );
+        }
+    }
+
+    public boolean canVariableRead(
+            String objectPath,
+            String variableName,
+            List<String> readRoles,
+            Authentication authentication
+    ) {
+        if (!canRead(objectPath, authentication)) {
+            return false;
+        }
+        return hasVariableRole(readRoles, authentication);
+    }
+
+    public boolean canVariableWrite(
+            String objectPath,
+            String variableName,
+            List<String> writeRoles,
+            Authentication authentication
+    ) {
+        if (!canWrite(objectPath, authentication)) {
+            return false;
+        }
+        return hasVariableRole(writeRoles, authentication);
+    }
+
+    private boolean hasVariableRole(List<String> requiredRoles, Authentication authentication) {
+        if (requiredRoles == null || requiredRoles.isEmpty()) {
+            return true;
+        }
+        if (isAdmin(authentication)) {
+            return true;
+        }
+        Set<String> roles = extractRoles(authentication);
+        for (String required : requiredRoles) {
+            if (required != null && roles.contains(required)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean canRead(String objectPath, Authentication authentication) {
         return hasPermission(objectPath, "READ", authentication);
     }

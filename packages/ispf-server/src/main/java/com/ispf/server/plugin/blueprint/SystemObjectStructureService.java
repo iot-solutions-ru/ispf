@@ -129,6 +129,22 @@ public class SystemObjectStructureService {
     }
 
     @Transactional
+    public void ensureQueryStructure(String path) {
+        if (objectManager.require(path).getVariable("queryId").isPresent()) {
+            return;
+        }
+        applyIntrinsic("query-v1", path);
+    }
+
+    @Transactional
+    public void ensureEventFilterStructure(String path) {
+        if (objectManager.require(path).getVariable("filterId").isPresent()) {
+            return;
+        }
+        applyIntrinsic("event-filter-v1", path);
+    }
+
+    @Transactional
     public void ensureDeviceDriverStructure(String path) {
         PlatformObject node = objectManager.require(path);
         if (node.getVariable("driverId").isEmpty()) {

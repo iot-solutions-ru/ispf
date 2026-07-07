@@ -530,6 +530,8 @@ public final class AgentPlaybooks {
                 + "| WORKFLOW | root.platform.workflows | workflow-v1 | "
                 + "create_object, save_workflow_bpmn, run_workflow |\n"
                 + "| REPORT | root.platform.reports | report-v1 / tree-variables-report-v1 | configure_report, run_report |\n"
+                + "| QUERY | " + com.ispf.server.query.QueryDefinitionService.QUERIES_ROOT + " | query-v1 | REST /api/v1/queries, create_object |\n"
+                + "| EVENT_FILTER | " + com.ispf.server.eventfilter.EventFilterObjectService.EVENT_FILTERS_ROOT + " | event-filter-v1 | create_object |\n"
                 + "| SCHEDULE | root.platform.schedules or app tree | schedule-v1 | create_object, configure_schedule |\n"
                 + "| DATA_SOURCE | root.platform.data-sources | data-source-v1 | create_object, test connection |\n"
                 + "| APPLICATION | root.platform.applications | bundle manifest | register_application, import_package |\n"

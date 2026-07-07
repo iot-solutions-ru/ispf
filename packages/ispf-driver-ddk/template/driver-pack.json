@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-acme-widget",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-acme-widget.jar",
+  "drivers": [
+    {
+      "driverId": "acme-widget",
+      "driverClass": "com.ispf.driver.template.TemplateDeviceDriver"
+    }
+  ]
+}

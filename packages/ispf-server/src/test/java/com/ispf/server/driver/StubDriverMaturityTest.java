@@ -9,24 +9,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class StubDriverMaturityTest {
 
+    /** BL-140: promoted to PRODUCTION (Phase 25 OT Trust). */
     @ParameterizedTest
     @ValueSource(strings = {
             "ethernet-ip",
             "opc-da",
-            "opc-bridge",
+            "opc-bridge"
+    })
+    void promotedIndustrialDriversAreProduction(String driverId) {
+        assertEquals(DriverMaturity.PRODUCTION, DriverMaturityRegistry.resolve(driverId), driverId);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
             "corba",
             "vmware",
             "smi-s"
     })
-    void promotedStubDriversAreBeta(String driverId) {
+    void remainingStubDriversAreBeta(String driverId) {
         assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve(driverId), driverId);
     }
 
     @Test
-    void noRemainingBl26StubsInRegistry() {
-        assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("ethernet-ip"));
-        assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("opc-da"));
-        assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("opc-bridge"));
+    void bl26StubDriversStillBetaInRegistry() {
         assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("corba"));
         assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("vmware"));
         assertEquals(DriverMaturity.BETA, DriverMaturityRegistry.resolve("smi-s"));

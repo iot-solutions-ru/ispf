@@ -7,7 +7,7 @@ import { regionContentsFromRows } from "./sheetFormulaEngine";
 export function useSheetDataRegion(
   config: SheetConfig,
   objectPath: string,
-  refreshIntervalMs: number
+  refreshIntervalMs: number | false
 ): { regionContents: Record<string, string>; revision: number } {
   const region = config.dataRegion;
   const variableName = region?.variableName?.trim() ?? "";

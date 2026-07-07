@@ -136,6 +136,34 @@ export function validateExpression(expression: string): Promise<{ valid: boolean
   });
 }
 
+export interface EvaluateExpressionPayload {
+  objectPath: string;
+  expression: string;
+  targetVariable?: string;
+}
+
+export interface EvaluateExpressionStep {
+  phase: string;
+  status: string;
+  detail?: unknown;
+}
+
+export function evaluateExpression(
+  payload: EvaluateExpressionPayload
+): Promise<{
+  valid: boolean;
+  expression: string;
+  result: unknown;
+  resultType: string | null;
+  error: string | null;
+  steps: EvaluateExpressionStep[];
+}> {
+  return request("/api/v1/expressions/evaluate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function fetchObjects(parent?: string, lite = true): Promise<ObjectSummary[]> {
   const params = new URLSearchParams();
   if (parent) {
@@ -426,6 +454,8 @@ export function createVariable(path: string, payload: CreateVariablePayload): Pr
 export interface UpdateVariableDefinitionPayload {
   readable?: boolean;
   writable?: boolean;
+  readRoles?: string[];
+  writeRoles?: string[];
 }
 
 export function updateVariableDefinition(

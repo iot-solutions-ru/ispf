@@ -1,5 +1,6 @@
 package com.ispf.server.api;
 
+import com.ispf.server.audit.AuditEventService;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,17 +33,20 @@ public class AuthController {
     private final IspfSecurityProperties securityProperties;
     private final Environment environment;
     private final String oauthIssuerUri;
+    private final AuditEventService auditEventService;
 
     public AuthController(
             PlatformUserService userService,
             IspfSecurityProperties securityProperties,
             Environment environment,
-            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri
+            @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri,
+            AuditEventService auditEventService
     ) {
         this.userService = userService;
         this.securityProperties = securityProperties;
         this.environment = environment;
         this.oauthIssuerUri = oauthIssuerUri;
+        this.auditEventService = auditEventService;
     }
 
     @GetMapping("/config")
@@ -66,8 +70,11 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
         try {
-            return userService.login(request.username(), request.password());
+            Map<String, Object> response = userService.login(request.username(), request.password());
+            auditEventService.logLoginSuccess(request.username().trim().toLowerCase());
+            return response;
         } catch (IllegalArgumentException ex) {
+            auditEventService.logLoginFailure(request.username().trim().toLowerCase());
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         }
     }

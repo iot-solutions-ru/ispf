@@ -10,7 +10,7 @@ See also: [SCADA.md](SCADA.md), [SCADA_MIMIC.md](SCADA_MIMIC.md), [tools/symbol-
 
 | Source | Palette category | `symbolId` | Count |
 |--------|------------------|------------|-------|
-| ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, … | `pack.ispf-pid.*` | 57 |
+| ISA/ISO P&ID pack | `pack-valves`, `pack-pumps`, … | `pack.ispf-pid.*` | 70 |
 | Inline SVG | `common` | `custom.svg` | 1 template |
 | User library | `custom` | `custom:{id}` | Per mimic document |
 
@@ -119,7 +119,7 @@ Define `bindingSchema` on `customSymbols[]` entry for editor hints. Reference: `
 
 | Test | Path |
 |------|------|
-| Pack manifest load | `symbolPackLoader.test.ts` — ≥50 symbols, 8 categories |
+| Pack manifest load | `symbolPackLoader.test.ts` — ≥60 symbols, 8 categories |
 | SVG sanitize / upload parse | `customSvg.test.ts` |
 | Behavior engine | `symbolBehaviors.test.ts`, `svgSymbolEngine.test.ts` |
 

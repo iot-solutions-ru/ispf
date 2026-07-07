@@ -39,7 +39,7 @@ interface BindingCellRef {
 export function useSheetBindings(
   config: SheetConfig,
   objectPath: string,
-  refreshIntervalMs: number,
+  refreshIntervalMs: number | false,
   formulaContents: SheetValues = {}
 ): {
   externalByAddr: Map<string, number | string | boolean>;
@@ -141,7 +141,7 @@ export function useSheetBindings(
       return byPath;
     },
     enabled: watchedPaths.length > 0,
-    refetchInterval: wsConnected ? false : refreshIntervalMs,
+    refetchInterval: wsConnected || refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
   const histRefs = useMemo(() => {
@@ -189,7 +189,7 @@ export function useSheetBindings(
       return histValues;
     },
     enabled: histRefs.length > 0,
-    refetchInterval: wsConnected ? false : refreshIntervalMs,
+    refetchInterval: wsConnected || refreshIntervalMs === false ? false : refreshIntervalMs,
   });
 
   return useMemo(() => {

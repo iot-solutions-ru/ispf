@@ -59,6 +59,40 @@ Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace)
 
 Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`.
 
+## Marketplace GA checklist (BL-183)
+
+Foundation for Phase 32 marketplace GA. Track in release planning; not all items required for dev/lab browse.
+
+| # | Item | Status |
+|---|------|--------|
+| 1 | Remote catalog browse (System → Solutions) | Shipped |
+| 2 | Free one-click install (platform proxies download + deploy) | Shipped |
+| 3 | Paid activate with entitlement key | Shipped |
+| 4 | Bundle signature verification on install | Planned |
+| 5 | Version pinning + upgrade path (`latestVersion`, semver) | Partial |
+| 6 | `minIspfVersion` enforcement before install | Partial |
+| 7 | Vendor legal fields in listing manifest | Foundation — see demo |
+| 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API |
+| 9 | Marketplace server artifact reseed runbook | Shipped — see Troubleshooting |
+| 10 | 10+ signed production bundles | Planned |
+| 11 | 3 external partner catalogs | Planned (BL-184) |
+| 12 | CI: bundle validate on publish | Use `tools/bundle-validate-cli/validate.mjs` |
+
+### Demo listing manifest
+
+Reference listing + bundle for marketplace server seeding and integrator tests:
+
+| File | Purpose |
+|------|---------|
+| [examples/marketplace-demo/listing.manifest.json](../examples/marketplace-demo/listing.manifest.json) | Catalog entry fields (slug, vendor, pricing) |
+| [examples/marketplace-demo/bundle.json](../examples/marketplace-demo/bundle.json) | Installable application bundle (`appId=marketplace-demo`) |
+
+Publish flow (marketplace server):
+
+1. Copy `bundle.json` to marketplace artifacts store as `marketplace-demo__1.0.0.json`
+2. Register `listing.manifest.json` in catalog index
+3. Verify `GET /api/v1/catalog/marketplace-demo/download` and ISPF **Установить**
+
 ## Troubleshooting
 
 ### `ENOENT ... warehouse-reference__1.0.0.json` on download / ISPF install 502
@@ -77,6 +111,7 @@ ISPF only proxies the download; fix is always on the marketplace host. See [ispf
 
 ## Related
 
+- [COMPETITIVE_SCORECARD.md](COMPETITIVE_SCORECARD.md) — dimension 12 (ecosystem / marketplace)
 - [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md)
 - [PLUGINS.md](PLUGINS.md)
 - [APPLICATIONS.md](APPLICATIONS.md)

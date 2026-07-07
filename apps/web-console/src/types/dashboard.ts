@@ -678,6 +678,10 @@ export interface SpreadsheetWidget extends DashboardWidgetBase {
   valuesVariable?: string;
   sessionKey?: string;
   editable?: boolean;
+  /** When true, poll binding cells and variable persist source at liveRefreshIntervalMs (BL-150). */
+  live?: boolean;
+  /** Override dashboard refreshIntervalMs for live binding polling (default: dashboard interval). */
+  liveRefreshIntervalMs?: number;
 }
 
 export interface LiquidGaugeWidget extends DashboardWidgetBase {
@@ -747,11 +751,16 @@ export const DASHBOARD_GRID_MARGIN: readonly [number, number] = [4, 4];
 export const DASHBOARD_FINE_GRID_SCALE = 7;
 export const DASHBOARD_COLUMNS = 12 * DASHBOARD_FINE_GRID_SCALE;
 
+/** Full-screen mosaic layouts for control-room video walls (BL-148). */
+export type DashboardLayoutPreset = "video-wall-2x2";
+
 export interface DashboardLayout {
   columns: number;
   rowHeight: number;
   /** Visual theme id, e.g. "btop" → class dashboard-theme-btop on grid host */
   theme?: string;
+  /** Mosaic preset — applies CSS scaling and quadrant layout hints */
+  layoutPreset?: DashboardLayoutPreset;
   widgets: DashboardWidget[];
 }
 

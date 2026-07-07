@@ -1,0 +1,12 @@
+{
+  "id": "hvac-zone-binding",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC zone CEL bindings",
+  "description": "Platform context rules and binding rules for zone comfort.",
+  "prompt": "Add CEL binding for zone comfort index and update dashboard context rule.",
+  "playbook": "hvacZoneComfort",
+  "acceptance": {
+    "requiredTools": ["create_binding_rule", "configure_platform_context_rule", "list_binding_rules"]
+  }
+}

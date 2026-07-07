@@ -20,9 +20,9 @@
 | Phase 0–23 | 23 | 23 | 0 | — | — |
 | Sprint S01–S26 | 26 | 26 | 0 | 0 | — |
 
-**Текущий спринт:** нет активного — **Phase 24 (S24–S30) Done** (2026-07-07).
+**Текущий спринт:** не начат — **Phase 25 (Excellence Program)** Planned. См. [ROADMAP_PHASE25.md](ROADMAP_PHASE25.md).
 
-**Post-acceleration backlog:** BL-01…139 Done (BL-112 Cancelled). Phase 24 закрыт — см. [§ Phase 24](#phase-24--closed).
+**Post-acceleration backlog:** BL-01…139 Done (BL-112 Cancelled). Phase 24 закрыт — см. [§ Phase 24](#phase-24--closed). Следующая волна: BL-140…190, Phase 25–32.
 
 Программа acceleration: [ACCELERATION_PROGRAM.md](ACCELERATION_PROGRAM.md).
 
@@ -774,6 +774,25 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ---
 
+## Phase 25–32 — Excellence Program (Planned)
+
+Цель: **10/10** по конкурентному scorecard (IoT / SCADA / MES low-code). BL-140…190, спринты S31–S46.
+
+**Полный план:** [ROADMAP_PHASE25.md](ROADMAP_PHASE25.md) — OT Trust, HMI Excellence, Enterprise Security, Historian Scale, MES Platform, Automation Depth, AI Autopilot, Ecosystem.
+
+| Phase | Тема | BL | Статус |
+| ----- | ---- | -- | ------ |
+| 25 | OT Trust | 140…145 | Planned |
+| 26 | HMI Excellence | 146…152 | Planned |
+| 27 | Enterprise Security | 153…158 | Planned |
+| 28 | Historian at Scale | 159…163 | Planned |
+| 29 | MES Platform | 164…170 | Planned |
+| 30 | Automation Depth | 171…176 | Planned |
+| 31 | AI Autopilot | 177…182 | Planned |
+| 32 | Ecosystem & Market | 183…190 | Planned |
+
+---
+
 ## Phase 24 — closed
 
 Post-S26; **Done** (S24–S30, 2026-07-07).
@@ -809,6 +828,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | [FEDERATION.md](FEDERATION.md) | Edge federation |
 | [LOAD_TESTING.md](LOAD_TESTING.md) | Load gates |
 | [PLATFORM_EVOLUTION.md](PLATFORM_EVOLUTION.md) | История |
+| [ROADMAP_PHASE25.md](ROADMAP_PHASE25.md) | Phase 25–32 Excellence Program, BL-140…190 |
 | [decisions/](decisions/) | ADR |
 
 ---
@@ -817,6 +837,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-07 | Phase 25–32 Excellence Program: [ROADMAP_PHASE25.md](ROADMAP_PHASE25.md), BL-140…190 |
 | 2026-07-07 | Tail cleanup: ROADMAP sync (BL 0 Partial, 23.24 Done); CH verify prod-safe smoke |
 | 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
 | 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |

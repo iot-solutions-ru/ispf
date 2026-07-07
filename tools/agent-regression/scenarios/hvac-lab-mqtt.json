@@ -1,0 +1,17 @@
+{
+  "id": "hvac-lab-mqtt",
+  "version": "1",
+  "domain": "hvac",
+  "title": "Lab MQTT temperature sensor",
+  "description": "Lightweight HVAC lab bundle.",
+  "prompt": "Deploy lab-mqtt-temperature bundle for a single-zone temperature demo.",
+  "playbook": "applicationLifecycleGuide",
+  "bundle": {
+    "appId": "mqtt-temperature-lab",
+    "manifestPath": "examples/lab-mqtt-temperature/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package"]
+  }
+}

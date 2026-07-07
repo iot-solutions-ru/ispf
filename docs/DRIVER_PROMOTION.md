@@ -20,6 +20,17 @@
 4. Изменить запись в `DriverMaturityRegistry`.
 5. При необходимости — demo device / model в bootstrap.
 
+## Статус (июль 2026, Phase 25 BL-140)
+
+| driverId | Было | Стало | Примечание |
+|----------|------|-------|------------|
+| `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
+| `dnp3` | BETA | **PRODUCTION** | Class 0/1/2/3 poll via `io.stepfunc:dnp3` |
+| `dlms` | BETA | **PRODUCTION** | Gurux read/write; auth NONE |
+| `ethernet-ip` | BETA | **PRODUCTION** | CIP session registration + tag path loopback |
+| `opc-da` | BETA | **PRODUCTION** | Connectivity shell + parser tests |
+| `opc-bridge` | BETA | **PRODUCTION** | Bridge point mapping + parser tests |
+
 ## Статус (июнь 2026)
 
 | driverId | Было | Стало | Примечание |

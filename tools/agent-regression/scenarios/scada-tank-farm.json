@@ -1,0 +1,12 @@
+{
+  "id": "scada-tank-farm",
+  "version": "1",
+  "domain": "scada",
+  "title": "Tank farm monitoring",
+  "description": "Virtual tank devices, fill level trends, facility overview dashboard.",
+  "prompt": "Build tank farm with 3 tanks, fill level charts, and overview dashboard.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "configure_variable_history", "set_dashboard_layout"]
+  }
+}

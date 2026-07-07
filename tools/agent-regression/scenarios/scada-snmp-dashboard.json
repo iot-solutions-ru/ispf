@@ -1,0 +1,12 @@
+{
+  "id": "scada-snmp-dashboard",
+  "version": "1",
+  "domain": "scada",
+  "title": "SNMP host monitoring dashboard",
+  "description": "SNMP device + monitoring dashboard layout.",
+  "prompt": "Configure SNMP localhost monitoring with CPU, memory, and network widgets.",
+  "playbook": "snmpLocalhostMonitoring",
+  "acceptance": {
+    "requiredTools": ["configure_driver", "set_dashboard_layout", "list_variables"]
+  }
+}

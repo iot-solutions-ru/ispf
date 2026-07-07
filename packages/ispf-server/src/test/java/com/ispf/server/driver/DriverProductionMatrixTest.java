@@ -26,6 +26,25 @@ class DriverProductionMatrixTest {
     }
 
     @Test
+    void top20IndustrialDriversAreProductionOrInteropPartner() {
+        for (String driverId : DriverProductionMatrix.TOP_20_INDUSTRIAL) {
+            if ("iec104-server".equals(driverId)) {
+                continue;
+            }
+            assertEquals(
+                    DriverMaturity.PRODUCTION,
+                    DriverProductionMatrix.resolveMaturity(driverId),
+                    driverId
+            );
+            DriverProductionMatrix.Entry entry = DriverProductionMatrix.entry(driverId).orElseThrow();
+            assertTrue(
+                    DriverProductionMatrix.loopbackTestSourceExists(entry),
+                    driverId + " missing loopback test"
+            );
+        }
+    }
+
+    @Test
     void productionDriversDeclareLoopbackTestSource() {
         for (DriverProductionMatrix.Entry entry : DriverProductionMatrix.entries().values()) {
             if (entry.maturity() != DriverMaturity.PRODUCTION) {
@@ -63,6 +82,16 @@ class DriverProductionMatrixTest {
     @Test
     void top10IndustrialDriversLinkedToInteropMatrix() {
         for (String driverId : DriverProductionMatrix.TOP_10_INDUSTRIAL) {
+            assertTrue(
+                    DriverProductionMatrix.resolveInteropGradleModule(driverId).isPresent(),
+                    driverId
+            );
+        }
+    }
+
+    @Test
+    void top20IndustrialDriversLinkedToInteropMatrix() {
+        for (String driverId : DriverProductionMatrix.TOP_20_INDUSTRIAL) {
             assertTrue(
                     DriverProductionMatrix.resolveInteropGradleModule(driverId).isPresent(),
                     driverId

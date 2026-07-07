@@ -977,19 +977,19 @@ ALTER TABLE platform_cluster_replicas
 
 
 -- ===== V64__platform_cluster_replica_profile.sql =====
-ALTER TABLE platform_cluster_replicas
-    ADD COLUMN replica_profile VARCHAR(32) NOT NULL DEFAULT 'unified';
-
-ALTER TABLE platform_cluster_replicas
-    ADD COLUMN replica_capabilities VARCHAR(512) NOT NULL DEFAULT '';
-
-UPDATE platform_cluster_replicas
-SET replica_profile = CASE replica_role
-    WHEN 'api' THEN 'edge-api'
-    WHEN 'worker' THEN 'compute'
-    WHEN 'all' THEN 'unified'
-    ELSE replica_role
-END
+ALTER TABLE platform_cluster_replicas
+    ADD COLUMN replica_profile VARCHAR(32) NOT NULL DEFAULT 'unified';
+
+ALTER TABLE platform_cluster_replicas
+    ADD COLUMN replica_capabilities VARCHAR(512) NOT NULL DEFAULT '';
+
+UPDATE platform_cluster_replicas
+SET replica_profile = CASE replica_role
+    WHEN 'api' THEN 'edge-api'
+    WHEN 'worker' THEN 'compute'
+    WHEN 'all' THEN 'unified'
+    ELSE replica_role
+END
 WHERE replica_profile = 'unified';
 
 
@@ -1063,5 +1063,13 @@ WHERE name = 'layout'
 -- ===== V70__platform_tenant_quotas.sql =====
 ALTER TABLE platform_tenants ADD COLUMN IF NOT EXISTS max_devices INT;
 ALTER TABLE platform_tenants ADD COLUMN IF NOT EXISTS max_objects INT;
+
+
+-- ===== V71__variable_acl_roles.sql =====
+ALTER TABLE object_variables
+    ADD COLUMN IF NOT EXISTS read_roles_json TEXT;
+
+ALTER TABLE object_variables
+    ADD COLUMN IF NOT EXISTS write_roles_json TEXT;
 
 

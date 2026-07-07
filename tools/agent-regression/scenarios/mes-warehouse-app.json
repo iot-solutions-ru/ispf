@@ -1,0 +1,17 @@
+{
+  "id": "mes-warehouse-app",
+  "version": "1",
+  "domain": "mes",
+  "title": "Warehouse reference app",
+  "description": "Warehouse bundle with SQL bindings.",
+  "prompt": "Deploy warehouse-app bundle and verify SQL-backed operator screens.",
+  "playbook": "applicationLifecycleGuide",
+  "bundle": {
+    "appId": "warehouse",
+    "manifestPath": "examples/warehouse-app/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package"]
+  }
+}

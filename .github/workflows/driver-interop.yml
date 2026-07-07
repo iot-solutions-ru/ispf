@@ -6,6 +6,7 @@ on:
       - "packages/ispf-driver-*/**"
       - "packages/ispf-server/src/main/java/com/ispf/server/driver/**"
       - ".github/workflows/driver-interop.yml"
+      - "deploy/tools/driver-interop-report.sh"
   workflow_dispatch:
 
 jobs:
@@ -19,12 +20,22 @@ jobs:
           - ispf-driver-mqtt
           - ispf-driver-modbus
           - ispf-driver-modbus-rtu
+          - ispf-driver-modbus-udp
           - ispf-driver-flexible
           - ispf-driver-opcua
+          - ispf-driver-opcua-server
           - ispf-driver-snmp
           - ispf-driver-bacnet
           - ispf-driver-s7
           - ispf-driver-http
+          - ispf-driver-iec104
+          - ispf-driver-iec104-server
+          - ispf-driver-dnp3
+          - ispf-driver-dlms
+          - ispf-driver-ethernet-ip
+          - ispf-driver-opc-da
+          - ispf-driver-opc-bridge
+          - ispf-driver-gps-tracker
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +49,11 @@ jobs:
 
       - name: Run driver tests (${{ matrix.module }})
         id: test
-        run: ./gradlew :packages:${{ matrix.module }}:test --no-daemon
+        run: |
+          START_MS=$(date +%s%3N)
+          ./gradlew :packages:${{ matrix.module }}:test --no-daemon
+          END_MS=$(date +%s%3N)
+          echo "duration_ms=$((END_MS - START_MS))" >> "$GITHUB_OUTPUT"
 
       - name: Record interop result
         if: always()
@@ -49,12 +64,29 @@ jobs:
           else
             echo "Result: **fail** ❌" >> "$GITHUB_STEP_SUMMARY"
           fi
+          if [ -n "${{ steps.test.outputs.duration_ms }}" ]; then
+            echo "Duration: ${{ steps.test.outputs.duration_ms }} ms" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   summary:
     needs: matrix
     if: always()
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Make scripts executable
+        run: chmod +x gradlew deploy/tools/driver-interop-report.sh
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Generate interop report
+        if: always()
+        run: deploy/tools/driver-interop-report.sh --ci-summary
+
       - name: Interop matrix complete
         run: echo "Driver interop matrix finished (see job summaries per pack)." >> "$GITHUB_STEP_SUMMARY"
 
@@ -117,7 +149,7 @@ jobs:
           distribution: temurin
           java-version: "25"
 
-      - name: Verify PRODUCTION↔interop matrix gate (BL-85)
+      - name: Verify PRODUCTION↔interop matrix gate (BL-85 / BL-140)
         run: >
           ./gradlew
           :packages:ispf-server:test

@@ -1,0 +1,20 @@
+{
+  "slug": "marketplace-demo",
+  "title": "ISPF Marketplace Demo",
+  "description": "Minimal signed-ready bundle listing for marketplace GA checklist (BL-183). Demonstrates browse → install flow.",
+  "pricing": "free",
+  "appId": "marketplace-demo",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО «АйоТи Солюшнс»",
+  "vendorInn": "0000000000",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "marketplace@iot-solutions.ru",
+  "vendorContactPhone": "+7-000-000-00-00",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": ["demo", "marketplace", "hvac"],
+  "changelog": "Initial marketplace GA demo listing."
+}

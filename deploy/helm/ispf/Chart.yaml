@@ -1,0 +1,18 @@
+apiVersion: v2
+name: ispf
+description: ISPF platform — Spring Boot server, Web Console, optional NATS/Redis/ClickHouse
+type: application
+version: 0.1.0
+appVersion: "0.9.32"
+keywords:
+  - iot
+  - scada
+  - mes
+  - iiot
+home: https://github.com/Michaael/IoT-Solutions-Platform-1
+maintainers:
+  - name: IoT Solutions
+    url: https://iot-solutions.ru
+annotations:
+  ispf.io/bl: BL-186
+  ispf.io/status: skeleton

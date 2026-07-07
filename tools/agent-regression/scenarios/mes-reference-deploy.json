@@ -1,0 +1,17 @@
+{
+  "id": "mes-reference-deploy",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES reference bundle deploy",
+  "description": "Validate and import mes-reference bundle.",
+  "prompt": "Deploy mes-reference application bundle and verify BFF functions.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-reference",
+    "manifestPath": "examples/mes-reference/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+  }
+}

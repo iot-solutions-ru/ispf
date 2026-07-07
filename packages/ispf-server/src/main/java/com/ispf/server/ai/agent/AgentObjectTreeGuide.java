@@ -31,6 +31,12 @@ public final class AgentObjectTreeGuide {
                 + "| "
                 + AutomationTreeService.CORRELATORS_ROOT
                 + " | Correlators | CORRELATOR |\n"
+                + "| "
+                + com.ispf.server.query.QueryDefinitionService.QUERIES_ROOT
+                + " | Queries | QUERY |\n"
+                + "| "
+                + com.ispf.server.eventfilter.EventFilterObjectService.EVENT_FILTERS_ROOT
+                + " | Event filters | EVENT_FILTER |\n"
                 + """
                 | root.platform.relative-blueprints | Relative model catalog | MODEL definitions; apply via apply_relative_blueprint |
                 | root.platform.instance-types | Instance type catalog | (definitions only) |
@@ -48,6 +54,8 @@ public final class AgentObjectTreeGuide {
                 - **CORRELATOR**: patternType COUNT|SEQUENCE|EVENT_CHAIN — tool configure_correlator
                 - **WORKFLOW**: BPMN in bundle or platform tree
                 - **REPORT**: SQL report definition path for report widget
+                - **QUERY**: queryType tree-scan|sql, sourcePathPattern, fieldsJson, filterExpression (CEL)
+                - **EVENT_FILTER**: eventNamePattern, sourceObjectPathPattern, severity range, filterExpression
                 
                 ### Models & templates
                 

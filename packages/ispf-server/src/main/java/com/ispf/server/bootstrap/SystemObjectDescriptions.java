@@ -1,9 +1,11 @@
 package com.ispf.server.bootstrap;
 
+import com.ispf.server.application.reference.mes.MesPaths;
 import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.migration.MigrationObjectService;
+import com.ispf.server.process.ProcessProgramPaths;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.security.PlatformUserService;
 
@@ -97,6 +99,26 @@ public final class SystemObjectDescriptions {
                 device functions, timers, and user tasks. Activate workflows from the Workflow editor; \
                 link an Operator App so user tasks appear in the operator sidebar Work queue. \
                 Correlators can start workflows when event patterns match."""));
+        map.put(MesPaths.MES_ROOT, new Entry("MES", """
+                Manufacturing execution (ISA-95 Level 3) catalog. Contains work orders, operations, lots, shifts, \
+                quality records, and optional site/area/line instance hierarchy. \
+                Use with application bundles (mes-platform, mes-oee-reference) and BFF functions for OEE and dispatch."""));
+        map.put(MesPaths.WORK_ORDERS, new Entry("Work Orders", """
+                Work order catalog. Each WORK_ORDER child represents a manufacturing order or dispatch unit. \
+                Link to workflows for operator confirmation and to app SQL schemas for ERP sync."""));
+        map.put(MesPaths.OPERATIONS, new Entry("Operations", """
+                Routing operation catalog. OPERATION nodes describe steps on a work order or line — \
+                ideal cycle time, status, and BFF hooks for MES KPI."""));
+        map.put(MesPaths.LOTS, new Entry("Lots", """
+                Material lot / batch catalog. LOT nodes track batch IDs, genealogy, and traceability to quality records."""));
+        map.put(MesPaths.SHIFTS, new Entry("Shifts", """
+                Production shift catalog. SHIFT nodes align with OEE time buckets (planned time, downtime, output). \
+                See mes_oee_* BFF functions in mes-oee-reference / mes-platform bundles."""));
+        map.put(MesPaths.QUALITY_RECORDS, new Entry("Quality Records", """
+                Quality inspection and defect catalog. QUALITY_RECORD nodes store SPC samples, holds, and disposition."""));
+        map.put(MesPaths.INSTANCES, new Entry("MES Instances", """
+                ISA-95 equipment hierarchy (site → area → line → unit). \
+                Model paths per ISA95_CATALOG.md; bind Level 1 devices under units for SCADA + MES convergence."""));
         map.put("root.platform.alert-rules", new Entry("Alert Rules", """
                 CEL alert rule catalog. Each ALERT child watches variable changes on a target object and publishes \
                 an event when the CEL condition is true (optionally edge-triggered to fire only on false→true transitions). \
@@ -105,6 +127,16 @@ public final class SystemObjectDescriptions {
                 Event correlator catalog. Each CORRELATOR child matches event patterns across objects — COUNT (event A then B within a window) \
                 or SEQUENCE (ordered chain) — and triggers a workflow or publishes a follow-up event. \
                 Place correlators between alert rules and BPMN automation."""));
+        map.put("root.platform.queries", new Entry("Queries", """
+                Cross-object query catalog. Each QUERY child defines a dynamic scan or SQL projection over the object tree \
+                (sourcePathPattern, fieldsJson, optional CEL filterExpression). Execution engine is Phase 30 skeleton — \
+                definitions are stored as platform objects under root.platform.queries.*."""));
+        map.put("root.platform.event-filters", new Entry("Event Filters", """
+                Reusable event journal filter catalog. Each EVENT_FILTER child stores eventNamePattern, sourceObjectPathPattern, \
+                severity range, time window, and optional CEL filterExpression for operator event log views and automation pre-filters."""));
+        map.put(ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, new Entry("Process Programs", """
+                Cyclic process-control program catalog (BL-172). Each PROCESS_PROGRAM child defines a control loop interval, \
+                CEL controlExpression, and runtime cycle metadata. Execution scheduler is follow-up work."""));
         map.put("root.platform.applications", new Entry("Applications", """
                 Deployed application bundle containers. Each APPLICATION child (folder name = appId / packageId) holds standard subfolders: \
                 functions, reports, schedules, bindings, migrations, and optional screens. \

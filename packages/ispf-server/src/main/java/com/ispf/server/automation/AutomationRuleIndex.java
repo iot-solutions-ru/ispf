@@ -163,6 +163,10 @@ public class AutomationRuleIndex {
             for (String part : correlator.secondEventName().split(",")) {
                 addCorrelatorPath(correlatorPathsByEventName, part.trim(), correlator.id());
             }
+        } else if (correlator.patternType() == CorrelatorPatternType.WINDOW) {
+            for (String part : correlator.secondEventName().split(",")) {
+                addCorrelatorPath(correlatorPathsByEventName, part.trim(), correlator.id());
+            }
         }
         addCorrelatorPath(correlatorPathsByEventName, correlator.secondEventName(), correlator.id());
     }

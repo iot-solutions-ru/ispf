@@ -41,6 +41,7 @@ export default function SpreadsheetConfiguredGridView({
     isLoading,
     canEdit: widgetEditable,
     persistWarning,
+    bindingRefreshMs,
   } = useSpreadsheetPersist(widget, objectPath, refreshIntervalMs);
 
   const [selectedCell, setSelectedCell] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export default function SpreadsheetConfiguredGridView({
   const { externalByAddr, ispfContext } = useSheetBindings(
     sheetConfig,
     objectPath,
-    refreshIntervalMs,
+    bindingRefreshMs,
     localContents
   );
 

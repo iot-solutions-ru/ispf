@@ -14,6 +14,13 @@ class SystemObjectDescriptionsTest {
     }
 
     @Test
+    void resolvesMesCatalogPaths() {
+        assertTrue(SystemObjectDescriptions.resolve("root.platform.mes").isPresent());
+        assertTrue(SystemObjectDescriptions.resolve("root.platform.mes.work-orders").isPresent());
+        assertTrue(SystemObjectDescriptions.resolve("root.platform.mes.instances").isPresent());
+    }
+
+    @Test
     void resolvesApplicationSubfolders() {
         assertTrue(SystemObjectDescriptions.resolve("root.platform.applications.demo.functions").isPresent());
         assertTrue(SystemObjectDescriptions.resolve("root.platform.applications.demo").isPresent());

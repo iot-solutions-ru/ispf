@@ -58,7 +58,7 @@ async function loadVariablesBatchWithOfflineCache(objectPaths: string[]) {
 
 export function useVariablesQuery(
   objectPath: string,
-  refreshIntervalMs = 5000,
+  refreshIntervalMs: number | false = 5000,
   enabled = true,
 ) {
   const wsConnected = useSyncExternalStore(
@@ -80,7 +80,7 @@ export function useVariablesQuery(
 
 export function useVariablesBatchQuery(
   objectPaths: string[],
-  refreshIntervalMs = 5000,
+  refreshIntervalMs: number | false = 5000,
   enabled = true,
 ) {
   const wsConnected = useSyncExternalStore(
