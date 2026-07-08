@@ -5033,6 +5033,57 @@ body.scada-mimic-editor-open {
   flex: 1;
 }
 
+.operator-video-wall-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--border, #30363d);
+}
+
+.operator-video-wall-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg, #0d1117);
+  overflow: hidden;
+}
+
+.operator-video-wall-cell--empty {
+  background: var(--surface-1, #161b22);
+}
+
+.operator-video-wall-cell-title {
+  flex-shrink: 0;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #8b949e);
+  border-bottom: 1px solid var(--border, #30363d);
+  background: var(--surface-2, #21262d);
+}
+
+.operator-video-wall-cell-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.operator-video-wall-cell-body .dashboard-shell {
+  height: 100%;
+  min-height: 0;
+}
+
+.operator-video-wall-cell-body .dashboard-toolbar {
+  display: none;
+}
+
 /* Operator HMI */
 .operator-shell {
   display: flex;
@@ -6131,6 +6182,42 @@ body.scada-mimic-editor-open {
   overflow: auto;
   margin-top: 0;
   overscroll-behavior: contain;
+}
+
+.dash-sheet-wrap--freeze-header .dash-sheet-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2, #21262d);
+}
+
+.dash-sheet-wrap--freeze-header .dash-sheet-table .dash-sheet-corner {
+  z-index: 3;
+}
+
+.dash-sheet-table .dash-sheet-col-header {
+  position: relative;
+  min-width: 3rem;
+}
+
+.dash-sheet-col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.dash-sheet-col-resize-handle:hover,
+.dash-sheet-col-resize-handle:active {
+  background: rgba(47, 129, 247, 0.35);
+}
+
+.dash-sheet-row-header-col {
+  width: 2.5rem;
 }
 
 .dash-widget-spreadsheet {
@@ -7389,6 +7476,54 @@ body.scada-mimic-editor-open {
 }
 
 .expression-debugger-binding-value {
+  font-family: var(--mono, ui-monospace, monospace);
+  word-break: break-all;
+}
+
+.expression-debugger-watch {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle, #30363d);
+}
+
+.expression-debugger-watch-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.expression-debugger-watch-header h5 {
+  margin: 0;
+}
+
+.expression-debugger-watch-pins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.expression-debugger-watch-pin {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+}
+
+.expression-debugger-watch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.expression-debugger-watch-table th,
+.expression-debugger-watch-table td {
+  border-bottom: 1px solid var(--border-subtle, #30363d);
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.expression-debugger-watch-value {
   font-family: var(--mono, ui-monospace, monospace);
   word-break: break-all;
 }

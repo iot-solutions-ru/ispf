@@ -930,6 +930,20 @@ export function deleteCorrelator(path: string): Promise<void> {
   return request(`/api/v1/correlators/by-path?path=${encodeURIComponent(path)}`, { method: "DELETE" });
 }
 
+export function fetchEventFilters(): Promise<import("./types/automation").EventFilterPayload[]> {
+  return request("/api/v1/event-filters");
+}
+
+export function updateEventFilter(
+  path: string,
+  payload: Partial<import("./types/automation").EventFilterPayload>
+): Promise<import("./types/automation").EventFilterPayload> {
+  return request(`/api/v1/event-filters/by-path?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify({ ...payload, path }),
+  });
+}
+
 export interface ObjectConfigAuditEntry {
   id: string;
   objectPath: string;

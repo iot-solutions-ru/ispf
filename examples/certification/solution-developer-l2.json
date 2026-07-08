@@ -1,0 +1,93 @@
+{
+  "track": "solution-developer",
+  "level": 2,
+  "title": "Solution developer — Level 2 Automation",
+  "version": "0.1.0",
+  "bl": "BL-190",
+  "questions": [
+    {
+      "id": "sd-l2-q01",
+      "type": "multiple-choice",
+      "topic": "drivers",
+      "prompt": "A healthy polled driver should report status:",
+      "options": [
+        "RUNNING",
+        "PENDING_LICENSE",
+        "UNREACHABLE",
+        "DRAFT"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/DRIVERS.md"
+    },
+    {
+      "id": "sd-l2-q02",
+      "type": "multiple-choice",
+      "topic": "alerts",
+      "prompt": "Alert rules are typically validated by:",
+      "options": [
+        "Firing a test event or crossing a threshold",
+        "Restarting PostgreSQL",
+        "Deleting the object tree",
+        "Disabling nginx"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/AUTOMATION.md"
+    },
+    {
+      "id": "sd-l2-q03",
+      "type": "multiple-choice",
+      "topic": "workflows",
+      "prompt": "User tasks in a workflow appear in:",
+      "options": [
+        "The operator work queue",
+        "Driver pack manifest only",
+        "Helm secret template",
+        "Grafana datasource"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/WORKFLOWS.md"
+    },
+    {
+      "id": "sd-l2-q04",
+      "type": "multiple-choice",
+      "topic": "field-pilot",
+      "prompt": "Before OT field pilot, teams should complete:",
+      "options": [
+        "FIELD_PILOT_PLAYBOOK checklist",
+        "Marketplace GA legal review only",
+        "Cluster failover drill",
+        "Multi-tenant isolation test"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/FIELD_PILOT_PLAYBOOK.md"
+    },
+    {
+      "id": "sd-l2-q05",
+      "type": "multiple-choice",
+      "topic": "scada",
+      "prompt": "SCADA mimic bindings connect diagram elements to:",
+      "options": [
+        "Live variable paths or expressions",
+        "Static PNG assets only",
+        "JDBC queries",
+        "Git commit hashes"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/SCADA.md"
+    },
+    {
+      "id": "sd-l2-q06",
+      "type": "multiple-choice",
+      "topic": "practical",
+      "prompt": "Professional practical exam pass criteria includes:",
+      "options": [
+        "Driver RUNNING and alert fires on threshold",
+        "Parquet export to S3",
+        "Three-replica NATS cluster",
+        "OEM driver co-signing"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/PARTNER_PROGRAM.md"
+    }
+  ]
+}

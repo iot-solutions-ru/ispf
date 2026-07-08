@@ -14,6 +14,7 @@ import {
   isCorrelatorPath,
   isCorrelatorsRoot,
 } from "./automationPath";
+import { isEventFilterPath, isEventFiltersRoot } from "./eventFilterPath";
 import { isFederationRoot } from "./federationPath";
 import { isTenantsRoot } from "./tenantPath";
 import { localizedSystemFolderMeta } from "./systemFolderI18n";
@@ -144,6 +145,7 @@ export function isSystemCatalogFolder(path: string, objectType?: ObjectType): bo
     || isTenantsRoot(path)
     || (isAlertRulePath(path) && !isAlertRulesRoot(path))
     || (isCorrelatorPath(path) && !isCorrelatorsRoot(path))
+    || (isEventFilterPath(path) && !isEventFiltersRoot(path))
   ) {
     return false;
   }

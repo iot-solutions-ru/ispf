@@ -124,7 +124,7 @@ public class AutomationTreeService {
                 createAlertRuleNode(path, entity.getName(), entity.getObjectPath(), entity.getWatchVariable(),
                         entity.getConditionExpr(), entity.getEventName(), entity.getPayloadVariable(),
                         entity.isEnabled(), entity.isEdgeTrigger(), 0, false, "HIGH", false,
-                        entity.getLastConditionMet(), null, null);
+                        entity.getLastConditionMet(), null, null, null);
             }
         }
         legacyAlertRuleRepository.deleteAll();
@@ -190,12 +190,13 @@ public class AutomationTreeService {
             String priority,
             boolean ackRequired,
             String notificationWebhookUrl,
-            String notificationEmailTarget
+            String notificationEmailTarget,
+            String anomalyModelId
     ) {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
                 payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, priority, ackRequired, null,
-                notificationWebhookUrl, notificationEmailTarget);
+                notificationWebhookUrl, notificationEmailTarget, anomalyModelId);
         AlertRule rule = getAlertRule(path);
         indexRefresh.afterAlertRuleCreated(rule);
         return rule;
@@ -206,7 +207,7 @@ public class AutomationTreeService {
             String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
             Integer delaySeconds, Boolean sustainWhileTrue, String priority, Boolean ackRequired,
             Integer rateLimitSeconds,
-            String notificationWebhookUrl, String notificationEmailTarget) {
+            String notificationWebhookUrl, String notificationEmailTarget, String anomalyModelId) {
         AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
@@ -253,6 +254,9 @@ public class AutomationTreeService {
         }
         if (notificationEmailTarget != null) {
             setRuntimeString(path, "notificationEmailTarget", notificationEmailTarget);
+        }
+        if (anomalyModelId != null) {
+            setString(path, "anomalyModelId", anomalyModelId);
         }
         objectManager.persistNodeTree(path);
         AlertRule rule = getAlertRule(path);
@@ -440,6 +444,7 @@ public class AutomationTreeService {
                 "HIGH",
                 false,
                 null,
+                null,
                 null
         );
     }
@@ -521,7 +526,8 @@ public class AutomationTreeService {
         boolean ackRequired,
         Boolean lastConditionMet,
         String notificationWebhookUrl,
-        String notificationEmailTarget
+        String notificationEmailTarget,
+        String anomalyModelId
     ) {
         ensureParent(path);
         String name = leafName(path);
@@ -545,6 +551,7 @@ public class AutomationTreeService {
         if (notificationEmailTarget != null) {
             setRuntimeString(path, "notificationEmailTarget", notificationEmailTarget);
         }
+        setString(path, "anomalyModelId", anomalyModelId != null ? anomalyModelId : "");
         objectManager.persistNodeTree(path);
         if (lastConditionMet != null) {
             alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
@@ -616,7 +623,8 @@ public class AutomationTreeService {
                 createdAt,
                 createdAt,
                 blankToNull(readString(node, "notificationWebhookUrl").orElse(null)),
-                blankToNull(readString(node, "notificationEmailTarget").orElse(null))
+                blankToNull(readString(node, "notificationEmailTarget").orElse(null)),
+                blankToNull(readString(node, "anomalyModelId").orElse(null))
         );
     }
 

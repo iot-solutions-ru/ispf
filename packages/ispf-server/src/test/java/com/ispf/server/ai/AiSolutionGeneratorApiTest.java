@@ -68,6 +68,32 @@ class AiSolutionGeneratorApiTest {
 
     @Test
     @WithMockUser(roles = "admin")
+    void oilGasPromptReturnsOilGasDomainDraft() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/solutions/generate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"prompt":"Oil and gas upstream pump station with tank farm"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.domain").value("oil-gas"))
+                .andExpect(jsonPath("$.blueprintDraft.referenceBundle.appId").value("simulator"));
+    }
+
+    @Test
+    @WithMockUser(roles = "admin")
+    void energyPromptReturnsMiniTecReferenceBundle() throws Exception {
+        mockMvc.perform(post("/api/v1/ai/solutions/generate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"prompt":"Thermal power plant energy turbine reporting"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.domain").value("energy"))
+                .andExpect(jsonPath("$.blueprintDraft.referenceBundle.appId").value("mini-tec"));
+    }
+
+    @Test
+    @WithMockUser(roles = "admin")
     void blankPromptIsRejected() throws Exception {
         mockMvc.perform(post("/api/v1/ai/solutions/generate")
                         .contentType(MediaType.APPLICATION_JSON)

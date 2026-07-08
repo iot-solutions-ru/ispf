@@ -1,0 +1,59 @@
+{
+  "_comment": "BL-181: reference dashboard layout for GET /api/v1/ai/agent/metrics/tools. Import into root.platform.dashboards.ai-ops.",
+  "columns": 12,
+  "rowHeight": 72,
+  "widgets": [
+    {
+      "id": "ai-tool-latency",
+      "type": "function",
+      "title": "Agent tool latency (7d)",
+      "x": 0,
+      "y": 0,
+      "w": 6,
+      "h": 4,
+      "objectPath": "root.platform.applications.platform.functions.ai_toolMetricsChart",
+      "functionName": "run",
+      "buttonLabel": "Refresh latency chart",
+      "inputMapJson": "{\"days\":7,\"metric\":\"avgLatencyMs\"}",
+      "resultView": "chart"
+    },
+    {
+      "id": "ai-tool-errors",
+      "type": "function",
+      "title": "Agent tool error rate (7d)",
+      "x": 6,
+      "y": 0,
+      "w": 6,
+      "h": 4,
+      "objectPath": "root.platform.applications.platform.functions.ai_toolMetricsChart",
+      "functionName": "run",
+      "buttonLabel": "Refresh error chart",
+      "inputMapJson": "{\"days\":7,\"metric\":\"errorRate\"}",
+      "resultView": "chart"
+    },
+    {
+      "id": "ai-tool-tokens",
+      "type": "function",
+      "title": "Agent tokens (7d)",
+      "x": 0,
+      "y": 4,
+      "w": 4,
+      "h": 2,
+      "objectPath": "root.platform.applications.platform.functions.ai_toolMetricsTotals",
+      "functionName": "run",
+      "buttonLabel": "Load totals",
+      "inputMapJson": "{\"days\":7}",
+      "resultView": "value"
+    },
+    {
+      "id": "ai-turn-metrics",
+      "type": "html-snippet",
+      "title": "Turn metrics",
+      "x": 4,
+      "y": 4,
+      "w": 8,
+      "h": 2,
+      "htmlJson": "<p>Turn-level KPIs: use AI Studio <code>AgentMetricsPanel</code> or <code>GET /api/v1/ai/agent/metrics?days=7</code>. Tool breakdown uses <code>/agent/metrics/tools</code>.</p>"
+    }
+  ]
+}

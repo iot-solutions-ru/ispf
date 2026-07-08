@@ -42,6 +42,13 @@ spec:
               value: {{ .Values.ispf.driverPacksDir | quote }}
             - name: ISPF_HISTORIAN_STORE
               value: {{ .Values.ispf.historian.store | quote }}
+            {{- if include "ispf.secretsEnabled" . }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ispf.secretName" . }}
+                  key: db-password
+            {{- end }}
             {{- if .Values.redis.enabled }}
             - name: ISPF_REDIS_HOST
               value: {{ .Values.ispf.redis.host | quote }}

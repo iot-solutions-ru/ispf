@@ -821,6 +821,7 @@ public class ApplicationBundleDeployService {
                     false,
                     null,
                     null,
+                    null,
                     null
             );
             automationTreeService.resetAlertRuleRuntimeState(path);
@@ -839,6 +840,7 @@ public class ApplicationBundleDeployService {
                 rule.sustainWhileTrue() != null && rule.sustainWhileTrue(),
                 "HIGH",
                 false,
+                null,
                 null,
                 null
         );

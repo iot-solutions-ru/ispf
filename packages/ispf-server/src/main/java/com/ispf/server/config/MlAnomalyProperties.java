@@ -28,6 +28,11 @@ public class MlAnomalyProperties {
      */
     private double thresholdMax = Double.POSITIVE_INFINITY;
 
+    /**
+     * History lookback window when scoring anomaly alert rules.
+     */
+    private int sampleWindowSeconds = 300;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -58,5 +63,13 @@ public class MlAnomalyProperties {
 
     public void setThresholdMax(double thresholdMax) {
         this.thresholdMax = thresholdMax;
+    }
+
+    public int getSampleWindowSeconds() {
+        return sampleWindowSeconds;
+    }
+
+    public void setSampleWindowSeconds(int sampleWindowSeconds) {
+        this.sampleWindowSeconds = sampleWindowSeconds;
     }
 }

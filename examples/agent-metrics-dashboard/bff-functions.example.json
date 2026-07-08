@@ -1,0 +1,59 @@
+{
+  "_comment": "BL-181: deploy as platform script functions (admin-only HTTP to /api/v1/ai/agent/metrics/tools).",
+  "functions": [
+    {
+      "path": "root.platform.applications.platform.functions.ai_toolMetricsChart",
+      "displayName": "AI tool metrics chart",
+      "description": "Maps agent tool metrics to chart rows for dashboard widgets.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/ai/agent/metrics/tools?days={{days}}",
+          "saveAs": "metrics"
+        },
+        {
+          "op": "map",
+          "source": "metrics.tools",
+          "saveAs": "rows",
+          "row": {
+            "label": "{{tool}}",
+            "value": "{{avgLatencyMs}}"
+          },
+          "whenMetric": "avgLatencyMs"
+        }
+      ],
+      "parameters": [
+        { "name": "days", "type": "integer", "default": 7 },
+        { "name": "metric", "type": "string", "default": "avgLatencyMs" }
+      ],
+      "notes": "When metric=errorRate, map value from errorRate field instead of avgLatencyMs."
+    },
+    {
+      "path": "root.platform.applications.platform.functions.ai_toolMetricsTotals",
+      "displayName": "AI tool token totals",
+      "description": "Sums prompt+completion tokens from tool metrics for indicator widgets.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/ai/agent/metrics/tools?days={{days}}",
+          "saveAs": "metrics"
+        },
+        {
+          "op": "reduce",
+          "source": "metrics.tools",
+          "fields": ["promptTokens", "completionTokens"],
+          "saveAs": "totalTokens"
+        }
+      ],
+      "parameters": [
+        { "name": "days", "type": "integer", "default": 7 }
+      ]
+    }
+  ],
+  "dataSource": {
+    "endpoint": "GET /api/v1/ai/agent/metrics/tools?days=7",
+    "fields": ["tool", "callCount", "avgLatencyMs", "promptTokens", "completionTokens", "errorCount", "errorRate"]
+  }
+}

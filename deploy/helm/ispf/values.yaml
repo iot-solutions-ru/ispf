@@ -68,12 +68,20 @@ redis:
 ingress:
   enabled: false
   className: nginx
+  annotations: {}
   hosts:
     - host: ispf.example.com
       paths:
         - path: /
           pathType: Prefix
   tls: []
+
+secrets:
+  create: true
+  # When set, chart references an existing Secret instead of rendering secret.yaml.
+  existingSecret: ""
+  # Defaults to postgresql.auth.password when empty.
+  dbPassword: ""
 
 service:
   type: ClusterIP
@@ -99,9 +107,11 @@ persistence:
   data:
     enabled: true
     size: 10Gi
+    storageClass: ""
   drivers:
     enabled: true
     size: 2Gi
+    storageClass: ""
 
 nodeSelector: {}
 tolerations: []

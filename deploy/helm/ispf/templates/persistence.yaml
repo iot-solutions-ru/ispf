@@ -1,0 +1,45 @@
+{{- if .Values.persistence.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ispf.fullname" . }}-data
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    ispf.io/bl: BL-186
+    ispf.io/volume: data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.data.size }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- else if .Values.persistence.data.storageClass }}
+  storageClassName: {{ .Values.persistence.data.storageClass | quote }}
+  {{- end }}
+{{- end }}
+---
+{{- if .Values.persistence.drivers.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ispf.fullname" . }}-drivers
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    ispf.io/bl: BL-186
+    ispf.io/volume: drivers
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.drivers.size }}
+  {{- if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- else if .Values.persistence.drivers.storageClass }}
+  storageClassName: {{ .Values.persistence.drivers.storageClass | quote }}
+  {{- end }}
+{{- end }}

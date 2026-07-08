@@ -14,9 +14,11 @@ data:
 {{- else }}
     spring:
       datasource:
-        url: jdbc:postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "ispf.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}?reWriteBatchedInserts=true
+        url: jdbc:postgresql://{{ include "ispf.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}?reWriteBatchedInserts=true
         username: {{ .Values.postgresql.auth.username | quote }}
+        {{- if not (include "ispf.secretsEnabled" .) }}
         password: {{ .Values.postgresql.auth.password | quote }}
+        {{- end }}
     ispf:
       cluster:
         enabled: {{ .Values.ispf.cluster.enabled }}

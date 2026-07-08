@@ -164,6 +164,7 @@ final class AgentAutomationTools {
                             ackRequired,
                             null,
                             null,
+                            null,
                             null
                     );
                     return Map.of("status", "OK", "path", path, "alert", alertPreview(updated));

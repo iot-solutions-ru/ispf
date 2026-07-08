@@ -3,6 +3,9 @@ import { resolveSheetMode } from "../sheet/sheetConfig";
 import SpreadsheetConfiguredGridView from "./SpreadsheetConfiguredGridView";
 import SpreadsheetFreeGridView from "./SpreadsheetFreeGridView";
 
+/** BL-150: column resize + frozen header live in grid views via `useSpreadsheetColumnResize`. */
+export { useSpreadsheetColumnResize } from "./spreadsheet/useSpreadsheetColumnResize";
+
 export { default as SpreadsheetImportNotice } from "./SpreadsheetImportNotice";
 export type { SpreadsheetImportNoticeState } from "./SpreadsheetImportNotice";
 

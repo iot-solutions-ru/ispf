@@ -163,6 +163,14 @@ public class BlueprintBootstrap {
                                 true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
                         ),
                         BlueprintVariableDefinition.of(
+                                "anomalyModelId",
+                                "Optional anomaly SPI model id (e.g. threshold-v1); when set, CEL is skipped",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
                                 "eventName",
                                 "Event to publish when condition is met",
                                 "config",

@@ -27,6 +27,7 @@ import OperatorAgentFab from "./OperatorAgentFab";
 import OperatorOfflineBanner from "./OperatorOfflineBanner";
 import OperatorOfflineBadge from "./OperatorOfflineBadge";
 import OperatorFederationPeerSelector from "./OperatorFederationPeerSelector";
+import OperatorVideoWallGrid from "./OperatorVideoWallGrid";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForOperatorUi } from "../../utils/operatorOfflineCache";
 
@@ -240,6 +241,14 @@ export default function OperatorDashboardApp({
     [activeDashboardPath, appId]
   );
 
+  const handleVideoWallSessionChange = useCallback(
+    (path: string, next: DashboardSession) => {
+      setSessionsByDashboard((prev) => ({ ...prev, [path]: next }));
+      saveStoredDashboardSession(appId, path, next);
+    },
+    [appId]
+  );
+
   useEffect(() => {
     if (!activeDashboardPath || viewKind !== "dashboard") {
       return;
@@ -377,6 +386,15 @@ export default function OperatorDashboardApp({
         main={
           viewKind === "report" ? (
             <ReportBuilder key={activeReportPath} path={activeReportPath} operatorMode />
+          ) : videoWallMode ? (
+            <OperatorVideoWallGrid
+              dashboards={ui.dashboards}
+              appId={appId}
+              sessionsByDashboard={sessionsByDashboard}
+              onSessionChange={handleVideoWallSessionChange}
+              onNavigateDashboard={navigateDashboard}
+              federationPeerId={federationPeerId}
+            />
           ) : (
             <DashboardBuilder
               key={activeDashboardPath}

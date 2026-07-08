@@ -14,3 +14,15 @@
 {{- end }}
 {{- end }}
 {{- end }}
+
+{{- define "ispf.secretName" -}}
+{{- if .Values.secrets.existingSecret }}
+{{- .Values.secrets.existingSecret }}
+{{- else }}
+{{- include "ispf.fullname" . }}-secrets
+{{- end }}
+{{- end }}
+
+{{- define "ispf.secretsEnabled" -}}
+{{- or .Values.secrets.create .Values.secrets.existingSecret }}
+{{- end }}

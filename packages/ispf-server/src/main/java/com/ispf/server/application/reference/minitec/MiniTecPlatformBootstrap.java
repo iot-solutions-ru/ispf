@@ -401,7 +401,8 @@ public class MiniTecPlatformBootstrap {
                 null,
                 null,
                 placeholderWebhook ? "" : null,
-                emailWithoutRelay ? "" : null
+                emailWithoutRelay ? "" : null,
+                null
         );
     }
 
@@ -444,7 +445,7 @@ public class MiniTecPlatformBootstrap {
         String target = email && hasNotificationRelay() ? emailTarget : null;
         automationTreeService.createAlertRule(
                 name, objectPath, watch, condition, event, payload,
-                true, true, 0, false, "HIGH", false, webhook, target
+                true, true, 0, false, "HIGH", false, webhook, target, null
         );
     }
 

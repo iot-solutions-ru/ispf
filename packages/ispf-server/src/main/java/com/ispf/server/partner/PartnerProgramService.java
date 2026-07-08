@@ -5,12 +5,17 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * BL-184: partner program tier catalog stub for dev/lab and partner portal foundation.
  */
 @Service
 public class PartnerProgramService {
+
+    private static final String PORTAL_URL = "https://github.com/Michaael/Partner-portal";
+    private static final AtomicLong APPLICATION_SEQ = new AtomicLong(1);
 
     private static final List<Map<String, Object>> TIERS = List.of(
             tier(
@@ -50,6 +55,51 @@ public class PartnerProgramService {
         response.put("count", TIERS.size());
         response.put("tiers", TIERS);
         return response;
+    }
+
+    public Map<String, Object> enroll(PartnerEnrollRequest request) {
+        String requestedTier = request != null && request.tierId() != null && !request.tierId().isBlank()
+                ? request.tierId()
+                : "bronze";
+        final String tierId = TIERS.stream().anyMatch(tier -> requestedTier.equals(tier.get("id")))
+                ? requestedTier
+                : "bronze";
+
+        String applicationId = "partner-app-" + APPLICATION_SEQ.getAndIncrement() + "-" + UUID.randomUUID().toString().substring(0, 8);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", "ACCEPTED");
+        response.put("applicationId", applicationId);
+        response.put("tierId", tierId);
+        response.put("portalUrl", PORTAL_URL);
+        response.put(
+                "message",
+                "Enrollment recorded in platform stub; sync with Partner Portal pending Phase 32 GA"
+        );
+        if (request != null) {
+            if (request.companyName() != null && !request.companyName().isBlank()) {
+                response.put("companyName", request.companyName());
+            }
+            if (request.contactEmail() != null && !request.contactEmail().isBlank()) {
+                response.put("contactEmail", request.contactEmail());
+            }
+            if (request.verticals() != null && !request.verticals().isEmpty()) {
+                response.put("verticals", request.verticals());
+            }
+            if (request.regions() != null && !request.regions().isEmpty()) {
+                response.put("regions", request.regions());
+            }
+        }
+        return response;
+    }
+
+    public record PartnerEnrollRequest(
+            String companyName,
+            String contactEmail,
+            String tierId,
+            List<String> verticals,
+            List<String> regions
+    ) {
     }
 
     private static Map<String, Object> tier(

@@ -1,6 +1,7 @@
 package com.ispf.server.application.api;
 
 import com.ispf.server.application.bundle.MarketplaceLocalBundleService;
+import com.ispf.server.application.bundle.MarketplaceSymbolListingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,14 +21,25 @@ import java.util.Map;
 public class MarketplaceBundleController {
 
     private final MarketplaceLocalBundleService localBundleService;
+    private final MarketplaceSymbolListingService symbolListingService;
 
-    public MarketplaceBundleController(MarketplaceLocalBundleService localBundleService) {
+    public MarketplaceBundleController(
+            MarketplaceLocalBundleService localBundleService,
+            MarketplaceSymbolListingService symbolListingService
+    ) {
         this.localBundleService = localBundleService;
+        this.symbolListingService = symbolListingService;
     }
 
     @GetMapping("/bundles")
     public Map<String, Object> listBundles() {
         return localBundleService.listLocalBundles();
+    }
+
+    /** BL-185: symbol pack marketplace listing stub. */
+    @GetMapping("/symbols")
+    public Map<String, Object> listSymbolPacks() {
+        return symbolListingService.listSymbolPacks();
     }
 
     @PostMapping("/bundles/{id}/install")

@@ -89,5 +89,19 @@
   "processProgram.lastCycleAt": "Last cycle",
   "processProgram.lastError": "Last error",
   "processProgram.validateCel": "Validate CEL",
-  "processProgram.celOk": "CEL OK"
+  "processProgram.celOk": "CEL OK",
+  "eventFilter.title": "Event filter",
+  "eventFilter.subtitle": "Reusable event journal filter (name, source, severity, CEL)",
+  "eventFilter.loading": "Loading event filter…",
+  "eventFilter.filterId": "Filter id *",
+  "eventFilter.eventNamePattern": "Event name pattern *",
+  "eventFilter.sourceObjectPathPattern": "Source object path pattern *",
+  "eventFilter.minSeverity": "Min severity",
+  "eventFilter.maxSeverity": "Max severity",
+  "eventFilter.timeWindowMs": "Time window (ms, 0 = all time)",
+  "eventFilter.filterExpression": "CEL filter expression",
+  "eventFilter.filterExpressionPlaceholder": "severity >= 80",
+  "eventFilter.enabled": "Enabled",
+  "eventFilter.validateCel": "Validate CEL",
+  "eventFilter.celOk": "CEL OK"
 }

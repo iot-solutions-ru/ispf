@@ -4,7 +4,7 @@ ISPF certified integrator and solution partner program. **Partner Portal** — �
 
 - Repo: [Partner-portal](https://github.com/Michaael/Partner-portal)
 - API: `GET /api/v1/tiers`, applications, directory, training progress
-- In-server stub `GET /api/v1/partners/tiers` в `ispf-server` — legacy placeholder; canonical catalog на Partner Portal
+- In-server stub `GET /api/v1/partners/tiers` and `POST /api/v1/partners/enroll` в `ispf-server` — legacy placeholder; canonical catalog на Partner Portal
 
 Related: [MARKETPLACE.md](MARKETPLACE.md), [CERTIFICATION.md](CERTIFICATION.md), [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md).
 

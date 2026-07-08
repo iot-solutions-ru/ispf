@@ -9,6 +9,7 @@ import com.ispf.server.event.EventService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.notification.NotificationDispatchService;
 import com.ispf.server.platform.AutomationMetricsRecorder;
+import com.ispf.server.ml.AnomalyAlertRuleEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class AlertRuleService {
     private final NotificationDispatchService notificationDispatchService;
 
     private final AlarmShelfService alarmShelfService;
+    private final AnomalyAlertRuleEvaluator anomalyAlertRuleEvaluator;
 
     public AlertRuleService(
             AutomationTreeService automationTreeService,
@@ -39,7 +41,8 @@ public class AlertRuleService {
             EventService eventService,
             AutomationMetricsRecorder automationMetricsRecorder,
             NotificationDispatchService notificationDispatchService,
-            AlarmShelfService alarmShelfService
+            AlarmShelfService alarmShelfService,
+            AnomalyAlertRuleEvaluator anomalyAlertRuleEvaluator
     ) {
         this.automationTreeService = automationTreeService;
         this.objectManager = objectManager;
@@ -48,6 +51,7 @@ public class AlertRuleService {
         this.automationMetricsRecorder = automationMetricsRecorder;
         this.notificationDispatchService = notificationDispatchService;
         this.alarmShelfService = alarmShelfService;
+        this.anomalyAlertRuleEvaluator = anomalyAlertRuleEvaluator;
     }
 
     @Transactional(readOnly = true)
@@ -62,7 +66,12 @@ public class AlertRuleService {
 
     @Transactional
     public AlertRule create(CreateAlertRuleRequest request) {
-        validateRule(request.objectPath(), request.eventName(), request.conditionExpr());
+        validateRule(
+                request.objectPath(),
+                request.eventName(),
+                request.conditionExpr(),
+                request.anomalyModelId()
+        );
         return automationTreeService.createAlertRule(
                 request.name(),
                 request.objectPath(),
@@ -77,7 +86,8 @@ public class AlertRuleService {
                 request.resolvedPriority(),
                 request.resolvedAckRequired(),
                 request.notificationWebhookUrl(),
-                request.notificationEmailTarget()
+                request.notificationEmailTarget(),
+                request.anomalyModelId()
         );
     }
 
@@ -88,7 +98,8 @@ public class AlertRuleService {
             validateRule(
                     request.objectPath() != null ? request.objectPath() : current.objectPath(),
                     request.eventName() != null ? request.eventName() : current.eventName(),
-                    request.conditionExpr() != null ? request.conditionExpr() : current.conditionExpr()
+                    request.conditionExpr() != null ? request.conditionExpr() : current.conditionExpr(),
+                    request.anomalyModelId() != null ? request.anomalyModelId() : current.anomalyModelId()
             );
         }
         return automationTreeService.updateAlertRule(
@@ -107,7 +118,8 @@ public class AlertRuleService {
                 request.ackRequired(),
                 request.rateLimitSeconds(),
                 request.notificationWebhookUrl(),
-                request.notificationEmailTarget()
+                request.notificationEmailTarget(),
+                request.anomalyModelId()
         );
     }
 
@@ -129,7 +141,9 @@ public class AlertRuleService {
             if (!node.events().containsKey(rule.eventName())) {
                 continue;
             }
-            boolean conditionMet = evaluateCondition(rule.conditionExpr(), node, rule.watchVariable());
+            boolean conditionMet = usesAnomalyModel(rule)
+                    ? anomalyAlertRuleEvaluator.evaluate(objectPath, rule.watchVariable(), rule.anomalyModelId())
+                    : evaluateCondition(rule.conditionExpr(), node, rule.watchVariable());
             Double watchValue = readWatchValue(node, rule.watchVariable());
             Double previousWatchValue = automationTreeService.getAlertRuleLastWatchValue(rule.id());
             boolean shouldFire;
@@ -257,12 +271,18 @@ public class AlertRuleService {
                 .orElse(null);
     }
 
-    private void validateRule(String objectPath, String eventName, String conditionExpr) {
+    private static boolean usesAnomalyModel(AlertRule rule) {
+        return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
+    }
+
+    private void validateRule(String objectPath, String eventName, String conditionExpr, String anomalyModelId) {
         PlatformObject node = objectManager.require(objectPath);
         if (!node.events().containsKey(eventName)) {
             throw new IllegalArgumentException("Unknown event on object: " + eventName);
         }
-        expressionEngine.compile(conditionExpr);
+        if (anomalyModelId == null || anomalyModelId.isBlank()) {
+            expressionEngine.compile(conditionExpr);
+        }
     }
 
     public record CreateAlertRuleRequest(
@@ -279,7 +299,8 @@ public class AlertRuleService {
             String priority,
             Boolean ackRequired,
             String notificationWebhookUrl,
-            String notificationEmailTarget
+            String notificationEmailTarget,
+            String anomalyModelId
     ) {
         public int resolvedDelaySeconds() {
             return delaySeconds != null ? delaySeconds : 0;
@@ -313,7 +334,8 @@ public class AlertRuleService {
             Boolean ackRequired,
             Integer rateLimitSeconds,
             String notificationWebhookUrl,
-            String notificationEmailTarget
+            String notificationEmailTarget,
+            String anomalyModelId
     ) {
     }
 }

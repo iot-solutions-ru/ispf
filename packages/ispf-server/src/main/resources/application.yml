@@ -209,6 +209,9 @@ ispf:
     anomaly:
       enabled: ${ISPF_ML_ANOMALY_ENABLED:false}
       default-threshold: ${ISPF_ML_ANOMALY_DEFAULT_THRESHOLD:0.85}
+      threshold-min: ${ISPF_ML_ANOMALY_THRESHOLD_MIN:-1.7976931348623157E308}
+      threshold-max: ${ISPF_ML_ANOMALY_THRESHOLD_MAX:1.7976931348623157E308}
+      sample-window-seconds: ${ISPF_ML_ANOMALY_SAMPLE_WINDOW_SECONDS:300}
   variable-history:
     enabled: ${ISPF_VARIABLE_HISTORY_ENABLED:true}
     slo:

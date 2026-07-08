@@ -1,0 +1,121 @@
+{
+  "track": "platform-admin",
+  "level": "core",
+  "title": "Platform admin — Core modules",
+  "version": "0.1.0",
+  "bl": "BL-190",
+  "questions": [
+    {
+      "id": "pa-core-q01",
+      "type": "multiple-choice",
+      "topic": "security",
+      "prompt": "TOTP MFA enrollment stub endpoints live under:",
+      "options": [
+        "/api/v1/security/mfa/**",
+        "/api/v1/partners/enroll",
+        "/api/v1/federation/tunnel",
+        "/api/v1/drivers/write"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/SECURITY.md"
+    },
+    {
+      "id": "pa-core-q02",
+      "type": "multiple-choice",
+      "topic": "deploy",
+      "prompt": "ISPF production VPS deploy uses:",
+      "options": [
+        "deploy/vps-deploy-direct.ps1 (SCP + staging)",
+        "GitHub Releases download only",
+        "Compress-Archive for web-console.zip",
+        "Fixtures enabled by default"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/DEPLOYMENT.md"
+    },
+    {
+      "id": "pa-core-q03",
+      "type": "multiple-choice",
+      "topic": "historian",
+      "prompt": "Hot-tier historian store on a single-node lab is typically:",
+      "options": [
+        "postgres (jdbc)",
+        "clickhouse only",
+        "in-memory only",
+        "disabled"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/HISTORIAN_TIERS.md"
+    },
+    {
+      "id": "pa-core-q04",
+      "type": "multiple-choice",
+      "topic": "observability",
+      "prompt": "Platform metrics for CPU and queues are exposed at:",
+      "options": [
+        "GET /api/v1/platform/metrics",
+        "GET /api/v1/info only",
+        "POST /api/v1/events/fire",
+        "GET /ws/operator"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/OBSERVABILITY.md"
+    },
+    {
+      "id": "pa-core-q05",
+      "type": "multiple-choice",
+      "topic": "helm",
+      "prompt": "Helm chart for ISPF (BL-186) includes templates for:",
+      "options": [
+        "deployment, service, configmap, ingress, persistence, secrets",
+        "only docker-compose",
+        "driver pack compiler",
+        "BPMN designer"
+      ],
+      "correctIndex": 0,
+      "reference": "deploy/helm/ispf/"
+    },
+    {
+      "id": "pa-core-q06",
+      "type": "multiple-choice",
+      "topic": "edge",
+      "prompt": "ARM64 Raspberry Pi edge profile compose path is:",
+      "options": [
+        "deploy/edge/arm64/docker-compose.yml",
+        "apps/web-console/vite.config.ts",
+        "packages/ispf-driver-modbus-rtu",
+        "docs/COMPETITIVE_SCORECARD.md"
+      ],
+      "correctIndex": 0,
+      "reference": "deploy/edge/arm64/README.md"
+    },
+    {
+      "id": "pa-core-q07",
+      "type": "multiple-choice",
+      "topic": "backup",
+      "prompt": "Platform admin practical exam includes:",
+      "options": [
+        "Backup/restore drill on hardened single-node deploy",
+        "Writing a new Modbus driver",
+        "Designing a P&ID symbol pack",
+        "Marketplace revenue share setup"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/CERTIFICATION.md"
+    },
+    {
+      "id": "pa-core-q08",
+      "type": "multiple-choice",
+      "topic": "clickhouse",
+      "prompt": "After ClickHouse-enabled deploy, verification script is:",
+      "options": [
+        "vps-clickhouse-verify.sh",
+        "gradlew test only",
+        "npm run lint",
+        "driver-interop.yml"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/DEPLOYMENT.md"
+    }
+  ]
+}

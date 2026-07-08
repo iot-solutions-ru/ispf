@@ -1,6 +1,8 @@
 import { useCallback, useReducer } from "react";
 
-const MAX_HISTORY = 100;
+/** Undo/redo depth for mimic editor (BL-147 harden). */
+export const MIMIC_HISTORY_LIMIT = 20;
+const MAX_HISTORY = MIMIC_HISTORY_LIMIT;
 
 interface HistoryState<T> {
   past: T[];

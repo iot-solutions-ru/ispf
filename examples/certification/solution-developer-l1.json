@@ -1,0 +1,121 @@
+{
+  "track": "solution-developer",
+  "level": 1,
+  "title": "Solution developer — Level 1 Foundation",
+  "version": "0.1.0",
+  "bl": "BL-190",
+  "questions": [
+    {
+      "id": "sd-l1-q01",
+      "type": "multiple-choice",
+      "topic": "object-tree",
+      "prompt": "Which API lists variables under a device context?",
+      "options": [
+        "GET /api/v1/variables?contextPath=...",
+        "POST /api/v1/drivers/poll",
+        "GET /api/v1/federation/peers",
+        "DELETE /api/v1/contexts/{id}"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/OBJECT_MODEL.md"
+    },
+    {
+      "id": "sd-l1-q02",
+      "type": "multiple-choice",
+      "topic": "bundles",
+      "prompt": "What is the primary deploy endpoint for an application bundle?",
+      "options": [
+        "POST /api/v1/applications/{appId}/deploy",
+        "PUT /api/v1/drivers/start",
+        "GET /api/v1/marketplace/listings",
+        "POST /api/v1/events/fire"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/APPLICATIONS.md"
+    },
+    {
+      "id": "sd-l1-q03",
+      "type": "multiple-choice",
+      "topic": "operator-ui",
+      "prompt": "Operator mode is intended for which users?",
+      "options": [
+        "Shift operators without admin console access",
+        "Driver pack signing only",
+        "Database migration",
+        "Cluster replica failover"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/OPERATOR_GUIDE.md"
+    },
+    {
+      "id": "sd-l1-q04",
+      "type": "multiple-choice",
+      "topic": "dashboards",
+      "prompt": "A value widget on a dashboard typically binds to:",
+      "options": [
+        "A variable path or expression",
+        "A JDBC connection string",
+        "A Helm values file",
+        "A BPMN deployment id only"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/DASHBOARDS.md"
+    },
+    {
+      "id": "sd-l1-q05",
+      "type": "multiple-choice",
+      "topic": "lab-training",
+      "prompt": "Which example bundle is recommended for Associate lab import?",
+      "options": [
+        "examples/lab-training",
+        "examples/mes-platform-production",
+        "build/driver-packs/ispf-driver-dnp3",
+        "deploy/helm/ispf"
+      ],
+      "correctIndex": 0,
+      "reference": "examples/lab-training/"
+    },
+    {
+      "id": "sd-l1-q06",
+      "type": "multiple-choice",
+      "topic": "security",
+      "prompt": "Production edge and VPS deploys should set fixtures to:",
+      "options": [
+        "false (ISPF_BOOTSTRAP_FIXTURES_ENABLED=false)",
+        "true for all environments",
+        "true only on Sundays",
+        "unset (platform default demo)"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/DEPLOYMENT.md"
+    },
+    {
+      "id": "sd-l1-q07",
+      "type": "multiple-choice",
+      "topic": "partner-program",
+      "prompt": "Partner tier listing stub endpoint on ispf-server is:",
+      "options": [
+        "GET /api/v1/partners/tiers",
+        "GET /api/v1/partners/enroll",
+        "POST /api/v1/marketplace/install",
+        "GET /api/v1/security/mfa/status"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/PARTNER_PROGRAM.md"
+    },
+    {
+      "id": "sd-l1-q08",
+      "type": "multiple-choice",
+      "topic": "practical",
+      "prompt": "Associate practical exam pass criteria includes:",
+      "options": [
+        "Operator app loads with live widget value",
+        "ClickHouse cluster with 3 shards",
+        "Federation hub with 5 peers",
+        "Signed GPL driver pack in prod"
+      ],
+      "correctIndex": 0,
+      "reference": "docs/CERTIFICATION.md"
+    }
+  ]
+}

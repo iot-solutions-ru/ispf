@@ -28,7 +28,9 @@ import {
   isProcessProgramPath,
   isProcessProgramsRoot,
 } from "../utils/processProgramPath";
+import { isEventFilterPath, isEventFiltersRoot } from "../utils/eventFilterPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
+import EventFilterInspector from "./automation/EventFilterInspector";
 import AutomationRulesListPanel from "./automation/AutomationRulesListPanel";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
 import ProcessProgramInspector from "./automation/ProcessProgramInspector";
@@ -93,6 +95,8 @@ export default function ExplorerView({
   const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
   const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
   const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
+  const isEventFilter = isEventFilterPath(selectedPath);
+  const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
@@ -119,6 +123,8 @@ export default function ExplorerView({
     || isAlertRulesFolder
     || isCorrelatorsFolder
     || isProcessProgramsFolder
+    || isEventFilter
+    || isEventFiltersFolder
     || isFederation
     || isTenants
     || isCatalogFolder
@@ -185,6 +191,8 @@ export default function ExplorerView({
         <CorrelatorInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isProcessProgram ? (
         <ProcessProgramInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
+      ) : isEventFilter ? (
+        <EventFilterInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isFederation ? (
         <FederationPeersPanel canManage={isPlatformAdmin} />
       ) : isTenants ? (

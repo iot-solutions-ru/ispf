@@ -26,6 +26,19 @@ export interface CreateAlertRulePayload {
   notificationEmailTarget?: string;
 }
 
+export interface EventFilterPayload {
+  filterId: string;
+  displayName?: string;
+  description?: string;
+  eventNamePattern?: string;
+  sourceObjectPathPattern?: string;
+  minSeverity?: number;
+  maxSeverity?: number;
+  timeWindowMs?: number;
+  filterExpression?: string;
+  enabled?: boolean;
+}
+
 export interface CreateCorrelatorPayload {
   name: string;
   objectPath?: string;

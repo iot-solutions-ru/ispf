@@ -12,6 +12,7 @@ import { useSheetFormulaEngine } from "../sheet/useSheetFormulaEngine";
 import { useSheetBindings } from "../sheet/useSheetBindings";
 import { useSpreadsheetPersist } from "../sheet/useSpreadsheetPersist";
 import { validateSheetCellValue } from "../sheet/sheetValidation";
+import { useSpreadsheetColumnResize } from "./spreadsheet/useSpreadsheetColumnResize";
 
 const VIRTUALIZE_ROW_THRESHOLD = 50;
 const TABLE_ROW_ESTIMATE_PX = 36;
@@ -172,6 +173,7 @@ export default function SpreadsheetConfiguredGridView({
   }, [sheetConfig, columnFilterDraft, formula.revision, localContents]);
 
   const shouldVirtualize = visibleRows.length >= VIRTUALIZE_ROW_THRESHOLD;
+  const { getColWidth, resizeHandleProps } = useSpreadsheetColumnResize(sheetConfig.cols);
   const rowVirtualizer = useVirtualizer({
     count: visibleRows.length,
     getScrollElement: () => tableWrapRef.current,
@@ -319,7 +321,7 @@ export default function SpreadsheetConfiguredGridView({
             </div>
           )}
           <div
-            className="dash-table-wrap dash-sheet-wrap"
+            className="dash-table-wrap dash-sheet-wrap dash-sheet-wrap--freeze-header"
             ref={tableWrapRef}
             style={
               styles.body
@@ -328,12 +330,19 @@ export default function SpreadsheetConfiguredGridView({
             }
           >
             <table className="dash-object-table dash-sheet-table" style={styles.table}>
+              <colgroup>
+                <col className="dash-sheet-row-header-col" />
+                {colLabels.map((col, colIndex) => (
+                  <col key={col} style={{ width: getColWidth(colIndex) }} />
+                ))}
+              </colgroup>
               <thead>
                 <tr>
                   <th className="dash-sheet-corner" />
-                  {colLabels.map((col) => (
+                  {colLabels.map((col, colIndex) => (
                     <th key={col} className="dash-sheet-col-header">
                       {col}
+                      <span {...resizeHandleProps(colIndex)} />
                     </th>
                   ))}
                 </tr>

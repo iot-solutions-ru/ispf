@@ -387,6 +387,8 @@ JAVA_OPTS=-Xms128m -Xmx256m -XX:+UseG1GC
 | [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) | Production M/L (multi-replica) |
 | [`deploy/vps-deploy-direct.ps1`](../deploy/vps-deploy-direct.ps1) | Deploy jar + UI (staging) |
 | [`deploy/vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh) | Rolling restart реплик |
+| [`deploy/docker-compose.edge-arm.yml`](../deploy/docker-compose.edge-arm.yml) | Edge ARM64 (legacy path) |
+| [`deploy/edge/arm64/docker-compose.yml`](../deploy/edge/arm64/docker-compose.yml) | Edge ARM64 gateway (BL-187, Pi profile) |
 | [`deploy/ispf-server.prod-idle.env`](../deploy/ispf-server.prod-idle.env) | **Только** demo-idle / edge baseline |
 | [`deploy/vps-apply-prod-idle-env.sh`](../deploy/vps-apply-prod-idle-env.sh) | Merge idle env + recreate |
 | [`deploy/vps-event-journal-peak-tuning.sh`](../deploy/vps-event-journal-peak-tuning.sh) | Throughput / Prod L journal |

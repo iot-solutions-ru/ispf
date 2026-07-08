@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { evaluateExpression, type EvaluateExpressionStep } from "../api";
 import BindingExpressionField from "./BindingExpressionField";
+import ExpressionDebuggerWatchList from "./ExpressionDebuggerWatchList";
 import type { VariableDto } from "../types";
 
 interface ExpressionDebuggerPanelProps {
@@ -82,6 +83,13 @@ export default function ExpressionDebuggerPanel({
   const [expression, setExpression] = useState("");
   const [targetVariable, setTargetVariable] = useState("");
   const [revealedSteps, setRevealedSteps] = useState(0);
+  const [pinnedWatch, setPinnedWatch] = useState<string[]>([]);
+
+  const toggleWatchPin = useCallback((name: string) => {
+    setPinnedWatch((prev) =>
+      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    );
+  }, []);
 
   const variableNames = useMemo(
     () => variables.map((variable) => variable.name),
@@ -158,6 +166,14 @@ export default function ExpressionDebuggerPanel({
       {evaluateMutation.error && (
         <p className="hint error">{(evaluateMutation.error as Error).message}</p>
       )}
+
+      <ExpressionDebuggerWatchList
+        pinned={pinnedWatch}
+        onTogglePin={toggleWatchPin}
+        variables={variables}
+        steps={steps}
+        revealedSteps={revealedSteps}
+      />
 
       {evaluateMutation.data && (
         <section className="expression-debugger-result">

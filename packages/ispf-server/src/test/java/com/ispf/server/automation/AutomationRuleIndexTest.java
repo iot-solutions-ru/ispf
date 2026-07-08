@@ -171,6 +171,7 @@ class AutomationRuleIndexTest {
                 NOW,
                 NOW,
                 null,
+                null,
                 null
         );
     }
