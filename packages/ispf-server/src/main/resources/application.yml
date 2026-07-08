@@ -150,6 +150,12 @@ ispf:
       stale-minutes: ${ISPF_FEDERATION_HEALTH_STALE_MINUTES:15}
       monitor-enabled: ${ISPF_FEDERATION_HEALTH_MONITOR_ENABLED:true}
       monitor-interval-ms: ${ISPF_FEDERATION_HEALTH_MONITOR_INTERVAL_MS:60000}
+  agent:
+    store-forward:
+      enabled: ${ISPF_AGENT_STORE_FORWARD_ENABLED:true}
+      persist-to-disk: ${ISPF_AGENT_STORE_FORWARD_PERSIST_TO_DISK:true}
+      max-bytes: ${ISPF_AGENT_STORE_FORWARD_MAX_BYTES:2097152}
+      drop-policy: ${ISPF_AGENT_STORE_FORWARD_DROP_POLICY:DROP_OLDEST}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
     mfa:
@@ -182,6 +188,7 @@ ispf:
           username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
           password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
       warm:
+        enabled: ${ISPF_HISTORIAN_TIER_WARM_ENABLED:false}
         store: ${ISPF_HISTORIAN_TIER_WARM_STORE:clickhouse}
         retention-days: ${ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS:90}
         clickhouse:

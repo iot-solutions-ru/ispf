@@ -14,6 +14,7 @@ public record BpmnProcess(
         Map<String, MessageTaskDefinition> messageTasks,
         Map<String, SignalCatchDefinition> signalCatchEvents,
         Map<String, MessageCatchDefinition> messageCatchEvents,
+        Map<String, MessageThrowDefinition> messageThrowEvents,
         Map<String, TimerCatchDefinition> timerCatchEvents,
         Map<String, BoundaryTimerDefinition> boundaryTimers,
         List<SequenceFlowDefinition> sequenceFlows

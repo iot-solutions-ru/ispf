@@ -7,6 +7,7 @@ import SecurityUsersPanel from "./SecurityUsersPanel";
 import SecurityUserInspector from "./SecurityUserInspector";
 import SecurityRolesPanel from "./SecurityRolesPanel";
 import SecurityRoleInspector from "./SecurityRoleInspector";
+import SecurityRootPanel from "./SecurityRootPanel";
 import SystemFolderListPanel from "./SystemFolderListPanel";
 import FederationPeersPanel from "./FederationPeersPanel";
 import TenantsPanel from "./TenantsPanel";
@@ -16,16 +17,21 @@ import {
   isOperatorAppChildPath,
 } from "../utils/operatorAppsPath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "../utils/securityUserPath";
-import { isSecurityRolePath, isSecurityRolesRoot } from "../utils/securityRolePath";
+import { isSecurityRolePath, isSecurityRolesRoot, isSecurityRoot } from "../utils/securityRolePath";
 import {
   isAlertRulePath,
   isAlertRulesRoot,
   isCorrelatorPath,
   isCorrelatorsRoot,
 } from "../utils/automationPath";
+import {
+  isProcessProgramPath,
+  isProcessProgramsRoot,
+} from "../utils/processProgramPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
 import AutomationRulesListPanel from "./automation/AutomationRulesListPanel";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
+import ProcessProgramInspector from "./automation/ProcessProgramInspector";
 import { isSpecializedEditorObject } from "../utils/editorObject";
 import { isSystemCatalogFolder } from "../utils/systemFolderConfig";
 import { isPlatformSqlObjectPath } from "../utils/platformSqlPath";
@@ -78,12 +84,15 @@ export default function ExplorerView({
   const isOperatorAppChild = isOperatorAppChildPath(selectedPath);
   const isUsersRoot = isSecurityUsersRoot(selectedPath);
   const isUserObject = isSecurityUserPath(selectedPath);
+  const isSecurityFolder = isSecurityRoot(selectedPath);
   const isRolesRoot = isSecurityRolesRoot(selectedPath);
   const isRoleObject = isSecurityRolePath(selectedPath);
   const isAlertRule = isAlertRulePath(selectedPath);
   const isCorrelator = isCorrelatorPath(selectedPath);
+  const isProcessProgram = isProcessProgramPath(selectedPath);
   const isAlertRulesFolder = isAlertRulesRoot(selectedPath);
   const isCorrelatorsFolder = isCorrelatorsRoot(selectedPath);
+  const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
   const isCatalogFolder = isSystemCatalogFolder(selectedPath, selectedObject?.type);
@@ -99,14 +108,17 @@ export default function ExplorerView({
   const isDevice = selectedObject?.type === "DEVICE";
   const hideToolbar =
     isOperatorAppChild
-    || isUsersRoot
+    ||     isUsersRoot
     || isUserObject
+    || isSecurityFolder
     || isRolesRoot
     || isRoleObject
     || isAlertRule
     || isCorrelator
+    || isProcessProgram
     || isAlertRulesFolder
     || isCorrelatorsFolder
+    || isProcessProgramsFolder
     || isFederation
     || isTenants
     || isCatalogFolder
@@ -155,6 +167,8 @@ export default function ExplorerView({
         <OperatorAppsPanel canManage={canConfigure} selectedPath={selectedPath} />
       ) : isUsersRoot ? (
         <SecurityUsersPanel canManage={isPlatformAdmin} onSelectUser={onSelectPath} />
+      ) : isSecurityFolder ? (
+        <SecurityRootPanel canManage={isPlatformAdmin} onSelectPath={onSelectPath} />
       ) : isUserObject ? (
         <SecurityUserInspector key={selectedPath} path={selectedPath} canManage={isPlatformAdmin} onDeleted={onDeleted} />
       ) : isRolesRoot ? (
@@ -169,6 +183,8 @@ export default function ExplorerView({
         <AlertRuleInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isCorrelator ? (
         <CorrelatorInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
+      ) : isProcessProgram ? (
+        <ProcessProgramInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isFederation ? (
         <FederationPeersPanel canManage={isPlatformAdmin} />
       ) : isTenants ? (

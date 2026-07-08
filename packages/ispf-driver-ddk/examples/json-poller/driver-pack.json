@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-json-poller",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-json-poller.jar",
+  "drivers": [
+    {
+      "driverId": "json-poller",
+      "driverClass": "com.ispf.driver.jsonpoller.JsonPollerDeviceDriver"
+    }
+  ]
+}

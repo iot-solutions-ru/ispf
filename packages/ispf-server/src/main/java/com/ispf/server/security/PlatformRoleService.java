@@ -193,9 +193,14 @@ public class PlatformRoleService {
         summary.put("displayName", role.displayName());
         summary.put("description", role.description());
         summary.put("builtIn", role.builtIn());
+        summary.put("template", isRoleTemplate(role.name()));
         summary.put("objectPath", role.objectPath());
         summary.put("createdAt", role.createdAt().toString());
         summary.put("updatedAt", role.updatedAt().toString());
         return summary;
+    }
+
+    private static boolean isRoleTemplate(String name) {
+        return OPERATOR_READONLY.equals(name) || MES_SUPERVISOR.equals(name);
     }
 }

@@ -1,0 +1,17 @@
+{
+  "id": "mes-mini-tec-deploy",
+  "version": "1",
+  "domain": "mes",
+  "title": "Mini-TEC reference deploy",
+  "description": "Deploy mini-tec energy reference bundle with reports and operator UI.",
+  "prompt": "Deploy mini-tec bundle: validate, dry-run, import, configure operator dashboards for TEC daily journal.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "mini-tec",
+    "manifestPath": "examples/mini-tec/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "dry_run_deploy", "import_package", "configure_operator_ui"]
+  }
+}

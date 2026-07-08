@@ -192,6 +192,105 @@ class MqttDeviceDriverTest {
         assertTrue(error.getMessage().contains("Not connected"));
     }
 
+    @Test
+    void eventToVariableCreatesPerTopicVariables() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topicA = "ispf/devices/site-a/temperature";
+        String topicB = "ispf/devices/site-b/temperature";
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "eventToVariable", "true"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("catchAll", "#"));
+
+        publish(topicA, "21.1", port);
+        publish(topicB, "22.2", port);
+        awaitVariable(driverObject, "ispf_devices_site_a_temperature");
+        awaitVariable(driverObject, "ispf_devices_site_b_temperature");
+
+        assertEquals("21.1", driverObject.variables.get("ispf_devices_site_a_temperature").firstRow().get("raw"));
+        assertEquals("22.2", driverObject.variables.get("ispf_devices_site_b_temperature").firstRow().get("raw"));
+        assertEquals(topicA, driverObject.variables.get("ispf_devices_site_a_temperature").firstRow().get("topic"));
+        driver.disconnect();
+    }
+
+    @Test
+    void eventToVariableDisabledUsesLastMessage() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/devices/unmapped/temp";
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "eventToVariable", "false"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("catchAll", "#"));
+
+        publish(topic, "99.0", port);
+        awaitVariable(driverObject, "lastMessage");
+
+        assertEquals("99.0", driverObject.variables.get("lastMessage").firstRow().get("raw"));
+        driver.disconnect();
+    }
+
+    @Test
+    void eventToVariableIgnoredWhenIngressVariableSet() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/devices/sensor/temp";
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "eventToVariable", "true",
+                "ingressVariable", "lastIngress"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("catchAll", "#"));
+
+        publish(topic, "33.3", port);
+        awaitVariable(driverObject, "lastIngress");
+
+        assertEquals("33.3", driverObject.variables.get("lastIngress").firstRow().get("raw"));
+        assertEquals(topic, driverObject.variables.get("lastIngress").firstRow().get("topic"));
+        driver.disconnect();
+    }
+
+    @Test
+    void explicitMappingTakesPrecedenceOverEventToVariable() throws Exception {
+        int port = freePort();
+        startBroker(port);
+        String topic = "ispf/devices/sensor/temp";
+
+        StubDriverObject driverObject = new StubDriverObject(Map.of(
+                "brokerUrl", "tcp://127.0.0.1:" + port,
+                "topicPrefix", "",
+                "eventToVariable", "true"
+        ));
+        MqttDeviceDriver driver = new MqttDeviceDriver();
+        driver.initialize(driverObject);
+        driver.connect();
+        driver.readPoints(Map.of("temperature", topic));
+
+        publish(topic, "18.5", port);
+        awaitVariable(driverObject, "temperature");
+
+        assertEquals("18.5", driverObject.variables.get("temperature").firstRow().get("raw"));
+        driver.disconnect();
+    }
+
     private void startBroker(int port) throws Exception {
         Properties props = new Properties();
         props.setProperty("host", "127.0.0.1");

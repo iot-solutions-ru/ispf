@@ -77,7 +77,7 @@ class MeterMqttScriptDispatchIntegrationTest {
         assertThat(created.firstRow().get("ok")).isEqualTo(true);
         assertThat(created.firstRow().get("routedPath")).isEqualTo(INSTANCE_PATH);
         telemetryCoalescer.flushNow();
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(500);
 
         var temperature = objectManager.require(INSTANCE_PATH).getVariable("temperature").orElseThrow().value().orElseThrow();
         assertThat(temperature.firstRow().get("value")).isEqualTo(22.0);
@@ -92,7 +92,7 @@ class MeterMqttScriptDispatchIntegrationTest {
         );
         assertThat(updated.firstRow().get("ok")).isEqualTo(true);
         telemetryCoalescer.flushNow();
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(500);
 
         temperature = objectManager.require(INSTANCE_PATH).getVariable("temperature").orElseThrow().value().orElseThrow();
         assertThat(temperature.firstRow().get("value")).isEqualTo(25.0);

@@ -1,0 +1,17 @@
+{
+  "id": "hvac-mqtt-alerts",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC MQTT temperature alerts",
+  "description": "Lab MQTT temperature bundle with comfort alert rules.",
+  "prompt": "Deploy lab-mqtt-temperature reference and add CEL alert when zone temperature exceeds setpoint.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "mqtt-temperature-lab",
+    "manifestPath": "examples/lab-mqtt-temperature/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["import_package", "configure_alert", "configure_operator_ui"]
+  }
+}

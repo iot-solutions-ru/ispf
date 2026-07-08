@@ -17,6 +17,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -482,6 +485,26 @@ public class VariableHistoryService {
     }
 
     @Transactional(readOnly = true)
+    public void streamCsv(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            int limit,
+            OutputStream outputStream
+    ) throws IOException {
+        VariableHistoryResponse response = query(objectPath, variableName, fieldName, from, to, limit);
+        outputStream.write("timestamp,field,value\n".getBytes(StandardCharsets.UTF_8));
+        for (VariableHistorySample sample : response.samples()) {
+            String line = sample.ts() + "," + response.field() + ","
+                    + (sample.value() != null ? sample.value() : "") + "\n";
+            outputStream.write(line.getBytes(StandardCharsets.UTF_8));
+        }
+        outputStream.flush();
+    }
+
+    @Transactional(readOnly = true)
     public byte[] exportJson(
             String objectPath,
             String variableName,
@@ -496,6 +519,41 @@ public class VariableHistoryService {
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to serialize history export", ex);
         }
+    }
+
+    /**
+     * Interim bulk export format for Parquet cold-tier (BL-163): one JSON object per sample line.
+     */
+    @Transactional(readOnly = true)
+    public void streamJsonLines(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            int limit,
+            OutputStream outputStream
+    ) throws IOException {
+        VariableHistoryResponse response = query(objectPath, variableName, fieldName, from, to, limit);
+        for (VariableHistorySample sample : response.samples()) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("objectPath", response.objectPath());
+            row.put("variableName", response.variableName());
+            row.put("field", response.field());
+            row.put("timestamp", sample.ts() != null ? sample.ts().toString() : null);
+            row.put("value", sample.value());
+            row.put("text", sample.text());
+            if (sample.ingestedAt() != null) {
+                row.put("ingestedAt", sample.ingestedAt().toString());
+            }
+            outputStream.write(objectMapper.writeValueAsBytes(row));
+            outputStream.write('\n');
+        }
+        outputStream.flush();
+    }
+
+    public static String exportInterimBulkFormat() {
+        return "jsonl";
     }
 
     public static String exportFileName(String variableName, String field, String format) {

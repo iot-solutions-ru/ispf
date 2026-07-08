@@ -110,6 +110,22 @@ CEL-правило на изменение переменной. При исти
 |-----|----------|
 | `COUNT` | N событий `eventName` за `windowSeconds` |
 | `SEQUENCE` | Событие A, затем B на том же объекте |
+| `WINDOW` | Набор событий (A + список в `secondEventName`) — каждое хотя бы раз за `windowSeconds` |
+
+### WINDOW (BL-171)
+
+Паттерн **неупорядоченного окна**: все перечисленные события должны произойти на одном объекте в пределах `windowSeconds`, порядок не важен.
+
+| Поле | Роль для WINDOW |
+|------|-----------------|
+| `eventName` | Первое обязательное событие |
+| `secondEventName` | Дополнительные события через запятую (напр. `workOrderReleased,workOrderStarted`) |
+| `windowSeconds` | Ширина скользящего окна (> 0) |
+| `minOccurrences` | Не используется (оставьте 1) |
+
+Пример: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` за 120 с на `mes-platform-hub` → `RUN_WORKFLOW`.
+
+`EventCorrelatorService.processWindowPattern` записывает каждый hit в window store и срабатывает, когда множество уникальных имён событий покрывает требуемый набор.
 
 ### Поля
 

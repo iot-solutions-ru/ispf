@@ -1,0 +1,17 @@
+{
+  "id": "scada-simulator-profiles",
+  "version": "1",
+  "domain": "scada",
+  "title": "Virtual simulator profiles",
+  "description": "Deploy simulator bundle with meter and weighbridge virtual devices.",
+  "prompt": "Import simulator-profiles bundle and verify virtual devices under root.platform.devices.",
+  "playbook": "virtualClusterMonitoring",
+  "bundle": {
+    "appId": "simulator",
+    "manifestPath": "examples/simulator-profiles/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "list_objects"]
+  }
+}

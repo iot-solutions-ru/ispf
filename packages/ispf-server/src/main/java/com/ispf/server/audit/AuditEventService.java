@@ -7,7 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +26,7 @@ public class AuditEventService {
     public static final String CATEGORY_AUTH = "auth";
     public static final String CATEGORY_MFA = "mfa";
     public static final String CATEGORY_ACL = "acl";
+    public static final String CATEGORY_OBJECT = "object";
 
     private final AuditEventRepository repository;
     private final ObjectMapper objectMapper;
@@ -55,12 +60,36 @@ public class AuditEventService {
         return rows.stream().map(this::toRecord).toList();
     }
 
+    @Transactional(readOnly = true)
+    public void streamCsv(String category, int limit, OutputStream output) throws IOException {
+        List<AuditEvent> events = listRecent(category, limit);
+        output.write("id,category,action,actor,target_type,target_id,occurred_at,details_json\n"
+                .getBytes(StandardCharsets.UTF_8));
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_INSTANT;
+        for (AuditEvent event : events) {
+            output.write(csvLine(
+                    event.id(),
+                    event.category(),
+                    event.action(),
+                    event.actor(),
+                    event.targetType(),
+                    event.targetId(),
+                    event.occurredAt() == null ? "" : formatter.format(event.occurredAt()),
+                    event.detailsJson()
+            ).getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
     public void logLoginSuccess(String username) {
         log(CATEGORY_AUTH, "login.success", username, "user", username, Map.of());
     }
 
     public void logLoginFailure(String username) {
         log(CATEGORY_AUTH, "login.failure", username, "user", username, Map.of());
+    }
+
+    public void logObjectDeleted(String actor, String objectPath) {
+        log(CATEGORY_OBJECT, "object.deleted", actor, "object", objectPath, Map.of());
     }
 
     public void logMfaEnrollmentStarted(String username) {
@@ -118,6 +147,28 @@ public class AuditEventService {
         } catch (Exception ex) {
             return "{\"error\":\"serialization-failed\"}";
         }
+    }
+
+    private static String csvLine(String... columns) {
+        StringBuilder line = new StringBuilder();
+        for (int i = 0; i < columns.length; i++) {
+            if (i > 0) {
+                line.append(',');
+            }
+            line.append(escapeCsv(columns[i]));
+        }
+        line.append('\n');
+        return line.toString();
+    }
+
+    private static String escapeCsv(String value) {
+        if (value == null) {
+            return "";
+        }
+        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 
     public record AuditEvent(

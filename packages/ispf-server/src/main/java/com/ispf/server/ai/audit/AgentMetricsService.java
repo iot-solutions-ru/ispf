@@ -140,6 +140,72 @@ public class AgentMetricsService {
         return payload;
     }
 
+    /**
+     * BL-181: per-tool cost/latency breakdown for agent observability v2.
+     */
+    public Map<String, Object> toolMetrics(int days) {
+        int windowDays = Math.min(Math.max(days, 1), 90);
+        Instant since = Instant.now().minus(windowDays, ChronoUnit.DAYS);
+        Timestamp sinceTs = Timestamp.from(since);
+
+        List<Map<String, Object>> tools = jdbcTemplate.query("""
+                SELECT
+                    REPLACE(tool_name, 'agent_tool_', '') AS tool,
+                    COUNT(*) AS call_count,
+                    AVG(latency_ms) AS avg_latency_ms,
+                    MAX(latency_ms) AS max_latency_ms,
+                    SUM(COALESCE(prompt_tokens, 0)) AS prompt_tokens,
+                    SUM(COALESCE(completion_tokens, 0)) AS completion_tokens,
+                    SUM(CASE WHEN status = 'ERROR' THEN 1 ELSE 0 END) AS error_count
+                FROM %s
+                WHERE created_at >= ?
+                  AND tool_name LIKE 'agent_tool_%%'
+                GROUP BY tool_name
+                ORDER BY call_count DESC
+                """.formatted(auditTable),
+                (rs, rowNum) -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("tool", rs.getString("tool"));
+                    row.put("callCount", rs.getLong("call_count"));
+                    row.put("avgLatencyMs", round1(rs.getDouble("avg_latency_ms")));
+                    row.put("maxLatencyMs", rs.getLong("max_latency_ms"));
+                    row.put("promptTokens", rs.getLong("prompt_tokens"));
+                    row.put("completionTokens", rs.getLong("completion_tokens"));
+                    row.put("errorCount", rs.getLong("error_count"));
+                    long calls = rs.getLong("call_count");
+                    row.put("errorRate", calls > 0 ? round1(rs.getDouble("error_count") * 100.0 / calls) : 0.0);
+                    return row;
+                },
+                sinceTs
+        );
+
+        Map<String, Object> totals = jdbcTemplate.queryForMap("""
+                SELECT
+                    COUNT(*) AS total_calls,
+                    COALESCE(SUM(prompt_tokens), 0) AS prompt_tokens,
+                    COALESCE(SUM(completion_tokens), 0) AS completion_tokens,
+                    COALESCE(SUM(latency_ms), 0) AS latency_ms,
+                    SUM(CASE WHEN status = 'ERROR' THEN 1 ELSE 0 END) AS error_count
+                FROM %s
+                WHERE created_at >= ?
+                  AND tool_name LIKE 'agent_tool_%%'
+                """.formatted(auditTable),
+                sinceTs
+        );
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("days", windowDays);
+        payload.put("since", since.toString());
+        payload.put("toolCount", tools.size());
+        payload.put("totalCalls", totals.get("total_calls"));
+        payload.put("promptTokensSum", totals.get("prompt_tokens"));
+        payload.put("completionTokensSum", totals.get("completion_tokens"));
+        payload.put("latencyMsSum", totals.get("latency_ms"));
+        payload.put("errorCountSum", totals.get("error_count"));
+        payload.put("tools", tools);
+        return payload;
+    }
+
     private static double round1(double value) {
         return Math.round(value * 10.0) / 10.0;
     }

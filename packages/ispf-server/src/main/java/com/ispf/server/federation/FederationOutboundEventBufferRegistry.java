@@ -3,6 +3,7 @@ package com.ispf.server.federation;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +38,24 @@ public class FederationOutboundEventBufferRegistry {
 
     public int pendingCount(UUID agentId) {
         return buffer(agentId).stats().count();
+    }
+
+    public Map<UUID, List<FederationOutboundEventBuffer.BufferedEvent>> exportPending() {
+        Map<UUID, List<FederationOutboundEventBuffer.BufferedEvent>> pending = new LinkedHashMap<>();
+        for (Map.Entry<UUID, FederationOutboundEventBuffer> entry : buffers.entrySet()) {
+            List<FederationOutboundEventBuffer.BufferedEvent> events = entry.getValue().pendingSnapshot();
+            if (!events.isEmpty()) {
+                pending.put(entry.getKey(), events);
+            }
+        }
+        return pending;
+    }
+
+    public void restorePending(Map<UUID, List<FederationOutboundEventBuffer.BufferedEvent>> restored) {
+        if (restored == null || restored.isEmpty()) {
+            return;
+        }
+        restored.forEach((agentId, events) -> buffer(agentId).restore(events));
     }
 
     private FederationOutboundEventBuffer buffer(UUID agentId) {

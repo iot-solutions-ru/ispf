@@ -1,4 +1,4 @@
-import { useMemo, memo } from "react";
+import { useMemo, memo, useState, useRef, useCallback } from "react";
 import type { MimicConnection, MimicCustomSymbol, MimicElement, ScadaMimicDocument } from "../../types/scadaMimic";
 import type { SnapGuide } from "../../scada/elementSnap";
 import { applyFormatRules } from "../../scada/formatRules";
@@ -38,6 +38,10 @@ export interface ScadaMimicCanvasProps {
   onElementContextMenu?: (element: MimicElement, clientX: number, clientY: number) => void;
   elementTooltips?: Record<string, string | undefined>;
   onCanvasClick?: (x: number, y: number) => void;
+  onMarqueeSelect?: (
+    rect: { x1: number; y1: number; x2: number; y2: number },
+    additive: boolean
+  ) => void;
   onConnectAtPoint?: (x: number, y: number) => void;
   onElementConnectClick?: (element: MimicElement, x: number, y: number) => void;
   onElementDragStart?: (id: string, origins: Map<string, { x: number; y: number }>) => void;
@@ -323,6 +327,7 @@ export default function ScadaMimicCanvas({
   onElementContextMenu,
   elementTooltips,
   onCanvasClick,
+  onMarqueeSelect,
   onConnectAtPoint,
   onElementConnectClick,
   onElementDragStart,
@@ -350,6 +355,11 @@ export default function ScadaMimicCanvas({
   const singleSelectedId =
     selectedIds && selectedIds.size === 1 ? [...selectedIds][0] : null;
 
+  const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(
+    null
+  );
+  const marqueeUsedRef = useRef(false);
+
   const portHints = useMemo(() => {
     if (!connectMode) return [];
     const hints: { key: string; x: number; y: number; active: boolean }[] = [];
@@ -372,6 +382,10 @@ export default function ScadaMimicCanvas({
 
   const handleSvgClick = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!editMode) return;
+    if (marqueeUsedRef.current) {
+      marqueeUsedRef.current = false;
+      return;
+    }
     const local = clientToSvg(e.currentTarget, e.clientX, e.clientY);
     if (!local) return;
     if (connectMode && onConnectAtPoint) {
@@ -380,6 +394,56 @@ export default function ScadaMimicCanvas({
     }
     onCanvasClick?.(local.x, local.y);
   };
+
+  const handleSvgMouseDown = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      if (!editMode || connectMode || e.button !== 0 || !onMarqueeSelect) return;
+      if ((e.target as Element).closest(".scada-resize-handle")) return;
+      const svg = e.currentTarget;
+      const local = clientToSvg(svg, e.clientX, e.clientY);
+      if (!local) return;
+      e.preventDefault();
+      const origin = { x1: local.x, y1: local.y, x2: local.x, y2: local.y };
+      setMarquee(origin);
+      marqueeUsedRef.current = false;
+
+      const move = (ev: MouseEvent) => {
+        const current = clientToSvg(svg, ev.clientX, ev.clientY);
+        if (!current) return;
+        setMarquee({ x1: origin.x1, y1: origin.y1, x2: current.x, y2: current.y });
+      };
+
+      const up = (ev: MouseEvent) => {
+        window.removeEventListener("mousemove", move);
+        window.removeEventListener("mouseup", up);
+        setMarquee(null);
+        const current = clientToSvg(svg, ev.clientX, ev.clientY);
+        if (!current) return;
+        const dx = Math.abs(current.x - origin.x1);
+        const dy = Math.abs(current.y - origin.y1);
+        if (dx < 4 && dy < 4) return;
+        marqueeUsedRef.current = true;
+        onMarqueeSelect(
+          { x1: origin.x1, y1: origin.y1, x2: current.x, y2: current.y },
+          ev.shiftKey
+        );
+      };
+
+      window.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", up);
+    },
+    [connectMode, editMode, onMarqueeSelect]
+  );
+
+  const marqueeRect = useMemo(() => {
+    if (!marquee) return null;
+    return {
+      x: Math.min(marquee.x1, marquee.x2),
+      y: Math.min(marquee.y1, marquee.y2),
+      width: Math.abs(marquee.x2 - marquee.x1),
+      height: Math.abs(marquee.y2 - marquee.y1),
+    };
+  }, [marquee]);
 
   const gridSize = document.grid?.size ?? 1;
   const showGrid = editMode && document.grid?.visible === true && gridSize > 1;
@@ -415,6 +479,7 @@ export default function ScadaMimicCanvas({
           transformOrigin: "0 0",
         }}
         onClick={handleSvgClick}
+        onMouseDown={handleSvgMouseDown}
       >
         {showGrid && (
           <defs>
@@ -455,6 +520,17 @@ export default function ScadaMimicCanvas({
               pointerEvents="none"
             />
           )
+        )}
+
+        {marqueeRect && marqueeRect.width > 0 && marqueeRect.height > 0 && (
+          <rect
+            className="scada-marquee-select"
+            x={marqueeRect.x}
+            y={marqueeRect.y}
+            width={marqueeRect.width}
+            height={marqueeRect.height}
+            pointerEvents="none"
+          />
         )}
 
         {connections.map((conn) => (

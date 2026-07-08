@@ -925,6 +925,786 @@ function temperatureController(): IsaSymbolDef {
   });
 }
 
+function levelController(): IsaSymbolDef {
+  return sym({
+    slug: "level-controller",
+    category: "pack-isa",
+    nameEn: "Level controller (LC)",
+    nameRu: "Регулятор уровня (LC)",
+    tags: ["isa", "control"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "LC")}`),
+  });
+}
+
+function flowController(): IsaSymbolDef {
+  return sym({
+    slug: "flow-controller",
+    category: "pack-isa",
+    nameEn: "Flow controller (FC)",
+    nameRu: "Регулятор расхода (FC)",
+    tags: ["isa", "control"],
+    ports: portsHorizontal(48),
+    svg: wrap(`${bubble(32, 28, 16, "FC")}${line(0, 48, 64, 48)}`),
+  });
+}
+
+function speedIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "speed-indicator",
+    category: "pack-sensors",
+    nameEn: "Speed indicator (SI)",
+    nameRu: "Индикатор скорости (SI)",
+    tags: ["instrument", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("SI")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function weightIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "weight-indicator",
+    category: "pack-sensors",
+    nameEn: "Weight indicator (WI)",
+    nameRu: "Индикатор массы (WI)",
+    tags: ["instrument", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("WI")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function phIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "ph-indicator",
+    category: "pack-sensors",
+    nameEn: "pH indicator (pH)",
+    nameRu: "Индикатор pH (pH)",
+    tags: ["instrument", "analyzer", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("pH")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function differentialPressureIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "differential-pressure-indicator",
+    category: "pack-sensors",
+    nameEn: "Differential pressure (PDI)",
+    nameRu: "Перепад давления (PDI)",
+    tags: ["instrument", "pressure", "isa"],
+    ports: portsHorizontal(48),
+    svg: wrap(`${instrumentBubble("PDI")}${line(0, 48, 64, 48)}`),
+  });
+}
+
+function reliefValve(): IsaSymbolDef {
+  return sym({
+    slug: "relief-valve",
+    category: "pack-valves",
+    nameEn: "Relief valve",
+    nameRu: "Предохранительный клапан",
+    tags: ["valve", "safety", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${pipeVertical()}${poly("22,28 42,28 32,40")}${line(28, 22, 36, 22)}`),
+  });
+}
+
+function knifeGateValve(): IsaSymbolDef {
+  return sym({
+    slug: "knife-gate-valve",
+    category: "pack-valves",
+    nameEn: "Knife gate valve",
+    nameRu: "Ножевой затвор",
+    tags: ["valve", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(28, 20, 8, 24)}`),
+  });
+}
+
+function fourWayValve(): IsaSymbolDef {
+  return sym({
+    slug: "four-way-valve",
+    category: "pack-valves",
+    nameEn: "Four-way valve",
+    nameRu: "Четырёхходовой клапан",
+    tags: ["valve", "isa"],
+    ports: portsCross(),
+    svg: wrap(`${line(32, 0, 32, 20)}${line(32, 44, 32, 64)}${line(0, 32, 20, 32)}${line(44, 32, 64, 32)}${circle(32, 32, 10)}`),
+  });
+}
+
+function meteringPump(): IsaSymbolDef {
+  return sym({
+    slug: "metering-pump",
+    category: "pack-pumps",
+    nameEn: "Metering pump",
+    nameRu: "Дозирующий насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${circle(32, 32, 12)}${text(32, 33, "M", 10)}`),
+  });
+}
+
+function screwPump(): IsaSymbolDef {
+  return sym({
+    slug: "screw-pump",
+    category: "pack-pumps",
+    nameEn: "Screw pump",
+    nameRu: "Шнековый насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(22, 24, 20, 16, 2)}${line(26, 28, 38, 36)}${line(26, 36, 38, 28)}`),
+  });
+}
+
+function blower(): IsaSymbolDef {
+  return sym({
+    slug: "blower",
+    category: "pack-misc",
+    nameEn: "Blower",
+    nameRu: "Воздуходувка",
+    tags: ["equipment", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${circle(32, 32, 14)}${poly("32,18 40,32 32,46 24,32")}`),
+  });
+}
+
+function coolingTower(): IsaSymbolDef {
+  return sym({
+    slug: "cooling-tower",
+    category: "pack-misc",
+    nameEn: "Cooling tower",
+    nameRu: "Градирня",
+    tags: ["equipment", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${poly("16,48 48,48 40,16 24,16")}${line(32, 48, 32, 58)}`),
+  });
+}
+
+function evaporator(): IsaSymbolDef {
+  return sym({
+    slug: "evaporator",
+    category: "pack-misc",
+    nameEn: "Evaporator",
+    nameRu: "Испаритель",
+    tags: ["equipment", "heat", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${rect(14, 24, 36, 16)}${line(50, 32, 64, 32)}${line(0, 32, 14, 32)}${line(22, 24, 22, 16)}${line(42, 24, 42, 16)}`),
+  });
+}
+
+function condenser(): IsaSymbolDef {
+  return sym({
+    slug: "condenser",
+    category: "pack-misc",
+    nameEn: "Condenser",
+    nameRu: "Конденсатор",
+    tags: ["equipment", "heat", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${rect(14, 24, 36, 16)}${line(50, 32, 64, 32)}${line(0, 32, 14, 32)}${line(18, 40, 46, 40)}`),
+  });
+}
+
+function steamTrap(): IsaSymbolDef {
+  return sym({
+    slug: "steam-trap",
+    category: "pack-valves",
+    nameEn: "Steam trap",
+    nameRu: "Конденсатоотводчик",
+    tags: ["valve", "steam", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${line(32, 0, 32, 22)}${circle(32, 32, 10)}${line(32, 42, 32, 64)}`),
+  });
+}
+
+function sightGlass(): IsaSymbolDef {
+  return sym({
+    slug: "sight-glass",
+    category: "pack-pipes",
+    nameEn: "Sight glass",
+    nameRu: "Смотровое стекло",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(26, 24, 12, 16, 2)}`),
+  });
+}
+
+function strainer(): IsaSymbolDef {
+  return sym({
+    slug: "strainer",
+    category: "pack-pipes",
+    nameEn: "Strainer",
+    nameRu: "Фильтр-сетка",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${poly("26,24 38,24 32,40")}`),
+  });
+}
+
+function yStrainer(): IsaSymbolDef {
+  return sym({
+    slug: "y-strainer",
+    category: "pack-pipes",
+    nameEn: "Y-strainer",
+    nameRu: "Y-фильтр",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 22, 32)}${line(42, 32, 64, 32)}${line(22, 32, 32, 44)}${poly("28,40 36,40 32,48")}`),
+  });
+}
+
+function expansionJoint(): IsaSymbolDef {
+  return sym({
+    slug: "expansion-joint",
+    category: "pack-pipes",
+    nameEn: "Expansion joint",
+    nameRu: "Компенсатор",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 22, 32)}${path("M22 26 Q32 38 42 26 Q32 14 22 26", "none")}${line(42, 32, 64, 32)}`),
+  });
+}
+
+function electricHeater(): IsaSymbolDef {
+  return sym({
+    slug: "electric-heater",
+    category: "pack-electrical",
+    nameEn: "Electric heater",
+    nameRu: "Электронагреватель",
+    tags: ["electrical", "heat", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 18, 32)}${rect(18, 22, 28, 20, 2)}${line(24, 28, 40, 36)}${line(24, 36, 40, 28)}${line(46, 32, 64, 32)}`),
+  });
+}
+
+function steamTurbine(): IsaSymbolDef {
+  return sym({
+    slug: "steam-turbine",
+    category: "pack-misc",
+    nameEn: "Steam turbine",
+    nameRu: "Паровая турбина",
+    tags: ["equipment", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${circle(32, 32, 14)}${poly("32,18 40,32 32,46 24,32")}`),
+  });
+}
+
+function boiler(): IsaSymbolDef {
+  return sym({
+    slug: "boiler",
+    category: "pack-misc",
+    nameEn: "Boiler",
+    nameRu: "Котёл",
+    tags: ["equipment", "heat", "isa"],
+    ports: [
+      { id: "n", x: 32, y: 0 },
+      { id: "s", x: 32, y: 64 },
+    ],
+    svg: wrap(`${rect(16, 18, 32, 36, 4)}${line(32, 54, 32, 64)}${line(32, 0, 32, 18)}`),
+  });
+}
+
+function hopper(): IsaSymbolDef {
+  return sym({
+    slug: "hopper",
+    category: "pack-tanks",
+    nameEn: "Hopper",
+    nameRu: "Бункер",
+    tags: ["vessel", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${poly("18,16 46,16 40,44 24,44")}${line(32, 44, 32, 58)}`),
+  });
+}
+
+function floatValve(): IsaSymbolDef {
+  return sym({
+    slug: "float-valve",
+    category: "pack-valves",
+    nameEn: "Float valve",
+    nameRu: "Поплавковый клапан",
+    tags: ["valve", "level", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${pipeVertical()}${circle(32, 40, 8)}${line(32, 32, 32, 48)}`),
+  });
+}
+
+function footValve(): IsaSymbolDef {
+  return sym({
+    slug: "foot-valve",
+    category: "pack-valves",
+    nameEn: "Foot valve",
+    nameRu: "Напорный клапан",
+    tags: ["valve", "pump", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${line(32, 0, 32, 40)}${poly("22,40 42,40 32,52")}`),
+  });
+}
+
+function vacuumBreaker(): IsaSymbolDef {
+  return sym({
+    slug: "vacuum-breaker",
+    category: "pack-valves",
+    nameEn: "Vacuum breaker",
+    nameRu: "Вакуумный клапан",
+    tags: ["valve", "safety", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${pipeVertical()}${poly("26,28 38,28 32,38")}${line(32, 10, 32, 28)}`),
+  });
+}
+
+function backflowPreventer(): IsaSymbolDef {
+  return sym({
+    slug: "backflow-preventer",
+    category: "pack-valves",
+    nameEn: "Backflow preventer",
+    nameRu: "Обратный клапан двойной",
+    tags: ["valve", "safety", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(24, 24, 16, 16, 2)}${poly("28,32 36,28 36,36")}`),
+  });
+}
+
+function manualValve(): IsaSymbolDef {
+  return sym({
+    slug: "manual-valve",
+    category: "pack-valves",
+    nameEn: "Manual valve",
+    nameRu: "Ручной клапан",
+    tags: ["valve", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${poly("26,32 32,26 38,32 32,38")}${line(32, 12, 32, 26)}`),
+  });
+}
+
+function diaphragmPump(): IsaSymbolDef {
+  return sym({
+    slug: "diaphragm-pump",
+    category: "pack-pumps",
+    nameEn: "Diaphragm pump",
+    nameRu: "Мембранный насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${path("M22 28 Q32 20 42 28 Q32 44 22 36 Z")}`),
+  });
+}
+
+function jetPump(): IsaSymbolDef {
+  return sym({
+    slug: "jet-pump",
+    category: "pack-pumps",
+    nameEn: "Jet pump",
+    nameRu: "Струйный насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${poly("24,32 40,26 40,38")}`),
+  });
+}
+
+function rotaryPump(): IsaSymbolDef {
+  return sym({
+    slug: "rotary-pump",
+    category: "pack-pumps",
+    nameEn: "Rotary pump",
+    nameRu: "Роторный насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${circle(32, 32, 12)}${poly("32,20 38,32 32,44 26,32")}`),
+  });
+}
+
+function airPump(): IsaSymbolDef {
+  return sym({
+    slug: "air-pump",
+    category: "pack-pumps",
+    nameEn: "Air pump",
+    nameRu: "Воздушный насос",
+    tags: ["pump", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(22, 24, 20, 16, 2)}${line(26, 28, 38, 36)}${line(26, 36, 38, 28)}`),
+  });
+}
+
+function dayTank(): IsaSymbolDef {
+  return sym({
+    slug: "day-tank",
+    category: "pack-tanks",
+    nameEn: "Day tank",
+    nameRu: "Дневной бак",
+    tags: ["vessel", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${rect(20, 20, 24, 32, 2)}${line(32, 52, 32, 60)}`),
+  });
+}
+
+function surgeTank(): IsaSymbolDef {
+  return sym({
+    slug: "surge-tank",
+    category: "pack-tanks",
+    nameEn: "Surge tank",
+    nameRu: "Гидроаккумулятор",
+    tags: ["vessel", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${rect(18, 16, 28, 36, 4)}${line(32, 52, 32, 64)}${line(32, 0, 32, 16)}`),
+  });
+}
+
+function settlingTank(): IsaSymbolDef {
+  return sym({
+    slug: "settling-tank",
+    category: "pack-tanks",
+    nameEn: "Settling tank",
+    nameRu: "Отстойник",
+    tags: ["vessel", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${rect(14, 18, 36, 30, 2)}${line(32, 48, 32, 58)}${line(32, 10, 32, 18)}`),
+  });
+}
+
+function undergroundTank(): IsaSymbolDef {
+  return sym({
+    slug: "underground-tank",
+    category: "pack-tanks",
+    nameEn: "Underground tank",
+    nameRu: "Подземный резервуар",
+    tags: ["vessel", "isa"],
+    ports: [{ id: "n", x: 32, y: 0 }],
+    svg: wrap(`${path("M16 28 Q32 48 48 28 L48 44 Q32 56 16 44 Z")}${line(32, 0, 32, 20)}`),
+  });
+}
+
+function pipeUnion(): IsaSymbolDef {
+  return sym({
+    slug: "pipe-union",
+    category: "pack-pipes",
+    nameEn: "Union",
+    nameRu: "Муфта",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${rect(26, 26, 12, 12)}`),
+  });
+}
+
+function pipeCoupling(): IsaSymbolDef {
+  return sym({
+    slug: "pipe-coupling",
+    category: "pack-pipes",
+    nameEn: "Coupling",
+    nameRu: "Соединение",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 24, 32)}${line(40, 32, 64, 32)}${rect(24, 28, 16, 8)}`),
+  });
+}
+
+function pipeVent(): IsaSymbolDef {
+  return sym({
+    slug: "pipe-vent",
+    category: "pack-pipes",
+    nameEn: "Vent",
+    nameRu: "Вентиляция",
+    tags: ["pipe", "fitting", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${line(32, 20, 32, 64)}${poly("32,12 26,20 38,20")}`),
+  });
+}
+
+function pipeDrain(): IsaSymbolDef {
+  return sym({
+    slug: "pipe-drain",
+    category: "pack-pipes",
+    nameEn: "Drain",
+    nameRu: "Дренаж",
+    tags: ["pipe", "fitting", "isa"],
+    ports: [{ id: "n", x: 32, y: 0 }],
+    svg: wrap(`${line(32, 0, 32, 44)}${poly("32,52 26,44 38,44")}`),
+  });
+}
+
+function instrumentConnection(): IsaSymbolDef {
+  return sym({
+    slug: "instrument-connection",
+    category: "pack-pipes",
+    nameEn: "Instrument connection",
+    nameRu: "Отвод к прибору",
+    tags: ["pipe", "instrument", "isa"],
+    ports: [
+      { id: "w", x: 0, y: 32 },
+      { id: "n", x: 32, y: 0 },
+    ],
+    svg: wrap(`${line(0, 32, 32, 32)}${line(32, 32, 32, 0)}${circle(32, 32, 4)}`),
+  });
+}
+
+function expansionLoop(): IsaSymbolDef {
+  return sym({
+    slug: "expansion-loop",
+    category: "pack-pipes",
+    nameEn: "Expansion loop",
+    nameRu: "Компенсатор петля",
+    tags: ["pipe", "fitting", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 16, 32)}${path("M16 32 Q24 12 32 32 Q40 52 48 32", "none")}${line(48, 32, 64, 32)}`),
+  });
+}
+
+function conductivityIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "conductivity-indicator",
+    category: "pack-sensors",
+    nameEn: "Conductivity indicator (CI)",
+    nameRu: "Индикатор проводимости (CI)",
+    tags: ["instrument", "analyzer", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("CI")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function oxygenIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "oxygen-indicator",
+    category: "pack-sensors",
+    nameEn: "Oxygen indicator (OI)",
+    nameRu: "Индикатор кислорода (OI)",
+    tags: ["instrument", "analyzer", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("OI")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function humidityIndicator(): IsaSymbolDef {
+  return sym({
+    slug: "humidity-indicator",
+    category: "pack-sensors",
+    nameEn: "Humidity indicator (HI)",
+    nameRu: "Индикатор влажности (HI)",
+    tags: ["instrument", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${instrumentBubble("HI")}${line(32, 46, 32, 58)}`),
+  });
+}
+
+function vibrationTransmitter(): IsaSymbolDef {
+  return sym({
+    slug: "vibration-transmitter",
+    category: "pack-sensors",
+    nameEn: "Vibration transmitter (VT)",
+    nameRu: "Датчик вибрации (VT)",
+    tags: ["instrument", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${bubble(32, 28, 14, "VT")}${line(32, 42, 32, 54)}`),
+  });
+}
+
+function positionTransmitter(): IsaSymbolDef {
+  return sym({
+    slug: "position-transmitter",
+    category: "pack-sensors",
+    nameEn: "Position transmitter (ZT)",
+    nameRu: "Датчик положения (ZT)",
+    tags: ["instrument", "isa"],
+    ports: [{ id: "s", x: 32, y: 48 }],
+    svg: wrap(`${bubble(32, 28, 14, "ZT")}${line(32, 42, 32, 54)}`),
+  });
+}
+
+function relayCoil(): IsaSymbolDef {
+  return sym({
+    slug: "relay-coil",
+    category: "pack-electrical",
+    nameEn: "Relay coil",
+    nameRu: "Катушка реле",
+    tags: ["electrical", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 18, 32)}${line(46, 32, 64, 32)}${rect(18, 24, 28, 16, 2)}${text(32, 33, "K", 10)}`),
+  });
+}
+
+function contactor(): IsaSymbolDef {
+  return sym({
+    slug: "contactor",
+    category: "pack-electrical",
+    nameEn: "Contactor",
+    nameRu: "Контактор",
+    tags: ["electrical", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 16, 32)}${line(48, 32, 64, 32)}${rect(16, 22, 32, 20, 2)}${line(24, 28, 40, 36)}${line(24, 36, 40, 28)}`),
+  });
+}
+
+function motorStarter(): IsaSymbolDef {
+  return sym({
+    slug: "motor-starter",
+    category: "pack-electrical",
+    nameEn: "Motor starter",
+    nameRu: "Пускатель",
+    tags: ["electrical", "motor", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 14, 32)}${line(50, 32, 64, 32)}${rect(14, 20, 36, 24, 2)}${circle(32, 32, 8)}`),
+  });
+}
+
+function limitSwitch(): IsaSymbolDef {
+  return sym({
+    slug: "limit-switch",
+    category: "pack-electrical",
+    nameEn: "Limit switch",
+    nameRu: "Концевой выключатель",
+    tags: ["electrical", "switch", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${line(0, 32, 22, 32)}${line(42, 32, 64, 32)}${poly("22,32 32,24 42,32 32,40")}`),
+  });
+}
+
+function pushButton(): IsaSymbolDef {
+  return sym({
+    slug: "push-button",
+    category: "pack-electrical",
+    nameEn: "Push button",
+    nameRu: "Кнопка",
+    tags: ["electrical", "switch", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${line(32, 36, 32, 64)}${circle(32, 28, 10)}${line(26, 28, 38, 28)}`),
+  });
+}
+
+function ratioController(): IsaSymbolDef {
+  return sym({
+    slug: "ratio-controller",
+    category: "pack-isa",
+    nameEn: "Ratio controller (RC)",
+    nameRu: "Регулятор соотношения (RC)",
+    tags: ["isa", "control"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "RC")}`),
+  });
+}
+
+function safetyController(): IsaSymbolDef {
+  return sym({
+    slug: "safety-controller",
+    category: "pack-isa",
+    nameEn: "Safety controller (SC)",
+    nameRu: "Регулятор безопасности (SC)",
+    tags: ["isa", "control", "safety"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "SC")}`),
+  });
+}
+
+function selectorSwitch(): IsaSymbolDef {
+  return sym({
+    slug: "selector-switch",
+    category: "pack-isa",
+    nameEn: "Selector switch (HS)",
+    nameRu: "Переключатель (HS)",
+    tags: ["isa", "switch"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "HS")}`),
+  });
+}
+
+function indicatorTransmitter(): IsaSymbolDef {
+  return sym({
+    slug: "indicator-transmitter",
+    category: "pack-isa",
+    nameEn: "Indicator transmitter (IT)",
+    nameRu: "Индикатор-передатчик (IT)",
+    tags: ["isa", "instrument"],
+    ports: [{ id: "s", x: 32, y: 50 }],
+    svg: wrap(`${bubble(32, 28, 16, "IT")}`),
+  });
+}
+
+function cyclone(): IsaSymbolDef {
+  return sym({
+    slug: "cyclone",
+    category: "pack-misc",
+    nameEn: "Cyclone",
+    nameRu: "Циклон",
+    tags: ["equipment", "isa"],
+    ports: [
+      { id: "n", x: 32, y: 0 },
+      { id: "s", x: 32, y: 64 },
+    ],
+    svg: wrap(`${poly("20,12 44,12 48,48 16,48")}${line(32, 48, 32, 58)}`),
+  });
+}
+
+function clarifier(): IsaSymbolDef {
+  return sym({
+    slug: "clarifier",
+    category: "pack-misc",
+    nameEn: "Clarifier",
+    nameRu: "Осветлитель",
+    tags: ["equipment", "isa"],
+    ports: [{ id: "s", x: 32, y: 64 }],
+    svg: wrap(`${rect(16, 20, 32, 28, 4)}${line(32, 48, 32, 58)}${line(32, 8, 32, 20)}`),
+  });
+}
+
+function scrubber(): IsaSymbolDef {
+  return sym({
+    slug: "scrubber",
+    category: "pack-misc",
+    nameEn: "Scrubber",
+    nameRu: "Улавливатель",
+    tags: ["equipment", "isa"],
+    ports: portsVertical(),
+    svg: wrap(`${rect(20, 16, 24, 36, 2)}${line(32, 52, 32, 64)}${line(32, 0, 32, 16)}`),
+  });
+}
+
+function deaerator(): IsaSymbolDef {
+  return sym({
+    slug: "deaerator",
+    category: "pack-misc",
+    nameEn: "Deaerator",
+    nameRu: "Деаэратор",
+    tags: ["equipment", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${path("M18 32 Q18 18 32 18 Q46 18 46 32 Q46 46 32 46 Q18 46 18 32")}${line(32, 0, 32, 14)}`),
+  });
+}
+
+function dryer(): IsaSymbolDef {
+  return sym({
+    slug: "dryer",
+    category: "pack-misc",
+    nameEn: "Dryer",
+    nameRu: "Сушилка",
+    tags: ["equipment", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${rect(16, 22, 32, 20, 2)}${line(0, 32, 16, 32)}${line(48, 32, 64, 32)}${line(24, 22, 24, 14)}${line(40, 22, 40, 14)}`),
+  });
+}
+
+function chute(): IsaSymbolDef {
+  return sym({
+    slug: "chute",
+    category: "pack-misc",
+    nameEn: "Chute",
+    nameRu: "Желоб",
+    tags: ["equipment", "isa"],
+    ports: [
+      { id: "n", x: 32, y: 0 },
+      { id: "s", x: 32, y: 64 },
+    ],
+    svg: wrap(`${poly("20,8 44,8 48,56 16,56")}`),
+  });
+}
+
+function heatTracer(): IsaSymbolDef {
+  return sym({
+    slug: "heat-tracer",
+    category: "pack-misc",
+    nameEn: "Heat trace",
+    nameRu: "Обогрев трасс",
+    tags: ["equipment", "heat", "isa"],
+    ports: portsHorizontal(),
+    svg: wrap(`${pipeHorizontal()}${path("M18 26 Q32 18 46 26 Q32 38 18 26", "none")}`),
+  });
+}
+
 export const ALL_ISA_SYMBOLS: IsaSymbolDef[] = [
   gateValve(),
   globeValve(),
@@ -996,4 +1776,68 @@ export const ALL_ISA_SYMBOLS: IsaSymbolDef[] = [
   damper(),
   pressureController(),
   temperatureController(),
+  levelController(),
+  flowController(),
+  speedIndicator(),
+  weightIndicator(),
+  phIndicator(),
+  differentialPressureIndicator(),
+  reliefValve(),
+  knifeGateValve(),
+  fourWayValve(),
+  meteringPump(),
+  screwPump(),
+  blower(),
+  coolingTower(),
+  evaporator(),
+  condenser(),
+  steamTrap(),
+  sightGlass(),
+  strainer(),
+  yStrainer(),
+  expansionJoint(),
+  electricHeater(),
+  steamTurbine(),
+  boiler(),
+  hopper(),
+  floatValve(),
+  footValve(),
+  vacuumBreaker(),
+  backflowPreventer(),
+  manualValve(),
+  diaphragmPump(),
+  jetPump(),
+  rotaryPump(),
+  airPump(),
+  dayTank(),
+  surgeTank(),
+  settlingTank(),
+  undergroundTank(),
+  pipeUnion(),
+  pipeCoupling(),
+  pipeVent(),
+  pipeDrain(),
+  instrumentConnection(),
+  expansionLoop(),
+  conductivityIndicator(),
+  oxygenIndicator(),
+  humidityIndicator(),
+  vibrationTransmitter(),
+  positionTransmitter(),
+  relayCoil(),
+  contactor(),
+  motorStarter(),
+  limitSwitch(),
+  pushButton(),
+  ratioController(),
+  safetyController(),
+  selectorSwitch(),
+  indicatorTransmitter(),
+  cyclone(),
+  clarifier(),
+  scrubber(),
+  deaerator(),
+  dryer(),
+  chute(),
+  heatTracer(),
 ];

@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -74,6 +75,43 @@ class AlarmShelfApprovalApiTest {
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(true));
+    }
+
+    @Test
+    void rejectRemovesPendingRequestWithoutCreatingShelf() throws Exception {
+        String adminToken = login("admin", "admin");
+        String createBody = """
+                {
+                  "objectPath": "%s",
+                  "eventName": "%s",
+                  "durationMinutes": 15,
+                  "comment": "reject me"
+                }
+                """.formatted(DEMO_DEVICE, EVENT_NAME);
+
+        MvcResult pending = mockMvc.perform(post("/api/v1/alarm-shelves")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String requestId = pending.getResponse().getContentAsString()
+                .replaceAll("(?s).*\"id\"\\s*:\\s*\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/alarm-shelves/requests/" + requestId + "/reject")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/alarm-shelves/requests")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id=='" + requestId + "')]").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/alarm-shelves")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.objectPath=='" + DEMO_DEVICE + "' && @.eventName=='" + EVENT_NAME + "')]").doesNotExist());
     }
 
     private String login(String username, String password) throws Exception {

@@ -1,5 +1,9 @@
-# ISPF Helm values skeleton (BL-186). Wire subcharts / templates in follow-up PRs.
-# Prod reference: deploy/vps-deploy-direct.ps1 + deploy/docker-compose.*.yml
+# ISPF Helm values (BL-186). Prod reference: deploy/vps-deploy-direct.ps1 + deploy/docker-compose.*.yml
+
+configMap:
+  enabled: true
+  # Optional full override; when empty, chart renders datasource + ispf.* from values below.
+  applicationYaml: ""
 
 global:
   imageRegistry: ""

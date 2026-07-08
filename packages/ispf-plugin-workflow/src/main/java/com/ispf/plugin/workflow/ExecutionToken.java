@@ -13,6 +13,8 @@ public final class ExecutionToken {
     private String pendingUserTaskId;
     private String pendingSignalCatchNodeId;
     private String pendingSignalName;
+    private String pendingMessageCatchNodeId;
+    private String pendingMessageName;
     private String pendingTimerCatchNodeId;
     private String pendingBoundaryTimerNodeId;
     private long timerDeadlineEpochMs;
@@ -52,6 +54,14 @@ public final class ExecutionToken {
         return pendingSignalName;
     }
 
+    public String pendingMessageCatchNodeId() {
+        return pendingMessageCatchNodeId;
+    }
+
+    public String pendingMessageName() {
+        return pendingMessageName;
+    }
+
     public String pendingTimerCatchNodeId() {
         return pendingTimerCatchNodeId;
     }
@@ -77,6 +87,8 @@ public final class ExecutionToken {
         pendingUserTaskId = userTaskNodeId;
         pendingSignalCatchNodeId = null;
         pendingSignalName = null;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
         pendingTimerCatchNodeId = null;
         currentNodeId = userTaskNodeId;
     }
@@ -86,6 +98,21 @@ public final class ExecutionToken {
         pendingUserTaskId = null;
         pendingSignalCatchNodeId = catchNodeId;
         pendingSignalName = signalName;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
+        pendingTimerCatchNodeId = null;
+        pendingBoundaryTimerNodeId = null;
+        timerDeadlineEpochMs = 0L;
+        currentNodeId = catchNodeId;
+    }
+
+    public void waitAtMessageCatch(String catchNodeId, String messageName) {
+        state = TokenState.WAITING;
+        pendingUserTaskId = null;
+        pendingSignalCatchNodeId = null;
+        pendingSignalName = null;
+        pendingMessageCatchNodeId = catchNodeId;
+        pendingMessageName = messageName;
         pendingTimerCatchNodeId = null;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
@@ -97,6 +124,8 @@ public final class ExecutionToken {
         pendingUserTaskId = null;
         pendingSignalCatchNodeId = null;
         pendingSignalName = null;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
         pendingTimerCatchNodeId = catchNodeId;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = deadlineEpochMs;
@@ -125,6 +154,12 @@ public final class ExecutionToken {
         pendingSignalName = null;
     }
 
+    public void resumeAfterMessageCatch() {
+        state = TokenState.ACTIVE;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
+    }
+
     public void resumeAfterTimerCatch() {
         state = TokenState.ACTIVE;
         pendingTimerCatchNodeId = null;
@@ -150,6 +185,8 @@ public final class ExecutionToken {
         pendingUserTaskId = null;
         pendingSignalCatchNodeId = null;
         pendingSignalName = null;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
         pendingTimerCatchNodeId = null;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
@@ -162,6 +199,8 @@ public final class ExecutionToken {
         pendingUserTaskId = null;
         pendingSignalCatchNodeId = null;
         pendingSignalName = null;
+        pendingMessageCatchNodeId = null;
+        pendingMessageName = null;
         pendingTimerCatchNodeId = null;
         pendingBoundaryTimerNodeId = null;
         timerDeadlineEpochMs = 0L;
@@ -175,6 +214,8 @@ public final class ExecutionToken {
             String pendingUserTaskId,
             String pendingSignalCatchNodeId,
             String pendingSignalName,
+            String pendingMessageCatchNodeId,
+            String pendingMessageName,
             String pendingTimerCatchNodeId,
             String pendingBoundaryTimerNodeId,
             long timerDeadlineEpochMs,
@@ -185,6 +226,8 @@ public final class ExecutionToken {
         token.pendingUserTaskId = pendingUserTaskId;
         token.pendingSignalCatchNodeId = pendingSignalCatchNodeId;
         token.pendingSignalName = pendingSignalName;
+        token.pendingMessageCatchNodeId = pendingMessageCatchNodeId;
+        token.pendingMessageName = pendingMessageName;
         token.pendingTimerCatchNodeId = pendingTimerCatchNodeId;
         token.pendingBoundaryTimerNodeId = pendingBoundaryTimerNodeId;
         token.timerDeadlineEpochMs = timerDeadlineEpochMs;

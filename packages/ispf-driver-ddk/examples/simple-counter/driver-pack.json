@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-simple-counter",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-simple-counter.jar",
+  "drivers": [
+    {
+      "driverId": "simple-counter",
+      "driverClass": "com.ispf.driver.simplecounter.SimpleCounterDeviceDriver"
+    }
+  ]
+}

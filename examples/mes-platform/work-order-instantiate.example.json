@@ -1,0 +1,39 @@
+{
+  "description": "Instantiate a WORK_ORDER under root.platform.mes.work-orders using the work-order-v1 INSTANCE blueprint (BL-164 / BL-166).",
+  "prerequisites": [
+    "Server started (MesPlatformBootstrap seeds root.platform.mes.*)",
+    "work-order-v1 registered under root.platform.instance-types (MesBlueprintBootstrap)"
+  ],
+  "resolveBlueprintId": {
+    "method": "GET",
+    "url": "/api/v1/blueprints",
+    "matchName": "work-order-v1",
+    "useField": "id"
+  },
+  "instantiate": {
+    "method": "POST",
+    "url": "/api/v1/blueprints/{work-order-v1-id}/instantiate",
+    "body": {
+      "parentPath": "root.platform.mes.work-orders",
+      "instanceName": "wo-line-a01-001",
+      "parameters": {
+        "orderNumber": "WO-LINE-A01-001",
+        "lineCode": "LINE-A01",
+        "status": "dispatched",
+        "priority": "normal"
+      }
+    }
+  },
+  "expectedObjectPath": "root.platform.mes.work-orders.wo-line-a01-001",
+  "dispatchFollowUp": {
+    "description": "Fire workOrderDispatched on mes-platform-hub (or enable correlator) to start BPMN user task",
+    "event": {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "eventName": "workOrderDispatched",
+      "payload": {
+        "workOrderPath": "root.platform.mes.work-orders.wo-line-a01-001",
+        "lineCode": "LINE-A01"
+      }
+    }
+  }
+}

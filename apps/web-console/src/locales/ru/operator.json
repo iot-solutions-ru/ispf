@@ -35,6 +35,11 @@
   "alarmShelves.noExpiry": "до возобновления",
   "alarmShelves.expired": "истекло",
   "alarmShelves.unshelve": "Снять",
+  "alarmShelves.approvalTitle": "Очередь согласования",
+  "alarmShelves.approvalCount": "ожидает: {{count}}",
+  "alarmShelves.requestedBy": "запросил {{user}}",
+  "alarmShelves.approve": "Одобрить",
+  "alarmShelves.reject": "Отклонить",
   "alarmBar.dashboard": "Дашборд",
   "alarmBar.mute": "Без звука",
   "alarmBar.report": "Отчёт",
@@ -130,5 +135,9 @@
   "workQueue.title": "Очередь задач",
   "offline.staleBanner": "Нет сети — показаны сохранённые данные от {{time}}",
   "offline.reconnecting": "Сеть восстановлена — обновление…",
-  "offline.unknownTime": "неизвестно"
+  "offline.unknownTime": "неизвестно",
+  "offline.badge": "Офлайн",
+  "offline.badgeTitle": "Нет сети — показаны сохранённые данные",
+  "federationPeer.label": "Узел федерации",
+  "federationPeer.allSites": "Все площадки"
 }

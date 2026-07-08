@@ -101,5 +101,9 @@ public enum ObjectType {
     PROCESS_PROGRAMS,
     /** Cyclic control loop program instance. */
     PROCESS_PROGRAM,
+    /** Asset analytics template catalog folder (Phase 28). */
+    ANALYTICS,
+    /** Derived tag / KPI template instance. */
+    ANALYTICS_TEMPLATE,
     CUSTOM
 }

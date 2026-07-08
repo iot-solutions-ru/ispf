@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Multi-tenant isolation mode — BL-155.
  * {@code logical}: shared DB schema, path-based namespaces (default).
- * {@code hard}: per-tenant PostgreSQL schema (stub — schema provisioning is follow-up work).
+ * {@code hard}: per-tenant PostgreSQL schema ({@link com.ispf.server.tenant.TenantSchemaService}).
  */
 @ConfigurationProperties(prefix = "ispf.tenant")
 public class TenantIsolationProperties {

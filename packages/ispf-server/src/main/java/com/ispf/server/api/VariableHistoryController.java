@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Locale;
 
@@ -97,7 +99,7 @@ public class VariableHistoryController {
     }
 
     @GetMapping("/history/export")
-    public ResponseEntity<byte[]> exportHistory(
+    public ResponseEntity<?> exportHistory(
             @RequestParam String path,
             @RequestParam String name,
             @RequestParam String format,
@@ -107,19 +109,20 @@ public class VariableHistoryController {
             @RequestParam(required = false) String calendarRange,
             @RequestParam(required = false) String timeZone,
             @RequestParam(required = false, defaultValue = "10000") int limit
-    ) {
+    ) throws IOException {
         String normalizedFormat = format == null ? "" : format.trim().toLowerCase(Locale.ROOT);
         try {
             InstantRange range = resolveRange(from, to, calendarRange, timeZone);
             return switch (normalizedFormat) {
                 case "csv" -> {
-                    String csv = variableHistoryService.exportCsv(
-                            path, name, field, range.from(), range.to(), limit
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    variableHistoryService.streamCsv(
+                            path, name, field, range.from(), range.to(), limit, buffer
                     );
                     yield ResponseEntity.ok()
                             .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "csv"))
                             .contentType(new MediaType("text", "csv"))
-                            .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            .body(buffer.toByteArray());
                 }
                 case "json" -> ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "json"))
@@ -127,10 +130,17 @@ public class VariableHistoryController {
                         .body(variableHistoryService.exportJson(
                                 path, name, field, range.from(), range.to(), limit
                         ));
-                case "parquet" -> throw new ResponseStatusException(
-                        HttpStatus.NOT_IMPLEMENTED,
-                        "Parquet export is planned for Phase 28 cold-tier historian (BL-163); use csv or json today"
-                );
+                case "parquet" -> {
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    variableHistoryService.streamJsonLines(
+                            path, name, field, range.from(), range.to(), limit, buffer
+                    );
+                    yield ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "jsonl"))
+                            .header("X-ISPF-Export-Format", "parquet-stub-jsonl")
+                            .contentType(new MediaType("application", "x-ndjson"))
+                            .body(buffer.toByteArray());
+                }
                 default -> throw new IllegalArgumentException("Unsupported export format: " + format);
             };
         } catch (IllegalArgumentException e) {

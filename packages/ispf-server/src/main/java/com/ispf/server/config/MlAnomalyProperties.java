@@ -18,6 +18,16 @@ public class MlAnomalyProperties {
      */
     private double defaultThreshold = 0.85;
 
+    /**
+     * Inclusive lower bound for {@link com.ispf.server.ml.ThresholdAnomalyDetectionSpi}.
+     */
+    private double thresholdMin = Double.NEGATIVE_INFINITY;
+
+    /**
+     * Inclusive upper bound for {@link com.ispf.server.ml.ThresholdAnomalyDetectionSpi}.
+     */
+    private double thresholdMax = Double.POSITIVE_INFINITY;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -32,5 +42,21 @@ public class MlAnomalyProperties {
 
     public void setDefaultThreshold(double defaultThreshold) {
         this.defaultThreshold = defaultThreshold;
+    }
+
+    public double getThresholdMin() {
+        return thresholdMin;
+    }
+
+    public void setThresholdMin(double thresholdMin) {
+        this.thresholdMin = thresholdMin;
+    }
+
+    public double getThresholdMax() {
+        return thresholdMax;
+    }
+
+    public void setThresholdMax(double thresholdMax) {
+        this.thresholdMax = thresholdMax;
     }
 }

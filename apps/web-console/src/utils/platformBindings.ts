@@ -22,6 +22,8 @@ export interface PlatformBindingEntry {
   stateful?: boolean;
   category: PlatformBindingCategory;
   params: BindingParamDef[];
+  /** Quote style for string params (default double). Analytics helpers use single quotes. */
+  stringQuoteStyle?: "single" | "double";
 }
 
 export interface BindingBuilderContext {
@@ -30,7 +32,10 @@ export interface BindingBuilderContext {
   functionNames?: string[];
 }
 
-function quoteString(value: string): string {
+function quoteString(value: string, style: "single" | "double" = "double"): string {
+  if (style === "single") {
+    return `'${value.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+  }
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
@@ -56,7 +61,10 @@ export function defaultParamValues(
       case "number":
       case "string":
       case "unit":
-        values[param.key] = param.default ?? "";
+        values[param.key] =
+          param.key === "source" && ctx.variableNames?.[0]
+            ? ctx.variableNames[0]
+            : (param.default ?? "");
         break;
     }
   }
@@ -86,7 +94,7 @@ export function buildPlatformBindingExpression(
         break;
       case "path":
       case "string":
-        parts.push(quoteString(raw));
+        parts.push(quoteString(raw, entry.stringQuoteStyle ?? "double"));
         break;
     }
   }
@@ -274,6 +282,28 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
     params: [
       { key: "table", kind: "var", labelKey: "platformBindings.param.table" },
       { key: "field", kind: "string", labelKey: "platformBindings.param.field", default: "amount" },
+    ],
+  },
+  {
+    id: "rollingAvg",
+    name: "rollingAvg",
+    snippet: "rollingAvg('sourceVar', '5m')",
+    category: "aggregate",
+    stringQuoteStyle: "single",
+    params: [
+      { key: "source", kind: "string", labelKey: "platformBindings.param.source", default: "sourceVar" },
+      { key: "windowBucket", kind: "string", labelKey: "platformBindings.param.windowBucket", default: "5m" },
+    ],
+  },
+  {
+    id: "rateOfChange",
+    name: "rateOfChange",
+    snippet: "rateOfChange('sourceVar', '1h')",
+    category: "aggregate",
+    stringQuoteStyle: "single",
+    params: [
+      { key: "source", kind: "string", labelKey: "platformBindings.param.source", default: "sourceVar" },
+      { key: "windowBucket", kind: "string", labelKey: "platformBindings.param.windowBucket", default: "1h" },
     ],
   },
 ];

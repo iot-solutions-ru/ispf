@@ -55,10 +55,21 @@ public class WorkflowInstanceController {
         return workflowService.fireDueTimers(instanceId, request.operatorId());
     }
 
+    @PostMapping("/{instanceId}/message")
+    public Map<String, Object> message(
+            @PathVariable String instanceId,
+            @RequestBody MessageWorkflowRequest request
+    ) throws WorkflowException {
+        return workflowService.deliverMessage(instanceId, request.message(), request.operatorId());
+    }
+
     public record CancelWorkflowRequest(String reason, String detailJson, String cancelledBy) {
     }
 
     public record SignalWorkflowRequest(String signal, String operatorId) {
+    }
+
+    public record MessageWorkflowRequest(String message, String operatorId) {
     }
 
     public record TimerWorkflowRequest(String operatorId) {

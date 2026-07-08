@@ -1,0 +1,482 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES Platform Production (BL-170)",
+  "tablePrefix": "",
+  "schemaName": "app_mes_platform_production",
+  "migrations": [
+    {
+      "id": "mes_platform_schema",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_platform_line (line_code VARCHAR(32) PRIMARY KEY, display_name VARCHAR(128) NOT NULL, area_path VARCHAR(256)); INSERT INTO mes_platform_line (line_code, display_name, area_path) SELECT 'LINE-A01', 'Assembly Line A01', 'root.platform.mes.instances.plant-a.areas.assembly.lines.line-a01' WHERE NOT EXISTS (SELECT 1 FROM mes_platform_line WHERE line_code = 'LINE-A01'); CREATE TABLE IF NOT EXISTS mes_oee_shift (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, shift_label VARCHAR(64) NOT NULL, planned_minutes INTEGER NOT NULL, downtime_minutes INTEGER NOT NULL, ideal_cycle_sec INTEGER NOT NULL, total_units INTEGER NOT NULL, good_units INTEGER NOT NULL); INSERT INTO mes_oee_shift (id, line_code, shift_label, planned_minutes, downtime_minutes, ideal_cycle_sec, total_units, good_units) SELECT 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'LINE-A01', 'Morning', 480, 45, 12, 2100, 2050 WHERE NOT EXISTS (SELECT 1 FROM mes_oee_shift WHERE line_code = 'LINE-A01' AND shift_label = 'Morning');"
+    },
+    {
+      "id": "mes_platform_phase29",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_spc_sample (id UUID PRIMARY KEY, line_code VARCHAR(32) NOT NULL, measurement_mm NUMERIC(8,3) NOT NULL, sample_ts TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'LINE-A01', 10.02 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef', 'LINE-A01', 9.98 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef'); INSERT INTO mes_spc_sample (id, line_code, measurement_mm) SELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0', 'LINE-A01', 10.05 WHERE NOT EXISTS (SELECT 1 FROM mes_spc_sample WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee0'); CREATE TABLE IF NOT EXISTS mes_erp_outbox (id UUID PRIMARY KEY, entity_type VARCHAR(32) NOT NULL, entity_id VARCHAR(64) NOT NULL, payload_json TEXT NOT NULL, idempotency_key VARCHAR(128) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL DEFAULT 'pending', created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, processed_at TIMESTAMP NULL); CREATE TABLE IF NOT EXISTS mes_batch_run (batch_path VARCHAR(256) PRIMARY KEY, batch_id VARCHAR(64) NOT NULL, recipe VARCHAR(64) NOT NULL, phase VARCHAR(32) NOT NULL DEFAULT 'idle', updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP); INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) SELECT 'root.platform.mes.lots.batch-line-a01-001', 'BATCH-LINE-A01-001', 'recipe-standard-a', 'charge' WHERE NOT EXISTS (SELECT 1 FROM mes_batch_run WHERE batch_path = 'root.platform.mes.lots.batch-line-a01-001');"
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "mes-platform-production-hub",
+      "type": "DEVICE",
+      "displayName": "MES Platform Hub",
+      "description": "OEE + MES BFF hub for mes-platform certification bundle",
+      "templateId": "mes-platform-production-hub-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_oee_listShifts",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "shift_row",
+                "fields": [
+                  { "name": "shiftId", "type": "STRING" },
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "shiftLabel", "type": "STRING" },
+                  { "name": "plannedMinutes", "type": "INTEGER" },
+                  { "name": "downtimeMinutes", "type": "INTEGER" },
+                  { "name": "totalUnits", "type": "INTEGER" },
+                  { "name": "goodUnits", "type": "INTEGER" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"shifts\",\"sql\":\"SELECT id::text AS shift_id, line_code, shift_label, planned_minutes, downtime_minutes, total_units, good_units FROM mes_oee_shift ORDER BY line_code, shift_label\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${shifts}\",\"fields\":{\"shiftId\":\"${item.shift_id}\",\"lineCode\":\"${item.line_code}\",\"shiftLabel\":\"${item.shift_label}\",\"plannedMinutes\":\"${item.planned_minutes}\",\"downtimeMinutes\":\"${item.downtime_minutes}\",\"totalUnits\":\"${item.total_units}\",\"goodUnits\":\"${item.good_units}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_oee_getKpi",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [{ "name": "shiftId", "type": "STRING" }]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "lineCode", "type": "STRING" },
+            { "name": "shiftLabel", "type": "STRING" },
+            { "name": "availabilityPct", "type": "INTEGER" },
+            { "name": "performancePct", "type": "INTEGER" },
+            { "name": "qualityPct", "type": "INTEGER" },
+            { "name": "oeePct", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"kpi\",\"sql\":\"SELECT line_code, shift_label, CAST(ROUND(CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 100.0 / planned_minutes ELSE 0 END, 0) AS INT) AS availability_pct, CAST(ROUND(CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(100.0, ideal_cycle_sec * total_units * 100.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END, 0) AS INT) AS performance_pct, CAST(ROUND(CASE WHEN total_units > 0 THEN good_units * 100.0 / total_units ELSE 0 END, 0) AS INT) AS quality_pct, CAST(ROUND(CASE WHEN planned_minutes > 0 AND total_units > 0 THEN (CASE WHEN planned_minutes > 0 THEN (planned_minutes - downtime_minutes) * 1.0 / planned_minutes ELSE 0 END) * (CASE WHEN (planned_minutes - downtime_minutes) > 0 AND total_units > 0 THEN LEAST(1.0, ideal_cycle_sec * total_units * 1.0 / ((planned_minutes - downtime_minutes) * 60)) ELSE 0 END) * (CASE WHEN total_units > 0 THEN good_units * 1.0 / total_units ELSE 0 END) * 100 ELSE 0 END, 0) AS INT) AS oee_pct FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"kpi\",\"message\":\"Shift not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"lineCode\":\"${kpi.line_code}\",\"shiftLabel\":\"${kpi.shift_label}\",\"availabilityPct\":\"${kpi.availability_pct}\",\"performancePct\":\"${kpi.performance_pct}\",\"qualityPct\":\"${kpi.quality_pct}\",\"oeePct\":\"${kpi.oee_pct}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_oee_addDowntime",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "shiftId", "type": "STRING" },
+            { "name": "minutes", "type": "INTEGER" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "downtimeMinutes", "type": "INTEGER" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"shift\",\"sql\":\"SELECT id, downtime_minutes, planned_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"failIfNull\",\"var\":\"shift\",\"message\":\"Shift not found\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_oee_shift SET downtime_minutes = LEAST(planned_minutes, downtime_minutes + ?) WHERE id = ?\",\"params\":[\"${input.minutes}\",\"${input.shiftId}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT downtime_minutes FROM mes_oee_shift WHERE id = ?\",\"params\":[\"${input.shiftId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"downtimeMinutes\":\"${updated.downtime_minutes}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_platform_listLines",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "line_row",
+                "fields": [
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "displayName", "type": "STRING" },
+                  { "name": "areaPath", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lines\",\"sql\":\"SELECT line_code, display_name, area_path FROM mes_platform_line ORDER BY line_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lines}\",\"fields\":{\"lineCode\":\"${item.line_code}\",\"displayName\":\"${item.display_name}\",\"areaPath\":\"${item.area_path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_dispatch_confirmWorkOrder",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "workOrderPath", "type": "STRING" },
+            { "name": "operatorId", "type": "STRING" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "confirmed", "type": "BOOLEAN" },
+            { "name": "workOrderPath", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_quality_listSpcSamples",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "spc_row",
+                "fields": [
+                  { "name": "sampleId", "type": "STRING" },
+                  { "name": "lineCode", "type": "STRING" },
+                  { "name": "measurementMm", "type": "DOUBLE" },
+                  { "name": "sampleTs", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"samples\",\"sql\":\"SELECT id::text AS sample_id, line_code, measurement_mm, sample_ts::text AS sample_ts FROM mes_spc_sample ORDER BY sample_ts DESC LIMIT 20\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${samples}\",\"fields\":{\"sampleId\":\"${item.sample_id}\",\"lineCode\":\"${item.line_code}\",\"measurementMm\":\"${item.measurement_mm}\",\"sampleTs\":\"${item.sample_ts}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_batch_runPhase",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "batchPath", "type": "STRING" },
+            { "name": "batchId", "type": "STRING" },
+            { "name": "recipe", "type": "STRING" },
+            { "name": "phase", "type": "STRING" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "batchPath", "type": "STRING" },
+            { "name": "phase", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"UPDATE mes_batch_run SET phase = ?, batch_id = ?, recipe = COALESCE(NULLIF(?, ''), recipe), updated_at = CURRENT_TIMESTAMP WHERE batch_path = ?\",\"params\":[\"${input.phase}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.batchPath}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT batch_path FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"when\",\"var\":\"updated\",\"notNull\":false,\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_batch_run (batch_path, batch_id, recipe, phase) VALUES (?, ?, COALESCE(NULLIF(?, ''), 'default-recipe'), ?)\",\"params\":[\"${input.batchPath}\",\"${input.batchId}\",\"${input.recipe}\",\"${input.phase}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"phase\":\"${input.phase}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_batch_getStatus",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [{ "name": "batchPath", "type": "STRING" }]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "batchPath", "type": "STRING" },
+            { "name": "batchId", "type": "STRING" },
+            { "name": "recipe", "type": "STRING" },
+            { "name": "phase", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"batch\",\"sql\":\"SELECT batch_id, recipe, phase FROM mes_batch_run WHERE batch_path = ?\",\"params\":[\"${input.batchPath}\"]},{\"type\":\"failIfNull\",\"var\":\"batch\",\"message\":\"Batch not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"batchPath\":\"${input.batchPath}\",\"batchId\":\"${batch.batch_id}\",\"recipe\":\"${batch.recipe}\",\"phase\":\"${batch.phase}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_erp_enqueueOutbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            { "name": "entityType", "type": "STRING" },
+            { "name": "entityId", "type": "STRING" },
+            { "name": "payloadJson", "type": "STRING" }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            { "name": "enqueued", "type": "BOOLEAN" },
+            { "name": "idempotencyKey", "type": "STRING" }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO mes_erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), ?, ?, ?, CONCAT(?, ':', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM mes_erp_outbox WHERE idempotency_key = CONCAT(?, ':', ?))\",\"params\":[\"${input.entityType}\",\"${input.entityId}\",\"${input.payloadJson}\",\"${input.entityType}\",\"${input.entityId}\",\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"selectOne\",\"var\":\"keyRow\",\"sql\":\"SELECT CONCAT(?, ':', ?) AS idempotency_key\",\"params\":[\"${input.entityType}\",\"${input.entityId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"enqueued\":true,\"idempotencyKey\":\"${keyRow.idempotency_key}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "functionName": "mes_erp_pollOutbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": { "name": "in", "fields": [] },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            { "name": "error_code", "type": "STRING" },
+            { "name": "error_message", "type": "STRING" },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "outbox_row",
+                "fields": [
+                  { "name": "outboxId", "type": "STRING" },
+                  { "name": "entityType", "type": "STRING" },
+                  { "name": "entityId", "type": "STRING" },
+                  { "name": "idempotencyKey", "type": "STRING" },
+                  { "name": "status", "type": "STRING" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT id::text AS outbox_id, entity_type, entity_id, idempotency_key FROM mes_erp_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 50\"},{\"type\":\"exec\",\"sql\":\"UPDATE mes_erp_outbox SET status = 'sent', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"outboxId\":\"${item.outbox_id}\",\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"idempotencyKey\":\"${item.idempotency_key}\",\"status\":\"sent\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "mes-platform-production-hub-v1",
+      "description": "MES platform hub — SPC telemetry and control limits (BL-167)",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "spcMeasurement",
+          "description": "Latest critical-dimension SPC sample (mm)",
+          "group": "quality",
+          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "readable": true,
+          "writable": true,
+          "historyEnabled": true,
+          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.02 }] }
+        },
+        {
+          "name": "spcUcl",
+          "description": "Upper control limit (mm)",
+          "group": "quality",
+          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.5 }] }
+        },
+        {
+          "name": "spcLcl",
+          "description": "Lower control limit (mm)",
+          "group": "quality",
+          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 9.5 }] }
+        },
+        {
+          "name": "spcTarget",
+          "description": "Target / center line (mm)",
+          "group": "quality",
+          "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.0 }] }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "quality-record-v1",
+      "description": "Quality inspection record with defect traceability (BL-167)",
+      "type": "RELATIVE",
+      "targetObjectType": "QUALITY_RECORD",
+      "variables": [
+        {
+          "name": "defectCode",
+          "description": "Defect / NCR code",
+          "group": "info",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+        },
+        {
+          "name": "severity",
+          "description": "Severity label (minor, major, critical)",
+          "group": "info",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "minor" }] }
+        },
+        {
+          "name": "lotId",
+          "description": "Material lot / batch id",
+          "group": "traceability",
+          "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] },
+          "readable": true,
+          "writable": true,
+          "defaultValue": { "schema": { "name": "stringValue", "fields": [{ "name": "value", "type": "STRING" }] }, "rows": [{ "value": "" }] }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "workflows": [
+    {
+      "path": "root.platform.workflows.mes-work-order-dispatch",
+      "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform-production: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.devices.mes-platform-production-hub\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
+      "status": "ACTIVE",
+      "operatorAppId": "mes-platform-production"
+    }
+  ],
+  "correlators": [
+    {
+      "name": "MES work order dispatch",
+      "objectPath": "root.platform.devices.mes-platform-production-hub",
+      "patternType": "COUNT",
+      "eventName": "workOrderDispatched",
+      "windowSeconds": 0,
+      "minOccurrences": 1,
+      "cooldownSeconds": 5,
+      "sequenceGapSeconds": 0,
+      "actionType": "RUN_WORKFLOW",
+      "actionTarget": "root.platform.workflows.mes-work-order-dispatch",
+      "enabled": false
+    }
+  ],
+  "events": [
+    { "id": "workOrderDispatched", "roles": ["operator", "admin"] }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-platform-production-dispatch",
+      "title": "MES Dispatch",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":5,\"h\":6,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":5,\"y\":0,\"w\":7,\"h\":3,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":5,\"y\":3,\"w\":7,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-production-oee",
+      "title": "MES OEE",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":4,\"y\":0,\"w\":8,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":3,\"w\":12,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-platform-production-quality",
+      "title": "MES Quality / SPC",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"spc-chart\",\"type\":\"chart\",\"title\":\"SPC — critical dimension\",\"x\":0,\"y\":0,\"w\":8,\"h\":4,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"variableName\":\"spcMeasurement\",\"historyRange\":\"24h\",\"chartStyle\":\"line\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-ucl\",\"type\":\"value\",\"title\":\"UCL\",\"x\":8,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"variableName\":\"spcUcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-target\",\"type\":\"value\",\"title\":\"Target\",\"x\":10,\"y\":0,\"w\":2,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"variableName\":\"spcTarget\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-lcl\",\"type\":\"value\",\"title\":\"LCL\",\"x\":8,\"y\":2,\"w\":4,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"variableName\":\"spcLcl\",\"valueField\":\"value\",\"decimals\":2,\"unit\":\"mm\"},{\"id\":\"spc-samples\",\"type\":\"function\",\"title\":\"SPC samples\",\"x\":0,\"y\":4,\"w\":6,\"h\":2,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_quality_listSpcSamples\",\"buttonLabel\":\"List SPC samples\"},{\"id\":\"spc-help\",\"type\":\"html-snippet\",\"title\":\"Quality module\",\"x\":6,\"y\":4,\"w\":6,\"h\":2,\"htmlJson\":\"<p>BL-167: <code>chart</code> widget on <code>spcMeasurement</code> with UCL/LCL reference values. Apply <code>quality-record-v1</code> to <code>QUALITY_RECORD</code> nodes for defect traceability.</p>\"}]}"
+    }
+  ],
+  "schedules": [
+    {
+      "scheduleId": "mes-erp-outbox-poll",
+      "enabled": false,
+      "intervalMs": 5000,
+      "actionType": "invoke_function",
+      "action": {
+        "objectPath": "root.platform.devices.mes-platform-production-hub",
+        "functionName": "mes_erp_pollOutbox"
+      }
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-platform-production",
+    "title": "MES Platform",
+    "defaultDashboard": "root.platform.dashboards.mes-platform-production-dispatch",
+    "dashboards": [
+      { "path": "root.platform.dashboards.mes-platform-production-dispatch", "title": "Dispatch" },
+      { "path": "root.platform.dashboards.mes-platform-production-oee", "title": "OEE" },
+      { "path": "root.platform.dashboards.mes-platform-production-quality", "title": "Quality" }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.mes-platform-production-hub"
+  }
+}

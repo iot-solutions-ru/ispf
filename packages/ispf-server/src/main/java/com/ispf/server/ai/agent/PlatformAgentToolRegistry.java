@@ -232,6 +232,12 @@ public class PlatformAgentToolRegistry {
                 agentRecipeCatalog,
                 objectMapper
         ));
+        tools.addAll(AgentDeployPlaybookTools.all(
+                objectMapper,
+                aiToolRegistry,
+                bundleDeployService,
+                operatorAppUiService
+        ));
         tools.addAll(List.of(
                 listObjectsTool(objectManager, objectAccessService, tenantScopeService, objectUiIconService),
                 getObjectTool(objectManager, objectAccessService, tenantScopeService, objectUiIconService),

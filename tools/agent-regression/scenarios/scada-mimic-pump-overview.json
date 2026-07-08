@@ -1,0 +1,12 @@
+{
+  "id": "scada-mimic-pump-overview",
+  "version": "1",
+  "domain": "scada",
+  "title": "Pump station mimic overview",
+  "description": "Create mimic diagram and facility overview dashboard for pump station.",
+  "prompt": "Build pump station SCADA with MIMIC diagram, historian trends, and scada-facility-overview layout.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["create_object", "save_mimic_diagram", "configure_variable_history", "set_dashboard_layout"]
+  }
+}

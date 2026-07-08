@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.3",
-  "generatedAt": "2026-07-07T15:49:45.416006+00:00",
+  "generatedAt": "2026-07-08T01:45:51.763994+00:00",
   "platformVersion": "0.9.3",
   "bundleManifest": {
     "fields": [
@@ -197,8 +197,9 @@
       "rank": 1,
       "dimension": "Unified data model (object tree)",
       "baseline": 9.0,
+      "current": 9.3,
       "target": 10.0,
-      "gap": 1.0,
+      "gap": 0.7,
       "phaseRef": "[25](ROADMAP_PHASE25.md#phase-25--ot-trust), [29](ROADMAP_PHASE25.md#phase-29--mes-platform), [30](ROADMAP_PHASE25.md#phase-30--automation-depth) — BL-164…168, BL-173",
       "keywords": "Unified data model (object tree) competitive gap scorecard"
     },
@@ -206,8 +207,9 @@
       "rank": 2,
       "dimension": "SCADA / HMI / mimics",
       "baseline": 7.0,
+      "current": 7.9,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 2.1,
       "phaseRef": "[26](ROADMAP_PHASE25.md#phase-26--hmi-excellence) — BL-146…152",
       "keywords": "SCADA / HMI / mimics competitive gap scorecard"
     },
@@ -215,8 +217,9 @@
       "rank": 3,
       "dimension": "OT/IT connectivity (drivers)",
       "baseline": 6.0,
+      "current": 6.9,
       "target": 10.0,
-      "gap": 4.0,
+      "gap": 3.1,
       "phaseRef": "[25](ROADMAP_PHASE25.md#phase-25--ot-trust) — BL-140…145",
       "keywords": "OT/IT connectivity (drivers) competitive gap scorecard"
     },
@@ -224,8 +227,9 @@
       "rank": 4,
       "dimension": "Historian / time-series",
       "baseline": 7.0,
+      "current": 7.6,
       "target": 10.0,
-      "gap": 3.0,
+      "gap": 2.4,
       "phaseRef": "[28](ROADMAP_PHASE25.md#phase-28--historian-at-scale) — BL-159…163",
       "keywords": "Historian / time-series competitive gap scorecard"
     },
@@ -233,8 +237,9 @@
       "rank": 5,
       "dimension": "Automation / alarms",
       "baseline": 7.5,
+      "current": 8.1,
       "target": 10.0,
-      "gap": 2.5,
+      "gap": 1.9,
       "phaseRef": "[27](ROADMAP_PHASE25.md#phase-27--enterprise-security), [30](ROADMAP_PHASE25.md#phase-30--automation-depth) — BL-153…157, BL-171…174",
       "keywords": "Automation / alarms competitive gap scorecard"
     },
@@ -242,8 +247,9 @@
       "rank": 6,
       "dimension": "Workflow / BPMN",
       "baseline": 6.5,
+      "current": 7.1,
       "target": 10.0,
-      "gap": 3.5,
+      "gap": 2.9,
       "phaseRef": "[30](ROADMAP_PHASE25.md#phase-30--automation-depth) — BL-176",
       "keywords": "Workflow / BPMN competitive gap scorecard"
     },
@@ -251,8 +257,9 @@
       "rank": 7,
       "dimension": "MES / ISA-95",
       "baseline": 5.5,
+      "current": 6.4,
       "target": 10.0,
-      "gap": 4.5,
+      "gap": 3.6,
       "phaseRef": "[29](ROADMAP_PHASE25.md#phase-29--mes-platform) — BL-164…170",
       "keywords": "MES / ISA-95 competitive gap scorecard"
     },
@@ -260,8 +267,9 @@
       "rank": 8,
       "dimension": "Low-code velocity",
       "baseline": 8.0,
+      "current": 8.6,
       "target": 10.0,
-      "gap": 2.0,
+      "gap": 1.4,
       "phaseRef": "[26](ROADMAP_PHASE25.md#phase-26--hmi-excellence), [31](ROADMAP_PHASE25.md#phase-31--ai-autopilot) — BL-146…152, BL-177…180",
       "keywords": "Low-code velocity competitive gap scorecard"
     },
@@ -269,8 +277,9 @@
       "rank": 9,
       "dimension": "AI-assisted development",
       "baseline": 9.0,
+      "current": 9.6,
       "target": 10.0,
-      "gap": 1.0,
+      "gap": 0.4,
       "phaseRef": "[31](ROADMAP_PHASE25.md#phase-31--ai-autopilot) — BL-177…182",
       "keywords": "AI-assisted development competitive gap scorecard"
     },
@@ -278,8 +287,9 @@
       "rank": 10,
       "dimension": "Security / RBAC / tenancy",
       "baseline": 6.5,
+      "current": 7.3,
       "target": 10.0,
-      "gap": 3.5,
+      "gap": 2.7,
       "phaseRef": "[27](ROADMAP_PHASE25.md#phase-27--enterprise-security) — BL-153…157",
       "keywords": "Security / RBAC / tenancy competitive gap scorecard"
     },
@@ -287,8 +297,9 @@
       "rank": 11,
       "dimension": "Deploy / scale / edge",
       "baseline": 8.0,
+      "current": 8.6,
       "target": 10.0,
-      "gap": 2.0,
+      "gap": 1.4,
       "phaseRef": "[25](ROADMAP_PHASE25.md#phase-25--ot-trust), [28](ROADMAP_PHASE25.md#phase-28--historian-at-scale), [32](ROADMAP_PHASE25.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187",
       "keywords": "Deploy / scale / edge competitive gap scorecard"
     },
@@ -296,8 +307,9 @@
       "rank": 12,
       "dimension": "Ecosystem / marketplace",
       "baseline": 4.0,
+      "current": 5.5,
       "target": 10.0,
-      "gap": 6.0,
+      "gap": 4.5,
       "phaseRef": "[32](ROADMAP_PHASE25.md#phase-32--ecosystem--market) — BL-183…185",
       "keywords": "Ecosystem / marketplace competitive gap scorecard"
     },
@@ -305,8 +317,9 @@
       "rank": 13,
       "dimension": "Documentation / DX",
       "baseline": 9.0,
+      "current": 9.4,
       "target": 10.0,
-      "gap": 1.0,
+      "gap": 0.6,
       "phaseRef": "[32](ROADMAP_PHASE25.md#phase-32--ecosystem--market) — BL-189, BL-190",
       "keywords": "Documentation / DX competitive gap scorecard"
     },
@@ -314,6 +327,7 @@
       "rank": 14,
       "dimension": "Stack modernity",
       "baseline": 9.0,
+      "current": 9.0,
       "target": 10.0,
       "gap": 1.0,
       "phaseRef": "maintain — Spring Boot 4, React 19, NATS, ClickHouse option",
@@ -744,10 +758,10 @@
     {
       "appId": "mes-platform",
       "purpose": "mes_platform",
-      "keySections": "functions, migrations, objects",
+      "keySections": "dashboards, events, functions, migrations, objects, workflows",
       "version": "1.0.0",
       "path": "examples/mes-platform/bundle.json",
-      "keywords": "mes-platform functions migrations objects"
+      "keywords": "mes-platform dashboards events functions migrations objects workflows"
     },
     {
       "appId": "mes-reference",
@@ -880,7 +894,7 @@
       "title": "Automation correlators",
       "topic": "automation",
       "keywords": "automation Automation correlators automation",
-      "text": "# Автоматизация: события, алерты, корреляторы\n\n## События\n\n### Descriptor\n\nНа объекте задаётся `EventDescriptor`: имя, схема payload, уровень.\n\nУровни (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Публикация\n\n**API (ручной fire, интеграции):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждое обновление переменной от драйвера вызывает `EventService.fireIngress` → async journal. Событие задаётся `ingressEventName` в driver config (default `messageReceived`). См. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nОбщий hot path после валидации descriptor:\n\n1. Запись в `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) или ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Слушатели: correlators, UI\n\n### Журнал\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nБез `objectPath` — глобальный журнал (до 200 записей).\n\n### Демо\n\n`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire); `messageReceived` — для loadtest / audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Хранение в дереве объектов\n\nAlert rules и event correlators — **узлы дерева** под `root.platform`, как dashboards и workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Сущность | Тип узла | Модель | Папка |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nКонфигурация хранится в переменных объекта (`objectPath`, `watchVariable`, `conditionExpr`, …). Сервис `AutomationTreeService` читает и пишет узлы; при старте `AutomationBootstrap` мигрирует legacy-строки из таблиц `alert_rules` / `event_correlators` (если есть) и создаёт демо-правила.\n\nUI: **Обозреватель** → выберите узел в `alert-rules` или `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Создание — контекстное меню дерева или `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert Rules\n\nCEL-правило на изменение переменной. При истинности условия — fire события.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `objectPath` | Объект |\n| `watchVariable` | Имя переменной |\n| `conditionExpr` | CEL (контекст: поля переменной) |\n| `eventName` | Имя события для fire |\n| `payloadVariable` | Переменная для payload (опц.) |\n| `enabled` | Вкл/выкл |\n| `edgeTrigger` | Только на фронте false→true |\n| `notificationWebhookUrl` | URL для HTTP POST при срабатывании (опц.) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (опц., нужен relay) |\n\nПри fire события, если задан webhook и/или email — дополнительно вызывается `NotificationDispatchService` (ошибки логируются, alert не блокируется).\n\n### Пример\n\nОбъект: `demo-sensor-01`, watch: `alarmActive`, условие: `self.alarmActive[\"value\"] == true`, событие: `thresholdExceeded`.\n\n`AlertRuleListener` реагирует на `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Роли |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event Correlators\n\nАгрегация нескольких событий → действие (запуск workflow).\n\n### Паттерны (`CorrelatorPatternType`)\n\n| Тип | Описание |\n|-----|----------|\n| `COUNT` | N событий `eventName` за `windowSeconds` |\n| `SEQUENCE` | Событие A, затем B на том же объекте |\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `name` | Имя |\n| `patternType` | COUNT / SEQUENCE |\n| `eventName` | Первое событие (A) |\n| `secondEventName` | Второе (для SEQUENCE) |\n| `windowSeconds` | Окно наблюдения |\n| `minOccurrences` | Порог (COUNT) |\n| `cooldownSeconds` | Пауза после срабатывания |\n| `actionType` | См. таблицу ниже |\n| `actionTarget` | Зависит от `actionType` |\n| `enabled` | Вкл/выкл |\n\n### Типы действий (`CorrelatorActionType`)\n\n| `actionType` | `actionTarget` | Описание |\n|--------------|----------------|----------|\n| `RUN_WORKFLOW` | path workflow | Запуск BPMN |\n| `FIRE_EVENT` | имя события | `EventService.fire` на объекте |\n| `SET_VARIABLE` | `varName=value` | Запись переменной |\n| `OPEN_OPERATOR_REPORT` | path отчёта | Событие `openOperatorReport` |\n| `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |\n| `SEND_EMAIL` | `to\\|subject\\|body` | POST на email relay (см. конфиг ниже) |\n\n### Пример SEQUENCE\n\nA = `thresholdExceeded`, B = `thresho"
+      "text": "# Автоматизация: события, алерты, корреляторы\n\n## События\n\n### Descriptor\n\nНа объекте задаётся `EventDescriptor`: имя, схема payload, уровень.\n\nУровни (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Публикация\n\n**API (ручной fire, интеграции):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждое обновление переменной от драйвера вызывает `EventService.fireIngress` → async journal. Событие задаётся `ingressEventName` в driver config (default `messageReceived`). См. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nОбщий hot path после валидации descriptor:\n\n1. Запись в `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) или ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Слушатели: correlators, UI\n\n### Журнал\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nБез `objectPath` — глобальный журнал (до 200 записей).\n\n### Демо\n\n`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire); `messageReceived` — для loadtest / audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Хранение в дереве объектов\n\nAlert rules и event correlators — **узлы дерева** под `root.platform`, как dashboards и workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Сущность | Тип узла | Модель | Папка |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nКонфигурация хранится в переменных объекта (`objectPath`, `watchVariable`, `conditionExpr`, …). Сервис `AutomationTreeService` читает и пишет узлы; при старте `AutomationBootstrap` мигрирует legacy-строки из таблиц `alert_rules` / `event_correlators` (если есть) и создаёт демо-правила.\n\nUI: **Обозреватель** → выберите узел в `alert-rules` или `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Создание — контекстное меню дерева или `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert Rules\n\nCEL-правило на изменение переменной. При истинности условия — fire события.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `objectPath` | Объект |\n| `watchVariable` | Имя переменной |\n| `conditionExpr` | CEL (контекст: поля переменной) |\n| `eventName` | Имя события для fire |\n| `payloadVariable` | Переменная для payload (опц.) |\n| `enabled` | Вкл/выкл |\n| `edgeTrigger` | Только на фронте false→true |\n| `notificationWebhookUrl` | URL для HTTP POST при срабатывании (опц.) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (опц., нужен relay) |\n\nПри fire события, если задан webhook и/или email — дополнительно вызывается `NotificationDispatchService` (ошибки логируются, alert не блокируется).\n\n### Пример\n\nОбъект: `demo-sensor-01`, watch: `alarmActive`, условие: `self.alarmActive[\"value\"] == true`, событие: `thresholdExceeded`.\n\n`AlertRuleListener` реагирует на `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Роли |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event Correlators\n\nАгрегация нескольких событий → действие (запуск workflow).\n\n### Паттерны (`CorrelatorPatternType`)\n\n| Тип | Описание |\n|-----|----------|\n| `COUNT` | N событий `eventName` за `windowSeconds` |\n| `SEQUENCE` | Событие A, затем B на том же объекте |\n| `WINDOW` | Набор событий (A + список в `secondEventName`) — каждое хотя бы раз за `windowSeconds` |\n\n### WINDOW (BL-171)\n\nПаттерн **неупорядоченного окна**: все перечисленные события должны произойти на одном объекте в пределах `windowSeconds`, порядок не важен.\n\n| Поле | Роль для WINDOW |\n|------|-----------------|\n| `eventName` | Первое обязательное событие |\n| `secondEventName` | Дополнительные события через запятую (напр. `workOrderReleased,workOrderStarted`) |\n| `windowSeconds` | Ширина скользящего окна (> 0) |\n| `minOccurrences` | Не используется (оставьте 1) |\n\nПример: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` за 120 с на `mes-platform-hub` → `RUN_WORKFLOW`.\n\n`EventCorrelatorService.processWindowPattern` записывает каждый hit в window store и срабатывает, когда множество уникальных имён событий покрывает требуемый набор.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `name` | Имя |\n| `patternType` | COUNT / SEQUENCE |\n| `eventName` | Первое со"
     },
     {
       "id": "dashboards",
@@ -1226,8 +1240,8 @@
     {
       "id": "hmi_quality_gates",
       "path": "docs/HMI_QUALITY_GATES.md",
-      "title": "HMI quality gates (S21 / BL-92–95)",
-      "keywords": "HMI_QUALITY_GATES HMI quality gates (S21 / BL-92–95)"
+      "title": "HMI quality gates (S21 / BL-92–95, BL-152)",
+      "keywords": "HMI_QUALITY_GATES HMI quality gates (S21 / BL-92–95, BL-152)"
     },
     {
       "id": "isa95_catalog",
@@ -1306,6 +1320,12 @@
       "path": "docs/OBSERVABILITY.md",
       "title": "Observability (ISPF)",
       "keywords": "OBSERVABILITY Observability (ISPF)"
+    },
+    {
+      "id": "opcua_server_interop",
+      "path": "docs/OPCUA_SERVER_INTEROP.md",
+      "title": "OPC UA Server Driver — Interop Guide (BL-143)",
+      "keywords": "OPCUA_SERVER_INTEROP OPC UA Server Driver — Interop Guide (BL-143)"
     },
     {
       "id": "operator_guide",
@@ -1394,8 +1414,8 @@
     {
       "id": "reference_mes_platform",
       "path": "docs/REFERENCE_MES_PLATFORM.md",
-      "title": "MES Platform walkthrough (BL-164 / BL-165 / BL-170)",
-      "keywords": "REFERENCE_MES_PLATFORM MES Platform walkthrough (BL-164 / BL-165 / BL-170)"
+      "title": "MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-170)",
+      "keywords": "REFERENCE_MES_PLATFORM MES Platform walkthrough (BL-164 / BL-165 / BL-166 / BL-167 / BL-170)"
     },
     {
       "id": "reference_mes_walkthrough",
@@ -1782,7 +1802,7 @@
     "dashboardsDoc": "# Дашборды и виджеты\n\n**Справочник всех виджетов** (назначение, настройки, примеры): **[WIDGETS.md](WIDGETS.md)**.\n\n## Обзор\n\nДашборд — объект типа `DASHBOARD` с моделью `dashboard-v1`. Layout хранится в переменной `layout` (JSON string).\n\nПеременные модели:\n\n| Имя | Описание |\n|-----|----------|\n| `title` | Заголовок экрана |\n| `layout` | JSON сетки виджетов |\n| `refreshIntervalMs` | Интервал опроса (мс), по умолчанию 5000 |\n| `@dashboardContext` | **Planned** — JSON session (selection, params, widgets); см. [PLATFORM_LOGIC.md](PLATFORM_LOGIC.md) |\n\nДемо:\n\n| Дашборд | Назначение |\n|---------|------------|\n| `root.platform.dashboards.demo-sensor` | один объект, статический `objectPath` |\n| `root.platform.dashboards.snmp-host-monitoring` | таблица устройств + `selectionKey: \"device\"` |\n\nLayout по умолчанию: `packages/ispf-server/.../DashboardLayouts.java`.\n\n## Привязка к объектам: `objectPath` и `selectionKey`\n\nВиджеты (`value`, `indicator`, `chart`, …) читают переменные **конкретного** объекта платформы (`DEVICE`, `CUSTOM`, …). Путь к этому объекту задаётся двумя способами.\n\n### Откуда берётся `objectPath`\n\n`objectPath` — **поле в JSON виджета** внутри переменной `layout` объекта `DASHBOARD`. Его не передаёт родительский React-компонент в runtime.\n\n| Источник | Когда |\n|----------|--------|\n| Bootstrap | `DashboardLayouts.java` записывает layout при первом запуске |\n| Dashboard Builder | админ выбирает объект в поле «Объект» (`WidgetEditorPanel`) → `PUT .../layout` |\n| Ручное редактирование | правка JSON layout |\n\nПример статической привязки (один датчик):\n\n```json\n{\n  \"type\": \"value\",\n  \"objectPath\": \"root.platform.devices.demo-sensor-01\",\n  \"variableName\": \"temperature\",\n  \"valueField\": \"value\"\n}\n```\n\n### Что такое `selectionKey`\n\n`selectionKey` — **имя слота** в общем состоянии дашборда (`DashboardContext`), а не замена поля `objectPath`.\n\n```typescript\nselection: Record<string, string>\n// { \"device\": \"root.platform.devices.snmp-localhost\" }\n```\n\nПри отрисовке виджета путь вычисляется так (`resolveWidgetPath` в `dashboardUtils.ts`):\n\n1. Если задан `selectionKey` **и** `selection[selectionKey]` не пуст → используется **выбранный путь**.\n2. Иначе → используется **статический** `objectPath` из layout.\n3. Если оба пусты → виджет показывает подсказку «Выберите …» / «—».\n\n`objectPath` не «перезаписывается» ключом: ключ лишь указывает, из какого слота контекста взять путь, когда пользователь что-то выбрал.\n\n### Publish / subscribe внутри дашборда\n\nСвязка **не** «виджет A → виджет B». Связка по **совпадению строки** `selectionKey`:\n\n| Роль | Тип виджета | Поле | Действие |\n|------|-------------|------|----------|\n| **Источник выбора** | `object-table` | `selectionKey`, `parentPath` | при клике по строке: `setSelection(key, child.path)` |\n| **Потребитель** | `value`, `indicator`, `chart`, `sparkline`, `progress`, `gauge`, `status-badge`, `function`, `function-form` | тот же `selectionKey` | читает `selection[key]` как `objectPath` |\n\nВсе виджеты с **одинаковым** `selectionKey` показывают данные **одного и того же** выбранного объекта — это нормально (детализация выбора).\n\nДля **нескольких независимых выборов** на одном экране используйте **разные имена** слотов, например `\"device\"` и `\"order\"`.\n\n### Пример: SNMP Host Monitoring\n\nДашборд `root.platform.dashboards.snmp-host-monitoring`:\n\n```json\n{\n  \"id\": \"device-table\",\n  \"type\": \"object-table\",\n  \"parentPath\": \"root.platform.devices\",\n  \"selectionKey\": \"device\",\n  \"columnsJson\": \"[{\\\"variable\\\":\\\"sysName\\\",\\\"label\\\":\\\"Имя хоста\\\"},{\\\"variable\\\":\\\"driverStatus\\\",\\\"label\\\":\\\"Драйвер\\\"}]\"\n}\n```\n\nГрафики **net ↓ / net ↑** ссылаются на переменные объекта `ifInOctetsRate` / `ifOutOctetsRate` (B/s). Они вычисляются platform binding `counterRate(ifInOctets)` / `counterRate(ifOutOctets)` в модели `snmp-agent-v1` при каждом poll SNMP; сырые Counter32 остаются в `ifInOctets` / `ifOutOctets`. Подробнее: [BINDINGS.md](BINDINGS.md#counterrate).\n\n```json\n{\n  \"id\": \"hostname-value\",\n  \"type\": \"value\",\n  \"selectionKey\": \"device\",\n  \"variableName\": \"sysName\",\n  \"valueField\": \"value\"\n}\n```\n\n- Таблица загружает детей `parentPath`, в колонках — переменные **каждой** строки.\n- Клик по строке публикует путь в `selection.device`.\n- Виджеты с `selectionKey: \"device\"` опрашивают переменные **только выбранного** `DEVICE`.\n\nСтатический `objectPath` у потребителей в этом layout **не задан** — путь полностью из выбора.\n\n### Откуда значения переменных (данные на экране)\n\nДашборд **не** опрашивает протоколы (SNMP, Modbus, …) напрямую.\n\n```text\nДрайвер (poll) → переменные DEVICE на сервере\n       ↓\nGET /api/v1/objects/by-path/variables?path=...\n       ↓\nВиджет: variableName + valueField → отображение\n```\n\nДля SNMP-устройства нужны: модель с переменными (`snmp-agent-v1`), запущенный драйвер и `driverPointMappingsJson`. Имена в `columnsJson` / `variableName` должны **совпадать** с именами переменных объекта.\n\nОбновление UI: polling по `refreshIntervalMs` + WebSocket `/ws/objects` (`VARIABLE_UPDATED` инвалидирует кэш `variables`).\n\n### Типичные ошибки конфигурации\n\n| Ситуация | Результат |\n|----------|-----------|\n| Таблица `selectionKey: \"device\"`, виджет `selectionKey: \"device\"` | Работает |\n| Таблица `\"device\"`, виджет `\"order\"` | Не связаны |\n| Две таблицы с одним `selectionKey` | Один слот; побеждает последний клик |\n| `selectionKey` без таблицы-источника | Пустой слот → fallback на `objectPath` или «—» |\n| Заданы и `objectPath`, и `selectionKey` | При непустом выборе **приоритет у selection** |\n| В колонке имя переменной не совпадает с моделью | Ячейка «—» |\n\nВ редакторе виджета: поле **«Ключ выбора (selectionKey)»** (`WidgetEditorPanel`). Пустая строка отключает привязку к контексту.\n\n## Навигация между дашбордами\n\nВиджеты могут открывать другой дашборд **переходом** (`navigate`) или **модальным окном** (`modal`).\n\n| Механизм | type | Поля |\n|----------|------|------|\n| Кнопка | `dashboard-link` | `targetDashboardPath`, `openMode`, `buttonLabel`, `modalTitle` |\n| Клик по ",
     "driversDoc": "﻿# Драйверы устройств\n\nКаталог кандидатов на новые драйверы (roadmap): [ROADMAP.md § PF-14](ROADMAP.md#часть-a--req-pf-application-platform-закрыт), полный список ниже (REQ-PF-14).\n\n## Зрелость драйверов\n\n| Уровень | Значение |\n|---------|----------|\n| **production** | Полный poll/read/write, тесты, документированный config |\n| **beta** | Рабочий connectivity, ограниченный feature set |\n| **stub** | TCP/session check или connectivity shell (v0.1) |\n| **simulator** | Virtual/profile-based (см. PF-09) |\n\nМногие записи каталога REQ-PF-14 помечены как stub — см. таблицу ниже и [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).\n\nМатрица production readiness — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [DRIVER_INTEROP_LAB.md](DRIVER_INTEROP_LAB.md) (BL-141).\n\n### Top-20 industrial (BL-140, Phase 25)\n\n19 драйверов **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.\n\n| `driverId` | Maturity | Interop module |\n| ---------- | -------- | -------------- |\n| `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | см. interop lab |\n| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | см. interop lab |\n| `iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker` | PRODUCTION | см. interop lab |\n| `iec104-server` | BETA | interop partner для `iec104` |\n\n### observedAt (source timestamps, BL-79)\n\nPoll-драйверы передают `updateVariable(name, value, observedAt)` в historian ([0020](decisions/0020-time-and-timezones.md)):\n\n| Driver id | observedAt | Источник |\n| --------- | ---------- | -------- |\n| virtual | yes | unified poll tick |\n| mqtt | yes | JSON `observedAt` / `timestamp` / epoch |\n| modbus-tcp/rtu/udp | yes | общий instant на poll tick |\n| opcua | yes | OPC UA SourceTime / ServerTime |\n| s7 | yes | poll tick |\n| snmp | yes | poll tick |\n| bacnet | yes | poll tick |\n\n## Архитектура\n\nДрайверы реализуют SPI `DeviceDriver` (`packages/ispf-driver-api`):\n\n```java\npublic interface DeviceDriver {\n    DriverMetadata metadata();\n    void connect(Map<String, String> config) throws DriverException;\n    void disconnect();\n    void readPoints() throws DriverException;\n    void writePoint(String pointId, DataRecord value) throws DriverException;\n}\n```\n\nРегистрация через **driver packs** в `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop по `pollIntervalMs`.\n\nСборка packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. См. [LICENSED_DRIVER_PACKS.md](LICENSED_DRIVER_PACKS.md).\n\n## Переменные устройства (driver group)\n\nНа объекте `DEVICE` переменные группы `driver` появляются при **provisioning драйвера** (`POST /objects` с `driverId` или `PUT .../drivers/runtime/configure`), а не через auto-apply RELATIVE-моделей.\n\n`DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` встраивает схему (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) из blueprint без записи в каталог моделей и без `appliedBlueprintIds`.\n\nFixture RELATIVE-модель `device-driver-v1` (при `fixtures-enabled`) — для demo/lab и явного apply; см. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).\n\n| Переменная | Описание |\n|------------|----------|\n| `driverId` | ID драйвера — полный список см. таблицу ниже |\n| `driverStatus` | `STOPPED` / `RUNNING` / `ERROR` |\n| `driverPollIntervalMs` | Интервал опроса |\n| `driverConfigJson` | JSON конфигурации |\n| `driverPointMappingsJson` | JSON: `variableName → pointId` (legacy string) или extended object с Haystack metadata (BL-59) |\n\n### Extended point mappings (BL-59)\n\nLegacy формат — строка с protocol address на переменную:\n\n```json\n{\n  \"temperature\": \"HOLDING:1:40001\",\n  \"status\": \"COIL:1:0\"\n}\n```\n\nExtended object добавляет Haystack tags для export (`GET /api/v1/platform/haystack/export`) без отдельных переменных на каждую точку:\n\n```json\n{\n  \"sineWave\": {\n    \"point\": \"sim\",\n    \"haystackTags\": [\"point\", \"sensor\", \"temp\"],\n    \"unit\": \"°C\",\n    \"dis\": \"Sine wave\"\n  },\n  \"status\": \"sim\"\n}\n```\n\n| Поле | Алиасы | Назначение |\n|------|--------|------------|\n| `point` | `address`, `pointId` | Protocol address (как в legacy string) |\n| `haystackTags` | `tags` | Marker tags для Haystack export |\n| `unit` | — | Единица измерения (`°C`, `kW`, …) |\n| `dis` | — | Display name точки в export |\n\nRuntime poll/write использует только protocol address; Haystack поля игнорируются драйвером, но попадают в semantic export. Переменные с `historyEnabled` экспортируются всегда; без history — только если в mapping есть Haystack metadata.\n\n**BACnet example** (`analog-value:1:present-value`):\n\n```json\n{\n  \"supplyTemp\": {\n    \"address\": \"analog-value:1:present-value\",\n    \"haystackTags\": [\"point\", \"sensor\", \"temp\", \"supply\"],\n    \"unit\": \"°C\",\n    \"dis\": \"Supply air temperature\"\n  }\n}\n```\n\n**OPC UA example** (`ns=2;s=TagName`):\n\n```json\n{\n  \"chillerKw\": {\n    \"point\": \"ns=2;s=Chiller/ElectricPower\",\n    \"tags\": [\"point\", \"sensor\", \"power\"],\n    \"unit\": \"kW\",\n    \"dis\": \"Chiller electric power\"\n  }\n}\n```\n\nDemo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).\n\nBrick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on device → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` from the same point mappings.\n\n## REST Runtime API\n\n```http\nPOST /api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01\nPOST /api/v1/drivers/runtime/stop?devicePath=...\nPOST /api/v1/drivers/runtime/poll?devicePath=...&pointId=<optional>\nPOST /api/v1/drivers/runtime/write?devicePath=...&pointId=<variableName>\nPUT  /api/v1/drivers/runtime/configure?devicePath=...\nGET  /api/v1/drivers/runtime/status?devicePath=...\nGET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>\n```\n\n`poll` without `pointId` refreshes all mapped points; with `pointId` — single mapping key only (BL-84).\n\n`write` body — `DataRecord` с полем `value` (число, boolean или string). `pointId` — ключ из `driverPointMappingsJson` (имя переменной).\n\n## Driver packs (не встроены в server JAR)\n\nКаждый протокол — отдельный pack (`ispf-driver-*`). Без установленных packs `GET /api/v1/drivers` пуст.\n\n### virtual (`ispf-driver-virtual`)\n\nСимулятор для стенда без железа. Профиль задаётся в `driverConfigJson.profile`:\n\n| `profile` | Переменные | Назначение |\n|-----------|------------|------------|\n| `demo` (default) | `temperature`, `status` | Синусоида температуры |\n| `meter` | `meterLiters`, `flowRate`, `filling` | Налив: `litersPerSecond`, `filling` |\n| `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |\n| `rack-signals` | `gasPresent`, `groundConnected` | Булевы сигналы по `rackId` |\n\nПример meter (virtual driver profile):\n\n```json\n{\n  \"profile\": \"meter\",\n  \"litersPerSecond\": \"120\",\n  \"filling\": \"true\"\n}\n```\n\nКонфиг demo-температуры:\n\n```json\n{\n  \"profile\": \"demo\",\n  \"baseTemperature\": \"22.0\",\n  \"amplitude\": \"15.0\",\n  \"periodSec\": \"60\"\n}\n```\n\n### mqtt (`ispf-driver-mqtt`)\n\nEclipse Paho, подписка на топики.\n\nКонфиг: `brokerUrl`, `topicPrefix`, `clientId`, credentials.\n\nPoint mapping: `variableName → mqttTopicSuffix`.\n\nLoopback test: `MqttDeviceDriverTest` (embedded moquette broker, subscribe + publish write).\n\n### modbus-tcp (`ispf-driver-modbus`)\n\nj2mod, Modbus TCP. Poll/read/write через `readPoints` / `writePoint`.\n\nФормат точки: `slaveId:registerType:address[:count]`\n\nТипы регистров: `HOLDING`, `INPUT`, `COIL`, `DISCRETE`.\n\nWrite (`writePoint`):\n\n| Тип | Modbus function | Поле в `DataRecord` |\n|-----|-----------------|---------------------|\n| `HOLDING` | Write Single Register (FC6) | `raw` или `value` (число) |\n| `COIL` | Write Single Coil (FC5) | `value` (boolean) |\n| `INPUT`, `DISCRETE` | — | ",
     "workflowsDoc": "# Workflow и BPMN\n\n## Обзор\n\nWorkflow — объект типа `WORKFLOW` с моделью `workflow-v1`. Движок: чистый Java в `ispf-plugin-workflow` (без Camunda/Flowable).\n\nПеременные workflow-объекта:\n\n| Переменная | Описание |\n|------------|----------|\n| `title` | Название |\n| `status` | `DRAFT` / `ACTIVE` / `STOPPED` |\n| `bpmnXml` | BPMN 2.0 XML |\n| `triggerJson` | Триггер по изменению переменных |\n| `operatorAppId` | Operator App для user task в sidebar |\n| `instanceState` | JSON состояния последнего экземпляра |\n| `lastRunAt` | Время последнего запуска |\n| `lastAction` | Последнее действие service task |\n\n## Жизненный цикл\n\n**Workflow object:**\n- `DRAFT` — редактирование, запуск вручную\n- `ACTIVE` — слушает триггеры + ручной run\n- `STOPPED` — не запускается\n\n**Instance (`InstanceStatus`):**\n- `RUNNING` — выполняется\n- `WAITING` — ожидает user task, signal catch или timer\n- `COMPLETED` — завершён\n- `FAILED` — ошибка\n\n## Поддерживаемые элементы BPMN\n\n| Элемент | Поддержка |\n|---------|-----------|\n| `startEvent` | Да |\n| `endEvent` | Да |\n| `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |\n| `userTask` | Очередь оператора, claim/complete |\n| `intermediateCatchEvent` | Ожидание сигнала (`ispf:signal`) или таймера (`ispf:durationSeconds`) |\n| `boundaryEvent` | Таймер на user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) |\n| `messageTask` | Публикация в NATS (если enabled) |\n| `exclusiveGateway` | Условные переходы (CEL) |\n| `parallelGateway` | Fork/join, execution tokens |\n| `sequenceFlow` | `ispf:condition`, `ispf:default` |\n\nNamespace расширений: `http://ispf.io/bpmn` (префикс `ispf:`).\n\n## ISPF-атрибуты\n\n### serviceTask\n\n```xml\n<serviceTask id=\"log1\" name=\"Log alarm\"\n             ispf:action=\"log\"\n             ispf:message=\"Threshold exceeded\"/>\n```\n\n| action | Параметры |\n|--------|-----------|\n| `log` | `ispf:message` |\n| `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |\n| `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |\n| `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |\n\nПример `invoke_function` (прикладные функции — [APPLICATIONS.md](APPLICATIONS.md)):\n\n```xml\n<serviceTask id=\"assign\" name=\"Assign tank\"\n             ispf:action=\"invoke_function\"\n             ispf:objectPath=\"root.platform.devices.demo-sensor-01\"\n             ispf:functionName=\"myapp_acknowledge\"\n             ispf:inputMap=\"orderId=${workflow.orderId}\"\n             ispf:outputMap=\"assignResult=result\"/>\n```\n\n### userTask\n\n```xml\n<userTask id=\"approve\" name=\"Approve\"\n          ispf:title=\"Подтвердить аларм\"\n          ispf:instructions=\"Проверьте датчик\"\n          ispf:assigneeRole=\"operator\"\n          ispf:targetObjectPath=\"root.platform.devices.demo-sensor-01\"\n          ispf:function=\"acknowledgeAlarm\"/>\n```\n\n### sequenceFlow\n\n```xml\n<sequenceFlow sourceRef=\"gw\" targetRef=\"approve\" ispf:condition=\"needsApproval\"/>\n<sequenceFlow sourceRef=\"gw\" targetRef=\"end\" ispf:default=\"true\"/>\n```\n\nУсловие — CEL в контексте переменных workflow instance.\n\n### messageTask\n\n```xml\n<messageTask id=\"notify\" name=\"Notify\"\n             ispf:subject=\"ispf.ops.alarm\"\n             ispf:message=\"Alarm fired\"\n             ispf:channel=\"nats\"/>\n```\n\n### intermediateCatchEvent (signal)\n\n```xml\n<intermediateCatchEvent id=\"waitIncident\" name=\"Wait incident\"\n                        ispf:signal=\"incidentRegistered\"/>\n```\n\nЭкземпляр переходит в `WAITING` до доставки сигнала. Альтернатива отмене через cancel API — инцидент может «разбудить» процесс и продолжить ветку обработки.\n\n### intermediateCatchEvent (timer)\n\n```xml\n<intermediateCatchEvent id=\"waitDelay\" name=\"Wait delay\"\n                        ispf:durationSeconds=\"300\"/>\n```\n\nЭкземпляр ждёт истечения срока; продолжение — `POST .../timer` (см. ниже) или планировщик.\n\n### boundaryEvent (timer on user task)\n\n```xml\n<boundaryEvent id=\"ackTimeout\" attachedToRef=\"operatorAck\"\n               cancelActivity=\"true\" ispf:durationSeconds=\"300\"/>\n<sequenceFlow sourceRef=\"ackTimeout\" targetRef=\"escalate\"/>\n```\n\nПока user task в `WAITING`, параллельно отсчитывается SLA. При срабатывании таймера выполняется ветка escalation (interrupting). Шаблон: [REFERENCE_ESCALATION_TEMPLATES.md](REFERENCE_ESCALATION_TEMPLATES.md).\n\n## Work Queue\n\nUser tasks попадают в `GET /api/v1/work-queue`.\n\n### Привязка к Operator App\n\nНа объекте workflow (модель `workflow-v1`) задаётся переменная **`operatorAppId`** — id Operator App, в sidebar «Задачи» которого попадут user task этого процесса.\n\n- Настройка: редактор workflow → панель **Operator App** (или `PUT /api/v1/workflows/by-path/operator-app`)\n- При создании user task значение копируется в `workflow_user_tasks.operator_app_id`\n- Фильтр sidebar: `GET /api/v1/work-queue?operatorAppId=platform`\n\nЕсли `operatorAppId` пуст — задачи **не показываются** в sidebar Operator Apps (виджет `work-queue` на дашборде по-прежнему показывает все).\n\n| Статус задачи | Действие |\n|---------------|----------|\n| `OPEN` | claim → `CLAIMED` |\n| `CLAIMED` | complete → workflow продолжается |\n\n```http\nPOST /api/v1/work-queue/claim?taskId=...&operatorId=operator\nPOST /api/v1/work-queue/complete?taskId=...&operatorId=operator\n```\n\nПри `ispf:function` на user task — функция вызывается при complete.\n\n## Триггеры\n\n`triggerJson` на workflow-объекте. `WorkflowTriggerListener` сравнивает изменения переменных с условием и запускает ACTIVE workflow.\n\n## Event Correlators → Workflow\n\nКоррелятор с action `RUN_WORKFLOW` и `actionTarget` = path workflow. См. [AUTOMATION.md](AUTOMATION.md).\n\n## Демо workflow\n\n`root.platform.workflows.demo-alarm-handler` — BPMN с gateway, user task, service log.\n\nОпределение: `WorkflowDefinitions.DEMO_ALARM_HANDLER`.\n\n## UI\n\n- **WorkflowBuilder** — статус, run, редактор BPMN (bpmn-js)\n- **BpmnDiagramEditor** / **BpmnDiagramViewer** — custom moddle `ispf-moddle.json`\n\n### Диаграмма без разметки (DI)\n\nBPMN из движка или скриптов часто содержит только логику процесса, **без с",
-    "automationDoc": "# Автоматизация: события, алерты, корреляторы\n\n## События\n\n### Descriptor\n\nНа объекте задаётся `EventDescriptor`: имя, схема payload, уровень.\n\nУровни (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Публикация\n\n**API (ручной fire, интеграции):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждое обновление переменной от драйвера вызывает `EventService.fireIngress` → async journal. Событие задаётся `ingressEventName` в driver config (default `messageReceived`). См. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nОбщий hot path после валидации descriptor:\n\n1. Запись в `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) или ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Слушатели: correlators, UI\n\n### Журнал\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nБез `objectPath` — глобальный журнал (до 200 записей).\n\n### Демо\n\n`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire); `messageReceived` — для loadtest / audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Хранение в дереве объектов\n\nAlert rules и event correlators — **узлы дерева** под `root.platform`, как dashboards и workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Сущность | Тип узла | Модель | Папка |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nКонфигурация хранится в переменных объекта (`objectPath`, `watchVariable`, `conditionExpr`, …). Сервис `AutomationTreeService` читает и пишет узлы; при старте `AutomationBootstrap` мигрирует legacy-строки из таблиц `alert_rules` / `event_correlators` (если есть) и создаёт демо-правила.\n\nUI: **Обозреватель** → выберите узел в `alert-rules` или `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Создание — контекстное меню дерева или `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert Rules\n\nCEL-правило на изменение переменной. При истинности условия — fire события.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `objectPath` | Объект |\n| `watchVariable` | Имя переменной |\n| `conditionExpr` | CEL (контекст: поля переменной) |\n| `eventName` | Имя события для fire |\n| `payloadVariable` | Переменная для payload (опц.) |\n| `enabled` | Вкл/выкл |\n| `edgeTrigger` | Только на фронте false→true |\n| `notificationWebhookUrl` | URL для HTTP POST при срабатывании (опц.) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (опц., нужен relay) |\n\nПри fire события, если задан webhook и/или email — дополнительно вызывается `NotificationDispatchService` (ошибки логируются, alert не блокируется).\n\n### Пример\n\nОбъект: `demo-sensor-01`, watch: `alarmActive`, условие: `self.alarmActive[\"value\"] == true`, событие: `thresholdExceeded`.\n\n`AlertRuleListener` реагирует на `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Роли |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event Correlators\n\nАгрегация нескольких событий → действие (запуск workflow).\n\n### Паттерны (`CorrelatorPatternType`)\n\n| Тип | Описание |\n|-----|----------|\n| `COUNT` | N событий `eventName` за `windowSeconds` |\n| `SEQUENCE` | Событие A, затем B на том же объекте |\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `name` | Имя |\n| `patternType` | COUNT / SEQUENCE |\n| `eventName` | Первое событие (A) |\n| `secondEventName` | Второе (для SEQUENCE) |\n| `windowSeconds` | Окно наблюдения |\n| `minOccurrences` | Порог (COUNT) |\n| `cooldownSeconds` | Пауза после срабатывания |\n| `actionType` | См. таблицу ниже |\n| `actionTarget` | Зависит от `actionType` |\n| `enabled` | Вкл/выкл |\n\n### Типы действий (`CorrelatorActionType`)\n\n| `actionType` | `actionTarget` | Описание |\n|--------------|----------------|----------|\n| `RUN_WORKFLOW` | path workflow | Запуск BPMN |\n| `FIRE_EVENT` | имя события | `EventService.fire` на объекте |\n| `SET_VARIABLE` | `varName=value` | Запись переменной |\n| `OPEN_OPERATOR_REPORT` | path отчёта | Событие `openOperatorReport` |\n| `SEND_WEBHOOK` | URL | HTTP POST JSON (`NotificationDispatchService`) |\n| `SEND_EMAIL` | `to\\|subject\\|body` | POST на email relay (см. конфиг ниже) |\n\n### Пример SEQUENCE\n\nA = `thresholdExceeded`, B = `thresho",
+    "automationDoc": "# Автоматизация: события, алерты, корреляторы\n\n## События\n\n### Descriptor\n\nНа объекте задаётся `EventDescriptor`: имя, схема payload, уровень.\n\nУровни (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Публикация\n\n**API (ручной fire, интеграции):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (высокая частота, без HTTP):** при `telemetryPublishMode=EVENT_JOURNAL_ONLY` каждое обновление переменной от драйвера вызывает `EventService.fireIngress` → async journal. Событие задаётся `ingressEventName` в driver config (default `messageReceived`). См. [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nОбщий hot path после валидации descriptor:\n\n1. Запись в `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) или ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Слушатели: correlators, UI\n\n### Журнал\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nБез `objectPath` — глобальный журнал (до 200 записей).\n\n### Демо\n\n`mqtt-sensor-v1` → событие `thresholdExceeded` при превышении порога (через alert rule или ручной fire); `messageReceived` — для loadtest / audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Хранение в дереве объектов\n\nAlert rules и event correlators — **узлы дерева** под `root.platform`, как dashboards и workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Сущность | Тип узла | Модель | Папка |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nКонфигурация хранится в переменных объекта (`objectPath`, `watchVariable`, `conditionExpr`, …). Сервис `AutomationTreeService` читает и пишет узлы; при старте `AutomationBootstrap` мигрирует legacy-строки из таблиц `alert_rules` / `event_correlators` (если есть) и создаёт демо-правила.\n\nUI: **Обозреватель** → выберите узел в `alert-rules` или `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Создание — контекстное меню дерева или `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert Rules\n\nCEL-правило на изменение переменной. При истинности условия — fire события.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `objectPath` | Объект |\n| `watchVariable` | Имя переменной |\n| `conditionExpr` | CEL (контекст: поля переменной) |\n| `eventName` | Имя события для fire |\n| `payloadVariable` | Переменная для payload (опц.) |\n| `enabled` | Вкл/выкл |\n| `edgeTrigger` | Только на фронте false→true |\n| `notificationWebhookUrl` | URL для HTTP POST при срабатывании (опц.) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (опц., нужен relay) |\n\nПри fire события, если задан webhook и/или email — дополнительно вызывается `NotificationDispatchService` (ошибки логируются, alert не блокируется).\n\n### Пример\n\nОбъект: `demo-sensor-01`, watch: `alarmActive`, условие: `self.alarmActive[\"value\"] == true`, событие: `thresholdExceeded`.\n\n`AlertRuleListener` реагирует на `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Роли |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event Correlators\n\nАгрегация нескольких событий → действие (запуск workflow).\n\n### Паттерны (`CorrelatorPatternType`)\n\n| Тип | Описание |\n|-----|----------|\n| `COUNT` | N событий `eventName` за `windowSeconds` |\n| `SEQUENCE` | Событие A, затем B на том же объекте |\n| `WINDOW` | Набор событий (A + список в `secondEventName`) — каждое хотя бы раз за `windowSeconds` |\n\n### WINDOW (BL-171)\n\nПаттерн **неупорядоченного окна**: все перечисленные события должны произойти на одном объекте в пределах `windowSeconds`, порядок не важен.\n\n| Поле | Роль для WINDOW |\n|------|-----------------|\n| `eventName` | Первое обязательное событие |\n| `secondEventName` | Дополнительные события через запятую (напр. `workOrderReleased,workOrderStarted`) |\n| `windowSeconds` | Ширина скользящего окна (> 0) |\n| `minOccurrences` | Не используется (оставьте 1) |\n\nПример: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` за 120 с на `mes-platform-hub` → `RUN_WORKFLOW`.\n\n`EventCorrelatorService.processWindowPattern` записывает каждый hit в window store и срабатывает, когда множество уникальных имён событий покрывает требуемый набор.\n\n### Поля\n\n| Поле | Описание |\n|------|----------|\n| `name` | Имя |\n| `patternType` | COUNT / SEQUENCE |\n| `eventName` | Первое со",
     "objectModelDoc": "﻿# Модель объектов\n\nБизнес-логика ISPF выражается через **состав узлов дерева**: модели (blueprint), переменные, события, функции, workflow и узлы автоматизации. См. [ARCHITECTURE.md § Основной принцип](ARCHITECTURE.md#основной-принцип-бизнес-логика-в-механизмах-платформы).\n\n## Иерархия\n\nВсе сущности платформы — **узлы дерева объектов** с dot-нотацией пути:\n\n```\nroot\n└── root.platform\n    ├── root.platform.devices\n    │   ├── root.platform.devices.demo-sensor-01\n    │   └── root.platform.devices.snmp-localhost\n    ├── root.platform.relative-blueprints\n    ├── root.platform.instance-types\n    ├── root.platform.absolute-blueprints\n    ├── root.platform.instances\n    ├── root.platform.dashboards\n    │   └── root.platform.dashboards.demo-sensor\n    ├── root.platform.reports\n    │   └── root.platform.reports.ready-items\n    ├── root.platform.security\n    │   ├── root.platform.security.users\n    │   │   ├── root.platform.security.users.admin\n    │   │   └── root.platform.security.users.operator\n    │   └── root.platform.security.roles\n    │       ├── root.platform.security.roles.admin\n    │       └── root.platform.security.roles.operator\n    ├── root.platform.workflows\n    │   └── root.platform.workflows.demo-alarm-handler\n    ├── root.platform.alert-rules\n    │   └── root.platform.alert-rules.temperature-threshold-exceeded\n    └── root.platform.correlators\n        └── root.platform.correlators.alarm-handler-on-threshold-event\n```\n\nПути разделяются **точкой** (`.`), не слэшем. Резолвинг дочернего пути: `parentPath + \".\" + name`.\n\n## Типы объектов (`ObjectType`)\n\n| Тип | Назначение |\n|-----|------------|\n| `ROOT` | Корень дерева |\n| `TENANT` | Арендатор (multi-tenancy, план) |\n| `PLATFORM` | Узел `root.platform` |\n| `DEVICES` | Каталог устройств |\n| `DEVICE` | Устройство с драйвером |\n| `DRIVER` | Экземпляр драйвера |\n| `MODEL` | Определение модели |\n| `DASHBOARDS` | Каталог дашбордов |\n| `DASHBOARD` | HMI-экран |\n| `WORKFLOWS` | Каталог workflow |\n| `WORKFLOW` | BPMN-процесс |\n| `ALERT_RULES` | Каталог alert rules |\n| `ALERT` | Правило алерта |\n| `CORRELATORS` | Каталог correlators |\n| `CORRELATOR` | Event correlator |\n| `APPLICATIONS` | Каталог приложений |\n| `APPLICATION` | Прикладное приложение (bundle) |\n| `OPERATOR_APPS` | Каталог operator UI |\n| `SECURITY` | Корень RBAC |\n| `USERS` / `USER` | Пользователи |\n| `ROLES` / `ROLE` | Роли |\n| `FUNCTIONS` / `FUNCTION` | Функции приложения |\n| `REPORTS` / `REPORT` | Каталог `root.platform.reports` и SQL-отчёты (`report-v1`) |\n| `AGENT` | Edge agent |\n| `VISUAL_GROUP` | Визуальная группа — ссылки на объекты в `@groupMembers` без изменения их путей |\n| `CUSTOM` | Произвольный контейнер (fallback для неизвестных узлов) |\n\nСистемные папки (`PLATFORM`, `DEVICES`, `ALERT_RULES`, …) получают семантический тип при bootstrap и миграции `V22__system_object_types.sql`. Пользовательские узлы — по шаблону модели или `CUSTOM`.\n\n## Безопасность в дереве\n\nУзлы `root.platform.security` создаются автоматически при старте и при изменении пользователей:\n\n| Путь | Тип | Переменные |\n|------|-----|------------|\n| `...security.users.{username}` | `USER` | `username`, `displayName`, `roles`, `enabled` |\n| `...security.roles.{role}` | `CUSTOM` | `roleName`, `description` |\n\nCRUD пользователей — через `POST/PUT/DELETE /api/v1/security/users` (роль `admin`). Удаление узла `USER` в дереве также удаляет учётную запись.\n\n## Состав объекта (`PlatformObject`)\n\nКаждый узел содержит:\n\n- **Метаданные:** `id`, `path`, `displayName`, `description`, `templateId`, `sortOrder`, `createdAt`\n- **Переменные** (`Variable`) — типизированные значения\n- **Функции** (`FunctionDescriptor`) — вызываемые операции\n- **События** (`EventDescriptor`) — публикуемые типы событий\n\n## Типизированные данные\n\n### DataSchema\n\nОписание полей записи:\n\n```json\n{\n  \"name\": \"temperature\",\n  \"fields\": [\n    { \"name\": \"value\", \"type\": \"DOUBLE\" },\n    { \"name\": \"unit\", \"type\": \"STRING\" }\n  ]\n}\n```\n\nТипы полей (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DATETIME`, `BINARY`, `RECORD`, `RECORD_LIST`.\n\n### Telemetry quality (BL-82)\n\nOptional field `quality` on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([ADR-0025](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets omit `BAD` samples (line gap); historian quality column is follow-up work.\n\n### DataRecord\n\nТабличная структура со строками данных. Типичный формат одной строки для REST:\n\n```json\n{\n  \"schema\": { \"name\": \"temperature\", \"fields\": [...] },\n  \"rows\": [{ \"value\": 23.5, \"unit\": \"C\" }]\n}\n```\n\nВиджеты и API читают поле через `valueField` (по умолчанию `\"value\"`).\n\n## Переменные\n\n| Свойство | Описание |\n|----------|----------|\n| `name` | Имя в объекте |\n| `schema` | `DataSchema` |\n| `readable` / `writable` | Права доступа |\n| `value` | Текущий `DataRecord` |\n\n### Вычисляемые привязки (binding rules)\n\nПравила на объекте в `@bindingRules` (см. [BINDINGS.md](BINDINGS.md)). Runtime — `Bindin",
     "observabilityDoc": "# Observability (ISPF)\n\nЭкспорт метрик автomation pipeline: **Prometheus scrape** (pull) и **OTLP** (push, OpenTelemetry-compatible backends).\n\n## Prometheus (default on prod)\n\n| Endpoint | Auth | Формат |\n|----------|------|--------|\n| `/actuator/prometheus` | admin role | Prometheus text |\n\nКлючевые метрики ISPF (Micrometer):\n\n| Metric | Type | Описание |\n|--------|------|----------|\n| `ispf.events.fired.total{source=...}` | counter | Fires по источнику (alert, api, correlator, function) |\n| `ispf.alert.fires.total` | counter | Срабатывания alert rules |\n| `ispf.alert.evaluations.total` | counter | Оценки CEL |\n| `ispf.correlator.triggers.total` | counter | Срабатывания correlators |\n| `ispf.object_change.queue.size{lane=telemetry\\|automation\\|total}` | gauge | Глубина async-очередей |\n| `ispf.object_change.workers.active{lane=telemetry\\|automation}` | gauge | Активные worker-потоки (elastic mode) |\n| `ispf.object_change.processed.total` | gauge | Обработанные object-change events |\n| `ispf.object_change.queue.dropped.total` | counter | Dropped events (queue full) |\n| `ispf.event_journal.queue.size` | gauge | Очередь async writer журнала |\n| `ispf.event_journal.flushed.total` | gauge | Записано в journal (cumulative) |\n| `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback при переполнении очереди |\n| `ispf.workflow.starts.total{trigger=...}` | counter | Старты workflow по триггеру |\n| `ispf.event_history.records` | gauge | Записей в журнале событий |\n| `ispf.workflow_instances.running` | gauge | Активные workflow instances |\n| `ispf.drivers.active` / `connected` | gauge | Драйверы |\n| `ispf.database.connections.*` | gauge | HikariCP pool |\n\n### Metrics probe (object tree sync)\n\nIn-process sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe` (переменные `eventsPerSecond`, `objectChangeQueueSize`, `heapUsedMb`, …). Альтернатива внешнему Prometheus во время load test.\n\n| Endpoint | Auth | Описание |\n|----------|------|----------|\n| `GET /api/v1/platform/diagnostics/metrics-probe` | admin | `{ enabled, devicePath, devicePresent }` |\n| `PUT /api/v1/platform/diagnostics/metrics-probe` | admin | `{ \"enabled\": true\\|false }` — вкл/выкл sync |\n\n**UI (рекомендуется):** Admin → System → Metrics → **Load diagnostics** → чекбокс «Sync metrics to probe device». При закрытии страницы probe **автоматически выключается** (не оставлять фоновую нагрузку).\n\nEnv `ISPF_PLATFORM_METRICS_PROBE_ENABLED` и boot-time `ispf.platform-metrics-probe.enabled` **не запускают** scheduler — только runtime toggle через API/UI. Интервал: `ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS` (default 5000) или Runtime settings → `metrics-probe.interval-ms`.\n\nПеред включением создайте probe device: `python deploy/setup-platform-metrics-monitor.py`.\n\n## Metrics UI diagnostics (0.9.97+)\n\nAdmin → **System → Metrics** — карточка **«Диагностика нагрузки»** (кластерный fan-out).\n\n| Endpoint | Auth | Описание |\n|----------|------|----------|\n| `GET /api/v1/platform/metrics` | admin | Метрики **текущей** JVM + `diagnostics` (CPU, suspects, `detail`) |\n| `GET /api/v1/platform/cluster/diagnostics` | admin | Все реплики: CPU rank, suspects, drill-down по ноде |\n\n**Уровень 1 — кластер:** какая реплика грузит CPU (`processCpuPercent`), очереди pipeline, `clusterTopSuspect`.\n\n**Уровень 2 — внутри ноды** (expand в UI):\n\n| Блок | Содержимое |\n|------|------------|\n| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, top-5 потоков по CPU Δ |\n| Driver bindings | `devicePath`, `driverId`, ingress pending/coalesced, `pressureScore` |\n| Jobs | `platform_jobs` со статусом `RUNNING` на `holder_id` |\n| Workflows | top `workflow_instances` в статусе `RUNNING` |\n\nЭвристики suspects: backlog object-change / event journal / historian, JDBC pool, heap pressure, горячая привязка драйвера.\n\nPeer fan-out: heartbeat пишет `http_port` в `platform_cluster_replicas` (V65); агрегатор опрашивает `http://127.0.0.1:{port}/api/v1/platform/metrics` на VPS host network.\n\nЕсли все JVM с низким CPU — виновник вне ISPF (Scylla, ClickHouse, Postgres): `docker stats` на хосте.\n\n### CLI (single-node, SSH)\n\nСкрипт [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — два sample `GET /api/v1/platform/metrics` с интервалом ~6s, вывод thread groups и suspects в stdout. Удобен по SSH без UI.\n\n```bash\nscp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/\nssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py\n```\n\nПодробнее: [DEMOSTANDS.md](DEMOSTANDS.md#диагностика-edge-стенда) (раздел проверки), [VPS_DEMOSTAND.md](VPS_DEMOSTAND.md) (пример ops).\n\n**Grafana dashboard** (все метрики pipeline): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — см. [`deploy/grafana/README.md`](../deploy/grafana/README.md). Локальный стек: `docker compose -f deploy/docker-compose.observability.yml up -d`.\n\n## OTLP metrics export (optional, 0.9.9+)\n\nPush метрик в OpenTelemetry Collector / Grafana Cloud / Uptrace через Micrometer OTLP registry.\n\n**Выключено по умолчанию** — без `ISPF_OTLP_METRICS_ENABLED=true` экспорт не выполняется.\n\n```yaml\n# /opt/ispf/ispf-server.env\nISPF_OTLP_METRICS_ENABLED=true\nISPF_OTLP_METRICS_URL=http://otel-collector:4318/v1/metrics\nISPF_OTLP_METRICS_STEP=30s\nISPF_ENVIRONMENT=prod\n```\n\nSpring properties (`application.yml`):\n\n| Property | Env | Default |\n|----------|-----|---------|\n| `management.otlp.metrics.export.enabled` | `ISPF_OTLP_METRICS_ENABLED` | `false` |\n| `management.otlp.metrics.export.url` | `ISPF_OTLP_METRICS_URL` | `http://localhost:4318/v1/metrics` |\n| `management.otlp.metrics.export.step` | `ISPF_OTLP_METRICS_STEP` | `30s` |\n\nResource attributes: `service.name=ispf-server`, `deployment.environment` из `ISPF_ENVIRONMENT`.\n\nВсе ISPF counters/gauges выше экспортируются в OTLP вместе со стандартными JVM/Spring Boot metrics (`jvm.*`, `http.server.requests`, `hikaricp.*`).\n\n### Пример: локальный OTel C",
     "clusterDoc": "# Кластер ISPF (multi-replica)\n\nРуководство по горизонтальному масштабированию API: несколько JVM-реплик, одно дерево объектов в PostgreSQL, синхронизация live-значений через NATS ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).\n\nСм. также: [ADR-0028](decisions/0028-horizontal-active-active-cluster.md), [DEPLOYMENT.md](DEPLOYMENT.md), [MESSAGING.md](MESSAGING.md), [BINDINGS.md](BINDINGS.md).\n\n## Кластер ≠ федерация\n\n| | **Кластер** | **Федерация** |\n|---|-------------|---------------|\n| Дерево объектов | Одно `root.platform.*` в одной БД | Несколько площадок / edge-агентов |\n| Реплики | N stateless JVM за LB | Связь hub ↔ spoke |\n| Драйвер | Exactly-one poll на устройство | См. [FEDERATION.md](FEDERATION.md) |\n\n## Топология (пример VPS / lab)\n\n```text\n                    nginx :8080\n           REST ip_hash  │  WS ip_hash (одна реплика на клиента)\n        ┌──────────┬───────┴───────┬──────────┐\n        ▼          ▼               ▼          │\n   replica-1   replica-2      replica-3      │\n   :8081       :8082           :8083          │\n        └──────────┴───────┬───┴──────────────┘\n                           │\n              PostgreSQL (одно дерево)\n              NATS (fan-out между репликами)\n              Redis (path interest, ACL, correlator)\n```\n\nCompose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml), VPS: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml).\n\nКаждая реплика при старте:\n\n1. Flyway (один раз на БД).\n2. `loadFromDatabase()` — одинаковое дерево на всех узлах.\n3. Регистрация в `platform_cluster_replicas` + heartbeat.\n4. Захват `platform_driver_locks` для устройств, назначенных этому узлу.\n\n## Где живут данные\n\n| Данные | Хранение | Кластерное поведение |\n|--------|----------|----------------------|\n| Структура объектов, config, bindings | PostgreSQL | Запись на любой реплике → NATS fan-out → reload на peers ([ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md): `reloadPathFromDatabase`, config vars: `syncVariableFromDatabase`) |\n| **Live telemetry** (`ifInOctets`, `temperature`, …) | **RAM на owner-реплике** | Не пишется в PG на каждый tick |\n| **Live mirror на follower** | RAM (копия snapshot) | ADR-0029: NATS payload с `value` |\n| Historian / event journal | PG / ClickHouse / Cassandra | Пишет **только owner** |\n| Bindings / alerts / functions cascade | RAM + automation pipeline | Выполняется **только на owner** |\n\n### Driver ownership\n\nРовно одна реплика опрашивает каждое DEVICE (`platform_driver_locks`, TTL + renew). При падении узла lock истекает, другая реплика забирает устройство.\n\nПроверка: `GET /api/v1/platform/cluster/health` (admin) — поле `heldDevicePaths` на каждом узле.\n\n## Bindings, variables, functions, dashboards\n\n### Переменные\n\n- **Raw telemetry** приходит с драйвера на owner → `setDriverTelemetryValue()` → RAM.\n- **REST** `GET /api/v1/objects/{path}/variables` читает **локальный RAM** реплики, обслужившей запрос.\n- **WebSocket** `/ws/objects` — push `VARIABLE_UPDATED` клиентам, подписанным на path.\n\nДо ADR-0029 follower RAM для telemetry был пуст → round-robin REST мог вернуть `null`/устаревшее значение.\n\n### Bindings\n\n**Локальные** (на том же DEVICE):\n\n```cel\ncounterRate(ifInOctets)   → переменная ifInOctetsRate\n```\n\n**Cross-object** (на hub-объекте):\n\n```cel\nrefAt(\"root.platform.devices.snmp-router-01\", ifInOctetsRate)   → routerNetDown\n```\n\nЦепочка на **owner** реплике, где живёт исходное устройство:\n\n```text\nSNMP poll → ifInOctets (RAM)\n         → binding counterRate → ifInOctetsRate (RAM)\n         → (если hub на том же owner или ref читается с owner RAM) → derived vars\n```\n\nFollower **не пересчитывает** bindings — получает уже вычисленные значения через NATS mirror (`replicaIngress` events без automation).\n\n### Functions\n\n`INVOKE_FUNCTION`, script handlers, platform functions — выполняются на реплике, принявшей HTTP-запрос. Для side-effect функций учитывайте идемпотентность. Live-read переменных device — с любой реплики после ADR-0029.\n\n### Dashboards\n\nДашборд — объект `DASHBOARD` с layout JSON. Виджеты ссылаются на `objectPath` / bindings. HMI:\n\n1. WS subscribe на paths таблицы/графиков.\n2. Push `VARIABLE_UPDATED` (локально или после NATS mirror).\n3. Иногда REST refetch — должен попасть на реплику с актуальным RAM (после ADR-0029 — любая).\n\n## ADR-0029: live variable replica sync\n\n### Проблема (до 0029)\n\n| Механизм | Пробел |\n|----------|--------|\n| NATS `ispf.events.*` | Только `path` + `variableName`, **без value** |\n| `NatsEventBridge` | Пропускал `telemetry=true` |\n| REST vs WS LB | `ip_hash` на REST и WS — один клиент (IP) → одна JVM; failover через `max_fails` + `proxy_next_upstream` |\n| WS path interest | Только per-JVM — owner не знал о подписчиках на другой реплике |\n\n### Решение\n\n```text\nOwner (driver)\n  → RAM update\n  → automation (bindings, alerts, historian) — только здесь\n  → ClusterLiveVariableReplicaPublisher (coalesced NATS + full DataRecord)\n\nFollower\n  → ClusterVariableReplicaApplier → RAM mirror\n  → ObjectChangeEvent(replicaIngress=true) → WS push\n  → REST GET /variables — свежее значение\n```\n\n```mermaid\nflowchart TB\n    subgraph owner [Driver owner replica]\n        DRV[Driver poll / MQTT]\n        RAM1[RAM update]\n        AUTO[Bindings / alerts / historian]\n        INT[Redis path interest]\n        PUB[ClusterLiveVariableReplicaPublisher]\n        DRV --> RAM1 --> AUTO\n        RAM1 --> PUB\n        INT --> PUB\n    end\n    subgraph bus [NATS]\n        NATS[\"ispf.events.variable_updated + value\"]\n    end\n    subgraph follower [Любая другая реплика]\n        SUB[NatsObjectChangeSubscriber]\n        RAM2[RAM mirror apply]\n        WS[WebSocket push]\n        REST[GET /variables]\n        SUB --> RAM2 --> WS\n        RAM2 --> REST\n    end\n    PUB --> NATS --> SUB\n```\n\n### replicaIngress\n\nСобытия с `replicaIngress=true` на follower:\n\n| Consumer | Поведение |\n|----------|-----------|\n| NATS / `ClusterLiveVariableReplicaPublisher` | Пропуск (нет loop) |\n| Bindings / historian / alerts | Пропуск |\n| WebSocket | Push клиентам |\n\n### Cluster-wide path interest (Redis)\n\nПри `ispf.cluster.cluster-path-interest-enabled=true` и Redis:\n\n- WS `subscribe` / `unsubscribe` обновляет ref-count в Redis (`ispf:cluster:ws:interest:{path}`).\n- Owner публishes NATS sync, даже если все браузеры на других репликах.\n\nБез Redis — только local interest; рекомендуется sticky REST+WS или включить Redis.\n\n## Пример: SNMP fleet monitoring (3 реплики)\n\n### Объекты\n\n| Path | Тип | Назначение |\n|------|-----|------------|\n| `root.platform.devices.snmp-router-01` | DEVICE | SNMP router, model `snmp-agent-v1` |\n| `root.platform.devices.snmp-switch-02` | DEVICE | SNMP switch |\n| `root.platform.devices.snmp-fleet.hub` | CUSTOM | Cross-object агрегатор |\n| `root.platform.dashboards.snmp-host-monitoring` | DASHBOARD | btop-таблица + графики |\n\n### Bindings\n\nНа каждом DEVICE (локальные):\n\n```json\n{\n  \"targetVariable\": \"ifInOctetsRate\",\n  \"expression\": \"counterRate(ifInOctets)\"\n}\n```\n\nНа hub (cross-object):\n\n```json\n{\n  \"targetVariable\": \"routerNetDown\",\n  \"expression\": \"refAt(\\\"root.platform.devices.snmp-router-01\\\", ifInOctetsRate)\"\n}\n```\n\n```json\n{\n  \"targetVariable\": \"totalNetDown\",\n  \"expression\": \"routerNetDown + switchNetDown\"\n}\n```\n\n### Сценарий по шагам\n\n**T0 — старт:** R1, R2, R3 загружают одно дерево из PG. R1 захватывает lock на `snmp-router-01`, R2 — на `snmp-switch-02`.\n\n**T1 — оператор открывает HMI:** браузер → nginx → WS на R3 (`ip_hash`), subscribe на paths дашборда. Redis фиксирует global interest → owners R1/R2 начинают публиковать updates.\n\n**T2 — SNMP poll на R1:** `ifInOctets` обновляется → `counterRate` binding → `ifInOctetsRate`. Demand-driven: есть interest → `ObjectChangeEvent` → coalesced NATS с полным `value`.\n\n**T3 — REST refetch на R2:** `GET .../snmp-router-01/variables/ifInOctetsRate` — follower уже применил NATS snapshot → актуальное значение (без sticky REST).\n\n**T4 — hub `totalNetDown`:** вычисляется на owner hub-о"
@@ -6213,17 +6233,22 @@
       "path": "examples/mes-platform/bundle.json",
       "version": "1.0.0",
       "sections": [
+        "correlators",
+        "dashboards",
         "displayName",
+        "events",
         "functions",
         "migrations",
+        "models",
         "objects",
         "operatorUi",
         "schemaName",
-        "version"
+        "version",
+        "workflows"
       ],
       "manifest": {
         "version": "1.0.0",
-        "displayName": "MES Platform (BL-165 / BL-170)",
+        "displayName": "MES Platform (BL-165 / BL-166 / BL-167 / BL-170)",
         "tablePrefix": "",
         "schemaName": "app_mes_platform",
         "migrations": [
@@ -6453,13 +6478,213 @@
               "type": "script",
               "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"lines\",\"sql\":\"SELECT line_code, display_name, area_path FROM mes_platform_line ORDER BY line_code\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${lines}\",\"fields\":{\"lineCode\":\"${item.line_code}\",\"displayName\":\"${item.display_name}\",\"areaPath\":\"${item.area_path}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
             }
+          },
+          {
+            "objectPath": "root.platform.devices.mes-platform-hub",
+            "functionName": "mes_dispatch_confirmWorkOrder",
+            "version": "1",
+            "descriptor": {
+              "inputSchema": {
+                "name": "in",
+                "fields": [
+                  {
+                    "name": "workOrderPath",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "operatorId",
+                    "type": "STRING"
+                  }
+                ]
+              },
+              "outputSchema": {
+                "name": "out",
+                "fields": [
+                  {
+                    "name": "error_code",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "error_message",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "confirmed",
+                    "type": "BOOLEAN"
+                  },
+                  {
+                    "name": "workOrderPath",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            },
+            "source": {
+              "type": "script",
+              "body": "{\"steps\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"confirmed\":true,\"workOrderPath\":\"${input.workOrderPath}\"}}]}"
+            }
+          }
+        ],
+        "models": [
+          {
+            "name": "quality-record-v1",
+            "description": "Quality inspection record with defect traceability (BL-167)",
+            "type": "RELATIVE",
+            "targetObjectType": "QUALITY_RECORD",
+            "variables": [
+              {
+                "name": "defectCode",
+                "description": "Defect / NCR code",
+                "group": "info",
+                "schema": {
+                  "name": "stringValue",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": true,
+                "defaultValue": {
+                  "schema": {
+                    "name": "stringValue",
+                    "fields": [
+                      {
+                        "name": "value",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "value": ""
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "severity",
+                "description": "Severity label (minor, major, critical)",
+                "group": "info",
+                "schema": {
+                  "name": "stringValue",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": true,
+                "defaultValue": {
+                  "schema": {
+                    "name": "stringValue",
+                    "fields": [
+                      {
+                        "name": "value",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "value": "minor"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "lotId",
+                "description": "Material lot / batch id",
+                "group": "traceability",
+                "schema": {
+                  "name": "stringValue",
+                  "fields": [
+                    {
+                      "name": "value",
+                      "type": "STRING"
+                    }
+                  ]
+                },
+                "readable": true,
+                "writable": true,
+                "defaultValue": {
+                  "schema": {
+                    "name": "stringValue",
+                    "fields": [
+                      {
+                        "name": "value",
+                        "type": "STRING"
+                      }
+                    ]
+                  },
+                  "rows": [
+                    {
+                      "value": ""
+                    }
+                  ]
+                }
+              }
+            ],
+            "events": [],
+            "functions": [],
+            "bindings": [],
+            "parameters": {}
+          }
+        ],
+        "workflows": [
+          {
+            "path": "root.platform.workflows.mes-work-order-dispatch",
+            "bpmnXml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?><definitions xmlns=\"http://www.omg.org/spec/BPMN/20100524/MODEL\" xmlns:ispf=\"http://ispf.io/bpmn\" targetNamespace=\"http://ispf.io/bpmn\"><process id=\"mes-work-order-dispatch\" name=\"MES Work Order Dispatch\" isExecutable=\"true\"><startEvent id=\"start\" name=\"Start\"/><serviceTask id=\"notifyDispatch\" name=\"Log dispatch\" ispf:action=\"log\" ispf:message=\"mes-platform: work order dispatched\"/><userTask id=\"confirmStart\" name=\"Confirm work order start\" ispf:title=\"Confirm work order start\" ispf:instructions=\"Review the dispatched work order and confirm operator acceptance\" ispf:assigneeRole=\"operator\" ispf:targetObject=\"root.platform.devices.mes-platform-hub\" ispf:function=\"mes_dispatch_confirmWorkOrder\"/><endEvent id=\"end\" name=\"End\"/><sequenceFlow id=\"f1\" sourceRef=\"start\" targetRef=\"notifyDispatch\"/><sequenceFlow id=\"f2\" sourceRef=\"notifyDispatch\" targetRef=\"confirmStart\"/><sequenceFlow id=\"f3\" sourceRef=\"confirmStart\" targetRef=\"end\"/></process></definitions>",
+            "status": "ACTIVE",
+            "operatorAppId": "mes-platform"
+          }
+        ],
+        "correlators": [
+          {
+            "name": "MES work order dispatch",
+            "objectPath": "root.platform.devices.mes-platform-hub",
+            "patternType": "COUNT",
+            "eventName": "workOrderDispatched",
+            "windowSeconds": 0,
+            "minOccurrences": 1,
+            "cooldownSeconds": 5,
+            "sequenceGapSeconds": 0,
+            "actionType": "RUN_WORKFLOW",
+            "actionTarget": "root.platform.workflows.mes-work-order-dispatch",
+            "enabled": false
+          }
+        ],
+        "events": [
+          {
+            "id": "workOrderDispatched",
+            "roles": [
+              "operator",
+              "admin"
+            ]
+          }
+        ],
+        "dashboards": [
+          {
+            "path": "root.platform.dashboards.mes-platform-dispatch",
+            "title": "MES Dispatch",
+            "refreshIntervalMs": 5000,
+            "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"dispatch-queue\",\"type\":\"work-queue\",\"title\":\"Work orders\",\"x\":0,\"y\":0,\"w\":5,\"h\":6,\"operatorId\":\"operator\",\"operatorAppId\":\"mes-platform\",\"maxItems\":10},{\"id\":\"dispatch-help\",\"type\":\"html-snippet\",\"title\":\"Dispatch\",\"x\":5,\"y\":0,\"w\":7,\"h\":3,\"htmlJson\":\"<p>Work order dispatch workflow + operator work-queue (BL-166). Fire <code>workOrderDispatched</code> on the hub to start the BPMN user task.</p>\"},{\"id\":\"oee-shift\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":5,\"y\":3,\"w\":7,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Load seed shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"}]}"
           }
         ],
         "operatorUi": {
           "appId": "mes-platform",
           "title": "MES Platform",
-          "defaultDashboard": "",
-          "dashboards": [],
+          "defaultDashboard": "root.platform.dashboards.mes-platform-dispatch",
+          "dashboards": [
+            {
+              "path": "root.platform.dashboards.mes-platform-dispatch",
+              "title": "Dispatch"
+            }
+          ],
           "eventJournalObjectPath": "root.platform.devices.mes-platform-hub"
         }
       }
@@ -7212,5 +7437,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "b24faf46cedfe4ee5d1bcc5800e013458767ab66ca93bf310656dbd66298fedc"
+  "contentSha256": "c5ed4d72b3f61b81c3d655aea694f13c2863d408f8f29079be69bb558bbbd133"
 }

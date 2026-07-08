@@ -53,4 +53,28 @@ class BpmnParserTest {
         assertThat(process.messageCatchEvents()).containsKey("waitMsg");
         assertThat(process.messageCatchEvents().get("waitMsg").messageName()).isEqualTo("erpAck");
     }
+
+    @Test
+    void parsesMessageThrowEvent() throws Exception {
+        String xml = """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                             xmlns:ispf="http://ispf.io/bpmn">
+                  <process id="msg-throw" name="Message Throw" isExecutable="true">
+                    <startEvent id="start"/>
+                    <intermediateThrowEvent id="shipMsg" name="Ship order">
+                      <messageEventDefinition messageRef="orderShipped"/>
+                    </intermediateThrowEvent>
+                    <endEvent id="end"/>
+                    <sequenceFlow sourceRef="start" targetRef="shipMsg"/>
+                    <sequenceFlow sourceRef="shipMsg" targetRef="end"/>
+                  </process>
+                </definitions>
+                """;
+
+        BpmnProcess process = new BpmnParser().parse(xml);
+
+        assertThat(process.messageThrowEvents()).containsKey("shipMsg");
+        assertThat(process.messageThrowEvents().get("shipMsg").messageName()).isEqualTo("orderShipped");
+    }
 }

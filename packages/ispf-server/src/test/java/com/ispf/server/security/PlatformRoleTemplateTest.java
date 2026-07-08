@@ -32,10 +32,12 @@ class PlatformRoleTemplateTest {
         assertThat(operatorReadonly.get("displayName")).isEqualTo("Operator (read-only)");
         assertThat(String.valueOf(operatorReadonly.get("description"))).contains("Read-only operator");
         assertThat(operatorReadonly.get("builtIn")).isEqualTo(false);
+        assertThat(operatorReadonly.get("template")).isEqualTo(true);
 
         assertThat(mesSupervisor.get("displayName")).isEqualTo("MES Supervisor");
         assertThat(String.valueOf(mesSupervisor.get("description"))).contains("MES supervisor");
         assertThat(mesSupervisor.get("objectPath"))
                 .isEqualTo(PlatformUserService.ROLES_FOLDER + "." + PlatformRoleService.MES_SUPERVISOR);
+        assertThat(mesSupervisor.get("template")).isEqualTo(true);
     }
 }

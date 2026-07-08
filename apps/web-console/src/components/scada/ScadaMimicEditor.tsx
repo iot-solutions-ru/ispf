@@ -20,8 +20,10 @@ import { snapElementPosition, type SnapGuide } from "../../scada/elementSnap";
 import {
   alignElements,
   applyElementResize,
+  boundsIntersect,
   distributeElements,
   flipElement,
+  getElementBounds,
   rotateElement,
   setElementSize,
   type AlignMode,
@@ -36,6 +38,7 @@ import ScadaMimicCanvas from "./ScadaMimicCanvas";
 import SymbolPalette from "./SymbolPalette";
 import MimicPropertiesPanel from "./MimicPropertiesPanel";
 import MimicLayerPanel from "./MimicLayerPanel";
+import MimicElementsListPanel from "./MimicElementsListPanel";
 import {
   IconAlignBottom,
   IconAlignCenterH,
@@ -125,6 +128,10 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   const selectedConnection = useMemo(
     () => document.connections.find((c) => c.id === selectedConnectionId) ?? null,
     [document.connections, selectedConnectionId]
+  );
+  const customSymbolNames = useMemo(
+    () => new Map((document.customSymbols ?? []).map((sym) => [sym.id, sym.name])),
+    [document.customSymbols]
   );
 
   const bindingPaths = useMemo(
@@ -406,6 +413,31 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       });
     },
     [updateDocument]
+  );
+
+  const handleMarqueeSelect = useCallback(
+    (rect: { x1: number; y1: number; x2: number; y2: number }, additive: boolean) => {
+      if (tool !== "select") return;
+      const selection = {
+        left: Math.min(rect.x1, rect.x2),
+        top: Math.min(rect.y1, rect.y2),
+        right: Math.max(rect.x1, rect.x2),
+        bottom: Math.max(rect.y1, rect.y2),
+      };
+      const hitIds = document.elements
+        .filter((el) => boundsIntersect(selection, getElementBounds(el, document.customSymbols)))
+        .map((el) => el.id);
+      setSelectedConnectionId(null);
+      setSelectedIds((prev) => {
+        if (additive) {
+          const next = new Set(prev);
+          for (const id of hitIds) next.add(id);
+          return next;
+        }
+        return new Set(hitIds);
+      });
+    },
+    [document.customSymbols, document.elements, tool]
   );
 
   const handleCanvasClick = (x: number, y: number) => {
@@ -793,6 +825,25 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
               onActiveLayerChange={setActiveLayerId}
               onUpdateLayers={handleUpdateLayers}
             />
+            <MimicElementsListPanel
+              elements={document.elements}
+              layers={document.layers}
+              customSymbolNames={customSymbolNames}
+              selectedIds={selectedIds}
+              onSelectElement={(id, additive) => {
+                if (tool === "connect") return;
+                setSelectedConnectionId(null);
+                setSelectedIds((prev) => {
+                  if (additive) {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  }
+                  return new Set([id]);
+                });
+              }}
+            />
           </aside>
           <main className="scada-mimic-editor-canvas-wrap">
             <div className="scada-canvas-stage">
@@ -827,6 +878,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
                   }}
                   onSelectConnection={setSelectedConnectionId}
                   onCanvasClick={handleCanvasClick}
+                  onMarqueeSelect={tool === "select" ? handleMarqueeSelect : undefined}
                   onConnectAtPoint={handleConnectAtPoint}
                   onElementConnectClick={handleElementConnectClick}
                   onElementDragStart={handleElementDragStart}

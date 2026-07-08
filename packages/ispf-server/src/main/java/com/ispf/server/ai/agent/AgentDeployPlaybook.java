@@ -1,11 +1,106 @@
 package com.ispf.server.ai.agent;
 
+import java.util.List;
+import java.util.Locale;
+
 /**
  * End-to-end agent deploy playbook (BL-177): spec → bundle → deploy → operator UI without manual edits.
  */
 public final class AgentDeployPlaybook {
 
+    public record DeployStep(
+            String id,
+            int order,
+            String title,
+            String instruction,
+            List<String> tools
+    ) {
+    }
+
+    private static final List<DeployStep> STEPS = List.of(
+            new DeployStep(
+                    "discover",
+                    1,
+                    "Discover platform state",
+                    "list_objects, search_context, get_automation_schema topic=all",
+                    List.of("list_objects", "search_context", "get_automation_schema")
+            ),
+            new DeployStep(
+                    "blueprint",
+                    2,
+                    "Load reference bundle blueprint",
+                    "get_example_bundle appId=<from spec> sections=[manifest,migrations,functions,operatorUi]",
+                    List.of("get_example_bundle", "search_platform_recipes")
+            ),
+            new DeployStep(
+                    "validate",
+                    3,
+                    "Validate bundle manifest",
+                    "validate_bundle appId=... manifest={...} → status OK before any deploy",
+                    List.of("validate_bundle", "deploy_step_validate")
+            ),
+            new DeployStep(
+                    "dry_run",
+                    4,
+                    "Dry-run deploy",
+                    "dry_run_deploy appId=... manifest={...} → review wouldApply paths",
+                    List.of("dry_run_deploy", "deploy_step_dry_run")
+            ),
+            new DeployStep(
+                    "import",
+                    5,
+                    "Import package",
+                    "import_package appId=... manifest={...} after validate/dry-run OK",
+                    List.of("import_package", "deploy_step_import")
+            ),
+            new DeployStep(
+                    "operator_ui",
+                    6,
+                    "Configure operator shell",
+                    "configure_operator_ui from manifest operatorUi (title, dashboards, reports, alarmBar)",
+                    List.of("configure_operator_ui", "deploy_step_operator_ui")
+            ),
+            new DeployStep(
+                    "verify",
+                    7,
+                    "Verify deployed solution",
+                    "list_objects parentPath=root.platform; list_variables; invoke_bff smoke; run_report when shipped",
+                    List.of("list_objects", "list_variables", "invoke_bff", "run_report", "deploy_step_verify")
+            ),
+            new DeployStep(
+                    "automation",
+                    8,
+                    "Optional automation",
+                    "configure_alert, configure_correlator, save_workflow_bpmn when TZ requires",
+                    List.of("configure_alert", "configure_correlator", "save_workflow_bpmn")
+            ),
+            new DeployStep(
+                    "finish",
+                    9,
+                    "Finish with operator link",
+                    "summary with appId, operator URL (?mode=operator&app=...), verified tree paths only",
+                    List.of("finish", "get_operator_link")
+            )
+    );
+
     private AgentDeployPlaybook() {
+    }
+
+    public static List<DeployStep> steps() {
+        return STEPS;
+    }
+
+    public static DeployStep stepById(String stepId) {
+        if (stepId == null || stepId.isBlank()) {
+            return null;
+        }
+        String normalized = stepId.trim().toLowerCase(Locale.ROOT).replace('-', '_');
+        for (DeployStep step : STEPS) {
+            if (step.id().equals(normalized)) {
+                return step;
+            }
+        }
+        return null;
     }
 
     public static String referenceText() {

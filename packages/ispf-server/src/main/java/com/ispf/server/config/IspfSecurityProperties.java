@@ -84,12 +84,25 @@ public class IspfSecurityProperties {
          */
         private boolean enabled = false;
 
+        /**
+         * Allowed TOTP drift in 30-second steps (±N). Default {@code 1} accepts previous/current/next window.
+         */
+        private int timeWindowSteps = 1;
+
         public boolean isEnabled() {
             return enabled;
         }
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public int getTimeWindowSteps() {
+            return timeWindowSteps;
+        }
+
+        public void setTimeWindowSteps(int timeWindowSteps) {
+            this.timeWindowSteps = timeWindowSteps;
         }
     }
 }

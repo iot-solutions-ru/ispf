@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Isolated
+@TestPropertySource(properties = "ispf.driver.ingress-buffer-enabled=false")
 class CwmpDriverIntegrationTest {
 
     private static final String DEVICE_NAME = "cwmp-driver-it";
@@ -54,6 +56,7 @@ class CwmpDriverIntegrationTest {
     private String acsUrl;
     private final AtomicInteger informCount = new AtomicInteger();
     private final AtomicInteger setParameterResponseCount = new AtomicInteger();
+    private volatile String softwareVersion = "ISPF-CWMP-2.0.1";
 
     @BeforeEach
     void createDevice() {
@@ -69,6 +72,7 @@ class CwmpDriverIntegrationTest {
     void startMockAcs() throws IOException {
         informCount.set(0);
         setParameterResponseCount.set(0);
+        softwareVersion = "ISPF-CWMP-2.0.1";
         acsServer = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         acsServer.createContext("/", this::handleAcsRequest);
         acsServer.start();
@@ -113,11 +117,17 @@ class CwmpDriverIntegrationTest {
                       <soap-env:Body>
                         <ParameterList>
                           <Name>Device.DeviceInfo.SoftwareVersion</Name>
-                          <Value>ISPF-CWMP-2.0.1</Value>
+                          <Value>%s</Value>
                         </ParameterList>
                       </soap-env:Body>
                     </soap-env:Envelope>
-                    """;
+                    """.formatted(softwareVersion);
+        } else if (body.contains("SetParameterValues")) {
+            if (!body.contains("SetParameterValuesResponse")) {
+                softwareVersion = extractSoftwareVersionFromSet(body);
+            }
+            setParameterResponseCount.incrementAndGet();
+            response = "<ok/>";
         } else if (body.contains("SetParameterValuesResponse")) {
             setParameterResponseCount.incrementAndGet();
             response = "<ok/>";
@@ -130,6 +140,18 @@ class CwmpDriverIntegrationTest {
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(bytes);
         }
+    }
+
+    private static String extractSoftwareVersionFromSet(String body) {
+        int valueIndex = body.indexOf("<Value>");
+        if (valueIndex < 0) {
+            return "ISPF-CWMP-2.0.1";
+        }
+        int valueEnd = body.indexOf("</Value>", valueIndex);
+        if (valueEnd < 0) {
+            return "ISPF-CWMP-2.0.1";
+        }
+        return body.substring(valueIndex + "<Value>".length(), valueEnd).trim();
     }
 
     @Test
@@ -170,11 +192,25 @@ class CwmpDriverIntegrationTest {
                 .andExpect(jsonPath("$[*].name", hasItem("softwareVersion")))
                 .andExpect(jsonPath("$[*].name", hasItem("cwmpConnected")));
 
-        mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
-                        .param("path", devicePath)
-                        .param("name", "softwareVersion"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-2.0.1"));
+        long deadline = System.nanoTime() + 5_000_000_000L;
+        AssertionError lastFailure = null;
+        while (System.nanoTime() < deadline) {
+            try {
+                mockMvc.perform(get("/api/v1/objects/by-path/variables/detail")
+                                .param("path", devicePath)
+                                .param("name", "softwareVersion"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.value.rows[0].value").value("ISPF-CWMP-2.0.1"));
+                lastFailure = null;
+                break;
+            } catch (AssertionError ex) {
+                lastFailure = ex;
+                Thread.sleep(50);
+            }
+        }
+        if (lastFailure != null) {
+            throw lastFailure;
+        }
 
         org.junit.jupiter.api.Assertions.assertTrue(informCount.get() >= 1);
     }

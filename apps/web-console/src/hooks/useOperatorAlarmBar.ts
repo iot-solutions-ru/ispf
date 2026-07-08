@@ -4,6 +4,7 @@ import {
   fetchAlarmShelves,
   fetchEvents,
   invokeFunction,
+  isAlarmShelfPendingRequest,
   shelveAlarm,
   unshelveAlarm,
 } from "../api";
@@ -231,13 +232,16 @@ export function useOperatorAlarmBar(
         return;
       }
       try {
-        const shelf = await shelveAlarm({
+        const result = await shelveAlarm({
           objectPath: alarm.event.objectPath,
           eventName: alarm.event.eventName,
           durationMinutes,
           comment,
         });
-        setShelves((current) => [...current.filter((item) => item.id !== shelf.id), shelf]);
+        if (isAlarmShelfPendingRequest(result)) {
+          return;
+        }
+        setShelves((current) => [...current.filter((item) => item.id !== result.id), result]);
         setAlarms((current) => current.filter((item) => item.id !== alarmId));
       } catch {
         // ignore

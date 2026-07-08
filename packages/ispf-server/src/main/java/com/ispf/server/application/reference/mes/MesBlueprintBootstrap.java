@@ -23,6 +23,7 @@ import java.util.UUID;
 public class MesBlueprintBootstrap {
 
     public static final String BATCH_MODEL = "batch-v1";
+    public static final String WORK_ORDER_MODEL = "work-order-v1";
 
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -38,6 +39,7 @@ public class MesBlueprintBootstrap {
 
     public void ensureMesModels() {
         ensureModel(buildBatchModel());
+        ensureModel(buildWorkOrderModel());
     }
 
     private void ensureModel(BlueprintDefinition definition) {
@@ -77,6 +79,29 @@ public class MesBlueprintBootstrap {
                         varDef("batchId", "Batch identifier", "info", ""),
                         varDef("recipe", "Recipe id or name", "config", ""),
                         varDef("phase", "Current ISA-88 phase (charge, react, discharge, …)", "runtime", "idle")
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    private static BlueprintDefinition buildWorkOrderModel() {
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                WORK_ORDER_MODEL,
+                "Manufacturing work order instance — dispatch, line, status (BL-164 / BL-166)",
+                BlueprintType.INSTANCE,
+                ObjectType.WORK_ORDER,
+                "",
+                List.of(
+                        varDef("orderNumber", "Work order number", "info", ""),
+                        varDef("lineCode", "ISA-95 line code", "routing", ""),
+                        varDef("status", "Lifecycle status (planned, dispatched, in-progress, complete)", "runtime", "planned"),
+                        varDef("priority", "Priority label (low, normal, high, urgent)", "config", "normal")
                 ),
                 List.of(),
                 List.of(),

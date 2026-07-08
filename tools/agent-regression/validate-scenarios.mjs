@@ -85,8 +85,8 @@ async function liveValidateBundle(appId, manifestPath) {
 }
 
 const files = fs.readdirSync(scenariosDir).filter((f) => f.endsWith(".json")).sort();
-if (files.length < 10) {
-  fail(`expected at least 10 scenarios, found ${files.length}`);
+if (files.length < 30) {
+  fail(`expected at least 30 scenarios, found ${files.length}`);
 }
 
 let bundleChecks = 0;

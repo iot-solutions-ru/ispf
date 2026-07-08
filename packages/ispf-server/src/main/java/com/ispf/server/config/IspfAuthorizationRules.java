@@ -50,6 +50,7 @@ public final class IspfAuthorizationRules {
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers("/api/v1/alert-rules/**", "/api/v1/correlators/**",
+                        "/api/v1/event-filters/**",
                         "/api/v1/data-sources/**", "/api/v1/migrations/**", "/api/v1/sql-bindings/**",
                         "/api/v1/queries/**")
                 .hasAnyRole(IspfRoles.ROLES_CONFIG);
@@ -98,6 +99,9 @@ public final class IspfAuthorizationRules {
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers(HttpMethod.POST, "/api/v1/alarm-shelves/requests/*/approve")
+                .hasAnyRole(IspfRoles.ROLES_ADMIN);
+
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/alarm-shelves/requests/*/reject")
                 .hasAnyRole(IspfRoles.ROLES_ADMIN);
 
         auth.requestMatchers(HttpMethod.GET, "/api/v1/**")

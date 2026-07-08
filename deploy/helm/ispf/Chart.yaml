@@ -15,4 +15,4 @@ maintainers:
     url: https://iot-solutions.ru
 annotations:
   ispf.io/bl: BL-186
-  ispf.io/status: skeleton
+  ispf.io/status: configmap-ready

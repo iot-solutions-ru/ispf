@@ -294,6 +294,24 @@ export function fetchVariableHistoryAggregate(
   return request(`/api/v1/objects/by-path/variables/history/aggregate?${params}`);
 }
 
+export interface AnalyticsTemplateDto {
+  path: string;
+  templateId: string;
+  displayName: string;
+  description: string;
+  helper: string;
+  sourcePath: string;
+  sourceVariable: string;
+  sourceField: string;
+  windowBucket: string;
+  blueprintName: string;
+  enabled: boolean;
+}
+
+export function fetchAnalyticsTemplates(): Promise<AnalyticsTemplateDto[]> {
+  return request("/api/v1/platform/analytics/templates");
+}
+
 export async function downloadVariableHistoryExport(
   path: string,
   name: string,
@@ -829,6 +847,23 @@ export interface AlarmShelf {
   active: boolean;
 }
 
+export interface AlarmShelfPendingRequest {
+  id: string;
+  objectPath: string;
+  eventName: string;
+  alertRulePath: string | null;
+  durationMinutes: number | null;
+  comment: string | null;
+  requestedBy: string;
+  requestedAt: string;
+}
+
+export function isAlarmShelfPendingRequest(
+  value: AlarmShelf | AlarmShelfPendingRequest
+): value is AlarmShelfPendingRequest {
+  return "requestedBy" in value && !("active" in value);
+}
+
 export function fetchAlarmShelves(): Promise<AlarmShelf[]> {
   return request("/api/v1/alarm-shelves");
 }
@@ -839,7 +874,7 @@ export function shelveAlarm(payload: {
   alertRulePath?: string;
   durationMinutes?: number;
   comment?: string;
-}): Promise<AlarmShelf> {
+}): Promise<AlarmShelf | AlarmShelfPendingRequest> {
   return request("/api/v1/alarm-shelves", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -849,6 +884,22 @@ export function shelveAlarm(payload: {
 export function unshelveAlarm(id: string): Promise<void> {
   return request(`/api/v1/alarm-shelves/${encodeURIComponent(id)}`, {
     method: "DELETE",
+  });
+}
+
+export function fetchAlarmShelfRequests(): Promise<AlarmShelfPendingRequest[]> {
+  return request("/api/v1/alarm-shelves/requests");
+}
+
+export function approveAlarmShelfRequest(id: string): Promise<AlarmShelf> {
+  return request(`/api/v1/alarm-shelves/requests/${encodeURIComponent(id)}/approve`, {
+    method: "POST",
+  });
+}
+
+export function rejectAlarmShelfRequest(id: string): Promise<void> {
+  return request(`/api/v1/alarm-shelves/requests/${encodeURIComponent(id)}/reject`, {
+    method: "POST",
   });
 }
 

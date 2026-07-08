@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, июль 2026 |
-| **Обновлено** | 2026-07-07 (wave 1 foundations landed) |
+| **Обновлено** | 2026-07-07 (wave 2 hardening) |
 | **Предыдущие фазы** | [ROADMAP.md](ROADMAP.md) — Phase 0–24, BL-01…139, S01–S30 |
 | **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](ARCHITECTURE.md)) |
 
@@ -16,12 +16,12 @@
 | Категория | Всего | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–32 | 8 | 0 | 8 | 0 | — |
-| BL-140…190 | 51 | 0 | 51 | 0 | 0 |
-| Sprint S31–S46 (draft) | 16 | 0 | 8 | 8 | — |
+| BL-140…190 | 51 | 12 | 39 | 0 | 0 |
+| Sprint S31–S46 (draft) | 16 | 0 | 14 | 2 | — |
 
-**Текущий спринт:** **S31–S38 wave 1** — foundations landed (Partial); hardening + field soak остаётся.
+**Текущий спринт:** **S31–S45 wave 2** — hardening landed; field soak + marketplace install остаётся.
 
-**Текущая оценка продукта:** ~8.0/10 (post wave 1 foundations).  
+**Текущая оценка продукта:** ~8.5/10 (post wave 2).  
 **Целевая оценка:** 10/10 — см. [§ Definition of Done](#definition-of-done--1010-overall).
 
 ---
@@ -76,14 +76,14 @@
 | S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | Partial |
 | S37 | 27 | MFA + per-variable ACL | BL-153, BL-154 | Partial |
 | S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Partial |
-| S39 | 28 | Historian tiers | BL-159, BL-160 | Planned |
-| S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | Planned |
-| S41 | 29 | MES objects + OEE | BL-164, BL-165 | Planned |
-| S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | Planned |
-| S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | Planned |
-| S44 | 31 | AI e2e deploy | BL-177, BL-178 | Planned |
-| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Planned |
-| S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | Planned |
+| S39 | 28 | Historian tiers | BL-159, BL-160 | Partial |
+| S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | Partial |
+| S41 | 29 | MES objects + OEE | BL-164, BL-165 | Partial |
+| S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | Partial |
+| S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | Partial |
+| S44 | 31 | AI e2e deploy | BL-177, BL-178 | Partial |
+| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Partial |
+| S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | Partial |
 
 Ориентир: **~2 недели на спринт**, Phase 25–32 ≈ **18–24 месяца**.
 
@@ -364,5 +364,6 @@
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-07 | Wave 2 hardening: TOTP MFA, MQTT eventToVariable, analytics, BPMN messages, 30 agent scenarios, 991 tests green |
 | 2026-07-07 | Wave 1 foundations: BL-140…190 skeletons (Partial) across Phase 25–32 |
 | 2026-07-07 | Создан Excellence Program Phase 25–32, BL-140…190, S31–S46 draft |

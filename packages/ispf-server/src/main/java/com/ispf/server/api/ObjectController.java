@@ -430,22 +430,27 @@ public class ObjectController {
     @DeleteMapping("/by-path")
     public void delete(@RequestParam String path, Authentication authentication) {
         objectAccessService.requireWrite(path, authentication);
+        String actor = authentication != null ? authentication.getName() : "system";
         try {
             if (platformUserService.isSecurityUserPath(path)) {
                 platformUserService.deleteUser(platformUserService.usernameFromPath(path));
+                auditEventService.logObjectDeleted(actor, path);
                 return;
             }
             if (platformRoleService.isSecurityRolePath(path)) {
                 platformRoleService.deleteRole(platformRoleService.roleNameFromPath(path));
+                auditEventService.logObjectDeleted(actor, path);
                 return;
             }
             if (objectManager.tree().findByPath(path)
                     .filter(node -> node.type() == ObjectType.CORRELATOR)
                     .isPresent()) {
                 automationTreeService.deleteCorrelator(path);
+                auditEventService.logObjectDeleted(actor, path);
                 return;
             }
             objectManager.delete(path);
+            auditEventService.logObjectDeleted(actor, path);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (ObjectNotFoundException e) {

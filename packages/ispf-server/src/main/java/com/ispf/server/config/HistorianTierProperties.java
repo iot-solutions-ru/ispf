@@ -8,6 +8,7 @@ import java.util.Optional;
 
 /**
  * Multi-tier historian deploy profiles: hot (PG/Timescale) → warm (ClickHouse) → cold (S3/parquet) — BL-159.
+ * Warm query routing: set {@code ispf.historian.tiers.warm.enabled=true}.
  */
 @ConfigurationProperties(prefix = "ispf.historian")
 public class HistorianTierProperties {
@@ -33,6 +34,7 @@ public class HistorianTierProperties {
         HistorianTierProfile warm = new HistorianTierProfile();
         warm.setStore("clickhouse");
         warm.setRetentionDays(90);
+        warm.setEnabled(false);
         map.put("warm", warm);
 
         HistorianTierProfile cold = new HistorianTierProfile();

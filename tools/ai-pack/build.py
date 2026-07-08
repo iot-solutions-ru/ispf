@@ -341,15 +341,26 @@ def build_example_summaries(examples: list[dict]) -> list[dict]:
 
 
 def parse_competitive_scorecard(path: Path) -> list[dict]:
-    """Parse COMPETITIVE_SCORECARD.md into readiness gap index (BL-182)."""
+    """Parse COMPETITIVE_SCORECARD.md into readiness gap index (BL-182).
+
+    Uses the **Post wave 2** column when present; falls back to Post wave 1 or baseline.
+    """
     if not path.exists():
         return []
     gaps: list[dict] = []
     in_matrix = False
+    wave2_column = -1
+    target_column = -1
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if stripped.startswith("| # | Dimension"):
             in_matrix = True
+            header_parts = [p.strip().lower() for p in stripped.strip("|").split("|")]
+            for idx, label in enumerate(header_parts):
+                if "post wave 2" in label:
+                    wave2_column = idx
+                elif label == "target":
+                    target_column = idx
             continue
         if not in_matrix:
             continue
@@ -361,18 +372,29 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
                 break
             continue
         try:
-            baseline = float(parts[2])
-            target = float(parts[3].replace("*", "").strip())
+            baseline = float(parts[2].replace("*", "").strip())
+            if wave2_column >= 0 and len(parts) > wave2_column:
+                current = float(parts[wave2_column].replace("*", "").strip())
+            elif len(parts) > 4 and re.search(r"\d", parts[3]):
+                current = float(parts[3].replace("*", "").strip())
+            else:
+                current = baseline
+            if target_column >= 0 and len(parts) > target_column:
+                target = float(parts[target_column].replace("*", "").strip())
+            else:
+                target = float(parts[-2].replace("*", "").strip())
         except ValueError:
             continue
+        phase_idx = target_column + 1 if target_column >= 0 and len(parts) > target_column + 1 else len(parts) - 1
         gaps.append(
             {
                 "rank": int(parts[0]),
                 "dimension": parts[1],
                 "baseline": baseline,
+                "current": current,
                 "target": target,
-                "gap": round(target - baseline, 1),
-                "phaseRef": parts[4] if len(parts) > 4 else "",
+                "gap": round(target - current, 1),
+                "phaseRef": parts[phase_idx] if phase_idx < len(parts) else "",
                 "keywords": f"{parts[1]} competitive gap scorecard",
             }
         )

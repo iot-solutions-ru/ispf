@@ -1,0 +1,17 @@
+{
+  "id": "scada-spreadsheet-demo",
+  "version": "1",
+  "domain": "scada",
+  "title": "Spreadsheet widget demo",
+  "description": "Deploy sheet-demo bundle with spreadsheet storage blueprint.",
+  "prompt": "Deploy spreadsheet demo bundle and verify dashboard spreadsheet widget bindings.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "sheet-demo",
+    "manifestPath": "examples/spreadsheet-demo/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "set_dashboard_layout"]
+  }
+}

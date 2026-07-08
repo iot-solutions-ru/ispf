@@ -1,0 +1,53 @@
+# BL-141: OT driver interop lab fixtures (Modbus TCP, MQTT, OPC UA).
+# Bind to loopback only — do not expose on public interfaces.
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: ispf-interop-mosquitto
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/version' -C 1 -W 3 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+  modbus-tcp:
+    image: oitc/modbus-server:latest
+    container_name: ispf-interop-modbus-tcp
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:502:502"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/502' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+
+  opcua:
+    # open62541-based quickstart server (SecurityPolicy.None, anonymous).
+    image: mcr.microsoft.com/iotedge/opc-plc:latest
+    container_name: ispf-interop-opcua
+    restart: unless-stopped
+    command:
+      - --pn=4840
+      - --autoaccept
+      - --sph
+      - --sn=5
+      - --sr=10
+      - --st=uint
+      - --fn=5
+      - --fr=1.0
+    ports:
+      - "127.0.0.1:4840:4840"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/4840' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 15s

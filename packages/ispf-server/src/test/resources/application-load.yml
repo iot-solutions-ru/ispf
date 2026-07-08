@@ -1,0 +1,7 @@
+# Production-like async paths for @Tag("load") scale gates (EventFireLoadTest, ListDevicesLoadTest).
+ispf:
+  object-change:
+    async-enabled: true
+    demand-driven-publication: true
+  event-journal:
+    async-enabled: true

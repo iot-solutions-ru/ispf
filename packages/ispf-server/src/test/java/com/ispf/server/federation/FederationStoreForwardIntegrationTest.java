@@ -1,6 +1,11 @@
 package com.ispf.server.federation;
 
+import com.ispf.core.model.DataRecord;
+import com.ispf.core.model.DataSchema;
+import com.ispf.core.model.FieldType;
+import com.ispf.core.object.ObjectType;
 import com.ispf.server.object.ObjectChangeEvent;
+import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +54,9 @@ class FederationStoreForwardIntegrationTest {
     private FederationOutboundEventBufferRegistry bufferRegistry;
 
     @Autowired
+    private ObjectManager objectManager;
+
+    @Autowired
     private ApplicationEventPublisher eventPublisher;
 
     @org.springframework.boot.test.web.server.LocalServerPort
@@ -59,9 +67,11 @@ class FederationStoreForwardIntegrationTest {
         String token = loginAdmin();
         String baseUrl = "http://127.0.0.1:" + port;
         String siteName = "store-forward-" + System.nanoTime();
+        String deviceName = "store-forward-buffer-" + System.nanoTime();
+        String isolatedPath = ensureQuietDevice(deviceName);
 
-        String registrationCode = createRegistration(token, siteName);
-        String agentId = createOutboundAgent(token, siteName, baseUrl, registrationCode);
+        String registrationCode = createRegistration(token, siteName, isolatedPath);
+        String agentId = createOutboundAgent(token, siteName, baseUrl, registrationCode, isolatedPath);
         UUID agentUuid = UUID.fromString(agentId);
 
         waitForConnected(token, agentId);
@@ -71,14 +81,15 @@ class FederationStoreForwardIntegrationTest {
 
         for (int i = 0; i < 5; i++) {
             eventPublisher.publishEvent(ObjectChangeEvent.variableUpdated(
-                    "root.platform.devices.demo-sensor-01",
+                    isolatedPath,
                     "temperature"
             ));
         }
 
-        assertThat(bufferRegistry.stats(agentUuid).count()).isGreaterThan(0);
+        assertThat(bufferRegistry.stats(agentUuid).count()).isEqualTo(5);
 
         tunnelAgentService.scheduleConnect(agentUuid);
+        waitForConnected(token, agentId);
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
                 FederationIntegrationTestSupport.BUFFER_DRAIN_TIMEOUT_SECONDS);
         while (System.nanoTime() < deadline) {
@@ -95,16 +106,16 @@ class FederationStoreForwardIntegrationTest {
         return FederationIntegrationTestSupport.loginAdmin(mockMvc);
     }
 
-    private String createRegistration(String token, String siteName) throws Exception {
+    private String createRegistration(String token, String siteName, String pathPrefix) throws Exception {
         MvcResult registration = mockMvc.perform(post("/api/v1/federation/inbound/registrations")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "name": "%s",
-                                  "pathPrefix": "root.platform"
+                                  "pathPrefix": "%s"
                                 }
-                                """.formatted(siteName)))
+                                """.formatted(siteName, pathPrefix)))
                 .andExpect(status().isOk())
                 .andReturn();
         return objectMapper.readTree(registration.getResponse().getContentAsString())
@@ -112,7 +123,8 @@ class FederationStoreForwardIntegrationTest {
                 .asString();
     }
 
-    private String createOutboundAgent(String token, String siteName, String baseUrl, String registrationCode)
+    private String createOutboundAgent(String token, String siteName, String baseUrl, String registrationCode,
+            String pathPrefix)
             throws Exception {
         MvcResult agentCreated = mockMvc.perform(post("/api/v1/federation/outbound/agents")
                         .header("Authorization", "Bearer " + token)
@@ -122,9 +134,9 @@ class FederationStoreForwardIntegrationTest {
                                   "name": "%s",
                                   "hubBaseUrl": "%s",
                                   "registrationCode": "%s",
-                                  "pathPrefix": "root.platform"
+                                  "pathPrefix": "%s"
                                 }
-                                """.formatted(siteName, baseUrl, registrationCode)))
+                                """.formatted(siteName, baseUrl, registrationCode, pathPrefix)))
                 .andExpect(status().isOk())
                 .andReturn();
         return objectMapper.readTree(agentCreated.getResponse().getContentAsString()).path("id").asString();
@@ -148,5 +160,34 @@ class FederationStoreForwardIntegrationTest {
             Thread.sleep(500);
         }
         throw new IllegalStateException("Timed out waiting for outbound agent connect: " + agentId);
+    }
+
+    private String ensureQuietDevice(String deviceName) {
+        String path = "root.platform.devices." + deviceName;
+        if (objectManager.tree().findByPath(path).isEmpty()) {
+            objectManager.create(
+                    "root.platform.devices",
+                    deviceName,
+                    ObjectType.DEVICE,
+                    deviceName,
+                    "",
+                    null
+            );
+            DataSchema temperature = DataSchema.builder("temperature")
+                    .field("value", FieldType.DOUBLE)
+                    .field("unit", FieldType.STRING)
+                    .build();
+            objectManager.createVariable(
+                    path,
+                    "temperature",
+                    temperature,
+                    true,
+                    true,
+                    DataRecord.single(temperature, java.util.Map.of("value", 20.0, "unit", "C")),
+                    false,
+                    null
+            );
+        }
+        return path;
     }
 }

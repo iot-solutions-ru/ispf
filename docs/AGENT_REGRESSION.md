@@ -55,10 +55,10 @@ bash scripts/run-agent-regression.sh --live
 
 | Stage | Gate |
 |-------|------|
-| PR | `run-agent-regression.sh` (schema + manifest) |
+| PR | `run-agent-regression.sh` / `validate-scenarios.mjs` (schema + manifest) |
 | Nightly | Live agent run against lab VPS; pass rate ≥95% (BL-178 target: 50 scenarios) |
 
-**Current scenario count:** 21 (SCADA, MES, HVAC).
+**Current scenario count:** 30 (SCADA, MES, HVAC).
 
 ## Related
 

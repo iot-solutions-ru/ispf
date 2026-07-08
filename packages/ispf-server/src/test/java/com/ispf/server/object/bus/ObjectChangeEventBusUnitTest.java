@@ -44,7 +44,7 @@ class ObjectChangeEventBusUnitTest {
     @Test
     void coalescesTelemetryUpdatesBeforeDispatchInUnifiedMode() throws InterruptedException {
         CopyOnWriteArrayList<String> trace = new CopyOnWriteArrayList<>();
-        ObjectChangeProperties properties = new ObjectChangeProperties();
+        ObjectChangeProperties properties = deterministicAsyncProperties();
         properties.setAsyncEnabled(true);
         properties.setSplitLanesEnabled(false);
         properties.setWorkerThreads(1);
@@ -72,7 +72,7 @@ class ObjectChangeEventBusUnitTest {
     @Test
     void coalescesTelemetryUpdatesOnTelemetryLaneWhenSplit() throws InterruptedException {
         CopyOnWriteArrayList<String> telemetryTrace = new CopyOnWriteArrayList<>();
-        ObjectChangeProperties properties = new ObjectChangeProperties();
+        ObjectChangeProperties properties = deterministicAsyncProperties();
         properties.setAsyncEnabled(true);
         properties.setSplitLanesEnabled(true);
         properties.setTelemetryWorkerThreads(1);
@@ -107,7 +107,7 @@ class ObjectChangeEventBusUnitTest {
         CountDownLatch automationProcessed = new CountDownLatch(1);
         CountDownLatch releaseTelemetry = new CountDownLatch(1);
 
-        ObjectChangeProperties properties = new ObjectChangeProperties();
+        ObjectChangeProperties properties = deterministicAsyncProperties();
         properties.setAsyncEnabled(true);
         properties.setSplitLanesEnabled(true);
         properties.setTelemetryWorkerThreads(1);
@@ -162,7 +162,7 @@ class ObjectChangeEventBusUnitTest {
     @Test
     void skipsAutomationLaneForTelemetryOnlyDriverUpdates() throws InterruptedException {
         CopyOnWriteArrayList<String> automationTrace = new CopyOnWriteArrayList<>();
-        ObjectChangeProperties properties = new ObjectChangeProperties();
+        ObjectChangeProperties properties = deterministicAsyncProperties();
         properties.setAsyncEnabled(true);
         properties.setSplitLanesEnabled(true);
         properties.setTelemetryWorkerThreads(1);
@@ -198,6 +198,13 @@ class ObjectChangeEventBusUnitTest {
                 trace.add(name);
             }
         };
+    }
+
+    private static ObjectChangeProperties deterministicAsyncProperties() {
+        ObjectChangeProperties properties = new ObjectChangeProperties();
+        properties.setElasticWorkersEnabled(false);
+        properties.setCoalesceSchedulerElastic(false);
+        return properties;
     }
 
     private static ObjectChangeAsyncHandler telemetryHandler(CopyOnWriteArrayList<String> trace, String name) {

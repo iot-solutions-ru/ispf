@@ -1,0 +1,43 @@
+{{- if .Values.configMap.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ispf.fullname" . }}-config
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    ispf.io/bl: BL-186
+data:
+  application.yml: |
+{{- if .Values.configMap.applicationYaml }}
+{{ .Values.configMap.applicationYaml | nindent 4 }}
+{{- else }}
+    spring:
+      datasource:
+        url: jdbc:postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "ispf.fullname" . }}-postgresql:5432/{{ .Values.postgresql.auth.database }}?reWriteBatchedInserts=true
+        username: {{ .Values.postgresql.auth.username | quote }}
+        password: {{ .Values.postgresql.auth.password | quote }}
+    ispf:
+      cluster:
+        enabled: {{ .Values.ispf.cluster.enabled }}
+        replica-id: {{ .Values.ispf.cluster.replicaId | quote }}
+        role: {{ .Values.ispf.cluster.role | quote }}
+      bootstrap:
+        fixtures-enabled: {{ .Values.ispf.bootstrap.fixturesEnabled }}
+      license:
+        enforce: {{ .Values.ispf.license.enforce }}
+        require-signed-bundles: {{ .Values.ispf.license.requireSignedBundles }}
+      historian:
+        store: {{ .Values.ispf.historian.store | quote }}
+      redis:
+        enabled: {{ .Values.redis.enabled }}
+{{- if .Values.redis.enabled }}
+        host: {{ .Values.ispf.redis.host | quote }}
+        port: {{ .Values.ispf.redis.port }}
+{{- end }}
+      clickhouse:
+        enabled: {{ .Values.ispf.clickhouse.enabled }}
+      nats:
+        enabled: {{ .Values.ispf.nats.enabled }}
+{{- end }}
+{{- end }}

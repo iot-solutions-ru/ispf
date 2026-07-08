@@ -33,6 +33,7 @@
   "editor.falseColor": "Color false",
   "editor.falseLabel": "Label false",
   "editor.historyRange": "History period (historyRange)",
+  "editor.analyticsTemplate": "Analytics template (BL-160)",
   "editor.inputJsonStatic": "inputJson (static input)",
   "editor.maxPoints": "Max points (maxPoints)",
   "editor.maxValueNoVariable": "maxValue (if no maxVariable)",

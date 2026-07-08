@@ -70,6 +70,19 @@ public class ExpressionEngine {
                 .evaluate(payload);
     }
 
+    /** Builds CEL evaluation bindings for debugger step-through. */
+    public Map<String, Object> buildEvaluationBindings(
+            PlatformObject platformObject,
+            Map<String, Object> context
+    ) {
+        return buildBindings(platformObject, null, context != null ? context : Map.of());
+    }
+
+    /** Compiles expression for debugger (throws on invalid CEL). */
+    public void validateCelCompile(String expression) {
+        compile(expression);
+    }
+
     private PayloadCompiledExpression compilePayloadUncached(String expression) {
         try {
             CelAbstractSyntaxTree ast = payloadCompiler.compile(expression).getAst();

@@ -10,7 +10,9 @@ import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 
 import java.net.URI;
 import java.net.URLEncoder;
@@ -40,7 +42,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("load")
 @Isolated
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
+@ActiveProfiles({"test", "load"})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@TestPropertySource(properties = {
+        "ispf.object-change.async-enabled=true",
+        "ispf.object-change.demand-driven-publication=true",
+        "ispf.event-journal.async-enabled=true"
+})
 @Execution(ExecutionMode.SAME_THREAD)
 class EventFireLoadTest {
 

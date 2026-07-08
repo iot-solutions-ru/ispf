@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class OpcUaServerDeviceDriver implements DeviceDriver {
 
-    private static final String APPLICATION_URI = "urn:ispf:driver:opcua-server";
+    private static final String APPLICATION_URI = OpcUaServerInterop.APPLICATION_URI;
 
     private static final DriverMetadata METADATA = new DriverMetadata(
             "opcua-server",
@@ -52,10 +52,10 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             "Hosts an embedded OPC UA server (Eclipse Milo) and maps node values to ISPF variables",
             "ISPF",
             Map.of(
-                    "bindPort", "4840",
-                    "namespace", "2",
+                    "bindPort", String.valueOf(OpcUaServerInterop.DEFAULT_BIND_PORT),
+                    "namespace", String.valueOf(OpcUaServerInterop.DEFAULT_NAMESPACE_INDEX),
                     "timeoutMs", "5000",
-                    "pollIntervalMs", "1000"
+                    "endpointPath", OpcUaServerInterop.ENDPOINT_PATH
             )
     );
 
@@ -157,7 +157,8 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
             server.getAddressSpaceManager().register(namespace);
             server.startup().get(timeoutMs, TimeUnit.MILLISECONDS);
             connected = true;
-            driverObject.log(DriverLogLevel.INFO, "OPC UA server listening on port " + bindPort);
+            driverObject.log(DriverLogLevel.INFO,
+                    "OPC UA server listening on " + endpointUrl() + " (browse: " + OpcUaServerInterop.browsePath("<tag>") + ")");
         } catch (Exception e) {
             connected = false;
             shutdownServer();
@@ -240,5 +241,10 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
                 consumer.accept(raw.toString());
             }
         });
+    }
+
+    /** Documented interop endpoint URL for external OPC UA clients. */
+    public String endpointUrl() {
+        return OpcUaServerInterop.endpointUrl(bindPort);
     }
 }

@@ -25,6 +25,7 @@ class PlatformCatalogSortOrderTest {
                         "root.platform.correlators",
                         "root.platform.workflows",
                         "root.platform.queries",
+                        "root.platform.analytics",
                         "root.platform.event-filters",
                         "root.platform.process-programs",
                         "root.platform.mes",

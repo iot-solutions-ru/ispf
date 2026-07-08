@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -26,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class VariableHistoryApiTest {
 
     private static final String DEVICE = "root.platform.devices.demo-sensor-01";
@@ -94,11 +96,16 @@ class VariableHistoryApiTest {
         );
         variableHistoryService.recordVariableUpdate(DEVICE, "temperature");
 
+        Instant from = Instant.now().minusSeconds(3600);
+        Instant to = Instant.now();
+
         mockMvc.perform(get("/api/v1/objects/by-path/variables/history/export")
                         .param("path", DEVICE)
                         .param("name", "temperature")
                         .param("field", "value")
                         .param("format", "csv")
+                        .param("from", from.toString())
+                        .param("to", to.toString())
                         .param("limit", "10"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", containsString("temperature-value.csv")))
@@ -127,13 +134,22 @@ class VariableHistoryApiTest {
     }
 
     @Test
-    void parquetExportReturnsNotImplemented() throws Exception {
+    void parquetExportReturnsJsonLinesInterimFormat() throws Exception {
+        double reading = 12.5;
+        variableHistoryService.recordObservedSample(DEVICE, "temperature", "value", reading, Instant.now());
+
         mockMvc.perform(get("/api/v1/objects/by-path/variables/history/export")
                         .param("path", DEVICE)
                         .param("name", "temperature")
                         .param("field", "value")
-                        .param("format", "parquet"))
-                .andExpect(status().isNotImplemented());
+                        .param("format", "parquet")
+                        .param("limit", "10"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", containsString("temperature-value.jsonl")))
+                .andExpect(header().string("X-ISPF-Export-Format", "parquet-stub-jsonl"))
+                .andExpect(content().contentTypeCompatibleWith("application/x-ndjson"))
+                .andExpect(content().string(containsString("\"variableName\":\"temperature\"")))
+                .andExpect(content().string(containsString("\"value\":12.5")));
     }
 
     @Test

@@ -36,7 +36,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.MarketplaceProperties.class,
         com.ispf.server.config.MetadataDbProperties.class,
         com.ispf.server.config.ExternalDataSourceProperties.class,
-        com.ispf.server.federation.FederationOutboundBufferProperties.class
+        com.ispf.server.federation.FederationOutboundBufferProperties.class,
+        com.ispf.server.agent.AgentStoreForwardProperties.class
 })
 public class IspfServerApplication {
 

@@ -136,6 +136,21 @@ public class WorkflowInstance {
                 .toList();
     }
 
+    public Optional<String> pendingMessageName() {
+        return waitingTokens().stream()
+                .map(ExecutionToken::pendingMessageName)
+                .filter(name -> name != null && !name.isBlank())
+                .findFirst();
+    }
+
+    public List<String> pendingMessageNames() {
+        return waitingTokens().stream()
+                .map(ExecutionToken::pendingMessageName)
+                .filter(name -> name != null && !name.isBlank())
+                .distinct()
+                .toList();
+    }
+
     public boolean hasDueTimers(long nowEpochMs) {
         return waitingTokens().stream()
                 .anyMatch(token -> token.timerDeadlineEpochMs() > 0L && nowEpochMs >= token.timerDeadlineEpochMs());
@@ -221,6 +236,12 @@ public class WorkflowInstance {
         recomputeStatus();
     }
 
+    public void waitTokenAtMessage(ExecutionToken token, String catchNodeId, String messageName) {
+        token.waitAtMessageCatch(catchNodeId, messageName);
+        history.add("MESSAGE_WAIT@" + messageName + "#" + token.tokenId());
+        recomputeStatus();
+    }
+
     public void waitTokenAtTimer(ExecutionToken token, String catchNodeId, long deadlineEpochMs) {
         token.waitAtTimerCatch(catchNodeId, deadlineEpochMs);
         history.add("TIMER_WAIT@" + catchNodeId + "#" + token.tokenId());
@@ -260,6 +281,37 @@ public class WorkflowInstance {
         }
         if (resumed.isEmpty()) {
             throw new IllegalStateException("No waiting token for signal: " + signalName);
+        }
+        recomputeStatus();
+        return resumed;
+    }
+
+    public List<ExecutionToken> resumeMessageIfPresent(String messageName) {
+        List<ExecutionToken> resumed = new ArrayList<>();
+        for (ExecutionToken token : waitingTokens()) {
+            if (messageName.equals(token.pendingMessageName())) {
+                token.resumeAfterMessageCatch();
+                history.add("MESSAGE@" + messageName + "#" + token.tokenId());
+                resumed.add(token);
+            }
+        }
+        if (!resumed.isEmpty()) {
+            recomputeStatus();
+        }
+        return resumed;
+    }
+
+    public List<ExecutionToken> resumeMessage(String messageName) {
+        List<ExecutionToken> resumed = new ArrayList<>();
+        for (ExecutionToken token : waitingTokens()) {
+            if (messageName.equals(token.pendingMessageName())) {
+                token.resumeAfterMessageCatch();
+                history.add("MESSAGE@" + messageName + "#" + token.tokenId());
+                resumed.add(token);
+            }
+        }
+        if (resumed.isEmpty()) {
+            throw new IllegalStateException("No waiting token for message: " + messageName);
         }
         recomputeStatus();
         return resumed;
@@ -362,6 +414,12 @@ public class WorkflowInstance {
                     if (token.pendingSignalName() != null) {
                         map.put("pendingSignalName", token.pendingSignalName());
                     }
+                    if (token.pendingMessageCatchNodeId() != null) {
+                        map.put("pendingMessageCatchNodeId", token.pendingMessageCatchNodeId());
+                    }
+                    if (token.pendingMessageName() != null) {
+                        map.put("pendingMessageName", token.pendingMessageName());
+                    }
                     if (token.pendingTimerCatchNodeId() != null) {
                         map.put("pendingTimerCatchNodeId", token.pendingTimerCatchNodeId());
                     }
@@ -409,6 +467,8 @@ public class WorkflowInstance {
                     stringValue(map.get("pendingUserTaskId")),
                     stringValue(map.get("pendingSignalCatchNodeId")),
                     stringValue(map.get("pendingSignalName")),
+                    stringValue(map.get("pendingMessageCatchNodeId")),
+                    stringValue(map.get("pendingMessageName")),
                     stringValue(map.get("pendingTimerCatchNodeId")),
                     stringValue(map.get("pendingBoundaryTimerNodeId")),
                     timerDeadline,

@@ -9,6 +9,9 @@ interface PlatformSqlEditorShellProps {
   onOpenProperties?: () => void;
   toolbar?: ReactNode;
   children: ReactNode;
+  /** Fill available editor viewport and scroll inside the body. */
+  fillHeight?: boolean;
+  className?: string;
 }
 
 export default function PlatformSqlEditorShell({
@@ -19,18 +22,31 @@ export default function PlatformSqlEditorShell({
   onOpenProperties,
   toolbar,
   children,
+  fillHeight = false,
+  className = "",
 }: PlatformSqlEditorShellProps) {
   const { t } = useTranslation(["common", "inspector"]);
 
+  const rootClass = [
+    "platform-sql-editor",
+    "report-builder",
+    fillHeight ? "platform-sql-editor--fill" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className="dashboard-builder report-builder">
-      <header className="dashboard-builder-header">
-        <div>
-          <h2>{title}</h2>
-          {subtitle && <p className="hint">{subtitle}</p>}
-          <p className="hint mono small">{path}</p>
+    <div className={rootClass}>
+      <header className="platform-sql-editor-header">
+        <div className="platform-sql-editor-header-text">
+          <h2 className="platform-sql-editor-title">{title}</h2>
+          {subtitle && <p className="platform-sql-editor-subtitle">{subtitle}</p>}
+          <p className="platform-sql-editor-path mono" title={path}>
+            {path}
+          </p>
         </div>
-        <div className="dashboard-builder-actions">
+        <div className="platform-sql-editor-actions">
           {toolbar}
           {onOpenProperties && (
             <button type="button" className="btn" onClick={onOpenProperties}>
@@ -44,7 +60,7 @@ export default function PlatformSqlEditorShell({
           )}
         </div>
       </header>
-      <div className="report-builder-body">{children}</div>
+      <div className="platform-sql-editor-body report-builder-body">{children}</div>
     </div>
   );
 }

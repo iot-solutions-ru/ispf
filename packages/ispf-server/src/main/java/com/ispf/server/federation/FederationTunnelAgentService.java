@@ -2,6 +2,7 @@ package com.ispf.server.federation;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.server.agent.AgentStoreForwardService;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
 import com.ispf.server.security.IspfSecretCipher;
@@ -38,7 +39,7 @@ public class FederationTunnelAgentService {
     private final FederationOutboundAgentStore agentStore;
     private final IspfSecretCipher secretCipher;
     private final FederationTunnelLocalProxyService localProxyService;
-    private final FederationOutboundEventBufferRegistry eventBufferRegistry;
+    private final AgentStoreForwardService storeForwardService;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -60,13 +61,13 @@ public class FederationTunnelAgentService {
             FederationOutboundAgentStore agentStore,
             IspfSecretCipher secretCipher,
             FederationTunnelLocalProxyService localProxyService,
-            FederationOutboundEventBufferRegistry eventBufferRegistry,
+            AgentStoreForwardService storeForwardService,
             ObjectMapper objectMapper
     ) {
         this.agentStore = agentStore;
         this.secretCipher = secretCipher;
         this.localProxyService = localProxyService;
-        this.eventBufferRegistry = eventBufferRegistry;
+        this.storeForwardService = storeForwardService;
         this.objectMapper = objectMapper;
     }
 
@@ -125,7 +126,6 @@ public class FederationTunnelAgentService {
 
     public void disconnect(UUID agentId) {
         synchronized (connectLocks.computeIfAbsent(agentId, ignored -> new Object())) {
-            disconnectRuntime(agentId);
             FederationOutboundAgent agent = agentStore.findById(agentId).orElse(null);
             if (agent == null) {
                 return;
@@ -138,6 +138,7 @@ public class FederationTunnelAgentService {
                     agent.lastConnectedAt(),
                     agent.sessionTokenEnc()
             );
+            disconnectRuntime(agentId);
         }
     }
 
@@ -178,7 +179,7 @@ public class FederationTunnelAgentService {
                 return;
             }
         }
-        eventBufferRegistry.enqueue(agentId, path, variableName, occurredAt);
+        storeForwardService.enqueue(agentId, path, variableName, occurredAt);
     }
 
     private boolean sendEventNotify(
@@ -205,7 +206,7 @@ public class FederationTunnelAgentService {
         if (runtime == null || runtime.webSocket == null) {
             return;
         }
-        for (FederationOutboundEventBuffer.BufferedEvent event : eventBufferRegistry.drain(agentId)) {
+        for (FederationOutboundEventBuffer.BufferedEvent event : storeForwardService.drain(agentId)) {
             if (!sendEventNotify(
                     runtime.webSocket,
                     event.path(),
@@ -213,7 +214,7 @@ public class FederationTunnelAgentService {
                     event.seq(),
                     event.occurredAt()
             )) {
-                eventBufferRegistry.enqueue(agentId, event.path(), event.variableName(), event.occurredAt());
+                storeForwardService.enqueue(agentId, event.path(), event.variableName(), event.occurredAt());
                 break;
             }
         }
@@ -313,6 +314,9 @@ public class FederationTunnelAgentService {
         if (agent == null || !agent.enabled()) {
             return;
         }
+        if (agent.tunnelStatus() == FederationTunnelStatus.DISCONNECTED) {
+            return;
+        }
         agentStore.updateStatus(
                 agentId,
                 FederationTunnelStatus.RECONNECTING,
@@ -329,6 +333,7 @@ public class FederationTunnelAgentService {
         String token = node.path("token").asString(null);
         String tokenEnc = token != null && secretCipher.isEnabled() ? secretCipher.encrypt(token) : null;
         agentStore.updateStatus(agentId, FederationTunnelStatus.CONNECTED, peerId, null, Instant.now(), tokenEnc);
+        replayBufferedEvents(agentId);
     }
 
     private void handleTokenRefresh(UUID agentId, JsonNode node) {

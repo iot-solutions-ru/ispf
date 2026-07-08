@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -60,6 +61,12 @@ public class AlarmShelfController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown shelf request: " + id));
         approvalService.removePending(id);
         return alarmShelfService.shelve(pending.toShelveRequest());
+    }
+
+    @PostMapping("/requests/{id}/reject")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void rejectRequest(@PathVariable String id) {
+        approvalService.reject(id);
     }
 
     @DeleteMapping("/{id}")

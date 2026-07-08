@@ -59,6 +59,7 @@ interface DashboardBuilderProps {
   onSessionChange?: (next: DashboardSession) => void;
   onSelectionChange?: (next: Record<string, string>) => void;
   onParamsChange?: (next: Record<string, unknown>) => void;
+  onLayoutPresetChange?: (preset: DashboardLayoutPreset | undefined) => void;
   subDashboardDepth?: number;
 }
 
@@ -93,6 +94,7 @@ export default function DashboardBuilder({
   onSessionChange,
   onSelectionChange,
   onParamsChange,
+  onLayoutPresetChange,
   subDashboardDepth = 0,
 }: DashboardBuilderProps) {
   const { t } = useTranslation(["dashboard", "common"]);
@@ -223,6 +225,10 @@ export default function DashboardBuilder({
   }, [dashboard.data, draftLayout]);
 
   layoutRef.current = layout;
+
+  useEffect(() => {
+    onLayoutPresetChange?.(layout.layoutPreset);
+  }, [layout.layoutPreset, onLayoutPresetChange]);
 
   useEffect(() => {
     setDraftLayout(null);

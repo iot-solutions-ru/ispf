@@ -106,6 +106,15 @@ public class EventFilterObjectService {
         return getByPath(path);
     }
 
+    @Transactional
+    public void delete(String path) {
+        PlatformObject node = objectManager.require(path);
+        if (node.type() != ObjectType.EVENT_FILTER) {
+            throw new IllegalArgumentException("Not an event filter object: " + path);
+        }
+        objectManager.delete(path);
+    }
+
     public String pathForFilterId(String filterId) {
         return EVENT_FILTERS_ROOT + "." + sanitizeNodeName(filterId);
     }

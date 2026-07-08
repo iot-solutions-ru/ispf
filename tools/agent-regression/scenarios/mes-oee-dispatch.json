@@ -1,0 +1,17 @@
+{
+  "id": "mes-oee-dispatch",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES OEE with dispatch workflow",
+  "description": "Extend mes-oee-reference with dispatch workflow and operator screens.",
+  "prompt": "Deploy mes-oee-reference bundle and configure dispatch workflow plus operator dashboards.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-oee-reference",
+    "manifestPath": "examples/mes-oee-reference/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "save_workflow_bpmn", "invoke_bff"]
+  }
+}

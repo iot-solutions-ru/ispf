@@ -1,0 +1,17 @@
+{
+  "id": "mes-marketplace-demo",
+  "version": "1",
+  "domain": "mes",
+  "title": "Marketplace demo bundle",
+  "description": "Minimal marketplace GA demo bundle for browse → install flow.",
+  "prompt": "Deploy marketplace-demo bundle using e2e deploy playbook steps.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "marketplace-demo",
+    "manifestPath": "examples/marketplace-demo/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["deploy_step_validate", "deploy_step_import", "configure_operator_ui"]
+  }
+}

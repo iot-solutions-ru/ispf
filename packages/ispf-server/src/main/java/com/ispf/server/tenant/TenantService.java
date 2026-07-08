@@ -19,17 +19,20 @@ public class TenantService {
     private final ObjectManager objectManager;
     private final TenantQuotaService tenantQuotaService;
     private final TenantScopeService tenantScopeService;
+    private final TenantSchemaService tenantSchemaService;
 
     public TenantService(
             TenantStore tenantStore,
             ObjectManager objectManager,
             TenantQuotaService tenantQuotaService,
-            TenantScopeService tenantScopeService
+            TenantScopeService tenantScopeService,
+            TenantSchemaService tenantSchemaService
     ) {
         this.tenantStore = tenantStore;
         this.objectManager = objectManager;
         this.tenantQuotaService = tenantQuotaService;
         this.tenantScopeService = tenantScopeService;
+        this.tenantSchemaService = tenantSchemaService;
     }
 
     public List<Tenant> listTenants() {
@@ -47,6 +50,7 @@ public class TenantService {
         }
         ensureTenantsRoot();
         Tenant tenant = tenantStore.insert(draft);
+        tenantSchemaService.provisionTenantSchema(tenant.tenantId());
         bootstrapTenantTree(tenant);
         return tenant;
     }

@@ -37,6 +37,13 @@ export function getElementBounds(el: MimicElement, customSymbols?: MimicCustomSy
   };
 }
 
+export function boundsIntersect(
+  a: Pick<ElementBounds, "left" | "top" | "right" | "bottom">,
+  b: Pick<ElementBounds, "left" | "top" | "right" | "bottom">
+): boolean {
+  return !(a.right < b.left || a.left > b.right || a.bottom < b.top || a.top > b.bottom);
+}
+
 export function elementTransform(el: MimicElement, width: number, height: number): string {
   const rotation = el.rotation ?? 0;
   return `translate(${el.x},${el.y}) rotate(${rotation} ${width / 2} ${height / 2})`;

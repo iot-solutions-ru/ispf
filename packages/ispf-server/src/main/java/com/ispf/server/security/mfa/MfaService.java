@@ -1,66 +1,89 @@
 package com.ispf.server.security.mfa;
 
 import com.ispf.server.config.IspfSecurityProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.SecureRandom;
+import java.time.Clock;
 import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * MFA enrollment skeleton (TOTP). Full verification and persistence are planned for a later sprint.
+ * TOTP MFA enrollment with persisted secrets (BL-153).
  */
 @Service
 public class MfaService {
 
-    private static final String BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int DEFAULT_TIME_WINDOW = 1;
 
     private final IspfSecurityProperties securityProperties;
-    private final Map<String, PendingEnrollment> pendingByUsername = new ConcurrentHashMap<>();
+    private final MfaEnrollmentStore enrollmentStore;
+    private final Clock clock;
 
-    public MfaService(IspfSecurityProperties securityProperties) {
+    @Autowired
+    public MfaService(IspfSecurityProperties securityProperties, MfaEnrollmentStore enrollmentStore) {
+        this(securityProperties, enrollmentStore, Clock.systemUTC());
+    }
+
+    MfaService(IspfSecurityProperties securityProperties, MfaEnrollmentStore enrollmentStore, Clock clock) {
         this.securityProperties = securityProperties;
+        this.enrollmentStore = enrollmentStore;
+        this.clock = clock;
     }
 
     public MfaStatus status(String username) {
-        PendingEnrollment pending = pendingByUsername.get(username);
-        return new MfaStatus(
-                securityProperties.getMfa().isEnabled(),
-                pending != null,
-                pending != null ? pending.createdAt().toString() : null
-        );
+        if (username == null || username.isBlank()) {
+            return new MfaStatus(securityProperties.getMfa().isEnabled(), false, false, null);
+        }
+        return enrollmentStore.findByUsername(username)
+                .map(enrollment -> new MfaStatus(
+                        securityProperties.getMfa().isEnabled(),
+                        enrollment.isEnrolled(),
+                        enrollment.isPending(),
+                        enrollment.isPending() ? enrollment.createdAt().toString() : null
+                ))
+                .orElseGet(() -> new MfaStatus(
+                        securityProperties.getMfa().isEnabled(),
+                        false,
+                        false,
+                        null
+                ));
     }
 
     public EnrollmentStart startEnrollment(String username) {
         requireMfaEnabled();
-        String secret = generateBase32Secret(20);
-        PendingEnrollment pending = new PendingEnrollment(secret, Instant.now());
-        pendingByUsername.put(username, pending);
+        String secret = TotpUtil.generateSecret();
+        Instant startedAt = clock.instant();
+        enrollmentStore.savePending(username, secret, startedAt);
         String label = username != null ? username : "user";
-        String otpauthUri = "otpauth://totp/ISPF:" + label + "?secret=" + secret + "&issuer=ISPF&algorithm=SHA1&digits=6&period=30";
-        return new EnrollmentStart(secret, otpauthUri, "Scan the OTP URI with an authenticator app, then POST /verify with a 6-digit code.");
+        String otpauthUri = TotpUtil.buildOtpauthUri("ISPF", label, secret);
+        return new EnrollmentStart(
+                secret,
+                otpauthUri,
+                "Scan the OTP URI with an authenticator app, then POST /verify with a 6-digit code."
+        );
     }
 
     public EnrollmentVerifyResult verifyEnrollment(String username, String code) {
         requireMfaEnabled();
-        PendingEnrollment pending = pendingByUsername.get(username);
-        if (pending == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No pending MFA enrollment");
+        MfaEnrollmentStore.MfaEnrollment pending = enrollmentStore.findByUsername(username)
+                .filter(MfaEnrollmentStore.MfaEnrollment::isPending)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No pending MFA enrollment"));
+        if (!TotpUtil.verifyCode(pending.secret(), code, timeWindowSteps(), clock.instant())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid TOTP code");
         }
-        if (code == null || !code.matches("\\d{6}")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Code must be 6 digits");
-        }
-        // Stub: accept any well-formed code; production will validate TOTP and persist enrollment.
-        pendingByUsername.remove(username);
-        return new EnrollmentVerifyResult(true, "MFA enrollment recorded (stub — TOTP validation not yet implemented)");
+        enrollmentStore.confirmEnrollment(username, clock.instant());
+        return new EnrollmentVerifyResult(true, "MFA enrollment recorded");
     }
 
     public void cancelEnrollment(String username) {
-        pendingByUsername.remove(username);
+        enrollmentStore.deletePending(username);
+    }
+
+    private int timeWindowSteps() {
+        int configured = securityProperties.getMfa().getTimeWindowSteps();
+        return configured >= 0 ? configured : DEFAULT_TIME_WINDOW;
     }
 
     private void requireMfaEnabled() {
@@ -69,18 +92,12 @@ public class MfaService {
         }
     }
 
-    private static String generateBase32Secret(int length) {
-        StringBuilder secret = new StringBuilder(length);
-        for (int i = 0; i < length; i++) {
-            secret.append(BASE32_ALPHABET.charAt(RANDOM.nextInt(BASE32_ALPHABET.length())));
-        }
-        return secret.toString();
-    }
-
-    private record PendingEnrollment(String secret, Instant createdAt) {
-    }
-
-    public record MfaStatus(boolean enabled, boolean enrollmentPending, String enrollmentStartedAt) {
+    public record MfaStatus(
+            boolean enabled,
+            boolean enrolled,
+            boolean enrollmentPending,
+            String enrollmentStartedAt
+    ) {
     }
 
     public record EnrollmentStart(String secret, String otpauthUri, String hint) {

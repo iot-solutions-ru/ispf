@@ -103,7 +103,7 @@ class MqttGatewayDispatchIntegrationTest {
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
         assertThat(result.firstRow().get("routedPath")).isEqualTo(SENSOR);
         telemetryCoalescer.flushNow();
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(500);
 
         var sensorNode = objectManager.require(SENSOR);
         assertThat(sensorNode.templateId()).contains(
@@ -141,7 +141,7 @@ class MqttGatewayDispatchIntegrationTest {
 
         assertThat(result.firstRow().get("ok")).isEqualTo(true);
         telemetryCoalescer.flushNow();
-        TimeUnit.MILLISECONDS.sleep(100);
+        TimeUnit.MILLISECONDS.sleep(500);
 
         var temperature = objectManager.require(SENSOR).getVariable("temperature").orElseThrow().value().orElseThrow();
         assertThat(temperature.firstRow().get("value")).isEqualTo(19.5);

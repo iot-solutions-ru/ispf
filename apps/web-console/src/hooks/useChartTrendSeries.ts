@@ -14,6 +14,7 @@ import {
   isCalendarHistoryRange,
   type HistoryRange,
 } from "./useVariableHistory";
+import { resolveAnalyticsAggregateBucket, type AnalyticsTemplateRef } from "../utils/analyticsChartBinding";
 import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
 import { useTrendSeries, type TrendPoint } from "./useTrendSeries";
 
@@ -99,7 +100,8 @@ export function useChartTrendSeries(
   refreshIntervalMs: number,
   maxPoints: number,
   historyRange: WidgetHistoryRange = "live",
-  mode: ChartSeriesMode = "line"
+  mode: ChartSeriesMode = "line",
+  analyticsTemplate?: AnalyticsTemplateRef | null
 ) {
   const field = valueField ?? "value";
   const isRangeMode = mode === "range";
@@ -113,23 +115,28 @@ export function useChartTrendSeries(
     refreshIntervalMs,
     maxPoints,
     historyRange,
-    isBucketMode
+    isBucketMode || Boolean(analyticsTemplate)
   );
 
-  const aggregateBucket =
+  const rangeChartBucket =
     isBucketMode && historyRange !== "live" && isHistoryRange(historyRange)
       ? historyBucketForRangeChart(historyRange)
       : null;
+  const aggregateBucket = resolveAnalyticsAggregateBucket(analyticsTemplate, rangeChartBucket);
   const calendarRange =
     isHistoryRange(historyRange) && isCalendarHistoryRange(historyRange) ? historyRange : undefined;
+  const defaultFrom =
+    analyticsTemplate && historyRange === "live" ? historyRangeFrom("24h") : undefined;
   const from =
     aggregateBucket && isHistoryRange(historyRange) && !calendarRange
       ? historyRangeFrom(historyRange)
-      : undefined;
+      : defaultFrom;
   const to =
     calendarRange || (isHistoryRange(historyRange) && historyRange === "all")
       ? undefined
-      : new Date().toISOString();
+      : analyticsTemplate && historyRange === "live"
+        ? new Date().toISOString()
+        : new Date().toISOString();
 
   const aggregateQuery = useQuery({
     queryKey: [
@@ -190,6 +197,40 @@ export function useChartTrendSeries(
   }, [rangePoints]);
 
   const ohlcStats = useMemo(() => candlestickStats(candlestickPoints), [candlestickPoints]);
+
+  const analyticsPoints = useMemo(() => {
+    if (!analyticsTemplate || isBucketMode || !aggregateQuery.data?.buckets?.length) {
+      return [] as TrendPoint[];
+    }
+    return aggregateQuery.data.buckets
+      .filter((item) => item.avg != null && Number.isFinite(item.avg))
+      .map((item) => {
+        const t = Date.parse(item.ts);
+        return {
+          t: Number.isFinite(t) ? t : Date.now(),
+          time: new Date(Number.isFinite(t) ? t : Date.now()).toLocaleTimeString(),
+          value: item.avg as number,
+        };
+      });
+  }, [aggregateQuery.data, analyticsTemplate, isBucketMode]);
+
+  if (!isBucketMode && analyticsTemplate) {
+    const bucketLoading =
+      trend.historyLoading ||
+      (aggregateBucket != null && aggregateQuery.isLoading && analyticsPoints.length === 0);
+    return {
+      ...trend,
+      mode: "line" as const,
+      points: analyticsPoints.length > 0 ? analyticsPoints : trend.points,
+      rangePoints: [] as RangeTrendPoint[],
+      candlestickPoints: [] as CandlestickPoint[],
+      historyLoading: bucketLoading,
+      isLoading: trend.isLoading || bucketLoading,
+      aggregated: aggregateBucket != null,
+      historyBucket: aggregateBucket,
+      latestValue: analyticsPoints[analyticsPoints.length - 1]?.value ?? trend.stats.latest,
+    };
+  }
 
   if (!isBucketMode) {
     return {

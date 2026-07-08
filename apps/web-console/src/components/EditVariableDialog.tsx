@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   setVariable,
   updateVariableDefinition,
   updateVariableHistory,
 } from "../api";
+import { fetchSecurityRoles } from "../api/securityRoles";
 import type { DataRecord, VariableDto } from "../types";
 import DataRecordValueEditor from "./schema/DataRecordValueEditor";
 import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
+import RoleMultiSelect from "./RoleMultiSelect";
 import { cloneRecord, recordsEqual } from "../utils/record";
 
 interface EditVariableDialogProps {
@@ -52,8 +54,8 @@ export default function EditVariableDialog({
   );
   const [readable, setReadable] = useState(variable.readable);
   const [writable, setWritable] = useState(variable.writable);
-  const [readRolesText, setReadRolesText] = useState((variable.readRoles ?? []).join(", "));
-  const [writeRolesText, setWriteRolesText] = useState((variable.writeRoles ?? []).join(", "));
+  const [readRoles, setReadRoles] = useState<string[]>(variable.readRoles ?? []);
+  const [writeRoles, setWriteRoles] = useState<string[]>(variable.writeRoles ?? []);
   const [history, setHistory] = useState<VariableHistoryState>(() => historyFromVariable(variable));
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState("{}");
@@ -68,16 +70,19 @@ export default function EditVariableDialog({
     [variable]
   );
 
-  const parseRoles = (text: string) =>
-    text
-      .split(",")
-      .map((role) => role.trim())
-      .filter(Boolean);
+  const rolesQuery = useQuery({
+    queryKey: ["security-roles"],
+    queryFn: fetchSecurityRoles,
+    enabled: canEditDefinition,
+  });
 
-  const initialReadRoles = (variable.readRoles ?? []).join(", ");
-  const initialWriteRoles = (variable.writeRoles ?? []).join(", ");
-  const readRolesDirty = canEditDefinition && readRolesText.trim() !== initialReadRoles.trim();
-  const writeRolesDirty = canEditDefinition && writeRolesText.trim() !== initialWriteRoles.trim();
+  const rolesEqual = (a: string[], b: string[]) =>
+    a.length === b.length && [...a].sort().join(",") === [...b].sort().join(",");
+
+  const initialReadRoles = variable.readRoles ?? [];
+  const initialWriteRoles = variable.writeRoles ?? [];
+  const readRolesDirty = canEditDefinition && !rolesEqual(readRoles, initialReadRoles);
+  const writeRolesDirty = canEditDefinition && !rolesEqual(writeRoles, initialWriteRoles);
 
   const canEditValue = variable.writable;
   const definitionDirty =
@@ -98,8 +103,8 @@ export default function EditVariableDialog({
     setJsonText(JSON.stringify(next, null, 2));
     setReadable(variable.readable);
     setWritable(variable.writable);
-    setReadRolesText((variable.readRoles ?? []).join(", "));
-    setWriteRolesText((variable.writeRoles ?? []).join(", "));
+    setReadRoles(variable.readRoles ?? []);
+    setWriteRoles(variable.writeRoles ?? []);
     setHistory(historyFromVariable(variable));
   }, [variable]);
 
@@ -131,8 +136,8 @@ export default function EditVariableDialog({
         await updateVariableDefinition(objectPath, variable.name, {
           readable,
           writable,
-          readRoles: parseRoles(readRolesText),
-          writeRoles: parseRoles(writeRolesText),
+          readRoles,
+          writeRoles,
         });
       }
       if (canManageHistory && historyDirty) {
@@ -219,24 +224,20 @@ export default function EditVariableDialog({
               {t("variables.writable")}
             </label>
             <p className="hint full">{t("variables.schemaReadOnlyHint")}</p>
-            <label className="full">
-              <span>{t("variables.readRoles")}</span>
-              <input
-                type="text"
-                value={readRolesText}
-                placeholder={t("variables.rolesPlaceholder")}
-                onChange={(e) => setReadRolesText(e.target.value)}
-              />
-            </label>
-            <label className="full">
-              <span>{t("variables.writeRoles")}</span>
-              <input
-                type="text"
-                value={writeRolesText}
-                placeholder={t("variables.rolesPlaceholder")}
-                onChange={(e) => setWriteRolesText(e.target.value)}
-              />
-            </label>
+            <RoleMultiSelect
+              id={`read-roles-${variable.name}`}
+              label={t("variables.readRoles")}
+              roles={rolesQuery.data ?? []}
+              selected={readRoles}
+              onChange={setReadRoles}
+            />
+            <RoleMultiSelect
+              id={`write-roles-${variable.name}`}
+              label={t("variables.writeRoles")}
+              roles={rolesQuery.data ?? []}
+              selected={writeRoles}
+              onChange={setWriteRoles}
+            />
             <p className="hint full">{t("variables.rolesHint")}</p>
           </section>
         )}

@@ -44,6 +44,7 @@ public class BpmnParser {
             Map<String, MessageTaskDefinition> messageTasks = new HashMap<>();
             Map<String, SignalCatchDefinition> signalCatchEvents = new HashMap<>();
             Map<String, MessageCatchDefinition> messageCatchEvents = new HashMap<>();
+            Map<String, MessageThrowDefinition> messageThrowEvents = new HashMap<>();
             Map<String, TimerCatchDefinition> timerCatchEvents = new HashMap<>();
             Map<String, BoundaryTimerDefinition> boundaryTimers = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
@@ -109,6 +110,16 @@ public class BpmnParser {
                 }
             }
 
+            for (Element throwEvent : elements(process, "intermediateThrowEvent")) {
+                String id = throwEvent.getAttribute("id");
+                nodeTypes.put(id, "intermediateThrowEvent");
+                if (firstChildElement(throwEvent, "messageEventDefinition") != null) {
+                    messageThrowEvents.put(id, parseMessageThrow(throwEvent));
+                } else {
+                    throw new WorkflowException("Unsupported throw event (message only): " + id);
+                }
+            }
+
             for (Element boundary : elements(process, "boundaryEvent")) {
                 BoundaryTimerDefinition boundaryTimer = parseBoundaryTimer(boundary);
                 if (boundaryTimer != null) {
@@ -134,6 +145,7 @@ public class BpmnParser {
                     messageTasks,
                     signalCatchEvents,
                     messageCatchEvents,
+                    messageThrowEvents,
                     timerCatchEvents,
                     boundaryTimers,
                     List.copyOf(sequenceFlows)
@@ -197,6 +209,31 @@ public class BpmnParser {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    private MessageThrowDefinition parseMessageThrow(Element throwEvent) throws WorkflowException {
+        Map<String, String> parameters = new HashMap<>();
+        readIspfAttribute(throwEvent, parameters, "message");
+        String messageName = parameters.get("message");
+        if (messageName == null || messageName.isBlank()) {
+            Element messageDef = firstChildElement(throwEvent, "messageEventDefinition");
+            if (messageDef != null) {
+                messageName = messageDef.getAttribute("messageRef");
+                if (messageName == null || messageName.isBlank()) {
+                    messageName = readIspfAttribute(messageDef, "message");
+                }
+            }
+        }
+        if (messageName == null || messageName.isBlank()) {
+            throw new WorkflowException("Message throw event requires ispf:message or messageRef: "
+                    + throwEvent.getAttribute("id"));
+        }
+        return new MessageThrowDefinition(
+                throwEvent.getAttribute("id"),
+                throwEvent.getAttribute("name"),
+                messageName,
+                Map.copyOf(parameters)
+        );
     }
 
     private MessageCatchDefinition parseMessageCatch(Element catchEvent) throws WorkflowException {

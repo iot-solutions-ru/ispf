@@ -77,5 +77,17 @@
   "catalog.column.variable": "Variable",
   "catalog.column.event": "Event",
   "catalog.column.pattern": "Pattern",
-  "catalog.column.action": "Action"
+  "catalog.column.action": "Action",
+  "processProgram.title": "Process program",
+  "processProgram.subtitle": "Cyclic CEL control loop (BL-172)",
+  "processProgram.loading": "Loading process program…",
+  "processProgram.programId": "Program id *",
+  "processProgram.cycleIntervalMs": "Cycle interval (ms)",
+  "processProgram.controlExpression": "Control expression (CEL)",
+  "processProgram.controlExpressionPlaceholder": "temperature > 80",
+  "processProgram.enabled": "Enabled",
+  "processProgram.lastCycleAt": "Last cycle",
+  "processProgram.lastError": "Last error",
+  "processProgram.validateCel": "Validate CEL",
+  "processProgram.celOk": "CEL OK"
 }

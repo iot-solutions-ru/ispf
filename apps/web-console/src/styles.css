@@ -3072,6 +3072,99 @@ body.dashboard-grid-dragging .dashboard-grid-host.editable .dashboard-grid-item 
   border-bottom: 1px solid var(--border, #444c56);
 }
 
+.scada-elements-list-panel {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border, #444c56);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scada-elements-list-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.scada-elements-list-empty {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.scada-elements-list-groups {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 0.35rem;
+}
+
+.scada-elements-list-group + .scada-elements-list-group {
+  margin-top: 0.5rem;
+}
+
+.scada-elements-list-group-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.scada-elements-list-hidden {
+  opacity: 0.5;
+}
+
+.scada-elements-list {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+}
+
+.scada-elements-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.2rem 0.35rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scada-elements-list-item:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+}
+
+.scada-elements-list-item.selected {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.scada-elements-list-z {
+  flex-shrink: 0;
+  width: 1.4rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.scada-elements-list-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .scada-layer-panel-list {
   list-style: none;
   margin: 0.35rem 0 0;
@@ -3392,6 +3485,12 @@ body.scada-mimic-editor-open {
   padding: 0;
 }
 
+.scada-mimic-editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .scada-mimic-editor-props {
   border-right: none;
   border-left: 1px solid var(--border);
@@ -3678,6 +3777,14 @@ body.scada-mimic-editor-open {
   stroke: #ffffff;
   stroke-width: 2px;
   opacity: 1;
+}
+
+.scada-marquee-select {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
 }
 
 /* —— Properties —— */
@@ -4898,6 +5005,34 @@ body.scada-mimic-editor-open {
   margin-bottom: 0.75rem;
 }
 
+.operator-shell--video-wall-2x2 .operator-topbar,
+.operator-shell--video-wall-2x2 .op-nav,
+.operator-shell--video-wall-2x2 .operator-agent-fab {
+  display: none;
+}
+
+.operator-shell--video-wall-2x2 .operator-layout {
+  flex: 1;
+  min-height: 0;
+}
+
+.operator-shell--video-wall-2x2 .operator-dashboard-shell-host {
+  overflow: hidden;
+}
+
+.operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-shell {
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
+.operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-body,
+.operator-shell--video-wall-2x2 .operator-dashboard-shell-host .dashboard-canvas {
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
 /* Operator HMI */
 .operator-shell {
   display: flex;
@@ -5214,6 +5349,18 @@ body.scada-mimic-editor-open {
 
 .operator-alarm-shelf-unshelve {
   flex-shrink: 0;
+}
+
+.operator-alarm-shelf-approval-panel {
+  bottom: auto;
+  top: 4.5rem;
+  max-height: min(40vh, 20rem);
+}
+
+.operator-alarm-shelf-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.35rem;
 }
 
 .operator-alarm-bar-editor {
@@ -6897,6 +7044,29 @@ body.scada-mimic-editor-open {
   gap: 0.5rem;
 }
 
+.operator-federation-peer-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.operator-federation-peer-label {
+  white-space: nowrap;
+}
+
+.operator-federation-peer-input {
+  min-width: 9rem;
+  max-width: 14rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle, #d1d5db);
+  background: var(--surface-elevated, #fff);
+  color: inherit;
+  font-size: 0.82rem;
+}
+
 .operator-sidebar-toggle {
   display: none;
 }
@@ -7083,6 +7253,126 @@ body.scada-mimic-editor-open {
   border-right: none;
   text-align: center;
   font-weight: 500;
+}
+
+.operator-offline-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #c0392b;
+  vertical-align: middle;
+}
+
+.expression-debugger-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.expression-debugger-steps-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.expression-debugger-steps-header h5 {
+  margin: 0;
+}
+
+.expression-debugger-step-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.expression-debugger-step-list {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.expression-debugger-step {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  background: var(--surface);
+}
+
+.expression-debugger-step.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.expression-debugger-step.ok {
+  border-left: 3px solid #2ea043;
+}
+
+.expression-debugger-step.error {
+  border-left: 3px solid #c0392b;
+}
+
+.expression-debugger-step-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.expression-debugger-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+
+.expression-debugger-bindings {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.expression-debugger-binding-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.expression-debugger-binding-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.expression-debugger-binding-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  font-size: 0.82rem;
+}
+
+.expression-debugger-binding-value {
+  font-family: var(--mono, ui-monospace, monospace);
+  word-break: break-all;
 }
 
 .op-alert-error {
@@ -7405,6 +7695,29 @@ body.scada-mimic-editor-open {
   flex-direction: column;
   min-width: 0;
   box-shadow: var(--ui-shadow-surface);
+}
+
+.security-user-card--link {
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.security-user-card--link:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.variable-role-picker {
+  grid-column: 1 / -1;
+}
+
+.variable-role-picker legend {
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .security-user-card-title {
@@ -11319,6 +11632,365 @@ body.scada-mimic-editor-open {
 
 .dash-tree-item.driver-error {
   color: #ef4444;
+}
+
+/* Platform SQL editors (data sources, migrations, reports, …) */
+.platform-sql-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+.platform-sql-editor--fill {
+  height: 100%;
+}
+
+.platform-sql-editor-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 0.35rem 1rem;
+  align-items: start;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+  box-shadow: var(--ui-shadow-surface);
+}
+
+.platform-sql-editor-header-text {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+.platform-sql-editor-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-self: center;
+}
+
+.platform-sql-editor-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.platform-sql-editor-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.platform-sql-editor-path {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.platform-sql-editor-body {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.platform-sql-editor-actions .btn {
+  min-height: 40px;
+}
+
+.platform-sql-editor-actions .btn:active {
+  transform: scale(0.96);
+}
+
+.platform-sql-editor--fill .platform-sql-editor-body {
+  overflow: hidden;
+}
+
+.data-source-editor .platform-sql-editor-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+}
+
+/* Data source editor */
+.data-source-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: stretch;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.data-source-editor-settings,
+.data-source-editor-sql {
+  margin-bottom: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.data-source-editor-settings {
+  overflow: auto;
+}
+
+.data-source-editor-sql {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.data-source-section-title {
+  margin: 0 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.data-source-section-title--connection {
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-subtle, var(--border));
+}
+
+.data-source-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.ds-connection-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.ds-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.ds-field--span-2 {
+  grid-column: 1 / -1;
+}
+
+.ds-field-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.ds-field input,
+.ds-field textarea,
+.ds-field select,
+.data-source-settings-form > .ds-field input,
+.data-source-settings-form > .ds-field textarea {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.data-source-description {
+  resize: vertical;
+  min-height: 3.25rem;
+  max-height: 6rem;
+  field-sizing: fixed;
+}
+
+.ds-mode-segment {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  padding: 0.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.ds-mode-segment-btn {
+  min-height: 40px;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.15s var(--ui-ease, ease);
+}
+
+.ds-mode-segment-btn:hover {
+  color: var(--text);
+  background: rgba(110, 118, 129, 0.12);
+}
+
+.ds-mode-segment-btn:active {
+  transform: scale(0.96);
+}
+
+.ds-mode-segment-btn.active {
+  color: var(--text);
+  background: var(--bg-elevated);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.ds-status-banner {
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  grid-column: 1 / -1;
+}
+
+.ds-status-banner--ok {
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.ds-status-banner--error {
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+.ds-status-banner--neutral {
+  color: var(--text-muted);
+  background: rgba(110, 118, 129, 0.1);
+  border: 1px solid var(--border);
+}
+
+.data-source-sql-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-bottom: 0.65rem;
+}
+
+.data-source-sql-head .data-source-section-title {
+  margin-bottom: 0.25rem;
+}
+
+.data-source-sql-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  text-wrap: pretty;
+  max-width: 42rem;
+}
+
+.data-source-sql-input {
+  flex: 1 1 auto;
+  min-height: 7.5rem;
+  max-height: none;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  resize: none;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.data-source-sql-meta {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.data-source-sql-results {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  margin-top: 0.35rem;
+}
+
+.data-source-sql-table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  margin-top: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+@media (max-width: 960px) {
+  .platform-sql-editor-header {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  .platform-sql-editor-actions {
+    grid-column: 1;
+    grid-row: 3;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .platform-sql-editor-path {
+    grid-row: 2;
+  }
+
+  .data-source-editor-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 0;
+  }
+
+  .data-source-editor-sql {
+    min-height: min(52vh, 520px);
+  }
+
+  .ds-connection-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Report Builder */

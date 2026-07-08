@@ -13,6 +13,7 @@ import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
 import OperatorAgentFab from "./OperatorAgentFab";
 import OperatorOfflineBanner from "./OperatorOfflineBanner";
+import OperatorOfflineBadge from "./OperatorOfflineBadge";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForManifest } from "../../utils/operatorOfflineCache";
 
@@ -41,7 +42,7 @@ export default function OperatorManifestView({
   const queryClient = useQueryClient();
   useObjectWebSocket();
   const manifestQuery = useOperatorManifest(appId);
-  const { showStaleBanner, reconnecting } = useOperatorConnectivity(() => {
+  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() => {
     queryClient.invalidateQueries({ queryKey: ["operator-manifest", appId] });
     queryClient.invalidateQueries({ queryKey: ["bff-table"] });
     queryClient.invalidateQueries({ queryKey: ["app-report", appId] });
@@ -95,6 +96,7 @@ export default function OperatorManifestView({
       <header className="operator-topbar">
         <div>
           <strong>{manifest.title}</strong>
+          <OperatorOfflineBadge visible={offline} />
           <span className="brand-sub">
             {appId} · {wireProfile}
             {session ? ` · ${session.displayName}` : ""}

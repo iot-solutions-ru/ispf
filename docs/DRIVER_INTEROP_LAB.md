@@ -79,9 +79,61 @@ bash deploy/tools/driver-interop-report.sh
 
 Read-only production drivers (`dnp3`, `ethernet-ip`, `opc-da`, `opc-bridge`, `http`, `snmp`, `gps-tracker`) — integrity poll / session check без write round-trip; promotion write path — отдельный BL по [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md).
 
-## Docker fixtures (roadmap)
+## Docker fixtures (BL-141)
 
-Полные hardware-emulator fixtures (OpenDNP3 outstation, Gurux DLMS simulator, Milo UA server container) — wave 2 (BL-142+). Сейчас loopback использует in-process stub servers в JUnit (CI-safe, без Docker).
+Hardware-emulator containers for manual interop on a lab host. CI loopback tests remain in-process (no Docker required).
+
+### Start fixtures
+
+From repo root:
+
+```bash
+docker compose -f deploy/driver-interop/docker-compose.yml up -d
+```
+
+Check health:
+
+```bash
+docker compose -f deploy/driver-interop/docker-compose.yml ps
+```
+
+Stop:
+
+```bash
+docker compose -f deploy/driver-interop/docker-compose.yml down
+```
+
+### Endpoints (loopback)
+
+| Service | Image | Host endpoint | ISPF driver |
+| ------- | ----- | ------------- | ----------- |
+| MQTT | `eclipse-mosquitto:2.0` | `tcp://127.0.0.1:1883` | `mqtt` — `brokerUrl` |
+| Modbus TCP | `oitc/modbus-server` | `127.0.0.1:502` | `modbus-tcp` — `host` / `port` |
+| OPC UA | `mcr.microsoft.com/iotedge/opc-plc` | `opc.tcp://127.0.0.1:4840` | `opcua` — `endpointUrl` |
+
+OPC UA simulator uses **SecurityPolicy.None** and anonymous auth (lab only). For an ISPF-native server endpoint, use the embedded `opcua-server` driver on the same port only when the container is stopped.
+
+Mosquitto config: `deploy/driver-interop/mosquitto/mosquitto.conf` (anonymous, no persistence).
+
+### Smoke against fixtures
+
+After `docker compose up -d`:
+
+```bash
+# MQTT publish (requires mosquitto clients)
+mosquitto_pub -h 127.0.0.1 -t ispf/lab/ping -m ok
+
+# Driver loopback (CI-safe, no Docker)
+./gradlew :packages:ispf-driver-mqtt:test :packages:ispf-driver-modbus:test :packages:ispf-driver-opcua:test
+```
+
+Full top-20 interop sweep:
+
+```bash
+bash deploy/tools/driver-interop-report.sh
+```
+
+Extended hardware-emulator fixtures (OpenDNP3 outstation, Gurux DLMS simulator) — BL-142+.
 
 ## Связанные документы
 

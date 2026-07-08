@@ -25,4 +25,13 @@ class MesBlueprintBootstrapTest {
         assertThat(model.variables()).extracting(v -> v.name())
                 .contains("batchId", "recipe", "phase");
     }
+
+    @Test
+    void workOrderV1RegisteredAsInstanceTypeForWorkOrders() {
+        var model = blueprintRegistry.requireByName(MesBlueprintBootstrap.WORK_ORDER_MODEL);
+        assertThat(model.type()).isEqualTo(BlueprintType.INSTANCE);
+        assertThat(model.targetObjectType()).isEqualTo(ObjectType.WORK_ORDER);
+        assertThat(model.variables()).extracting(v -> v.name())
+                .contains("orderNumber", "lineCode", "status", "priority");
+    }
 }

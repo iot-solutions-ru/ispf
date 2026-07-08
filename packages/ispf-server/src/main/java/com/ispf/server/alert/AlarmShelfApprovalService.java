@@ -1,6 +1,8 @@
 package com.ispf.server.alert;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,6 +47,12 @@ public class AlarmShelfApprovalService {
 
     public Optional<PendingShelfRequest> removePending(String id) {
         return Optional.ofNullable(pendingById.remove(id));
+    }
+
+    public void reject(String id) {
+        if (removePending(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown shelf request: " + id);
+        }
     }
 
     public record PendingShelfRequest(

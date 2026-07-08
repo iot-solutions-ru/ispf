@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ispf.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+    ispf.io/bl: BL-186
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ispf.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "ispf.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: ispf-server
+          image: "{{ .Values.image.server.repository }}:{{ .Values.image.server.tag }}"
+          imagePullPolicy: {{ .Values.image.server.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ispf.server.port }}
+              protocol: TCP
+          env:
+            - name: JAVA_OPTS
+              value: {{ .Values.ispf.server.javaOpts | quote }}
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ .Values.ispf.server.profiles | quote }}
+            {{- if .Values.configMap.enabled }}
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: "optional:file:/opt/ispf/config/"
+            {{- end }}
+            - name: ISPF_BOOTSTRAP_FIXTURES_ENABLED
+              value: {{ .Values.ispf.bootstrap.fixturesEnabled | quote }}
+            - name: ISPF_DRIVER_PACKS_DIR
+              value: {{ .Values.ispf.driverPacksDir | quote }}
+            - name: ISPF_HISTORIAN_STORE
+              value: {{ .Values.ispf.historian.store | quote }}
+            {{- if .Values.redis.enabled }}
+            - name: ISPF_REDIS_HOST
+              value: {{ .Values.ispf.redis.host | quote }}
+            - name: ISPF_REDIS_PORT
+              value: {{ .Values.ispf.redis.port | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources.server | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.configMap.enabled }}
+            - name: config
+              mountPath: /opt/ispf/config
+              readOnly: true
+            {{- end }}
+            - name: data
+              mountPath: /opt/ispf/data
+            - name: drivers
+              mountPath: {{ .Values.ispf.driverPacksDir }}
+        - name: nginx
+          image: "{{ .Values.image.nginx.repository }}:{{ .Values.image.nginx.tag }}"
+          imagePullPolicy: {{ .Values.image.nginx.pullPolicy }}
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources.nginx | nindent 12 }}
+      volumes:
+        {{- if .Values.configMap.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "ispf.fullname" . }}-config
+        {{- end }}
+        {{- if .Values.persistence.data.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "ispf.fullname" . }}-data
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+        {{- if .Values.persistence.drivers.enabled }}
+        - name: drivers
+          persistentVolumeClaim:
+            claimName: {{ include "ispf.fullname" . }}-drivers
+        {{- else }}
+        - name: drivers
+          emptyDir: {}
+        {{- end }}

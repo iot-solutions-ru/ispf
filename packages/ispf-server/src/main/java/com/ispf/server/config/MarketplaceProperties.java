@@ -10,6 +10,8 @@ public class MarketplaceProperties {
 
     private boolean enabled = true;
     private String defaultId = "iot-solutions";
+    /** Local dev/lab bundle directory, e.g. examples/marketplace-demo (BL-183). */
+    private String localBundlesDir = "";
     private List<Endpoint> endpoints = new ArrayList<>();
 
     public boolean isEnabled() {
@@ -26,6 +28,14 @@ public class MarketplaceProperties {
 
     public void setDefaultId(String defaultId) {
         this.defaultId = defaultId;
+    }
+
+    public String getLocalBundlesDir() {
+        return localBundlesDir;
+    }
+
+    public void setLocalBundlesDir(String localBundlesDir) {
+        this.localBundlesDir = localBundlesDir != null ? localBundlesDir : "";
     }
 
     public List<Endpoint> getEndpoints() {

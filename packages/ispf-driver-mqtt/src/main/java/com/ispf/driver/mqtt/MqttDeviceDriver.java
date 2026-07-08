@@ -41,7 +41,8 @@ public class MqttDeviceDriver implements DeviceDriver {
             "ISPF",
             Map.of(
                     "brokerUrl", "tcp://localhost:1883",
-                    "topicPrefix", "ispf/devices/"
+                    "topicPrefix", "ispf/devices/",
+                    "eventToVariable", "false"
             )
     );
 
@@ -68,8 +69,10 @@ public class MqttDeviceDriver implements DeviceDriver {
     private int callbackThreads = 4;
     private int callbackQueueCapacity = 10_000;
     private boolean ingressCoalesceEnabled = true;
+    private boolean eventToVariable;
     private IngressElasticSettings ingressElastic = DEFAULT_ELASTIC;
     private final Map<String, String> subscriptions = new ConcurrentHashMap<>();
+    private final Map<String, String> topicVariableNames = new ConcurrentHashMap<>();
     private volatile boolean disconnected;
     private DriverIngressBuffer<String, byte[]> ingressBuffer;
     private DriverIngressFifoExecutor ingressFifo;
@@ -105,6 +108,7 @@ public class MqttDeviceDriver implements DeviceDriver {
             case "callbackThreads" -> callbackThreads = DriverIngress.resolveThreads(Map.of(key, value), callbackThreads);
             case "callbackQueueCapacity" -> callbackQueueCapacity = DriverIngress.resolveCapacity(Map.of(key, value), callbackQueueCapacity);
             case "ingressCoalesceEnabled" -> ingressCoalesceEnabled = DriverIngress.resolveCoalesceEnabled(Map.of(key, value), ingressCoalesceEnabled);
+            case "eventToVariable" -> eventToVariable = Boolean.parseBoolean(value.trim());
             case DriverIngress.TELEMETRY_PUBLISH_MODE -> {
                 if ("EVENT_JOURNAL_ONLY".equalsIgnoreCase(value.trim())) {
                     ingressCoalesceEnabled = false;
@@ -201,7 +205,7 @@ public class MqttDeviceDriver implements DeviceDriver {
         String payload = new String(payloadBytes, StandardCharsets.UTF_8);
         Instant observed = MqttPayloadTimestamps.resolve(payloadBytes);
         String variableName = resolveVariableForTopic(topic);
-        if (usesIngressSchema(variableName)) {
+        if (usesIngressSchema(variableName, topic)) {
             driverObject.updateVariable(variableName, DataRecord.single(
                     INGRESS_SCHEMA,
                     Map.of("topic", topic, "raw", payload)
@@ -310,10 +314,46 @@ public class MqttDeviceDriver implements DeviceDriver {
         }
         for (Map.Entry<String, String> entry : subscriptions.entrySet()) {
             if (mqttTopicMatches(entry.getKey(), arrivedTopic)) {
+                if (eventToVariable && isCatchAllSubscription(entry.getKey())) {
+                    return topicToVariableName(arrivedTopic);
+                }
+                if (!eventToVariable && isCatchAllSubscription(entry.getKey())) {
+                    return "lastMessage";
+                }
                 return entry.getValue();
             }
         }
+        if (eventToVariable) {
+            return topicToVariableName(arrivedTopic);
+        }
         return "lastMessage";
+    }
+
+    private static boolean isCatchAllSubscription(String pattern) {
+        return "#".equals(pattern) || pattern.endsWith("/#") || pattern.endsWith("#");
+    }
+
+    private String topicToVariableName(String topic) {
+        return topicVariableNames.computeIfAbsent(topic, this::sanitizeTopicToVariableName);
+    }
+
+    private String sanitizeTopicToVariableName(String topic) {
+        String relative = topic;
+        if (topicPrefix != null && !topicPrefix.isBlank() && topic.startsWith(topicPrefix)) {
+            relative = topic.substring(topicPrefix.length());
+        }
+        String sanitized = relative.replaceAll("[^a-zA-Z0-9]+", "_").replaceAll("_+", "_");
+        sanitized = sanitized.replaceAll("^_|_$", "");
+        if (sanitized.isBlank()) {
+            sanitized = "topic";
+        }
+        if (Character.isDigit(sanitized.charAt(0))) {
+            sanitized = "v_" + sanitized;
+        }
+        if (sanitized.length() > 64) {
+            sanitized = sanitized.substring(0, 64);
+        }
+        return sanitized;
     }
 
     private static boolean mqttTopicMatches(String pattern, String topic) {
@@ -343,11 +383,14 @@ public class MqttDeviceDriver implements DeviceDriver {
         return patternIndex == patternParts.length && topicIndex == topicParts.length;
     }
 
-    private boolean usesIngressSchema(String variableName) {
+    private boolean usesIngressSchema(String variableName, String topic) {
         if (ingressVariable != null && !ingressVariable.isBlank()) {
             return ingressVariable.equals(variableName);
         }
-        return "lastIngress".equals(variableName);
+        if ("lastIngress".equals(variableName)) {
+            return true;
+        }
+        return eventToVariable && variableName.equals(topicToVariableName(topic));
     }
 
     @Override

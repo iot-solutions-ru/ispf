@@ -318,6 +318,54 @@ public class WorkflowService {
     }
 
     @Transactional
+    public Map<String, Object> deliverMessage(String instanceId, String messageName, String operatorId)
+            throws WorkflowException {
+        if (messageName == null || messageName.isBlank()) {
+            throw new WorkflowException("Message name is required");
+        }
+        WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
+        WorkflowInstance instance = stored.instance();
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting: " + instanceId);
+        }
+        if (!instance.pendingMessageNames().contains(messageName)) {
+            throw new WorkflowException("Instance is not waiting for message: " + messageName);
+        }
+
+        String workflowPath = instance.workflowPath();
+        BpmnProcess process = workflowEngine.parse(
+                readString(objectManager.require(workflowPath), "bpmnXml")
+                        .orElseThrow(() -> new WorkflowException("BPMN missing"))
+        );
+
+        if (operatorId != null && !operatorId.isBlank()) {
+            instance.claim(operatorId);
+        }
+        WorkflowConditionEvaluator evaluator = conditionFactory.forTriggerObjectPath(stored.triggerObjectPath());
+        workflowEngine.deliverMessage(
+                instance,
+                process,
+                messageName,
+                this::executeTask,
+                this::executeMessageTask,
+                evaluator
+        );
+
+        UserTaskDefinition nextPending = instance.pendingUserTaskId()
+                .map(id -> process.userTasks().get(id))
+                .orElse(null);
+        instanceStore.save(instance, process, stored.triggerObjectPath(), nextPending);
+        persistInstanceSnapshot(workflowPath, instance);
+        publishInstanceEvent(workflowPath, instance);
+
+        return Map.of(
+                "instanceId", instanceId,
+                "message", messageName,
+                "status", instance.status().name()
+        );
+    }
+
+    @Transactional
     public Map<String, Object> fireDueTimers(String instanceId, String operatorId) throws WorkflowException {
         WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(instanceId);
         WorkflowInstance instance = stored.instance();
@@ -387,6 +435,33 @@ public class WorkflowService {
     }
 
     @Transactional
+    public Map<String, Object> deliverMessageByWorkflowPath(String workflowPath, String messageName, String operatorId)
+            throws WorkflowException {
+        if (messageName == null || messageName.isBlank()) {
+            throw new WorkflowException("Message name is required");
+        }
+        List<WorkflowInstanceEntity> waiting = instanceRepository.findByWorkflowPathAndStatus(
+                workflowPath,
+                InstanceStatus.WAITING.name()
+        );
+        List<String> delivered = new ArrayList<>();
+        for (WorkflowInstanceEntity entity : waiting) {
+            WorkflowInstanceStore.StoredWorkflowInstance stored = instanceStore.load(entity.getId());
+            if (!stored.instance().pendingMessageNames().contains(messageName)) {
+                continue;
+            }
+            deliverMessage(entity.getId(), messageName, operatorId);
+            delivered.add(entity.getId());
+        }
+        return Map.of(
+                "workflowPath", workflowPath,
+                "message", messageName,
+                "deliveredCount", delivered.size(),
+                "instanceIds", delivered
+        );
+    }
+
+    @Transactional
     public void handleVariableTrigger(String objectPath, String variableName) {
         for (String workflowPath : eventTriggerIndex.findVariableWorkflows(objectPath, variableName)) {
             PlatformObject node = objectManager.require(workflowPath);
@@ -443,6 +518,16 @@ public class WorkflowService {
     }
 
     private void executeMessageTask(MessageTaskDefinition task, WorkflowInstance instance) {
+        if ("bpmn-throw".equalsIgnoreCase(task.channel())) {
+            String messageName = task.subject();
+            instance.resumeMessageIfPresent(messageName);
+            try {
+                self.getObject().deliverMessageByWorkflowPath(instance.workflowPath(), messageName, null);
+            } catch (WorkflowException e) {
+                log.debug("BPMN message throw had no external waiters for {}: {}", messageName, e.getMessage());
+            }
+            return;
+        }
         if ("nats".equalsIgnoreCase(task.channel())) {
             natsEventBridge.publish(task.subject(), task.message());
             return;
@@ -583,7 +668,8 @@ public class WorkflowService {
             natsEventBridge.publishWorkflowEvent(path, "waiting", Map.of(
                     "instanceId", instance.instanceId(),
                     "taskId", instance.pendingUserTaskId().orElse(""),
-                    "signal", instance.pendingSignalName().orElse("")
+                    "signal", instance.pendingSignalName().orElse(""),
+                    "message", instance.pendingMessageName().orElse("")
             ));
         }
     }

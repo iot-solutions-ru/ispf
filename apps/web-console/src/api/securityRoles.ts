@@ -5,6 +5,7 @@ export interface SecurityRoleSummary {
   displayName: string;
   description: string;
   builtIn: boolean;
+  template?: boolean;
   objectPath: string;
   createdAt: string;
   updatedAt: string;

@@ -279,6 +279,32 @@ ispf.federation:
 
 Тесты: `FederationOutboundEventBufferTest`, `FederationStoreForwardIntegrationTest`.
 
+### Agent store-forward service (BL-145)
+
+`AgentStoreForwardService` (`com.ispf.server.agent`) — именованный фасад над in-memory буфером для edge outbound tunnel. Используется `FederationTunnelAgentService` при disconnect/reconnect.
+
+Конфиг:
+
+```yaml
+ispf:
+  agent:
+    store-forward:
+      enabled: true                 # ISPF_AGENT_STORE_FORWARD_ENABLED
+      max-bytes: 2097152            # ISPF_AGENT_STORE_FORWARD_MAX_BYTES
+      drop-policy: DROP_OLDEST      # ISPF_AGENT_STORE_FORWARD_DROP_POLICY
+```
+
+| Ключ | Default | Описание |
+|------|---------|----------|
+| `enabled` | `true` | При `false` события не буферизуются и не replay |
+| `max-bytes` | 2 MiB | Лимит per-agent (делегирует в `FederationOutboundEventBufferRegistry`) |
+| `drop-policy` | `DROP_OLDEST` | Политика переполнения |
+| `persist-to-disk` | `true` | JSON snapshot в `{data-dir}/agent/store-forward-buffer.json` |
+
+Legacy alias: `ispf.federation.outbound-buffer.*` — тот же registry; новые edge deployments предпочитают `ispf.agent.store-forward.*`.
+
+**Persistence (BL-145):** при `persist-to-disk=true` pending events сохраняются в `{ISPF_DATA_DIR}/agent/store-forward-buffer.json` и восстанавливаются при restart.
+
 **Limits (v1):** буфер только in-memory — при restart edge/hub события в очереди теряются. Не покрывает HTTP-only peers без outbound tunnel.
 
 ### Peer health SLO (BL-118)

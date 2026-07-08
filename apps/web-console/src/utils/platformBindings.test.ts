@@ -7,8 +7,8 @@ import {
 } from "./platformBindings";
 
 describe("platformBindings", () => {
-  it("lists 18 functions matching PlatformBindingRegistry", () => {
-    expect(PLATFORM_BINDING_ENTRIES).toHaveLength(18);
+  it("lists 20 functions matching PlatformBindingRegistry", () => {
+    expect(PLATFORM_BINDING_ENTRIES).toHaveLength(20);
     expect(PLATFORM_BINDING_NAMES).toContain("counterRate");
     expect(PLATFORM_BINDING_NAMES).toContain("callFunctionAt");
     expect(PLATFORM_BINDING_NAMES).toContain("sumRecordField");
@@ -38,6 +38,15 @@ describe("platformBindings", () => {
     expect(buildPlatformBindingExpression(entry!, values)).toBe(
       'refAt("root.platform.devices.pump-01", pressure)'
     );
+  });
+
+  it("builds rollingAvg analytics helper for chart bindings", () => {
+    const entry = PLATFORM_BINDING_ENTRIES.find((item) => item.id === "rollingAvg");
+    expect(entry).toBeDefined();
+    const values = defaultParamValues(entry!, {
+      variableNames: ["temperature"],
+    });
+    expect(buildPlatformBindingExpression(entry!, values)).toBe("rollingAvg('temperature', '5m')");
   });
 
   it("omits optional callFunction input", () => {

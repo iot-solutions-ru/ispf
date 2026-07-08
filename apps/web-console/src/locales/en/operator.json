@@ -40,6 +40,11 @@
   "alarmShelves.noExpiry": "until resume",
   "alarmShelves.expired": "expired",
   "alarmShelves.unshelve": "Unshelve",
+  "alarmShelves.approvalTitle": "Shelf approval queue",
+  "alarmShelves.approvalCount": "{{count}} pending",
+  "alarmShelves.requestedBy": "requested by {{user}}",
+  "alarmShelves.approve": "Approve",
+  "alarmShelves.reject": "Reject",
   "preferences.title": "Preferences",
   "preferences.alarmsLegend": "Alarms",
   "preferences.sound": "Alarm sound",
@@ -130,5 +135,9 @@
   "agent.pickOption": "Pick an option or refine your request:",
   "offline.staleBanner": "Offline — showing cached data from {{time}}",
   "offline.reconnecting": "Back online — refreshing…",
-  "offline.unknownTime": "unknown time"
+  "offline.unknownTime": "unknown time",
+  "offline.badge": "Offline",
+  "offline.badgeTitle": "No network connection — showing cached data",
+  "federationPeer.label": "Federation site",
+  "federationPeer.allSites": "All sites"
 }

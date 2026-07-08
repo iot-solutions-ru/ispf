@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 export type DataSourceConnectionMode = "internal" | "external";
@@ -31,6 +32,23 @@ interface DataSourceConnectionFieldsProps extends DataSourceConnectionValues {
   passwordPlaceholder?: string;
 }
 
+function Field({
+  label,
+  children,
+  span = 1,
+}: {
+  label: string;
+  children: ReactNode;
+  span?: 1 | 2;
+}) {
+  return (
+    <label className={`ds-field${span === 2 ? " ds-field--span-2" : ""}`}>
+      <span className="ds-field-label">{label}</span>
+      {children}
+    </label>
+  );
+}
+
 export default function DataSourceConnectionFields({
   connectionMode,
   schemaName,
@@ -51,39 +69,46 @@ export default function DataSourceConnectionFields({
   const { t } = useTranslation(["platform"]);
 
   return (
-    <>
-      <label>
-        {t("platform:dataSource.connectionMode")}
-        <select
-          value={connectionMode}
-          onChange={(e) => onConnectionModeChange(e.target.value as DataSourceConnectionMode)}
+    <div className="ds-connection-fields">
+      <div className="ds-mode-segment" role="tablist" aria-label={t("platform:dataSource.connectionMode")}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={connectionMode === "internal"}
+          className={`ds-mode-segment-btn${connectionMode === "internal" ? " active" : ""}`}
+          onClick={() => onConnectionModeChange("internal")}
         >
-          <option value="internal">{t("platform:dataSource.modeInternal")}</option>
-          <option value="external">{t("platform:dataSource.modeExternal")}</option>
-        </select>
-      </label>
+          {t("platform:dataSource.modeInternalShort")}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={connectionMode === "external"}
+          className={`ds-mode-segment-btn${connectionMode === "external" ? " active" : ""}`}
+          onClick={() => onConnectionModeChange("external")}
+        >
+          {t("platform:dataSource.modeExternalShort")}
+        </button>
+      </div>
+
       {connectionMode === "internal" ? (
-        <label>
-          {t("platform:dataSource.schema")}
+        <Field label={t("platform:dataSource.schema")} span={2}>
           <input
             value={schemaName}
             onChange={(e) => onSchemaNameChange(e.target.value)}
             required
             placeholder={t("platform:dataSource.schemaPlaceholder")}
           />
-        </label>
+        </Field>
       ) : (
         <>
-          <label className="full">
-            {t("platform:dataSource.jdbcUrl")}
+          <Field label={t("platform:dataSource.jdbcUrl")} span={2}>
             <input value={jdbcUrl} onChange={(e) => onJdbcUrlChange(e.target.value)} required />
-          </label>
-          <label>
-            {t("platform:dataSource.jdbcDriverClass")}
+          </Field>
+          <Field label={t("platform:dataSource.jdbcDriverClass")}>
             <input value={jdbcDriverClass} onChange={(e) => onJdbcDriverClassChange(e.target.value)} />
-          </label>
-          <label>
-            {t("platform:dataSource.poolSize")}
+          </Field>
+          <Field label={t("platform:dataSource.poolSize")}>
             <input
               type="number"
               min={1}
@@ -91,22 +116,21 @@ export default function DataSourceConnectionFields({
               value={poolSize}
               onChange={(e) => onPoolSizeChange(Number(e.target.value))}
             />
-          </label>
-          <label>
-            {t("platform:dataSource.jdbcUsername")}
+          </Field>
+          <Field label={t("platform:dataSource.jdbcUsername")}>
             <input value={jdbcUsername} onChange={(e) => onJdbcUsernameChange(e.target.value)} />
-          </label>
-          <label>
-            {t("platform:dataSource.jdbcPassword")}
+          </Field>
+          <Field label={t("platform:dataSource.jdbcPassword")}>
             <input
               type="password"
               value={jdbcPassword}
               onChange={(e) => onJdbcPasswordChange(e.target.value)}
               placeholder={passwordPlaceholder}
+              autoComplete="new-password"
             />
-          </label>
+          </Field>
         </>
       )}
-    </>
+    </div>
   );
 }

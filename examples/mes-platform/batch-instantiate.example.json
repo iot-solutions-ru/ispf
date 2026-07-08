@@ -1,0 +1,47 @@
+{
+  "description": "Instantiate a LOT (ISA-88 batch) under root.platform.mes.lots using the batch-v1 INSTANCE blueprint (BL-168).",
+  "prerequisites": [
+    "Server started (MesPlatformBootstrap seeds root.platform.mes.*)",
+    "batch-v1 registered under root.platform.instance-types (MesBlueprintBootstrap)"
+  ],
+  "resolveBlueprintId": {
+    "method": "GET",
+    "url": "/api/v1/blueprints",
+    "matchName": "batch-v1",
+    "useField": "id"
+  },
+  "instantiate": {
+    "method": "POST",
+    "url": "/api/v1/blueprints/{batch-v1-id}/instantiate",
+    "body": {
+      "parentPath": "root.platform.mes.lots",
+      "instanceName": "batch-line-a01-001",
+      "parameters": {
+        "batchId": "BATCH-LINE-A01-001",
+        "recipe": "recipe-standard-a",
+        "phase": "charge"
+      }
+    }
+  },
+  "expectedObjectPath": "root.platform.mes.lots.batch-line-a01-001",
+  "batchRunnerFollowUp": {
+    "description": "Advance ISA-88 phase via mes_batch_runPhase BFF on mes-platform-hub",
+    "bff": {
+      "objectPath": "root.platform.devices.mes-platform-hub",
+      "functionName": "mes_batch_runPhase",
+      "input": {
+        "batchPath": "root.platform.mes.lots.batch-line-a01-001",
+        "batchId": "BATCH-LINE-A01-001",
+        "recipe": "recipe-standard-a",
+        "phase": "react"
+      }
+    },
+    "statusCheck": {
+      "functionName": "mes_batch_getStatus",
+      "input": {
+        "batchPath": "root.platform.mes.lots.batch-line-a01-001"
+      },
+      "expectedPhase": "react"
+    }
+  }
+}

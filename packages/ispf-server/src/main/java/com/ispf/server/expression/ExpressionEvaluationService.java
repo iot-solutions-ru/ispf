@@ -49,7 +49,7 @@ public class ExpressionEvaluationService {
 
         try {
             BindingExpressionValidator.validateOrThrow(trimmed);
-            steps.add(new EvaluateStep("validate", "ok", null));
+            steps.add(new EvaluateStep("validate", "ok", Map.of("expression", trimmed)));
         } catch (Exception e) {
             steps.add(new EvaluateStep("validate", "error", e.getMessage()));
             return new EvaluateResult(false, trimmed, null, null, e.getMessage(), steps);
@@ -64,13 +64,38 @@ public class ExpressionEvaluationService {
             return new EvaluateResult(false, trimmed, null, null, e.getMessage(), steps);
         }
 
-        Map<String, Object> context = buildVariableContext(node);
-        steps.add(new EvaluateStep("context", "ok", context));
+        Map<String, Object> variableContext = buildVariableContext(node);
+        steps.add(new EvaluateStep("variable-context", "ok", variableContext));
+
+        boolean platformBinding = PlatformBindingRegistry.matches(trimmed);
+        if (platformBinding) {
+            steps.add(new EvaluateStep("compile", "ok", Map.of("engine", "platform-binding", "expression", trimmed)));
+            PlatformBindingRegistry.find(trimmed).ifPresent(binding ->
+                    steps.add(new EvaluateStep("platform-binding", "ok", Map.of(
+                            "binding", binding.getClass().getSimpleName())))
+            );
+        } else {
+            try {
+                expressionEngine.validateCelCompile(trimmed);
+                steps.add(new EvaluateStep("compile-cel", "ok", Map.of("engine", "cel", "expression", trimmed)));
+            } catch (Exception e) {
+                steps.add(new EvaluateStep("compile-cel", "error", e.getMessage()));
+                return new EvaluateResult(false, trimmed, null, null, e.getMessage(), steps);
+            }
+            Map<String, Object> celBindings = expressionEngine.buildEvaluationBindings(node, Map.of());
+            steps.add(new EvaluateStep("cel-bindings", "ok", celBindings));
+        }
 
         try {
             Object rawResult = evaluateRaw(node, trimmed, targetVariable);
             String resultType = rawResult != null ? rawResult.getClass().getSimpleName() : "null";
             steps.add(new EvaluateStep("evaluate", "ok", rawResult));
+            if (targetVariable != null && !targetVariable.isBlank()) {
+                steps.add(new EvaluateStep("map-result", "ok", Map.of(
+                        "targetVariable", targetVariable,
+                        "resultType", resultType
+                )));
+            }
             return new EvaluateResult(true, trimmed, rawResult, resultType, null, steps);
         } catch (Exception e) {
             steps.add(new EvaluateStep("evaluate", "error", e.getMessage()));

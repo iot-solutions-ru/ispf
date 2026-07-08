@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ispf.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    ispf.io/bl: BL-186
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: web
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "ispf.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

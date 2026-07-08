@@ -74,7 +74,7 @@ ls build/driver-packs/ispf-driver-acme-widget/
 
 ## Reference drivers (roadmap)
 
-BL-144 acceptance (wave 2): три reference custom drivers в `examples/driver-ddk-*`. Сейчас — один compilable template stub в DDK module.
+BL-144 acceptance (wave 2): три reference custom drivers — `template/` (acme-widget), `examples/simple-counter/`, `examples/json-poller/`. Все три компилируются в `:packages:ispf-driver-ddk:test`.
 
 ## Связанные ADR
 

@@ -84,6 +84,9 @@ final class DriverProductionMatrix {
     private static final Set<Capability> POLL_WRITE_OBSERVED = EnumSet.of(
             Capability.POLL, Capability.WRITE, Capability.OBSERVED_AT
     );
+    private static final Set<Capability> POLL_WRITE_QUALITY = EnumSet.of(
+            Capability.POLL, Capability.WRITE, Capability.QUALITY
+    );
     private static final Set<Capability> POLL_WRITE = EnumSet.of(Capability.POLL, Capability.WRITE);
     private static final Set<Capability> POLL_OBSERVED = EnumSet.of(Capability.POLL, Capability.OBSERVED_AT);
     private static final Set<Capability> POLL_ONLY = EnumSet.of(Capability.POLL);
@@ -110,8 +113,8 @@ final class DriverProductionMatrix {
             ),
                     testPath("ispf-driver-opcua", "com.ispf.driver.opcua.OpcUaDeviceDriverTest"),
                     "ispf-driver-opcua"),
-            entry("opcua-server", DriverMaturity.PRODUCTION, POLL_WRITE,
-                    testPath("ispf-driver-opcua-server", "com.ispf.driver.opcuaserver.OpcUaServerPointTest"),
+            entry("opcua-server", DriverMaturity.PRODUCTION, POLL_WRITE_QUALITY,
+                    testPath("ispf-driver-opcua-server", "com.ispf.driver.opcuaserver.OpcUaServerDeviceDriverTest"),
                     "ispf-driver-opcua-server"),
             entry("s7", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-s7", "com.ispf.driver.s7.S7DeviceDriverTest"),
@@ -125,7 +128,7 @@ final class DriverProductionMatrix {
             entry("bacnet", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-bacnet", "com.ispf.driver.bacnet.BacnetDeviceDriverNetworkTest"),
                     "ispf-driver-bacnet"),
-            entry("iec104", DriverMaturity.PRODUCTION, POLL_WRITE,
+            entry("iec104", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-iec104", "com.ispf.driver.iec104.Iec104DeviceDriverTest"),
                     "ispf-driver-iec104"),
             entry("iec104-server", DriverMaturity.BETA, POLL_ONLY,
@@ -134,11 +137,12 @@ final class DriverProductionMatrix {
             entry("dnp3", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-dnp3", "com.ispf.driver.dnp3.Dnp3DeviceDriverTest"),
                     "ispf-driver-dnp3"),
-            entry("dlms", DriverMaturity.PRODUCTION, POLL_WRITE,
+            entry("dlms", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
                     testPath("ispf-driver-dlms", "com.ispf.driver.dlms.DlmsDeviceDriverTest"),
                     "ispf-driver-dlms"),
-            entry("cwmp", DriverMaturity.BETA, POLL_WRITE,
-                    testPath("ispf-driver-cwmp", "com.ispf.driver.cwmp.CwmpDeviceDriverTest")),
+            entry("cwmp", DriverMaturity.PRODUCTION, POLL_WRITE_OBSERVED,
+                    testPath("ispf-driver-cwmp", "com.ispf.driver.cwmp.CwmpDeviceDriverTest"),
+                    "ispf-driver-cwmp"),
             entry("ethernet-ip", DriverMaturity.PRODUCTION, POLL_ONLY,
                     testPath("ispf-driver-ethernet-ip", "com.ispf.driver.ethernetip.EthernetIpDeviceDriverTest"),
                     "ispf-driver-ethernet-ip"),

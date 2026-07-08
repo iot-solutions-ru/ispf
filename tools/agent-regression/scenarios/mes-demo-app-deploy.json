@@ -1,0 +1,17 @@
+{
+  "id": "mes-demo-app-deploy",
+  "version": "1",
+  "domain": "mes",
+  "title": "Demo application bundle deploy",
+  "description": "Validate and import demo-app with SQL reports and operator shell.",
+  "prompt": "Deploy demo application bundle (appId demo) with validate_bundle and import_package.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "demo",
+    "manifestPath": "examples/demo-app/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "run_report"]
+  }
+}

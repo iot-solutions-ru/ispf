@@ -29,11 +29,15 @@ jobs:
               - 'settings.gradle.kts'
               - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
+              - 'tools/agent-regression/**'
+              - 'examples/**'
             web_console:
               - 'apps/web-console/**'
               - 'tools/symbol-pack-isa/**'
             tools:
+              - 'tools/ai-pack/**'
               - 'tools/license-audit/**'
+              - 'tools/agent-regression/**'
 
   backend:
     needs: changes
@@ -51,6 +55,9 @@ jobs:
 
       - name: License compliance audit
         run: node tools/license-audit/check-all.mjs
+
+      - name: Agent regression scenarios (BL-178)
+        run: node tools/agent-regression/validate-scenarios.mjs
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew

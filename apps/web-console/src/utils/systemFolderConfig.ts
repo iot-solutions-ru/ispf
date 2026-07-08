@@ -6,7 +6,7 @@ import {
 } from "../types/blueprints";
 import type { ObjectType } from "../types";
 import { isOperatorAppChildPath } from "./operatorAppsPath";
-import { isSecurityRolePath, isSecurityRolesRoot } from "./securityRolePath";
+import { isSecurityRolePath, isSecurityRolesRoot, isSecurityRoot } from "./securityRolePath";
 import { isSecurityUserPath, isSecurityUsersRoot } from "./securityUserPath";
 import {
   isAlertRulePath,
@@ -134,7 +134,8 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
 
 export function isSystemCatalogFolder(path: string, objectType?: ObjectType): boolean {
   if (
-    isSecurityUsersRoot(path)
+    isSecurityRoot(path)
+    || isSecurityUsersRoot(path)
     || isSecurityRolesRoot(path)
     || isSecurityUserPath(path)
     || isSecurityRolePath(path)

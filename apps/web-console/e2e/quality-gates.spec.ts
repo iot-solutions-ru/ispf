@@ -5,7 +5,7 @@ import { buildStressMimicDocument } from "./fixtures/stressMimic";
 
 const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
 const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 55);
-const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 120);
+const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 200);
 
 async function openOperatorE2e(page: import("@playwright/test").Page) {
   await Promise.all([

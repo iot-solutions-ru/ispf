@@ -60,7 +60,7 @@ export default function SecurityRolesPanel({ canManage, onSelectRole }: Security
               </td>
               <td>{role.displayName}</td>
               <td>{role.description || t("common:empty.dash")}</td>
-              <td>{role.builtIn ? t("roles.type.builtIn") : t("roles.type.custom")}</td>
+              <td>{role.builtIn ? t("roles.type.builtIn") : role.template ? t("roles.type.template") : t("roles.type.custom")}</td>
             </tr>
           ))}
         </tbody>

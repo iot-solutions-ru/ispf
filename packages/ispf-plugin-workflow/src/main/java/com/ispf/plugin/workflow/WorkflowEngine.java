@@ -146,6 +146,27 @@ public class WorkflowEngine {
         }
     }
 
+    public void deliverMessage(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            String messageName,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        if (instance.status() != InstanceStatus.WAITING) {
+            throw new WorkflowException("Instance is not waiting for message");
+        }
+        List<ExecutionToken> resumed = instance.resumeMessage(messageName);
+        for (ExecutionToken token : resumed) {
+            String catchNodeId = token.currentNodeId();
+            advanceToken(instance, process, token, catchNodeId, executor, messageExecutor, evaluator);
+        }
+        while (instance.status() == InstanceStatus.RUNNING) {
+            step(instance, process, executor, messageExecutor, evaluator);
+        }
+    }
+
     public void fireDueTimers(
             WorkflowInstance instance,
             BpmnProcess process,
@@ -271,10 +292,39 @@ public class WorkflowEngine {
                     instance.scheduleBoundaryTimer(token, boundary.id(), deadlineFromNow(boundary.durationSeconds()));
                 }
             }
+            case "intermediateThrowEvent" -> {
+                MessageThrowDefinition throwDef = process.messageThrowEvents().get(nodeId);
+                if (throwDef == null) {
+                    instance.fail("Message throw definition missing: " + nodeId);
+                    return;
+                }
+                try {
+                    messageExecutor.execute(
+                            new MessageTaskDefinition(
+                                    throwDef.id(),
+                                    throwDef.name(),
+                                    throwDef.messageName(),
+                                    throwDef.messageName(),
+                                    "bpmn-throw",
+                                    throwDef.parameters()
+                            ),
+                            instance
+                    );
+                } catch (WorkflowException e) {
+                    instance.fail(e.getMessage());
+                    return;
+                }
+                advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
+            }
             case "intermediateCatchEvent" -> {
                 TimerCatchDefinition timerCatch = process.timerCatchEvents().get(nodeId);
                 if (timerCatch != null) {
                     instance.waitTokenAtTimer(token, nodeId, deadlineFromNow(timerCatch.durationSeconds()));
+                    return;
+                }
+                MessageCatchDefinition messageCatch = process.messageCatchEvents().get(nodeId);
+                if (messageCatch != null) {
+                    instance.waitTokenAtMessage(token, nodeId, messageCatch.messageName());
                     return;
                 }
                 SignalCatchDefinition catchDef = process.signalCatchEvents().get(nodeId);

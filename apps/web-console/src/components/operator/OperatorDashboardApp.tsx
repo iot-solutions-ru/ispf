@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthSession } from "../../auth/session";
+import { isAdminSession } from "../../auth/session";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
 import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
@@ -11,18 +12,21 @@ import {
   resolveOperatorReport,
   type OperatorUi,
 } from "../../types/operatorUi";
-import type { DashboardSession } from "../dashboard/DashboardContext";
-import { emptySession, mergeSession } from "../dashboard/DashboardContext";
+import type { DashboardLayoutPreset } from "../../types/dashboard";
+import { emptySession, mergeSession, type DashboardSession } from "../dashboard/DashboardContext";
 import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
 import ReportBuilder from "../report/ReportBuilder";
 import AlarmBarOverlay from "./AlarmBarOverlay";
 import AlarmShelfPanel from "./AlarmShelfPanel";
+import AlarmShelfApprovalPanel from "./AlarmShelfApprovalPanel";
 import OperatorShellFrame from "./OperatorShellFrame";
 import OperatorSidebar from "./OperatorSidebar";
 import OperatorSidebarToggle from "./OperatorSidebarToggle";
 import OperatorAgentFab from "./OperatorAgentFab";
 import OperatorOfflineBanner from "./OperatorOfflineBanner";
+import OperatorOfflineBadge from "./OperatorOfflineBadge";
+import OperatorFederationPeerSelector from "./OperatorFederationPeerSelector";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForOperatorUi } from "../../utils/operatorOfflineCache";
 
@@ -111,6 +115,11 @@ function saveStoredDashboardSession(
   }
 }
 
+function resolveFederationPeerFromUrl(): string | null {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("federationPeer") ?? params.get("ctx.federationPeer");
+}
+
 export default function OperatorDashboardApp({
   appId,
   operatorId = "operator",
@@ -122,7 +131,7 @@ export default function OperatorDashboardApp({
   const queryClient = useQueryClient();
   useObjectWebSocket();
   const uiQuery = useOperatorUi(appId);
-  const { showStaleBanner, reconnecting } = useOperatorConnectivity(() => {
+  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() => {
     queryClient.invalidateQueries({ queryKey: ["operator-ui", appId] });
     queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     queryClient.invalidateQueries({ queryKey: ["variables"] });
@@ -156,11 +165,69 @@ export default function OperatorDashboardApp({
   );
   const activePath = viewKind === "report" ? activeReportPath : activeDashboardPath;
   const sidebarDrawer = useOperatorSidebarDrawer([viewKind, activePath]);
+  const [layoutPreset, setLayoutPreset] = useState<DashboardLayoutPreset | undefined>();
+  const [federationPeerId, setFederationPeerId] = useState<string | null>(resolveFederationPeerFromUrl);
+  const videoWallMode = viewKind === "dashboard" && layoutPreset === "video-wall-2x2";
 
-  const dashboardSession = useMemo(
-    () => (activeDashboardPath ? (sessionsByDashboard[activeDashboardPath] ?? emptySession()) : emptySession()),
-    [activeDashboardPath, sessionsByDashboard]
+  useEffect(() => {
+    setLayoutPreset(undefined);
+  }, [activeDashboardPath, viewKind]);
+
+  const handleFederationPeerChange = useCallback(
+    (peerId: string | null) => {
+      setFederationPeerId(peerId);
+      if (!activeDashboardPath) {
+        const url = new URL(window.location.href);
+        if (peerId) {
+          url.searchParams.set("federationPeer", peerId);
+          url.searchParams.set("ctx.federationPeer", peerId);
+        } else {
+          url.searchParams.delete("federationPeer");
+          url.searchParams.delete("ctx.federationPeer");
+        }
+        window.history.replaceState({}, "", url.toString());
+        return;
+      }
+      setSessionsByDashboard((prev) => {
+        const current = prev[activeDashboardPath] ?? loadStoredDashboardSession(appId, activeDashboardPath) ?? emptySession();
+        const next: DashboardSession = {
+          ...current,
+          selection: { ...current.selection },
+        };
+        if (peerId) {
+          next.selection.federationPeer = peerId;
+        } else {
+          delete next.selection.federationPeer;
+        }
+        saveStoredDashboardSession(appId, activeDashboardPath, next);
+        return { ...prev, [activeDashboardPath]: next };
+      });
+      const url = new URL(window.location.href);
+      if (peerId) {
+        url.searchParams.set("federationPeer", peerId);
+        url.searchParams.set("ctx.federationPeer", peerId);
+      } else {
+        url.searchParams.delete("federationPeer");
+        url.searchParams.delete("ctx.federationPeer");
+      }
+      window.history.replaceState({}, "", url.toString());
+    },
+    [activeDashboardPath, appId]
   );
+
+  const handleLayoutPresetChange = useCallback((preset: DashboardLayoutPreset | undefined) => {
+    setLayoutPreset(preset);
+  }, []);
+
+  const dashboardSession = useMemo(() => {
+    const base = activeDashboardPath
+      ? (sessionsByDashboard[activeDashboardPath] ?? emptySession())
+      : emptySession();
+    if (!federationPeerId) {
+      return base;
+    }
+    return mergeSession(base, { selection: { federationPeer: federationPeerId } });
+  }, [activeDashboardPath, federationPeerId, sessionsByDashboard]);
 
   const handleDashboardSessionChange = useCallback(
     (next: DashboardSession) => {
@@ -227,6 +294,7 @@ export default function OperatorDashboardApp({
     navigateDashboard,
     navigateReport,
   });
+  const showShelfApproval = isAdminSession(session ?? null) && alarmBar.enabled;
 
   useEffect(() => {
     if (!ui) {
@@ -274,22 +342,27 @@ export default function OperatorDashboardApp({
     <div
       className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
         sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
-      }`}
+      }${videoWallMode ? " operator-shell--video-wall-2x2" : ""}`}
       data-testid="operator-shell"
     >
-      <OperatorDashboardChrome
-        ui={ui}
-        viewKind={viewKind}
-        activePath={activePath}
-        appId={appId}
-        session={session}
-        onSwitchAdmin={onSwitchAdmin}
-        onLogout={onLogout}
-        onSelectDashboard={navigateDashboard}
-        onSelectReport={navigateReport}
-        sidebarOpen={sidebarDrawer.open}
-        onToggleSidebar={sidebarDrawer.toggle}
-      />
+      {!videoWallMode && (
+        <OperatorDashboardChrome
+          ui={ui}
+          viewKind={viewKind}
+          activePath={activePath}
+          appId={appId}
+          session={session}
+          offline={offline}
+          federationPeerId={federationPeerId}
+          onFederationPeerChange={handleFederationPeerChange}
+          onSwitchAdmin={onSwitchAdmin}
+          onLogout={onLogout}
+          onSelectDashboard={navigateDashboard}
+          onSelectReport={navigateReport}
+          sidebarOpen={sidebarDrawer.open}
+          onToggleSidebar={sidebarDrawer.toggle}
+        />
+      )}
       <OperatorOfflineBanner
         visible={showStaleBanner}
         cachedAt={cachedAt}
@@ -312,6 +385,7 @@ export default function OperatorDashboardApp({
               session={dashboardSession}
               onSessionChange={handleDashboardSessionChange}
               onNavigateDashboard={navigateDashboard}
+              onLayoutPresetChange={handleLayoutPresetChange}
             />
           )
         }
@@ -321,11 +395,14 @@ export default function OperatorDashboardApp({
       {alarmBar.enabled && (
         <AlarmShelfPanel shelves={alarmBar.shelves} onUnshelve={alarmBar.onUnshelveShelf} />
       )}
-      <OperatorAgentFab
-        appId={appId}
-        onOpenDashboard={navigateDashboard}
-        onOpenReport={navigateReport}
-      />
+      <AlarmShelfApprovalPanel enabled={showShelfApproval} />
+      {!videoWallMode && (
+        <OperatorAgentFab
+          appId={appId}
+          onOpenDashboard={navigateDashboard}
+          onOpenReport={navigateReport}
+        />
+      )}
     </div>
   );
 }
@@ -336,6 +413,9 @@ function OperatorDashboardChrome({
   activePath,
   appId,
   session,
+  offline,
+  federationPeerId,
+  onFederationPeerChange,
   onSwitchAdmin,
   onLogout,
   onSelectDashboard,
@@ -348,6 +428,9 @@ function OperatorDashboardChrome({
   activePath: string;
   appId: string;
   session?: AuthSession;
+  offline?: boolean;
+  federationPeerId: string | null;
+  onFederationPeerChange: (peerId: string | null) => void;
   onSwitchAdmin?: () => void;
   onLogout?: () => void;
   onSelectDashboard: (path: string) => void;
@@ -366,12 +449,17 @@ function OperatorDashboardChrome({
       <header className="operator-topbar">
         <div>
           <strong>{ui.title}</strong>
+          <OperatorOfflineBadge visible={Boolean(offline)} />
           <span className="brand-sub">
             {appId} · {activeTitle}
             {session ? ` · ${session.displayName}` : ""}
           </span>
         </div>
         <div className="topbar-actions">
+          <OperatorFederationPeerSelector
+            selectedPeerId={federationPeerId}
+            onSelectPeer={onFederationPeerChange}
+          />
           <OperatorSidebarToggle open={sidebarOpen} onClick={onToggleSidebar} />
           <OperatorPreferences />
           {onLogout && (

@@ -221,6 +221,15 @@ public class AiController {
         return agentMetricsService.metrics(days);
     }
 
+    @GetMapping("/agent/metrics/tools")
+    public Map<String, Object> getAgentToolMetrics(
+            Authentication authentication,
+            @RequestParam(name = "days", defaultValue = "7") int days
+    ) {
+        objectAccessService.requireAdmin(authentication);
+        return agentMetricsService.toolMetrics(days);
+    }
+
     @GetMapping("/agent/sessions/{sessionId}/documents")
     public Map<String, Object> listAgentSessionDocuments(
             Authentication authentication,

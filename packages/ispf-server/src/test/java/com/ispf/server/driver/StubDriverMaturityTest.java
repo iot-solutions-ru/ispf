@@ -14,7 +14,8 @@ class StubDriverMaturityTest {
     @ValueSource(strings = {
             "ethernet-ip",
             "opc-da",
-            "opc-bridge"
+            "opc-bridge",
+            "cwmp"
     })
     void promotedIndustrialDriversAreProduction(String driverId) {
         assertEquals(DriverMaturity.PRODUCTION, DriverMaturityRegistry.resolve(driverId), driverId);

@@ -137,11 +137,27 @@ public class SystemObjectStructureService {
     }
 
     @Transactional
+    public void ensureAnalyticsTemplateStructure(String path) {
+        if (objectManager.require(path).getVariable("templateId").isPresent()) {
+            return;
+        }
+        applyIntrinsic("analytics-template-v1", path);
+    }
+
+    @Transactional
     public void ensureEventFilterStructure(String path) {
         if (objectManager.require(path).getVariable("filterId").isPresent()) {
             return;
         }
         applyIntrinsic("event-filter-v1", path);
+    }
+
+    @Transactional
+    public void ensureProcessProgramStructure(String path) {
+        if (objectManager.require(path).getVariable("programId").isPresent()) {
+            return;
+        }
+        applyIntrinsic("process-program-v1", path);
     }
 
     @Transactional

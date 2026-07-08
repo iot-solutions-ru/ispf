@@ -11,6 +11,7 @@ import com.ispf.server.object.ObjectTemplateService;
 import com.ispf.server.object.RuntimeTelemetryCoalescer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Isolated
 @TestPropertySource(properties = {
         "ispf.object-change.async-enabled=true",
         "ispf.object-change.split-lanes-enabled=true",
@@ -73,6 +75,7 @@ class MeterMqttBurstIngressIntegrationTest {
                         Map.of("value", DemoFixtureBootstrap.METER_INGRESS_DRIVER_CONFIG)
                 )
         );
+        telemetryPolicyService.invalidateCache(BUS);
 
         assertThat(telemetryPolicyService.ingressPayloadLanes(BUS)).isTrue();
 

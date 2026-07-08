@@ -81,4 +81,21 @@ public final class FederationOutboundEventBuffer {
     public synchronized boolean isEmpty() {
         return events.isEmpty();
     }
+
+    public synchronized List<BufferedEvent> pendingSnapshot() {
+        return List.copyOf(events);
+    }
+
+    public synchronized void restore(List<BufferedEvent> restored) {
+        events.clear();
+        totalBytes = 0;
+        if (restored == null || restored.isEmpty()) {
+            return;
+        }
+        for (BufferedEvent event : restored) {
+            events.addLast(event);
+            totalBytes += event.byteSize();
+            seq.updateAndGet(current -> Math.max(current, event.seq()));
+        }
+    }
 }

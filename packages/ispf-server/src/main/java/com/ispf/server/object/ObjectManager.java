@@ -39,6 +39,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -826,7 +827,26 @@ public class ObjectManager {
             }
             Variable created = new Variable(name, schema, false, false, value);
             node.addVariable(created);
-            persistVariable(path, created);
+            try {
+                persistVariable(path, created);
+            } catch (DataIntegrityViolationException duplicate) {
+                node.removeVariable(name);
+                Optional<ObjectVariableEntity> raced = variableRepository.findByObjectPathAndName(path, name);
+                if (raced.isEmpty()) {
+                    throw duplicate;
+                }
+                ObjectVariableEntity entity = raced.get();
+                node.addVariable(new Variable(
+                        name,
+                        mapper.readSchema(entity.getSchemaJson()),
+                        entity.isReadable(),
+                        entity.isWritable(),
+                        mapper.readDataRecord(entity.getValueJson()),
+                        entity.isHistoryEnabled(),
+                        entity.getHistoryRetentionDays()
+                ));
+                return setSystemVariableValue(path, name, value);
+            }
             publish(ObjectChangeEvent.variableUpdated(path, name));
             return created;
         }

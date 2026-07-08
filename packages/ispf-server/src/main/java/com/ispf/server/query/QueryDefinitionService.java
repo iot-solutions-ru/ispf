@@ -6,16 +6,23 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
+import com.ispf.expression.ExpressionEngine;
 import com.ispf.server.bootstrap.SystemObjectCatalogSupport;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class QueryDefinitionService {
@@ -36,10 +43,17 @@ public class QueryDefinitionService {
 
     private final ObjectManager objectManager;
     private final SystemObjectStructureService structureService;
+    private final ObjectMapper objectMapper;
+    private final ExpressionEngine expressionEngine = new ExpressionEngine();
 
-    public QueryDefinitionService(ObjectManager objectManager, SystemObjectStructureService structureService) {
+    public QueryDefinitionService(
+            ObjectManager objectManager,
+            SystemObjectStructureService structureService,
+            ObjectMapper objectMapper
+    ) {
         this.objectManager = objectManager;
         this.structureService = structureService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -118,6 +132,160 @@ public class QueryDefinitionService {
             throw new IllegalArgumentException("Not a query object: " + path);
         }
         objectManager.delete(path);
+    }
+
+    @Transactional
+    public QueryExecuteResult execute(String path) {
+        return execute(getByPath(path));
+    }
+
+    @Transactional
+    public QueryExecuteResult execute(QueryDefinition definition) {
+        if (!definition.enabled()) {
+            throw new IllegalStateException("Query is disabled: " + definition.queryId());
+        }
+        Instant executedAt = Instant.now();
+        try {
+            QuerySpec spec = parseQuerySpec(definition.fieldsJson());
+            String pattern = definition.sourcePathPattern();
+            if (pattern == null || pattern.isBlank()) {
+                throw new IllegalArgumentException("sourcePathPattern is required");
+            }
+            List<Map<String, Object>> rows = new ArrayList<>();
+            for (PlatformObject node : objectManager.tree().all()) {
+                if (!ObjectPathPattern.matches(node.path(), pattern)) {
+                    continue;
+                }
+                if (!matchesObjectTypes(node, spec.objectTypes())) {
+                    continue;
+                }
+                if (!passesFilter(definition.filterExpression(), node)) {
+                    continue;
+                }
+                rows.add(buildRow(node, spec.fields()));
+            }
+            recordRun(definition.path(), executedAt, null);
+            return new QueryExecuteResult(
+                    definition.queryId(),
+                    definition.path(),
+                    List.copyOf(rows),
+                    rows.size(),
+                    executedAt.toString(),
+                    null
+            );
+        } catch (Exception ex) {
+            recordRun(definition.path(), executedAt, ex.getMessage());
+            throw ex instanceof RuntimeException runtime ? runtime : new IllegalStateException(ex.getMessage(), ex);
+        }
+    }
+
+    private void recordRun(String path, Instant at, String error) {
+        setString(path, "lastRunAt", at.toString());
+        setString(path, "lastError", error != null ? error : "");
+    }
+
+    private boolean passesFilter(String filterExpression, PlatformObject node) {
+        if (filterExpression == null || filterExpression.isBlank()) {
+            return true;
+        }
+        Object result = expressionEngine.evaluate(filterExpression, node);
+        return !(result instanceof Boolean bool) || bool;
+    }
+
+    private static boolean matchesObjectTypes(PlatformObject node, Set<ObjectType> objectTypes) {
+        if (objectTypes == null || objectTypes.isEmpty()) {
+            return true;
+        }
+        return objectTypes.contains(node.type());
+    }
+
+    private Map<String, Object> buildRow(PlatformObject node, List<FieldSpec> fields) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        for (FieldSpec field : fields) {
+            row.put(field.name(), resolveFieldValue(node, field.source()));
+        }
+        return row;
+    }
+
+    private static Object resolveFieldValue(PlatformObject node, String source) {
+        if (source == null || source.isBlank() || "path".equals(source)) {
+            return node.path();
+        }
+        if ("type".equals(source)) {
+            return node.type().name();
+        }
+        if ("displayName".equals(source)) {
+            return node.displayName();
+        }
+        if ("description".equals(source)) {
+            return node.description();
+        }
+        return node.getVariable(source)
+                .flatMap(Variable::value)
+                .map(record -> record.rowCount() > 0 ? record.firstRow() : Map.of())
+                .orElse(null);
+    }
+
+    private QuerySpec parseQuerySpec(String fieldsJson) {
+        if (fieldsJson == null || fieldsJson.isBlank()) {
+            return new QuerySpec(List.of(new FieldSpec("path", "path")), Set.of());
+        }
+        try {
+            JsonNode root = objectMapper.readTree(fieldsJson);
+            if (root.isArray()) {
+                return new QuerySpec(parseFieldArray(root), Set.of());
+            }
+            if (root.isObject()) {
+                Set<ObjectType> objectTypes = new LinkedHashSet<>();
+                JsonNode typesNode = root.get("objectTypes");
+                if (typesNode != null && typesNode.isArray()) {
+                    for (JsonNode typeNode : typesNode) {
+                        objectTypes.add(ObjectType.valueOf(typeNode.asString()));
+                    }
+                }
+                JsonNode fieldsNode = root.get("fields");
+                if (fieldsNode != null && fieldsNode.isArray()) {
+                    return new QuerySpec(parseFieldArray(fieldsNode), objectTypes);
+                }
+            }
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Invalid fieldsJson: " + ex.getMessage(), ex);
+        }
+        throw new IllegalArgumentException("fieldsJson must be a field array or object with fields[]");
+    }
+
+    private List<FieldSpec> parseFieldArray(JsonNode array) {
+        List<FieldSpec> fields = new ArrayList<>();
+        for (JsonNode fieldNode : array) {
+            if (!fieldNode.isObject()) {
+                continue;
+            }
+            String name = fieldNode.path("name").asString(null);
+            String source = fieldNode.path("source").asString(name);
+            if (name != null && !name.isBlank()) {
+                fields.add(new FieldSpec(name, source));
+            }
+        }
+        if (fields.isEmpty()) {
+            fields.add(new FieldSpec("path", "path"));
+        }
+        return fields;
+    }
+
+    private record QuerySpec(List<FieldSpec> fields, Set<ObjectType> objectTypes) {
+    }
+
+    private record FieldSpec(String name, String source) {
+    }
+
+    public record QueryExecuteResult(
+            String queryId,
+            String path,
+            List<Map<String, Object>> rows,
+            int rowCount,
+            String executedAt,
+            String error
+    ) {
     }
 
     public String pathForQueryId(String queryId) {

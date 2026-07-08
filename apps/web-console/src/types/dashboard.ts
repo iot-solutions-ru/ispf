@@ -189,6 +189,10 @@ export interface ChartWidget extends DashboardWidgetBase {
    * `[{ "label", "variableName", "valueField?", "max?" }]`.
    */
   radarAxesJson?: string;
+  /** Asset analytics template id (BL-160); uses historian aggregate bucket from template. */
+  analyticsTemplateId?: string;
+  /** Resolved binding expression for editor preview, e.g. rollingAvg('temp', '5m'). */
+  analyticsBindingExpression?: string;
 }
 
 export interface SparklineWidget extends DashboardWidgetBase {

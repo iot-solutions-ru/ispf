@@ -2,6 +2,7 @@ package com.ispf.server.ai.agent;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -58,6 +59,8 @@ class AgentPlaybooksTest {
         assertTrue(playbook.contains("validate_bundle"));
         assertTrue(playbook.contains("import_package"));
         assertFalse(playbook.contains("%s"));
+        assertEquals(9, AgentDeployPlaybook.steps().size());
+        assertTrue(AgentDeployPlaybook.stepById("validate").tools().contains("validate_bundle"));
     }
 
     @Test

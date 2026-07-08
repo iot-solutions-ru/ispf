@@ -15,7 +15,6 @@ import com.ispf.server.persistence.entity.EventHistoryEntity;
 import com.ispf.server.platform.AutomationMetricsRecorder;
 import com.ispf.server.object.pubsub.ObjectChangePublicationService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -92,17 +91,15 @@ public class EventService {
         );
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    /** HTTP/API fire — no surrounding transaction; journal and automation reactions are async. */
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload) {
         return fireInternal(objectPath, eventName, payload, null, AutomationMetricsRecorder.EventFireSource.API, null);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecordPayloadRequest payload, String appId) {
         return fire(objectPath, eventName, payload, appId, null);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(
             String objectPath,
             String eventName,
@@ -120,7 +117,6 @@ public class EventService {
         );
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(String objectPath, String eventName, DataRecord payload) {
         return fireInternal(
                 objectPath,
@@ -132,7 +128,6 @@ public class EventService {
         );
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(
             String objectPath,
             String eventName,
@@ -149,7 +144,6 @@ public class EventService {
         );
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ObjectEvent fire(
             String objectPath,
             String eventName,

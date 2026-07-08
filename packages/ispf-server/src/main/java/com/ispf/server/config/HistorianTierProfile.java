@@ -5,6 +5,9 @@ package com.ispf.server.config;
  */
 public class HistorianTierProfile {
 
+    /** When false, tier is configured but not used for routing or writes. */
+    private boolean enabled = false;
+
     /** Write backend: {@code jdbc}, {@code clickhouse}, or {@code cold} (S3/parquet archive). */
     private String store = "jdbc";
 
@@ -58,6 +61,14 @@ public class HistorianTierProfile {
         public void setFormat(String format) {
             this.format = format;
         }
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public String getStore() {

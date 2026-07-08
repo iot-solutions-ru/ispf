@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
-import { evaluateExpression } from "../api";
+import { evaluateExpression, type EvaluateExpressionStep } from "../api";
 import BindingExpressionField from "./BindingExpressionField";
 import type { VariableDto } from "../types";
 
@@ -10,6 +10,66 @@ interface ExpressionDebuggerPanelProps {
   variables?: VariableDto[];
   functionNames?: string[];
   compact?: boolean;
+}
+
+function isBindingsStep(phase: string): boolean {
+  return phase === "cel-bindings" || phase === "variable-context";
+}
+
+function renderStepDetail(step: EvaluateExpressionStep): string {
+  if (step.detail === undefined || step.detail === null) {
+    return "";
+  }
+  if (typeof step.detail === "string") {
+    return step.detail;
+  }
+  return JSON.stringify(step.detail, null, 2);
+}
+
+function BindingsTable({ detail }: { detail: unknown }) {
+  if (!detail || typeof detail !== "object") {
+    return null;
+  }
+  const record = detail as Record<string, unknown>;
+  const self = record.self;
+  const parent = record.parent;
+  const context = record.context;
+
+  if (self !== undefined || parent !== undefined || context !== undefined) {
+    return (
+      <div className="expression-debugger-bindings">
+        {self !== undefined && (
+          <div className="expression-debugger-binding-group">
+            <span className="expression-debugger-binding-label">self</span>
+            <pre className="mono compact">{JSON.stringify(self, null, 2)}</pre>
+          </div>
+        )}
+        {parent !== undefined && (
+          <div className="expression-debugger-binding-group">
+            <span className="expression-debugger-binding-label">parent</span>
+            <pre className="mono compact">{JSON.stringify(parent, null, 2)}</pre>
+          </div>
+        )}
+        {context !== undefined && (
+          <div className="expression-debugger-binding-group">
+            <span className="expression-debugger-binding-label">context</span>
+            <pre className="mono compact">{JSON.stringify(context, null, 2)}</pre>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="expression-debugger-bindings">
+      {Object.entries(record).map(([name, value]) => (
+        <div key={name} className="expression-debugger-binding-row">
+          <code>{name}</code>
+          <span className="expression-debugger-binding-value">{JSON.stringify(value)}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ExpressionDebuggerPanel({
@@ -21,6 +81,7 @@ export default function ExpressionDebuggerPanel({
   const { t } = useTranslation("inspector");
   const [expression, setExpression] = useState("");
   const [targetVariable, setTargetVariable] = useState("");
+  const [revealedSteps, setRevealedSteps] = useState(0);
 
   const variableNames = useMemo(
     () => variables.map((variable) => variable.name),
@@ -34,9 +95,14 @@ export default function ExpressionDebuggerPanel({
         expression: expression.trim(),
         targetVariable: targetVariable.trim() || undefined,
       }),
+    onSuccess: (data) => {
+      setRevealedSteps(data.steps.length > 0 ? 1 : 0);
+    },
   });
 
   const steps = evaluateMutation.data?.steps ?? [];
+  const visibleSteps = steps.slice(0, revealedSteps);
+  const canRevealMore = revealedSteps < steps.length;
 
   return (
     <div className={`expression-debugger-panel${compact ? " compact" : ""}`}>
@@ -117,21 +183,48 @@ export default function ExpressionDebuggerPanel({
 
       {steps.length > 0 && (
         <section className="expression-debugger-steps">
-          <h5>{t("expressionDebugger.steps")}</h5>
+          <div className="expression-debugger-steps-header">
+            <h5>{t("expressionDebugger.steps")}</h5>
+            <div className="expression-debugger-step-actions">
+              {canRevealMore && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => setRevealedSteps((count) => Math.min(count + 1, steps.length))}
+                >
+                  {t("expressionDebugger.stepNext")}
+                </button>
+              )}
+              {revealedSteps < steps.length && (
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => setRevealedSteps(steps.length)}
+                >
+                  {t("expressionDebugger.stepShowAll")}
+                </button>
+              )}
+            </div>
+          </div>
           <ol className="expression-debugger-step-list">
-            {steps.map((step, index) => (
+            {visibleSteps.map((step, index) => (
               <li
                 key={`${step.phase}-${index}`}
-                className={step.status === "error" ? "error" : step.status === "ok" ? "ok" : ""}
+                className={`expression-debugger-step${
+                  step.status === "error" ? " error" : step.status === "ok" ? " ok" : ""
+                }${index === visibleSteps.length - 1 ? " active" : ""}`}
               >
-                <code>{step.phase}</code>
-                <span className="inline-badge">{step.status}</span>
+                <div className="expression-debugger-step-head">
+                  <span className="expression-debugger-step-index">{index + 1}</span>
+                  <code>{t(`expressionDebugger.phase.${step.phase}`, { defaultValue: step.phase })}</code>
+                  <span className="inline-badge">{step.status}</span>
+                </div>
                 {step.detail !== undefined && step.detail !== null && (
-                  <pre className="mono compact">
-                    {typeof step.detail === "string"
-                      ? step.detail
-                      : JSON.stringify(step.detail, null, 2)}
-                  </pre>
+                  isBindingsStep(step.phase) ? (
+                    <BindingsTable detail={step.detail} />
+                  ) : (
+                    <pre className="mono compact">{renderStepDetail(step)}</pre>
+                  )
                 )}
               </li>
             ))}

@@ -168,6 +168,8 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "WORKFLOW":
     case "CORRELATORS":
     case "CORRELATOR":
+    case "PROCESS_PROGRAMS":
+    case "PROCESS_PROGRAM":
       return "workflow";
     case "ALERT_RULES":
     case "ALERT":
