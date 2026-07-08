@@ -108,7 +108,7 @@ class AnomalyAlertRuleIntegrationTest {
     private boolean waitForEvent(String eventName) throws Exception {
         Instant deadline = Instant.now().plus(Duration.ofSeconds(10));
         while (Instant.now().isBefore(deadline)) {
-            String body = mockMvc.perform(get("/api/v1/events/history")
+            String body = mockMvc.perform(get("/api/v1/events")
                             .param("objectPath", DEMO_DEVICE)
                             .param("limit", "20"))
                     .andExpect(status().isOk())

@@ -1,13 +1,13 @@
 [
   {
     "file": "components/AiStudioStatusTab.tsx",
-    "line": 155,
+    "line": 157,
     "kind": "jsx-text",
     "text": "scripts/run-local-with-ai.ps1"
   },
   {
     "file": "components/ApplicationBundlePanel.tsx",
-    "line": 392,
+    "line": 403,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.my-dashboard"
   },
@@ -121,25 +121,25 @@
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 450,
+    "line": 513,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 474,
+    "line": 537,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 488,
+    "line": 551,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 521,
+    "line": 584,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
@@ -163,91 +163,91 @@
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1017,
+    "line": 1071,
     "kind": "ui-attr",
     "text": "gpu-*"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1031,
+    "line": 1085,
     "kind": "jsx-text",
     "text": "DEVICE"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1032,
+    "line": 1086,
     "kind": "jsx-text",
     "text": "FOLDER"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1033,
+    "line": 1087,
     "kind": "jsx-text",
     "text": "DASHBOARD"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1034,
+    "line": 1088,
     "kind": "jsx-text",
     "text": "CUSTOM"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1055,
+    "line": 1109,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1078,
+    "line": 1132,
     "kind": "ui-attr",
     "text": "count>10 && name contains abc"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1353,
+    "line": 1407,
     "kind": "ui-attr",
     "text": "root.platform.reports.ready-items"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1641,
+    "line": 1695,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1647,
+    "line": 1701,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1864,
+    "line": 1918,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1923,
+    "line": 1977,
     "kind": "ui-attr",
     "text": "HTML"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 406,
+    "line": 408,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.detail"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 531,
+    "line": 584,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 889,
+    "line": 943,
     "kind": "ui-attr",
     "text": "root.platform.workflows..."
   },
@@ -277,21 +277,21 @@
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 101,
-    "kind": "jsx-text",
-    "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
-  },
-  {
-    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 91,
+    "line": 109,
     "kind": "jsx-text",
     "text": "(editable && series.points.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 95,
+    "line": 113,
     "kind": "jsx-text",
     "text": "(editable && isRangeChart && series.rangePoints.length"
+  },
+  {
+    "file": "components/dashboard/widgets/ChartWidgetView.tsx",
+    "line": 119,
+    "kind": "jsx-text",
+    "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
   },
   {
     "file": "components/EditDescriptorDialog.tsx",
@@ -480,14 +480,20 @@
     "text": "fireAlarm, gasLeak"
   },
   {
+    "file": "components/platform/DataSourceEditor.tsx",
+    "line": 249,
+    "kind": "ui-attr",
+    "text": "SQL"
+  },
+  {
     "file": "components/platform/PlatformChangeSetsPanel.tsx",
-    "line": 108,
+    "line": 110,
     "kind": "jsx-text",
     "text": "DRAFT"
   },
   {
     "file": "components/platform/PlatformChangeSetsPanel.tsx",
-    "line": 109,
+    "line": 111,
     "kind": "jsx-text",
     "text": "APPLIED"
   },
@@ -517,19 +523,19 @@
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 154,
+    "line": 155,
     "kind": "ui-attr",
     "text": "root.platform.devices…"
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 164,
+    "line": 165,
     "kind": "jsx-text",
     "text": "CEL"
   },
   {
     "file": "components/runtime/BindingInvokeJournalPanel.tsx",
-    "line": 165,
+    "line": 166,
     "kind": "jsx-text",
     "text": "SQL"
   },

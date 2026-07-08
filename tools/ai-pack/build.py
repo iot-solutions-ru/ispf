@@ -259,7 +259,7 @@ def parse_driver_catalog(drivers_md: str) -> list[dict]:
     lines = drivers_md.splitlines()
     start = -1
     for i, line in enumerate(lines):
-        if "Полный список" in line and "DriverCatalog" in line:
+        if ("Full list of" in line or "Полный список" in line) and "DriverCatalog" in line:
             start = i
             break
     if start < 0:
