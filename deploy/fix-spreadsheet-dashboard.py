@@ -3,21 +3,24 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
-BASE = "http://127.0.0.1:8080"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ispf_auth import auth_headers, login as ispf_login  # noqa: E402
+
+BASE = os.environ.get("API", "http://127.0.0.1:8080")
 DASHBOARD_PATH = "root.platform.dashboards.spreadsheet"
 DEVICE_PATH = "root.platform.devices.lab-userA-01"
 VALUES_VARIABLE = "sheetValues"
 
 
 def api(method: str, path: str, body: dict | None = None, token: str | None = None) -> object:
-    headers = {"Content-Type": "application/json", "X-ISPF-Role": "admin"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
+    headers = auth_headers(token) if token else {"Content-Type": "application/json"}
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(f"{BASE}{path}", data=data, headers=headers, method=method)
     try:
@@ -27,15 +30,6 @@ def api(method: str, path: str, body: dict | None = None, token: str | None = No
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"{method} {path} -> {e.code}: {detail}") from e
-
-
-def login() -> str | None:
-    try:
-        out = api("POST", "/api/v1/auth/login", {"username": "admin", "password": "admin"})
-        token = out.get("token") if isinstance(out, dict) else None
-        return token or None
-    except RuntimeError:
-        return None
 
 
 def get_layout(token: str) -> dict:
@@ -83,7 +77,7 @@ def fix_widget(widget: dict) -> bool:
 
 
 def main() -> int:
-    token = login()
+    token = ispf_login(api=BASE)
     layout = get_layout(token)
     widgets = layout.get("widgets") or []
     fixed = 0

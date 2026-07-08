@@ -12,6 +12,7 @@ import com.ispf.server.application.script.ScriptExecutionContext;
 import com.ispf.server.binding.BindingRefreshAfterCommit;
 import com.ispf.server.object.ObjectManager;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
@@ -46,7 +47,7 @@ public class ApplicationFunctionRuntime {
         this.bindingRefreshAfterCommit = bindingRefreshAfterCommit;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         return invoke(objectPath, functionName, input, 0);
     }

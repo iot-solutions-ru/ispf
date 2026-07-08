@@ -17,7 +17,7 @@
         "/api/v1/drivers/write"
       ],
       "correctIndex": 0,
-      "reference": "docs/SECURITY.md"
+      "reference": "docs/en/security.md"
     },
     {
       "id": "pa-core-q02",
@@ -31,7 +31,7 @@
         "Fixtures enabled by default"
       ],
       "correctIndex": 0,
-      "reference": "docs/DEPLOYMENT.md"
+      "reference": "docs/en/deployment.md"
     },
     {
       "id": "pa-core-q03",
@@ -45,7 +45,7 @@
         "disabled"
       ],
       "correctIndex": 0,
-      "reference": "docs/HISTORIAN_TIERS.md"
+      "reference": "docs/en/historian-tiers.md"
     },
     {
       "id": "pa-core-q04",
@@ -59,7 +59,7 @@
         "GET /ws/operator"
       ],
       "correctIndex": 0,
-      "reference": "docs/OBSERVABILITY.md"
+      "reference": "docs/en/observability.md"
     },
     {
       "id": "pa-core-q05",
@@ -84,7 +84,7 @@
         "deploy/edge/arm64/docker-compose.yml",
         "apps/web-console/vite.config.ts",
         "packages/ispf-driver-modbus-rtu",
-        "docs/COMPETITIVE_SCORECARD.md"
+        "docs/en/competitive-scorecard.md"
       ],
       "correctIndex": 0,
       "reference": "deploy/edge/arm64/README.md"
@@ -101,7 +101,7 @@
         "Marketplace revenue share setup"
       ],
       "correctIndex": 0,
-      "reference": "docs/CERTIFICATION.md"
+      "reference": "docs/en/certification.md"
     },
     {
       "id": "pa-core-q08",
@@ -115,7 +115,7 @@
         "driver-interop.yml"
       ],
       "correctIndex": 0,
-      "reference": "docs/DEPLOYMENT.md"
+      "reference": "docs/en/deployment.md"
     }
   ]
 }

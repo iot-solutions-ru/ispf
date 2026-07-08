@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/solution-developer-public-api.md](../en/solution-developer-public-api.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/solution-developer-public-api.md](../en/solution-developer-public-api.md).
 
 ﻿# Публичный API для решений разработчиков
 

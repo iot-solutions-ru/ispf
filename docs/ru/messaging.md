@@ -19,7 +19,7 @@
 
 | Конечная точка | Назначение |
 |----------|------------|
-| `GET /ws/objects?token=...` | Subscribe paths, presence, **event catalog** |
+| `GET /ws/objects` + `Sec-WebSocket-Protocol: ispf-bearer, <token>` | Subscribe paths, presence, **event catalog** |
 
 ### Сообщения клиента
 
@@ -93,7 +93,7 @@ When `ispf.redis.enabled=true` and `ispf.redis.correlator-windows-enabled=true`:
 
 Прокси федерации — синхронизация чтения через HTTP; не замена событийного автобуса.
 
-##Каталог событий в комплекте (FW-31)
+## Каталог событий в комплекте (FW-31)
 
 Секция `events[]` в manifest:
 

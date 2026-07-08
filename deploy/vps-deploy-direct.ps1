@@ -443,6 +443,19 @@ Write-Host "==> Ensuring ISPF_BOOTSTRAP_FIXTURES_ENABLED=false on VPS (prod, no 
 Invoke-Remote "grep -q '^ISPF_BOOTSTRAP_FIXTURES_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_BOOTSTRAP_FIXTURES_ENABLED=.*/ISPF_BOOTSTRAP_FIXTURES_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_BOOTSTRAP_FIXTURES_ENABLED=false' >> /opt/ispf/ispf-server.env"
 Invoke-Remote "grep -q '^ISPF_PLATFORM_METRICS_PROBE_ENABLED=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's/^ISPF_PLATFORM_METRICS_PROBE_ENABLED=.*/ISPF_PLATFORM_METRICS_PROBE_ENABLED=false/' /opt/ispf/ispf-server.env || echo 'ISPF_PLATFORM_METRICS_PROBE_ENABLED=false' >> /opt/ispf/ispf-server.env"
 
+Write-Host "==> Applying prod security env on VPS"
+$securityEnv = @(
+    "ISPF_LOCAL_ROLE_HEADER_ENABLED=false",
+    "ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS=https://ispf.iot-solutions.ru",
+    "ISPF_MFA_ENABLED=true",
+    "ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES=true"
+)
+foreach ($line in $securityEnv) {
+    $key = ($line -split '=', 2)[0]
+    $val = ($line -split '=', 2)[1]
+    Invoke-Remote "grep -q '^${key}=' /opt/ispf/ispf-server.env 2>/dev/null && sed -i 's|^${key}=.*|${key}=${val}|' /opt/ispf/ispf-server.env || echo '${key}=${val}' >> /opt/ispf/ispf-server.env"
+}
+
 if ($Cluster) {
     Write-Host "==> Rolling out cluster on VPS (jar + UI + replica restart)"
     Invoke-Remote "bash /opt/ispf/bin/vps-cluster-rollout.sh $staging"

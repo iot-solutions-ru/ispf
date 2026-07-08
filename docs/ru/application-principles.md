@@ -2,7 +2,7 @@
 
 # Принципы создания приложений на ISPF
 
-Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Объединяет северную звезду из [ARCHITECTURE.md](architecture.md), международную платформу/решение ([ADR-0001](decisions/0001-app-platform-boundary.md)), жизненный цикл из [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md), подходы A–H из [AGENT_KNOWLEDGE.md](agent-knowledge.md) и единую модель логики из [PLATFORM_LOGIC.md](platform-logic.md).
+Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Сводит воедино North star из [ARCHITECTURE.md](architecture.md), границу platform/solution ([ADR-0001](decisions/0001-app-platform-boundary.md)), жизненный цикл из [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md), подходы A–H из [AGENT_KNOWLEDGE.md](agent-knowledge.md) и единую модель логики из [PLATFORM_LOGIC.md](platform-logic.md).
 
 **Для деталей API и виджетов** — специализированные документы; этот файл — хаб «как создать приложение».
 
@@ -10,9 +10,9 @@
 
 ---
 
-##Северная звезда
+## North star
 
-**Бизнес-логика прикладного решения живёт в декларативной конфигурации деревянных объектов; поставляет общие-движки платформы; Bundle Deploy — конфигурация упаковки и доставки, не зависящая от времени выполнения.**
+**Бизнес-логика прикладного решения живёт в declarative-конфигурации дерева объектов; платформа поставляет generic-движки; bundle deploy — упаковка и доставка конфигурации, не отдельный runtime.**
 
 ---
 
@@ -79,7 +79,7 @@ flowchart TB
 **Для агента:**
 
 - Production path: `validate_bundle` → `dry_run_deploy` → `import_package` (в одном run).
-- POC/lab: инструменты Tree-First без пакета — разрешено; Импорт пакета только после того, как ворота ОК.
+- POC/lab: инструменты Tree-First без пакета — разрешено; Импорт пакета только после того, как gates OK.
 
 Секции манифестируют: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migrations[]`, `functions[]`, `bindings[]`, `operatorUi`, … — см. [SOLUTION_DEVELOPER_PUBLIC_API.md](solution-developer-public-api.md).
 
@@ -168,7 +168,7 @@ flowchart TB
 - `operatorUi` в manifest, не legacy `operatorManifest`.
 - Согласование: повторное развертывание обновляет узлы, а не только создание.
 
-| Было (наследие) | Стало (полярная звезда) |
+| Было (наследие) | Стало (North star) |
 |---------------|-------------------|
 | Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или tree path `{appId}.functions.*` |
 | `screens[]` в operator manifest | `operatorUi` + dashboards |

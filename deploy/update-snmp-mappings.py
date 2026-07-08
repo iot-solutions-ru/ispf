@@ -6,10 +6,14 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ispf_auth import auth_headers  # noqa: E402
 
 API = os.environ.get("API", "http://127.0.0.1:8080")
 PATH_DEVICE = os.environ.get("PATH_DEVICE", "root.platform.devices.snmp-localhost")
-HEADERS = {"Content-Type": "application/json", "X-ISPF-Role": "admin"}
+HEADERS = auth_headers()
 
 MAPPINGS = {
     "sysName": "1.3.6.1.2.1.1.5.0:STRING",
@@ -50,19 +54,19 @@ def main() -> None:
         "rows": [{"value": json.dumps(MAPPINGS)}],
     }
     print("=== Updating mappings ===")
-    call(
-        "PUT",
-        f"/api/v1/objects/by-path/variables?path={PATH_DEVICE}&name=driverPointMappingsJson",
-        payload,
+    print(
+        call(
+            "PUT",
+            f"/api/v1/objects/by-path/variables?path={PATH_DEVICE}&name=driverPointMappingsJson",
+            payload,
+        )
     )
-    print("OK")
 
     try:
         call("POST", f"/api/v1/drivers/runtime/stop?devicePath={PATH_DEVICE}")
     except urllib.error.HTTPError:
         pass
     time.sleep(2)
-    print("=== Starting driver ===")
     print(call("POST", f"/api/v1/drivers/runtime/start?devicePath={PATH_DEVICE}"))
     time.sleep(8)
     print("=== Driver status (after) ===")

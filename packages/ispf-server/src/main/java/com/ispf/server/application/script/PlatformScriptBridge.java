@@ -148,7 +148,16 @@ public class PlatformScriptBridge {
         if (!variable.writable()) {
             throw new IllegalArgumentException("Variable is not writable: " + variableName);
         }
-        objectManager.setVariableValue(objectPath, variableName, DataRecord.single(variable.schema(), fields));
+        Map<String, Object> coerced = new LinkedHashMap<>();
+        for (com.ispf.core.model.FieldDefinition field : variable.schema().fields()) {
+            coerced.put(field.name(), ScriptFieldCoercion.coerce(field, fields.get(field.name())));
+        }
+        objectManager.setRuntimeVariableValue(
+                objectPath,
+                variableName,
+                DataRecord.single(variable.schema(), coerced),
+                false
+        );
     }
 
     static void validateInstanceName(String instanceName) {

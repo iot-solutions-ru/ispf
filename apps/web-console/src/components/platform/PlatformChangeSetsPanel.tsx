@@ -10,6 +10,7 @@ import {
   type ChangeSetOp,
   type ChangeSetPreview,
 } from "../../api/platformChangeSets";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 const SAMPLE_OPS = `[
   {
@@ -22,6 +23,7 @@ const SAMPLE_OPS = `[
 
 export default function PlatformChangeSetsPanel() {
   const { t } = useTranslation(["system", "common"]);
+  const { formatDate } = useUserTimeZone();
   const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
@@ -146,7 +148,7 @@ export default function PlatformChangeSetsPanel() {
                       <code>{item.status}</code>
                     </td>
                     <td>{item.author}</td>
-                    <td>{new Date(item.updatedAt).toLocaleString()}</td>
+                    <td>{formatDate(item.updatedAt)}</td>
                   </tr>
                 ))}
                 {(listQuery.data ?? []).length === 0 && (

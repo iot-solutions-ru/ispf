@@ -19,7 +19,7 @@
     "mqtt_ingress": {
       "sustained_events_per_s": 1878,
       "version": "0.9.87",
-      "source": "docs/LOAD_TESTING.md, HF01"
+      "source": "docs/en/load-testing.md, HF01"
     },
     "cluster": {
       "scale_factor_floor": 1.8,

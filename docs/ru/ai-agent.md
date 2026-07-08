@@ -94,7 +94,7 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 }
 ```
 
-Цель: **≥95 %** процент успешных попыток во всех сценариях. **Статус (0.9.102): не выполнено** — JSON-схема PR/ночных ворот + только результаты заглушки; см. [AGENT_REGRESSION.md](agent-regression.md).
+Цель: **≥95 %** процент успешных попыток во всех сценариях. **Статус (0.9.102): не выполнено** — JSON-схема PR/nightly gates + только результаты заглушки; см. [AGENT_REGRESSION.md](agent-regression.md).
 
 ---
 
@@ -106,9 +106,9 @@ node tools/agent-regression/validate-scenarios.mjs --results nightly-results.jso
 |----------|--------|
 | `GET /api/v1/ai/agent/metrics/tools?days=7` | `tools[]`: `tool`, `callCount`, `avgLatencyMs`, `promptTokens`, `completionTokens`, `errorCount`, `errorRate` |
 
-### Справочный макет информационной панели
+### Референсный layout дашборда
 
-Встраивайте в панель мониторинга платформы (`root.platform.dashboards.ai-ops`) с помощью виджета **диаграммы**, привязанного к API метрик инструмента через BFF или функцию скрипта. Минимальный эталонный макет:
+Встраивайте в дашборд платформы (`root.platform.dashboards.ai-ops`) с помощью виджета **диаграммы**, привязанного к API метрик инструмента через BFF или функцию скрипта. Минимальный эталонный макет:
 
 ```json
 {

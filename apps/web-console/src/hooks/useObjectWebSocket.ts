@@ -9,6 +9,9 @@ export { OBJECT_WS_EVENT } from "./objectWebSocketTypes";
 
 let activeSocket: WebSocket | null = null;
 let wsConnected = false;
+let socketOwnerCount = 0;
+let connectionToken = "";
+let retryTimer: number | undefined;
 const wsConnectionListeners = new Set<() => void>();
 /** Ref-counted path interests merged into one WS subscribe message. */
 const pathRefCounts = new Map<string, number>();
@@ -32,15 +35,75 @@ export function subscribeObjectWebSocketConnection(listener: () => void): () => 
   return () => wsConnectionListeners.delete(listener);
 }
 
+const WS_BEARER_PROTOCOL = "ispf-bearer";
+
 function wsUrl(): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const base = `${protocol}//${window.location.host}/ws/objects`;
-  const token = getStoredSession()?.token;
-  if (!token) {
-    return base;
+  return `${protocol}//${window.location.host}/ws/objects`;
+}
+
+function openWebSocket(authToken: string): WebSocket {
+  return new WebSocket(wsUrl(), [WS_BEARER_PROTOCOL, authToken]);
+}
+
+function clearRetryTimer() {
+  if (retryTimer !== undefined) {
+    window.clearTimeout(retryTimer);
+    retryTimer = undefined;
   }
-  const params = new URLSearchParams({ token });
-  return `${base}?${params.toString()}`;
+}
+
+function teardownSocket() {
+  clearRetryTimer();
+  if (activeSocket) {
+    activeSocket.close();
+    activeSocket = null;
+  }
+  setWsConnected(false);
+}
+
+function connectWebSocket(authToken: string) {
+  if (
+    activeSocket
+    && connectionToken === authToken
+    && (activeSocket.readyState === WebSocket.OPEN || activeSocket.readyState === WebSocket.CONNECTING)
+  ) {
+    return;
+  }
+
+  teardownSocket();
+  connectionToken = authToken;
+  const socket = openWebSocket(authToken);
+  activeSocket = socket;
+
+  socket.onopen = () => {
+    setWsConnected(true);
+    pushMergedSubscriptionsToServer();
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const message = JSON.parse(event.data) as ObjectWsMessage;
+      window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
+
+      if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
+        window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
+      }
+    } catch {
+      // ignore malformed messages
+    }
+  };
+
+  socket.onclose = () => {
+    if (activeSocket === socket) {
+      activeSocket = null;
+    }
+    setWsConnected(false);
+    if (socketOwnerCount > 0 && connectionToken === authToken) {
+      clearRetryTimer();
+      retryTimer = window.setTimeout(() => connectWebSocket(authToken), 3000);
+    }
+  };
 }
 
 function pushMergedSubscriptionsToServer() {
@@ -121,56 +184,16 @@ export function useObjectWebSocket(enabled = true) {
     if (!enabled || !authToken) {
       return;
     }
-    let active = true;
-    let socket: WebSocket | null = null;
-    let retryTimer: number | undefined;
 
-    const connect = () => {
-      if (!active) return;
-      socket = new WebSocket(wsUrl());
-      activeSocket = socket;
-
-      socket.onopen = () => {
-        setWsConnected(true);
-        pushMergedSubscriptionsToServer();
-      };
-
-      socket.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data) as ObjectWsMessage;
-          window.dispatchEvent(new CustomEvent(OBJECT_WS_EVENT, { detail: message }));
-
-          if (message.type === "CREATED" || message.type === "UPDATED" || message.type === "DELETED") {
-            window.dispatchEvent(new CustomEvent("ispf-tree-structure-change", { detail: message }));
-          }
-        } catch {
-          // ignore malformed messages
-        }
-      };
-
-      socket.onclose = () => {
-        setWsConnected(false);
-        if (activeSocket === socket) {
-          activeSocket = null;
-        }
-        if (active) {
-          retryTimer = window.setTimeout(connect, 3000);
-        }
-      };
-    };
-
-    connect();
+    socketOwnerCount++;
+    connectWebSocket(authToken);
 
     return () => {
-      active = false;
-      setWsConnected(false);
-      if (retryTimer) {
-        window.clearTimeout(retryTimer);
+      socketOwnerCount--;
+      if (socketOwnerCount <= 0) {
+        connectionToken = "";
+        teardownSocket();
       }
-      if (activeSocket === socket) {
-        activeSocket = null;
-      }
-      socket?.close();
     };
   }, [enabled, authToken]);
 }

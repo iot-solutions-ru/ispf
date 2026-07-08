@@ -6,6 +6,7 @@ import type {
   OperatorAlarmRule,
 } from "../types/operatorAlarmBar";
 import type { OperatorUi } from "../types/operatorUi";
+import { formatUserDateTime } from "./formatDateTime";
 
 const PRIORITY_RANK: Record<string, number> = {
   LOW: 1,
@@ -155,7 +156,7 @@ export function resolveFieldValue(event: ObjectEvent, source: string): string {
     return event.level;
   }
   if (source === "timestamp") {
-    return new Date(event.timestamp).toLocaleString();
+    return formatUserDateTime(event.timestamp);
   }
   if (source.startsWith("payload.")) {
     const key = source.slice("payload.".length);

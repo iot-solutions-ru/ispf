@@ -11,7 +11,6 @@ import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.object.pubsub.ClusterPathInterestStore;
 import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
-import com.ispf.server.config.IspfRoles;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
@@ -197,7 +196,7 @@ public class ObjectWebSocketHandler extends TextWebSocketHandler {
                 return normalized;
             }
         }
-        return List.of(IspfRoles.ADMIN);
+        return List.of();
     }
 
     private void handleSubscribe(WebSocketSession session, JsonNode node) throws IOException {

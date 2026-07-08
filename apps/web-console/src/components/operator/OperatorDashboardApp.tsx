@@ -4,7 +4,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { AuthSession } from "../../auth/session";
 import { isAdminSession } from "../../auth/session";
 import { useOperatorUi } from "../../hooks/useOperatorUi";
-import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { useOperatorAlarmBar } from "../../hooks/useOperatorAlarmBar";
 import {
@@ -132,7 +131,6 @@ export default function OperatorDashboardApp({
 }: OperatorDashboardAppProps) {
   const { t } = useTranslation(["operator", "common"]);
   const queryClient = useQueryClient();
-  useObjectWebSocket();
   const uiQuery = useOperatorUi(appId);
   const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() =>
     syncOperatorCachesOnReconnect(queryClient, appId)

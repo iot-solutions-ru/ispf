@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acquireEditLease, fetchEditLeases, releaseEditLease } from "../api";
+import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 function leaseCoversPath(leasePath: string, objectPath: string): boolean {
   return objectPath === leasePath || objectPath.startsWith(`${leasePath}.`);
@@ -21,6 +22,7 @@ export default function EditLeaseBanner({
   isEditing,
 }: EditLeaseBannerProps) {
   const { t } = useTranslation("inspector");
+  const { formatDate } = useUserTimeZone();
   const queryClient = useQueryClient();
 
   const leasesQuery = useQuery({
@@ -85,7 +87,7 @@ export default function EditLeaseBanner({
         <span>
           {t("objectEditor.leaseBlocked", {
             holder: blockingLease.holder,
-            until: new Date(blockingLease.expiresAt).toLocaleString(),
+            until: formatDate(blockingLease.expiresAt),
             prefix: blockingLease.pathPrefix,
           })}
         </span>
@@ -98,7 +100,7 @@ export default function EditLeaseBanner({
       <div className="banner success edit-lease-banner">
         <span>
           {t("objectEditor.leaseHeld", {
-            until: new Date(ownLease.expiresAt).toLocaleString(),
+            until: formatDate(ownLease.expiresAt),
           })}
         </span>
         <button

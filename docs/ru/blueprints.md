@@ -62,7 +62,7 @@
 
 **Внутренняя система** (схема вшивается в экземпляре, без `appliedBlueprintIds`): `data-source-v1`, `schedule-v1`, `sql-binding-v1`, `migration-v1`, `alert-rule-v1`, `correlator-v1`, `dashboard-v1`, `report-v1`, `workflow-v1`.
 
-**Светильники** (демо/лаборатория, не часть ядра): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Конфиг: `ispf.bootstrap.fixtures-enabled` (по умолчанию `true`).
+**Fixtures** (демо/лаборатория, не часть ядра): `device-driver-v1`, `mqtt-gateway-v1`, `mqtt-sensor-v1`, `base-sensor-v1`, `vendor-sensor-ext-v1`, `snmp-agent-v1`. Конфиг: `ispf.bootstrap.fixtures-enabled` (по умолчанию `true`).
 
 См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
@@ -127,7 +127,7 @@
 
 ### Fixtures (`ispf.bootstrap.fixtures-enabled=true`)
 
-Демонстрационные/лабораторные модели **не** включены в ядро ​​`ModelBootstrap`. Регистрируются `FixtureModelBootstrap` при старте (если светильники включены).
+Демонстрационные/лабораторные модели **не** включены в ядро ​​`ModelBootstrap`. Регистрируются `FixtureModelBootstrap` при старте (если fixtures включены).
 
 #### mqtt-сенсор-v1
 
@@ -150,7 +150,7 @@
 
 RELATIVE mixin с переменными группами `driver` — для демо/лаборатории и явного применения. **Не** используется для автоматического применения при создании УСТРОЙСТВА.
 
-На производственно-пути схема водителя в ущерб при `provisionDriver()` без относительного миксина (см. [DRIVERS.md](drivers.md)).
+На production path схема драйвера provisioning через `provisionDriver()` без относительного миксина (см. [DRIVERS.md](drivers.md)).
 
 #### snmp-агент-v1
 
@@ -171,7 +171,7 @@ SNMP-устройство (MIB-II + HOST-RESOURCES). Демо: `root.platform.de
 | `ifOutOctets` | 1.3.6.1.2.1.2.2.1.16.1 | Исходящие octets (интерфейс #1) |
 | `hrProcessorLoad` | 1.3.6.1.2.1.25.3.3.1.2.1 | Загрузка CPU % (ядро #1) |
 
-Используются дашбордом `root.platform.dashboards.snmp-host-monitoring`.
+Используется дашборд `root.platform.dashboards.snmp-host-monitoring`.
 
 #### базовый-сенсор-v1 / вендор-сенсор-ext-v1
 
@@ -196,4 +196,4 @@ Content-Type: application/json
 - [DASHBOARDS.md](dashboards.md) — макет Dashboard-v1.
 - [WORKFLOWS.md](workflows.md) — рабочий процесс-v1
 - [DRIVERS.md](drivers.md) — переменные драйвера, инициализация
-- [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — светильники + автоматическое применение CEL
+- [decisions/0018-fixture-models-and-cel-applicability.md](decisions/0018-fixture-models-and-cel-applicability.md) — fixtures + автоматическое применение CEL

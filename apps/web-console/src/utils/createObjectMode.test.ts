@@ -1,102 +1,57 @@
 import { describe, expect, it } from "vitest";
 import {
   canCreateChildAt,
-  canCreateVisualGroupAt,
   defaultObjectTypeForParent,
   instanceTypeFilterForParent,
-  resolveVisualGroupParentPath,
+  resolveCreateDialogMode,
 } from "./createObjectMode";
 
-describe("canCreateChildAt", () => {
-  it("allows create in new model catalog folders", () => {
-    expect(canCreateChildAt("root.platform.instance-types", "BLUEPRINT")).toBe(true);
-    expect(canCreateChildAt("root.platform.relative-blueprints", "BLUEPRINT")).toBe(true);
-    expect(canCreateChildAt("root.platform.absolute-blueprints", "BLUEPRINT")).toBe(true);
-    expect(canCreateChildAt("root.platform.instances", "CUSTOM")).toBe(true);
+describe("canCreateChildAt — platform catalogs", () => {
+  it("allows create in Phase 30 catalogs", () => {
+    expect(canCreateChildAt("root.platform.queries", "QUERIES")).toBe(true);
+    expect(canCreateChildAt("root.platform.analytics", "ANALYTICS")).toBe(true);
+    expect(canCreateChildAt("root.platform.event-filters", "EVENT_FILTERS")).toBe(true);
+    expect(canCreateChildAt("root.platform.process-programs", "PROCESS_PROGRAMS")).toBe(true);
   });
 
-  it("allows create under CUSTOM containers", () => {
-    expect(canCreateChildAt("root.platform.my-folder", "CUSTOM")).toBe(true);
-    expect(canCreateChildAt("root.platform.site.building", "CUSTOM")).toBe(true);
+  it("allows create in MES catalog folders", () => {
+    expect(canCreateChildAt("root.platform.mes.work-orders", "WORK_ORDERS")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.lots", "LOTS")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.quality-records", "QUALITY_RECORDS")).toBe(true);
+    expect(canCreateChildAt("root.platform.mes.instances", "MES_INSTANCES")).toBe(true);
   });
 
-  it("allows create in mimics catalog", () => {
-    expect(canCreateChildAt("root.platform.mimics", "MIMICS")).toBe(true);
-  });
-
-  it("blocks create on model definition leaves", () => {
-    expect(canCreateChildAt("root.platform.instance-types.sensor-v1", "BLUEPRINT")).toBe(false);
-  });
-
-  it("allows create application under applications catalog", () => {
-    expect(canCreateChildAt("root.platform.applications", "APPLICATIONS")).toBe(true);
-    expect(canCreateChildAt("root.platform.applications.warehouse", "APPLICATION")).toBe(false);
+  it("blocks create on instance leaves", () => {
+    expect(canCreateChildAt("root.platform.queries.device-scan", "QUERY")).toBe(false);
+    expect(canCreateChildAt("root.platform.analytics.oee", "ANALYTICS_TEMPLATE")).toBe(false);
+    expect(canCreateChildAt("root.platform.mes.work-orders.wo-1", "WORK_ORDER")).toBe(false);
   });
 });
 
 describe("resolveCreateDialogMode", () => {
-  it("maps applications catalog to application mode", async () => {
-    const { resolveCreateDialogMode } = await import("./createObjectMode");
-    expect(resolveCreateDialogMode("root.platform.applications")).toBe("application");
-    expect(resolveCreateDialogMode("root.platform.operator-apps")).toBe("operator-app");
-  });
-});
-
-describe("resolveCreateLabelKind", () => {
-  it("maps parent folders to create label kinds", async () => {
-    const { resolveCreateLabelKind } = await import("./createObjectMode");
-    expect(resolveCreateLabelKind("root.platform.devices")).toBe("device");
-    expect(resolveCreateLabelKind("root.platform.dashboards")).toBe("dashboard");
-    expect(resolveCreateLabelKind("root.platform.mimics")).toBe("mimic");
-    expect(resolveCreateLabelKind("root.platform.workflows")).toBe("workflow");
-    expect(resolveCreateLabelKind("root.platform.alert-rules")).toBe("alert-rule");
-    expect(resolveCreateLabelKind("root.platform.applications")).toBe("application");
-    expect(resolveCreateLabelKind("root.platform.instance-types")).toBe("blueprint");
-    expect(resolveCreateLabelKind("root.platform.instances")).toBe("instance");
-    expect(resolveCreateLabelKind("root.platform.my-folder")).toBe("object");
-  });
-});
-
-describe("canCreateVisualGroupAt", () => {
-  it("allows group create from catalog folders and their children", () => {
-    expect(canCreateVisualGroupAt("root.platform.reports", "REPORTS")).toBe(true);
-    expect(canCreateVisualGroupAt("root.platform.reports.lab-table", "REPORT")).toBe(true);
-    expect(resolveVisualGroupParentPath("root.platform.reports.lab-table", "REPORT")).toBe(
-      "root.platform.reports",
-    );
-  });
-
-  it("blocks group create on visual group nodes", () => {
-    expect(canCreateVisualGroupAt("root.platform.reports.bundle-lab", "VISUAL_GROUP")).toBe(false);
-  });
-});
-
-describe("filterVisualGroupsInCatalog", () => {
-  it("keeps only visual groups in the given catalog folder", async () => {
-    const { filterVisualGroupsInCatalog } = await import("./createObjectMode");
-    const objects = [
-      { path: "root.platform.reports.g1", type: "VISUAL_GROUP" as const },
-      { path: "root.platform.devices.g2", type: "VISUAL_GROUP" as const },
-      { path: "root.platform.reports.r1", type: "REPORT" as const },
-    ];
-    expect(filterVisualGroupsInCatalog(objects, "root.platform.reports")).toEqual([
-      { path: "root.platform.reports.g1", type: "VISUAL_GROUP" },
-    ]);
+  it("maps Phase 30 catalogs to specialized dialogs", () => {
+    expect(resolveCreateDialogMode("root.platform.queries")).toBe("query");
+    expect(resolveCreateDialogMode("root.platform.event-filters")).toBe("event-filter");
+    expect(resolveCreateDialogMode("root.platform.process-programs")).toBe("process-program");
+    expect(resolveCreateDialogMode("root.platform.analytics")).toBe("analytics-template");
   });
 });
 
 describe("defaultObjectTypeForParent", () => {
-  it("maps parent folders to sensible default types", () => {
-    expect(defaultObjectTypeForParent("root.platform.devices")).toBe("DEVICE");
-    expect(defaultObjectTypeForParent("root.platform.mimics")).toBe("MIMIC");
-    expect(defaultObjectTypeForParent("root.platform.instance-types")).toBe("BLUEPRINT");
-    expect(defaultObjectTypeForParent("root.platform.my-folder")).toBe("CUSTOM");
+  it("maps catalog folders to child types", () => {
+    expect(defaultObjectTypeForParent("root.platform.queries")).toBe("QUERY");
+    expect(defaultObjectTypeForParent("root.platform.analytics")).toBe("ANALYTICS_TEMPLATE");
+    expect(defaultObjectTypeForParent("root.platform.event-filters")).toBe("EVENT_FILTER");
+    expect(defaultObjectTypeForParent("root.platform.process-programs")).toBe("PROCESS_PROGRAM");
+    expect(defaultObjectTypeForParent("root.platform.mes.work-orders")).toBe("WORK_ORDER");
+    expect(defaultObjectTypeForParent("root.platform.mes.lots")).toBe("LOT");
   });
 });
 
 describe("instanceTypeFilterForParent", () => {
-  it("filters instance types by parent folder, not selected type", () => {
-    expect(instanceTypeFilterForParent("root.platform.devices")).toBe("DEVICE");
-    expect(instanceTypeFilterForParent("root.platform.my-folder")).toBeUndefined();
+  it("filters instance blueprints for MES parents", () => {
+    expect(instanceTypeFilterForParent("root.platform.mes.work-orders")).toBe("WORK_ORDER");
+    expect(instanceTypeFilterForParent("root.platform.mes.lots")).toBe("LOT");
+    expect(instanceTypeFilterForParent("root.platform.queries")).toBeUndefined();
   });
 });

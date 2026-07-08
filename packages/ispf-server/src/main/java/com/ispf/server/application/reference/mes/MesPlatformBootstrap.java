@@ -19,16 +19,13 @@ public class MesPlatformBootstrap {
 
     private final ObjectManager objectManager;
     private final SystemObjectDescriptionReconciler systemObjectDescriptionReconciler;
-    private final MesBlueprintBootstrap mesBlueprintBootstrap;
 
     public MesPlatformBootstrap(
             ObjectManager objectManager,
-            SystemObjectDescriptionReconciler systemObjectDescriptionReconciler,
-            MesBlueprintBootstrap mesBlueprintBootstrap
+            SystemObjectDescriptionReconciler systemObjectDescriptionReconciler
     ) {
         this.objectManager = objectManager;
         this.systemObjectDescriptionReconciler = systemObjectDescriptionReconciler;
-        this.mesBlueprintBootstrap = mesBlueprintBootstrap;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -47,6 +44,5 @@ public class MesPlatformBootstrap {
         SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.SHIFTS, ObjectType.SHIFTS, null);
         SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.QUALITY_RECORDS, ObjectType.QUALITY_RECORDS, null);
         SystemObjectCatalogSupport.ensureFolder(objectManager, MesPaths.INSTANCES, ObjectType.MES_INSTANCES, null);
-        mesBlueprintBootstrap.ensureMesModels();
     }
 }

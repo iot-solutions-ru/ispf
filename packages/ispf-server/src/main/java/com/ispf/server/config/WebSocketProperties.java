@@ -21,6 +21,12 @@ public class WebSocketProperties {
 
     private int sendScaleCheckIntervalMs = 200;
 
+    /**
+     * Comma-separated origin patterns for {@code /ws/**} (Spring allowedOriginPatterns syntax).
+     * Default {@code *} keeps local dev working; set a host list on internet-facing deployments.
+     */
+    private String allowedOriginPatterns = "*";
+
     public int getSendThreads() {
         return sendThreads;
     }
@@ -75,6 +81,25 @@ public class WebSocketProperties {
 
     public void setSendScaleCheckIntervalMs(int sendScaleCheckIntervalMs) {
         this.sendScaleCheckIntervalMs = Math.max(50, sendScaleCheckIntervalMs);
+    }
+
+    public String getAllowedOriginPatterns() {
+        return allowedOriginPatterns;
+    }
+
+    public void setAllowedOriginPatterns(String allowedOriginPatterns) {
+        this.allowedOriginPatterns = allowedOriginPatterns == null ? "*" : allowedOriginPatterns;
+    }
+
+    public String[] resolvedAllowedOriginPatterns() {
+        String raw = allowedOriginPatterns == null ? "*" : allowedOriginPatterns.trim();
+        if (raw.isEmpty() || "*".equals(raw)) {
+            return new String[] {"*"};
+        }
+        return java.util.Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(part -> !part.isEmpty())
+                .toArray(String[]::new);
     }
 
     public IngressElasticSettings resolvedSendElastic() {

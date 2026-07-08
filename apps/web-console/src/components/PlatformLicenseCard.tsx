@@ -1,9 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformLicense } from "../api/platformLicense";
+import { useOptionalUserTimeZone } from "../context/UserTimeZoneContext";
+import { formatUserDateTime } from "../utils/formatDateTime";
 
 export default function PlatformLicenseCard() {
   const { t } = useTranslation(["system", "common"]);
+  const tz = useOptionalUserTimeZone();
+  const formatDate = (value: string | number | Date | null | undefined) =>
+    tz ? tz.formatDate(value) : formatUserDateTime(value);
   const licenseQuery = useQuery({
     queryKey: ["platform-license"],
     queryFn: fetchPlatformLicense,
@@ -61,7 +66,7 @@ export default function PlatformLicenseCard() {
                   <th>{t("licenseHealth.expiresAt")}</th>
                   <td>
                     <time dateTime={licenseQuery.data.expiresAt}>
-                      {new Date(licenseQuery.data.expiresAt).toLocaleString()}
+                      {formatDate(licenseQuery.data.expiresAt)}
                     </time>
                   </td>
                 </tr>

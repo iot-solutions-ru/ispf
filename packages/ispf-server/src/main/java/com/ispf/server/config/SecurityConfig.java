@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.server.websocket.WebSocketAuthSupport;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,17 +20,7 @@ public class SecurityConfig {
 
     @Bean
     BearerTokenResolver bearerTokenResolver() {
-        return request -> {
-            String authorization = request.getHeader("Authorization");
-            if (authorization != null && authorization.startsWith("Bearer ")) {
-                return authorization.substring("Bearer ".length()).trim();
-            }
-            String token = request.getParameter("token");
-            if (token != null && !token.isBlank()) {
-                return token.trim();
-            }
-            return null;
-        };
+        return request -> WebSocketAuthSupport.bearerFromAuthorization(request.getHeader("Authorization"));
     }
 
     @Bean

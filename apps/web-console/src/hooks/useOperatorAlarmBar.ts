@@ -93,6 +93,7 @@ export function useOperatorAlarmBar(
   const [alertRules, setAlertRules] = useState<import("../types/event").AlertRule[]>([]);
   const [muted, setMuted] = useState(() => localStorage.getItem(ALARM_MUTE_STORAGE_KEY) === "1");
   const [userSoundEnabled, setUserSoundEnabled] = useState(isOperatorAlarmSoundEnabled);
+  const [actionError, setActionError] = useState<string | null>(null);
   const seenIds = useRef(new Set<string>());
   const shelvesRef = useRef(shelves);
   const soundTimer = useRef<number | undefined>(undefined);
@@ -218,7 +219,9 @@ export function useOperatorAlarmBar(
       try {
         await unshelveAlarm(shelfId);
         setShelves((current) => current.filter((item) => item.id !== shelfId));
-      } catch {
+        setActionError(null);
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : "Failed to unshelve alarm");
         refreshShelves();
       }
     },
@@ -243,8 +246,9 @@ export function useOperatorAlarmBar(
         }
         setShelves((current) => [...current.filter((item) => item.id !== result.id), result]);
         setAlarms((current) => current.filter((item) => item.id !== alarmId));
-      } catch {
-        // ignore
+        setActionError(null);
+      } catch (error) {
+        setActionError(error instanceof Error ? error.message : "Failed to shelve alarm");
       }
     },
     [alarms]
@@ -354,5 +358,7 @@ export function useOperatorAlarmBar(
     onOpenObject: openObjectFor,
     onPrimaryAction: primaryActionFor,
     hasActiveAlarm: sortedAlarms.length > 0,
+    actionError,
+    clearActionError: () => setActionError(null),
   };
 }

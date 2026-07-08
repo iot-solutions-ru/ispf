@@ -33,6 +33,11 @@ public class LocalRoleHeaderFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        if (!properties.isLocalRoleHeaderEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         Authentication existing = SecurityContextHolder.getContext().getAuthentication();
         if (existing != null && existing.isAuthenticated()
                 && !(existing instanceof AnonymousAuthenticationToken)) {

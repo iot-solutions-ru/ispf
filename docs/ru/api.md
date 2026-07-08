@@ -91,7 +91,7 @@ Content-Type: application/json
 | `driverId` | Для `DEVICE`: provisioning драйвера после create |
 | `autoApplyRelativeBlueprints` | По умолчанию `true`. ОТНОСИТЕЛЬНЫЕ миксины с **пустым** CEL не применяются; нужен непустой `suitabilityExpression` |
 
-`mqtt-sensor-v1` — модель светильника (`ispf.bootstrap.fixtures-enabled`). См. [BLUEPRINTS.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+`mqtt-sensor-v1` — fixture-модель (`ispf.bootstrap.fixtures-enabled`). См. [BLUEPRINTS.md](blueprints.md), [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 ## функции
 

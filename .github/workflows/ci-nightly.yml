@@ -156,7 +156,7 @@ jobs:
         with:
           name: ci-dashboard-${{ github.run_id }}
           path: |
-            docs/CI_DASHBOARD.md
+            docs/en/ci-dashboard.md
             tools/acceleration/ci-dashboard.json
           retention-days: 30
 

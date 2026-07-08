@@ -15,13 +15,19 @@ public class DataSourceQueryExecutor {
     public static final int HARD_MAX_ROWS = 100_000;
 
     private final DataSourceSqlSession dataSourceSqlSession;
+    private final DataSourceConnectionResolver connectionResolver;
 
-    public DataSourceQueryExecutor(DataSourceSqlSession dataSourceSqlSession) {
+    public DataSourceQueryExecutor(
+            DataSourceSqlSession dataSourceSqlSession,
+            DataSourceConnectionResolver connectionResolver
+    ) {
         this.dataSourceSqlSession = dataSourceSqlSession;
+        this.connectionResolver = connectionResolver;
     }
 
     public DataSourceQueryResult execute(String dataSourcePath, String sql, List<Object> params, Integer maxRows) {
         String query = DataSourceSqlSupport.normalizeSql(sql);
+        DataSourceSqlSupport.assertAllowedForExternal(connectionResolver.isExternal(dataSourcePath), query);
         List<Object> bindParams = DataSourceSqlSupport.normalizeParams(params);
         int rowLimit = resolveMaxRows(maxRows);
 

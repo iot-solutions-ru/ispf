@@ -6,6 +6,7 @@ import {
   type ClusterNode,
   type ClusterNodeStatus,
 } from "../api/clusterHealth";
+import { formatUserDateTime } from "../utils/formatDateTime";
 
 const KNOWN_PROFILES = ["unified", "edge-api", "hmi-read", "io", "compute", "all", "api", "worker"] as const;
 
@@ -26,7 +27,7 @@ function profileClass(profile: string | null | undefined): string {
 
 function formatInstant(value: string | null): string {
   if (!value) return "—";
-  return new Date(value).toLocaleString();
+  return formatUserDateTime(value);
 }
 
 function ProfileBadge({

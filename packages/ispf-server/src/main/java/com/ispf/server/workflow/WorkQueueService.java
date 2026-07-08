@@ -99,7 +99,7 @@ public class WorkQueueService {
 
     @Transactional
     public WorkQueueItem claimTask(String taskId, String operatorId) throws WorkflowException {
-        WorkflowUserTaskEntity task = userTaskRepository.findById(taskId)
+        WorkflowUserTaskEntity task = userTaskRepository.findByIdForUpdate(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
         if ("COMPLETED".equals(task.getStatus())) {
             return toItem(task);
@@ -118,7 +118,7 @@ public class WorkQueueService {
 
     @Transactional
     public WorkQueueItem completeTask(String taskId, String operatorId) throws WorkflowException {
-        WorkflowUserTaskEntity task = userTaskRepository.findById(taskId)
+        WorkflowUserTaskEntity task = userTaskRepository.findByIdForUpdate(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Task not found: " + taskId));
         if ("COMPLETED".equals(task.getStatus())) {
             return toItem(task);

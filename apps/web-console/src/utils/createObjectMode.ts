@@ -8,6 +8,15 @@ import {
 } from "./automationPath";
 import type { ObjectType } from "../types";
 import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT, SCHEDULES_ROOT } from "./platformSqlPath";
+import {
+  ANALYTICS_ROOT,
+  QUERIES_ROOT,
+  isMesCatalogContainer,
+  isPlatformCatalogContainer,
+  isPlatformReportsFolder,
+} from "./platformCatalogPath";
+import { EVENT_FILTERS_ROOT } from "./eventFilterPath";
+import { PROCESS_PROGRAMS_ROOT } from "./processProgramPath";
 
 export const APPLICATIONS_ROOT = "root.platform.applications";
 export const REPORTS_ROOT = "root.platform.reports";
@@ -22,34 +31,11 @@ export type CreateDialogMode =
   | "data-source"
   | "migration"
   | "sql-binding"
-  | "schedule";
-
-function isPlatformReportsFolder(path: string): boolean {
-  return path === REPORTS_ROOT || (path.endsWith(".reports") && !path.startsWith(`${APPLICATIONS_ROOT}.`));
-}
-
-function isPlatformCatalogContainer(path: string): boolean {
-  if (path === "root" || path === "root.platform") {
-    return true;
-  }
-  return (
-    path.endsWith(".devices")
-    || path.endsWith(".relative-blueprints")
-    || path.endsWith(".instance-types")
-    || path.endsWith(".absolute-blueprints")
-    || path.endsWith(".instances")
-    || path.endsWith(".dashboards")
-    || path.endsWith(".mimics")
-    || isPlatformReportsFolder(path)
-    || path.endsWith(".workflows")
-    || path.endsWith(".alert-rules")
-    || path.endsWith(".correlators")
-    || path.endsWith(".data-sources")
-    || path.endsWith(".schedules")
-    || path.endsWith(".bindings")
-    || path.endsWith(".migrations")
-  );
-}
+  | "schedule"
+  | "query"
+  | "event-filter"
+  | "process-program"
+  | "analytics-template";
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === APPLICATIONS_ROOT) {
@@ -75,6 +61,18 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   }
   if (parentPath === SCHEDULES_ROOT || parentPath.endsWith(".schedules")) {
     return "schedule";
+  }
+  if (parentPath === QUERIES_ROOT) {
+    return "query";
+  }
+  if (parentPath === EVENT_FILTERS_ROOT) {
+    return "event-filter";
+  }
+  if (parentPath === PROCESS_PROGRAMS_ROOT) {
+    return "process-program";
+  }
+  if (parentPath === ANALYTICS_ROOT) {
+    return "analytics-template";
   }
   if (isPlatformReportsFolder(parentPath)) {
     return "report";
@@ -109,6 +107,16 @@ export function resolveCreateLabelKind(parentPath: string): string {
       return "workflow";
     case "BLUEPRINT":
       return "blueprint";
+    case "WORK_ORDER":
+      return "work-order";
+    case "OPERATION":
+      return "operation";
+    case "LOT":
+      return "lot";
+    case "SHIFT":
+      return "shift";
+    case "QUALITY_RECORD":
+      return "quality-record";
     default:
       if (parentPath.endsWith(".instances")) {
         return "instance";
@@ -165,6 +173,38 @@ export function filterVisualGroupsInCatalog<T extends { path: string; type: Obje
   );
 }
 
+const CONTAINER_OBJECT_TYPES: ObjectType[] = [
+  "ROOT",
+  "TENANT",
+  "PLATFORM",
+  "DEVICES",
+  "DASHBOARDS",
+  "REPORTS",
+  "WORKFLOWS",
+  "ALERT_RULES",
+  "CORRELATORS",
+  "QUERIES",
+  "ANALYTICS",
+  "EVENT_FILTERS",
+  "PROCESS_PROGRAMS",
+  "DATA_SOURCES",
+  "SCHEDULES",
+  "BINDINGS",
+  "MIGRATIONS",
+  "APPLICATIONS",
+  "OPERATOR_APPS",
+  "MIMICS",
+  "MES",
+  "WORK_ORDERS",
+  "OPERATIONS",
+  "LOTS",
+  "SHIFTS",
+  "QUALITY_RECORDS",
+  "MES_INSTANCES",
+  "BLUEPRINT",
+  "CUSTOM",
+];
+
 /** Whether the selected tree node can have a child created under it. */
 export function canCreateChildAt(path: string, objectType: ObjectType | undefined): boolean {
   if (!path) {
@@ -177,6 +217,10 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     path === OPERATOR_APPS_ROOT
     || path === ALERT_RULES_ROOT
     || path === CORRELATORS_ROOT
+    || path === QUERIES_ROOT
+    || path === EVENT_FILTERS_ROOT
+    || path === PROCESS_PROGRAMS_ROOT
+    || path === ANALYTICS_ROOT
   ) {
     return true;
   }
@@ -202,27 +246,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     return true;
   }
 
-  const containerTypes: ObjectType[] = [
-    "ROOT",
-    "TENANT",
-    "PLATFORM",
-    "DEVICES",
-    "DASHBOARDS",
-    "REPORTS",
-    "WORKFLOWS",
-    "ALERT_RULES",
-    "CORRELATORS",
-    "DATA_SOURCES",
-    "SCHEDULES",
-    "BINDINGS",
-    "MIGRATIONS",
-    "APPLICATIONS",
-    "OPERATOR_APPS",
-    "MIMICS",
-    "BLUEPRINT",
-    "CUSTOM",
-  ];
-  if (!objectType || !containerTypes.includes(objectType)) {
+  if (!objectType || !CONTAINER_OBJECT_TYPES.includes(objectType)) {
     return false;
   }
 
@@ -234,19 +258,7 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     return true;
   }
 
-  const suffixAllowed =
-    path.endsWith(".devices")
-    || path.endsWith(".relative-blueprints")
-    || path.endsWith(".instance-types")
-    || path.endsWith(".absolute-blueprints")
-    || path.endsWith(".instances")
-    || path.endsWith(".dashboards")
-    || path.endsWith(".mimics")
-    || path.endsWith(".reports")
-    || path.endsWith(".workflows")
-    || path.endsWith(".alert-rules")
-    || path.endsWith(".correlators");
-  return suffixAllowed;
+  return isPlatformCatalogContainer(path) || isMesCatalogContainer(path);
 }
 
 export function defaultObjectTypeForParent(parentPath: string): ObjectType {
@@ -265,6 +277,18 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   if (parentPath.endsWith(".devices")) {
     return "DEVICE";
   }
+  if (parentPath.endsWith(".queries")) {
+    return "QUERY";
+  }
+  if (parentPath.endsWith(".analytics")) {
+    return "ANALYTICS_TEMPLATE";
+  }
+  if (parentPath.endsWith(".event-filters")) {
+    return "EVENT_FILTER";
+  }
+  if (parentPath.endsWith(".process-programs")) {
+    return "PROCESS_PROGRAM";
+  }
   if (parentPath.endsWith(".work-orders")) {
     return "WORK_ORDER";
   }
@@ -279,9 +303,6 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   }
   if (parentPath.endsWith(".quality-records")) {
     return "QUALITY_RECORD";
-  }
-  if (parentPath.endsWith(".process-programs")) {
-    return "PROCESS_PROGRAM";
   }
   if (
     parentPath.endsWith(".relative-blueprints")
@@ -309,6 +330,21 @@ export function instanceTypeFilterForParent(parentPath: string): ObjectType | un
   }
   if (parentPath.endsWith(".workflows")) {
     return "WORKFLOW";
+  }
+  if (parentPath.endsWith(".work-orders")) {
+    return "WORK_ORDER";
+  }
+  if (parentPath.endsWith(".operations")) {
+    return "OPERATION";
+  }
+  if (parentPath.endsWith(".lots")) {
+    return "LOT";
+  }
+  if (parentPath.endsWith(".shifts")) {
+    return "SHIFT";
+  }
+  if (parentPath.endsWith(".quality-records")) {
+    return "QUALITY_RECORD";
   }
   return undefined;
 }

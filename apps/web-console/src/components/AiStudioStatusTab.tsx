@@ -9,9 +9,11 @@ import {
   fetchAiModels,
   fetchAiProviderStatus,
 } from "../api/ai";
+import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 export default function AiStudioStatusTab() {
   const { t } = useTranslation(["ai", "common"]);
+  const { formatDate } = useUserTimeZone();
   const [toolQuery, setToolQuery] = useState("");
 
   const providerQuery = useQuery({
@@ -194,7 +196,7 @@ export default function AiStudioStatusTab() {
               {contextPack.generatedAt && (
                 <div>
                   <dt>{t("settings.generatedAt")}</dt>
-                  <dd>{new Date(contextPack.generatedAt).toLocaleString()}</dd>
+                  <dd>{formatDate(contextPack.generatedAt)}</dd>
                 </div>
               )}
             </dl>

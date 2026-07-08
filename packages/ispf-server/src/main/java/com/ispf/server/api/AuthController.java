@@ -1,6 +1,7 @@
 package com.ispf.server.api;
 
 import com.ispf.server.audit.AuditEventService;
+import com.ispf.server.security.LoginAttemptLimiter;
 import com.ispf.server.security.PlatformUserService;
 import com.ispf.server.config.IspfSecurityProperties;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,19 +35,22 @@ public class AuthController {
     private final Environment environment;
     private final String oauthIssuerUri;
     private final AuditEventService auditEventService;
+    private final LoginAttemptLimiter loginAttemptLimiter;
 
     public AuthController(
             PlatformUserService userService,
             IspfSecurityProperties securityProperties,
             Environment environment,
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}") String oauthIssuerUri,
-            AuditEventService auditEventService
+            AuditEventService auditEventService,
+            LoginAttemptLimiter loginAttemptLimiter
     ) {
         this.userService = userService;
         this.securityProperties = securityProperties;
         this.environment = environment;
         this.oauthIssuerUri = oauthIssuerUri;
         this.auditEventService = auditEventService;
+        this.loginAttemptLimiter = loginAttemptLimiter;
     }
 
     @GetMapping("/config")
@@ -68,17 +72,25 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
+    public Map<String, Object> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String username = request.username().trim().toLowerCase();
+        String clientIp = clientIp(httpRequest);
         try {
+            loginAttemptLimiter.checkAllowed(username, clientIp);
             Map<String, Object> response = userService.login(
                     request.username(),
                     request.password(),
                     request.totpCode()
             );
-            auditEventService.logLoginSuccess(request.username().trim().toLowerCase());
+            loginAttemptLimiter.recordSuccess(username, clientIp);
+            auditEventService.logLoginSuccess(username);
             return response;
+        } catch (LoginAttemptLimiter.LoginLockedException ex) {
+            auditEventService.logLoginFailure(username);
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), ex);
         } catch (IllegalArgumentException ex) {
-            auditEventService.logLoginFailure(request.username().trim().toLowerCase());
+            loginAttemptLimiter.recordFailure(username, clientIp);
+            auditEventService.logLoginFailure(username);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage(), ex);
         }
     }
@@ -129,6 +141,15 @@ public class AuthController {
             return header.substring("Bearer ".length()).trim();
         }
         return null;
+    }
+
+    private static String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            int comma = forwarded.indexOf(',');
+            return (comma >= 0 ? forwarded.substring(0, comma) : forwarded).trim();
+        }
+        return request.getRemoteAddr();
     }
 
     public record LoginRequest(@NotBlank String username, @NotBlank String password, String totpCode) {

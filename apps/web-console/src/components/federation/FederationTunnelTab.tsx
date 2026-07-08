@@ -6,6 +6,7 @@ import type {
   TunnelSession,
 } from "../../api/federation";
 import { copyToClipboard } from "./federationShared";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 interface FederationTunnelTabProps {
   inboundQuery: UseQueryResult<InboundRegistration[], Error>;
@@ -75,6 +76,7 @@ export default function FederationTunnelTab({
   configureSecretsKeyMutation,
 }: FederationTunnelTabProps) {
   const { t } = useTranslation(["federation", "common"]);
+  const { formatDate } = useUserTimeZone();
 
   return (
     <>
@@ -135,7 +137,7 @@ export default function FederationTunnelTab({
               <tr key={reg.id}>
                 <td><code>{reg.name}</code></td>
                 <td><code>{reg.pathPrefix}</code></td>
-                <td>{new Date(reg.expiresAt).toLocaleString()}</td>
+                <td>{formatDate(reg.expiresAt)}</td>
                 <td>{reg.consumedAt ? t("tunnel.registrationUsed") : t("tunnel.registrationPending")}</td>
                 <td>
                   <button

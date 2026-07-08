@@ -1,7 +1,12 @@
 #!/bin/bash
 set -euo pipefail
-curl -s -H 'X-ISPF-Role: admin' \
-  'http://127.0.0.1:8080/api/v1/dashboards/by-path?path=root.platform.dashboards.cbr-rates-dashboard' \
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=ispf-auth.sh
+source "${SCRIPT_DIR}/ispf-auth.sh"
+API="${API:-http://127.0.0.1:8080}"
+AUTH="$(ispf_auth_header)"
+curl -s -H "$AUTH" \
+  "${API}/api/v1/dashboards/by-path?path=root.platform.dashboards.cbr-rates-dashboard" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)

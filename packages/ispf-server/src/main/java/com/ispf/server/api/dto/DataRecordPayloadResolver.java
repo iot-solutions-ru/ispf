@@ -15,7 +15,9 @@ public final class DataRecordPayloadResolver {
         if (payload == null) {
             return DataRecord.empty(defaultSchema);
         }
-        DataSchema schema = payload.schema() != null ? payload.schema() : defaultSchema;
+        DataSchema schema = payload.schema() != null && !payload.schema().fields().isEmpty()
+                ? payload.schema()
+                : defaultSchema;
         List<Map<String, Object>> rows = payload.rows();
         if (rows == null || rows.isEmpty() || rows.stream().allMatch(Map::isEmpty)) {
             return DataRecord.empty(schema);

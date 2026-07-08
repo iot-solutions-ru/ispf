@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { formatUserDateTime } from "../../utils/formatDateTime";
 
 interface OperatorOfflineBannerProps {
   visible: boolean;
@@ -26,7 +27,7 @@ export default function OperatorOfflineBanner({
       {reconnecting
         ? t("offline.reconnecting")
         : t("offline.staleBanner", {
-            time: cachedAt ? new Date(cachedAt).toLocaleString() : t("offline.unknownTime"),
+            time: cachedAt ? formatUserDateTime(cachedAt) : t("offline.unknownTime"),
           })}
     </div>
   );

@@ -204,6 +204,36 @@ class PlatformSqlApiTest {
     }
 
     @Test
+    void executeQueryRejectsWriteOnExternalDataSource() throws Exception {
+        String path = "root.platform.data-sources.ext-write-blocked";
+        mockMvc.perform(post("/api/v1/data-sources")
+                        .header("X-ISPF-Role", "admin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "ext-write-blocked",
+                                  "displayName": "External write blocked",
+                                  "connectionMode": "external",
+                                  "jdbcUrl": "jdbc:postgresql://127.0.0.1:1/none",
+                                  "jdbcUsername": "ispf",
+                                  "jdbcPassword": "wrong"
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/v1/data-sources/by-path/execute-query")
+                        .header("X-ISPF-Role", "admin")
+                        .param("path", path)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "query": "DELETE FROM users"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void executeQueryFunctionInvoke() throws Exception {
         mockMvc.perform(post("/api/v1/objects/by-path/functions/invoke")
                         .header("X-ISPF-Role", "admin")

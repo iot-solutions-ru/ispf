@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/variable-history.md](../en/variable-history.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/variable-history.md](../en/variable-history.md).
 
 # История применения — этапы
 
@@ -90,9 +90,9 @@ ispf:
 | **Raw trend** | ≤ 10k points (`GET .../history`) | **< 500 ms** |
 | **Export** | ≤ 10k points (`GET .../history/export`) | best-effort; same point cap |
 
-Лабораторные ворота (этап 28): сценарии `deploy/run_lab_historian_*.py` должны утверждать совокупную задержку относительно `aggregate-max-latency-ms` при нагрузке `aggregate-max-points`.
+Лабораторные gates (этап 28): сценарии `deploy/run_lab_historian_*.py` должны утверждать совокупную задержку относительно `aggregate-max-latency-ms` при нагрузке `aggregate-max-points`.
 
-Ссылка на панель мониторинга: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (макет виджета BL-161 + эскиз BFF).
+Ссылка на дашборд: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (макет виджета BL-161 + BFF sketch).
 
 Многоуровневые профили хранения и развертывания: [HISTORIAN_TIERS.md](historian-tiers.md).
 

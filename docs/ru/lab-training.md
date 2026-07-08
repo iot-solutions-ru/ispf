@@ -229,7 +229,7 @@ Content-Type: application/json
 
 ---
 
-### 18. Виртуальные устройства панели мониторинга
+### 18. Виртуальные устройства дашборды
 
 **Дашборд:** `root.platform.dashboards.lab-virtual-overview` — chart/value, event-feed, report table.
 

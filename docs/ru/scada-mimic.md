@@ -100,13 +100,13 @@
 | `toggleVariable` | `objectPath`, `variableName`, optional `value` | Flip or set a boolean/command variable |
 | `invokeFunction` | `objectPath`, `functionName`, optional `paramsJson` | Call object function |
 | `navigate` | `dashboardPath`, опционально `selectionJson` | Откройте другую панель управления; дополнительный выбор сеанса семян `{"equipment":"..."}` |
-| `setSelection` | `selectionKey` + `objectPath`, **или** `selectionJson` | Оставайтесь на текущем HMI; обновить выбор сеанса информационной панели (например, детализацию карты оборудования) |
+| `setSelection` | `selectionKey` + `objectPath`, **или** `selectionJson` | Оставайтесь на текущем HMI; обновить выбор сессии дашборда (например, детализацию карты оборудования) |
 | `pulse` (функция) | `sourceType: "pulse"`, `sourceBody: {"variable":"cmdStart"}` | Обработчик платформы записывает логическую командную переменную при вызове |
 | `toggleLayer` | `layerId` | Show/hide mimic layer |
 | `toggleExpand` | `elementId` | Expand/collapse symbol group |
 | `cycleUnit` | `bindingKey`, `units[]` | Cycle displayed engineering unit |
 
-**Встроенный HMI оператора (mini-TEC):** привязывайте щелчки GPU/GRPB к `setSelection` с `selectionKey: "equipment"`, чтобы правая панель карты обновлялась, не выходя из `mini-tec-hmi`. Используйте `navigate` только при открытии отдельной информационной панели.
+**Встроенный HMI оператора (mini-TEC):** привязывайте щелчки GPU/GRPB к `setSelection` с `selectionKey: "equipment"`, чтобы правая панель карты обновлялась, не выходя из `mini-tec-hmi`. Используйте `navigate` только при открытии отдельной дашборда.
 
 Example `setSelection`:
 

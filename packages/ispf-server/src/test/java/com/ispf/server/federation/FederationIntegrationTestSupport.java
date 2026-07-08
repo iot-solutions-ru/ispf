@@ -9,7 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Shared flake budget for federation integration tests (S27).
- * See docs/FEDERATION.md § Integration test flake budget.
+ * See docs/en/federation.md § Integration test flake budget.
  */
 public final class FederationIntegrationTestSupport {
 

@@ -6,7 +6,7 @@ import com.ispf.plugin.blueprint.BlueprintRegistry;
 import org.springframework.stereotype.Component;
 
 /**
- * Platform INSTANCE models documented in {@code docs/BLUEPRINTS.md} / {@code docs/DRIVERS.md}.
+ * Platform INSTANCE models documented in {@code docs/en/blueprints.md} / {@code docs/en/drivers.md}.
  * Always registered at startup — independent of demo object fixtures.
  */
 @Component

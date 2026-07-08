@@ -159,6 +159,10 @@ ispf:
       drop-policy: ${ISPF_AGENT_STORE_FORWARD_DROP_POLICY:DROP_OLDEST}
   security:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
+    local-role-header-enabled: ${ISPF_LOCAL_ROLE_HEADER_ENABLED:false}
+    login:
+      max-failed-attempts: ${ISPF_LOGIN_MAX_FAILED_ATTEMPTS:5}
+      lockout-minutes: ${ISPF_LOGIN_LOCKOUT_MINUTES:15}
     mfa:
       enabled: ${ISPF_MFA_ENABLED:false}
       required-for-admin: ${ISPF_MFA_REQUIRED_FOR_ADMIN:false}
@@ -168,6 +172,7 @@ ispf:
   alarm-shelf:
     approval-required: ${ISPF_ALARM_SHELF_APPROVAL_REQUIRED:false}
   websocket:
+    allowed-origin-patterns: ${ISPF_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:*}
     send-threads: ${ISPF_WEBSOCKET_SEND_THREADS:2}
     send-elastic-enabled: ${ISPF_WEBSOCKET_SEND_ELASTIC:true}
     send-threads-min: ${ISPF_WEBSOCKET_SEND_THREADS_MIN:2}

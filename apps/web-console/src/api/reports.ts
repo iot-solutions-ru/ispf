@@ -132,7 +132,37 @@ export function runReportByPath(
   path: string,
   parameters?: Record<string, unknown>
 ): Promise<ReportRunResult> {
-  return runReportByPathAsync(path, parameters);
+  return runReportByPathResolved(path, parameters);
+}
+
+let cachedJobConsumerActive: boolean | undefined;
+
+async function isJobConsumerActive(): Promise<boolean> {
+  if (cachedJobConsumerActive !== undefined) {
+    return cachedJobConsumerActive;
+  }
+  try {
+    const response = await fetch("/api/v1/info", { headers: getAuthHeaders() });
+    if (!response.ok) {
+      cachedJobConsumerActive = true;
+      return true;
+    }
+    const info = (await response.json()) as { jobConsumerActive?: boolean };
+    cachedJobConsumerActive = info.jobConsumerActive !== false;
+  } catch {
+    cachedJobConsumerActive = true;
+  }
+  return cachedJobConsumerActive;
+}
+
+async function runReportByPathResolved(
+  path: string,
+  parameters?: Record<string, unknown>
+): Promise<ReportRunResult> {
+  if (await isJobConsumerActive()) {
+    return runReportByPathAsync(path, parameters);
+  }
+  return runReportByPathSync(path, parameters);
 }
 
 function sleep(ms: number): Promise<void> {

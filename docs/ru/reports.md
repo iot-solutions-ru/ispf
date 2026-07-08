@@ -132,7 +132,7 @@ GET  /api/v1/applications/{appId}/reports/{reportId}/export?format=csv|pdf|xlsx|
 ## Пользовательский интерфейс оператора
 
 - **operatorUi `reports[]`:** навигация по path отчётов (как `dashboards[]`).
-- **Виджет информационной панели `type: "report"`** — таблица по `reportPath` с `parametersJson`/сопоставление сеансов и панель инструментов экспорта.
+- **Виджет дашборда `type: "report"`** — таблица по `reportPath` с `parametersJson`/сопоставление сеансов и панель инструментов экспорта.
 - **Legacy manifest** `screen.report` — CSV + PDF/XLSX/HTML при YARG template.
 
 ## Права

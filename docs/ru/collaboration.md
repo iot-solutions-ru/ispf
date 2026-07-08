@@ -4,7 +4,7 @@
 
 Механизмы безопасной параллельной работы нескольких инженеров над одним деревом объектов ISPF.
 
-##11.1 Фундамент — доработка + аудит
+## 11.1 Фундамент — доработка + аудит
 
 ### Оптимистический параллелизм
 
@@ -28,7 +28,7 @@
 }
 ```
 
-Версия **не** инкрементируется при телеметрии водителя и расчетных привязках (`setDriverTelemetryValue`, `propagateBindings`).
+Версия **не** инкрементируется при телеметрии драйвера и расчетных привязках (`setDriverTelemetryValue`, `propagateBindings`).
 
 ### Аудит конфигурации
 
@@ -66,7 +66,7 @@ DELETE /api/v1/objects/leases?pathPrefix=...
 GET    /api/v1/objects/leases
 ```
 
-При активной аренде другого держателя → **423 Locked** напишите.
+При активном lease другого держателя → **423 Locked** при записи.
 
 ### Объединение моделей
 
@@ -90,7 +90,7 @@ POST /api/v1/blueprints/{id}/upgrade-instances?dryRun=true
 
 Наследование вверх по path (как READ/WRITE/INVOKE). Назначение через `PUT /api/v1/objects/by-path/acl?path=<prefix>`.
 
-##11.4 Change-сеты и продвижение
+## 11.4 Change-сеты и продвижение
 
 ```
 POST /api/v1/platform/change-sets

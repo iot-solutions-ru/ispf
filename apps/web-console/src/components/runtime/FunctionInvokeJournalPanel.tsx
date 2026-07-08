@@ -10,6 +10,7 @@ import JournalViewShell, { JOURNAL_VIEW_MODES, type JournalViewMode } from "../j
 import JournalVirtualList from "../journal/JournalVirtualList";
 import { ObjectPathField } from "../../ui";
 import { usePersistentTab } from "../../hooks/usePersistentTab";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 const LIVE_LIMIT = 25;
 const HISTORY_PAGE = 50;
@@ -215,6 +216,7 @@ function InvokeRow({
   entry: FunctionInvokeAuditEntry;
 }) {
   const { t } = useTranslation(["runtime", "journal"]);
+  const { formatDate } = useUserTimeZone();
   const sections = useMemo(
     () => [
       {
@@ -249,7 +251,7 @@ function InvokeRow({
       {entry.appId && <p className="hint">app: {entry.appId}</p>}
       {entry.errorMessage && <p className="event-journal-detail">{entry.errorMessage}</p>}
       <time className="hint event-journal-time">
-        {new Date(entry.invokedAt).toLocaleString()}
+        {formatDate(entry.invokedAt)}
       </time>
     </JournalExpandableItem>
   );

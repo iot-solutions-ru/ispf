@@ -1,106 +1,106 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/glossary.md](../en/glossary.md).
 
-﻿# Глоссарий ISPF
+# Глоссарий ISPF
 
-Краткий словарь терминов платформы. Обзор продукта: [PRODUCT.md](product.md).
+Краткий словарь терминов платформы. Обзор продукта: [product.md](product.md).
 
 ---
 
-## Основной принцип (сквозной термин)
+## Сквозной принцип
 
-**Бизнес-логика в механических платформах** — архитектурный принцип ISPF: правила и поведение прикладного решения по принципу декларативно-конфигурации **дерева объектов** (модели, переменные, события, функции, рабочий процесс, правила оповещений, корреляторы), а неотраслевому Java в `ispf-server`. Платформа реализует дженерики-движки; Bundle Deploy производит настройку этих механизмов. См. [АРХИТЕКТУРА.md](architecture.md).
+**Бизнес-логика в механизмах платформы** — архитектурный принцип ISPF: правила и поведение прикладного решения описываются **declarative-конфигурацией дерева объектов** (модели, переменные, события, функции, workflow, правила оповещений, корреляторы), а не отраслевым Java в `ispf-server`. Платформа реализует **generic-движки**; **bundle deploy** доставляет в них конфигурацию. См. [architecture.md](architecture.md).
 
 ---
 
 ## А
 
-**Правило оповещения** — правило автоматизации: CEL-условие на переменный объект. При истинности — автоматический пожарный события. Узел типа `ALERT` в `root.platform.alert-rules`.
+**Правило оповещения (alert rule)** — правило автоматизации: CEL-условие на переменной объекта. При истинности автоматически генерируется событие (`POST /events/fire`). Узел типа `ALERT` в `root.platform.alert-rules`.
 
-**Приложение (deploy-приложение)** — зарегистрированное прикладное решение с изолированной SQL-схемой, JSON-функциями и опциональным пакетом. Регистрируется через `POST /applications`. Отображается в дереве под `root.platform.applications`.
+**Приложение (deploy application)** — зарегистрированное прикладное решение с изолированной SQL-схемой, JSON-функциями и опциональным bundle. Регистрация: `POST /applications`. В дереве — под `root.platform.applications`.
 
-**Функция приложения** — Функция приложения, описанная JSON-скрипт (шаги `selectOne`, `update`, …). Выполняется в песочнице без Java-кода в ядре.
+**Функция приложения (application function)** — функция, описанная JSON-скриптом (шаги `selectOne`, `update`, …). Выполняется в песочнице без Java в ядре.
 
 ---
 
 ## Б
 
-**Привязка** — правило вычисления значений переменных (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` при активаторах (локальные и межобъектные изменения). Выражение — Google **CEL** или функция платформы. См. [BINDINGS.md](bindings.md).
+**Привязка (binding)** — правило вычисления значения переменной (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` по активаторам (локальным и межобъектным). Выражение — Google **CEL** или функция платформы. См. [bindings.md](bindings.md).
 
-**BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из пользовательского интерфейса. Профиль провода `anima-operator-v1` — контракт для устаревшего манифеста.
+**BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Профиль `anima-operator-v1` — контракт legacy manifest.
 
-**Чертеж** — см. **Модель**.
+**Blueprint** — см. **Модель**.
 
-**Пакет** — ZIP-пакет приложения: манифест, SQL, функции, интерфейс оператора, отчёты. Деплоится через `POST /applications/{id}/deploy`.
+**Bundle** — ZIP-пакет приложения: manifest, SQL, функции, operator UI, отчёты. Деплой: `POST /applications/{id}/deploy`.
 
-**BPMN** — Модель бизнес-процесса и обозначения. Нотация для описания рабочего процесса. ISPF использует BPMN 2.0 XML с расширениями пространства имен `http://ispf.io/bpmn`.
+**BPMN** — Business Process Model and Notation. ISPF использует BPMN 2.0 XML с расширениями `http://ispf.io/bpmn`.
 
 ---
 
-## С
+## В
 
-**CEL (Common Expression Language)** — язык выражений Google. Используется в привязках, правилах оповещений, рабочем процессе условий шлюза.
+**CEL (Common Expression Language)** — язык выражений Google. Используется в привязках, правилах оповещений, условиях шлюзов workflow.
 
-**Заявка** — действие оператора в рабочей очереди: закрепление задачи пользователя за собой.
+**Claim** — действие оператора в work queue: закрепление user task за собой.
 
 ---
 
 ## Д
 
-**Dashboard** — объект типа `DASHBOARD` с макетом JSON (сетка виджетов). Создаётся в Dashboard Builder, отображается в HMI оператора.
+**Dashboard (дашборд)** — объект типа `DASHBOARD` с layout JSON (сетка виджетов). Создаётся в Dashboard Builder, отображается в operator HMI.
 
-**DataRecord** — типизированная запись переменного объекта. Содержит `DataSchema` (поля) и значения.
+**DataRecord** — типизированная запись переменной объекта: `DataSchema` (поля) и значения.
 
-**DeviceDriver** — SPI-интерфейс драйвера устройства. Реализация: mqtt, modbus, snmp, virtual, … (58 модулей).
+**DeviceDriver** — SPI-интерфейс драйвера устройства. Реализации: mqtt, modbus, snmp, virtual, … (58 модулей).
 
-**Driver runtime** — сервис опроса устройств. Старт/стоп через `POST /drivers/runtime/start|stop`.
+**Driver runtime** — сервис опроса устройств. Старт/стоп: `POST /drivers/runtime/start|stop`.
 
 ---
 
-## Э
+## С
 
-**Событие** — типизированное. Имеет дескриптор (имя, схема payload, уровень). Публикуется через `POST /events/fire` или правило оповещения.
+**Событие (event)** — типизированное уведомление от объекта. Дескриптор: имя, схема payload, уровень. Публикация: `POST /events/fire` или правило оповещения.
 
-**Коррелятор событий** — правило: цепочка событий → запуск рабочего процесса. Узел типа `CORRELATOR` в `root.platform.correlators`.
+**Коррелятор событий (event correlator)** — правило: цепочка событий → запуск workflow. Узел `CORRELATOR` в `root.platform.correlators`.
 
-**Проводник** — панель просмотра свойств узла дерева в консоли администратора.
+**Explorer (проводник)** — панель свойств выбранного узла дерева в admin console.
 
 ---
 
 ## Ф
 
-**Flyway** — инструмент миграции SQL-платформы. Миграция приложений **не** использует Flyway — только API `data/migrate`.
+**Flyway** — миграции SQL платформы. Миграции приложений **не** через Flyway — только API `data/migrate`.
 
-**Функция (функция платформы)** — исполняемая функция на объекте платформы (не функция приложения). Оформление в модели объекта.
+**Функция платформы (platform function)** — исполняемая функция на объекте платформы (не application function). Описывается в модели объекта.
 
 ---
 
 ## Ч
 
-**HMI (человеко-машинный интерфейс)** — операторский интерфейс. В ISPF — оператор HMI на базе дашбордов.
+**HMI (Human-Machine Interface)** — операторский интерфейс. В ISPF — operator HMI на базе дашбордов.
 
 ---
 
-## я
+## И
 
-**Инспектор** — панель деталей объекта: свойства, переменные, события, функции.
+**Inspector (инспектор)** — панель деталей объекта: свойства, переменные, события, функции.
 
-**Instance (экземпляр рабочего процесса)** — запущенный экземпляр BPMN-процесса. Статусы: `RUNNING`, `WAITING`, `COMPLETED`, `FAILED`.
+**Instance (экземпляр workflow)** — запущенный экземпляр BPMN-процесса. Статусы: `RUNNING`, `WAITING`, `COMPLETED`, `FAILED`.
 
 ---
 
 ## Л
 
-**Макет** — описание сетки виджетов дашборда в формате JSON. Хранится в переменном `layout` объекте `DASHBOARD`.
+**Layout** — JSON-описание сетки виджетов дашборда. Хранится в переменной `layout` объекта `DASHBOARD`.
 
-**Устаревший манифест** — оболочка оператора в открытом формате (`operatorManifest` в JSON). Заменён на `operatorUi` + панели приборов платформы.
+**Legacy manifest** — устаревший формат operator shell (`operatorManifest` в JSON). Заменён на `operatorUi` + дашборды платформы.
 
 ---
 
 ## М
 
-**Model (BlueprintDefinition)** — шаблон объекта: переменные, события, функции, привязки. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. ОТНОСИТЕЛЬНЫЕ миксины применяются автоматически при создании только при непустом CEL (*Условие применимости* / `suitabilityExpression`). Явный запрос — через `templateId` или API.
+**Модель (Model / BlueprintDefinition)** — шаблон объекта: переменные, события, функции, привязки. Типы: `RELATIVE`, `ABSOLUTE`, `INSTANCE`. `RELATIVE`-миксины применяются при создании только при непустом CEL (*условие применимости* / `suitabilityExpression`). Явное применение — `templateId` или API.
 
-**Модель светильника** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется по `ispf.bootstrap.fixtures-enabled=true`. Не часть встроенного реестра. См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
+**Fixture-модель** — демо/лабораторная модель (`mqtt-sensor-v1`, `mqtt-gateway-v1`, …), регистрируется при `ispf.bootstrap.fixtures-enabled=true`. Не входит в встроенный реестр. См. [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).
 
 **Model engine** — плагин `ispf-plugin-blueprint`, применяющий модели к объектам.
 
@@ -108,23 +108,23 @@
 
 ## О
 
-**Object tree** — иерархия узлов платформы с dot-path адресацией (`root.platform.devices.sensor-01`).
+**Object tree (дерево объектов)** — иерархия узлов платформы с dot-path адресацией (`root.platform.devices.sensor-01`).
 
-**ObjectType** — тип узла: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `MODEL`, `APPLICATION`, `USER`, `PLATFORM`, `ALERT_RULES`, … Системные имеют базу семантический тип, не `CUSTOM`.
+**ObjectType** — тип узла: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `MODEL`, `APPLICATION`, `USER`, `PLATFORM`, `ALERT_RULES`, … Системные папки имеют семантический тип, не `CUSTOM`.
 
-**Приложение оператора** — изменение пользовательского интерфейса оператора для конкретных приложений. Хранится в `operator_app_ui`, редактируется в `root.platform.operator-apps`.
+**Operator app** — конфигурация operator UI для конкретного приложения. Хранится в `operator_app_ui`, редактируется в `root.platform.operator-apps`.
 
-**Operator HMI** — режим веб-консоли для операторов: дашборды только для чтения, очередь работ, журнал событий.
+**Operator HMI** — режим Web Console для операторов: дашборды read-only, work queue, журнал событий.
 
-**Operator UI** — JSON-конфиг: заголовок, список дашбордов, панель мониторинга по умолчанию. Загружается через `GET /operator-apps/{id}/ui`.
+**Operator UI** — JSON: заголовок, список дашбордов, дашборд по умолчанию. Загрузка: `GET /operator-apps/{id}/ui`.
 
 ---
 
 ## П
 
-**Объект платформы** — узел дерева объектов ISPF (в отличие от записи приложения в таблице `applications`).
+**Объект платформы (platform object)** — узел дерева объектов ISPF (в отличие от записи в таблице `applications`).
 
-**Плагин** — расширение платформы. В репозитории: `ispf-plugin-blueprint`, `ispf-plugin-workflow`. Коммерческие — вне `main`.
+**Plugin** — расширение платформы. В репозитории: `ispf-plugin-blueprint`, `ispf-plugin-workflow`. Коммерческие — вне `main`.
 
 ---
 
@@ -132,43 +132,43 @@
 
 **RBAC** — Role-Based Access Control. Роли: `admin`, `operator`.
 
-**REQ-PF** — требования к платформенному слою приложений. Статус: [ROADMAP.md § Часть A](roadmap.md).
+**REQ-PF** — требования к application platform layer. Статус: [roadmap.md § Часть A](roadmap.md).
 
 ---
 
 ## С
 
-**selectionKey** — имя слота динамического выбора объекта на дашборде. Виджет с `selectionKey: "device"` читает путь из `selection.device`, установленный кликом по таблице.
+**selectionKey** — имя слота динамического выбора объекта на дашборде. Виджет с `selectionKey: "device"` читает путь из `selection.device`, заданный кликом по строке таблицы.
 
-**Сервисная задача** — элемент BPMN: важное действие (LOG, SET_VARIABLE, INVOKE_FUNCTION, PUBLISH_NATS).
+**Service task** — элемент BPMN: автоматическое действие (LOG, SET_VARIABLE, INVOKE_FUNCTION, PUBLISH_NATS).
 
-**SPI (Интерфейс поставщика услуг)** — продление контракта. Пример: `DeviceDriver` для драйверов.
+**SPI (Service Provider Interface)** — контракт расширения. Пример: `DeviceDriver` для драйверов.
 
 ---
 
-## У
+## П (user task)
 
-**Задача пользователя** — элемент BPMN: задача для оператора. Появляется в очереди работ до заявки/завершения.
+**User task** — элемент BPMN: задача для оператора. Появляется в work queue до claim/complete.
 
 ---
 
 ## В
 
-**Переменная** — именованное значение объекта. Типизируется через `DataRecord`. «Иметь привязку CEL.
+**Переменная (variable)** — именованное значение на объекте. Типизация через `DataRecord`. Может иметь CEL-привязку.
 
-**Виртуальный драйвер** — драйвер-симулятор. Генерирует тестовые данные (например, синусоидальную температуру для `demo-sensor-01`).
+**Virtual driver** — драйвер-симулятор. Генерирует тестовые данные (например, синусоидальную температуру для `demo-sensor-01`).
 
 ---
 
-## Вт
+## W
 
 **Web Console** — React-приложение admin + operator UI. Каталог: `apps/web-console/`.
 
 **WebSocket** — `WS /ws/objects` — live-обновления переменных и событий.
 
-**Виджет** — элемент дашборда: значение, диаграмма, объект-таблица, электронная таблица, рабочая-очередь,… Справочник: [WIDGETS.md](widgets.md).
+**Widget (виджет)** — элемент дашборда: value, chart, object-table, spreadsheet, work-queue, … Справочник: [widgets.md](widgets.md).
 
-**Рабочая очередь** — включение пользовательских задач BPMN для операторов.
+**Work queue (рабочая очередь)** — очередь BPMN user tasks для операторов.
 
 **Workflow** — объект типа `WORKFLOW` с BPMN XML. Статусы объекта: `DRAFT`, `ACTIVE`, `STOPPED`.
 
@@ -176,16 +176,16 @@
 
 ---
 
-##Сокращения
+## Сокращения
 
 | Сокращение | Расшифровка |
 |------------|-------------|
-| ИСФФ | Платформа для решений Интернета вещей |
-| HMI | Человеко-машинный интерфейс |
-| СКАДА | Диспетчерский контроль и сбор данных |
-| MES | Система управления производством |
-| ОПЦ ЮА | Открытая платформа коммуникаций. Унифицированная архитектура |
-| SNMP | Простой протокол управления сетью |
-| МКТТ | Транспорт телеметрии очереди сообщений |
-| ДЖВТ | Веб-токен JSON |
-| ОИДК | OpenID Connect |
+| ISPF | IoT Solutions Platform Framework |
+| HMI | Human-Machine Interface |
+| SCADA | Supervisory Control and Data Acquisition |
+| MES | Manufacturing Execution System |
+| OPC UA | Open Platform Communications Unified Architecture |
+| SNMP | Simple Network Management Protocol |
+| MQTT | Message Queuing Telemetry Transport |
+| JWT | JSON Web Token |
+| OIDC | OpenID Connect |

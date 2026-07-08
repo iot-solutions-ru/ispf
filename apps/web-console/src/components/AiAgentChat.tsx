@@ -13,6 +13,7 @@ import { AgentRunDetails } from "./agent/AgentRunDetails";
 import {
   type AgentChatAttachment,
 } from "../utils/agentChatAttachments";
+import { formatUserDateTime } from "../utils/formatDateTime";
 const CHAT_INPUT_MAX_HEIGHT_PX = 320;
 
 function resizeChatInput(textarea: HTMLTextAreaElement | null) {
@@ -27,16 +28,7 @@ function resizeChatInput(textarea: HTMLTextAreaElement | null) {
 }
 
 function formatChatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
+  return formatUserDateTime(iso);
 }
 
 function AgentModeBadge({ mode }: { mode: AgentInteractionMode }) {

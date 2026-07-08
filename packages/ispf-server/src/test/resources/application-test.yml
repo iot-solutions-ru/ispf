@@ -24,6 +24,7 @@ ispf:
     fixtures-enabled: true
   security:
     rbac-enabled: false
+    local-role-header-enabled: true
     secrets-key: test-secret-key-for-federation-phase7
   mqtt:
     enabled: false

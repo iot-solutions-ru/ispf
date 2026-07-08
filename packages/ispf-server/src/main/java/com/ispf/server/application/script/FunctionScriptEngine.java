@@ -311,40 +311,9 @@ public class FunctionScriptEngine {
         Map<String, Object> normalized = new LinkedHashMap<>();
         for (FieldDefinition field : outputSchema.fields()) {
             Object value = row.get(field.name());
-            if (value == null && !field.nullable()) {
-                value = defaultValue(field.type());
-            } else {
-                value = coerceFieldValue(field, value);
-            }
-            normalized.put(field.name(), value);
+            normalized.put(field.name(), ScriptFieldCoercion.coerce(field, value));
         }
         return DataRecord.single(outputSchema, normalized);
-    }
-
-    private static Object coerceFieldValue(FieldDefinition field, Object value) {
-        if (value == null || field.type() != FieldType.BOOLEAN) {
-            return value;
-        }
-        if (value instanceof Boolean) {
-            return value;
-        }
-        if (value instanceof Number number) {
-            return number.intValue() != 0;
-        }
-        if (value instanceof String text) {
-            return "true".equalsIgnoreCase(text) || "1".equals(text);
-        }
-        return value;
-    }
-
-    private static Object defaultValue(com.ispf.core.model.FieldType type) {
-        return switch (type) {
-            case BOOLEAN -> false;
-            case INTEGER, LONG -> 0L;
-            case DOUBLE -> 0.0;
-            case RECORD_LIST -> List.of();
-            default -> "";
-        };
     }
 
     private static DataRecord wireError(DataSchema outputSchema, JsonNode step) {

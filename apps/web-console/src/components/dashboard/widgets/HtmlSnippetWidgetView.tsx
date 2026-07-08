@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type { HtmlSnippetWidget } from "../../../types/dashboard";
 import DashWidgetShell from "../DashWidgetShell";
 import { useWidgetStyles } from "../widgetStyles";
-import { buildHtmlSnippetSrcDoc, htmlSnippetRequiresIframe } from "./htmlSnippetDocument";
+import { buildHtmlSnippetSrcDoc, htmlSnippetRequiresIframe, sanitizeHtmlSnippet } from "./htmlSnippetDocument";
 
 interface HtmlSnippetWidgetViewProps {
   widget: HtmlSnippetWidget;
@@ -11,7 +11,7 @@ interface HtmlSnippetWidgetViewProps {
 
 export default function HtmlSnippetWidgetView({ widget, editable }: HtmlSnippetWidgetViewProps) {
   const styles = useWidgetStyles(widget.stylesJson);
-  const html = widget.htmlJson ?? "";
+  const html = sanitizeHtmlSnippet(widget.htmlJson ?? "");
   const useIframe = useMemo(() => htmlSnippetRequiresIframe(html), [html]);
   const srcDoc = useMemo(() => (useIframe ? buildHtmlSnippetSrcDoc(html) : ""), [html, useIframe]);
 

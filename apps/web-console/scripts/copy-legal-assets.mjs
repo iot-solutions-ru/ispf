@@ -13,8 +13,8 @@ const outDir = path.resolve(here, "../public/legal");
 const copies = [
   ["LICENSE", "LICENSE"],
   ["NOTICE", "NOTICE"],
-  ["docs/LICENSE.md", "LICENSE.md"],
-  ["docs/THIRD_PARTY_NOTICES.md", "THIRD_PARTY_NOTICES.md"],
+  ["docs/en/license.md", "LICENSE.md"],
+  ["docs/en/third-party-notices.md", "THIRD_PARTY_NOTICES.md"],
   ["LICENSE-COMMERCIAL.md", "LICENSE-COMMERCIAL.md"],
   [
     "apps/web-console/src/scada/symbols/packs/ispf-pid-v1/LICENSE.md",

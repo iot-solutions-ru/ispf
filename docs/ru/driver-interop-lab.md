@@ -70,7 +70,7 @@ bash deploy/tools/driver-interop-report.sh
 
 Драйверы с `WRITE` в матрице покрывают write path в loopback-тестах:
 
-| Водитель | Запись покрытия в режиме обратной связи |
+| Драйвер | Запись покрытия в режиме обратной связи |
 | ------ | -------------------------- |
 | `modbus-tcp/rtu/udp` | FC5/FC6 write |
 | `opcua` | Milo `writeValue` |
@@ -118,7 +118,7 @@ docker compose -f deploy/driver-interop/docker-compose.yml down
 
 Mosquitto config: `deploy/driver-interop/mosquitto/mosquitto.conf` (anonymous, no persistence).
 
-### Дым от светильников
+### Дым от fixtures
 
 After `docker compose up -d`:
 

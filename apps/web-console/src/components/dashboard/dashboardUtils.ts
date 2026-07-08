@@ -156,15 +156,16 @@ export function buildFunctionInput(
 /** Wraps plain `{action:"open"}` JSON into DataRecord `{rows:[...]}` for function invoke. */
 export function parseFunctionInputJson(raw: string): DataRecord {
   const parsed = JSON.parse(raw) as unknown;
-  const emptySchema: DataSchema = { name: "functionInput", fields: [] };
+  const withRows = (rows: Array<Record<string, unknown>>, schema?: DataSchema): DataRecord =>
+    schema ? { schema, rows } : ({ rows } as DataRecord);
+
   if (parsed && typeof parsed === "object" && Array.isArray((parsed as DataRecord).rows)) {
     const record = parsed as DataRecord;
-    return { schema: record.schema ?? emptySchema, rows: record.rows };
+    const schema =
+      record.schema && record.schema.fields.length > 0 ? record.schema : undefined;
+    return withRows(record.rows, schema);
   }
-  return {
-    schema: emptySchema,
-    rows: [parsed as Record<string, unknown>],
-  };
+  return withRows([parsed as Record<string, unknown>]);
 }
 
 export function parseJsonArray<T>(raw: string | undefined, fallback: T[]): T[] {

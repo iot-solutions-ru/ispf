@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
-import { useObjectWebSocket } from "../../hooks/useObjectWebSocket";
 import { useOperatorManifest } from "../../hooks/useOperatorManifest";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
 import { ANIMA_OPERATOR_WIRE_PROFILE } from "../../types/bff";
@@ -41,7 +40,6 @@ export default function OperatorManifestView({
 }: OperatorManifestViewProps) {
   const { t } = useTranslation(["operator", "common"]);
   const queryClient = useQueryClient();
-  useObjectWebSocket();
   const manifestQuery = useOperatorManifest(appId);
   const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() =>
     syncOperatorCachesOnReconnect(queryClient, appId)

@@ -19,7 +19,7 @@ Do not mix sync RPC and async bus in one "universal" channel.
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /ws/objects?token=...` | Subscribe paths, presence, **event catalog** |
+| `GET /ws/objects` + `Sec-WebSocket-Protocol: ispf-bearer, <token>` | Subscribe paths, presence, **event catalog** |
 
 ### Client messages
 

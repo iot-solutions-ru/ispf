@@ -11,6 +11,32 @@ export function decodeHtmlSnippetEntities(html: string): string {
     .replace(/&amp;/gi, "&");
 }
 
+const BLOCKED_HTML_TAGS = /<\/?(script|iframe|object|embed|link|meta|style|foreignObject|base|form)\b[^>]*>/gi;
+const EVENT_ATTRS = /\s(on[a-z]+|formaction|xlink:href|href)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi;
+
+/** Strip executable markup from dashboard HTML fragments before innerHTML. */
+export function sanitizeHtmlSnippet(html: string): string {
+  let sanitized = normalizeHtmlSnippet(html);
+  if (!sanitized) {
+    return "";
+  }
+  sanitized = sanitized.replace(BLOCKED_HTML_TAGS, "");
+  sanitized = sanitized.replace(EVENT_ATTRS, (match, attr: string, val: string) => {
+    const lower = attr.toLowerCase();
+    if (lower.startsWith("on")) {
+      return "";
+    }
+    const value = val.replace(/^['"]|['"]$/g, "").trim().toLowerCase();
+    if (lower === "href" || lower === "xlink:href") {
+      if (value.startsWith("javascript:") || value.startsWith("data:text/html")) {
+        return "";
+      }
+    }
+    return match;
+  });
+  return sanitized;
+}
+
 export function normalizeHtmlSnippet(html: string): string {
   return decodeHtmlSnippetEntities(html).trim();
 }

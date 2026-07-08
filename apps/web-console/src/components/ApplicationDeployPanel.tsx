@@ -14,6 +14,7 @@ import {
 import ApplicationBundlePanel from "./ApplicationBundlePanel";
 import ApplicationLifecyclePanel from "./ApplicationLifecyclePanel";
 import { ObjectPathField } from "../ui";
+import { formatUserDateTime } from "../utils/formatDateTime";
 
 interface ApplicationDeployPanelProps {
   appId: string;
@@ -28,7 +29,7 @@ function formatDeployedAt(value: string | undefined): string {
     return "";
   }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? value : formatUserDateTime(date);
 }
 
 export default function ApplicationDeployPanel({

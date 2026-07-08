@@ -13,6 +13,8 @@ export interface AlarmBarOverlayProps {
   onOpenReport: (alarm: ActiveOperatorAlarm) => void;
   onOpenObject: (alarm: ActiveOperatorAlarm) => void;
   onPrimaryAction: (alarm: ActiveOperatorAlarm) => void;
+  actionError?: string | null;
+  clearActionError?: () => void;
 }
 
 function AlarmBarItem({
@@ -134,6 +136,8 @@ export default function AlarmBarOverlay({
   onOpenReport,
   onOpenObject,
   onPrimaryAction,
+  actionError,
+  clearActionError,
 }: AlarmBarOverlayProps) {
   if (!enabled || alarms.length === 0) {
     return null;
@@ -144,6 +148,16 @@ export default function AlarmBarOverlay({
       className={`operator-alarm-bar-stack operator-alarm-bar-stack--${position}`}
       data-testid="operator-alarm-bar"
     >
+      {actionError && (
+        <div className="banner error operator-alarm-bar-error" role="status">
+          <span>{actionError}</span>
+          {clearActionError && (
+            <button type="button" className="btn btn-sm" onClick={clearActionError}>
+              ×
+            </button>
+          )}
+        </div>
+      )}
       {alarms.map((alarm, index) => (
         <AlarmBarItem
           key={alarm.id}

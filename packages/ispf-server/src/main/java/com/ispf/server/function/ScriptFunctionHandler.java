@@ -12,6 +12,7 @@ import com.ispf.server.object.ObjectManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -54,7 +55,7 @@ public class ScriptFunctionHandler implements FunctionHandler {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DataRecord invoke(String objectPath, String functionName, DataRecord input) {
         FunctionDescriptor descriptor = schemaSession.callWithPlatformCatalog(() -> {
             PlatformObject node = objectManager.require(objectPath);

@@ -1,5 +1,6 @@
 package com.ispf.server.bootstrap;
 
+import com.ispf.server.application.reference.mes.MesBlueprintBootstrap;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.operator.OperatorAppUiStore;
 import com.ispf.server.security.PlatformUserService;
@@ -37,6 +38,14 @@ class BootstrapCleanInstallTest {
         assertThat(BlueprintRegistry.findByName(LabBlueprintBootstrap.VIRTUAL_UNIFIED_MODEL)).isPresent();
         assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL)).isPresent();
         assertThat(BlueprintRegistry.findByName(PlatformReferenceBlueprintBootstrap.MQTT_GATEWAY_SENSOR_MODEL)).isPresent();
+    }
+
+    @Test
+    void registersMesInstanceTypesWithoutFixtures() {
+        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.BATCH_MODEL)).isPresent();
+        assertThat(BlueprintRegistry.findByName(MesBlueprintBootstrap.WORK_ORDER_MODEL)).isPresent();
+        assertThat(objectManager.tree().findByPath("root.platform.instance-types.batch-v1")).isPresent();
+        assertThat(objectManager.tree().findByPath("root.platform.instance-types.work-order-v1")).isPresent();
     }
 
     @Test

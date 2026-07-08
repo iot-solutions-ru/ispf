@@ -10,6 +10,7 @@ import YargHealthCard from "./YargHealthCard";
 import McpHealthCard from "./McpHealthCard";
 import PlatformLicenseCard from "./PlatformLicenseCard";
 import StorageHealthCard from "./StorageHealthCard";
+import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 const METRIC_KEYS = [
   "uptimeMs", "uptimeHuman", "heapUsedBytes", "heapMaxBytes", "heapUsedMb", "heapMaxMb",
@@ -35,6 +36,7 @@ const METRICS_SUB_TABS: readonly MetricsSubTab[] = ["overview", "diagnostics"];
 
 function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
   const { t } = useTranslation(["system", "common"]);
+  const { formatDate } = useUserTimeZone();
   const entries = Object.entries(section.values ?? {});
 
   const metricLabel = (key: string) => {
@@ -67,7 +69,7 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
               <th>{metricLabel(key)}</th>
               <td>
                 {typeof value === "string" && value.includes("T") && value.endsWith("Z") ? (
-                  <time dateTime={value}>{new Date(value).toLocaleString()}</time>
+                  <time dateTime={value}>{formatDate(value)}</time>
                 ) : (
                   formatMetricValue(value)
                 )}
@@ -82,6 +84,7 @@ function MetricSectionCard({ section }: { section: PlatformMetricSection }) {
 
 export default function SystemMetricsView({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation("system");
+  const { formatDate } = useUserTimeZone();
   const [subTab, setSubTab] = usePersistentTab<MetricsSubTab>(
     "system-metrics",
     "overview",
@@ -154,7 +157,7 @@ export default function SystemMetricsView({ embedded = false }: { embedded?: boo
             <>
               <p className="system-metrics-updated hint">
                 {t("metrics.updatedAt", {
-                  time: new Date(metricsQuery.data.timestamp).toLocaleString(),
+                  time: formatDate(metricsQuery.data.timestamp),
                 })}
               </p>
               <AutomationIndexStatsCard />

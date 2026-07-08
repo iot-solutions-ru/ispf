@@ -4,8 +4,17 @@ import {
   formatObjectTableCell,
   matchesNamePattern,
   objectTableValueField,
+  parseFunctionInputJson,
   parseWidgetJsonArray,
 } from "./dashboardUtils";
+
+describe("parseFunctionInputJson", () => {
+  it("omits empty schema so server uses function descriptor fields", () => {
+    const input = parseFunctionInputJson('{"jobNo":"PRINT-2026-001"}');
+    expect(input.rows[0]?.jobNo).toBe("PRINT-2026-001");
+    expect("schema" in input).toBe(false);
+  });
+});
 
 describe("buildFunctionInput", () => {
   it("includes bound values for hidden fields", () => {

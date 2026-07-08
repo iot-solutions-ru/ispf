@@ -17,7 +17,7 @@
         "DRAFT"
       ],
       "correctIndex": 0,
-      "reference": "docs/DRIVERS.md"
+      "reference": "docs/en/drivers.md"
     },
     {
       "id": "sd-l2-q02",
@@ -31,7 +31,7 @@
         "Disabling nginx"
       ],
       "correctIndex": 0,
-      "reference": "docs/AUTOMATION.md"
+      "reference": "docs/en/automation.md"
     },
     {
       "id": "sd-l2-q03",
@@ -45,7 +45,7 @@
         "Grafana datasource"
       ],
       "correctIndex": 0,
-      "reference": "docs/WORKFLOWS.md"
+      "reference": "docs/en/workflows.md"
     },
     {
       "id": "sd-l2-q04",
@@ -59,7 +59,7 @@
         "Multi-tenant isolation test"
       ],
       "correctIndex": 0,
-      "reference": "docs/FIELD_PILOT_PLAYBOOK.md"
+      "reference": "docs/en/field-pilot-playbook.md"
     },
     {
       "id": "sd-l2-q05",
@@ -73,7 +73,7 @@
         "Git commit hashes"
       ],
       "correctIndex": 0,
-      "reference": "docs/SCADA.md"
+      "reference": "docs/en/scada.md"
     },
     {
       "id": "sd-l2-q06",
@@ -87,7 +87,7 @@
         "OEM driver co-signing"
       ],
       "correctIndex": 0,
-      "reference": "docs/PARTNER_PROGRAM.md"
+      "reference": "docs/en/partner-program.md"
     }
   ]
 }

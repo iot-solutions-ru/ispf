@@ -22,6 +22,12 @@ public class IspfSecurityProperties {
     private boolean tokenAuthEnabled = true;
 
     /**
+     * When true, {@code X-ISPF-Role} may authenticate requests without Bearer token (local/test only).
+     * Disabled by default — must not be enabled on internet-facing deployments.
+     */
+    private boolean localRoleHeaderEnabled = false;
+
+    /**
      * OIDC client id for Web Console (Authorization Code + PKCE).
      */
     private String oidcClientId = "ispf-web-console";
@@ -33,6 +39,7 @@ public class IspfSecurityProperties {
     private String secretsKey = "";
 
     private final Mfa mfa = new Mfa();
+    private final Login login = new Login();
 
     public boolean isRbacEnabled() {
         return rbacEnabled;
@@ -56,6 +63,18 @@ public class IspfSecurityProperties {
 
     public void setTokenAuthEnabled(boolean tokenAuthEnabled) {
         this.tokenAuthEnabled = tokenAuthEnabled;
+    }
+
+    public boolean isLocalRoleHeaderEnabled() {
+        return localRoleHeaderEnabled;
+    }
+
+    public void setLocalRoleHeaderEnabled(boolean localRoleHeaderEnabled) {
+        this.localRoleHeaderEnabled = localRoleHeaderEnabled;
+    }
+
+    public Login getLogin() {
+        return login;
     }
 
     public String getOidcClientId() {
@@ -116,6 +135,30 @@ public class IspfSecurityProperties {
 
         public void setTimeWindowSteps(int timeWindowSteps) {
             this.timeWindowSteps = timeWindowSteps;
+        }
+    }
+
+    public static class Login {
+        /** Failed attempts per username+IP before temporary lockout. */
+        private int maxFailedAttempts = 5;
+
+        /** Lockout window after exceeding {@link #maxFailedAttempts}. */
+        private int lockoutMinutes = 15;
+
+        public int getMaxFailedAttempts() {
+            return maxFailedAttempts;
+        }
+
+        public void setMaxFailedAttempts(int maxFailedAttempts) {
+            this.maxFailedAttempts = maxFailedAttempts;
+        }
+
+        public int getLockoutMinutes() {
+            return lockoutMinutes;
+        }
+
+        public void setLockoutMinutes(int lockoutMinutes) {
+            this.lockoutMinutes = lockoutMinutes;
         }
     }
 }

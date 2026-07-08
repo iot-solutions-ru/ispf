@@ -6,7 +6,7 @@
 
 ## Роль на платформе
 
-| Водитель | Направление | Модуль |
+| Драйвер | Направление | Модуль |
 |--------|-----------|--------|
 | `opcua-server` | ISPF → OPC UA wire | `packages/ispf-driver-opcua-server` |
 | `opcua` | OPC UA wire → ISPF | `packages/ispf-driver-opcua` |

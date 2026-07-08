@@ -71,15 +71,24 @@ export default function FunctionWidgetView({ widget, editable }: FunctionWidgetV
         setMessage(null);
         return;
       }
+      const errorCode = row?.error_code != null ? String(row.error_code) : "";
+      if (errorCode && errorCode !== "OK") {
+        setError(String(row?.error_message ?? row?.message ?? errorCode));
+        setMessage(null);
+        return;
+      }
       const text = row?.message ? String(row.message) : t("view.done");
       setMessage(text);
       setError(null);
       queryClient.invalidateQueries({ queryKey: ["variables"] });
       queryClient.invalidateQueries({ queryKey: ["objects"] });
       queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["report-widget"] });
+      queryClient.invalidateQueries({ queryKey: ["report"] });
     },
     onError: (err: Error) => {
-      setError(err.message);
+      const text = err.message?.trim() || t("view.errorGeneric");
+      setError(text);
       setMessage(null);
     },
   });

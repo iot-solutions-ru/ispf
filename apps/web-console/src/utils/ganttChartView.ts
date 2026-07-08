@@ -1,4 +1,5 @@
 import type { DataRecord } from "../types";
+import { formatUserDateTime } from "./formatDateTime";
 
 export interface GanttRow {
   id: number;
@@ -124,20 +125,10 @@ export function formatGanttTick(value: number): string {
   if (!Number.isFinite(value)) return "";
   const abs = Math.abs(value);
   if (abs >= 1e11) {
-    return new Date(value).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatUserDateTime(value);
   }
   if (abs >= 1e9) {
-    return new Date(value * 1000).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatUserDateTime(value * 1000);
   }
   if (Number.isInteger(value) && abs < 1e7) {
     return String(value);

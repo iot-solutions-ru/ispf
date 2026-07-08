@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/spreadsheet-widget.md](../en/spreadsheet-widget.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/spreadsheet-widget.md](../en/spreadsheet-widget.md).
 
 # Виджет таблицы
 
@@ -115,7 +115,7 @@ Cross-sheet ссылки: `=Sheet2!A1`, `=SUM(Sales!A1:A10)`.
 
 Ограничения: `SUBTOTAL` не учитывает скрытые строки; подстановочные знаки в `XLOOKUP` не применяются; `YEARFRAC` — упрощённые базы 0/1; `SEARCH` подстановочные знаки — базовые `?` и `*`.
 
-##ISPF-функции
+## ISPF-функции
 
 ### `ISPREF(path, variableName, [field])`
 

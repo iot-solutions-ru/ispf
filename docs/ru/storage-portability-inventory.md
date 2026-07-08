@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/storage-portability-inventory.md](../en/storage-portability-inventory.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/storage-portability-inventory.md](../en/storage-portability-inventory.md).
 
 # Инвентаризация зависимостей PostgreSQL (ADR-0037)
 
@@ -19,7 +19,7 @@
 
 ## Greenfield и смена движка (ADR-0037)
 
-До v1.0: новая установка = новая БД; смена `ISPF_METADATA_DB_KIND` = пустая БД + базовая линия пролётного пути + импорт конфигурации бандлами. Миграция метаданных между PostgreSQL и MSSQL/Oracle **не** входит в область действия.
+До v1.0: новая установка = новая БД; смена `ISPF_METADATA_DB_KIND` = пустая БД + базовая линия baseline миграций + импорт конфигурации бандлами. Миграция метаданных между PostgreSQL и MSSQL/Oracle **не** входит в область действия.
 
 ## Java — SQL только для PG
 

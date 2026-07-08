@@ -4,7 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Declared runtime capabilities per driver id (see docs/DRIVERS.md).
+ * Declared runtime capabilities per driver id (see docs/en/drivers.md).
  * Primary source: {@link DriverProductionMatrix} (ADR-0022).
  */
 final class DriverCapabilityRegistry {

@@ -49,11 +49,6 @@ public class LocalBearerTokenFilter extends OncePerRequestFilter {
         String header = request.getHeader(AUTHORIZATION_HEADER);
         if (header != null && header.startsWith(BEARER_PREFIX)) {
             token = header.substring(BEARER_PREFIX.length()).trim();
-        } else {
-            String queryToken = request.getParameter("token");
-            if (queryToken != null && !queryToken.isBlank()) {
-                token = queryToken.trim();
-            }
         }
         if (token != null && !token.isBlank()) {
             userService.authenticateToken(token).ifPresent(user -> {

@@ -17,7 +17,7 @@
         "DELETE /api/v1/contexts/{id}"
       ],
       "correctIndex": 0,
-      "reference": "docs/OBJECT_MODEL.md"
+      "reference": "docs/en/object-model.md"
     },
     {
       "id": "sd-l1-q02",
@@ -31,7 +31,7 @@
         "POST /api/v1/events/fire"
       ],
       "correctIndex": 0,
-      "reference": "docs/APPLICATIONS.md"
+      "reference": "docs/en/applications.md"
     },
     {
       "id": "sd-l1-q03",
@@ -45,7 +45,7 @@
         "Cluster replica failover"
       ],
       "correctIndex": 0,
-      "reference": "docs/OPERATOR_GUIDE.md"
+      "reference": "docs/en/operator-guide.md"
     },
     {
       "id": "sd-l1-q04",
@@ -59,7 +59,7 @@
         "A BPMN deployment id only"
       ],
       "correctIndex": 0,
-      "reference": "docs/DASHBOARDS.md"
+      "reference": "docs/en/dashboards.md"
     },
     {
       "id": "sd-l1-q05",
@@ -87,7 +87,7 @@
         "unset (platform default demo)"
       ],
       "correctIndex": 0,
-      "reference": "docs/DEPLOYMENT.md"
+      "reference": "docs/en/deployment.md"
     },
     {
       "id": "sd-l1-q07",
@@ -101,7 +101,7 @@
         "GET /api/v1/security/mfa/status"
       ],
       "correctIndex": 0,
-      "reference": "docs/PARTNER_PROGRAM.md"
+      "reference": "docs/en/partner-program.md"
     },
     {
       "id": "sd-l1-q08",
@@ -115,7 +115,7 @@
         "Signed GPL driver pack in prod"
       ],
       "correctIndex": 0,
-      "reference": "docs/CERTIFICATION.md"
+      "reference": "docs/en/certification.md"
     }
   ]
 }

@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchAutomationIndexStats } from "../api/automationIndex";
+import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 export default function AutomationIndexStatsCard() {
   const { t } = useTranslation(["system", "common"]);
+  const { formatDate } = useUserTimeZone();
   const statsQuery = useQuery({
     queryKey: ["automation-index-stats"],
     queryFn: fetchAutomationIndexStats,
@@ -37,7 +39,7 @@ export default function AutomationIndexStatsCard() {
               <td>
                 {statsQuery.data.lastRebuildAt ? (
                   <time dateTime={statsQuery.data.lastRebuildAt}>
-                    {new Date(statsQuery.data.lastRebuildAt).toLocaleString()}
+                    {formatDate(statsQuery.data.lastRebuildAt)}
                   </time>
                 ) : (
                   t("common:empty.dash")

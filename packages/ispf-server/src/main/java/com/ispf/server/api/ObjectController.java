@@ -17,6 +17,7 @@ import com.ispf.expression.BindingExpressionValidator;
 import com.ispf.server.api.dto.ObjectDto;
 import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
+import com.ispf.server.plugin.blueprint.SystemObjectStructureService;
 import com.ispf.server.plugin.blueprint.dto.AppliedBlueprintDto;
 import com.ispf.server.api.dto.ObjectEditorDto;
 import com.ispf.server.api.dto.VariableDto;
@@ -95,6 +96,7 @@ public class ObjectController {
     private final ObjectBulkDeleteService objectBulkDeleteService;
     private final DriverRuntimeService driverRuntimeService;
     private final AuditEventService auditEventService;
+    private final SystemObjectStructureService systemObjectStructureService;
 
     public ObjectController(
             ObjectManager objectManager,
@@ -119,7 +121,8 @@ public class ObjectController {
             VisualGroupService visualGroupService,
             ObjectBulkDeleteService objectBulkDeleteService,
             DriverRuntimeService driverRuntimeService,
-            AuditEventService auditEventService
+            AuditEventService auditEventService,
+            SystemObjectStructureService systemObjectStructureService
     ) {
         this.objectManager = objectManager;
         this.objectTemplateService = objectTemplateService;
@@ -144,6 +147,7 @@ public class ObjectController {
         this.objectBulkDeleteService = objectBulkDeleteService;
         this.driverRuntimeService = driverRuntimeService;
         this.auditEventService = auditEventService;
+        this.systemObjectStructureService = systemObjectStructureService;
     }
 
     private void requireObjectTreeReady() {
@@ -335,6 +339,7 @@ public class ObjectController {
         if (request.type() == ObjectType.CORRELATOR) {
             automationTreeService.ensureCorrelatorStructure(node.path());
         }
+        ensurePhase30CatalogStructure(node);
         if (request.type() == ObjectType.DEVICE && request.driverId() != null && !request.driverId().isBlank()) {
             deviceProvisioningService.provisionDriver(
                     node.path(),
@@ -852,6 +857,36 @@ public class ObjectController {
                 remote.functionAuditEnabled(),
                 remote.eventJournalEnabled()
         );
+    }
+
+    private void ensurePhase30CatalogStructure(PlatformObject node) {
+        String path = node.path();
+        String leafId = path.substring(path.lastIndexOf('.') + 1);
+        DataSchema stringSchema = DataSchema.builder("stringValue").field("value", com.ispf.core.model.FieldType.STRING).build();
+        switch (node.type()) {
+            case QUERY -> {
+                systemObjectStructureService.ensureQueryStructure(path);
+                setStringVariable(path, "queryId", leafId, stringSchema);
+            }
+            case EVENT_FILTER -> {
+                systemObjectStructureService.ensureEventFilterStructure(path);
+                setStringVariable(path, "filterId", leafId, stringSchema);
+            }
+            case PROCESS_PROGRAM -> {
+                systemObjectStructureService.ensureProcessProgramStructure(path);
+                setStringVariable(path, "programId", leafId, stringSchema);
+            }
+            case ANALYTICS_TEMPLATE -> {
+                systemObjectStructureService.ensureAnalyticsTemplateStructure(path);
+                setStringVariable(path, "templateId", leafId, stringSchema);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void setStringVariable(String path, String name, String value, DataSchema schema) {
+        objectManager.setVariableValue(path, name, DataRecord.single(schema, Map.of("value", value != null ? value : "")));
     }
 
     private void assertNotFederationBound(String path) {

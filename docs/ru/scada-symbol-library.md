@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/scada-symbol-library.md](../en/scada-symbol-library.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/scada-symbol-library.md](../en/scada-symbol-library.md).
 
 # Библиотека символов SCADA (BL-94)
 

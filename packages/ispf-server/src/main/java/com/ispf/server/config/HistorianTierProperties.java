@@ -14,7 +14,7 @@ import java.util.Optional;
 public class HistorianTierProperties {
 
     /**
-     * Named deploy profile selected by ops (documented in {@code docs/HISTORIAN_TIERS.md}).
+     * Named deploy profile selected by ops (documented in {@code docs/en/historian-tiers.md}).
      * Tier routing enforcement is follow-up work; this block is the configuration contract.
      */
     private String deployProfile = "three-tier";

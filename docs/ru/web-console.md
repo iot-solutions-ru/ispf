@@ -1,4 +1,4 @@
-> **Язык:** полный русский перевод. Канонический английский: [en/web-console.md](../en/web-console.md).
+> **Язык:** русская версия (вычитка). Канонический английский: [en/web-console.md](../en/web-console.md).
 
 # Веб-консоль
 
@@ -28,7 +28,7 @@ URL: `http://localhost:5173`
 | `CORRELATOR` | `CorrelatorInspector` |
 | Остальные | `ObjectPropertiesEditor` |
 
-### ЧМИ оператора
+### HMI оператора
 
 URL: `http://localhost:5173?mode=operator`
 
@@ -99,7 +99,7 @@ src/
 
 `public/operator-apps/` — legacy fallback `{appId}.ui.json` (dev). Настройка встроенных app — админка → `root.platform.operator-apps`.
 
-## Построитель информационной панели
+## Конструктор дашбордов
 
 - Сетка 12 колонок, перетаскивание, изменение размера
 - Панель добавления виджетов (все 14 типов)
@@ -119,7 +119,7 @@ src/
 
 См. [WORKFLOWS.md](workflows.md).
 
-##Live-данные
+## Live-данные
 
 1. **Опрос** — `refetchInterval` = `refreshIntervalMs` дашборда
 2. **WebSocket** — `useObjectWebSocket` отключает кеш при `VARIABLE_UPDATED`

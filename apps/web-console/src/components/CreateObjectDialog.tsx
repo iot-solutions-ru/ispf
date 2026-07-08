@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { createObject } from "../api";
+import { createObject, createEventFilter, createQuery } from "../api";
 import { fetchInstanceTypes, instantiateBlueprint } from "../api/blueprints";
 import { registerApplication } from "../api/applications";
 import { saveReportDefinition } from "../api/reports";
@@ -125,6 +125,14 @@ export default function CreateObjectDialog({
         return t("dialog.newSqlBinding");
       case "schedule":
         return t("dialog.newSchedule");
+      case "query":
+        return t("dialog.newQuery");
+      case "event-filter":
+        return t("dialog.newEventFilter");
+      case "process-program":
+        return t("dialog.newProcessProgram");
+      case "analytics-template":
+        return t("dialog.newAnalyticsTemplate");
       default:
         return presetType === "VISUAL_GROUP"
           ? t("dialog.newVisualGroup")
@@ -150,6 +158,22 @@ export default function CreateObjectDialog({
     queryFn: () => fetchInstanceTypes(instanceTypeFilter, parentPath),
     enabled: mode === "object",
   });
+
+  useEffect(() => {
+    if (mode !== "object" || !instanceTypeFilter || instanceTypesQuery.isLoading) {
+      return;
+    }
+    const models = instanceTypesQuery.data ?? [];
+    if (models.length !== 1) {
+      return;
+    }
+    const only = models[0];
+    const selection = `${INSTANCE_TYPE_PREFIX}${only.id}`;
+    setTypeSelection(selection);
+    if (only.targetObjectType) {
+      setType(only.targetObjectType);
+    }
+  }, [mode, instanceTypeFilter, instanceTypesQuery.data, instanceTypesQuery.isLoading]);
 
   const selectedInstanceModel = useMemo(() => {
     if (!typeSelection.startsWith(INSTANCE_TYPE_PREFIX)) {
@@ -276,6 +300,47 @@ export default function CreateObjectDialog({
         });
         return created.path;
       }
+      if (mode === "query") {
+        const created = await createQuery({
+          queryId: name,
+          displayName: displayName || name,
+          description,
+          queryType: "tree-scan",
+          sourcePathPattern: "root.platform.devices.*",
+          fieldsJson: "[]",
+          enabled: true,
+        });
+        return created.path;
+      }
+      if (mode === "event-filter") {
+        const created = await createEventFilter({
+          filterId: name,
+          displayName: displayName || name,
+          description,
+          enabled: true,
+        });
+        return created.path;
+      }
+      if (mode === "process-program") {
+        const obj = await createObject({
+          parentPath,
+          name,
+          type: "PROCESS_PROGRAM",
+          displayName: displayName || name,
+          description,
+        });
+        return obj.path;
+      }
+      if (mode === "analytics-template") {
+        const obj = await createObject({
+          parentPath,
+          name,
+          type: "ANALYTICS_TEMPLATE",
+          displayName: displayName || name,
+          description,
+        });
+        return obj.path;
+      }
       if (selectedInstanceModel) {
         const obj = await instantiateBlueprint(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
@@ -377,6 +442,9 @@ export default function CreateObjectDialog({
           )}
           {mode === "schedule" && (
             <p className="hint">{t("dialog.scheduleHint")}</p>
+          )}
+          {(mode === "query" || mode === "event-filter" || mode === "process-program" || mode === "analytics-template") && (
+            <p className="hint">{t(`dialog.${mode}Hint`, { path: parentPath })}</p>
           )}
           <form
             className="form-grid"
@@ -619,7 +687,8 @@ export default function CreateObjectDialog({
               </>
             )}
 
-            {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding") && (
+            {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding"
+              || mode === "query" || mode === "event-filter" || mode === "process-program" || mode === "analytics-template") && (
               <label className="full">
                 {t("common:field.description")}
                 <textarea

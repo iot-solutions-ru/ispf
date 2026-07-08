@@ -14,11 +14,33 @@ export interface AuthSession {
 
 const SESSION_KEY = "ispf-auth-session";
 
-/** In-memory copy — stays in sync with localStorage (avoids race after clear). */
+/** In-memory copy — stays in sync with sessionStorage (avoids race after clear). */
 let cachedSession: AuthSession | null | undefined;
 
+function webStorage(): Storage | null {
+  if (typeof sessionStorage !== "undefined") {
+    return sessionStorage;
+  }
+  if (typeof localStorage !== "undefined") {
+    return localStorage;
+  }
+  return null;
+}
+
 function readSessionFromStorage(): AuthSession | null {
-  const raw = localStorage.getItem(SESSION_KEY);
+  const storage = webStorage();
+  if (!storage) {
+    return null;
+  }
+  let raw = storage.getItem(SESSION_KEY);
+  if (!raw && typeof sessionStorage !== "undefined" && typeof localStorage !== "undefined") {
+    // One-time migration from legacy localStorage (XSS window reduced vs keeping both).
+    raw = localStorage.getItem(SESSION_KEY);
+    if (raw) {
+      sessionStorage.setItem(SESSION_KEY, raw);
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }
   if (!raw) {
     return null;
   }
@@ -39,13 +61,28 @@ export function getStoredSession(): AuthSession | null {
 
 export function setStoredSession(session: AuthSession): void {
   cachedSession = session;
-  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  window.dispatchEvent(new Event("ispf-session-updated"));
+  const payload = JSON.stringify(session);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.setItem(SESSION_KEY, payload);
+  } else if (typeof localStorage !== "undefined") {
+    localStorage.setItem(SESSION_KEY, payload);
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(SESSION_KEY);
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("ispf-session-updated"));
+  }
 }
 
 export function clearStoredSession(): void {
   cachedSession = null;
-  localStorage.removeItem(SESSION_KEY);
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(SESSION_KEY);
+  }
 }
 
 export function getAuthHeaders(): Record<string, string> {

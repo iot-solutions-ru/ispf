@@ -164,7 +164,7 @@
   "bundle.license.errorHint.signature": "Неверная подпись или не задан ISPF_LICENSE_PUBLIC_KEY_PEM на сервере.",
   "bundle.license.errorHint.requireSigned": "Сервер требует подписанные бандлы (ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES). Добавьте валидный license или используйте free/reference bundle.",
   "bundle.license.errorHint.bundleId": "license.bundleId должен совпадать с appId / packageId.",
-  "bundle.license.errorHint.generic": "См. docs/COMMERCIAL_LICENSING.md или Система → Метрики для installation ID.",
+  "bundle.license.errorHint.generic": "См. docs/en/commercial-licensing.md или Система → Метрики для installation ID.",
   "treeExport.title": "Экспорт/импорт поддерева JSON",
   "treeExport.subtitle": "Экспорт или импорт узлов под {{rootPath}} (formatVersion 1). Federation proxy пропускаются.",
   "treeExport.export": "Экспорт поддерева",

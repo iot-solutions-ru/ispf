@@ -13,7 +13,7 @@ import com.ispf.server.dashboard.DashboardLayouts;
  */
 public final class AgentPlaybooks {
 
-    /** Documented INSTANCE model — docs/BLUEPRINTS.md § snmp-agent-v1. */
+    /** Documented INSTANCE model — docs/en/blueprints.md § snmp-agent-v1. */
     public static final String SNMP_MODEL = PlatformReferenceBlueprintBootstrap.SNMP_AGENT_MODEL;
     public static final String SNMP_DRIVER_ID = "snmp";
 
@@ -281,7 +281,7 @@ public final class AgentPlaybooks {
                 | Инструмент | Назначение |
                 |------------|------------|
                 | list_relative_blueprints | RELATIVE mixin-модели (virtual-lab-v1, …) |
-                | list_instance_types | INSTANCE шаблоны (snmp-agent-v1, … — см. docs/BLUEPRINTS.md) |
+                | list_instance_types | INSTANCE шаблоны (snmp-agent-v1, … — см. docs/en/blueprints.md) |
                 | get_object_blueprint | Схема: variables[], events[], functions[] |
                 | apply_relative_blueprint | Прикрепить mixin к существующему objectPath |
                 

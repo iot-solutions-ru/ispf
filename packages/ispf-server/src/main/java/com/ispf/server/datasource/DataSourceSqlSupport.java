@@ -13,6 +13,11 @@ public final class DataSourceSqlSupport {
             Pattern.CASE_INSENSITIVE
     );
 
+    private static final Pattern FORBIDDEN_EXTERNAL = Pattern.compile(
+            "\\b(DROP|TRUNCATE|ALTER|CREATE|GRANT|REVOKE|DELETE|UPDATE|INSERT)\\b",
+            Pattern.CASE_INSENSITIVE
+    );
+
     private DataSourceSqlSupport() {
     }
 
@@ -34,6 +39,15 @@ public final class DataSourceSqlSupport {
             throw new IllegalArgumentException("query contains forbidden SQL keyword");
         }
         return trimmed;
+    }
+
+    public static void assertAllowedForExternal(boolean external, String sql) {
+        if (!external) {
+            return;
+        }
+        if (FORBIDDEN_EXTERNAL.matcher(sql).find()) {
+            throw new IllegalArgumentException("write/DDL SQL is not allowed on external data sources");
+        }
     }
 
     public static boolean isReadQuery(String sql) {

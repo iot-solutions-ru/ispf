@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
-"""Embed assets/screenshots/*.png into index.html → dist/landing.html (single file)."""
+"""Embed assets into index.html variants → dist/ (multi-locale site build)."""
 
 from __future__ import annotations
 
 import base64
 import io
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SRC = ROOT / "index.html"
-OUT_DIR = ROOT / "dist"
-OUT = OUT_DIR / "landing.html"
 ASSETS = ROOT / "assets" / "screenshots"
 MAX_IMAGE_WIDTH = 1280
+LOCALE_PAGES = [
+    ROOT / "index.html",
+    ROOT / "en" / "index.html",
+    ROOT / "de" / "index.html",
+    ROOT / "zh" / "index.html",
+]
+OUT_ROOT = ROOT / "dist"
+THEME_JS = ROOT / "theme.js"
+I18N_MARKER = '<script src="theme.js"></script>'
+I18N_MARKER_SUB = '<script src="../theme.js"></script>'
 
 
 def _optimize_image(data: bytes) -> tuple[bytes, str]:
@@ -45,13 +54,19 @@ def _optimize_image(data: bytes) -> tuple[bytes, str]:
         return out.getvalue(), "image/jpeg"
 
 
-def embed(html: str) -> str:
+def embed_assets(html: str, asset_prefix: str) -> str:
     def repl(match: re.Match[str]) -> str:
         prefix, path, suffix = match.group(1), match.group(2), match.group(3)
-        file_path = ROOT / path.replace("/", "\\") if "\\" not in path else ROOT / path
-        if not file_path.is_file():
-            # try assets/screenshots basename only
-            file_path = ASSETS / Path(path).name
+        full = match.group(0)
+        rel = path
+        if rel.startswith("../"):
+            rel = rel[3:]
+        if "assets/screenshots/" in full or "/screenshots/" in rel:
+            file_path = ASSETS / Path(rel).name
+        else:
+            file_path = ROOT / rel.replace("/", "\\") if "\\" not in rel else ROOT / rel
+            if not file_path.is_file():
+                file_path = ROOT / "assets" / Path(rel).name
         if not file_path.is_file():
             raise FileNotFoundError(f"Missing asset for src={path!r} (tried {file_path})")
         raw = file_path.read_bytes()
@@ -60,26 +75,57 @@ def embed(html: str) -> str:
         return f'{prefix}data:{mime};base64,{b64}{suffix}'
 
     pattern = re.compile(
-        r'(src=")assets/screenshots/([a-zA-Z0-9_.-]+\.png)(")',
+        r'((?:src|href)=")(?:\.\./)?assets/(?:screenshots/)?([a-zA-Z0-9_.-]+\.(?:png|svg))(")',
     )
     return pattern.sub(repl, html)
 
 
+def inline_theme(html: str) -> str:
+    js = THEME_JS.read_text(encoding="utf-8")
+    for marker in (I18N_MARKER, I18N_MARKER_SUB):
+        if marker in html:
+            return html.replace(marker, f"<script>\n{js}\n</script>", 1)
+    return html
+
+
+def rel_out_path(src: Path) -> Path:
+    if src == ROOT / "index.html":
+        return OUT_ROOT / "index.html"
+    return OUT_ROOT / src.relative_to(ROOT)
+
+
 def main() -> None:
-    if not SRC.is_file():
-        raise SystemExit(f"Source not found: {SRC}")
-    html = SRC.read_text(encoding="utf-8")
-    if "data:image/png;base64," in html:
-        raise SystemExit(
-            "index.html already contains embedded images. "
-            "Restore asset paths (assets/screenshots/*.png) before building."
-        )
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_html = embed(html)
-    OUT.write_text(out_html, encoding="utf-8")
-    size_mb = OUT.stat().st_size / (1024 * 1024)
-    count = len(re.findall(r'data:image/(?:png|jpeg);base64,', out_html))
-    print(f"Built {OUT} ({size_mb:.2f} MB, {count} images embedded)")
+    gen = ROOT / "generate_locales.py"
+    merge = ROOT / "merge_translations.py"
+    if gen.is_file():
+        subprocess.run([sys.executable, str(gen)], check=True)
+    if merge.is_file():
+        subprocess.run([sys.executable, str(merge)], check=True)
+
+    OUT_ROOT.mkdir(parents=True, exist_ok=True)
+    total_images = 0
+    for src in LOCALE_PAGES:
+        if not src.is_file():
+            raise SystemExit(f"Missing page: {src} (run generate_locales.py first)")
+        html = src.read_text(encoding="utf-8")
+        if "data:image/png;base64," in html or "data:image/jpeg;base64," in html:
+            raise SystemExit(f"{src} already has embedded images — restore asset paths first")
+        out_html = inline_theme(embed_assets(html, ""))
+        out_path = rel_out_path(src)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(out_html, encoding="utf-8")
+        n = len(re.findall(r"data:image/(?:png|jpeg);base64,", out_html))
+        total_images += n
+        print(f"Built {out_path}")
+
+    # sync static assets for deploy
+    for name in ("theme.js",):
+        p = ROOT / name
+        if p.is_file():
+            (OUT_ROOT / name).write_text(p.read_text(encoding="utf-8"), encoding="utf-8")
+
+    size_mb = sum(f.stat().st_size for f in OUT_ROOT.rglob("*") if f.is_file()) / (1024 * 1024)
+    print(f"Done: dist/ ({size_mb:.2f} MB total, {total_images} image refs embedded)")
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
 | Реплики | N JVM без гражданства за LB | Коммуникационный хаб ↔ говорил |
 | Драйвер | Ровно один опрос на устройстве | См. [ФЕДЕРАЦИЯ.md](federation.md) |
 
-##Топология (пример VPS/лаб)
+## Топология (пример VPS/лаб)
 
 ```text
                     nginx :8080
@@ -55,7 +55,7 @@
 
 Проверка: `GET /api/v1/platform/cluster/health` (admin) — поле `heldDevicePaths` на каждом узле.
 
-## Привязки, переменные, функции, панели мониторинга
+## Привязки, переменные, функции, дашборды
 
 ### Переменные
 
@@ -349,7 +349,7 @@ GET /api/v1/platform/jobs/{jobId}
 
 Web console вызывает `run-async` и poll до `COMPLETED`. Sync `POST …/run` сохранён для тестов.
 
-Хранение заданий в `platform_jobs` (PostgreSQL). Претензия работника: `FOR UPDATE SKIP LOCKED`. Просроченный `RUNNING` возвращается в `QUEUED`.
+Хранение заданий в `platform_jobs` (PostgreSQL). Worker claim: `FOR UPDATE SKIP LOCKED`. Просроченный `RUNNING` возвращается в `QUEUED`.
 
 Подробнее: [ADR-0031](decisions/0031-cluster-replica-roles-platform-jobs.md), [ADR-0032](decisions/0032-replica-profiles-and-capabilities.md).
 

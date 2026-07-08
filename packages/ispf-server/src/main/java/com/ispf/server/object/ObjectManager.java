@@ -9,6 +9,7 @@ import com.ispf.core.object.FunctionDescriptor;
 import com.ispf.core.object.Variable;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
+import com.ispf.server.application.reference.mes.MesBlueprintBootstrap;
 import com.ispf.server.bootstrap.DemoFixtureBootstrap;
 import com.ispf.server.bootstrap.PlatformBootstrap;
 import com.ispf.server.bootstrap.PlatformCatalogSortOrder;
@@ -75,6 +76,7 @@ public class ObjectManager {
     private final ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration;
     private final ObjectProvider<DemoFixtureBootstrap> demoFixtureBootstrap;
     private final ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap;
+    private final ObjectProvider<MesBlueprintBootstrap> mesBlueprintBootstrap;
     private final ObjectProvider<VisualGroupService> visualGroupService;
     private final ObjectChangePublicationService publicationService;
     private final ObjectProvider<ObjectManager> self;
@@ -103,6 +105,7 @@ public class ObjectManager {
             ObjectProvider<SystemIntrinsicBlueprintMigration> intrinsicBlueprintMigration,
             ObjectProvider<DemoFixtureBootstrap> demoFixtureBootstrap,
             ObjectProvider<PlatformReferenceBlueprintBootstrap> platformReferenceBlueprintBootstrap,
+            ObjectProvider<MesBlueprintBootstrap> mesBlueprintBootstrap,
             ObjectProvider<VisualGroupService> visualGroupService,
             @org.springframework.context.annotation.Lazy ObjectChangePublicationService publicationService,
             ObjectProvider<ObjectManager> self,
@@ -128,6 +131,7 @@ public class ObjectManager {
         this.intrinsicBlueprintMigration = intrinsicBlueprintMigration;
         this.demoFixtureBootstrap = demoFixtureBootstrap;
         this.platformReferenceBlueprintBootstrap = platformReferenceBlueprintBootstrap;
+        this.mesBlueprintBootstrap = mesBlueprintBootstrap;
         this.visualGroupService = visualGroupService;
         this.publicationService = publicationService;
         this.self = self;
@@ -160,6 +164,7 @@ public class ObjectManager {
         blueprintPersistence.ifAvailable(BlueprintPersistenceService::restoreCustomBlueprints);
         intrinsicBlueprintMigration.ifAvailable(SystemIntrinsicBlueprintMigration::migrate);
         platformReferenceBlueprintBootstrap.ifAvailable(PlatformReferenceBlueprintBootstrap::ensureReferenceModels);
+        mesBlueprintBootstrap.ifAvailable(MesBlueprintBootstrap::ensureMesModels);
         if (shouldApplyFixtureBlueprints()) {
             demoFixtureBootstrap.ifAvailable(demo ->
                     demo.seedDemos(blueprintApplicationRunner.getObject()));

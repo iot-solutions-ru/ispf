@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import { parseManifestLicense } from "../../utils/bundleLicenseUi";
+import { useUserTimeZone } from "../../context/UserTimeZoneContext";
 
 interface BundleLicenseInfoPanelProps {
   appId?: string;
@@ -16,6 +17,7 @@ export default function BundleLicenseInfoPanel({
   compact = false,
 }: BundleLicenseInfoPanelProps) {
   const { t } = useTranslation(["platform", "common"]);
+  const { formatDate } = useUserTimeZone();
   const licenseQuery = useQuery({
     queryKey: ["platform-license"],
     queryFn: fetchPlatformLicense,
@@ -105,7 +107,7 @@ export default function BundleLicenseInfoPanel({
             <dt>{t("platform:bundle.license.expiresAt")}</dt>
             <dd>
               <time dateTime={manifestLicense.expiresAt}>
-                {new Date(manifestLicense.expiresAt).toLocaleString()}
+                {formatDate(manifestLicense.expiresAt)}
               </time>
             </dd>
           </div>

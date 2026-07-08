@@ -24,7 +24,7 @@
 
 ## Статус (июль 2026, 25 этап БЛ-140)
 
-| идентификатор водителя | Было | Стало | Примечание |
+| идентификатор драйвера | Было | Стало | Примечание |
 |----------|------|-------|------------|
 | `iec104` | BETA | **PRODUCTION** | Loopback vs `iec104-server`; write commands |
 | `dnp3` | BETA | **PRODUCTION** | Class 0/1/2/3 poll via `io.stepfunc:dnp3` |
@@ -35,7 +35,7 @@
 
 ## Статус (июнь 2026)
 
-| идентификатор водителя | Было | Стало | Примечание |
+| идентификатор драйвера | Было | Стало | Примечание |
 |----------|------|-------|------------|
 | `dnp3` | STUB | **BETA** | Class 0/1/2/3 poll via `io.stepfunc:dnp3`; write not implemented |
 | `cwmp` | STUB | **PRODUCTION** | Inform + ACS `GetParameterValues`; TR-069 acceptance tests |

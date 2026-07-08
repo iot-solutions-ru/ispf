@@ -5,6 +5,7 @@ import {
   htmlSnippetContainsScript,
   htmlSnippetRequiresIframe,
   isFullHtmlDocument,
+  sanitizeHtmlSnippet,
 } from "./htmlSnippetDocument";
 
 describe("htmlSnippetDocument", () => {
@@ -31,5 +32,11 @@ describe("htmlSnippetDocument", () => {
 
   it("decodes common entities", () => {
     expect(decodeHtmlSnippetEntities("&lt;script&gt;")).toBe("<script>");
+  });
+
+  it("sanitizes event handlers and javascript hrefs", () => {
+    expect(sanitizeHtmlSnippet('<img src=x onerror="alert(1)">')).toBe('<img src=x>');
+    expect(sanitizeHtmlSnippet('<a href="javascript:alert(1)">x</a>')).toBe("<a>x</a>");
+    expect(sanitizeHtmlSnippet("<p>safe</p>")).toBe("<p>safe</p>");
   });
 });

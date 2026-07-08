@@ -185,13 +185,13 @@ Cleanup orphans: `bash lab-emqtt-cleanup.sh` (label `ispf.emqtt-bench=1`).
 - [ADR-0026](decisions/0026-elastic-telemetry-ingress.md) — входной конвейер
 - [AUTOMATION.md](automation.md) — API метрик платформы
 
-##Сравнение продуктов VPS (ispf.iot-solutions.ru)
+## Сравнение продуктов VPS (ispf.iot-solutions.ru)
 
 Те же параметры теста, что и лабораторный пик: **цель 16×32 тыс.**, **8 осколков emqtt**, мера 60 с, `EVENT_JOURNAL_ONLY`, журнал Scylla.
 
 | | Лаборатория (84.42.21.226) | VPS прод |
 |--|-------------------|----------|
-| ИСФФ | 0.9.88 | 0.9.86 |
+| ISPF | 0.9.88 | 0.9.86 |
 | Сцилла | 20 СМП/48Г | **1 СМП / 750М** |
 | Авторы журналов | 24 | **6** |
 | **события уволены** | **~110 тыс./с** | **~349/с** |

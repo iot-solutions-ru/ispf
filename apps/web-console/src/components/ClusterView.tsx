@@ -2,9 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchClusterHealth } from "../api/clusterHealth";
 import ClusterHealthPanel from "./ClusterHealthCard";
+import { useUserTimeZone } from "../context/UserTimeZoneContext";
 
 export default function ClusterView() {
   const { t } = useTranslation("system");
+  const { formatDate } = useUserTimeZone();
   const healthQuery = useQuery({
     queryKey: ["cluster-health"],
     queryFn: fetchClusterHealth,
@@ -25,7 +27,7 @@ export default function ClusterView() {
         {healthQuery.data && (
           <p className="system-metrics-updated hint">
             {t("clusterHealth.updatedAt", {
-              time: new Date(healthQuery.data.timestamp).toLocaleString(),
+              time: formatDate(healthQuery.data.timestamp),
             })}
           </p>
         )}

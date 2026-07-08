@@ -934,6 +934,37 @@ export function fetchEventFilters(): Promise<import("./types/automation").EventF
   return request("/api/v1/event-filters");
 }
 
+export function createEventFilter(
+  payload: import("./types/automation").EventFilterPayload
+): Promise<import("./types/automation").EventFilterPayload & { path: string }> {
+  return request("/api/v1/event-filters", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface CreateQueryPayload {
+  queryId: string;
+  displayName?: string;
+  description?: string;
+  queryType?: string;
+  sourcePathPattern?: string;
+  fieldsJson?: string;
+  filterExpression?: string;
+  enabled?: boolean;
+}
+
+export interface QueryRecord extends CreateQueryPayload {
+  path: string;
+}
+
+export function createQuery(payload: CreateQueryPayload): Promise<QueryRecord> {
+  return request("/api/v1/queries", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function updateEventFilter(
   path: string,
   payload: Partial<import("./types/automation").EventFilterPayload>

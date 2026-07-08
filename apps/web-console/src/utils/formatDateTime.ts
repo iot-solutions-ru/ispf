@@ -1,3 +1,5 @@
+import { detectBrowserTimeZone, readStoredTimeZone } from "../i18n/timezones";
+
 export interface FormatDateTimeOptions {
   timeZone?: string;
   locale?: string;
@@ -35,4 +37,15 @@ export function formatDateTimeShort(
   locale?: string
 ): string {
   return formatDateTime(value, { timeZone, locale, dateStyle: "short", timeStyle: "short" });
+}
+
+/** User-facing timestamps: stored profile TZ, then browser, then UTC. */
+export function formatUserDateTime(
+  value: string | number | Date | null | undefined,
+  locale?: string
+): string {
+  return formatDateTime(value, {
+    timeZone: readStoredTimeZone() ?? detectBrowserTimeZone(),
+    locale,
+  });
 }
