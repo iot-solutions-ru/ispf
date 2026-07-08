@@ -1,0 +1,12 @@
+{
+  "id": "hvac-solution-generator-site",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC site spec solution generator",
+  "description": "BL-180 site spec to zone tree + comfort dashboard + alerts.",
+  "prompt": "From HVAC site spec: chiller plant, 3 floor zones, comfort dashboard, high temperature alert.",
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "acceptance": {
+    "requiredTools": ["create_object", "configure_alert", "set_dashboard_layout", "list_variables"]
+  }
+}

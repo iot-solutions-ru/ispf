@@ -1,0 +1,126 @@
+{
+  "_comment": "BL-161: deploy as platform script functions (HTTP to /api/v1/platform/analytics/historian-sla).",
+  "functions": [
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaAggregateP95",
+      "displayName": "Historian aggregate p95 latency",
+      "description": "Returns rolling p95 aggregate query latency in ms.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.aggregate.p95LatencyMs",
+          "saveAs": "value"
+        }
+      ]
+    },
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaAggregateSloMax",
+      "displayName": "Historian aggregate SLO ceiling",
+      "description": "Documented aggregate latency ceiling (ms) from platform SLO config.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.aggregate.sloMaxLatencyMs",
+          "saveAs": "value"
+        }
+      ]
+    },
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaAggregateMet",
+      "displayName": "Historian aggregate SLO met",
+      "description": "True when rolling aggregate p95 is within documented SLO.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.aggregate.sloMet",
+          "saveAs": "value"
+        }
+      ]
+    },
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaRawP95",
+      "displayName": "Historian raw query p95 latency",
+      "description": "Returns rolling p95 raw trend query latency in ms.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.raw.p95LatencyMs",
+          "saveAs": "value"
+        }
+      ]
+    },
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaRawSloMax",
+      "displayName": "Historian raw SLO ceiling",
+      "description": "Documented raw query latency ceiling (ms) from platform SLO config.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.raw.sloMaxLatencyMs",
+          "saveAs": "value"
+        }
+      ]
+    },
+    {
+      "path": "root.platform.applications.platform.functions.historian_slaRawMet",
+      "displayName": "Historian raw SLO met",
+      "description": "True when rolling raw p95 is within documented SLO.",
+      "script": [
+        {
+          "op": "http",
+          "method": "GET",
+          "url": "/api/v1/platform/analytics/historian-sla",
+          "saveAs": "sla"
+        },
+        {
+          "op": "pick",
+          "source": "sla.raw.sloMet",
+          "saveAs": "value"
+        }
+      ]
+    }
+  ],
+  "dataSource": {
+    "endpoint": "GET /api/v1/platform/analytics/historian-sla",
+    "fields": [
+      "raw.p50LatencyMs",
+      "raw.p95LatencyMs",
+      "raw.sloMaxLatencyMs",
+      "raw.sloMet",
+      "aggregate.p50LatencyMs",
+      "aggregate.p95LatencyMs",
+      "aggregate.sloMaxLatencyMs",
+      "aggregate.sloMet"
+    ]
+  }
+}

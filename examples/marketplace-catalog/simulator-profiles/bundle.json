@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Simulator Profiles",
+  "tablePrefix": "",
+  "schemaName": "app_simulator_profiles",
+  "metadata": {
+    "changelog": "Catalog stub bundle for simulator-profiles",
+    "domain": "simulator-profiles"
+  },
+  "operatorUi": {
+    "appId": "simulator",
+    "title": "Simulator Profiles",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

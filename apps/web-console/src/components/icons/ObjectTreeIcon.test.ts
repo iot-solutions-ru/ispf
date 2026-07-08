@@ -21,6 +21,34 @@ describe("resolveTreeIconKind", () => {
       "application",
     );
   });
+
+  it("uses dedicated icons for queries, analytics, and MES catalog folders", () => {
+    expect(resolveTreeIconKind("root.platform.queries", "QUERIES")).toBe("queries");
+    expect(resolveTreeIconKind("root.platform.queries.asset-scan", "QUERY")).toBe("queries");
+    expect(resolveTreeIconKind("root.platform.analytics", "ANALYTICS")).toBe("analytics");
+    expect(resolveTreeIconKind("root.platform.analytics.oee-kpi", "ANALYTICS_TEMPLATE")).toBe(
+      "analytics",
+    );
+    expect(resolveTreeIconKind("root.platform.mes", "MES")).toBe("mes");
+    expect(resolveTreeIconKind("root.platform.mes.work-orders", "WORK_ORDERS")).toBe("work-orders");
+    expect(resolveTreeIconKind("root.platform.mes.work-orders.wo-1", "WORK_ORDER")).toBe(
+      "work-orders",
+    );
+    expect(resolveTreeIconKind("root.platform.mes.operations", "OPERATIONS")).toBe("gear");
+    expect(resolveTreeIconKind("root.platform.mes.lots", "LOTS")).toBe("box");
+    expect(resolveTreeIconKind("root.platform.mes.shifts", "SHIFTS")).toBe("schedules");
+    expect(resolveTreeIconKind("root.platform.mes.quality-records", "QUALITY_RECORDS")).toBe(
+      "quality",
+    );
+    expect(resolveTreeIconKind("root.platform.mes.instances", "MES_INSTANCES")).toBe("layers");
+  });
+
+  it("uses filter icon for event filter catalog", () => {
+    expect(resolveTreeIconKind("root.platform.event-filters", "EVENT_FILTERS")).toBe("filter");
+    expect(resolveTreeIconKind("root.platform.event-filters.alarm-only", "EVENT_FILTER")).toBe(
+      "filter",
+    );
+  });
 });
 
 describe("normalizeIconId", () => {

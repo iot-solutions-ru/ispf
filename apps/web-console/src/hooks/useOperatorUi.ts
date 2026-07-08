@@ -45,5 +45,7 @@ export function useOperatorUi(appId: string | null) {
     queryKey: ["operator-ui", appId],
     queryFn: () => loadOperatorUi(appId!),
     enabled: Boolean(appId),
+    refetchOnReconnect: true,
+    placeholderData: () => (appId ? readCachedOperatorUi(appId) ?? undefined : undefined),
   });
 }

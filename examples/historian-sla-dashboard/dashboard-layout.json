@@ -1,0 +1,95 @@
+{
+  "_comment": "BL-161: reference dashboard layout for GET /api/v1/platform/analytics/historian-sla. Import into root.platform.dashboards.historian-sla.",
+  "columns": 12,
+  "rowHeight": 72,
+  "widgets": [
+    {
+      "id": "hist-agg-p95",
+      "type": "function",
+      "title": "Aggregate query p95 (ms)",
+      "x": 0,
+      "y": 0,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaAggregateP95",
+      "functionName": "run",
+      "buttonLabel": "Refresh aggregate SLA",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-agg-slo",
+      "type": "function",
+      "title": "Aggregate SLO ceiling (ms)",
+      "x": 4,
+      "y": 0,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaAggregateSloMax",
+      "functionName": "run",
+      "buttonLabel": "Load SLO target",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-agg-met",
+      "type": "function",
+      "title": "Aggregate SLO met",
+      "x": 8,
+      "y": 0,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaAggregateMet",
+      "functionName": "run",
+      "buttonLabel": "Check SLO status",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-raw-p95",
+      "type": "function",
+      "title": "Raw trend p95 (ms)",
+      "x": 0,
+      "y": 3,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaRawP95",
+      "functionName": "run",
+      "buttonLabel": "Refresh raw SLA",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-raw-slo",
+      "type": "function",
+      "title": "Raw SLO ceiling (ms)",
+      "x": 4,
+      "y": 3,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaRawSloMax",
+      "functionName": "run",
+      "buttonLabel": "Load raw SLO target",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-raw-met",
+      "type": "function",
+      "title": "Raw SLO met",
+      "x": 8,
+      "y": 3,
+      "w": 4,
+      "h": 3,
+      "objectPath": "root.platform.applications.platform.functions.historian_slaRawMet",
+      "functionName": "run",
+      "buttonLabel": "Check raw SLO status",
+      "resultView": "value"
+    },
+    {
+      "id": "hist-slo-help",
+      "type": "html-snippet",
+      "title": "Historian query SLO",
+      "x": 0,
+      "y": 6,
+      "w": 12,
+      "h": 2,
+      "htmlJson": "<p>BL-161: aggregate ≤1M points p95 &lt;2s, raw ≤10k p95 &lt;500ms. Micrometer: <code>ispf.historian.query.latency</code>. Lab gate: <code>deploy/tools/historian-scale-benchmark.sh</code>.</p>"
+    }
+  ]
+}

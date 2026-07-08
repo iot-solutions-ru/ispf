@@ -1,0 +1,12 @@
+{
+  "id": "scada-pipeline-segment",
+  "version": "1",
+  "domain": "scada",
+  "title": "Midstream pipeline segment",
+  "description": "Valve station, linepack pressure, segment overview mimic.",
+  "prompt": "Deploy midstream pipeline SCADA with valve station, pressure sensors, and linepack overview dashboard.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "save_mimic_diagram", "configure_alert"]
+  }
+}

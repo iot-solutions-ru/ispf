@@ -42,6 +42,15 @@ public class MarketplaceBundleController {
         return symbolListingService.listSymbolPacks();
     }
 
+    @PostMapping("/symbols/{id}/install")
+    public Map<String, Object> installSymbolPack(@PathVariable("id") String packId) {
+        try {
+            return symbolListingService.installSymbolPack(packId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     @PostMapping("/bundles/{id}/install")
     public Map<String, Object> installBundle(@PathVariable("id") String bundleId) {
         try {

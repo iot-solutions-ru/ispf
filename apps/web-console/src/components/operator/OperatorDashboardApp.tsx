@@ -13,6 +13,7 @@ import {
   type OperatorUi,
 } from "../../types/operatorUi";
 import type { DashboardLayoutPreset } from "../../types/dashboard";
+import { isVideoWallPreset } from "../dashboard/dashboardLayoutPresets";
 import { emptySession, mergeSession, type DashboardSession } from "../dashboard/DashboardContext";
 import OperatorPreferences from "./OperatorPreferences";
 import DashboardBuilder from "../dashboard/DashboardBuilder";
@@ -30,6 +31,7 @@ import OperatorFederationPeerSelector from "./OperatorFederationPeerSelector";
 import OperatorVideoWallGrid from "./OperatorVideoWallGrid";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForOperatorUi } from "../../utils/operatorOfflineCache";
+import { syncOperatorCachesOnReconnect } from "../../utils/operatorOfflineSync";
 
 interface OperatorDashboardAppProps {
   appId: string;
@@ -132,11 +134,9 @@ export default function OperatorDashboardApp({
   const queryClient = useQueryClient();
   useObjectWebSocket();
   const uiQuery = useOperatorUi(appId);
-  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() => {
-    queryClient.invalidateQueries({ queryKey: ["operator-ui", appId] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["variables"] });
-  });
+  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() =>
+    syncOperatorCachesOnReconnect(queryClient, appId)
+  );
   const cachedAt = cachedAtForOperatorUi(appId);
   const [viewKind, setViewKind] = useState<OperatorViewKind>(resolveViewKindFromUrl);
   const [dashboardPath, setDashboardPath] = useState<string | null>(resolveDashboardFromUrl);
@@ -168,7 +168,7 @@ export default function OperatorDashboardApp({
   const sidebarDrawer = useOperatorSidebarDrawer([viewKind, activePath]);
   const [layoutPreset, setLayoutPreset] = useState<DashboardLayoutPreset | undefined>();
   const [federationPeerId, setFederationPeerId] = useState<string | null>(resolveFederationPeerFromUrl);
-  const videoWallMode = viewKind === "dashboard" && layoutPreset === "video-wall-2x2";
+  const videoWallMode = viewKind === "dashboard" && isVideoWallPreset(layoutPreset);
 
   useEffect(() => {
     setLayoutPreset(undefined);
@@ -351,7 +351,7 @@ export default function OperatorDashboardApp({
     <div
       className={`operator-shell${alarmBar.hasActiveAlarm ? " operator-alarm-active" : ""}${
         sidebarDrawer.open ? " operator-shell--sidebar-open" : ""
-      }${videoWallMode ? " operator-shell--video-wall-2x2" : ""}`}
+      }${videoWallMode && layoutPreset ? ` operator-shell--${layoutPreset}` : ""}`}
       data-testid="operator-shell"
     >
       {!videoWallMode && (
@@ -390,6 +390,7 @@ export default function OperatorDashboardApp({
             <OperatorVideoWallGrid
               dashboards={ui.dashboards}
               appId={appId}
+              layoutPreset={layoutPreset!}
               sessionsByDashboard={sessionsByDashboard}
               onSessionChange={handleVideoWallSessionChange}
               onNavigateDashboard={navigateDashboard}

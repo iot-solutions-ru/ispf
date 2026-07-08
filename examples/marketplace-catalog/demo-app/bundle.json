@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Demo Application",
+  "tablePrefix": "",
+  "schemaName": "app_demo_app",
+  "metadata": {
+    "changelog": "Catalog stub bundle for demo-app",
+    "domain": "demo-app"
+  },
+  "operatorUi": {
+    "appId": "demo",
+    "title": "Demo Application",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

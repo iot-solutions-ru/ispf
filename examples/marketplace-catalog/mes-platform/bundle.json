@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES Platform",
+  "tablePrefix": "",
+  "schemaName": "app_mes_platform",
+  "metadata": {
+    "changelog": "Catalog stub bundle for mes-platform",
+    "domain": "mes-platform"
+  },
+  "operatorUi": {
+    "appId": "mes-platform",
+    "title": "MES Platform",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

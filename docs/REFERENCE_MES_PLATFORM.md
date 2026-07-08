@@ -2,11 +2,12 @@
 
 End-to-end certification path: **platform MES catalog → deploy bundle → OEE KPI + work-order dispatch + quality SPC + ISA-88 batch + ERP outbox** without custom Java.
 
-| Bundle | `appId` | Artifacts |
-|--------|---------|-----------|
-| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/) |
-| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/) |
+**Wave 8 status (complete):** BL-164…BL-170 certified. Production walkthrough ≤30 min verified; `MesPlatformGaSmokeTest` deploys `mes-platform-production` and asserts OEE, dispatch, quality, batch, ERP, and enabled outbox schedule.
 
+| Bundle | `appId` | Artifacts | Status |
+|--------|---------|-----------|--------|
+| Certification skeleton | `mes-platform` | [examples/mes-platform/](../examples/mes-platform/) | Reference |
+| Production walkthrough | `mes-platform-production` | [examples/mes-platform-production/](../examples/mes-platform-production/) | **Certified** (BL-170) |
 **See also:** [ISA95_CATALOG.md](ISA95_CATALOG.md), [REFERENCE_MES_OEE_WALKTHROUGH.md](REFERENCE_MES_OEE_WALKTHROUGH.md), [OBJECT_MODEL.md](OBJECT_MODEL.md).
 
 ---
@@ -77,7 +78,7 @@ Idempotent SAP / 1C sync stub — [erp-outbox.json](../examples/mes-platform/erp
 | `idempotency_key` | `${entityType}:${entityId}` |
 | `mes_erp_enqueueOutbox` | Insert-if-absent enqueue |
 | `mes_erp_pollOutbox` | Poll pending rows, mark `sent` |
-| Schedule `mes-erp-outbox-poll` | `invoke_function` every 5s (disabled in bundle) |
+| Schedule `mes-erp-outbox-poll` | `invoke_function` every 5s — **enabled** in `mes-platform-production` (disabled in skeleton bundle) |
 
 ---
 
@@ -104,6 +105,25 @@ Hub: `root.platform.devices.mes-platform-production-hub`
 Operator UI: `?mode=operator&app=mes-platform-production`
 
 Dashboards: **Dispatch**, **OEE**, **Quality** (SPC chart reference).
+
+---
+
+## Wave 8 GA smoke (BL-164…BL-170)
+
+Single integration test deploys the production bundle and verifies every MES module in one pass:
+
+| BL | Module | Assertion |
+|----|--------|-----------|
+| BL-164 / BL-165 | MES catalog + OEE | `mes_platform_listLines`, `mes_oee_getKpi` > 80% |
+| BL-166 | Work-order dispatch | `mes_dispatch_confirmWorkOrder` |
+| BL-167 | Quality SPC | `mes_quality_listSpcSamples` (3 seed rows) |
+| BL-168 | ISA-88 batch | `mes_batch_runPhase` → `react` |
+| BL-169 | ERP outbox | enqueue + poll round-trip; schedule `mes-erp-outbox-poll` enabled |
+| BL-170 | Production bundle | full `mes-platform-production` deploy |
+
+Test class: `com.ispf.server.application.MesPlatformGaSmokeTest`
+
+Per-module hardening tests (Wave 5): `MesWorkOrderDispatchIntegrationTest`, `MesQualitySpcDashboardIntegrationTest`, `MesBatchPhaseRunnerIntegrationTest`.
 
 ---
 
@@ -151,18 +171,19 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 
 ---
 
-## Certification checklist (≤ 30 min)
+## Certification checklist (≤ 30 min) — complete
 
-- [ ] `root.platform.mes.*` visible in Explorer after server start
-- [ ] Bundle deploy succeeds (`schemaName` = `app_mes_platform` or `app_mes_platform_production`)
-- [ ] `mes_platform_listLines` returns `LINE-A01`
-- [ ] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift
-- [ ] Operator UI opens with `?mode=operator&app=mes-platform` or `mes-platform-production`
-- [ ] Work-queue widget visible on Dispatch dashboard (BL-166)
-- [ ] SPC chart widget on Quality dashboard (BL-167)
-- [ ] `batch-v1` visible under `root.platform.instance-types` (BL-168)
-- [ ] `mes_batch_runPhase` advances seed batch phase
-- [ ] `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` round-trip (BL-169)
+- [x] `root.platform.mes.*` visible in Explorer after server start
+- [x] Bundle deploy succeeds (`schemaName` = `app_mes_platform` or `app_mes_platform_production`)
+- [x] `mes_platform_listLines` returns `LINE-A01`
+- [x] `mes_oee_getKpi` returns `oeePct` > 80 for seed shift
+- [x] Operator UI opens with `?mode=operator&app=mes-platform` or `mes-platform-production`
+- [x] Work-queue widget visible on Dispatch dashboard (BL-166)
+- [x] SPC chart widget on Quality dashboard (BL-167)
+- [x] `batch-v1` visible under `root.platform.instance-types` (BL-168)
+- [x] `mes_batch_runPhase` advances seed batch phase
+- [x] `mes_erp_enqueueOutbox` + `mes_erp_pollOutbox` round-trip (BL-169)
+- [x] `mes-erp-outbox-poll` schedule enabled in production bundle (BL-169 harden)
 
 ---
 
@@ -175,7 +196,8 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
   --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
   --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \
   --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" \
-  --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest"
+  --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest" \
+  --tests "com.ispf.server.application.MesPlatformGaSmokeTest"
 
 bash deploy/tools/mes-platform-production-deploy.sh
 ```

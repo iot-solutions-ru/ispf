@@ -85,6 +85,11 @@ public class IspfSecurityProperties {
         private boolean enabled = false;
 
         /**
+         * When true (and {@link #enabled}), admin-role logins require enrolled MFA and a valid TOTP code.
+         */
+        private boolean requiredForAdmin = false;
+
+        /**
          * Allowed TOTP drift in 30-second steps (±N). Default {@code 1} accepts previous/current/next window.
          */
         private int timeWindowSteps = 1;
@@ -95,6 +100,14 @@ public class IspfSecurityProperties {
 
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
+        }
+
+        public boolean isRequiredForAdmin() {
+            return requiredForAdmin;
+        }
+
+        public void setRequiredForAdmin(boolean requiredForAdmin) {
+            this.requiredForAdmin = requiredForAdmin;
         }
 
         public int getTimeWindowSteps() {

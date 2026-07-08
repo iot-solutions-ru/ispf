@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Building HVAC Reference",
+  "tablePrefix": "",
+  "schemaName": "app_building_hvac",
+  "metadata": {
+    "changelog": "Catalog stub bundle for building-hvac",
+    "domain": "building-hvac"
+  },
+  "operatorUi": {
+    "appId": "building-hvac",
+    "title": "Building HVAC Reference",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

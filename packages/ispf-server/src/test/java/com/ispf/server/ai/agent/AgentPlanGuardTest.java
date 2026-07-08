@@ -255,6 +255,18 @@ class AgentPlanGuardTest {
     }
 
     @Test
+    void approvalMessageApprovesWhenStoredPlanAndPhaseNone() {
+        AgentRunState state = new AgentRunState();
+        state.setPlanPhase(AgentPlanPhase.NONE);
+        state.setStoredPlan(Map.of("goal", "SCADA pump mimic", "steps", List.of("save_mimic_diagram")));
+        boolean approved = AgentPlanGuard.beginTurn(
+                state, "Утверждаю план, начинай выполнение", AgentProfile.ADMIN, true, "operator");
+        assertThat(approved).isTrue();
+        assertThat(state.isPlanApproved()).isTrue();
+        assertThat(state.isMutationsUnlockedForTurn()).isTrue();
+    }
+
+    @Test
     void awaitingApprovalIsNotResetToPlanning() {
         AgentRunState state = new AgentRunState();
         state.setInteractionMode(AgentInteractionMode.AUTO);

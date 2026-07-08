@@ -17,7 +17,7 @@ class MarketplaceSymbolListingServiceTest {
 
         assertEquals("OK", response.get("status"));
         assertEquals("stub", response.get("source"));
-        assertEquals(1, response.get("count"));
+        assertEquals(2, response.get("count"));
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> listings = (List<Map<String, Object>>) response.get("listings");

@@ -70,7 +70,11 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest request) {
         try {
-            Map<String, Object> response = userService.login(request.username(), request.password());
+            Map<String, Object> response = userService.login(
+                    request.username(),
+                    request.password(),
+                    request.totpCode()
+            );
             auditEventService.logLoginSuccess(request.username().trim().toLowerCase());
             return response;
         } catch (IllegalArgumentException ex) {
@@ -127,7 +131,7 @@ public class AuthController {
         return null;
     }
 
-    public record LoginRequest(@NotBlank String username, @NotBlank String password) {
+    public record LoginRequest(@NotBlank String username, @NotBlank String password, String totpCode) {
     }
 
     public record UpdateTimeZoneRequest(@NotBlank String timeZone) {

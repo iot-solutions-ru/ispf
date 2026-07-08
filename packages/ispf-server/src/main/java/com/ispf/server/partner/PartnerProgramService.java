@@ -17,6 +17,39 @@ public class PartnerProgramService {
     private static final String PORTAL_URL = "https://github.com/Michaael/Partner-portal";
     private static final AtomicLong APPLICATION_SEQ = new AtomicLong(1);
 
+    private static final List<Map<String, Object>> EXTERNAL_PARTNERS = List.of(
+            externalPartner(
+                    "acme-integrators",
+                    "Acme Integrators",
+                    "Professional",
+                    "silver",
+                    List.of("EMEA", "CIS"),
+                    List.of("scada", "hvac"),
+                    "https://marketplace.acme.example",
+                    "2026-01"
+            ),
+            externalPartner(
+                    "nordic-automation",
+                    "Nordic Automation AS",
+                    "Expert",
+                    "gold",
+                    List.of("Nordics", "Baltics"),
+                    List.of("mes", "warehouse"),
+                    "https://catalog.nordic-automation.example",
+                    "2025-11"
+            ),
+            externalPartner(
+                    "pacific-ot",
+                    "Pacific OT Solutions",
+                    "Professional",
+                    "silver",
+                    List.of("APAC"),
+                    List.of("scada", "pipeline"),
+                    "https://ispf.pacific-ot.example",
+                    "2026-03"
+            )
+    );
+
     private static final List<Map<String, Object>> TIERS = List.of(
             tier(
                     "bronze",
@@ -48,6 +81,16 @@ public class PartnerProgramService {
                     )
             )
     );
+
+    public Map<String, Object> listExternalPartners() {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", "OK");
+        response.put("source", "stub");
+        response.put("count", EXTERNAL_PARTNERS.size());
+        response.put("partners", EXTERNAL_PARTNERS);
+        response.put("portalUrl", PORTAL_URL);
+        return response;
+    }
 
     public Map<String, Object> listTiers() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -100,6 +143,29 @@ public class PartnerProgramService {
             List<String> verticals,
             List<String> regions
     ) {
+    }
+
+    private static Map<String, Object> externalPartner(
+            String id,
+            String name,
+            String certificationLevel,
+            String tierId,
+            List<String> regions,
+            List<String> verticals,
+            String marketplaceUrl,
+            String certifiedSince
+    ) {
+        Map<String, Object> row = new LinkedHashMap<>();
+        row.put("id", id);
+        row.put("name", name);
+        row.put("certificationLevel", certificationLevel);
+        row.put("tierId", tierId);
+        row.put("regions", regions);
+        row.put("verticals", verticals);
+        row.put("marketplaceUrl", marketplaceUrl);
+        row.put("certifiedSince", certifiedSince);
+        row.put("status", "certified");
+        return row;
     }
 
     private static Map<String, Object> tier(

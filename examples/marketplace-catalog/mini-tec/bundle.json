@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Mini TEC",
+  "tablePrefix": "",
+  "schemaName": "app_mini_tec",
+  "metadata": {
+    "changelog": "Catalog stub bundle for mini-tec",
+    "domain": "mini-tec"
+  },
+  "operatorUi": {
+    "appId": "mini-tec",
+    "title": "Mini TEC",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

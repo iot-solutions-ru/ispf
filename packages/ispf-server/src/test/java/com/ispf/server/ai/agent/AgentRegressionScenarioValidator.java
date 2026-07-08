@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
  */
 final class AgentRegressionScenarioValidator {
 
-    static final int MIN_SCENARIO_COUNT = 40;
+    static final int MIN_SCENARIO_COUNT = 50;
 
     private static final Set<String> DOMAINS = Set.of("scada", "mes", "hvac");
     private static final Set<String> SCENARIO_PROPERTIES = Set.of(

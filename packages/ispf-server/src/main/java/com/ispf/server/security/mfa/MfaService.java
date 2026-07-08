@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * TOTP MFA enrollment with persisted secrets (BL-153).
@@ -79,6 +80,27 @@ public class MfaService {
 
     public void cancelEnrollment(String username) {
         enrollmentStore.deletePending(username);
+    }
+
+    /**
+     * Enforces MFA for admin login when {@code ispf.security.mfa.required-for-admin=true}.
+     */
+    public void requireAdminLoginCode(String username, List<String> roles, String totpCode) {
+        if (!securityProperties.getMfa().isEnabled()
+                || !securityProperties.getMfa().isRequiredForAdmin()
+                || roles == null
+                || !roles.contains("admin")) {
+            return;
+        }
+        MfaEnrollmentStore.MfaEnrollment enrollment = enrollmentStore.findByUsername(username)
+                .filter(MfaEnrollmentStore.MfaEnrollment::isEnrolled)
+                .orElseThrow(() -> new IllegalArgumentException("Admin MFA enrollment required"));
+        if (totpCode == null || totpCode.isBlank()) {
+            throw new IllegalArgumentException("MFA TOTP code required");
+        }
+        if (!TotpUtil.verifyCode(enrollment.secret(), totpCode.trim(), timeWindowSteps(), clock.instant())) {
+            throw new IllegalArgumentException("Invalid TOTP code");
+        }
     }
 
     private int timeWindowSteps() {

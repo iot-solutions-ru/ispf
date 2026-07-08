@@ -1,0 +1,23 @@
+{
+  "slug": "mqtt-temperature",
+  "title": "MQTT Temperature Lab",
+  "description": "MQTT sensor blueprint and temperature trends.",
+  "pricing": "free",
+  "appId": "mqtt-temperature-lab",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "IoT Solutions Platform Contributors",
+  "vendorInn": "0000000000",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "marketplace@iot-solutions.ru",
+  "vendorContactPhone": "+7-000-000-00-00",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mqtt",
+    "iot"
+  ],
+  "changelog": "Marketplace catalog stub listing for mqtt-temperature (BL-183)."
+}

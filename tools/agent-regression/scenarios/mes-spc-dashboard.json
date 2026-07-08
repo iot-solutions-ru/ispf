@@ -1,0 +1,17 @@
+{
+  "id": "mes-spc-dashboard",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES SPC quality dashboard",
+  "description": "SPC chart widgets and sample list on production bundle.",
+  "prompt": "Configure MES quality SPC dashboard with chart widget and sample list function on mes-platform-production.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-platform-production",
+    "manifestPath": "examples/mes-platform-production/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["configure_operator_ui", "invoke_bff"]
+  }
+}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export function useOperatorConnectivity(onReconnect?: () => void) {
+export function useOperatorConnectivity(onReconnect?: () => void | Promise<void>) {
   const [online, setOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
@@ -11,11 +11,9 @@ export function useOperatorConnectivity(onReconnect?: () => void) {
       return;
     }
     setReconnecting(true);
-    try {
-      onReconnect();
-    } finally {
+    void Promise.resolve(onReconnect()).finally(() => {
       window.setTimeout(() => setReconnecting(false), 800);
-    }
+    });
   }, [onReconnect]);
 
   useEffect(() => {

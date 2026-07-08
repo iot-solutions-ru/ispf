@@ -161,6 +161,7 @@ ispf:
     oidc-client-id: ${ISPF_OIDC_CLIENT_ID:ispf-web-console}
     mfa:
       enabled: ${ISPF_MFA_ENABLED:false}
+      required-for-admin: ${ISPF_MFA_REQUIRED_FOR_ADMIN:false}
   tenant:
     isolation-mode: ${ISPF_TENANT_ISOLATION_MODE:logical}
     schema-prefix: ${ISPF_TENANT_SCHEMA_PREFIX:tenant_}

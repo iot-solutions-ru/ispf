@@ -41,6 +41,8 @@ export type ObjectType =
   | "REPORT"
   | "QUERIES"
   | "QUERY"
+  | "ANALYTICS"
+  | "ANALYTICS_TEMPLATE"
   | "EVENT_FILTERS"
   | "EVENT_FILTER"
   | "FUNCTIONS"

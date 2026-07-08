@@ -28,7 +28,7 @@ class MarketplaceSymbolListingApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("OK"))
                 .andExpect(jsonPath("$.source").value("stub"))
-                .andExpect(jsonPath("$.count").value(1))
+                .andExpect(jsonPath("$.count").value(2))
                 .andExpect(jsonPath("$.listings[0].slug").value("ispf-pid-v1"))
                 .andExpect(jsonPath("$.listings[0].artifactKind").value("symbol-pack"))
                 .andExpect(jsonPath("$.listings[0].packId").value("ispf-pid-v1"))

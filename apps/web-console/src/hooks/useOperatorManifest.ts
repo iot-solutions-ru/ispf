@@ -55,5 +55,8 @@ export function useOperatorManifest(appId: string | null) {
     queryKey: ["operator-manifest", appId],
     queryFn: () => loadManifest(appId!),
     enabled: Boolean(appId),
+    refetchOnReconnect: true,
+    placeholderData: () =>
+      appId ? readCachedOperatorManifest(appId) ?? undefined : undefined,
   });
 }

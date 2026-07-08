@@ -293,15 +293,23 @@ public class MarketplaceLocalBundleService {
         }
         Path cwd = Paths.get(System.getProperty("user.dir", ".")).toAbsolutePath().normalize();
         for (int depth = 0; depth <= 4; depth++) {
-            Path candidate = cwd.resolve("examples/marketplace-demo");
-            if (Files.isDirectory(candidate)) {
-                return candidate;
+            Path catalog = cwd.resolve("examples/marketplace-catalog");
+            if (Files.isDirectory(catalog)) {
+                return catalog;
+            }
+            Path demo = cwd.resolve("examples/marketplace-demo");
+            if (Files.isDirectory(demo)) {
+                return demo;
             }
             Path parent = cwd.getParent();
             if (parent == null) {
                 break;
             }
             cwd = parent;
+        }
+        Path catalog = Paths.get("examples/marketplace-catalog");
+        if (Files.isDirectory(catalog)) {
+            return catalog;
         }
         return Paths.get("examples/marketplace-demo");
     }

@@ -1,0 +1,23 @@
+{
+  "slug": "mes-platform",
+  "title": "MES Platform",
+  "description": "Full MES platform bundle with BPMN workflows.",
+  "pricing": "free",
+  "appId": "mes-platform",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "IoT Solutions Platform Contributors",
+  "vendorInn": "0000000000",
+  "vendorSellerKind": "company",
+  "vendorContactPerson": "Marketplace Team",
+  "vendorContactEmail": "marketplace@iot-solutions.ru",
+  "vendorContactPhone": "+7-000-000-00-00",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.30",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "bpmn"
+  ],
+  "changelog": "Marketplace catalog stub listing for mes-platform (BL-183)."
+}

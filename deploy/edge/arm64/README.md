@@ -80,6 +80,18 @@ Register the edge peer on the central hub ([FEDERATION.md](../../../docs/FEDERAT
 
 ---
 
+## Validation script
+
+From repository root (static checks always; runtime smoke when artifacts are staged):
+
+```bash
+bash deploy/edge/arm64/validate.sh
+```
+
+Set `ISPF_EDGE_VALIDATE_SKIP_SMOKE=1` to skip `docker compose up` (CI without staged JAR/UI).
+
+---
+
 ## Verification checklist
 
 1. `curl -s http://127.0.0.1:8080/api/v1/info` — single replica, `clusterEnabled=false`.

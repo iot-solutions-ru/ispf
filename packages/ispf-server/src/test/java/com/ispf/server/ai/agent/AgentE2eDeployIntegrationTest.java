@@ -23,14 +23,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * BL-177: end-to-end agent deploy integration — playbook tools in sequence with mes-platform bundle (no LLM).
+ * BL-177: end-to-end agent deploy integration — playbook tools in sequence with
+ * mes-platform-production bundle (no LLM).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AgentE2eDeployIntegrationTest {
 
-    private static final String APP_ID = "mes-platform";
+    private static final String APP_ID = "mes-platform-production";
 
     @Autowired
     private PlatformAgentToolRegistry toolRegistry;
@@ -42,8 +43,8 @@ class AgentE2eDeployIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void mesPlatformDeployPlaybookPipelineWithoutLlm() throws Exception {
-        String bundleJson = new ClassPathResource("mes-platform-bundle.json")
+    void mesPlatformProductionDeployPlaybookPipelineWithoutLlm() throws Exception {
+        String bundleJson = new ClassPathResource("mes-platform-production-bundle.json")
                 .getContentAsString(StandardCharsets.UTF_8);
         @SuppressWarnings("unchecked")
         Map<String, Object> manifest = objectMapper.readValue(bundleJson, Map.class);
@@ -62,6 +63,10 @@ class AgentE2eDeployIntegrationTest {
             assertEquals("OK", step(toolRegistry, guidanceStep, Map.of(), context).get("status"));
         }
 
+        Map<String, Object> blueprintArgs = Map.of("appId", APP_ID);
+        Map<String, Object> blueprint = step(toolRegistry, "get_example_bundle", blueprintArgs, context);
+        assertEquals("OK", blueprint.get("status"));
+
         Map<String, Object> manifestArgs = Map.of("appId", APP_ID, "manifest", manifest);
         assertEquals("OK", step(toolRegistry, "deploy_step_validate", manifestArgs, context).get("status"));
         assertEquals("OK", step(toolRegistry, "deploy_step_dry_run", manifestArgs, context).get("status"));
@@ -78,7 +83,7 @@ class AgentE2eDeployIntegrationTest {
 
         assertEquals("OK", step(toolRegistry, "deploy_step_verify", Map.of("appId", APP_ID), context).get("status"));
         assertEquals("OK", step(toolRegistry, "deploy_step_automation", Map.of(), context).get("status"));
-        assertEquals("OK", step(toolRegistry, "deploy_step_finish", Map.of(), context).get("status"));
+        assertEquals("OK", step(toolRegistry, "deploy_step_finish", Map.of("appId", APP_ID), context).get("status"));
 
         var completed = context.runState().completedPlanSteps();
         assertTrue(completed.contains("deploy:validate"));
@@ -94,7 +99,7 @@ class AgentE2eDeployIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "objectPath": "root.platform.devices.mes-platform-hub",
+                                  "objectPath": "root.platform.devices.mes-platform-production-hub",
                                   "functionName": "mes_platform_listLines",
                                   "input": {
                                     "schema": { "name": "in", "fields": [] },
@@ -104,6 +109,27 @@ class AgentE2eDeployIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"));
+
+        mockMvc.perform(post("/api/v1/bff/invoke")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "objectPath": "root.platform.devices.mes-platform-production-hub",
+                                  "functionName": "mes_batch_getStatus",
+                                  "input": {
+                                    "schema": {
+                                      "name": "in",
+                                      "fields": [{ "name": "batchPath", "type": "STRING" }]
+                                    },
+                                    "rows": [{
+                                      "batchPath": "root.platform.mes.lots.batch-line-a01-001"
+                                    }]
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.error_code").value("OK"))
+                .andExpect(jsonPath("$.result.phase").value("charge"));
     }
 
     private static Map<String, Object> step(

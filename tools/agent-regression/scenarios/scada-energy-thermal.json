@@ -1,0 +1,17 @@
+{
+  "id": "scada-energy-thermal",
+  "version": "1",
+  "domain": "scada",
+  "title": "Thermal power generation SCADA",
+  "description": "Boiler, turbine, substation feeder, kWh reporting.",
+  "prompt": "Build thermal power plant SCADA with boiler aggregate, steam turbine, substation feeder, and generation overview.",
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "bundle": {
+    "appId": "mini-tec",
+    "manifestPath": "examples/mini-tec/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+  }
+}

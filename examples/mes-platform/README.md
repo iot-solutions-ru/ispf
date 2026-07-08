@@ -34,6 +34,12 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
 | `mes_oee_addDowntime` | Register downtime minutes |
 | `mes_platform_listLines` | ISA-95 line registry (maps to `root.platform.mes.instances.*`) |
 
+## OEE analytics chart (BL-160)
+
+- Hub variable `oeePct` (history-enabled) on `mes-platform-hub-v1`
+- Dashboard `mes-platform-oee` includes `chart` widget with `analyticsTemplateId: oee` (8h historian rollup)
+- Platform catalog: `GET /api/v1/platform/analytics/templates`
+
 ## Work order dispatch (BL-166)
 
 - INSTANCE blueprint `work-order-v1` → create `WORK_ORDER` under `root.platform.mes.work-orders`

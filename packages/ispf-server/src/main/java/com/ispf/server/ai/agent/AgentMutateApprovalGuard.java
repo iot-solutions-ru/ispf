@@ -30,7 +30,7 @@ final class AgentMutateApprovalGuard {
         if (AgentPlanGuard.isReadOnlyTool(toolName)) {
             return Optional.empty();
         }
-        if (runState.isPlanApproved()) {
+        if (runState.isPlanApproved() || runState.isMutationsUnlockedForTurn()) {
             return Optional.empty();
         }
         String normalized = toolName != null ? toolName.trim().toLowerCase(Locale.ROOT) : "";

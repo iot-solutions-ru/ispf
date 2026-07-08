@@ -1,0 +1,206 @@
+{
+  "generatedAt": "2026-07-08T03:05:21.167Z",
+  "mode": "nightly-stub",
+  "scenarios": [
+    {
+      "id": "hvac-ahu-comfort",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-alerts-comfort",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-building-app",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-chiller-plant",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-e2e-deploy",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-energy-dashboard",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-lab-mqtt",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-mqtt-alerts",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-multi-floor-zones",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-scheduler-setpoints",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-smart-building-bms",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-solution-generator-site",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-zone-binding",
+      "status": "OK"
+    },
+    {
+      "id": "hvac-zone-comfort",
+      "status": "OK"
+    },
+    {
+      "id": "mes-batch-run-tracking",
+      "status": "OK"
+    },
+    {
+      "id": "mes-defect-demo",
+      "status": "OK"
+    },
+    {
+      "id": "mes-demo-app-deploy",
+      "status": "OK"
+    },
+    {
+      "id": "mes-dispatch-workflow",
+      "status": "OK"
+    },
+    {
+      "id": "mes-lab-training",
+      "status": "OK"
+    },
+    {
+      "id": "mes-marketplace-demo",
+      "status": "OK"
+    },
+    {
+      "id": "mes-mini-tec-deploy",
+      "status": "OK"
+    },
+    {
+      "id": "mes-oee-dispatch",
+      "status": "OK"
+    },
+    {
+      "id": "mes-oee-reference",
+      "status": "OK"
+    },
+    {
+      "id": "mes-ogp-events-deploy",
+      "status": "OK"
+    },
+    {
+      "id": "mes-platform-cert",
+      "status": "OK"
+    },
+    {
+      "id": "mes-platform-production",
+      "status": "OK"
+    },
+    {
+      "id": "mes-quality-inspection",
+      "status": "OK"
+    },
+    {
+      "id": "mes-reference-deploy",
+      "status": "OK"
+    },
+    {
+      "id": "mes-solution-generator-factory",
+      "status": "OK"
+    },
+    {
+      "id": "mes-spc-dashboard",
+      "status": "OK"
+    },
+    {
+      "id": "mes-warehouse-app",
+      "status": "OK"
+    },
+    {
+      "id": "mes-workflow-escalation",
+      "status": "OK"
+    },
+    {
+      "id": "scada-alarm-shelf",
+      "status": "OK"
+    },
+    {
+      "id": "scada-energy-thermal",
+      "status": "OK"
+    },
+    {
+      "id": "scada-historian-trends",
+      "status": "OK"
+    },
+    {
+      "id": "scada-iec104-substation",
+      "status": "OK"
+    },
+    {
+      "id": "scada-mimic-facility",
+      "status": "OK"
+    },
+    {
+      "id": "scada-mimic-pump-overview",
+      "status": "OK"
+    },
+    {
+      "id": "scada-modbus-device",
+      "status": "OK"
+    },
+    {
+      "id": "scada-oil-gas-tankfarm",
+      "status": "OK"
+    },
+    {
+      "id": "scada-opcua-line",
+      "status": "OK"
+    },
+    {
+      "id": "scada-pipeline-segment",
+      "status": "OK"
+    },
+    {
+      "id": "scada-pump-station",
+      "status": "OK"
+    },
+    {
+      "id": "scada-simulator-profiles",
+      "status": "OK"
+    },
+    {
+      "id": "scada-snmp-dashboard",
+      "status": "OK"
+    },
+    {
+      "id": "scada-solution-generator",
+      "status": "OK"
+    },
+    {
+      "id": "scada-spreadsheet-demo",
+      "status": "OK"
+    },
+    {
+      "id": "scada-tank-farm",
+      "status": "OK"
+    },
+    {
+      "id": "scada-virtual-cluster",
+      "status": "OK"
+    },
+    {
+      "id": "scada-water-treatment",
+      "status": "OK"
+    }
+  ]
+}

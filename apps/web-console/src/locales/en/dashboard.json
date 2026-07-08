@@ -50,6 +50,7 @@
   "settings.layoutPreset": "Layout preset",
   "settings.layoutPresetDefault": "Standard grid",
   "settings.layoutPresetVideoWall2x2": "Video wall 2×2",
+  "settings.layoutPresetVideoWall3x3": "Video wall 3×3",
   "settings.layoutPresetHint": "Mosaic presets replace root widgets with equal quadrants for control-room displays.",
   "rules.tab": "Rules",
   "rules.title": "Platform rules",

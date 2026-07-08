@@ -47,6 +47,8 @@ public class BpmnParser {
             Map<String, MessageThrowDefinition> messageThrowEvents = new HashMap<>();
             Map<String, TimerCatchDefinition> timerCatchEvents = new HashMap<>();
             Map<String, BoundaryTimerDefinition> boundaryTimers = new HashMap<>();
+            Map<String, SubProcessDefinition> subProcesses = new HashMap<>();
+            Map<String, String> endEventToSubProcess = new HashMap<>();
             List<SequenceFlowDefinition> sequenceFlows = new ArrayList<>();
             String startNodeId = null;
 
@@ -127,6 +129,24 @@ public class BpmnParser {
                 }
             }
 
+            for (Element subProcess : elements(process, "subProcess")) {
+                parseSubProcess(
+                        subProcess,
+                        nodeTypes,
+                        serviceTasks,
+                        userTasks,
+                        messageTasks,
+                        signalCatchEvents,
+                        messageCatchEvents,
+                        messageThrowEvents,
+                        timerCatchEvents,
+                        boundaryTimers,
+                        subProcesses,
+                        endEventToSubProcess,
+                        sequenceFlows
+                );
+            }
+
             for (Element flow : elements(process, "sequenceFlow")) {
                 sequenceFlows.add(parseSequenceFlow(flow));
             }
@@ -148,6 +168,8 @@ public class BpmnParser {
                     messageThrowEvents,
                     timerCatchEvents,
                     boundaryTimers,
+                    subProcesses,
+                    endEventToSubProcess,
                     List.copyOf(sequenceFlows)
             );
         } catch (WorkflowException e) {
@@ -155,6 +177,119 @@ public class BpmnParser {
         } catch (Exception e) {
             throw new WorkflowException("Failed to parse BPMN XML", e);
         }
+    }
+
+    private void parseSubProcess(
+            Element subProcess,
+            Map<String, String> nodeTypes,
+            Map<String, ServiceTaskDefinition> serviceTasks,
+            Map<String, UserTaskDefinition> userTasks,
+            Map<String, MessageTaskDefinition> messageTasks,
+            Map<String, SignalCatchDefinition> signalCatchEvents,
+            Map<String, MessageCatchDefinition> messageCatchEvents,
+            Map<String, MessageThrowDefinition> messageThrowEvents,
+            Map<String, TimerCatchDefinition> timerCatchEvents,
+            Map<String, BoundaryTimerDefinition> boundaryTimers,
+            Map<String, SubProcessDefinition> subProcesses,
+            Map<String, String> endEventToSubProcess,
+            List<SequenceFlowDefinition> sequenceFlows
+    ) throws WorkflowException {
+        String id = subProcess.getAttribute("id");
+        nodeTypes.put(id, "subProcess");
+
+        String subStartNodeId = null;
+        List<String> subEndNodeIds = new ArrayList<>();
+
+        for (Element start : elements(subProcess, "startEvent")) {
+            String startId = start.getAttribute("id");
+            if (subStartNodeId == null) {
+                subStartNodeId = startId;
+            }
+            nodeTypes.put(startId, "startEvent");
+        }
+
+        for (Element end : elements(subProcess, "endEvent")) {
+            String endId = end.getAttribute("id");
+            nodeTypes.put(endId, "endEvent");
+            subEndNodeIds.add(endId);
+            endEventToSubProcess.put(endId, id);
+        }
+
+        for (Element gateway : elements(subProcess, "exclusiveGateway")) {
+            nodeTypes.put(gateway.getAttribute("id"), "exclusiveGateway");
+        }
+
+        for (Element gateway : elements(subProcess, "parallelGateway")) {
+            nodeTypes.put(gateway.getAttribute("id"), "parallelGateway");
+        }
+
+        for (Element task : elements(subProcess, "serviceTask")) {
+            String taskId = task.getAttribute("id");
+            nodeTypes.put(taskId, "serviceTask");
+            serviceTasks.put(taskId, parseServiceTask(task));
+        }
+
+        for (Element task : elements(subProcess, "userTask")) {
+            String taskId = task.getAttribute("id");
+            nodeTypes.put(taskId, "userTask");
+            userTasks.put(taskId, parseUserTask(task));
+        }
+
+        for (Element task : elements(subProcess, "messageTask")) {
+            String taskId = task.getAttribute("id");
+            nodeTypes.put(taskId, "messageTask");
+            messageTasks.put(taskId, parseMessageTask(task));
+        }
+
+        for (Element catchEvent : elements(subProcess, "intermediateCatchEvent")) {
+            String catchId = catchEvent.getAttribute("id");
+            nodeTypes.put(catchId, "intermediateCatchEvent");
+            Integer durationSeconds = readDurationSeconds(catchEvent);
+            if (durationSeconds != null) {
+                Map<String, String> parameters = new HashMap<>();
+                parameters.put("durationSeconds", String.valueOf(durationSeconds));
+                timerCatchEvents.put(catchId, new TimerCatchDefinition(
+                        catchId,
+                        catchEvent.getAttribute("name"),
+                        durationSeconds,
+                        Map.copyOf(parameters)
+                ));
+            } else if (firstChildElement(catchEvent, "messageEventDefinition") != null) {
+                messageCatchEvents.put(catchId, parseMessageCatch(catchEvent));
+            } else {
+                signalCatchEvents.put(catchId, parseSignalCatch(catchEvent));
+            }
+        }
+
+        for (Element throwEvent : elements(subProcess, "intermediateThrowEvent")) {
+            String throwId = throwEvent.getAttribute("id");
+            nodeTypes.put(throwId, "intermediateThrowEvent");
+            if (firstChildElement(throwEvent, "messageEventDefinition") != null) {
+                messageThrowEvents.put(throwId, parseMessageThrow(throwEvent));
+            } else {
+                throw new WorkflowException("Unsupported throw event (message only): " + throwId);
+            }
+        }
+
+        for (Element boundary : elements(subProcess, "boundaryEvent")) {
+            BoundaryTimerDefinition boundaryTimer = parseBoundaryTimer(boundary);
+            if (boundaryTimer != null) {
+                boundaryTimers.put(boundaryTimer.attachedToRef(), boundaryTimer);
+            }
+        }
+
+        for (Element flow : elements(subProcess, "sequenceFlow")) {
+            sequenceFlows.add(parseSequenceFlow(flow));
+        }
+
+        if (subStartNodeId == null || subStartNodeId.isBlank()) {
+            throw new WorkflowException("BPMN subprocess startEvent is required: " + id);
+        }
+
+        subProcesses.put(
+                id,
+                new SubProcessDefinition(id, subProcess.getAttribute("name"), subStartNodeId, List.copyOf(subEndNodeIds))
+        );
     }
 
     private SequenceFlowDefinition parseSequenceFlow(Element flow) {

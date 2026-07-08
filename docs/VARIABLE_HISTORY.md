@@ -90,6 +90,8 @@ Documented service-level objectives for historian REST queries. Defaults bind vi
 
 Lab gate (Phase 28): `deploy/run_lab_historian_*.py` scripts should assert aggregate latency against `aggregate-max-latency-ms` at `aggregate-max-points` load.
 
+Dashboard reference: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
+
 Multi-tier retention and deploy profiles: [HISTORIAN_TIERS.md](./HISTORIAN_TIERS.md).
 
 См. также [OBJECT_MODEL.md](./OBJECT_MODEL.md), [API.md](./API.md).

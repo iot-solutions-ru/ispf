@@ -178,3 +178,17 @@ jobs:
             --tests com.ispf.server.driver.DriverOwnershipServiceTest \
             --tests com.ispf.server.driver.ClusterFailoverIntegrationTest \
             --no-daemon
+
+  agent-regression-nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Agent regression schema + pass-rate stub (BL-178)
+        env:
+          AGENT_REGRESSION_RESULTS: tools/agent-regression/nightly-stub-results.json
+        run: bash tools/agent-regression/run-nightly.sh

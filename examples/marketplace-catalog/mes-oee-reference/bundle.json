@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES OEE Reference",
+  "tablePrefix": "",
+  "schemaName": "app_mes_oee_reference",
+  "metadata": {
+    "changelog": "Catalog stub bundle for mes-oee-reference",
+    "domain": "mes-oee-reference"
+  },
+  "operatorUi": {
+    "appId": "mes-oee-reference",
+    "title": "MES OEE Reference",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

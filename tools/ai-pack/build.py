@@ -343,7 +343,7 @@ def build_example_summaries(examples: list[dict]) -> list[dict]:
 def parse_competitive_scorecard(path: Path) -> list[dict]:
     """Parse COMPETITIVE_SCORECARD.md into readiness gap index (BL-182).
 
-    Uses the **Post wave 3** column when present; falls back to Post wave 2, Post wave 1, or baseline.
+    Uses the highest **Post wave N** column when present; falls back to baseline.
     """
     if not path.exists():
         return []
@@ -356,15 +356,15 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
         if stripped.startswith("| # | Dimension"):
             in_matrix = True
             header_parts = [p.strip().lower() for p in stripped.strip("|").split("|")]
+            wave_columns: list[tuple[int, int]] = []
             for idx, label in enumerate(header_parts):
-                if "post wave 3" in label:
-                    current_column = idx
-                elif "post wave 2" in label and current_column < 0:
-                    current_column = idx
-                elif "post wave 1" in label and current_column < 0:
-                    current_column = idx
+                wave_match = re.search(r"post wave (\d+)", label)
+                if wave_match:
+                    wave_columns.append((int(wave_match.group(1)), idx))
                 elif label == "target":
                     target_column = idx
+            if wave_columns:
+                current_column = max(wave_columns, key=lambda item: item[0])[1]
             continue
         if not in_matrix:
             continue

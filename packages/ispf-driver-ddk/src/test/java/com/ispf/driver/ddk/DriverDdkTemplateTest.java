@@ -32,8 +32,10 @@ class DriverDdkTemplateTest {
         Path examples = Path.of("examples");
         assertTrue(Files.isDirectory(examples.resolve("simple-counter")));
         assertTrue(Files.isDirectory(examples.resolve("json-poller")));
+        assertTrue(Files.isDirectory(examples.resolve("modbus-simulator")));
         assertTrue(Files.exists(examples.resolve("simple-counter/driver-pack.json")));
         assertTrue(Files.exists(examples.resolve("json-poller/driver-pack.json")));
+        assertTrue(Files.exists(examples.resolve("modbus-simulator/driver-pack.json")));
     }
 
     @Test
@@ -44,5 +46,10 @@ class DriverDdkTemplateTest {
     @Test
     void jsonPollerDriverMetadata() {
         assertEquals(DriverDdk.JSON_POLLER_DRIVER_ID, new com.ispf.driver.jsonpoller.JsonPollerDeviceDriver().metadata().id());
+    }
+
+    @Test
+    void modbusSimulatorDriverMetadata() {
+        assertEquals(DriverDdk.MODBUS_SIMULATOR_DRIVER_ID, new com.ispf.driver.modbussimulator.ModbusSimulatorDeviceDriver().metadata().id());
     }
 }

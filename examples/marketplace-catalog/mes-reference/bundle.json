@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES Reference",
+  "tablePrefix": "",
+  "schemaName": "app_mes_reference",
+  "metadata": {
+    "changelog": "Catalog stub bundle for mes-reference",
+    "domain": "mes-reference"
+  },
+  "operatorUi": {
+    "appId": "mes-reference",
+    "title": "MES Reference",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

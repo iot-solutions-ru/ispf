@@ -1,0 +1,17 @@
+{
+  "id": "hvac-multi-floor-zones",
+  "version": "1",
+  "domain": "hvac",
+  "title": "Multi-floor HVAC zone app",
+  "description": "Floor zone hub with per-floor comfort dashboards.",
+  "prompt": "Deploy building HVAC with floor zone hub, AHU per floor, and multi-zone comfort dashboards.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "building-hvac",
+    "manifestPath": "examples/building-hvac-app/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+  }
+}

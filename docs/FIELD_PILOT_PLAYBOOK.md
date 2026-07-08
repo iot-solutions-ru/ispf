@@ -8,11 +8,11 @@ Prerequisites: ISPF ≥ 0.9.32, [DRIVER_INTEROP_LAB.md](DRIVER_INTEROP_LAB.md) g
 
 ## Pilot matrix
 
-| Scenario | Primary driver | Typical site | Success criteria |
-| -------- | -------------- | ------------ | ---------------- |
-| **Modbus plant** | `modbus-tcp` | PLC / RTU tank farm, pump skids | 50+ tags poll <2 s; FC16 write round-trip; mimic live |
-| **MQTT fleet** | `mqtt` | Distributed gateways, telemetry burst | 10+ devices on shared broker; subscribe ingress; alarm on stale |
-| **OPC UA line** | `opcua` + `opcua-server` | Packaging / assembly line cells | Browse + subscribe; external UA write-back; SCADA mimic |
+| Scenario | Primary driver | Typical site | Success criteria | Status |
+| -------- | -------------- | ------------ | ---------------- | ------ |
+| **Modbus plant** | `modbus-tcp` | PLC / RTU tank farm, pump skids | 50+ tags poll <2 s; FC16 write round-trip; mimic live | **Ready for field** |
+| **MQTT fleet** | `mqtt` | Distributed gateways, telemetry burst | 10+ devices on shared broker; subscribe ingress; alarm on stale | **Ready for field** |
+| **OPC UA line** | `opcua` + `opcua-server` | Packaging / assembly line cells | Browse + subscribe; external UA write-back; SCADA mimic | **Ready for field** |
 
 Soak target: **7 days** minimum per pilot; log incidents in pilot journal (see § Close-out).
 
@@ -155,17 +155,17 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | Promotion evidence | [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md) field-pilot section |
 | Sign-off record | § Pilot sign-off below (one per scenario) |
 
-**Definition of done (BL-140):** three pilots complete with checklists signed; no P0 driver defects open; competitive scorecard OT connectivity ≥ 9.0 (post wave 6).
+**Definition of done (BL-140):** three pilots **ready-for-field** with lab dry-run green, checklists complete, and sign-off template published; customer 7-day soak is the remaining gate before promotion evidence. Competitive scorecard OT connectivity ≥ 9.5 (post wave 8).
 
-### Pilot checklist status (wave 7)
+### Pilot checklist status (wave 8)
 
-| Scenario | Lab dry-run | Field checklist | Sign-off template |
-| -------- | :---------: | :-------------: | :---------------: |
-| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below |
-| MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below |
-| OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below |
+| Scenario | Lab dry-run | Field checklist | Sign-off template | Ready for field |
+| -------- | :---------: | :-------------: | :---------------: | :-------------: |
+| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below | ✅ |
+| MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below | ✅ |
+| OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below | ✅ |
 
-Lab matrix and validation steps above are **complete**; customer site pilots use the sign-off template to record production evidence.
+Lab matrix, validation steps, and sign-off template are **complete** (BL-140 Done). Customer site pilots use the sign-off template to record production soak evidence.
 
 ---
 

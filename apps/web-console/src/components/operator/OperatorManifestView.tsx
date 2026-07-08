@@ -16,6 +16,7 @@ import OperatorOfflineBanner from "./OperatorOfflineBanner";
 import OperatorOfflineBadge from "./OperatorOfflineBadge";
 import { useOperatorSidebarDrawer } from "../../hooks/useOperatorSidebarDrawer";
 import { cachedAtForManifest } from "../../utils/operatorOfflineCache";
+import { syncOperatorCachesOnReconnect } from "../../utils/operatorOfflineSync";
 
 import type { AuthSession } from "../../auth/session";
 
@@ -42,13 +43,9 @@ export default function OperatorManifestView({
   const queryClient = useQueryClient();
   useObjectWebSocket();
   const manifestQuery = useOperatorManifest(appId);
-  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() => {
-    queryClient.invalidateQueries({ queryKey: ["operator-manifest", appId] });
-    queryClient.invalidateQueries({ queryKey: ["bff-table"] });
-    queryClient.invalidateQueries({ queryKey: ["app-report", appId] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-    queryClient.invalidateQueries({ queryKey: ["variables"] });
-  });
+  const { showStaleBanner, reconnecting, offline } = useOperatorConnectivity(() =>
+    syncOperatorCachesOnReconnect(queryClient, appId)
+  );
   const cachedAt = cachedAtForManifest(appId);
   const [screenId, setScreenId] = useState<string | null>(resolveScreenFromUrl);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

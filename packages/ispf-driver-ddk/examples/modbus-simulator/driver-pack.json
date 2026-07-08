@@ -1,0 +1,12 @@
+{
+  "packId": "ispf-driver-modbus-simulator",
+  "licenseType": "Apache-2.0",
+  "minPlatformVersion": "0.9.32",
+  "jarFile": "ispf-driver-modbus-simulator.jar",
+  "drivers": [
+    {
+      "driverId": "modbus-simulator",
+      "driverClass": "com.ispf.driver.modbussimulator.ModbusSimulatorDeviceDriver"
+    }
+  ]
+}

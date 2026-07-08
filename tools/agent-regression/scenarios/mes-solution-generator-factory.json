@@ -1,0 +1,12 @@
+{
+  "id": "mes-solution-generator-factory",
+  "version": "1",
+  "domain": "mes",
+  "title": "Factory spec to MES solution",
+  "description": "BL-180 natural-language factory spec to tree + dashboards + alerts.",
+  "prompt": "From factory spec: 2 production lines, loading rack, OEE dashboard, high downtime alert.",
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "acceptance": {
+    "requiredTools": ["create_object", "set_dashboard_layout", "configure_alert", "validate_bundle"]
+  }
+}

@@ -17,6 +17,8 @@ public record BpmnProcess(
         Map<String, MessageThrowDefinition> messageThrowEvents,
         Map<String, TimerCatchDefinition> timerCatchEvents,
         Map<String, BoundaryTimerDefinition> boundaryTimers,
+        Map<String, SubProcessDefinition> subProcesses,
+        Map<String, String> endEventToSubProcess,
         List<SequenceFlowDefinition> sequenceFlows
 ) {
     public String resolveNext(String nodeId, WorkflowConditionEvaluator evaluator) throws WorkflowException {
@@ -86,6 +88,18 @@ public record BpmnProcess(
 
     public boolean isGateway(String nodeId) {
         return "exclusiveGateway".equals(nodeTypes.get(nodeId));
+    }
+
+    public boolean isSubProcess(String nodeId) {
+        return "subProcess".equals(nodeTypes.get(nodeId));
+    }
+
+    public boolean isSubProcessEnd(String endNodeId) {
+        return endEventToSubProcess.containsKey(endNodeId);
+    }
+
+    public String subProcessForEndEvent(String endNodeId) {
+        return endEventToSubProcess.get(endNodeId);
     }
 
     /** @deprecated use {@link #resolveNext(String, WorkflowConditionEvaluator)} */

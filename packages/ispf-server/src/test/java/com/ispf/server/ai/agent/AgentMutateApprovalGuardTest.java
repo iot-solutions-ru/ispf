@@ -43,6 +43,26 @@ class AgentMutateApprovalGuardTest {
     }
 
     @Test
+    void allowsMutationsAfterCompleteExecutionResetsPlanPhase() {
+        AgentRunState state = new AgentRunState();
+        state.approvePlan("alice");
+        AgentPlanGuard.completeExecution(state);
+        assertThat(state.isPlanApproved()).isFalse();
+        assertThat(state.isMutationsUnlockedForTurn()).isTrue();
+        assertThat(AgentMutateApprovalGuard.checkBeforeTool(true, state, "save_mimic_diagram", AgentProfile.ADMIN))
+                .isEmpty();
+    }
+
+    @Test
+    void blocksMutationsOnNewTurnUntilApproval() {
+        AgentRunState state = new AgentRunState();
+        state.approvePlan("alice");
+        AgentPlanGuard.beginTurn(state, "продолжай с мнемосхемой", AgentProfile.ADMIN, true, "alice");
+        assertThat(AgentMutateApprovalGuard.checkBeforeTool(true, state, "save_mimic_diagram", AgentProfile.ADMIN))
+                .isPresent();
+    }
+
+    @Test
     void disabledGuardAllowsMutations() {
         AgentRunState state = new AgentRunState();
         assertThat(AgentMutateApprovalGuard.checkBeforeTool(false, state, "create_object", AgentProfile.ADMIN))

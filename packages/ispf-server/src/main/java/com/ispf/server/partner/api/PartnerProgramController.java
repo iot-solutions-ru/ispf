@@ -26,6 +26,11 @@ public class PartnerProgramController {
         this.partnerProgramService = partnerProgramService;
     }
 
+    @GetMapping
+    public Map<String, Object> listPartners() {
+        return partnerProgramService.listExternalPartners();
+    }
+
     @GetMapping("/tiers")
     public Map<String, Object> listTiers() {
         return partnerProgramService.listTiers();

@@ -363,6 +363,16 @@
           "readable": true,
           "writable": true,
           "defaultValue": { "schema": { "name": "doubleValue", "fields": [{ "name": "value", "type": "DOUBLE" }] }, "rows": [{ "value": 10.0 }] }
+        },
+        {
+          "name": "oeePct",
+          "description": "Composite OEE percent (A×P×Q) — historian rollup via BL-160 oee template",
+          "group": "oee",
+          "schema": { "name": "integerValue", "fields": [{ "name": "value", "type": "INTEGER" }] },
+          "readable": true,
+          "writable": true,
+          "historyEnabled": true,
+          "defaultValue": { "schema": { "name": "integerValue", "fields": [{ "name": "value", "type": "INTEGER" }] }, "rows": [{ "value": 85 }] }
         }
       ],
       "events": [],
@@ -447,7 +457,7 @@
       "path": "root.platform.dashboards.mes-platform-production-oee",
       "title": "MES OEE",
       "refreshIntervalMs": 5000,
-      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":4,\"y\":0,\"w\":8,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":3,\"w\":12,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"}]}"
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"oee-shifts\",\"type\":\"function\",\"title\":\"Shifts\",\"x\":0,\"y\":0,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_listShifts\",\"buttonLabel\":\"List shifts\"},{\"id\":\"oee-kpi\",\"type\":\"function\",\"title\":\"OEE KPI\",\"x\":4,\"y\":0,\"w\":8,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_oee_getKpi\",\"buttonLabel\":\"Morning shift KPI\",\"inputMapJson\":\"{\\\"shiftId\\\":\\\"dddddddd-dddd-dddd-dddd-dddddddddddd\\\"}\"},{\"id\":\"oee-lines\",\"type\":\"function\",\"title\":\"ISA-95 lines\",\"x\":0,\"y\":3,\"w\":12,\"h\":3,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"functionName\":\"mes_platform_listLines\",\"buttonLabel\":\"List lines\"},{\"id\":\"oee-analytics-chart\",\"type\":\"chart\",\"title\":\"OEE trend (BL-160)\",\"x\":0,\"y\":6,\"w\":8,\"h\":4,\"objectPath\":\"root.platform.devices.mes-platform-production-hub\",\"variableName\":\"oeePct\",\"valueField\":\"value\",\"historyRange\":\"24h\",\"chartStyle\":\"area\",\"decimals\":0,\"unit\":\"%\",\"analyticsTemplateId\":\"oee\",\"analyticsBindingExpression\":\"oee('oeePct', '8h')\"},{\"id\":\"oee-analytics-help\",\"type\":\"html-snippet\",\"title\":\"Asset analytics\",\"x\":8,\"y\":6,\"w\":4,\"h\":4,\"htmlJson\":\"<p>BL-160: chart uses platform <code>oee</code> analytics template with 8h historian rollup on <code>oeePct</code>. Catalog: <code>GET /api/v1/platform/analytics/templates</code>.</p>\"}]}"
     },
     {
       "path": "root.platform.dashboards.mes-platform-production-quality",
@@ -459,7 +469,7 @@
   "schedules": [
     {
       "scheduleId": "mes-erp-outbox-poll",
-      "enabled": false,
+      "enabled": true,
       "intervalMs": 5000,
       "actionType": "invoke_function",
       "action": {

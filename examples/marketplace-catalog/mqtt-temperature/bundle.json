@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "MQTT Temperature Lab",
+  "tablePrefix": "",
+  "schemaName": "app_mqtt_temperature",
+  "metadata": {
+    "changelog": "Catalog stub bundle for mqtt-temperature",
+    "domain": "mqtt-temperature"
+  },
+  "operatorUi": {
+    "appId": "mqtt-temperature-lab",
+    "title": "MQTT Temperature Lab",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

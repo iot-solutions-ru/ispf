@@ -43,7 +43,7 @@ import {
   cacheDashboardView,
   readCachedDashboardView,
 } from "../../utils/operatorOfflineCache";
-import { applyLayoutPreset } from "./dashboardLayoutPresets";
+import { applyLayoutPreset, isVideoWallPreset } from "./dashboardLayoutPresets";
 
 interface DashboardBuilderProps {
   path: string;
@@ -479,7 +479,9 @@ export default function DashboardBuilder({
   }
 
   const videoWallClass =
-    layout.layoutPreset === "video-wall-2x2" ? " dashboard-shell--video-wall-2x2" : "";
+    layout.layoutPreset && isVideoWallPreset(layout.layoutPreset)
+      ? ` dashboard-shell--${layout.layoutPreset}`
+      : "";
 
   return (
     <div

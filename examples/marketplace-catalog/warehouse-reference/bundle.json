@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Warehouse Reference",
+  "tablePrefix": "",
+  "schemaName": "app_warehouse_reference",
+  "metadata": {
+    "changelog": "Catalog stub bundle for warehouse-reference",
+    "domain": "warehouse-reference"
+  },
+  "operatorUi": {
+    "appId": "warehouse",
+    "title": "Warehouse Reference",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

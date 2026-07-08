@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Spreadsheet Demo",
+  "tablePrefix": "",
+  "schemaName": "app_spreadsheet_demo",
+  "metadata": {
+    "changelog": "Catalog stub bundle for spreadsheet-demo",
+    "domain": "spreadsheet-demo"
+  },
+  "operatorUi": {
+    "appId": "sheet-demo",
+    "title": "Spreadsheet Demo",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

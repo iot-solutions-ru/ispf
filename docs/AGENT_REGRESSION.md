@@ -60,7 +60,7 @@ bash scripts/run-agent-regression.sh --live
 | Nightly | `tools/agent-regression/run-nightly.sh` + live agent run; pass rate ≥95% (BL-178 target: 50 scenarios) |
 | Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` (BL-177 mes-platform one-shot) |
 
-**Current scenario count:** 40 (SCADA, MES, HVAC).
+**Current scenario count:** 50 (SCADA, MES, HVAC).
 
 Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — target ≥95% live agent pass rate.
 

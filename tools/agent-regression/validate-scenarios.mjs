@@ -16,7 +16,7 @@ const enforceRate = process.argv.includes("--enforce-rate");
 const resultsArgIndex = process.argv.indexOf("--results");
 const resultsPath = resultsArgIndex >= 0 ? process.argv[resultsArgIndex + 1] : null;
 
-const MIN_SCENARIOS = 40;
+const MIN_SCENARIOS = 50;
 const TARGET_PASS_RATE = 0.95;
 const BUNDLE_REQUIRED = ["version", "displayName"];
 

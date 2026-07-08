@@ -10,6 +10,7 @@ import com.ispf.server.config.IspfRoles;
 import com.ispf.server.config.IspfSecurityProperties;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.time.PlatformTimeZones;
+import com.ispf.server.security.mfa.MfaService;
 import com.ispf.server.tenant.TenantStore;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -41,6 +42,7 @@ public class PlatformUserService {
     private final ObjectMapper objectMapper;
     private final TenantStore tenantStore;
     private final IspfSecurityProperties securityProperties;
+    private final MfaService mfaService;
 
     public PlatformUserService(
             PlatformUserStore userStore,
@@ -51,7 +53,8 @@ public class PlatformUserService {
             PasswordEncoder passwordEncoder,
             ObjectMapper objectMapper,
             TenantStore tenantStore,
-            IspfSecurityProperties securityProperties
+            IspfSecurityProperties securityProperties,
+            MfaService mfaService
     ) {
         this.userStore = userStore;
         this.roleService = roleService;
@@ -62,6 +65,7 @@ public class PlatformUserService {
         this.objectMapper = objectMapper;
         this.tenantStore = tenantStore;
         this.securityProperties = securityProperties;
+        this.mfaService = mfaService;
     }
 
     @Transactional
@@ -86,7 +90,7 @@ public class PlatformUserService {
     }
 
     @Transactional
-    public Map<String, Object> login(String username, String password) {
+    public Map<String, Object> login(String username, String password, String totpCode) {
         PlatformUserStore.PlatformUser user = userStore.findByUsername(username.trim().toLowerCase())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
         if (!user.enabled()) {
@@ -95,6 +99,8 @@ public class PlatformUserService {
         if (!passwordEncoder.matches(password, user.passwordHash())) {
             throw new IllegalArgumentException("Invalid username or password");
         }
+        List<String> roles = deserializeRoles(user.rolesJson());
+        mfaService.requireAdminLoginCode(user.username(), roles, totpCode);
         sessionStore.deleteExpired(Instant.now());
         String token = UUID.randomUUID().toString().replace("-", "");
         Instant expiresAt = Instant.now().plusSeconds(12 * 3600);
@@ -104,8 +110,7 @@ public class PlatformUserService {
         response.put("expiresAt", expiresAt.toString());
         response.put("username", user.username());
         response.put("displayName", user.displayName());
-        response.put("roles", deserializeRoles(user.rolesJson()));
-        response.put("timeZone", PlatformTimeZones.normalizeOrDefault(user.timeZone()));
+        response.put("roles", roles);
         response.put("autoStartEnabled", user.autoStartEnabled());
         if (user.autoStartApp() != null && !user.autoStartApp().isBlank()) {
             response.put("autoStartApp", user.autoStartApp());

@@ -87,6 +87,68 @@ class AgentMimicToolsTest {
     }
 
     @Test
+    void saveMimicDiagramRejectsEmptyReplace() throws Exception {
+        String path = "root.platform.mimics.demo";
+        when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
+        doNothing().when(objectAccessService).requireWrite(path, authentication);
+        when(objectManager.require(path)).thenReturn(mimicNode);
+        when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
+
+        Map<String, Object> result = tool("save_mimic_diagram").execute(
+                Map.of("path", path, "elements", List.of()),
+                new AgentContext("admin", authentication, null)
+        );
+
+        assertEquals("ERROR", result.get("status"));
+        assertTrue(String.valueOf(result.get("error")).contains("non-empty"));
+    }
+
+    @Test
+    void saveMimicDiagramEnrichesPumpBindings() throws Exception {
+        String path = "root.platform.mimics.demo";
+        String devicePath = "root.platform.devices.centrifugal-pump";
+        when(tenantScopeService.isPathVisible(path, authentication)).thenReturn(true);
+        doNothing().when(objectAccessService).requireWrite(path, authentication);
+        when(objectManager.require(path)).thenReturn(mimicNode);
+        when(mimicNode.type()).thenReturn(ObjectType.MIMIC);
+        when(mimicService.getMimic(path)).thenReturn(
+                new MimicService.MimicView(path, "Demo", 5000, MimicLayouts.EMPTY_MIMIC)
+        );
+        when(mimicService.saveDiagram(eq(path), any())).thenAnswer(invocation -> {
+            String diagramJson = invocation.getArgument(1);
+            return new MimicService.MimicView(path, "Demo", 5000, diagramJson);
+        });
+
+        Map<String, Object> result = tool("save_mimic_diagram").execute(
+                Map.of(
+                        "path", path,
+                        "devicePath", devicePath,
+                        "elements", List.of(Map.of(
+                                "id", "p1",
+                                "symbolId", "pump.centrifugal",
+                                "layerId", "layer-default",
+                                "x", 200,
+                                "y", 120,
+                                "bindings", Map.of(
+                                        "running", Map.of("variableName", "vibration"),
+                                        "fault", Map.of("variableName", "vibration")
+                                )
+                        ))
+                ),
+                new AgentContext("admin", authentication, null)
+        );
+
+        assertEquals("OK", result.get("status"));
+        assertEquals(1, result.get("elementCount"));
+        ArgumentCaptor<String> diagramCaptor = ArgumentCaptor.forClass(String.class);
+        verify(mimicService).saveDiagram(eq(path), diagramCaptor.capture());
+        String saved = diagramCaptor.getValue();
+        assertTrue(saved.contains("\"variableName\":\"sineWave\""));
+        assertTrue(saved.contains(devicePath));
+        assertTrue(saved.contains("\"transform\":\"bool\""));
+    }
+
+    @Test
     void listMimicSymbolsReturnsCatalog() throws Exception {
         Map<String, Object> result = tool("list_mimic_symbols").execute(
                 Map.of("category", "process"),

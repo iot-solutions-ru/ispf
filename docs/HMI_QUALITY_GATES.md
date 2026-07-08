@@ -40,7 +40,7 @@ Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min 
 | Area | Status | Notes |
 | ---- | ------ | ----- |
 | Color contrast (axe) | Done | `--text-muted` tokens + dedicated contrast tests on login/operator |
-| Keyboard mimic editor | Done | Escape close, arrow nudge, V/P/C tools, Del, Ctrl+Z/Y/S; dialog `role` + `aria-pressed` on tools |
+| Keyboard mimic editor | Done | Escape close, arrow navigate between elements, Shift+arrow nudge, V/P/C tools, Del, Ctrl+Z/Y/S; dialog `role` + `aria-pressed` on tools |
 | Screen reader labels | Done | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` per alarm |
 | SCADA symbol library | Done | [SCADA_SYMBOL_LIBRARY.md](SCADA_SYMBOL_LIBRARY.md), `customSvg.test.ts` |
 | Mimic 60 fps @ tank-farm | Done | CI stress proxy: 120 symbols @ ≥55 fps (`stressMimic.ts`); full tank-farm diagram same render path |

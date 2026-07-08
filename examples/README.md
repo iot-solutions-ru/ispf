@@ -16,6 +16,7 @@
 | [mes-defect-demo](mes-defect-demo/) | MES defect routing demo (bundle + smoke test) |
 | [mes-ogp-events](mes-ogp-events/) | UC-25 OGP event registration: wizard, journal, roll map, 1C outbox |
 | [agent-metrics-dashboard](agent-metrics-dashboard/) | BL-181: AI tool metrics dashboard layout + BFF sketch |
+| [historian-sla-dashboard](historian-sla-dashboard/) | BL-161: historian query SLA dashboard layout + BFF sketch |
 | [certification](certification/) | BL-190: exam question bank stubs (JSON) |
 
 Прикладные bundle разворачиваются через `POST /api/v1/applications/{appId}/deploy` из репозитория проекта.

@@ -58,6 +58,7 @@
   "settings.layoutPreset": "Пресет раскладки",
   "settings.layoutPresetDefault": "Обычная сетка",
   "settings.layoutPresetVideoWall2x2": "Видеостена 2×2",
+  "settings.layoutPresetVideoWall3x3": "Видеостена 3×3",
   "settings.layoutPresetHint": "Мозаичные пресеты заменяют корневые виджеты равными квадрантами для диспетчерских.",
   "haystackBind.open": "Привязка по Haystack-запросу",
   "haystackBind.title": "Привязка виджетов по Haystack-запросу",

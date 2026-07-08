@@ -28,7 +28,11 @@ export function resolveAnalyticsAggregateBucket(
   if (!template?.helper) {
     return fallbackBucket;
   }
-  if (template.helper === "rollingAvg" || template.helper === "rateOfChange") {
+  if (
+    template.helper === "rollingAvg" ||
+    template.helper === "rateOfChange" ||
+    template.helper === "oee"
+  ) {
     return template.windowBucket || fallbackBucket;
   }
   return fallbackBucket;

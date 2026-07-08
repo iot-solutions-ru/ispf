@@ -1,0 +1,12 @@
+{
+  "id": "scada-water-treatment",
+  "version": "1",
+  "domain": "scada",
+  "title": "Water treatment plant SCADA",
+  "description": "Intake pumps, clarifiers, effluent flow meters, facility overview.",
+  "prompt": "Build water treatment SCADA: intake pump, clarifier basin, effluent flow meter, overview dashboard, high flow alert.",
+  "playbook": "AgentSolutionGeneratorPlaybook",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "set_dashboard_layout", "configure_alert", "list_variables"]
+  }
+}

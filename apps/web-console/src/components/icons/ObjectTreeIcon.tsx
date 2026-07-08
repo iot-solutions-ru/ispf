@@ -30,7 +30,13 @@ export type TreeIconKind =
   | "tag"
   | "bookmark"
   | "layers"
-  | "box";
+  | "box"
+  | "queries"
+  | "analytics"
+  | "filter"
+  | "mes"
+  | "work-orders"
+  | "quality";
 
 export type TreeIconCategory = "general" | "platform" | "objects" | "application";
 
@@ -69,6 +75,12 @@ export const TREE_ICON_CATALOG: TreeIconDefinition[] = [
   { id: "schedules", category: "application" },
   { id: "bindings", category: "application" },
   { id: "screens", category: "application" },
+  { id: "queries", category: "application" },
+  { id: "analytics", category: "application" },
+  { id: "filter", category: "application" },
+  { id: "mes", category: "platform" },
+  { id: "work-orders", category: "platform" },
+  { id: "quality", category: "platform" },
 ];
 
 const ICON_IDS = new Set<string>(TREE_ICON_CATALOG.map((item) => item.id));
@@ -128,6 +140,36 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
   }
   if (path.includes(".reports")) {
     return "report";
+  }
+  if (path.includes(".queries")) {
+    return "queries";
+  }
+  if (path.includes(".analytics")) {
+    return "analytics";
+  }
+  if (path.includes(".event-filters")) {
+    return "filter";
+  }
+  if (path === "root.platform.mes" || path.startsWith("root.platform.mes.")) {
+    if (path.includes(".work-orders")) {
+      return "work-orders";
+    }
+    if (path.includes(".operations")) {
+      return "gear";
+    }
+    if (path.includes(".lots")) {
+      return "box";
+    }
+    if (path.includes(".shifts")) {
+      return "schedules";
+    }
+    if (path.includes(".quality-records")) {
+      return "quality";
+    }
+    if (path.includes(".instances")) {
+      return "layers";
+    }
+    return "mes";
   }
   if (path.endsWith(".mimics") || path.includes(".mimics.")) {
     return "mimic";
@@ -201,6 +243,34 @@ export function resolveTreeIconKind(path: string, type: ObjectType): TreeIconKin
     case "BINDINGS":
     case "BINDING":
       return "bindings";
+    case "QUERIES":
+    case "QUERY":
+      return "queries";
+    case "ANALYTICS":
+    case "ANALYTICS_TEMPLATE":
+      return "analytics";
+    case "EVENT_FILTERS":
+    case "EVENT_FILTER":
+      return "filter";
+    case "MES":
+      return "mes";
+    case "WORK_ORDERS":
+    case "WORK_ORDER":
+      return "work-orders";
+    case "OPERATIONS":
+    case "OPERATION":
+      return "gear";
+    case "LOTS":
+    case "LOT":
+      return "box";
+    case "SHIFTS":
+    case "SHIFT":
+      return "schedules";
+    case "QUALITY_RECORDS":
+    case "QUALITY_RECORD":
+      return "quality";
+    case "MES_INSTANCES":
+      return "layers";
     case "MIGRATIONS":
     case "MIGRATION":
       return "database";
@@ -399,6 +469,40 @@ const ICONS: Record<TreeIconKind, ReactNode> = {
     <>
       <path d="M3 5.5l5-2.5 5 2.5v5l-5 2.5-5-2.5v-5z" />
       <path d="M8 3v10M3 5.5l5 2.5 5-2.5" />
+    </>
+  ),
+  queries: (
+    <>
+      <circle cx="7" cy="7" r="3.2" />
+      <path d="M9.4 9.4L12 12" />
+      <path d="M3.5 12.5h4.5" />
+    </>
+  ),
+  analytics: (
+    <>
+      <path d="M2.5 12V4.5M2.5 12h11" />
+      <path d="M4 9.5l2.2-2.2 2.3 1.4 3-3.2" />
+    </>
+  ),
+  filter: <path d="M3 3.5h10l-4 5v3.5l-2 1V8.5L3 3.5z" />,
+  mes: (
+    <>
+      <path d="M2.5 12.5V8l2.5-1.8V9l2-1.5v5" />
+      <path d="M9 12.5V7.5l2.5-1.8v6.8" />
+      <path d="M2 12.5h12" />
+    </>
+  ),
+  "work-orders": (
+    <>
+      <path d="M5.5 3h5v1.8H5.5z" />
+      <rect x="4.5" y="4.5" width="7" height="9" rx="1" />
+      <path d="M6.5 7.5h3M6.5 9.5h3M6.5 11.5h2" />
+    </>
+  ),
+  quality: (
+    <>
+      <path d="M8 2.5l4 2v4c0 2.4-1.8 3.7-4 4.3-2.2-.6-4-1.9-4-4.3V4.5L8 2.5z" />
+      <path d="M6.2 8.2l1.2 1.2 2.6-2.6" />
     </>
   ),
 };

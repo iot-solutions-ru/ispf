@@ -1,0 +1,17 @@
+{
+  "version": "2.0.0",
+  "displayName": "Lab Training",
+  "tablePrefix": "",
+  "schemaName": "app_lab_training",
+  "metadata": {
+    "changelog": "Catalog stub bundle for lab-training",
+    "domain": "lab-training"
+  },
+  "operatorUi": {
+    "appId": "lab-training",
+    "title": "Lab Training",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

@@ -97,6 +97,10 @@ final class AgentPlanGuard {
         if (profile == AgentProfile.OPERATOR || runState == null) {
             return false;
         }
+        runState.clearMutationsUnlockedForTurn();
+        if (runState.planPhase() == AgentPlanPhase.APPROVED) {
+            runState.setPlanPhase(AgentPlanPhase.NONE);
+        }
         AgentInteractionMode mode = runState.interactionMode();
         if (mode == AgentInteractionMode.ASK) {
             runState.resetPlan();
@@ -104,7 +108,8 @@ final class AgentPlanGuard {
         }
         if (isApprovalMessage(userMessage, runState.planPhase())) {
             if (runState.planPhase() == AgentPlanPhase.AWAITING_APPROVAL
-                    || runState.planPhase() == AgentPlanPhase.PLANNING) {
+                    || runState.planPhase() == AgentPlanPhase.PLANNING
+                    || !runState.storedPlan().isEmpty()) {
                 runState.approvePlan(approverUsername);
                 return true;
             }

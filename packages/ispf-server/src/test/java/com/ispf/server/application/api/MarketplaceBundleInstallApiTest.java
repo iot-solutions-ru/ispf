@@ -33,14 +33,14 @@ class MarketplaceBundleInstallApiTest {
     @DynamicPropertySource
     static void marketplaceDir(DynamicPropertyRegistry registry) {
         Path repoRoot = Path.of(System.getProperty("user.dir"));
-        for (int depth = 0; depth <= 4 && !repoRoot.resolve("examples/marketplace-demo").toFile().isDirectory(); depth++) {
+        for (int depth = 0; depth <= 4 && !repoRoot.resolve("examples/marketplace-catalog").toFile().isDirectory(); depth++) {
             Path parent = repoRoot.getParent();
             if (parent == null) {
                 break;
             }
             repoRoot = parent;
         }
-        marketplaceDemoDir = repoRoot.resolve("examples/marketplace-demo").toString();
+        marketplaceDemoDir = repoRoot.resolve("examples/marketplace-catalog/marketplace-demo").toString();
         registry.add("ispf.marketplace.local-bundles-dir", () -> marketplaceDemoDir);
     }
 

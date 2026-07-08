@@ -316,6 +316,7 @@ public class WorkflowEngine {
                 }
                 advanceToken(instance, process, token, nodeId, executor, messageExecutor, evaluator);
             }
+            case "subProcess" -> enterSubProcess(instance, process, token, nodeId, executor, messageExecutor, evaluator);
             case "intermediateCatchEvent" -> {
                 TimerCatchDefinition timerCatch = process.timerCatchEvents().get(nodeId);
                 if (timerCatch != null) {
@@ -335,6 +336,11 @@ public class WorkflowEngine {
                 instance.waitTokenAtSignal(token, nodeId, catchDef.signalName());
             }
             case "endEvent" -> {
+                if (process.isSubProcessEnd(nodeId)) {
+                    exitSubProcess(instance, process, token, process.subProcessForEndEvent(nodeId),
+                            executor, messageExecutor, evaluator);
+                    return;
+                }
                 token.complete();
                 instance.removeToken(token);
                 if (instance.tokens().isEmpty()) {
@@ -457,7 +463,16 @@ public class WorkflowEngine {
         }
 
         instance.moveToken(token, next);
+        if (process.isSubProcess(next)) {
+            enterSubProcess(instance, process, token, next, executor, messageExecutor, evaluator);
+            return;
+        }
         if (process.isEnd(next)) {
+            if (process.isSubProcessEnd(next)) {
+                exitSubProcess(instance, process, token, process.subProcessForEndEvent(next),
+                        executor, messageExecutor, evaluator);
+                return;
+            }
             token.complete();
             instance.removeToken(token);
             if (instance.tokens().isEmpty()) {
@@ -501,6 +516,47 @@ public class WorkflowEngine {
             return null;
         }
         return findJoinFromBranch(process, outgoing.getFirst().targetRef());
+    }
+
+    private void enterSubProcess(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String subProcessNodeId,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        SubProcessDefinition subProcess = process.subProcesses().get(subProcessNodeId);
+        if (subProcess == null) {
+            instance.fail("Subprocess definition missing: " + subProcessNodeId);
+            return;
+        }
+        instance.moveToken(token, subProcess.startNodeId());
+        stepToken(instance, process, token, executor, messageExecutor, evaluator);
+    }
+
+    private void exitSubProcess(
+            WorkflowInstance instance,
+            BpmnProcess process,
+            ExecutionToken token,
+            String subProcessNodeId,
+            WorkflowActionExecutor executor,
+            MessageTaskExecutor messageExecutor,
+            WorkflowConditionEvaluator evaluator
+    ) throws WorkflowException {
+        SubProcessDefinition subProcess = process.subProcesses().get(subProcessNodeId);
+        if (subProcess == null) {
+            instance.fail("Subprocess definition missing: " + subProcessNodeId);
+            return;
+        }
+        List<SequenceFlowDefinition> outgoing = process.outgoingFrom(subProcessNodeId);
+        if (outgoing.isEmpty()) {
+            instance.fail("Subprocess has no outgoing flow: " + subProcessNodeId);
+            return;
+        }
+        instance.moveToken(token, outgoing.getFirst().targetRef());
+        stepToken(instance, process, token, executor, messageExecutor, evaluator);
     }
 
     private static java.util.Optional<ExecutionToken> findWaitingToken(

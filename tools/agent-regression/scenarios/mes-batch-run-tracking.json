@@ -1,0 +1,17 @@
+{
+  "id": "mes-batch-run-tracking",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES batch run phase tracking",
+  "description": "BL-170 batch run paths and phase transitions on mes-platform-production.",
+  "prompt": "Deploy mes-platform-production and verify batch run phase paths via BFF smoke.",
+  "playbook": "AgentDeployPlaybook",
+  "bundle": {
+    "appId": "mes-platform-production",
+    "manifestPath": "examples/mes-platform-production/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+  }
+}

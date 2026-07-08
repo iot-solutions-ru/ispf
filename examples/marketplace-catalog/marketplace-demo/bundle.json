@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "displayName": "Marketplace Demo",
+  "tablePrefix": "",
+  "schemaName": "app_marketplace_demo",
+  "metadata": {
+    "changelog": "Catalog stub bundle for marketplace-demo",
+    "domain": "marketplace-demo"
+  },
+  "operatorUi": {
+    "appId": "marketplace-demo",
+    "title": "Marketplace Demo",
+    "defaultDashboard": "",
+    "dashboards": [],
+    "eventJournalObjectPath": "root.platform"
+  }
+}

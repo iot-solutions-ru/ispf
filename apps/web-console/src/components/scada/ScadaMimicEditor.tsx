@@ -30,6 +30,7 @@ import {
   type DistributeAxis,
   type ResizeHandle,
 } from "../../scada/layoutOps";
+import { directionFromArrowKey, findElementInDirection } from "../../scada/mimicKeyboardNav";
 import { collectBindingPaths, resolveDocumentBindings } from "../../scada/bindingResolver";
 import { ensurePackLoaded, resolvePlacementSymbol } from "../../scada/symbols/registry";
 import { useVariablesBatchQuery } from "../../hooks/useVariablesQuery";
@@ -223,6 +224,23 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
       return next;
     },
     []
+  );
+
+  const handleNavigateSelection = useCallback(
+    (direction: ReturnType<typeof directionFromArrowKey>) => {
+      if (!direction || tool !== "select") return;
+      const anchorId = selectedIds.size > 0 ? [...selectedIds][0] : null;
+      const next = findElementInDirection(
+        documentRef.current.elements,
+        anchorId,
+        direction,
+        documentRef.current.customSymbols
+      );
+      if (!next) return;
+      setSelectedConnectionId(null);
+      setSelectedIds(new Set([next.id]));
+    },
+    [selectedIds, tool]
   );
 
   const handleNudgeSelected = useCallback(
@@ -624,14 +642,20 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
         }
         return;
       }
-      if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        if (selectedIds.size === 0 || tool !== "select") return;
+      const navDirection = directionFromArrowKey(e.key);
+      if (navDirection) {
+        if (tool !== "select") return;
         e.preventDefault();
-        const base = document.grid?.snap ? (document.grid?.size ?? 1) : 1;
-        const step = e.shiftKey ? base * 10 : base;
-        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
-        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-        handleNudgeSelected(dx, dy);
+        if (e.shiftKey) {
+          if (selectedIds.size === 0) return;
+          const base = document.grid?.snap ? (document.grid?.size ?? 1) : 1;
+          const step = e.ctrlKey || e.metaKey ? base * 10 : base;
+          const dx = navDirection === "left" ? -step : navDirection === "right" ? step : 0;
+          const dy = navDirection === "up" ? -step : navDirection === "down" ? step : 0;
+          handleNudgeSelected(dx, dy);
+        } else {
+          handleNavigateSelection(navDirection);
+        }
         return;
       }
       if (e.key === "v" || e.key === "V") setTool("select");
@@ -643,6 +667,7 @@ export default function ScadaMimicEditor({ diagramJson, onSave, onClose }: Scada
   }, [
     document,
     handleDeleteSelected,
+    handleNavigateSelection,
     handleNudgeSelected,
     canRedo,
     canUndo,

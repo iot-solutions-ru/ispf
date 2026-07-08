@@ -9,6 +9,7 @@ public final class DriverDdk {
     public static final String TEMPLATE_DRIVER_ID = "acme-widget";
     public static final String SIMPLE_COUNTER_DRIVER_ID = "simple-counter";
     public static final String JSON_POLLER_DRIVER_ID = "json-poller";
+    public static final String MODBUS_SIMULATOR_DRIVER_ID = "modbus-simulator";
 
     private DriverDdk() {
     }

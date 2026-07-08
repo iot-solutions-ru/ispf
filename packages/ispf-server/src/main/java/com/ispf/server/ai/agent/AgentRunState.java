@@ -27,6 +27,8 @@ public final class AgentRunState {
     private final AtomicInteger reworkRoundCount = new AtomicInteger();
     private volatile String lastUserMessage = "";
     private volatile String planApprovedBy;
+    /** Stays true for the rest of the agent turn after plan approval (survives {@link #resetPlan()}). */
+    private volatile boolean mutationsUnlockedForTurn;
     private volatile String planDepth = AgentPlanDepth.LITE.name();
 
     public AgentPlanDepth planDepth() {
@@ -119,6 +121,14 @@ public final class AgentRunState {
         return planPhase() == AgentPlanPhase.APPROVED;
     }
 
+    public boolean isMutationsUnlockedForTurn() {
+        return mutationsUnlockedForTurn;
+    }
+
+    public void clearMutationsUnlockedForTurn() {
+        this.mutationsUnlockedForTurn = false;
+    }
+
     public boolean isPlanningActive() {
         AgentPlanPhase phase = planPhase();
         return phase == AgentPlanPhase.PLANNING || phase == AgentPlanPhase.AWAITING_APPROVAL;
@@ -130,6 +140,7 @@ public final class AgentRunState {
 
     public void approvePlan(String approverUsername) {
         this.planPhase = AgentPlanPhase.APPROVED.storageValue();
+        this.mutationsUnlockedForTurn = true;
         if (approverUsername != null && !approverUsername.isBlank()) {
             this.planApprovedBy = approverUsername.trim();
         }
@@ -154,6 +165,7 @@ public final class AgentRunState {
         summary.put("interactionMode", interactionMode);
         summary.put("planPhase", planPhase);
         summary.put("planApproved", isPlanApproved());
+        summary.put("mutationsUnlockedForTurn", mutationsUnlockedForTurn);
         if (planApprovedBy != null && !planApprovedBy.isBlank()) {
             summary.put("planApprovedBy", planApprovedBy);
         }
@@ -240,6 +252,7 @@ public final class AgentRunState {
         }
         map.put("reworkRoundCount", reworkRoundCount.get());
         map.put("planDepth", planDepth);
+        map.put("mutationsUnlockedForTurn", mutationsUnlockedForTurn);
         if (pending != null) {
             map.put("pending", pending.toMap(objectMapper));
         }
@@ -321,6 +334,8 @@ public final class AgentRunState {
         if (depthRaw != null && !String.valueOf(depthRaw).isBlank()) {
             planDepth = String.valueOf(depthRaw).trim();
         }
+        Object mutationsRaw = raw.get("mutationsUnlockedForTurn");
+        mutationsUnlockedForTurn = mutationsRaw instanceof Boolean bool && bool;
     }
 
     /** @deprecated use {@link #snapshot(ObjectMapper)} */

@@ -4,7 +4,7 @@ import { mockAuthConfig, mockAuthenticatedApi, seedAuthSession } from "./fixture
 import { buildStressMimicDocument } from "./fixtures/stressMimic";
 
 const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
-const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 55);
+const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 60);
 const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 500);
 
 async function openOperatorE2e(page: import("@playwright/test").Page) {

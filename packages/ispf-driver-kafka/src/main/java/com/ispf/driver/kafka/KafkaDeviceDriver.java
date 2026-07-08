@@ -22,9 +22,14 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Kafka driver — consume latest message or produce to a topic.
+ * <p>
+ * With {@code eventToVariable=true}, consumed records update per-message-key variables (MQTT-style).
  */
 public class KafkaDeviceDriver implements DeviceDriver {
 
@@ -32,6 +37,12 @@ public class KafkaDeviceDriver implements DeviceDriver {
             .field("value", FieldType.STRING)
             .field("offset", FieldType.LONG)
             .field("partition", FieldType.INTEGER)
+            .build();
+
+    private static final DataSchema INGRESS_SCHEMA = DataSchema.builder("kafkaIngress")
+            .field("topic", FieldType.STRING)
+            .field("key", FieldType.STRING)
+            .field("raw", FieldType.STRING)
             .build();
 
     private static final DriverMetadata METADATA = new DriverMetadata(
@@ -44,7 +55,8 @@ public class KafkaDeviceDriver implements DeviceDriver {
                     "bootstrapServers", "localhost:9092",
                     "topic", "ispf/events",
                     "groupId", "ispf-driver",
-                    "timeoutMs", "5000"
+                    "timeoutMs", "5000",
+                    "eventToVariable", "false"
             )
     );
 
@@ -53,10 +65,15 @@ public class KafkaDeviceDriver implements DeviceDriver {
     private String topic = "ispf/events";
     private String groupId = "ispf-driver";
     private long timeoutMs = 5000;
+    private String ingressVariable;
+    private boolean eventToVariable;
     private KafkaConsumer<String, String> consumer;
     private KafkaProducer<String, String> producer;
     private final Map<String, KafkaPoint> points = new ConcurrentHashMap<>();
+    private final Map<String, String> keyVariableNames = new ConcurrentHashMap<>();
     private volatile boolean connected;
+    private ExecutorService consumerExecutor;
+    private final AtomicBoolean consumerRunning = new AtomicBoolean();
 
     @Override
     public DriverMetadata metadata() {
@@ -78,6 +95,8 @@ public class KafkaDeviceDriver implements DeviceDriver {
             case "topic" -> topic = value.trim();
             case "groupId" -> groupId = value.trim();
             case "timeoutMs" -> timeoutMs = Long.parseLong(value.trim());
+            case "ingressVariable" -> ingressVariable = value.trim();
+            case "eventToVariable" -> eventToVariable = Boolean.parseBoolean(value.trim());
             default -> { }
         }
     }
@@ -92,7 +111,7 @@ public class KafkaDeviceDriver implements DeviceDriver {
                     groupId == null || groupId.isBlank() ? "ispf-" + UUID.randomUUID() : groupId);
             consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
             consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-            consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+            consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
             consumerProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
             consumer = new KafkaConsumer<>(consumerProps);
             consumer.subscribe(Collections.singletonList(topic));
@@ -104,6 +123,9 @@ public class KafkaDeviceDriver implements DeviceDriver {
             producer = new KafkaProducer<>(producerProps);
 
             connected = true;
+            if (eventToVariable) {
+                startConsumerLoop();
+            }
             driverObject.log(DriverLogLevel.INFO,
                     "Kafka ready (bootstrap=" + bootstrapServers + ", topic=" + topic + ")");
         } catch (Exception e) {
@@ -118,6 +140,7 @@ public class KafkaDeviceDriver implements DeviceDriver {
     }
 
     private void releaseResources() {
+        stopConsumerLoop();
         connected = false;
         if (consumer != null) {
             consumer.close();
@@ -127,6 +150,110 @@ public class KafkaDeviceDriver implements DeviceDriver {
             producer.close();
             producer = null;
         }
+    }
+
+    private void startConsumerLoop() {
+        if (!consumerRunning.compareAndSet(false, true)) {
+            return;
+        }
+        consumerExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "kafka-driver-consumer");
+            thread.setDaemon(true);
+            return thread;
+        });
+        consumerExecutor.submit(this::consumeLoop);
+    }
+
+    private void stopConsumerLoop() {
+        consumerRunning.set(false);
+        if (consumerExecutor != null) {
+            consumerExecutor.shutdownNow();
+            consumerExecutor = null;
+        }
+    }
+
+    private void consumeLoop() {
+        while (consumerRunning.get() && connected && consumer != null) {
+            try {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                for (ConsumerRecord<String, String> record : records) {
+                    handleRecord(record);
+                }
+            } catch (Exception e) {
+                if (consumerRunning.get()) {
+                    driverObject.log(DriverLogLevel.WARNING, "Kafka consume loop: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    private void handleRecord(ConsumerRecord<String, String> record) {
+        String variableName = resolveVariableForRecord(record);
+        String payload = record.value() == null ? "" : record.value();
+        if (usesIngressSchema(variableName)) {
+            driverObject.updateVariable(variableName, DataRecord.single(
+                    INGRESS_SCHEMA,
+                    Map.of(
+                            "topic", topic,
+                            "key", record.key() == null ? "" : record.key(),
+                            "raw", payload
+                    )
+            ));
+            return;
+        }
+        driverObject.updateVariable(variableName, DataRecord.single(
+                MESSAGE_SCHEMA,
+                Map.of(
+                        "value", payload,
+                        "offset", record.offset(),
+                        "partition", record.partition()
+                )
+        ));
+    }
+
+    private String resolveVariableForRecord(ConsumerRecord<String, String> record) {
+        if (ingressVariable != null && !ingressVariable.isBlank()) {
+            return ingressVariable;
+        }
+        if (eventToVariable) {
+            String key = record.key();
+            if (key != null && !key.isBlank()) {
+                return keyToVariableName(key);
+            }
+            return "partition_" + record.partition();
+        }
+        for (Map.Entry<String, KafkaPoint> entry : points.entrySet()) {
+            if (entry.getValue().mode() == KafkaPoint.KafkaMode.CONSUME) {
+                return entry.getKey();
+            }
+        }
+        return "lastMessage";
+    }
+
+    private boolean usesIngressSchema(String variableName) {
+        if (ingressVariable != null && !ingressVariable.isBlank()) {
+            return ingressVariable.equals(variableName);
+        }
+        return eventToVariable;
+    }
+
+    private String keyToVariableName(String key) {
+        return keyVariableNames.computeIfAbsent(key, this::sanitizeKeyToVariableName);
+    }
+
+    private String sanitizeKeyToVariableName(String key) {
+        String sanitized = key.replaceAll("[^a-zA-Z0-9]+", "_").replaceAll("_+", "_");
+        sanitized = sanitized.replaceAll("^_|_$", "");
+        if (sanitized.isBlank()) {
+            sanitized = "key";
+        }
+        if (Character.isDigit(sanitized.charAt(0))) {
+            sanitized = "v_" + sanitized;
+        }
+        if (sanitized.length() > 64) {
+            sanitized = sanitized.substring(0, 64);
+        }
+        return sanitized;
     }
 
     @Override
@@ -143,7 +270,12 @@ public class KafkaDeviceDriver implements DeviceDriver {
         for (Map.Entry<String, String> entry : pointMappings.entrySet()) {
             KafkaPoint point = KafkaPoint.parse(entry.getValue());
             points.put(entry.getKey(), point);
-            driverObject.updateVariable(entry.getKey(), execute(point));
+        }
+        if (eventToVariable) {
+            return;
+        }
+        for (Map.Entry<String, KafkaPoint> entry : points.entrySet()) {
+            driverObject.updateVariable(entry.getKey(), execute(entry.getValue()));
         }
     }
 
