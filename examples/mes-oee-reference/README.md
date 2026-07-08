@@ -31,7 +31,7 @@ curl -X POST http://localhost:8080/api/v1/bff/invoke \
   -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_oee_listShifts","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 ```
 
-Walkthrough: [docs/REFERENCE_MES_OEE_WALKTHROUGH.md](../../docs/REFERENCE_MES_OEE_WALKTHROUGH.md).
+Walkthrough: [docs/en/reference-mes-oee-walkthrough.md](../../docs/en/reference-mes-oee-walkthrough.md).
 
 ## CI
 

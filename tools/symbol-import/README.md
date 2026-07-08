@@ -12,7 +12,7 @@ cd tools/symbol-pack-isa && npm install && npm run build
 ```
 
 See [tools/symbol-pack-isa/README.md](../symbol-pack-isa/README.md) and
-[docs/PID_SYMBOLS_LEGAL.md](../../docs/PID_SYMBOLS_LEGAL.md).
+[docs/en/pid-symbols-legal.md](../../docs/en/pid-symbols-legal.md).
 
 ## Legacy scripts
 

@@ -1,36 +1,59 @@
-# ISPF Marketing Landing
+# ISPF Marketing Landing (multi-locale)
 
-Исходник для редактирования — **`index.html`** со ссылками на PNG в `assets/screenshots/`.
+Исходники: **`index.html`** (RU) + **`en/`**, **`de/`**, **`zh/`** (генерируются).
+
+## Языки
+
+| URL | Язык |
+|-----|------|
+| `/` | Русский |
+| `/en/` | English |
+| `/de/` | Deutsch |
+| `/zh/` | 中文 |
+
+Переключатель в шапке — обычные ссылки, без JS-i18n.
 
 ## Редактирование
 
-1. Меняйте текст и разметку в `index.html`.
-2. Картинки кладите в `assets/screenshots/` (имена как в `src="assets/screenshots/..."`).
-
-## Сборка standalone (один файл для рассылки)
+1. Правьте **`index.html`** (русский мастер).
+2. Добавьте/обновите строки в **`locales/translations.json`** (`en`, `de`, `zh` — одинаковые ключи, русский текст → перевод).
+3. Сгенерируйте страницы и соберите prod:
 
 ```powershell
 cd marketing/landing
-python build.py
+python merge_translations.py   # locales/*.json ← translations.json
+python generate_locales.py     # en/de/zh/index.html из index.html
+python build.py                # dist/ с inline assets + theme.js
 ```
 
-Результат: **`dist/landing.html`** (~2 MB) — все скриншоты встроены как base64, можно открыть или отправить одним файлом.
+## Структура
 
-## Просмотр исходника локально
+```
+marketing/landing/
+  index.html          # RU
+  en/index.html
+  de/index.html
+  zh/index.html
+  theme.js            # только светлая/тёмная тема
+  locales/
+    translations.json # все переводы (мастер)
+    en.json de.json zh.json
+  generate_locales.py
+  build.py
+  dist/               # output для VPS
+```
 
-Откройте `index.html` в браузере из папки `marketing/landing` (относительные пути к assets должны резолвиться).
+## Публикация
 
-## Скриншоты
+| Канал | URL |
+|-------|-----|
+| **VPS (prod)** | https://www.iot-solutions.ru |
+| GitHub Pages | https://michaael.github.io/IoT-Solution-Site/ |
 
-| Файл | Назначение |
-|------|------------|
-| `hero-dashboard.png` | Hero · SNMP SCADA |
-| `operator-hmi.png` | Мини-ТЭЦ · operator HMI |
-| `scada-mimic-editor.png` | Редактор мнемосхем · pipeline SCADA (РД-029) |
-| `explorer-object-tree.png` | Object tree |
-| `dashboard-builder.png` | HMI builder |
-| `bpmn-workflow.png` | BPMN / MES |
-| `alert-automation.png` | Alert rules |
-| `application-deploy.png` | MES bundle |
-| `federation.png` | Federation |
-| `ai-agent.png` | Operator AI knowledge base |
+```powershell
+# синхронизировать landing/ в IoT-Solution-Site, затем:
+cd IoT-Solution-Site
+.\deploy\vps-deploy-direct.ps1
+```
+
+Старый **`i18n.js`** больше не используется на prod.

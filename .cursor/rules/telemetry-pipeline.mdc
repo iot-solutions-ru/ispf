@@ -4,7 +4,7 @@
 
 ## MQTT gateway (`mqtt-gateway-v1`, fixture)
 
-Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/decisions/0018-fixture-models-and-cel-applicability.md](../../docs/decisions/0018-fixture-models-and-cel-applicability.md).
+Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/en/decisions/0018-fixture-models-and-cel-applicability.md](../../docs/en/decisions/0018-fixture-models-and-cel-applicability.md).
 
 - One MQTT connection; `ingressVariable=lastIngress`, `ingressTopicLanes=true`
 - Hot path: `MqttGatewayIngressDispatchService` → `dispatchTelemetry` → child `temperature.value`
@@ -20,7 +20,7 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 
 - `activators.periodicMs > 0` → JDBC index `platform_binding_periodic_rules`
 - `BindingPeriodicScheduler` — один wake на ближайший `next_run_at`, без секундного обхода дерева
-- См. [docs/BINDINGS.md](../../docs/BINDINGS.md)
+- См. [docs/en/bindings.md](../../docs/en/bindings.md)
 
 ## Thread pools (do not multiply blindly)
 
@@ -37,7 +37,7 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 - Cluster fan-out: `GET /api/v1/platform/cluster/diagnostics`
 - Metrics probe (runtime only): `PUT /api/v1/platform/diagnostics/metrics-probe` → `root.platform.devices.platform-metrics-probe`
 - Boot env `ISPF_PLATFORM_METRICS_PROBE_ENABLED` **не** стартует scheduler — только UI/API toggle
-- См. [docs/OBSERVABILITY.md](../../docs/OBSERVABILITY.md), [docs/CLUSTER.md](../../docs/CLUSTER.md)
+- См. [docs/en/observability.md](../../docs/en/observability.md), [docs/en/cluster.md](../../docs/en/cluster.md)
 
 ## Baselines (gateway, 4 devices, ~2k msg/s)
 
@@ -49,11 +49,11 @@ Fixture RELATIVE-модель (`ispf.bootstrap.fixtures-enabled`). См. [docs/d
 
 ## Docs
 
-- [docs/LOAD_TESTING.md](docs/LOAD_TESTING.md)
-- [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md)
-- [docs/CLUSTER.md](docs/CLUSTER.md)
-- [docs/decisions/0017-telemetry-ingest-pipeline.md](docs/decisions/0017-telemetry-ingest-pipeline.md)
-- [docs/VARIABLE_HISTORY.md](docs/VARIABLE_HISTORY.md)
+- [docs/en/load-testing.md](docs/en/load-testing.md)
+- [docs/en/observability.md](docs/en/observability.md)
+- [docs/en/cluster.md](docs/en/cluster.md)
+- [docs/en/decisions/0017-telemetry-ingest-pipeline.md](docs/en/decisions/0017-telemetry-ingest-pipeline.md)
+- [docs/en/variable-history.md](docs/en/variable-history.md)
 
 ## Agent context
 

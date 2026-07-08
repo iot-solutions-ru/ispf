@@ -6,4 +6,4 @@ Incremental scripts V1–V70 were squashed (2026-07-07). There is **no Flyway up
 
 New install: empty database → Flyway applies `V1__baseline.sql` → import solution bundles for configuration.
 
-See [ADR-0037](../../../../../../../../docs/decisions/0037-relational-core-portability.md).
+See [ADR-0037](../../../../../../../../docs/en/decisions/0037-relational-core-portability.md).

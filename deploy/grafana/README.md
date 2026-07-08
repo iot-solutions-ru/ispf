@@ -1,6 +1,6 @@
 # Grafana: ISPF Automation Pipeline
 
-Dashboard **`ISPF Automation Pipeline`** (`uid: ispf-automation-pipeline`) — все Micrometer-метрики automation pipeline из [OBSERVABILITY.md](../../docs/OBSERVABILITY.md).
+Dashboard **`ISPF Automation Pipeline`** (`uid: ispf-automation-pipeline`) — все Micrometer-метрики automation pipeline из [OBSERVABILITY.md](../../docs/en/observability.md).
 
 ## Метрики на дашборде
 

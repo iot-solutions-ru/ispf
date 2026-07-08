@@ -54,4 +54,4 @@ GET  /api/v1/applications/demo/operator-manifest
 2. Вкладки: **Готовые позиции**, **Сводка по статусам**, **По категориям**.
 3. Роль в селекторе: `operator` или `admin` (заголовок `X-ISPF-Role` для local).
 
-См. [docs/REPORTS.md](../docs/REPORTS.md).
+См. [docs/en/reports.md](../docs/en/reports.md).

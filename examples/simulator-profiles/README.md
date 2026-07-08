@@ -13,4 +13,4 @@ Content-Type: application/json
 
 After deploy, configure drivers on created devices (`sim-meter-01`, `sim-weighbridge-01`) via Web Console **Driver** tab or `PUT /api/v1/drivers/runtime/configure` with `driverId: virtual` and `profile` in configuration.
 
-See [docs/DRIVERS.md](../../docs/DRIVERS.md#virtual-ispf-driver-virtual).
+See [docs/en/drivers.md](../../docs/en/drivers.md#virtual-ispf-driver-virtual).

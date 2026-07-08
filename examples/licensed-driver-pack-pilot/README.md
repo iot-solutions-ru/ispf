@@ -28,7 +28,7 @@ export ISPF_LICENSE_PUBLIC_KEY_PEM="$(cat /opt/ispf/license/public.pem)"
 
 1. `GET /api/v1/platform/installation-id` on the target host.
 2. `sha256sum pilot-licensed-pack.jar` → `jarSha256`.
-3. Sign canonical JSON (`packId`, `minPlatformVersion`, `installationId`, `jarSha256`, `expiresAt`) with vendor private key — see [LICENSED_DRIVER_PACKS.md](../../docs/LICENSED_DRIVER_PACKS.md) and `tools/license-builder/`.
+3. Sign canonical JSON (`packId`, `minPlatformVersion`, `installationId`, `jarSha256`, `expiresAt`) with vendor private key — see [LICENSED_DRIVER_PACKS.md](../../docs/en/licensed-driver-packs.md) and `tools/license-builder/`.
 
 ## 4. Manifest
 
@@ -45,5 +45,5 @@ Expect `pilot-licensed` in the catalog with maturity from the licensed registry.
 
 ## Related
 
-- [docs/LICENSED_DRIVER_PACKS.md](../../docs/LICENSED_DRIVER_PACKS.md)
-- [docs/COMMERCIAL_LICENSING.md](../../docs/COMMERCIAL_LICENSING.md)
+- [docs/en/licensed-driver-packs.md](../../docs/en/licensed-driver-packs.md)
+- [docs/en/commercial-licensing.md](../../docs/en/commercial-licensing.md)

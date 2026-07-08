@@ -30,4 +30,4 @@ POST /api/v1/bff/invoke
 
 Ожидается `error_code=OK` и 2 строки (`A-01`, `B-02`).
 
-См. [docs/ROADMAP.md](../docs/ROADMAP.md).
+См. [docs/en/roadmap.md](../docs/en/roadmap.md).

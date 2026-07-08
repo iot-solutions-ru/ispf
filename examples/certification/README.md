@@ -25,7 +25,7 @@ Stub multiple-choice banks for ISPF certification tracks. Full LMS integration a
       "prompt": "...",
       "options": ["...", "..."],
       "correctIndex": 0,
-      "reference": "docs/OBJECT_MODEL.md"
+      "reference": "docs/en/object-model.md"
     }
   ]
 }
@@ -33,8 +33,8 @@ Stub multiple-choice banks for ISPF certification tracks. Full LMS integration a
 
 ## Usage
 
-- Study alignment: [docs/CERTIFICATION.md](../../docs/CERTIFICATION.md)
-- Partner tiers: [docs/PARTNER_PROGRAM.md](../../docs/PARTNER_PROGRAM.md)
+- Study alignment: [docs/en/certification.md](../../docs/en/certification.md)
+- Partner tiers: [docs/en/partner-program.md](../../docs/en/partner-program.md)
 - Count questions: `jq '.questions | length' solution-developer-l1.json`
 
 Practical lab exams remain separate (instructor-verified); these JSON banks cover knowledge checks only.

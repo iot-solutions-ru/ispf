@@ -13,4 +13,4 @@ Reference layout for **agent observability v2** — per-tool latency, error rate
 2. Deploy platform script functions from `bff-functions.example.json` (or wire widgets to existing admin BFFs).
 3. Open admin console → dashboard **AI Ops** (admin role required for metrics API).
 
-See [docs/AI_AGENT.md](../docs/AI_AGENT.md) § AI tool metrics dashboard widget and [ADR-0034](../docs/decisions/0034-agent-observability-and-session-knowledge.md).
+See [docs/en/ai-agent.md](../docs/en/ai-agent.md) § AI tool metrics dashboard widget and [ADR-0034](../docs/en/decisions/0034-agent-observability-and-session-knowledge.md).

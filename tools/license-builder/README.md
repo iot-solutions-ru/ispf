@@ -1,6 +1,6 @@
 # License Builder (ISPF commercial bundle)
 
-Инструменты поставщика для RSA-лицензий commercial bundle. Спецификация: [docs/decisions/0003-commercial-bundle-licensing.md](../../docs/decisions/0003-commercial-bundle-licensing.md).
+Инструменты поставщика для RSA-лицензий commercial bundle. Спецификация: [docs/en/decisions/0003-commercial-bundle-licensing.md](../../docs/en/decisions/0003-commercial-bundle-licensing.md).
 
 ## Требования
 

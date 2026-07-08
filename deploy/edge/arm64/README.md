@@ -4,7 +4,7 @@ Lean **linux/arm64** compose profile for Raspberry Pi 4+ (4 GB RAM), Ampere, or 
 
 Canonical compose: [`docker-compose.yml`](docker-compose.yml). Legacy alias: [`../../docker-compose.edge-arm.yml`](../../docker-compose.edge-arm.yml).
 
-See also [DEMOSTANDS.md](../../../docs/DEMOSTANDS.md) — edge column and [FEDERATION.md](../../../docs/FEDERATION.md) for hub pairing.
+See also [DEMOSTANDS.md](../../../docs/en/demostands.md) — edge column and [FEDERATION.md](../../../docs/en/federation.md) for hub pairing.
 
 ---
 
@@ -63,7 +63,7 @@ docker compose -f deploy/edge/arm64/docker-compose.yml up -d
 | `ISPF_REPLICA_ID` | `edge-1` | Peer id on hub |
 | `ISPF_BOOTSTRAP_FIXTURES_ENABLED` | `false` | Prod policy — no demo fixtures |
 
-Register the edge peer on the central hub ([FEDERATION.md](../../../docs/FEDERATION.md)), then verify `GET /api/v1/federation/peers` from hub shows `edge-1` healthy.
+Register the edge peer on the central hub ([FEDERATION.md](../../../docs/en/federation.md)), then verify `GET /api/v1/federation/peers` from hub shows `edge-1` healthy.
 
 ---
 
@@ -76,7 +76,7 @@ Register the edge peer on the central hub ([FEDERATION.md](../../../docs/FEDERAT
 | ispf-server | 512 MB | JVM `-Xmx384m` |
 | nginx | 64 MB | Static UI + `/api` proxy |
 
-**Do not enable on edge:** cluster, elastic ingress workers, ClickHouse, demo fixtures. See [DEMOSTANDS.md](../../../docs/DEMOSTANDS.md) edge tuning table.
+**Do not enable on edge:** cluster, elastic ingress workers, ClickHouse, demo fixtures. See [DEMOSTANDS.md](../../../docs/en/demostands.md) edge tuning table.
 
 ---
 
@@ -109,5 +109,5 @@ For Kubernetes arm64 nodes, set `edge.enabled=true` and `edge.arm64=true` in [`d
 
 ## Related
 
-- [DEPLOYMENT.md](../../../docs/DEPLOYMENT.md) — production deploy paths
-- [ROADMAP_PHASE25.md](../../../docs/ROADMAP_PHASE25.md) — BL-187
+- [DEPLOYMENT.md](../../../docs/en/deployment.md) — production deploy paths
+- [ROADMAP_PHASE25.md](../../../docs/en/roadmap-phase-25.md) — BL-187

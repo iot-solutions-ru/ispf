@@ -21,4 +21,4 @@
 
 Прикладные bundle разворачиваются через `POST /api/v1/applications/{appId}/deploy` из репозитория проекта.
 
-См. [docs/APPLICATIONS.md](../docs/APPLICATIONS.md), [docs/REFERENCE_MES_OGP_EVENTS_WALKTHROUGH.md](../docs/REFERENCE_MES_OGP_EVENTS_WALKTHROUGH.md) и [docs/PLUGINS.md](../docs/PLUGINS.md).
+См. [docs/en/applications.md](../docs/en/applications.md), [docs/en/reference-mes-ogp-events-walkthrough.md](../docs/en/reference-mes-ogp-events-walkthrough.md) и [docs/en/plugins.md](../docs/en/plugins.md).

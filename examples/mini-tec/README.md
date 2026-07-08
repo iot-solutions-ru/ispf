@@ -38,7 +38,7 @@
 | Отчёты | `GET /api/v1/applications/mini-tec/reports/tec-daily-energy/export?format=csv` |
 | WebSocket | `WS /ws/objects` (live updates) |
 
-OPC-UA: для полевого ГПУ можно заменить virtual driver на `opcua` profile (см. [docs/DRIVERS.md](../../docs/DRIVERS.md)).
+OPC-UA: для полевого ГПУ можно заменить virtual driver на `opcua` profile (см. [docs/en/drivers.md](../../docs/en/drivers.md)).
 
 ## Дерево объектов
 
@@ -94,4 +94,4 @@ bash /opt/ispf/bin/export-minitec-fixtures.sh /tmp/minitec-fixtures-export
 
 `mini-tec-gpu-v1`, `mini-tec-grpb-v1`, `mini-tec-rumb-v1`, `mini-tec-dgu-v1`, `mini-tec-load-module-v1`, `mini-tec-station-hub-v1` — см. `MiniTecBlueprintBootstrap.java`.
 
-См. также [docs/REFERENCE_MINI_TEC_WALKTHROUGH.md](../../docs/REFERENCE_MINI_TEC_WALKTHROUGH.md).
+См. также [docs/en/reference-mini-tec-walkthrough.md](../../docs/en/reference-mini-tec-walkthrough.md).

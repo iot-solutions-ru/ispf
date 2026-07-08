@@ -411,8 +411,8 @@ def main() -> None:
         </p>""",
     )
     html = html.replace(
-        'href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/AI_DEVELOPMENT.md"',
-        'href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/PRODUCT.md"',
+        'href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/en/ai-development.md"',
+        'href="https://github.com/Michaael/IoT-Solutions-Platform/blob/main/docs/en/product.md"',
     )
     html = html.replace(">Документация ИИ<", ">Документация<")
     html = html.replace(

@@ -143,7 +143,7 @@ ${DIGEST_LINES}
   "licensing": {
     "notes": "Set ISPF_LICENSE_PUBLIC_KEY_PEM, ISPF_LICENSE_ENFORCE, ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES on target host before apply.",
     "signTool": "tools/license-builder/sign-bundle.py",
-    "docs": "docs/AIR_GAP_DEPLOYMENT.md"
+    "docs": "docs/en/air-gap-deployment.md"
   }
 }
 EOF

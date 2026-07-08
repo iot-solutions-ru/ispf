@@ -71,4 +71,4 @@ Operator app: `appId=sheet-demo`, дашборды:
 2. При `variable`: F5 — данные остаются; в Explorer → `sheetValues` видны строки `{cell, value}`.
 3. При `session`: данные сохраняются в sessionStorage до закрытия вкладки.
 
-Подробнее: [docs/SPREADSHEET_WIDGET.md](../../docs/SPREADSHEET_WIDGET.md).
+Подробнее: [docs/en/spreadsheet-widget.md](../../docs/en/spreadsheet-widget.md).

@@ -10,12 +10,12 @@ rights described in [CLA.md](CLA.md) (dual licensing / commercial relicensing).
 
 1. Sign or accept [CLA.md](CLA.md) (Contributor License Agreement).
 2. Do not commit industry-specific Java, customer bundles, or secrets.
-3. See [docs/PLUGINS.md](docs/PLUGINS.md) and [docs/LICENSE.md](docs/LICENSE.md) for boundaries.
+3. See [docs/en/plugins.md](docs/en/plugins.md) and [docs/en/license.md](docs/en/license.md) for boundaries.
 
 ## Driver changes
 
 Each device driver lives in `packages/ispf-driver-*` and ships as a **driver pack** (see
-[docs/LICENSED_DRIVER_PACKS.md](docs/LICENSED_DRIVER_PACKS.md)). After changing a driver:
+[docs/en/licensed-driver-packs.md](docs/en/licensed-driver-packs.md)). After changing a driver:
 
 ```powershell
 .\gradlew :packages:ispf-driver-<name>:assembleDriverPack

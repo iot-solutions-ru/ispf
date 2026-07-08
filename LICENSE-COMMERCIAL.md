@@ -39,7 +39,7 @@ Signing payload fields (sorted JSON): `tier`, `minPlatformVersion`, `installatio
 
 Commercial **application bundles** (objects, dashboards, widgets, functions) are licensed
 **separately** from the platform. Deploy-time RSA license in bundle manifest — see
-[COMMERCIAL_LICENSING.md](docs/COMMERCIAL_LICENSING.md).
+[COMMERCIAL_LICENSING.md](docs/en/commercial-licensing.md).
 
 Declarative bundle content is **not** platform source code; bundle EULA controls redistribution
 of the bundle artifact.
@@ -47,7 +47,7 @@ of the bundle artifact.
 ### Post-deploy configuration and IP (balanced policy)
 
 After a licensed bundle is deployed, its configuration lives in the customer’s **object tree**
-(dashboards, mimics, functions, bindings, etc.). The platform’s RSA deploy license ([ADR-0036](docs/decisions/0036-bundle-ip-balanced-protection.md))
+(dashboards, mimics, functions, bindings, etc.). The platform’s RSA deploy license ([ADR-0036](docs/en/decisions/0036-bundle-ip-balanced-protection.md))
 binds the **signed manifest artifact** to a specific `installationId`; it does **not** encrypt or
 lock down individual tree objects on the customer’s server.
 
@@ -65,7 +65,7 @@ relies on deploy licensing, contract terms, and ongoing updates/support, not DRM
 
 ## Related
 
-- [LICENSE.md](docs/LICENSE.md)
-- [COMMERCIAL_LICENSING.md](docs/COMMERCIAL_LICENSING.md)
-- [LICENSED_DRIVER_PACKS.md](docs/LICENSED_DRIVER_PACKS.md)
-- [ADR-0036 bundle IP policy](docs/decisions/0036-bundle-ip-balanced-protection.md)
+- [LICENSE.md](docs/en/license.md)
+- [COMMERCIAL_LICENSING.md](docs/en/commercial-licensing.md)
+- [LICENSED_DRIVER_PACKS.md](docs/en/licensed-driver-packs.md)
+- [ADR-0036 bundle IP policy](docs/en/decisions/0036-bundle-ip-balanced-protection.md)

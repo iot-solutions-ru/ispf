@@ -22,7 +22,7 @@ curl -X POST http://localhost:8080/api/v1/bff/invoke \
   -d '{"objectPath":"root.platform.devices.demo-sensor-01","functionName":"mes_listOrders","input":{"schema":{"name":"in","fields":[]},"rows":[{}]}}'
 ```
 
-Пошаговый walkthrough: [docs/REFERENCE_MES_WALKTHROUGH.md](../../docs/REFERENCE_MES_WALKTHROUGH.md).
+Пошаговый walkthrough: [docs/en/reference-mes-walkthrough.md](../../docs/en/reference-mes-walkthrough.md).
 
 ## CI
 

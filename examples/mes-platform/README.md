@@ -15,7 +15,7 @@ Production walkthrough: [mes-platform-production](../mes-platform-production/).
 ## Prerequisites
 
 - Server started with `MesPlatformBootstrap` (default on every boot) — MES catalog folders under `root.platform.mes.*`
-- See [REFERENCE_MES_PLATFORM.md](../../docs/REFERENCE_MES_PLATFORM.md)
+- See [REFERENCE_MES_PLATFORM.md](../../docs/en/reference-mes-platform.md)
 
 ## Deploy
 
@@ -69,4 +69,4 @@ curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform/deploy \
 ## Related
 
 - [mes-oee-reference](../mes-oee-reference/) — BL-121 minimal OEE reference
-- [ISA95_CATALOG.md](../../docs/ISA95_CATALOG.md)
+- [ISA95_CATALOG.md](../../docs/en/isa95-catalog.md)

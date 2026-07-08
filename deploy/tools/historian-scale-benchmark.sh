@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # BL-162: historian petabyte-path scale benchmark with local REST smoke + 1M aggregate SLA gate.
-# References docs/CLICKHOUSE_PROD_PLAYBOOK.md for prod cutover steps.
+# References docs/en/clickhouse-prod-playbook.md for prod cutover steps.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-PLAYBOOK="${ROOT}/docs/CLICKHOUSE_PROD_PLAYBOOK.md"
+PLAYBOOK="${ROOT}/docs/en/clickhouse-prod-playbook.md"
 REPORT_DIR="${ISPF_HISTORIAN_BENCH_DIR:-$ROOT/build/historian-scale}"
 mkdir -p "$REPORT_DIR"
 REPORT_FILE="$REPORT_DIR/scale-benchmark.md"

@@ -1,209 +1,130 @@
 ﻿# IoT Solutions Platform Framework (ISPF)
 
-Современная IoT/SCADA платформа на cloud-native стеке 2026 года.
+Modern IoT/SCADA platform on a cloud-native 2026 stack.
 
-**Статус:** активная разработка, `main` — рабочая ветка с полным циклом admin + operator HMI, application platform (REQ-PF) и production-ready local/dev профилями.
+**Status:** active development on `main` — full admin + operator HMI, application platform (REQ-PF), production-ready local/dev profiles.
 
-## Концепция
+## Core idea
 
-**Основной принцип:** бизнес-логика решения живёт **на платформе** — в моделях, переменных, событиях, функциях и workflow дерева объектов. Ядро — generic-движки; решение — declarative-конфигурация (в т.ч. через bundle deploy). См. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#основной-принцип-бизнес-логика-в-механизмах-платформы).
+**Business logic lives on the platform** — in models, variables, events, functions, and workflows on the object tree. The core provides generic engines; solutions are declarative configuration (including bundle deploy). See [architecture](docs/en/architecture.md).
 
-ISPF строится вокруг **иерархического дерева объектов** с типизированными переменными, событиями, функциями и вычисляемыми привязками:
+ISPF is built around a **hierarchical object tree** with typed variables, events, functions, and computed bindings:
 
-| Концепция | Реализация |
-|-----------|------------|
-| Дерево объектов | `ObjectTree` / REST API, drag-and-drop порядок соседей |
-| Типизированные данные | `DataRecord` + `DataSchema` |
-| Вычисляемые привязки | Google CEL (`ispf-expression`) |
-| Драйверы устройств | `DeviceDriver` SPI — **58 driverId** (Modbus, OPC UA, SNMP, MQTT, JDBC, …) |
-| HMI | Dashboard builder — 14 типов виджетов, история переменных на графиках |
-| Автоматизация | BPMN workflow, alert rules и correlators **как узлы дерева** |
-| Прикладной слой | Application platform: deploy bundle, функции, отчёты, BFF, scheduler |
-| Хранение | PostgreSQL + TimescaleDB (prod), H2 (local/test); Redis, NATS — опционально |
+| Concept | Implementation |
+| -------- | -------------- |
+| Object tree | `ObjectTree` / REST API, drag-and-drop sibling order |
+| Typed data | `DataRecord` + `DataSchema` |
+| Computed bindings | Google CEL (`ispf-expression`) |
+| Device drivers | `DeviceDriver` SPI — **58 driverId** (Modbus, OPC UA, SNMP, MQTT, JDBC, …) |
+| HMI | Dashboard builder — 14 widget types, variable history on charts |
+| Automation | BPMN workflow, alert rules and correlators as **tree nodes** |
+| Application layer | REQ-PF: bundle deploy, functions, reports, BFF, scheduler |
+| Storage | PostgreSQL + TimescaleDB (prod), H2 (local/test); Redis, NATS optional |
 | UI | Spring Boot 4.0 + Java 25 + React 19 (Vite) |
-| Интеграция | REST + WebSocket |
+| Integration | REST + WebSocket |
 
-## Текущий статус (июнь 2026)
+## Documentation
 
-### Web Console (админ)
+**Start here:**
 
-| Область | Состояние |
-|---------|-----------|
-| **Обозреватель** | Дерево объектов, инспекторы, создание дочерних узлов, **перетаскивание порядка** на одном уровне |
-| **Система** | Вкладка метрик платформы: runtime, БД, драйверы, automation, security |
-| Alert rules / correlators | Папки `root.platform.alert-rules` и `root.platform.correlators`, инспекторы в Explorer |
-| Security | Пользователи и роли в дереве (`root.platform.security`) |
-| Applications | Deploy bundle, функции, отчёты, operator screens — узлы под `root.platform.applications` |
-| Operator Apps | Конфигурация HMI: `root.platform.operator-apps` |
-| Models / Dashboards / Workflows | Редакторы в workspace-вкладках |
+| | |
+| --- | --- |
+| **English (canonical)** | [docs/en/readme.md](docs/en/readme.md) |
+| **Русский** | [docs/ru/readme.md](docs/ru/readme.md) |
+| **Doc hub** | [docs/README.md](docs/README.md) |
 
-### Backend
+**Essential links:**
 
-| Область | Состояние |
-|---------|-----------|
-| Object tree | JPA-персистентность, `sortOrder`, семантические `ObjectType` для системных узлов |
-| Variable historian | Запись samples, export CSV/JSON, агрегации, виджеты с историей |
-| Automation | CEL alert rules → события; correlators COUNT/SEQUENCE → workflow |
-| Workflow | BPMN engine, work queue, user tasks, сигналы |
-| Platform metrics | `GET /api/v1/platform/metrics` (admin) |
-| Application platform | REQ-PF: migrate, deploy, functions, reports, BFF, schedules, SQL bindings |
-| Security / OIDC | Local token auth + Keycloak JWT (resource server), per-object ACL |
-| Federation | Peer registry, catalog sync, proxy read (objects, dashboards, history) |
-| Platform baseline | Java 25, Spring Boot 4.0.7, Jackson 3 (`tools.jackson`) |
+| Topic | English | Русский |
+| ----- | ------- | ------- |
+| Product overview | [product.md](docs/en/product.md) | [product.md](docs/ru/product.md) |
+| Getting started | [getting-started.md](docs/en/getting-started.md) | [getting-started.md](docs/ru/getting-started.md) |
+| Architecture | [architecture.md](docs/en/architecture.md) | [architecture.md](docs/ru/architecture.md) |
+| Operator guide | [operator-guide.md](docs/en/operator-guide.md) | [operator-guide.md](docs/ru/operator-guide.md) |
+| Solution developer | [solution-developer-guide.md](docs/en/solution-developer-guide.md) | [solution-developer-guide.md](docs/ru/solution-developer-guide.md) |
+| REST API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
+| Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
+| Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
+| Roadmap Phase 25+ | [roadmap-phase-25.md](docs/en/roadmap-phase-25.md) | [roadmap-phase-25.md](docs/ru/roadmap-phase-25.md) |
+| ADR index | [decisions/readme.md](docs/en/decisions/readme.md) | [decisions/readme.md](docs/ru/decisions/readme.md) |
+| Glossary | [glossary.md](docs/en/glossary.md) | [glossary.md](docs/ru/glossary.md) |
 
-### Типы системных узлов (вместо `CUSTOM`)
-
-| Путь | Тип |
-|------|-----|
-| `root.platform` | `PLATFORM` |
-| `root.platform.devices` | `DEVICES` |
-| `root.platform.dashboards` | `DASHBOARDS` |
-| `root.platform.workflows` | `WORKFLOWS` |
-| `root.platform.alert-rules` | `ALERT_RULES` |
-| `root.platform.correlators` | `CORRELATORS` |
-| `root.platform.applications` | `APPLICATIONS` |
-| `root.platform.operator-apps` | `OPERATOR_APPS` |
-| `root.platform.security` | `SECURITY` |
-
-Экземпляры: `DEVICE`, `DASHBOARD`, `WORKFLOW`, `ALERT`, `CORRELATOR`, `APPLICATION`, `REPORT`, `FUNCTION`, …
-
-## Документация
-
-**[Обзор продукта → docs/PRODUCT.md](docs/PRODUCT.md)** — возможности, сценарии, роли.
-
-| Раздел | Файл |
-|--------|------|
-| Обзор продукта | [docs/PRODUCT.md](docs/PRODUCT.md) |
-| Руководство оператора | [docs/OPERATOR_GUIDE.md](docs/OPERATOR_GUIDE.md) |
-| Разработчик решений | [docs/SOLUTION_DEVELOPER_GUIDE.md](docs/SOLUTION_DEVELOPER_GUIDE.md) |
-| Public API (solution) | [docs/SOLUTION_DEVELOPER_PUBLIC_API.md](docs/SOLUTION_DEVELOPER_PUBLIC_API.md) |
-| ADR (архитектурные решения) | [docs/decisions/README.md](docs/decisions/README.md) |
-| Roadmap (единый) | [docs/ROADMAP.md](docs/ROADMAP.md) |
-| Commercial bundle licensing | [docs/COMMERCIAL_LICENSING.md](docs/COMMERCIAL_LICENSING.md) |
-| MES reference walkthrough | [docs/REFERENCE_MES_WALKTHROUGH.md](docs/REFERENCE_MES_WALKTHROUGH.md) |
-| Глоссарий | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
-| Быстрый старт | [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) |
-| Архитектура | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Модель объектов | [docs/OBJECT_MODEL.md](docs/OBJECT_MODEL.md) |
-| История переменных | [docs/VARIABLE_HISTORY.md](docs/VARIABLE_HISTORY.md) |
-| REST API | [docs/API.md](docs/API.md) |
-| Драйверы | [docs/DRIVERS.md](docs/DRIVERS.md) |
-| Модели | [docs/BLUEPRINTS.md](docs/BLUEPRINTS.md) |
-| Дашборды | [docs/DASHBOARDS.md](docs/DASHBOARDS.md) |
-| Workflow / BPMN | [docs/WORKFLOWS.md](docs/WORKFLOWS.md) |
-| Приложения (REQ-PF) | [docs/APPLICATIONS.md](docs/APPLICATIONS.md) |
-| Плагины и границы | [docs/PLUGINS.md](docs/PLUGINS.md) |
-| Автоматизация | [docs/AUTOMATION.md](docs/AUTOMATION.md) |
-| Web Console | [docs/WEB_CONSOLE.md](docs/WEB_CONSOLE.md) |
-| Безопасность | [docs/SECURITY.md](docs/SECURITY.md) |
-| Federation | [docs/FEDERATION.md](docs/FEDERATION.md) |
-| Развёртывание | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
-| Тестирование | [docs/TESTING.md](docs/TESTING.md) |
-| Roadmap | [docs/ROADMAP.md](docs/ROADMAP.md) |
-| Эволюция платформы | [docs/PLATFORM_EVOLUTION.md](docs/PLATFORM_EVOLUTION.md) |
-| Лицензия | [LICENSE](LICENSE) (GNU AGPL-3.0, платформа) · [docs/LICENSE.md](docs/LICENSE.md) |
-
-**[Полный индекс → docs/README.md](docs/README.md)**
-
-## Структура монорепозитория
+## Repository layout
 
 ```
 iot-solutions-platform-framework/
 ├── packages/
-│   ├── ispf-core/              # Домен: объекты, DataRecord, ObjectType
-│   ├── ispf-expression/        # CEL-движок
-│   ├── ispf-driver-api/        # SPI драйверов
-│   ├── ispf-driver-*/          # 58 protocol drivers
-│   ├── ispf-plugin-blueprint/      # Models plugin
+│   ├── ispf-core/              # Domain: objects, DataRecord, ObjectType
+│   ├── ispf-expression/        # CEL engine
+│   ├── ispf-driver-api/        # Driver SPI
+│   ├── ispf-driver-*/          # Protocol drivers
+│   ├── ispf-plugin-blueprint/  # Models plugin
 │   ├── ispf-plugin-workflow/   # BPMN engine
 │   └── ispf-server/            # Spring Boot API + JPA + Flyway
-├── apps/web-console/           # React-консоль (Explorer, System, Operator)
-├── examples/                   # demo-app, warehouse-app, mes-reference, lab-training
-├── tools/license-builder/      # RSA keys + sign commercial bundle
-├── docs/                       # Документация (AGPL-3.0, platform docs)
-├── deploy/                     # Mosquitto config
+├── apps/web-console/           # React console (Explorer, System, Operator)
+├── examples/                   # demo-app, mes-reference, lab-training, …
+├── tools/license-builder/      # RSA keys + commercial bundle signing
+├── docs/
+│   ├── en/                     # Canonical English docs
+│   └── ru/                     # Russian docs
+├── deploy/
 └── docker-compose.yml
 ```
 
-## Быстрый старт
+## Quick start
 
 ```bash
-# Инфраструктура (опционально для dev)
+# Infrastructure (optional for dev)
 docker compose up -d
 
-# API (local — без OAuth, H2)
+# API (local — no OAuth, H2)
 ./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
 
 # Web Console
 cd apps/web-console && npm install && npm run dev
 ```
 
-| URL | Назначение |
-|-----|------------|
-| http://localhost:8080/api/v1/info | Версия и capabilities |
+| URL | Purpose |
+| --- | ------- |
+| http://localhost:8080/api/v1/info | Version and capabilities |
 | http://localhost:8080/actuator/health | Health check |
 | http://localhost:5173 | Web Console (admin) |
 | http://localhost:5173?mode=operator | Operator HMI |
 
-Подробнее: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+Details: [docs/en/getting-started.md](docs/en/getting-started.md)
 
-## Демо-объекты
+## Demo objects
 
-| Путь | Назначение |
-|------|------------|
+| Path | Purpose |
+| ---- | ------- |
 | `root.platform.devices.demo-sensor-01` | Virtual sensor + alarm |
-| `root.platform.devices.snmp-localhost` | SNMP agent (Windows/Linux) |
+| `root.platform.devices.snmp-localhost` | SNMP agent |
 | `root.platform.dashboards.demo-sensor` | HMI dashboard |
 | `root.platform.workflows.demo-alarm-handler` | BPMN demo |
 | `root.platform.alert-rules.temperature-threshold-exceeded` | CEL alert rule |
-| `root.platform.correlators.alarm-handler-on-threshold-event` | Event correlator → workflow |
+| `root.platform.correlators.alarm-handler-on-threshold-event` | Correlator → workflow |
 
 ## RBAC
 
-| Профиль | Механизм |
-|---------|----------|
+| Profile | Mechanism |
+| ------- | --------- |
 | `local` | `X-ISPF-Role: admin\|operator` |
 | `dev` | JWT Keycloak, realm `ispf` |
 
-См. [docs/SECURITY.md](docs/SECURITY.md).
+See [security](docs/en/security.md).
 
-## Тесты
+## Tests
 
 ```bash
 ./gradlew test
 ```
 
-## Дорожная карта
+## License
 
-### Готово
+**[GNU Affero General Public License v3.0](LICENSE)** — platform (`ispf-server`, `web-console`, core packages).
 
-- [x] Персистентность объектов (JPA ↔ PostgreSQL/H2)
-- [x] WebSocket live-updates
-- [x] 58 device driver packs (REQ-PF-14, pack-only runtime)
-- [x] Dashboard builder — 14 типов виджетов
-- [x] BPMN editor + workflow engine (gateways, user tasks, parallel)
-- [x] Operator HMI, work queue, event journal
-- [x] Alert rules (CEL) + event correlators **в дереве объектов**
-- [x] RBAC admin/operator, users/roles в object tree
-- [x] Application platform: deploy, functions, reports, BFF, scheduler
-- [x] Variable historian: samples, export, aggregate, dashboard widgets
-- [x] Platform metrics (admin System tab)
-- [x] Object tree: drag-and-drop порядок, семантические типы узлов
-- [x] Документация синхронизирована с object-tree моделью автоматизации
-- [x] CI (GitHub Actions), PF-01c map/buildRecord, models[] в bundle, leader locks, WebSocket auth
-- [x] **Phase 16 (REQ-FW Sprint E–G):** ADR, licensing, MES reference, public API, events catalog, messaging, bundle `requires[]`, **AI Development Layer**
+Commercial Enterprise license: [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md), [commercial-licensing](docs/en/commercial-licensing.md).
 
-### В работе / далее
+Device drivers ship as separate **driver packs**. Application bundles use customer EULA.
 
-- **Sprint G (REQ-FW):** licensed driver JAR packs (FW-50) — done; see [docs/LICENSED_DRIVER_PACKS.md](docs/LICENSED_DRIVER_PACKS.md)
-- **Phase 5** — усиление механизмов object tree (модели, функции, события, workflow, bundle как упаковка дерева)
-
-См. [docs/ROADMAP.md](docs/ROADMAP.md).
-
-## Лицензия
-
-**[GNU Affero General Public License v3.0](LICENSE)** — платформа (`ispf-server`, `web-console`, core packages).  
-Коммерческая лицензия Enterprise — см. [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md), [docs/COMMERCIAL_LICENSING.md](docs/COMMERCIAL_LICENSING.md).  
-Device drivers — отдельные **driver packs** (1 driver = 1 pack = 1 `licenseType`).  
-Application bundles — отдельный EULA заказчика.  
-Подробнее: [docs/LICENSE.md](docs/LICENSE.md), [docs/PLUGINS.md](docs/PLUGINS.md), [NOTICE](NOTICE).
+More: [license](docs/en/license.md), [plugins](docs/en/plugins.md), [NOTICE](NOTICE).

@@ -22,4 +22,4 @@ Reference layout for **historian query SLO observability** — p50/p95 latency v
 
 Defaults bind via `ispf.variable-history.slo` (`VariableHistorySloProperties`). Lab gate: `deploy/tools/historian-scale-benchmark.sh`.
 
-See [docs/VARIABLE_HISTORY.md](../docs/VARIABLE_HISTORY.md) § Query SLO (BL-161) and [docs/HISTORIAN_TIERS.md](../docs/HISTORIAN_TIERS.md).
+See [docs/en/variable-history.md](../docs/en/variable-history.md) § Query SLO (BL-161) and [docs/en/historian-tiers.md](../docs/en/historian-tiers.md).

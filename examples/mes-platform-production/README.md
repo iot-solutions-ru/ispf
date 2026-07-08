@@ -13,7 +13,7 @@ Production-ready certification walkthrough: **OEE → work-order dispatch → qu
 ## Prerequisites
 
 - Server started (`MesPlatformBootstrap` + `MesBlueprintBootstrap` on boot)
-- See [REFERENCE_MES_PLATFORM.md](../../docs/REFERENCE_MES_PLATFORM.md)
+- See [REFERENCE_MES_PLATFORM.md](../../docs/en/reference-mes-platform.md)
 
 ## Deploy
 
@@ -44,4 +44,4 @@ Operator UI: `?mode=operator&app=mes-platform-production`
 ## Related
 
 - [mes-platform](../mes-platform/) — certification skeleton (same BFF contract)
-- [REFERENCE_MES_OEE_WALKTHROUGH.md](../../docs/REFERENCE_MES_OEE_WALKTHROUGH.md)
+- [REFERENCE_MES_OEE_WALKTHROUGH.md](../../docs/en/reference-mes-oee-walkthrough.md)

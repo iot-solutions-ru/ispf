@@ -7,7 +7,7 @@ Copy-paste BPMN and correlator patterns for **alarm → operator ack → timeout
 | `ack-timeout-escalation.bpmn.xml` | User task + **boundary timer** (300 s) → NATS escalation |
 | `recurring-threshold-correlator.json` | COUNT correlator template (3 events / 5 min) |
 
-Walkthrough: [docs/REFERENCE_ESCALATION_TEMPLATES.md](../../docs/REFERENCE_ESCALATION_TEMPLATES.md).
+Walkthrough: [docs/en/reference-escalation-templates.md](../../docs/en/reference-escalation-templates.md).
 
 ## Deploy workflow template
 

@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-DOCS = ROOT / "docs"
+DOCS = ROOT / "docs" / "en"
 EXAMPLES = ROOT / "examples"
 OUT_DIR = ROOT / "ai" / "context" / "generated"
 SERVER_RESOURCE = (
@@ -407,40 +407,40 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
 
 def build_doc_chunks() -> list[dict]:
     slices = [
-        ("application-principles", "Application creation principles P1-P10", "application-principles", DOCS / "APPLICATION_PRINCIPLES.md", 8000),
-        ("agent-knowledge", "Agent application approaches", "agent-knowledge", DOCS / "AGENT_KNOWLEDGE.md", 16000),
-        ("agent-recipes", "Agent recipe catalog index", "agent-recipes", DOCS / "AGENT_RECIPES.md", 24000),
-        ("solution-developer", "Solution developer lifecycle", "solution", DOCS / "SOLUTION_DEVELOPER_GUIDE.md", 9000),
-        ("public-api", "Public API", "all", DOCS / "SOLUTION_DEVELOPER_PUBLIC_API.md", 6000),
-        ("applications", "Applications deploy", "applications", DOCS / "APPLICATIONS.md", 9000),
-        ("platform-logic", "Platform rules dashboard context", "platform-logic", DOCS / "PLATFORM_LOGIC.md", 7000),
-        ("bindings", "CEL bindings", "bindings", DOCS / "BINDINGS.md", 6000),
-        ("object-functions", "Object tree functions", "functions", DOCS / "OBJECT_FUNCTIONS.md", 7000),
-        ("blueprints", "Object blueprints", "blueprints", DOCS / "BLUEPRINTS.md", 6000),
-        ("drivers", "Device drivers", "drivers", DOCS / "DRIVERS.md", 10000),
-        ("workflows", "Workflows BPMN", "workflows", DOCS / "WORKFLOWS.md", 6000),
-        ("automation", "Automation correlators", "automation", DOCS / "AUTOMATION.md", 5000),
-        ("dashboards", "Dashboards widgets", "dashboards", DOCS / "DASHBOARDS.md", 8000),
-        ("scada", "SCADA mimic diagrams", "scada", DOCS / "SCADA.md", 10000),
-        ("scada-mimic", "SCADA diagramJson API", "scada", DOCS / "SCADA_MIMIC.md", 8000),
-        ("widgets", "Widget catalog", "widgets", DOCS / "WIDGETS.md", 12000),
-        ("spreadsheet-widget", "Spreadsheet widget", "widgets", DOCS / "SPREADSHEET_WIDGET.md", 6000),
-        ("operator-guide", "Operator HMI guide", "operator", DOCS / "OPERATOR_GUIDE.md", 6000),
-        ("federation", "Federation peers binds", "federation", DOCS / "FEDERATION.md", 6000),
+        ("application-principles", "Application creation principles P1-P10", "application-principles", DOCS / "application-principles.md", 8000),
+        ("agent-knowledge", "Agent application approaches", "agent-knowledge", DOCS / "agent-knowledge.md", 16000),
+        ("agent-recipes", "Agent recipe catalog index", "agent-recipes", DOCS / "agent-recipes.md", 24000),
+        ("solution-developer", "Solution developer lifecycle", "solution", DOCS / "solution-developer-guide.md", 9000),
+        ("public-api", "Public API", "all", DOCS / "solution-developer-public-api.md", 6000),
+        ("applications", "Applications deploy", "applications", DOCS / "applications.md", 9000),
+        ("platform-logic", "Platform rules dashboard context", "platform-logic", DOCS / "platform-logic.md", 7000),
+        ("bindings", "CEL bindings", "bindings", DOCS / "bindings.md", 6000),
+        ("object-functions", "Object tree functions", "functions", DOCS / "object-functions.md", 7000),
+        ("blueprints", "Object blueprints", "blueprints", DOCS / "blueprints.md", 6000),
+        ("drivers", "Device drivers", "drivers", DOCS / "drivers.md", 10000),
+        ("workflows", "Workflows BPMN", "workflows", DOCS / "workflows.md", 6000),
+        ("automation", "Automation correlators", "automation", DOCS / "automation.md", 5000),
+        ("dashboards", "Dashboards widgets", "dashboards", DOCS / "dashboards.md", 8000),
+        ("scada", "SCADA mimic diagrams", "scada", DOCS / "scada.md", 10000),
+        ("scada-mimic", "SCADA diagramJson API", "scada", DOCS / "scada-mimic.md", 8000),
+        ("widgets", "Widget catalog", "widgets", DOCS / "widgets.md", 12000),
+        ("spreadsheet-widget", "Spreadsheet widget", "widgets", DOCS / "spreadsheet-widget.md", 6000),
+        ("operator-guide", "Operator HMI guide", "operator", DOCS / "operator-guide.md", 6000),
+        ("federation", "Federation peers binds", "federation", DOCS / "federation.md", 6000),
         ("timezones", "Time and timezones ADR-0020", "timezones", DOCS / "decisions" / "0020-time-and-timezones.md", 6000),
-        ("collaboration", "Collaboration revision", "collaboration", DOCS / "COLLABORATION.md", 5000),
-        ("semantic-export", "Haystack Brick export", "semantic", DOCS / "PLATFORM_LOGIC.md", 4000),
-        ("messaging", "Messaging events NATS", "features", DOCS / "MESSAGING.md", 5000),
-        ("object-model", "Object tree model", "object-model", DOCS / "OBJECT_MODEL.md", 6000),
-        ("ai-development", "AI agent ContextPack", "ai", DOCS / "AI_DEVELOPMENT.md", 7000),
-        ("architecture", "Architecture principles", "architecture", DOCS / "ARCHITECTURE.md", 5000),
-        ("web-console", "Web Console admin", "web-console", DOCS / "WEB_CONSOLE.md", 5000),
-        ("reports", "SQL reports", "reports", DOCS / "REPORTS.md", 5000),
-        ("lab-training", "Lab training exercises", "lab", DOCS / "LAB_TRAINING.md", 5000),
-        ("mes-walkthrough", "MES reference walkthrough", "mes", DOCS / "REFERENCE_MES_WALKTHROUGH.md", 5000),
-        ("observability", "Observability diagnostics probe", "observability", DOCS / "OBSERVABILITY.md", 9000),
-        ("cluster", "Cluster multi-replica live sync", "cluster", DOCS / "CLUSTER.md", 12000),
-        ("load-testing", "Load testing baselines", "loadtest", DOCS / "LOAD_TESTING.md", 8000),
+        ("collaboration", "Collaboration revision", "collaboration", DOCS / "collaboration.md", 5000),
+        ("semantic-export", "Haystack Brick export", "semantic", DOCS / "platform-logic.md", 4000),
+        ("messaging", "Messaging events NATS", "features", DOCS / "messaging.md", 5000),
+        ("object-model", "Object tree model", "object-model", DOCS / "object-model.md", 6000),
+        ("ai-development", "AI agent ContextPack", "ai", DOCS / "ai-development.md", 7000),
+        ("architecture", "Architecture principles", "architecture", DOCS / "architecture.md", 5000),
+        ("web-console", "Web Console admin", "web-console", DOCS / "web-console.md", 5000),
+        ("reports", "SQL reports", "reports", DOCS / "reports.md", 5000),
+        ("lab-training", "Lab training exercises", "lab", DOCS / "lab-training.md", 5000),
+        ("mes-walkthrough", "MES reference walkthrough", "mes", DOCS / "reference-mes-walkthrough.md", 5000),
+        ("observability", "Observability diagnostics probe", "observability", DOCS / "observability.md", 9000),
+        ("cluster", "Cluster multi-replica live sync", "cluster", DOCS / "cluster.md", 12000),
+        ("load-testing", "Load testing baselines", "loadtest", DOCS / "load-testing.md", 8000),
     ]
     chunks: list[dict] = []
     for chunk_id, title, topic, path, max_chars in slices:
@@ -473,13 +473,13 @@ def build_doc_catalog() -> list[dict]:
         catalog.append(
             {
                 "id": path.stem.lower(),
-                "path": f"docs/{path.name}",
+                "path": f"docs/en/{path.name}",
                 "title": title,
                 "keywords": f"{path.stem} {title}",
             }
         )
     for path in sorted((DOCS / "decisions").glob("*.md")):
-        if path.name == "README.md":
+        if path.name.lower() == "readme.md":
             continue
         text = read_text(path, 300)
         title = path.stem
@@ -490,7 +490,7 @@ def build_doc_catalog() -> list[dict]:
         catalog.append(
             {
                 "id": f"adr-{path.stem}",
-                "path": f"docs/decisions/{path.name}",
+                "path": f"docs/en/decisions/{path.name}",
                 "title": title,
                 "keywords": f"adr decision {path.stem} {title}",
             }
@@ -501,7 +501,7 @@ def build_doc_catalog() -> list[dict]:
 def build_pack() -> dict:
     version = platform_version()
     examples = load_examples()
-    drivers_path = DOCS / "DRIVERS.md"
+    drivers_path = DOCS / "drivers.md"
     drivers_doc_full = drivers_path.read_text(encoding="utf-8") if drivers_path.exists() else ""
     drivers_doc = drivers_doc_full[:12000]
     pack = {
@@ -520,27 +520,27 @@ def build_pack() -> dict:
         "scriptSteps": SCRIPT_STEPS,
         "widgetTypes": WIDGET_TYPES,
         "featureIndex": FEATURE_INDEX,
-        "competitiveGapIndex": parse_competitive_scorecard(DOCS / "COMPETITIVE_SCORECARD.md"),
+        "competitiveGapIndex": parse_competitive_scorecard(DOCS / "competitive-scorecard.md"),
         "driverCatalog": parse_driver_catalog(drivers_doc_full),
         "exampleSummaries": build_example_summaries(examples),
         "docChunks": build_doc_chunks(),
         "docCatalog": build_doc_catalog(),
         "apiSlice": {
-            "applicationPrinciplesDoc": read_text(DOCS / "APPLICATION_PRINCIPLES.md", 8000),
-            "agentKnowledgeDoc": read_text(DOCS / "AGENT_KNOWLEDGE.md", 12000),
-            "solutionDeveloperDoc": read_text(DOCS / "SOLUTION_DEVELOPER_GUIDE.md", 8000),
-            "platformLogicDoc": read_text(DOCS / "PLATFORM_LOGIC.md", 6000),
-            "bindingsDoc": read_text(DOCS / "BINDINGS.md", 5000),
-            "publicApiDoc": read_text(DOCS / "SOLUTION_DEVELOPER_PUBLIC_API.md", 8000),
-            "applicationsDoc": read_text(DOCS / "APPLICATIONS.md", 8000),
-            "messagingDoc": read_text(DOCS / "MESSAGING.md", 6000),
-            "dashboardsDoc": read_text(DOCS / "DASHBOARDS.md", 6000),
+            "applicationPrinciplesDoc": read_text(DOCS / "application-principles.md", 8000),
+            "agentKnowledgeDoc": read_text(DOCS / "agent-knowledge.md", 12000),
+            "solutionDeveloperDoc": read_text(DOCS / "solution-developer-guide.md", 8000),
+            "platformLogicDoc": read_text(DOCS / "platform-logic.md", 6000),
+            "bindingsDoc": read_text(DOCS / "bindings.md", 5000),
+            "publicApiDoc": read_text(DOCS / "solution-developer-public-api.md", 8000),
+            "applicationsDoc": read_text(DOCS / "applications.md", 8000),
+            "messagingDoc": read_text(DOCS / "messaging.md", 6000),
+            "dashboardsDoc": read_text(DOCS / "dashboards.md", 6000),
             "driversDoc": drivers_doc[:8000],
-            "workflowsDoc": read_text(DOCS / "WORKFLOWS.md", 6000),
-            "automationDoc": read_text(DOCS / "AUTOMATION.md", 5000),
-            "objectModelDoc": read_text(DOCS / "OBJECT_MODEL.md", 5000),
-            "observabilityDoc": read_text(DOCS / "OBSERVABILITY.md", 6000),
-            "clusterDoc": read_text(DOCS / "CLUSTER.md", 8000),
+            "workflowsDoc": read_text(DOCS / "workflows.md", 6000),
+            "automationDoc": read_text(DOCS / "automation.md", 5000),
+            "objectModelDoc": read_text(DOCS / "object-model.md", 5000),
+            "observabilityDoc": read_text(DOCS / "observability.md", 6000),
+            "clusterDoc": read_text(DOCS / "cluster.md", 8000),
         },
         "examples": examples,
         "generationPolicy": {
