@@ -1,0 +1,16 @@
+{
+  "id": "mes-workflow-escalation",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES workflow escalation",
+  "description": "User task escalation on delayed dispatch orders.",
+  "prompt": "Verify mes-reference workflow escalates pending dispatch order to supervisor queue.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-reference",
+    "manifestPath": "examples/mes-reference/bundle.json"
+  },
+  "acceptance": {
+    "requiredTools": ["invoke_bff", "list_work_queue"]
+  }
+}

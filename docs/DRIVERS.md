@@ -17,7 +17,7 @@
 
 ### Top-20 industrial (BL-140, Phase 25)
 
-19 драйверов **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
+В `DriverProductionMatrix` — **20** драйверов **PRODUCTION** (включая `cwmp` вне top-20) и **8** **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). Список: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.
 
 | `driverId` | Maturity | Interop module |
 | ---------- | -------- | -------------- |

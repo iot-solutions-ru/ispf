@@ -1,0 +1,17 @@
+{
+  "id": "mes-quality-inspection",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES quality inspection",
+  "description": "Defect demo quality inspection and rework workflow.",
+  "prompt": "Deploy mes-defect-demo and verify defect capture BFF and quality dashboard.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-defect-demo",
+    "manifestPath": "examples/mes-defect-demo/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "invoke_bff"]
+  }
+}

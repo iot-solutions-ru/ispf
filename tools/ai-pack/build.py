@@ -343,13 +343,13 @@ def build_example_summaries(examples: list[dict]) -> list[dict]:
 def parse_competitive_scorecard(path: Path) -> list[dict]:
     """Parse COMPETITIVE_SCORECARD.md into readiness gap index (BL-182).
 
-    Uses the **Post wave 2** column when present; falls back to Post wave 1 or baseline.
+    Uses the **Post wave 3** column when present; falls back to Post wave 2, Post wave 1, or baseline.
     """
     if not path.exists():
         return []
     gaps: list[dict] = []
     in_matrix = False
-    wave2_column = -1
+    current_column = -1
     target_column = -1
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
@@ -357,8 +357,12 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
             in_matrix = True
             header_parts = [p.strip().lower() for p in stripped.strip("|").split("|")]
             for idx, label in enumerate(header_parts):
-                if "post wave 2" in label:
-                    wave2_column = idx
+                if "post wave 3" in label:
+                    current_column = idx
+                elif "post wave 2" in label and current_column < 0:
+                    current_column = idx
+                elif "post wave 1" in label and current_column < 0:
+                    current_column = idx
                 elif label == "target":
                     target_column = idx
             continue
@@ -373,8 +377,8 @@ def parse_competitive_scorecard(path: Path) -> list[dict]:
             continue
         try:
             baseline = float(parts[2].replace("*", "").strip())
-            if wave2_column >= 0 and len(parts) > wave2_column:
-                current = float(parts[wave2_column].replace("*", "").strip())
+            if current_column >= 0 and len(parts) > current_column:
+                current = float(parts[current_column].replace("*", "").strip())
             elif len(parts) > 4 and re.search(r"\d", parts[3]):
                 current = float(parts[3].replace("*", "").strip())
             else:

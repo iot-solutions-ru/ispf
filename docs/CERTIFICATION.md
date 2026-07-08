@@ -1,115 +1,110 @@
 # Certification paths (BL-190)
 
-Structured certification tracks for integrators, operators, and platform administrators. Aligns with [PARTNER_PROGRAM.md](PARTNER_PROGRAM.md) partner levels and internal lab walkthroughs.
+Stub curriculum for ISPF certification. Full exams and proctoring ship with Phase 32 GA; labs below are runnable today on lab/VPS hosts.
+
+Aligns with [PARTNER_PROGRAM.md](PARTNER_PROGRAM.md) commercial tiers.
 
 ---
 
-## Overview
+## Tracks overview
 
-| Track | Audience | Outcome |
-|-------|----------|---------|
-| **Integrator** | Solution developers, SI partners | Deploy production-ready ISPF sites |
-| **Operator** | Plant operators, shift supervisors | Safe HMI + agent copilot usage |
-| **Platform admin** | IT/OT admins, DevOps | Secure multi-tenant platform ops |
-| **MES specialist** | Manufacturing engineers | ISA-95 dispatch + OEE without custom Java |
+| Track | Audience | Outcome badge |
+| ----- | -------- | ------------- |
+| **Solution developer** | Integrators, OEM app authors | Deploy production bundles without core-team support |
+| **Platform admin** | IT/OT ops, DevOps | Hardened deploy, security, historian, observability |
+
+Additional tracks (operator, MES specialist) — draft modules at end of document.
 
 ---
 
-## Integrator certification
+## Solution developer track
 
-### Level 1 — Foundation
+Maps to Partner **Associate → Professional** in [PARTNER_PROGRAM.md](PARTNER_PROGRAM.md).
 
-| Module | Doc reference | Lab |
-|--------|---------------|-----|
-| Object tree | [OBJECT_MODEL.md](OBJECT_MODEL.md) | Create DEVICE + list_variables |
+### Level 1 — Foundation (~16 h)
+
+| Module | Reference | Lab |
+| ------ | --------- | --- |
+| Object tree | [OBJECT_MODEL.md](OBJECT_MODEL.md) | Create DEVICE + `list_variables` |
 | Bundles | [APPLICATIONS.md](APPLICATIONS.md) | Deploy `demo-app` |
-| Dashboards | [DASHBOARDS.md](DASHBOARDS.md) | Add value + chart widgets |
+| Dashboards | [DASHBOARDS.md](DASHBOARDS.md) | Value + chart widgets |
 | Operator UI | [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) | Configure operator app |
 
-**Exam:** Deploy bundle with one dashboard; operator mode loads without admin console.
+**Exam (stub):** Deploy bundle with one dashboard; operator mode loads without admin console.
 
-### Level 2 — Automation
+### Level 2 — Automation (~24 h)
 
-| Module | Doc reference | Lab |
-|--------|---------------|-----|
-| Drivers | [DRIVERS.md](DRIVERS.md) | SNMP or virtual device RUNNING |
-| Alerts | [AUTOMATION.md](AUTOMATION.md) | configure_alert + fire event |
+| Module | Reference | Lab |
+| ------ | --------- | --- |
+| Drivers | [DRIVERS.md](DRIVERS.md) | SNMP or virtual device `RUNNING` |
+| Field pilots | [FIELD_PILOT_PLAYBOOK.md](FIELD_PILOT_PLAYBOOK.md) | Complete one OT scenario checklist |
+| Alerts | [AUTOMATION.md](AUTOMATION.md) | `configure_alert` + fire event |
 | Workflows | [WORKFLOWS.md](WORKFLOWS.md) | User task in work queue |
-| Reports | [REPORTS.md](REPORTS.md) | SQL report in operator app |
 
-**Exam:** Alert → correlator → operator notification path.
+**Exam (stub):** Alert → correlator → operator notification path.
 
-### Level 3 — Production
+### Level 3 — Production (~32 h)
 
-| Module | Doc reference | Lab |
-|--------|---------------|-----|
+| Module | Reference | Lab |
+| ------ | --------- | --- |
 | SCADA mimics | [SCADA.md](SCADA.md) | Mimic with live bindings |
 | Federation | [FEDERATION.md](FEDERATION.md) | Bind remote device |
+| AI agent | [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) | Solution generator scenario (BL-177) |
+
+**Exam (stub):** End-to-end agent deploy — spec to operator UI without manual tree edits.
+
+---
+
+## Platform admin track
+
+Maps to internal ops onboarding and Partner **Expert** infrastructure modules.
+
+### Core modules (~24 h)
+
+| Module | Reference | Lab |
+| ------ | --------- | --- |
+| Security | [SECURITY.md](SECURITY.md) | RBAC, MFA enrollment, audit export |
+| Deploy | [DEPLOYMENT.md](DEPLOYMENT.md) | VPS direct or Helm skeleton |
+| Historian | [HISTORIAN_TIERS.md](HISTORIAN_TIERS.md) | Hot tier + Parquet export (BL-163) |
+| Observability | [OBSERVABILITY.md](OBSERVABILITY.md) | Metrics scrape + diagnostics bundle |
+
+**Exam (stub):** Hardened single-node deploy + backup/restore drill; ClickHouse verify script green.
+
+### Advanced modules (~16 h)
+
+| Module | Reference | Lab |
+| ------ | --------- | --- |
 | Cluster | [CLUSTER.md](CLUSTER.md) | Two-replica lab |
-| AI agent | [AI_DEVELOPMENT.md](AI_DEVELOPMENT.md) | Solution generator scenario |
+| Multi-tenant | [MULTI_TENANT.md](MULTI_TENANT.md) | Tenant isolation write test |
+| Federation hub | [FEDERATION.md](FEDERATION.md) | Hub with 2+ peers (BL-188) |
 
-**Exam:** End-to-end agent deploy (BL-177) — spec to operator UI without manual tree edits.
-
-Maps to **Partner Professional / Expert** — see [PARTNER_PROGRAM.md](PARTNER_PROGRAM.md).
-
----
-
-## Operator certification
-
-| Module | Content |
-|--------|---------|
-| HMI navigation | Dashboard tabs, selectionKey drill-down |
-| Work queue | Claim / complete BPMN tasks |
-| Event journal | Alarm levels, filters |
-| Agent copilot | Scoped read-only tools, memory, reports |
-
-**Exam:** Complete shift checklist using operator HMI + agent (trend, report, work queue).
-
-Reference: [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) — Operator agent section.
+**Exam (stub):** Failover drill; tenant A cannot read tenant B variables.
 
 ---
 
-## Platform admin certification
-
-| Module | Content |
-|--------|---------|
-| Security | RBAC, MFA, audit ([SECURITY.md](SECURITY.md)) |
-| Deploy | VPS direct, Helm skeleton ([deploy/helm/ispf/](../deploy/helm/ispf/)) |
-| Observability | Metrics, diagnostics ([OBSERVABILITY.md](OBSERVABILITY.md)) |
-| Historian | Tier profiles ([HISTORIAN_TIERS.md](HISTORIAN_TIERS.md)) |
-
-**Exam:** Hardened single-node deploy + backup/restore drill.
-
----
-
-## MES specialist certification
-
-| Module | Content |
-|--------|---------|
-| ISA-95 catalog | [ISA95_CATALOG.md](ISA95_CATALOG.md) |
-| MES reference | [REFERENCE_MES_PLATFORM.md](REFERENCE_MES_PLATFORM.md) |
-| OEE walkthrough | [REFERENCE_MES_OEE_WALKTHROUGH.md](REFERENCE_MES_OEE_WALKTHROUGH.md) |
-| Bundle | `examples/mes-platform/` |
-
-**Exam:** Deploy MES bundle ≤ 30 min; dispatch order through BFF; OEE screen live.
-
-Maps to **BL-170** MES certification bundle acceptance.
-
----
-
-## Badge and renewal
+## Badge and renewal (draft)
 
 | Item | Policy |
-|------|--------|
+| ---- | ------ |
 | Badge validity | 12 months |
-| Renewal | Pass delta exam or complete continuing education module |
+| Renewal | Delta exam or continuing-education module |
 | Revocation | Critical security incident or license violation |
+| Proctoring | TBD — Phase 32 GA |
 
 ---
 
 ## Agent regression alignment
 
-Certification labs feed the [agent regression suite](AGENT_REGRESSION.md). Target: ≥95% scenario pass rate (BL-178) before Expert integrator exam uses live agent grading.
+Certification labs feed the [agent regression suite](AGENT_REGRESSION.md). Target: ≥95% scenario pass rate (BL-178) before live agent grading on Expert exams.
+
+---
+
+## Other tracks (draft)
+
+| Track | Audience | Key doc |
+| ----- | -------- | ------- |
+| Operator | Shift supervisors | [OPERATOR_GUIDE.md](OPERATOR_GUIDE.md) |
+| MES specialist | Manufacturing engineers | [REFERENCE_MES_PLATFORM.md](REFERENCE_MES_PLATFORM.md) |
 
 ---
 

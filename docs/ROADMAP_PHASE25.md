@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, июль 2026 |
-| **Обновлено** | 2026-07-07 (wave 2 hardening) |
+| **Обновлено** | 2026-07-08 (wave 3–4 hardening) |
 | **Предыдущие фазы** | [ROADMAP.md](ROADMAP.md) — Phase 0–24, BL-01…139, S01–S30 |
 | **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](ARCHITECTURE.md)) |
 
@@ -16,12 +16,12 @@
 | Категория | Всего | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–32 | 8 | 0 | 8 | 0 | — |
-| BL-140…190 | 51 | 12 | 39 | 0 | 0 |
-| Sprint S31–S46 (draft) | 16 | 0 | 14 | 2 | — |
+| BL-140…190 | 51 | 18 | 33 | 0 | 0 |
+| Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
 
-**Текущий спринт:** **S31–S45 wave 2** — hardening landed; field soak + marketplace install остаётся.
+**Текущий спринт:** **S31–S46 wave 4** — interop CI, 218 symbols, Parquet export, 40 agent scenarios; field soak + live LLM e2e остаётся.
 
-**Текущая оценка продукта:** ~8.5/10 (post wave 2).  
+**Текущая оценка продукта:** ~9.0/10 (post wave 3–4).  
 **Целевая оценка:** 10/10 — см. [§ Definition of Done](#definition-of-done--1010-overall).
 
 ---
@@ -242,57 +242,57 @@
 
 | ID | Phase | Название | P | Статус |
 | -- | ----- | -------- | - | ------ |
-| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | Planned |
-| BL-141 | 25 | Driver interop lab | P0 | Planned |
-| BL-142 | 25 | Event→variable at driver | P1 | Planned |
-| BL-143 | 25 | OPC UA server GA | P1 | Planned |
-| BL-144 | 25 | Driver DDK | P1 | Planned |
-| BL-145 | 25 | Agent edge GA | P1 | Planned |
-| BL-146 | 26 | P&ID symbol library v2 | P1 | Planned |
-| BL-147 | 26 | Mimic editor pro | P1 | Planned |
-| BL-148 | 26 | Video wall mode | P2 | Planned |
-| BL-149 | 26 | Expression debugger | P1 | Planned |
-| BL-150 | 26 | Live spreadsheet v2 | P2 | Planned |
-| BL-151 | 26 | Operator offline PWA | P1 | Planned |
-| BL-152 | 26 | HMI perf gate | P1 | Planned |
-| BL-153 | 27 | MFA | P2 | Planned |
-| BL-154 | 27 | Per-variable ACL | P2 | Planned |
-| BL-155 | 27 | Hard multi-tenancy | P2 | Planned |
-| BL-156 | 27 | Audit trail GA | P2 | Planned |
-| BL-157 | 27 | Role templates | P2 | Planned |
-| BL-158 | 27 | Alarm shelving | P2 | Planned |
-| BL-159 | 28 | Historian tiers turnkey | P2 | Planned |
-| BL-160 | 28 | Asset analytics framework | P2 | Planned |
-| BL-161 | 28 | Historian query SLA | P2 | Planned |
-| BL-162 | 28 | Event journal petabyte path | P2 | Planned |
-| BL-163 | 28 | Trend export | P3 | Planned |
-| BL-164 | 29 | MES object types | P1 | Planned |
-| BL-165 | 29 | OEE first-class | P1 | Planned |
-| BL-166 | 29 | Work order dispatch | P1 | Planned |
-| BL-167 | 29 | Quality module | P2 | Planned |
-| BL-168 | 29 | ISA-88 batch lite | P2 | Planned |
-| BL-169 | 29 | ERP outbox | P3 | Planned |
-| BL-170 | 29 | MES certification bundle | P1 | Planned |
-| BL-171 | 30 | CEP engine | P3 | Planned |
-| BL-172 | 30 | Process control context | P3 | Planned |
-| BL-173 | 30 | Queries engine | P2 | Planned |
-| BL-174 | 30 | Event filters | P3 | Planned |
-| BL-175 | 30 | ML hooks | P3 | Planned |
-| BL-176 | 30 | BPMN expansion | P2 | Planned |
-| BL-177 | 31 | End-to-end agent deploy | P0 | Planned |
-| BL-178 | 31 | Agent regression suite | P0 | Planned |
-| BL-179 | 31 | Operator agent GA | P1 | Planned |
-| BL-180 | 31 | Solution generator | P0 | Planned |
-| BL-181 | 31 | Agent observability v2 | P2 | Planned |
-| BL-182 | 31 | Context pack v2 | P2 | Planned |
-| BL-183 | 32 | Marketplace GA | P3 | Planned |
-| BL-184 | 32 | Partner program | P3 | Planned |
+| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Done** (20 PRODUCTION) |
+| BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
+| BL-142 | 25 | Event→variable at driver | P1 | Partial |
+| BL-143 | 25 | OPC UA server GA | P1 | Partial |
+| BL-144 | 25 | Driver DDK | P1 | Partial |
+| BL-145 | 25 | Agent edge GA | P1 | Partial (disk buffer; 30d soak) |
+| BL-146 | 26 | P&ID symbol library v2 | P1 | **Done** (218 symbols) |
+| BL-147 | 26 | Mimic editor pro | P1 | Partial |
+| BL-148 | 26 | Video wall mode | P2 | Partial |
+| BL-149 | 26 | Expression debugger | P1 | Partial |
+| BL-150 | 26 | Live spreadsheet v2 | P2 | Partial |
+| BL-151 | 26 | Operator offline PWA | P1 | Partial |
+| BL-152 | 26 | HMI perf gate | P1 | Partial (200 el e2e) |
+| BL-153 | 27 | MFA | P2 | Partial (TOTP) |
+| BL-154 | 27 | Per-variable ACL | P2 | Partial |
+| BL-155 | 27 | Hard multi-tenancy | P2 | Partial |
+| BL-156 | 27 | Audit trail GA | P2 | Partial |
+| BL-157 | 27 | Role templates | P2 | Partial |
+| BL-158 | 27 | Alarm shelving | P2 | Partial |
+| BL-159 | 28 | Historian tiers turnkey | P2 | Partial |
+| BL-160 | 28 | Asset analytics framework | P2 | Partial |
+| BL-161 | 28 | Historian query SLA | P2 | Partial |
+| BL-162 | 28 | Event journal petabyte path | P2 | Partial |
+| BL-163 | 28 | Trend export | P3 | **Done** (Parquet) |
+| BL-164 | 29 | MES object types | P1 | Partial |
+| BL-165 | 29 | OEE first-class | P1 | Partial |
+| BL-166 | 29 | Work order dispatch | P1 | Partial |
+| BL-167 | 29 | Quality module | P2 | Partial |
+| BL-168 | 29 | ISA-88 batch lite | P2 | Partial |
+| BL-169 | 29 | ERP outbox | P3 | Partial |
+| BL-170 | 29 | MES certification bundle | P1 | Partial |
+| BL-171 | 30 | CEP engine | P3 | Partial |
+| BL-172 | 30 | Process control context | P3 | Partial |
+| BL-173 | 30 | Queries engine | P2 | Partial |
+| BL-174 | 30 | Event filters | P3 | Partial |
+| BL-175 | 30 | ML hooks | P3 | Partial |
+| BL-176 | 30 | BPMN expansion | P2 | Partial |
+| BL-177 | 31 | End-to-end agent deploy | P0 | Partial |
+| BL-178 | 31 | Agent regression suite | P0 | Partial (40 scenarios) |
+| BL-179 | 31 | Operator agent GA | P1 | Partial |
+| BL-180 | 31 | Solution generator | P0 | Partial (keyword stub) |
+| BL-181 | 31 | Agent observability v2 | P2 | Partial |
+| BL-182 | 31 | Context pack v2 | P2 | Partial |
+| BL-183 | 32 | Marketplace GA | P3 | Partial (install/uninstall) |
+| BL-184 | 32 | Partner program | P3 | Partial |
 | BL-185 | 32 | Symbol marketplace | P3 | Planned |
-| BL-186 | 32 | K8s Helm chart | P2 | Planned |
-| BL-187 | 32 | ARM edge profile | P2 | Planned |
-| BL-188 | 32 | Manager-of-managers | P3 | Planned |
-| BL-189 | 32 | Competitive scorecard | P3 | Planned |
-| BL-190 | 32 | Certification paths | P3 | Planned |
+| BL-186 | 32 | K8s Helm chart | P2 | Partial |
+| BL-187 | 32 | ARM edge profile | P2 | Partial |
+| BL-188 | 32 | Manager-of-managers | P3 | Partial |
+| BL-189 | 32 | Competitive scorecard | P3 | Partial |
+| BL-190 | 32 | Certification paths | P3 | Partial |
 
 ---
 
@@ -364,6 +364,8 @@
 
 | Дата | Изменение |
 | ---- | --------- |
+| 2026-07-08 | Wave 4: interop CI smoke, 218 symbols, Parquet export, 40 agent scenarios, partner tiers, federation health poll |
+| 2026-07-08 | Wave 2–3 commit `d27f0be`: MFA, marketplace install, hard tenancy, mes-platform-production, 134→218 symbols path |
 | 2026-07-07 | Wave 2 hardening: TOTP MFA, MQTT eventToVariable, analytics, BPMN messages, 30 agent scenarios, 991 tests green |
 | 2026-07-07 | Wave 1 foundations: BL-140…190 skeletons (Partial) across Phase 25–32 |
 | 2026-07-07 | Создан Excellence Program Phase 25–32, BL-140…190, S31–S46 draft |

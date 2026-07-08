@@ -46,6 +46,7 @@ public class VariableHistoryService {
     private final VariableHistoryAsyncWriter asyncWriter;
     private final VariableHistoryBatchPersister batchPersister;
     private final VariableHistoryQueryStore queryStore;
+    private final HistorianQueryMetricsRecorder queryMetricsRecorder;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -63,7 +64,8 @@ public class VariableHistoryService {
             ClusterProperties clusterProperties,
             VariableHistoryAsyncWriter asyncWriter,
             VariableHistoryBatchPersister batchPersister,
-            VariableHistoryQueryStore queryStore
+            VariableHistoryQueryStore queryStore,
+            HistorianQueryMetricsRecorder queryMetricsRecorder
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
@@ -75,6 +77,7 @@ public class VariableHistoryService {
         this.asyncWriter = asyncWriter;
         this.batchPersister = batchPersister;
         this.queryStore = queryStore;
+        this.queryMetricsRecorder = queryMetricsRecorder;
     }
 
     public void recordVariableUpdate(String objectPath, String variableName) {
@@ -363,14 +366,22 @@ public class VariableHistoryService {
 
         int cappedLimit = Math.min(Math.max(limit, 1), 10_000);
 
-        List<VariableHistorySample> samples = queryStore.query(
-                objectPath,
-                variableName,
-                field,
-                from,
-                to,
-                cappedLimit
-        );
+        long started = System.nanoTime();
+        List<VariableHistorySample> samples;
+        try {
+            samples = queryStore.query(
+                    objectPath,
+                    variableName,
+                    field,
+                    from,
+                    to,
+                    cappedLimit
+            );
+        } finally {
+            queryMetricsRecorder.recordRawQuery(
+                    java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+            );
+        }
 
         return new VariableHistoryResponse(objectPath, variableName, field, samples);
     }
@@ -407,15 +418,23 @@ public class VariableHistoryService {
         }
 
         int cappedBuckets = Math.min(Math.max(maxBuckets, 1), 2_000);
-        List<VariableHistoryBucket> result = queryStore.aggregateBuckets(
-                objectPath,
-                variableName,
-                field,
-                resolvedFrom,
-                resolvedTo,
-                bucket,
-                cappedBuckets
-        );
+        long started = System.nanoTime();
+        List<VariableHistoryBucket> result;
+        try {
+            result = queryStore.aggregateBuckets(
+                    objectPath,
+                    variableName,
+                    field,
+                    resolvedFrom,
+                    resolvedTo,
+                    bucket,
+                    cappedBuckets
+            );
+        } finally {
+            queryMetricsRecorder.recordAggregateQuery(
+                    java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
+            );
+        }
 
         return new VariableHistoryAggregateResponse(
                 objectPath,
@@ -550,6 +569,19 @@ public class VariableHistoryService {
             outputStream.write('\n');
         }
         outputStream.flush();
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportParquet(
+            String objectPath,
+            String variableName,
+            String fieldName,
+            Instant from,
+            Instant to,
+            int limit
+    ) throws IOException {
+        VariableHistoryResponse response = query(objectPath, variableName, fieldName, from, to, limit);
+        return VariableHistoryParquetExporter.export(response);
     }
 
     public static String exportInterimBulkFormat() {

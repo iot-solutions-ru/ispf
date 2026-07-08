@@ -1,0 +1,16 @@
+{
+  "id": "hvac-ahu-comfort",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC AHU comfort control",
+  "description": "Air handling unit comfort setpoints and zone bindings.",
+  "prompt": "Configure building-hvac AHU comfort dashboard with zone temperature bindings.",
+  "playbook": "buildingHvacApp",
+  "bundle": {
+    "appId": "building-hvac",
+    "manifestPath": "examples/building-hvac-app/bundle.json"
+  },
+  "acceptance": {
+    "requiredTools": ["list_variables", "set_dashboard_layout"]
+  }
+}

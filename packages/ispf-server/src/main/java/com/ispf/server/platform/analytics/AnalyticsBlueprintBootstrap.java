@@ -25,6 +25,7 @@ public class AnalyticsBlueprintBootstrap {
     public static final String TEMPLATE_INTRINSIC = "analytics-template-v1";
     public static final String ROLLING_AVG_MODEL = "rolling-avg-v1";
     public static final String RATE_OF_CHANGE_MODEL = "rate-of-change-v1";
+    public static final String OEE_MODEL = "oee-v1";
 
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
@@ -46,6 +47,7 @@ public class AnalyticsBlueprintBootstrap {
         ensureModel(TEMPLATE_INTRINSIC, buildTemplateIntrinsic());
         ensureModel(ROLLING_AVG_MODEL, buildRollingAvgModel());
         ensureModel(RATE_OF_CHANGE_MODEL, buildRateOfChangeModel());
+        ensureModel(OEE_MODEL, buildOeeModel());
     }
 
     private void ensureModel(String name, BlueprintDefinition definition) {
@@ -127,6 +129,35 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("sourceVariable", "Source variable name", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),
                         varDef("windowBucket", "Historian bucket for delta", "config", "1h")
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    private static BlueprintDefinition buildOeeModel() {
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                OEE_MODEL,
+                "OEE composite KPI — Availability × Performance × Quality over shift window",
+                BlueprintType.RELATIVE,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        varDef("oeePct", "Composite OEE percent (A×P×Q×100)", "runtime", "0"),
+                        varDef("availabilityPct", "Availability percent", "runtime", "0"),
+                        varDef("performancePct", "Performance percent", "runtime", "0"),
+                        varDef("qualityPct", "Quality percent", "runtime", "0"),
+                        varDef("sourcePath", "Line or asset object path", "config", ""),
+                        varDef("availabilityVariable", "Planned/runtime availability source variable", "config", ""),
+                        varDef("performanceVariable", "Throughput or cycle-time source variable", "config", ""),
+                        varDef("qualityVariable", "Good/total quality source variable", "config", ""),
+                        varDef("sourceField", "Source schema field", "config", "value"),
+                        varDef("windowBucket", "Shift or rollup bucket (1h, 8h, 1d)", "config", "8h")
                 ),
                 List.of(),
                 List.of(),

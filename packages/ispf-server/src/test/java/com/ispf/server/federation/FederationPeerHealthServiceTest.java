@@ -25,6 +25,8 @@ class FederationPeerHealthServiceTest {
     private FederationOutboundAgentStore outboundAgentStore;
     @Mock
     private FederationOutboundEventBufferRegistry bufferRegistry;
+    @Mock
+    private FederationPeerAuthService authService;
 
     private FederationPeerHealthService healthService;
     private UUID peerId;
@@ -37,7 +39,9 @@ class FederationPeerHealthServiceTest {
                 tunnelHubService,
                 outboundAgentStore,
                 bufferRegistry,
-                15
+                authService,
+                15,
+                false
         );
     }
 
@@ -72,6 +76,24 @@ class FederationPeerHealthServiceTest {
         FederationPeerHealth health = healthService.health(peerId);
         assertThat(health.level()).isEqualTo(FederationPeerHealthLevel.GREEN);
         assertThat(health.lastProxyLatencyMs()).isEqualTo(42L);
+    }
+
+    @Test
+    void pollTunnelPeerRecordsOfflineWhenDisconnected() {
+        FederationPeer peer = peer(
+                peerId,
+                FederationConnectionMode.TUNNEL_INBOUND,
+                FederationAuthStatus.OK
+        );
+        when(tunnelHubService.isConnected(peerId)).thenReturn(false);
+        when(peerStore.findById(peerId)).thenReturn(Optional.of(peer));
+        when(outboundAgentStore.listAll()).thenReturn(List.of());
+
+        healthService.pollPeer(peer);
+
+        FederationPeerHealth health = healthService.health(peerId);
+        assertThat(health.level()).isEqualTo(FederationPeerHealthLevel.RED);
+        assertThat(health.summary()).contains("offline");
     }
 
     private static FederationPeer peer(UUID id, FederationConnectionMode mode, FederationAuthStatus authStatus) {

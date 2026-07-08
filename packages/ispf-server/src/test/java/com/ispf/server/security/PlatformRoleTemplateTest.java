@@ -1,5 +1,6 @@
 package com.ispf.server.security;
 
+import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +16,9 @@ class PlatformRoleTemplateTest {
 
     @Autowired
     private PlatformRoleService roleService;
+
+    @Autowired
+    private ObjectManager objectManager;
 
     @Test
     void seedsOperatorReadonlyAndMesSupervisorTemplates() {
@@ -39,5 +43,17 @@ class PlatformRoleTemplateTest {
         assertThat(mesSupervisor.get("objectPath"))
                 .isEqualTo(PlatformUserService.ROLES_FOLDER + "." + PlatformRoleService.MES_SUPERVISOR);
         assertThat(mesSupervisor.get("template")).isEqualTo(true);
+
+        String mesPath = PlatformUserService.ROLES_FOLDER + "." + PlatformRoleService.MES_SUPERVISOR;
+        var mesNode = objectManager.require(mesPath);
+        assertThat(mesNode.getVariable(PlatformRoleTemplatePermissions.OPERATOR_AGENT_TOOLS_VAR)).isPresent();
+        assertThat(mesNode.getVariable(PlatformRoleTemplatePermissions.SCOPE_PATH_PREFIXES_VAR)).isPresent();
+        var toolsRecord = mesNode.getVariable(PlatformRoleTemplatePermissions.OPERATOR_AGENT_TOOLS_VAR)
+                .orElseThrow()
+                .value()
+                .orElseThrow();
+        String toolsJson = String.valueOf(toolsRecord.get("value", 0));
+        assertThat(toolsJson).contains("run_report");
+        assertThat(toolsJson).contains("list_work_queue");
     }
 }

@@ -30,9 +30,10 @@ class AssetAnalyticsApiTest {
 
         mockMvc.perform(get("/api/v1/platform/analytics/templates"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[*].templateId", hasItem("rollingAvg")))
                 .andExpect(jsonPath("$[*].templateId", hasItem("rateOfChange")))
+                .andExpect(jsonPath("$[*].templateId", hasItem("oee")))
                 .andExpect(jsonPath("$[?(@.templateId=='rollingAvg')].helper").value(hasItem("rollingAvg")))
                 .andExpect(jsonPath("$[?(@.templateId=='rateOfChange')].helper").value(hasItem("rateOfChange")));
     }

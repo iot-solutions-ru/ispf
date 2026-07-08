@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.nio.file.Path;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -58,5 +59,17 @@ class MarketplaceBundleInstallApiTest {
                 .andExpect(jsonPath("$.status").value("OK"))
                 .andExpect(jsonPath("$.appId").value("marketplace-demo"))
                 .andExpect(jsonPath("$.source").value("local-marketplace"));
+    }
+
+    @Test
+    void uninstallMarketplaceDemoBundleBySlug() throws Exception {
+        mockMvc.perform(post("/api/v1/marketplace/bundles/marketplace-demo/install"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/marketplace/bundles/marketplace-demo/install"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.action").value("uninstall"))
+                .andExpect(jsonPath("$.appId").value("marketplace-demo"));
     }
 }

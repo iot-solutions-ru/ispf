@@ -4,49 +4,49 @@
   "license": "Apache-2.0",
   "authorship": "Original ISA/ISO functional diagrams — ISPF Core Contributors (2026). Not traced from vendor WMF/SVG.",
   "legalNotice": "Functional P&ID shapes per ISA-5.1 / ISO 14617 conventions. See LICENSE.md.",
-  "generatedAt": "2026-07-08T01:47:43.318Z",
+  "generatedAt": "2026-07-08T02:02:58.006Z",
   "generator": "tools/symbol-pack-isa",
-  "totalSymbols": 134,
+  "totalSymbols": 218,
   "categories": [
     {
       "id": "pack-valves",
       "file": "valves.json",
-      "count": 24
+      "count": 34
     },
     {
       "id": "pack-pumps",
       "file": "pumps.json",
-      "count": 13
+      "count": 18
     },
     {
       "id": "pack-tanks",
       "file": "tanks.json",
-      "count": 12
+      "count": 20
     },
     {
       "id": "pack-pipes",
       "file": "pipes.json",
-      "count": 19
+      "count": 33
     },
     {
       "id": "pack-sensors",
       "file": "sensors.json",
-      "count": 17
+      "count": 37
     },
     {
       "id": "pack-electrical",
       "file": "electrical.json",
-      "count": 12
+      "count": 20
     },
     {
       "id": "pack-isa",
       "file": "isa.json",
-      "count": 12
+      "count": 20
     },
     {
       "id": "pack-misc",
       "file": "misc.json",
-      "count": 25
+      "count": 36
     }
   ]
 }

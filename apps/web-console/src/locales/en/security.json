@@ -81,5 +81,18 @@
   "acl.column.type": "Type",
   "acl.column.principal": "Principal",
   "acl.column.permission": "Permission",
-  "acl.save": "Save ACL"
+  "acl.save": "Save ACL",
+  "mfa.title": "Multi-factor authentication (TOTP)",
+  "mfa.subtitle": "Enroll an authenticator app for your account. Scan the QR code or enter the secret manually, then verify with a 6-digit code.",
+  "mfa.disabledOnServer": "MFA is not enabled on this server (set ISPF_MFA_ENABLED=true).",
+  "mfa.account": "Account",
+  "mfa.statusLabel": "Status",
+  "mfa.statusEnrolled": "Enrolled",
+  "mfa.statusPending": "Enrollment in progress",
+  "mfa.statusNotEnrolled": "Not enrolled",
+  "mfa.startEnroll": "Start enrollment",
+  "mfa.pendingHint": "Complete enrollment with a code from your authenticator app.",
+  "mfa.manualSecret": "Manual entry secret",
+  "mfa.verifyCode": "Verification code",
+  "mfa.verify": "Verify & enable"
 }

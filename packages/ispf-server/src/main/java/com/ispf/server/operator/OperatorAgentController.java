@@ -75,14 +75,17 @@ public class OperatorAgentController {
     }
 
     @GetMapping("/status")
-    public Map<String, Object> status(@PathVariable String appId) throws Exception {
+    public Map<String, Object> status(
+            Authentication authentication,
+            @PathVariable String appId
+    ) throws Exception {
         OperatorAgentScope scope = scopeService.resolve(appId);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("appId", scope.appId());
         result.put("title", scope.title());
         result.put("pathPrefixes", scope.pathPrefixes());
         result.put("provider", llmProviderRegistry.status());
-        result.put("tools", toolRegistry.toolCatalog(AgentProfile.OPERATOR));
+        result.put("tools", toolRegistry.toolCatalog(AgentProfile.OPERATOR, authentication));
         result.put("agentProfile", AgentProfile.OPERATOR.storageValue());
         result.put("memoryCount", memoryService.count(scope.appId()));
         result.put("documentCount", documentService.count(scope.appId()));

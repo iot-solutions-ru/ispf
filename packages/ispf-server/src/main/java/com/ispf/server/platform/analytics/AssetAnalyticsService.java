@@ -81,6 +81,14 @@ public class AssetAnalyticsService {
                 AnalyticsBlueprintBootstrap.RATE_OF_CHANGE_MODEL,
                 "1h"
         );
+        upsertTemplate(
+                "oee",
+                "OEE composite",
+                "Availability × Performance × Quality over shift window — aligns with mes_oee_getKpi",
+                "oee",
+                AnalyticsBlueprintBootstrap.OEE_MODEL,
+                "8h"
+        );
     }
 
     private void upsertTemplate(

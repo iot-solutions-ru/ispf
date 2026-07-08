@@ -130,17 +130,13 @@ public class VariableHistoryController {
                         .body(variableHistoryService.exportJson(
                                 path, name, field, range.from(), range.to(), limit
                         ));
-                case "parquet" -> {
-                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                    variableHistoryService.streamJsonLines(
-                            path, name, field, range.from(), range.to(), limit, buffer
-                    );
-                    yield ResponseEntity.ok()
-                            .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "jsonl"))
-                            .header("X-ISPF-Export-Format", "parquet-stub-jsonl")
-                            .contentType(new MediaType("application", "x-ndjson"))
-                            .body(buffer.toByteArray());
-                }
+                case "parquet" -> ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_DISPOSITION, attachmentHeader(name, field, "parquet"))
+                        .header("X-ISPF-Export-Format", "parquet")
+                        .contentType(new MediaType("application", "vnd.apache.parquet"))
+                        .body(variableHistoryService.exportParquet(
+                                path, name, field, range.from(), range.to(), limit
+                        ));
                 default -> throw new IllegalArgumentException("Unsupported export format: " + format);
             };
         } catch (IllegalArgumentException e) {

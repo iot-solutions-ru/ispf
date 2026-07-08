@@ -1,6 +1,10 @@
 # Partner program (BL-184)
 
-Skeleton for the ISPF certified integrator and solution partner program. Full curriculum ships with Phase 32 GA.
+ISPF certified integrator and solution partner program. **Partner Portal** — отдельный сервис:
+
+- Repo: [Partner-portal](https://github.com/Michaael/Partner-portal)
+- API: `GET /api/v1/tiers`, applications, directory, training progress
+- In-server stub `GET /api/v1/partners/tiers` в `ispf-server` — legacy placeholder; canonical catalog на Partner Portal
 
 Related: [MARKETPLACE.md](MARKETPLACE.md), [CERTIFICATION.md](CERTIFICATION.md), [SOLUTION_DEVELOPER_GUIDE.md](SOLUTION_DEVELOPER_GUIDE.md).
 
@@ -99,7 +103,7 @@ Related: [MARKETPLACE.md](MARKETPLACE.md), [CERTIFICATION.md](CERTIFICATION.md),
 
 | Milestone | Target |
 |-----------|--------|
-| Partner portal (apply, training progress) | Phase 32 |
+| Partner portal (apply, training progress) | [Partner-portal](https://github.com/Michaael/Partner-portal) MVP |
 | First 5 certified integrators | Phase 32 GA |
 | OEM symbol + driver marketplace GA | BL-183, BL-185 |
 

@@ -1,0 +1,17 @@
+{
+  "id": "mes-platform-production",
+  "version": "1",
+  "domain": "mes",
+  "title": "MES platform production walkthrough",
+  "description": "BL-170 production bundle with OEE, SPC, and batch phases.",
+  "prompt": "Deploy mes-platform-production and verify OEE dashboard and batch run paths.",
+  "playbook": "mesReferenceLifecycle",
+  "bundle": {
+    "appId": "mes-platform-production",
+    "manifestPath": "examples/mes-platform-production/bundle.json"
+  },
+  "acceptance": {
+    "validateBundle": true,
+    "requiredTools": ["validate_bundle", "import_package", "invoke_bff"]
+  }
+}

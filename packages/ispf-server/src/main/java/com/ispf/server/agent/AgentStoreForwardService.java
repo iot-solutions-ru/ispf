@@ -10,7 +10,9 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -81,6 +83,35 @@ public class AgentStoreForwardService {
 
     public FederationOutboundEventBuffer.Stats stats(UUID agentId) {
         return bufferRegistry.stats(agentId);
+    }
+
+    public AgentStoreForwardStats aggregateStats() {
+        Map<UUID, FederationOutboundEventBuffer.Stats> perAgent = bufferRegistry.allStats();
+        Map<String, AgentStoreForwardAgentStats> agents = new LinkedHashMap<>();
+        int totalPending = 0;
+        int totalBytes = 0;
+        long totalDropped = 0;
+        for (Map.Entry<UUID, FederationOutboundEventBuffer.Stats> entry : perAgent.entrySet()) {
+            FederationOutboundEventBuffer.Stats stats = entry.getValue();
+            agents.put(
+                    entry.getKey().toString(),
+                    new AgentStoreForwardAgentStats(stats.count(), stats.bytes(), stats.dropped())
+            );
+            totalPending += stats.count();
+            totalBytes += stats.bytes();
+            totalDropped += stats.dropped();
+        }
+        return new AgentStoreForwardStats(
+                properties.isEnabled(),
+                properties.isPersistToDisk(),
+                properties.maxBytes(),
+                properties.dropPolicy(),
+                agents,
+                totalPending,
+                totalBytes,
+                totalDropped,
+                Instant.now()
+        );
     }
 
     private void persistPending() {

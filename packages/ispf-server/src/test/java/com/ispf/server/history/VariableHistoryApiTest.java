@@ -134,22 +134,27 @@ class VariableHistoryApiTest {
     }
 
     @Test
-    void parquetExportReturnsJsonLinesInterimFormat() throws Exception {
+    void parquetExportReturnsParquetBinary() throws Exception {
         double reading = 12.5;
         variableHistoryService.recordObservedSample(DEVICE, "temperature", "value", reading, Instant.now());
 
-        mockMvc.perform(get("/api/v1/objects/by-path/variables/history/export")
+        byte[] body = mockMvc.perform(get("/api/v1/objects/by-path/variables/history/export")
                         .param("path", DEVICE)
                         .param("name", "temperature")
                         .param("field", "value")
                         .param("format", "parquet")
                         .param("limit", "10"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Content-Disposition", containsString("temperature-value.jsonl")))
-                .andExpect(header().string("X-ISPF-Export-Format", "parquet-stub-jsonl"))
-                .andExpect(content().contentTypeCompatibleWith("application/x-ndjson"))
-                .andExpect(content().string(containsString("\"variableName\":\"temperature\"")))
-                .andExpect(content().string(containsString("\"value\":12.5")));
+                .andExpect(header().string("Content-Disposition", containsString("temperature-value.parquet")))
+                .andExpect(header().string("X-ISPF-Export-Format", "parquet"))
+                .andExpect(content().contentTypeCompatibleWith("application/vnd.apache.parquet"))
+                .andReturn()
+                .getResponse()
+                .getContentAsByteArray();
+
+        assertThat(body.length).isGreaterThan(8);
+        assertThat(new String(body, 0, 4)).isEqualTo("PAR1");
+        assertThat(new String(body, body.length - 4, 4)).isEqualTo("PAR1");
     }
 
     @Test

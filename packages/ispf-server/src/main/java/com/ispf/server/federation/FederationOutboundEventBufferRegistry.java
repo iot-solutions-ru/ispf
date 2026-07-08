@@ -40,6 +40,14 @@ public class FederationOutboundEventBufferRegistry {
         return buffer(agentId).stats().count();
     }
 
+    public Map<UUID, FederationOutboundEventBuffer.Stats> allStats() {
+        Map<UUID, FederationOutboundEventBuffer.Stats> stats = new LinkedHashMap<>();
+        for (Map.Entry<UUID, FederationOutboundEventBuffer> entry : buffers.entrySet()) {
+            stats.put(entry.getKey(), entry.getValue().stats());
+        }
+        return stats;
+    }
+
     public Map<UUID, List<FederationOutboundEventBuffer.BufferedEvent>> exportPending() {
         Map<UUID, List<FederationOutboundEventBuffer.BufferedEvent>> pending = new LinkedHashMap<>();
         for (Map.Entry<UUID, FederationOutboundEventBuffer> entry : buffers.entrySet()) {

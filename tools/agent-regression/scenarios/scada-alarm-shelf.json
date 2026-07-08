@@ -1,0 +1,12 @@
+{
+  "id": "scada-alarm-shelf",
+  "version": "1",
+  "domain": "scada",
+  "title": "SCADA alarm shelf approval",
+  "description": "Operator alarm shelf with approval workflow for high-priority alerts.",
+  "prompt": "Configure SCADA alarm shelf with high pressure alert and operator approval panel.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["configure_alert", "configure_operator_ui", "list_automation"]
+  }
+}

@@ -56,6 +56,23 @@ class AgentStoreForwardServiceTest {
         assertEquals("temperature", second.drain(agentId).getFirst().variableName());
     }
 
+    @Test
+    void aggregateStatsRollsUpPerAgentMetrics() {
+        AgentStoreForwardService service = newService(true, true);
+
+        UUID agentA = UUID.randomUUID();
+        UUID agentB = UUID.randomUUID();
+        service.enqueue(agentA, "root.platform.devices.a", "temperature", Instant.now());
+        service.enqueue(agentB, "root.platform.devices.b", "pressure", Instant.now());
+        service.enqueue(agentB, "root.platform.devices.b", "flow", Instant.now());
+
+        AgentStoreForwardStats stats = service.aggregateStats();
+        assertEquals(2, stats.agents().size());
+        assertEquals(3, stats.totalPending());
+        assertEquals(1, stats.agents().get(agentA.toString()).pendingCount());
+        assertEquals(2, stats.agents().get(agentB.toString()).pendingCount());
+    }
+
     private AgentStoreForwardService newService(boolean enabled, boolean persistToDisk) {
         FederationOutboundBufferProperties bufferProperties = new FederationOutboundBufferProperties();
         FederationOutboundEventBufferRegistry registry = new FederationOutboundEventBufferRegistry(bufferProperties);

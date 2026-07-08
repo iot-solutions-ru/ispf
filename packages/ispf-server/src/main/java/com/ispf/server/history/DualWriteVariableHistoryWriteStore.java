@@ -14,6 +14,7 @@ import java.util.List;
 @Service
 @Primary
 @ConditionalOnProperty(name = "ispf.variable-history.dual-write-enabled", havingValue = "true")
+@ConditionalOnProperty(name = "ispf.historian.tiers.warm.enabled", havingValue = "false", matchIfMissing = true)
 @ConditionalOnProperty(name = "ispf.variable-history.store", havingValue = "jdbc", matchIfMissing = true)
 public class DualWriteVariableHistoryWriteStore implements VariableHistoryWriteStore {
 

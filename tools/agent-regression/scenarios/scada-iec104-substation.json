@@ -1,0 +1,12 @@
+{
+  "id": "scada-iec104-substation",
+  "version": "1",
+  "domain": "scada",
+  "title": "SCADA IEC-104 substation",
+  "description": "IEC-104 substation telemetry and alarm shelf.",
+  "prompt": "Create IEC-104 substation SCADA overview with breaker status and trip alerts.",
+  "playbook": "virtualPumpStation",
+  "acceptance": {
+    "requiredTools": ["create_virtual_device", "configure_alert", "list_variables"]
+  }
+}

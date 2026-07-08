@@ -1,4 +1,5 @@
 import type { IsaSymbolDef } from "./types.js";
+import { WAVE4_ISA_SYMBOLS } from "./symbols-wave4.js";
 import {
   bubble,
   circle,
@@ -1840,4 +1841,5 @@ export const ALL_ISA_SYMBOLS: IsaSymbolDef[] = [
   dryer(),
   chute(),
   heatTracer(),
+  ...WAVE4_ISA_SYMBOLS,
 ];

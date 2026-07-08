@@ -11,8 +11,8 @@ Operator HMI quality: Lighthouse, bundle budget, axe a11y, SCADA mimic FPS.
 | Bundle budget | `npm run bundle:budget` | See `scripts/bundle-budget.json` | nightly |
 | Lighthouse | `npm run lighthouse:ci` | login a11y ≥85; operator a11y ≥90 (`LH_MIN_ACCESSIBILITY_OPERATOR`) | nightly |
 | axe critical | `npm run test:quality` | 0 critical | nightly |
-| Mimic FPS (stress) | `npm run test:quality` | ≥55 fps @ 120 elements (CI proxy) | nightly |
-| Mimic FPS (BL-152 target) | manual / `MIMIC_STRESS_ELEMENTS=500` | ≥60 fps @ 500 elements | roadmap |
+| Mimic FPS (stress) | `npm run test:quality` | ≥55 fps @ 500 elements (BL-152) | nightly |
+| Mimic FPS (excellence) | manual `MIMIC_MIN_FPS=60` | ≥60 fps @ 500 elements | optional |
 
 ```bash
 cd apps/web-console
@@ -28,8 +28,9 @@ Env overrides: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILI
 
 | Profile | Elements | FPS floor | Env |
 | ------- | -------- | --------- | --- |
-| CI gate (S21) | 120 | ≥55 | default `MIMIC_STRESS_ELEMENTS=120`, `MIMIC_MIN_FPS=55` |
-| Excellence target (Phase 26) | 500 | ≥60 | `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=60` |
+| CI gate (BL-152) | 500 | ≥55 | default `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
+| Excellence target | 500 | ≥60 | `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=60` |
+| Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Tank-farm manual | full diagram | ≥60 | Chrome Performance on operator mimic |
 
 Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min FPS over two 2s windows (`e2e/quality-gates.spec.ts`).
@@ -43,7 +44,7 @@ Stress document builder: `e2e/fixtures/stressMimic.ts`. Playwright measures min 
 | Screen reader labels | Done | `AlarmBarOverlay` — `role="alert"` + `aria-live="assertive"` per alarm |
 | SCADA symbol library | Done | [SCADA_SYMBOL_LIBRARY.md](SCADA_SYMBOL_LIBRARY.md), `customSvg.test.ts` |
 | Mimic 60 fps @ tank-farm | Done | CI stress proxy: 120 symbols @ ≥55 fps (`stressMimic.ts`); full tank-farm diagram same render path |
-| Mimic 60 fps @ 500 el | Partial | BL-152 target documented; enforce with `MIMIC_STRESS_ELEMENTS=500 MIMIC_MIN_FPS=60` locally |
+| Mimic 60 fps @ 500 el | Done (BL-152) | CI gate: 500 symbols @ ≥55 fps; raise `MIMIC_MIN_FPS=60` for excellence |
 | Lighthouse operator dashboard | Done | `lighthouse-ci.mjs` audits `/?mode=operator&app=e2e-operator` with API mocks |
 
 ## Profiling

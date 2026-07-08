@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchSecurityRoles } from "../api/securityRoles";
+import SecurityMfaPanel from "./SecurityMfaPanel";
 import { SECURITY_ROLES_ROOT } from "../utils/securityRolePath";
 import { SECURITY_USERS_ROOT } from "../utils/securityUserPath";
 
@@ -46,6 +47,8 @@ export default function SecurityRootPanel({ canManage, onSelectPath }: SecurityR
           <p className="security-user-card-desc">{t("securityRoot.rolesHint")}</p>
         </button>
       </div>
+
+      <SecurityMfaPanel />
 
       <section className="modal-section">
         <h4>{t("roleTemplates.title")}</h4>

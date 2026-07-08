@@ -11,7 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Shared flake budget for federation integration tests (S27).
  * See docs/FEDERATION.md § Integration test flake budget.
  */
-final class FederationIntegrationTestSupport {
+public final class FederationIntegrationTestSupport {
 
     /** Outbound tunnel WebSocket connect + linked peer registration. */
     static final long TUNNEL_CONNECT_TIMEOUT_SECONDS = System.getenv("CI") != null ? 120 : 60;
@@ -27,7 +27,7 @@ final class FederationIntegrationTestSupport {
     private FederationIntegrationTestSupport() {
     }
 
-    static String loginAdmin(MockMvc mockMvc) throws Exception {
+    public static String loginAdmin(MockMvc mockMvc) throws Exception {
         MvcResult login = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""

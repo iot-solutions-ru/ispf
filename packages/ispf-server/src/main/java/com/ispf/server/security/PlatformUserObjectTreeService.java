@@ -81,6 +81,29 @@ public class PlatformUserObjectTreeService {
                 "platform-role-v1"
         );
         setStringVariable(role.objectPath(), "description", role.description(), true);
+        seedRoleTemplatePermissions(role);
+    }
+
+    private void seedRoleTemplatePermissions(PlatformRoleStore.PlatformRole role) {
+        if (!PlatformRoleTemplatePermissions.isTemplate(role.name())) {
+            return;
+        }
+        PlatformRoleTemplatePermissions.operatorAgentTools(role.name()).ifPresent(tools -> {
+            try {
+                String json = objectMapper.writeValueAsString(tools.stream().sorted().toList());
+                setStringVariable(role.objectPath(), PlatformRoleTemplatePermissions.OPERATOR_AGENT_TOOLS_VAR, json, true);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to seed operatorAgentTools for " + role.name(), ex);
+            }
+        });
+        PlatformRoleTemplatePermissions.scopePathPrefixes(role.name()).ifPresent(prefixes -> {
+            try {
+                String json = objectMapper.writeValueAsString(prefixes);
+                setStringVariable(role.objectPath(), PlatformRoleTemplatePermissions.SCOPE_PATH_PREFIXES_VAR, json, true);
+            } catch (Exception ex) {
+                throw new IllegalStateException("Failed to seed scopePathPrefixes for " + role.name(), ex);
+            }
+        });
     }
 
     private void pruneRoles(Set<String> expectedRoleNames) {

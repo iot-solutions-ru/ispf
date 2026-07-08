@@ -305,7 +305,40 @@ Legacy alias: `ispf.federation.outbound-buffer.*` — тот же registry; но
 
 **Persistence (BL-145):** при `persist-to-disk=true` pending events сохраняются в `{ISPF_DATA_DIR}/agent/store-forward-buffer.json` и восстанавливаются при restart.
 
-**Limits (v1):** буфер только in-memory — при restart edge/hub события в очереди теряются. Не покрывает HTTP-only peers без outbound tunnel.
+**Metrics API (BL-145 HARDEN):**
+
+```http
+GET /api/v1/agent/store-forward/stats
+Authorization: Bearer <read-token>
+```
+
+Ответ: `{ enabled, persistToDisk, maxBytes, dropPolicy, agents: { "<agentId>": { pendingCount, pendingBytes, dropped } }, totalPending, totalBytes, totalDropped, capturedAt }`.
+
+Используйте для field/lab soak и алертинга на рост `totalPending` / `totalDropped`.
+
+### Field soak — 30-day buffer replay (BL-145)
+
+Accelerated lab soak (30 sim-days in 30 wall-minutes):
+
+```bash
+export ISPF_SOAK_BASE_URL=https://edge-site.example
+export ISPF_SOAK_TOKEN=<admin-or-read-token>
+export ISPF_SOAK_OUTBOUND_AGENT_ID=<uuid>   # optional disconnect/reconnect cycles
+export ISPF_DATA_DIR=/var/lib/ispf          # optional persist file check
+bash deploy/tools/agent-store-forward-soak.sh
+```
+
+| Env | Default | Описание |
+|-----|---------|----------|
+| `ISPF_SOAK_SIM_DAYS` | `30` | Simulated timeline length |
+| `ISPF_SOAK_WALL_MINUTES` | `30` | Wall-clock duration (86400× accel vs 30d) |
+| `ISPF_SOAK_POLL_SEC` | `10` | Stats poll interval |
+| `ISPF_SOAK_OUTBOUND_AGENT_ID` | — | Weekly simulated maintenance disconnect/reconnect |
+| `ISPF_SOAK_EVENT_PATH` / `ISPF_SOAK_EVENT_VAR` | demo sensor | Variable patches while tunnel offline |
+
+**Production field soak:** run the same script with `ISPF_SOAK_WALL_MINUTES=43200` (30 real days) on each edge node after hub registration. Review `build/agent-store-forward-soak/soak-report.md` + CSV; gate GA on zero data loss (`totalDropped` stable, pending drains after reconnect).
+
+**Limits (v1):** буфер only tracks tunnel `event_notify`; HTTP-only peers без outbound tunnel не буферизуются.
 
 ### Peer health SLO (BL-118)
 
@@ -376,6 +409,7 @@ Deploy profiles: hub uses standard VPS stack; edges use [docker-compose.edge-arm
 | Dashboard tabs | One tab per site or per production area (`site-a-overview`, `site-b-overview`) |
 | object-table | Rows from federated device subtree; selectionKey drills into site detail dashboard |
 | Live values | Proxy read + WS fan-out; stale badge when peer YELLOW/RED |
+| Federation site selector | Peer health badges (green/yellow/red) + 2 min refresh poll |
 | Event journal | Aggregated WARNING+ from all federated prefixes |
 | Agent copilot | Scoped to hub operator app prefixes only ([OPERATOR_GUIDE.md](OPERATOR_GUIDE.md)) |
 

@@ -9,6 +9,9 @@ import org.eclipse.milo.opcua.sdk.server.api.ManagedNamespaceWithLifecycle;
 import org.eclipse.milo.opcua.sdk.server.api.MonitoredItem;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode;
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode;
+import org.eclipse.milo.opcua.sdk.server.nodes.filters.AttributeFilters;
+import org.eclipse.milo.opcua.sdk.server.util.SubscriptionModel;
+import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
@@ -19,6 +22,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * Custom OPC UA namespace backing ISPF server variable points.
@@ -29,10 +33,18 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
 
     private final Map<NodeId, UaVariableNode> variableNodes = new ConcurrentHashMap<>();
     private final Map<NodeId, String> variableValues = new ConcurrentHashMap<>();
+    private final SubscriptionModel subscriptionModel;
+    private BiConsumer<NodeId, String> externalWriteListener;
     private UaFolderNode variablesFolder;
+
+    void setExternalWriteListener(BiConsumer<NodeId, String> listener) {
+        this.externalWriteListener = listener;
+    }
 
     IspfOpcUaNamespace(OpcUaServer server) {
         super(server, NAMESPACE_URI);
+        subscriptionModel = new SubscriptionModel(server, this);
+        getLifecycleManager().addLifecycle(subscriptionModel);
         getLifecycleManager().addStartupTask(this::initializeNodes);
     }
 
@@ -53,6 +65,16 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
                     .build();
             String initialValue = variableValues.computeIfAbsent(point.nodeId(), ignored -> "");
             variableNode.setValue(new DataValue(new Variant(initialValue)));
+            variableNode.getFilterChain().addLast(AttributeFilters.setValue((ctx, value) -> {
+                String written = variantToString(value.getValue());
+                variableValues.put(point.nodeId(), written);
+                BiConsumer<NodeId, String> listener = externalWriteListener;
+                if (listener != null) {
+                    listener.accept(point.nodeId(), written);
+                }
+                ctx.setAttribute(AttributeId.Value, value);
+                variableNode.fireAttributeChanged(AttributeId.Value, value);
+            }));
             getNodeManager().addNode(variableNode);
             variablesFolder.addOrganizes(variableNode);
             variableNodes.put(point.nodeId(), variableNode);
@@ -75,26 +97,33 @@ final class IspfOpcUaNamespace extends ManagedNamespaceWithLifecycle {
 
     @Override
     public void onDataItemsCreated(List<DataItem> dataItems) {
-        // no-op for v0.1
+        subscriptionModel.onDataItemsCreated(dataItems);
     }
 
     @Override
     public void onDataItemsModified(List<DataItem> dataItems) {
-        // no-op for v0.1
+        subscriptionModel.onDataItemsModified(dataItems);
     }
 
     @Override
     public void onDataItemsDeleted(List<DataItem> dataItems) {
-        // no-op for v0.1
+        subscriptionModel.onDataItemsDeleted(dataItems);
     }
 
     @Override
     public void onMonitoringModeChanged(List<MonitoredItem> monitoredItems) {
-        // no-op for v0.1
+        subscriptionModel.onMonitoringModeChanged(monitoredItems);
     }
 
     private void initializeNodes() {
         ensureVariablesFolder();
+    }
+
+    private static String variantToString(Variant variant) {
+        if (variant == null || variant.getValue() == null) {
+            return "";
+        }
+        return variant.getValue().toString();
     }
 
     private void ensureVariablesFolder() {

@@ -5,6 +5,9 @@ import type { VariableDto } from "../types";
 
 const PREFIX = "ispf:op-offline:";
 
+/** BL-151: operator offline cache TTL (8 hours). */
+export const OFFLINE_CACHE_MAX_AGE_MS = 8 * 60 * 60 * 1000;
+
 export interface OfflineCacheEnvelope<T> {
   cachedAt: string;
   payload: T;
@@ -17,13 +20,23 @@ export interface OfflineScreenSnapshot {
   truncated?: boolean;
 }
 
+function isExpired(cachedAt: string): boolean {
+  const ageMs = Date.now() - Date.parse(cachedAt);
+  return !Number.isFinite(ageMs) || ageMs > OFFLINE_CACHE_MAX_AGE_MS;
+}
+
 function readEnvelope<T>(key: string): OfflineCacheEnvelope<T> | null {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) {
       return null;
     }
-    return JSON.parse(raw) as OfflineCacheEnvelope<T>;
+    const envelope = JSON.parse(raw) as OfflineCacheEnvelope<T>;
+    if (isExpired(envelope.cachedAt)) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return envelope;
   } catch {
     return null;
   }

@@ -124,6 +124,47 @@ public class MarketplaceLocalBundleService {
         return result;
     }
 
+    /**
+     * BL-183: uninstall a locally installed marketplace bundle by removing deployed tree artifacts.
+     */
+    public Map<String, Object> uninstallLocalBundle(String bundleId) throws Exception {
+        if (bundleId == null || bundleId.isBlank()) {
+            throw new IllegalArgumentException("bundle id is required");
+        }
+        Path root = resolveLocalRoot();
+        if (root == null || !Files.isDirectory(root)) {
+            throw new IllegalStateException("Local marketplace bundle directory is not configured");
+        }
+
+        ResolvedListing resolved = resolveListing(root, bundleId.trim());
+        if (!"OK".equals(resolved.row().get("validationStatus"))) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("status", "ERROR");
+            error.put("bundleId", bundleId);
+            error.put("validationStatus", resolved.row().get("validationStatus"));
+            error.put("errors", resolved.row().getOrDefault("errors", List.of()));
+            return error;
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> listing = objectMapper.readValue(Files.readString(resolved.listingPath()), Map.class);
+        String appId = stringValue(listing.get("appId"));
+        if (appId.isBlank()) {
+            throw new IllegalStateException("Listing has no appId");
+        }
+
+        Map<String, Object> removeResult = bundleDeployService.removeBundleObjects(appId);
+        Map<String, Object> result = new LinkedHashMap<>(removeResult);
+        result.put("status", "OK".equals(removeResult.get("status")) ? "OK" : removeResult.get("status"));
+        result.put("source", "local-marketplace");
+        result.put("action", "uninstall");
+        result.put("bundleId", bundleId);
+        result.put("slug", listing.get("slug"));
+        result.put("appId", appId);
+        result.put("version", listing.get("latestVersion"));
+        return result;
+    }
+
     private record ResolvedListing(Map<String, Object> row, Path listingPath, Path bundlePath) {
     }
 

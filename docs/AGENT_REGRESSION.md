@@ -8,6 +8,7 @@ Foundation for CI agent scenario validation: curated prompts, bundle references,
 |------|---------|
 | `tools/agent-regression/scenario-schema.json` | JSON Schema for scenario files |
 | `tools/agent-regression/scenarios/*.json` | Scenario definitions (SCADA, MES, HVAC) |
+| `tools/agent-regression/run-nightly.sh` | Nightly stub: validate-scenarios + optional live pass-rate gate |
 | `scripts/run-agent-regression.sh` | Validates scenario + bundle manifest shape |
 
 ## Scenario file
@@ -56,9 +57,11 @@ bash scripts/run-agent-regression.sh --live
 | Stage | Gate |
 |-------|------|
 | PR | `run-agent-regression.sh` / `validate-scenarios.mjs` (schema + manifest) |
-| Nightly | Live agent run against lab VPS; pass rate ≥95% (BL-178 target: 50 scenarios) |
+| Nightly | `tools/agent-regression/run-nightly.sh` + live agent run; pass rate ≥95% (BL-178 target: 50 scenarios) |
 
-**Current scenario count:** 30 (SCADA, MES, HVAC).
+**Current scenario count:** 40 (SCADA, MES, HVAC).
+
+Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rate`) — target ≥95% live agent pass rate.
 
 ## Related
 

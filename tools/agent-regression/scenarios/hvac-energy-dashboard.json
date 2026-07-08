@@ -1,0 +1,12 @@
+{
+  "id": "hvac-energy-dashboard",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC energy dashboard",
+  "description": "Building energy KPI dashboard from zone historian trends.",
+  "prompt": "Build HVAC energy dashboard with zone historian trends and setpoint drift alert.",
+  "playbook": "buildingHvacApp",
+  "acceptance": {
+    "requiredTools": ["configure_variable_history", "set_dashboard_layout"]
+  }
+}

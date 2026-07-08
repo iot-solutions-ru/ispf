@@ -85,6 +85,15 @@ Idempotent SAP / 1C sync stub — [erp-outbox.json](../examples/mes-platform/erp
 
 Full walkthrough: [examples/mes-platform-production/](../examples/mes-platform-production/)
 
+**One-command deploy + smoke** (local or VPS):
+
+```bash
+bash deploy/tools/mes-platform-production-deploy.sh
+# or: bash deploy/tools/mes-platform-production-deploy.sh /path/to/bundle.json
+```
+
+Manual deploy:
+
 ```bash
 curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-production/deploy \
   -H "Content-Type: application/json" \
@@ -95,6 +104,16 @@ Hub: `root.platform.devices.mes-platform-production-hub`
 Operator UI: `?mode=operator&app=mes-platform-production`
 
 Dashboards: **Dispatch**, **OEE**, **Quality** (SPC chart reference).
+
+---
+
+## Wave 5 hardening (BL-166 / BL-167 / BL-168)
+
+| BL | Hardening | Integration test |
+|----|-----------|------------------|
+| BL-166 | Work-order dispatch BPMN full cycle (run → work-queue → confirm → `COMPLETED`) | `MesWorkOrderDispatchIntegrationTest` |
+| BL-167 | SPC `chart` widget on `mes-platform-quality` dashboard + `mes_quality_listSpcSamples` | `MesQualitySpcDashboardIntegrationTest` |
+| BL-168 | Batch phase runner `charge` → `react` → `discharge` via `mes_batch_runPhase` / `mes_batch_getStatus` | `MesBatchPhaseRunnerIntegrationTest` |
 
 ---
 
@@ -150,15 +169,15 @@ Seed shift UUID: `dddddddd-dddd-dddd-dddd-dddddddddddd` → OEE ≈ **85%** for 
 ## Smoke commands
 
 ```bash
-./gradlew :packages:ispf-server:test --tests "com.ispf.server.application.reference.mes.MesBlueprintBootstrapTest" --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest"
+./gradlew :packages:ispf-server:test \
+  --tests "com.ispf.server.application.reference.mes.MesBlueprintBootstrapTest" \
+  --tests "com.ispf.server.application.reference.mes.MesWorkOrderDispatchIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesQualitySpcDashboardIntegrationTest" \
+  --tests "com.ispf.server.application.reference.mes.MesBatchPhaseRunnerIntegrationTest" \
+  --tests "com.ispf.server.application.MesPlatformBundleSmokeTest" \
+  --tests "com.ispf.server.application.MesPlatformProductionBundleSmokeTest"
 
-curl -s -X POST http://localhost:8080/api/v1/applications/mes-platform-production/deploy \
-  -H "Content-Type: application/json" \
-  --data-binary @examples/mes-platform-production/bundle.json
-
-curl -s -X POST http://localhost:8080/api/v1/bff/invoke \
-  -H "Content-Type: application/json" \
-  -d '{"objectPath":"root.platform.devices.mes-platform-production-hub","functionName":"mes_oee_getKpi","input":{"schema":{"name":"in","fields":[{"name":"shiftId","type":"STRING"}]},"rows":[{"shiftId":"dddddddd-dddd-dddd-dddd-dddddddddddd"}]}}'
+bash deploy/tools/mes-platform-production-deploy.sh
 ```
 
 ---

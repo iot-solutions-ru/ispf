@@ -7067,6 +7067,24 @@ body.scada-mimic-editor-open {
   font-size: 0.82rem;
 }
 
+.federation-peer-health-badge.is-compact {
+  font-size: 0.68rem;
+  padding: 0.05rem 0.35rem;
+  line-height: 1.2;
+}
+
+.operator-federation-peer-select .federation-peer-health-badge[data-health="GREEN"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok, #16a34a) 35%, transparent);
+}
+
+.operator-federation-peer-select .federation-peer-health-badge[data-health="YELLOW"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--warn, #d97706) 35%, transparent);
+}
+
+.operator-federation-peer-select .federation-peer-health-badge[data-health="RED"] {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #dc2626) 35%, transparent);
+}
+
 .operator-sidebar-toggle {
   display: none;
 }
@@ -7587,6 +7605,48 @@ body.scada-mimic-editor-open {
 
 .security-users-header h3 {
   margin: 0 0 0.35rem;
+}
+
+.security-mfa-panel {
+  margin-top: 1.25rem;
+}
+
+.security-mfa-qr-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.security-mfa-qr {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0d1117;
+}
+
+.security-mfa-secret {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.security-mfa-verify-label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.security-mfa-verify-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.security-mfa-verify-row .system-settings-input {
+  width: 8rem;
 }
 
 .security-users-table-compact td,

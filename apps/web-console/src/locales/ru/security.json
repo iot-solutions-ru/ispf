@@ -74,5 +74,18 @@
   "users.column.roles": "Роли",
   "users.create": "+ Создать пользователя",
   "users.subtitle": "Учётные записи в root.platform.security.users. Выберите пользователя в дереве или в списке — свойства редактируются в инспекторе объекта.",
-  "users.title": "Пользователи платформы"
+  "users.title": "Пользователи платформы",
+  "mfa.title": "Двухфакторная аутентификация (TOTP)",
+  "mfa.subtitle": "Подключите приложение-аутентификатор: отсканируйте QR-код или введите секрет вручную, затем подтвердите 6-значным кодом.",
+  "mfa.disabledOnServer": "MFA не включён на сервере (ISPF_MFA_ENABLED=true).",
+  "mfa.account": "Учётная запись",
+  "mfa.statusLabel": "Статус",
+  "mfa.statusEnrolled": "Подключено",
+  "mfa.statusPending": "Ожидает подтверждения",
+  "mfa.statusNotEnrolled": "Не подключено",
+  "mfa.startEnroll": "Начать подключение",
+  "mfa.pendingHint": "Завершите подключение кодом из приложения-аутентификатора.",
+  "mfa.manualSecret": "Секрет для ручного ввода",
+  "mfa.verifyCode": "Код подтверждения",
+  "mfa.verify": "Подтвердить"
 }

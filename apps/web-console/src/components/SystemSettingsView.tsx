@@ -22,6 +22,11 @@ const QUICK_BOOLEAN_IDS = [
 
 const QUICK_SELECT_SETTINGS: Record<string, readonly string[]> = {
   "ai.provider": ["noop", "openai-compatible", "ollama", "custom-url"],
+  "tenant.isolation-mode": ["logical", "hard"],
+};
+
+const SECTION_SELECT_OPTIONS: Record<string, readonly string[]> = {
+  "tenant.isolation-mode": ["logical", "hard"],
 };
 
 function findSetting(
@@ -118,16 +123,19 @@ function SettingsSectionCard({
   section,
   drafts,
   onDraftChange,
+  sectionHint,
 }: {
   section: PlatformRuntimeSettingsSection;
   drafts: Record<string, string>;
   onDraftChange: (id: string, value: string) => void;
+  sectionHint?: string;
 }) {
   const { t } = useTranslation("system");
 
   return (
     <section className="system-metrics-card system-settings-card">
       <h3>{t(`settings.sections.${section.id}`, section.title)}</h3>
+      {sectionHint && <p className="hint system-settings-section-hint">{sectionHint}</p>}
       {section.id === "elastic" && (
         <p className="hint system-settings-section-hint">{t("settings.sections.elasticHint")}</p>
       )}
@@ -146,6 +154,7 @@ function SettingsSectionCard({
               key={setting.id}
               setting={setting}
               draftValue={drafts[setting.id] ?? setting.value}
+              selectOptions={SECTION_SELECT_OPTIONS[setting.id]}
               onChange={(value) => onDraftChange(setting.id, value)}
             />
           ))}
@@ -299,7 +308,16 @@ export default function SystemSettingsView() {
             />
           )}
 
-          {activeSection && activeSection.id !== "database" && (
+          {activeSection && activeSection.id === "tenant" && (
+            <SettingsSectionCard
+              section={activeSection}
+              drafts={mergedDrafts}
+              onDraftChange={(id, value) => setDrafts((prev) => ({ ...prev, [id]: value }))}
+              sectionHint={t("settings.sections.tenantHint")}
+            />
+          )}
+
+          {activeSection && activeSection.id !== "database" && activeSection.id !== "tenant" && (
             <SettingsSectionCard
               section={activeSection}
               drafts={mergedDrafts}

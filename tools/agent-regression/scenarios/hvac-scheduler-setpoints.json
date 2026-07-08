@@ -1,0 +1,16 @@
+{
+  "id": "hvac-scheduler-setpoints",
+  "version": "1",
+  "domain": "hvac",
+  "title": "HVAC scheduler setpoints",
+  "description": "Scheduled comfort setpoint changes for office zones.",
+  "prompt": "Configure HVAC zone scheduler setpoints and verify comfort dashboard updates.",
+  "playbook": "buildingHvacApp",
+  "bundle": {
+    "appId": "building-hvac",
+    "manifestPath": "examples/building-hvac-app/bundle.json"
+  },
+  "acceptance": {
+    "requiredTools": ["list_schedules", "set_variable"]
+  }
+}

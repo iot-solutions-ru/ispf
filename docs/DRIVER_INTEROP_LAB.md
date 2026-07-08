@@ -20,7 +20,7 @@
 | `modbus-rtu` | `ispf-driver-modbus-rtu` | `ModbusRtuDeviceDriverTest` |
 | `modbus-udp` | `ispf-driver-modbus-udp` | `ModbusPointTest` |
 | `opcua` | `ispf-driver-opcua` | `OpcUaDeviceDriverTest` |
-| `opcua-server` | `ispf-driver-opcua-server` | `OpcUaServerPointTest` |
+| `opcua-server` | `ispf-driver-opcua-server` | `OpcUaServerPointTest`, `OpcUaServerSubscriptionWriteBackIntegrationTest` |
 | `snmp` | `ispf-driver-snmp` | `SnmpDeviceDriverTest` |
 | `bacnet` | `ispf-driver-bacnet` | `BacnetDeviceDriverNetworkTest` |
 | `s7` | `ispf-driver-s7` | `S7DeviceDriverTest` |
@@ -41,9 +41,10 @@
 
 GitHub Actions: [`.github/workflows/driver-interop.yml`](../.github/workflows/driver-interop.yml)
 
-1. **matrix** — `./gradlew :packages:<module>:test` для каждого модуля из top-20.
-2. **summary** — `deploy/tools/driver-interop-report.sh --ci-summary` → `build/driver-interop/interop-summary.md`.
-3. **production-gate** — `DriverProductionMatrixTest` + `DriverInteropWorkflowGateTest`.
+1. **docker-fixtures-smoke** — `docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait`, затем `deploy/tools/driver-interop-smoke.sh` (MQTT / Modbus / OPC UA), `down -v`.
+2. **matrix** — `./gradlew :packages:<module>:test` для каждого модуля из top-20.
+3. **summary** — `deploy/tools/driver-interop-report.sh --ci-summary` → `build/driver-interop/interop-summary.md`.
+4. **production-gate** — `DriverProductionMatrixTest` + `DriverInteropWorkflowGateTest`.
 
 Триггеры: PR в `packages/ispf-driver-*`, `DriverProductionMatrix`, workflow file.
 
@@ -120,10 +121,15 @@ Mosquitto config: `deploy/driver-interop/mosquitto/mosquitto.conf` (anonymous, n
 After `docker compose up -d`:
 
 ```bash
-# MQTT publish (requires mosquitto clients)
-mosquitto_pub -h 127.0.0.1 -t ispf/lab/ping -m ok
+bash deploy/tools/driver-interop-smoke.sh
+```
 
-# Driver loopback (CI-safe, no Docker)
+Скрипт ждёт TCP на `1883` / `502` / `4840`, делает MQTT round-trip (через `docker exec` в `ispf-interop-mosquitto` или host `mosquitto_pub`), пишет `build/driver-interop/fixture-smoke-summary.md`.
+
+Ручная проверка:
+
+```bash
+mosquitto_pub -h 127.0.0.1 -t ispf/lab/ping -m ok
 ./gradlew :packages:ispf-driver-mqtt:test :packages:ispf-driver-modbus:test :packages:ispf-driver-opcua:test
 ```
 

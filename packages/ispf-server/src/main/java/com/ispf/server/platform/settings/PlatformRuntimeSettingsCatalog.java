@@ -16,6 +16,7 @@ final class PlatformRuntimeSettingsCatalog {
             Map.entry("drivers", "Drivers"),
             Map.entry("ai", "AI"),
             Map.entry("platform", "Platform"),
+            Map.entry("tenant", "Multi-tenant"),
             Map.entry("cluster", "Cluster"),
             Map.entry("license", "License")
     );
@@ -244,6 +245,9 @@ final class PlatformRuntimeSettingsCatalog {
 
             def("platform", "reports.yarg.libre-office.path", "ISPF_REPORTS_LIBREOFFICE_PATH", "ispf.reports.yarg.libre-office.path", PlatformRuntimeSettingType.STRING, "", false, false),
             def("platform", "reports.yarg.libre-office.timeout-seconds", "ISPF_REPORTS_LIBREOFFICE_TIMEOUT_SECONDS", "ispf.reports.yarg.libre-office.timeout-seconds", PlatformRuntimeSettingType.INTEGER, "120", false, false),
+
+            def("tenant", "tenant.isolation-mode", "ISPF_TENANT_ISOLATION_MODE", "ispf.tenant.isolation-mode", PlatformRuntimeSettingType.STRING, "logical", false, false),
+            def("tenant", "tenant.schema-prefix", "ISPF_TENANT_SCHEMA_PREFIX", "ispf.tenant.schema-prefix", PlatformRuntimeSettingType.STRING, "tenant_", false, false),
 
             def("license", "license.enforce", "ISPF_LICENSE_ENFORCE", "ispf.license.enforce", PlatformRuntimeSettingType.BOOLEAN, "false", false, false),
             def("license", "data-dir", "ISPF_DATA_DIR", "ispf.license.data-dir", PlatformRuntimeSettingType.STRING, "./data", false, false)

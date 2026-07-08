@@ -41,6 +41,7 @@ import com.ispf.server.platform.HaystackExportService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.security.PlatformRoleService;
 import com.ispf.server.security.PlatformUserService;
+import com.ispf.server.security.OperatorAgentToolPolicy;
 import com.ispf.server.security.acl.ObjectAccessService;
 import com.ispf.server.tenant.TenantScopeService;
 import com.ispf.server.history.VariableHistoryService;
@@ -55,6 +56,7 @@ import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.workflow.WorkQueueService;
 import com.ispf.server.workflow.WorkflowInstanceCancelService;
 import com.ispf.server.workflow.WorkflowService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -74,6 +76,7 @@ public class PlatformAgentToolRegistry {
 
     private final Map<String, PlatformAgentTool> toolsByName;
     private final ObjectMapper objectMapper;
+    private final OperatorAgentToolPolicy operatorAgentToolPolicy;
 
     public PlatformAgentToolRegistry(
             ContextPackSearchService contextPackSearchService,
@@ -123,9 +126,11 @@ public class PlatformAgentToolRegistry {
             ApplicationSqlBindingService applicationSqlBindingService,
             ApplicationBundlePullFromTreeService applicationBundlePullFromTreeService,
             ScheduleObjectService scheduleObjectService,
-            PlatformTimeZoneResolver platformTimeZoneResolver
+            PlatformTimeZoneResolver platformTimeZoneResolver,
+            OperatorAgentToolPolicy operatorAgentToolPolicy
     ) {
         this.objectMapper = objectMapper;
+        this.operatorAgentToolPolicy = operatorAgentToolPolicy;
         List<PlatformAgentTool> tools = new ArrayList<>();
         tools.addAll(AgentKnowledgeTools.all(
                 contextPackSearchService,
@@ -293,8 +298,15 @@ public class PlatformAgentToolRegistry {
     }
 
     public List<Map<String, Object>> toolCatalog(AgentProfile profile) {
+        return toolCatalog(profile, null);
+    }
+
+    public List<Map<String, Object>> toolCatalog(AgentProfile profile, Authentication authentication) {
+        Set<String> operatorAllowed = profile == AgentProfile.OPERATOR
+                ? operatorAgentToolPolicy.allowedTools(authentication)
+                : Set.of();
         return toolsByName.values().stream()
-                .filter(tool -> profile != AgentProfile.OPERATOR || OPERATOR_TOOLS.contains(tool.name()))
+                .filter(tool -> profile != AgentProfile.OPERATOR || operatorAllowed.contains(tool.name()))
                 .map(tool -> Map.<String, Object>of(
                         "name", tool.name(),
                         "description", tool.description()
@@ -318,11 +330,14 @@ public class PlatformAgentToolRegistry {
 
     public Map<String, Object> execute(String toolName, Map<String, Object> arguments, AgentContext context)
             throws Exception {
-        if (context.isOperator() && !OPERATOR_TOOLS.contains(toolName)) {
-            return Map.of(
-                    "status", "ERROR",
-                    "error", "Tool not allowed in operator mode: " + toolName
-            );
+        if (context.isOperator()) {
+            Set<String> allowed = operatorAgentToolPolicy.allowedTools(context.authentication());
+            if (!allowed.contains(toolName)) {
+                return Map.of(
+                        "status", "ERROR",
+                        "error", "Tool not allowed in operator mode: " + toolName
+                );
+            }
         }
         if (context.isOperator()) {
             try {

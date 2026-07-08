@@ -1,7 +1,7 @@
 /** Large mimic document for runtime FPS profiling (S21-01). */
 const LAYER = "layer-default";
 
-export function buildStressMimicDocument(elementCount = 200) {
+export function buildStressMimicDocument(elementCount = 500) {
   const cols = 20;
   const elements = Array.from({ length: elementCount }, (_, index) => ({
     id: `stress-el-${index}`,

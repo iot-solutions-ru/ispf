@@ -73,6 +73,7 @@ Covers:
 
 - `OpcUaServerPointTest` — NodeId parsing
 - `OpcUaServerDeviceDriverTest` — connect, read, write round-trip on ephemeral port
+- `OpcUaServerSubscriptionWriteBackIntegrationTest` — external Milo client subscribe + write → ISPF variable write-back (BL-143)
 
 ### Client + server loopback (full stack)
 
@@ -111,7 +112,7 @@ See also [DRIVERS.md](DRIVERS.md) § opcua client and [DRIVER_INTEROP_LAB.md](DR
 - String values only (no typed Variant mapping)
 - SecurityPolicy None — not suitable for untrusted networks
 - No REST browse for server devices (use OPC UA browse on wire)
-- Server-side Milo monitoring callbacks are no-op; ISPF poll does not push to external subscribers automatically
+- External subscribe notifications depend on Milo server monitoring callbacks (write-back to ISPF variables is covered by BL-143 integration test)
 - Ephemeral self-signed certificate regenerated on each connect
 
 ## Related files

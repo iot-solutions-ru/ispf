@@ -3,6 +3,11 @@ plugins {
     id("io.spring.dependency-management")
 }
 
+configurations.all {
+    exclude(group = "org.slf4j", module = "slf4j-reload4j")
+    exclude(group = "ch.qos.reload4j", module = "reload4j")
+}
+
 dependencies {
     implementation(project(":packages:ispf-core"))
     implementation(project(":packages:ispf-expression"))
@@ -42,6 +47,22 @@ dependencies {
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
     implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
+
+    implementation("org.apache.parquet:parquet-avro:1.14.3") {
+        exclude(group = "org.slf4j", module = "slf4j-reload4j")
+        exclude(group = "ch.qos.reload4j", module = "reload4j")
+    }
+    implementation("org.apache.parquet:parquet-hadoop:1.14.3") {
+        exclude(group = "org.slf4j", module = "slf4j-reload4j")
+        exclude(group = "ch.qos.reload4j", module = "reload4j")
+    }
+    implementation("org.apache.avro:avro:1.11.4")
+    implementation("org.apache.hadoop:hadoop-common:3.4.1") {
+        exclude(group = "org.slf4j", module = "slf4j-reload4j")
+        exclude(group = "ch.qos.reload4j", module = "reload4j")
+        exclude(group = "org.slf4j", module = "slf4j-log4j12")
+        exclude(group = "log4j", module = "log4j")
+    }
 
     constraints {
         implementation("net.sf.jasperreports:jasperreports:7.0.7")

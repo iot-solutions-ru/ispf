@@ -66,13 +66,34 @@ PUT /api/v1/tenants/acme/quotas
 
 | Property | Default | Описание |
 |----------|---------|----------|
-| `ispf.tenant.isolation-mode` | `logical` | `logical` — path namespaces; `hard` — per-tenant PostgreSQL schema (stub) |
+| `ispf.tenant.isolation-mode` | `logical` | `logical` — path namespaces; `hard` — per-tenant PostgreSQL schema |
 | `ispf.tenant.schema-prefix` | `tenant_` | Schema prefix when `hard` (`tenant_acme` for tenant `acme`) |
 
 Env: `ISPF_TENANT_ISOLATION_MODE=logical|hard`, `ISPF_TENANT_SCHEMA_PREFIX=tenant_`.
 
-**Logical (default):** один shared schema; tenant data under `root.tenant.{id}.platform.*`.
+**Web Console:** System → Runtime settings → **Multi-tenant** tab (или quick toggle **Tenant isolation mode** на вкладке Integrations). Изменение требует **перезапуска** `ispf-server`.
 
-**Hard (stub):** при `POST /api/v1/tenants` проверяется, что `tenantId` допустим как суффикс PostgreSQL schema (`[a-z][a-z0-9_]{0,62}`). Ответ включает `schemaName`. Provisioning schema и routing datasource — follow-up.
+### Logical (default)
+
+Один shared PostgreSQL schema; tenant data under `root.tenant.{id}.platform.*`. Write isolation enforced in API (`requirePathInScope`).
+
+### Hard mode
+
+При `POST /api/v1/tenants`:
+
+1. `tenantId` проверяется как допустимый суффикс PostgreSQL schema: `[a-z][a-z0-9_]{0,62}` (итоговое имя ≤ 63 символов с префиксом).
+2. Ответ включает `schemaName` (`tenant_{id}` по умолчанию).
+3. `TenantSchemaService` создаёт schema `CREATE SCHEMA IF NOT EXISTS` (stub — routing datasource follow-up).
+
+**Когда включать hard:** SaaS с жёстким DB-level isolation, compliance, отдельные backup/restore per tenant. **Не включать** для single-tenant on-prem без миграции данных.
+
+### Сравнение
+
+| | Logical | Hard |
+|---|---------|------|
+| DB schema | Shared | Per tenant |
+| Path scope | `root.tenant.{id}.*` | Same + schema provision |
+| OIDC tenant claim | Planned (BL-155 follow-up) | Planned |
+| Restart on toggle | Yes | Yes |
 
 См. также [FEDERATION.md](FEDERATION.md), [ROADMAP.md](ROADMAP.md).

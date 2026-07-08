@@ -42,13 +42,29 @@ export default defineConfig({
         navigateFallback: "index.html",
         runtimeCaching: [
           {
+            // BL-151: last operator manifest / UI for 8h offline PWA
+            urlPattern: /^\/api\/v1\/applications\/[^/]+\/(operator-manifest|operator-ui|hmi-ui)$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "ispf-operator-manifest",
+              expiration: {
+                maxEntries: 16,
+                maxAgeSeconds: 60 * 60 * 8,
+              },
+              networkTimeoutSeconds: 5,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
             urlPattern: /^\/api\/v1\/dashboards\//,
             handler: "NetworkFirst",
             options: {
               cacheName: "ispf-dashboards",
               expiration: {
                 maxEntries: 48,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
+                maxAgeSeconds: 60 * 60 * 8,
               },
               networkTimeoutSeconds: 5,
               cacheableResponse: {
@@ -63,7 +79,7 @@ export default defineConfig({
               cacheName: "ispf-mimics",
               expiration: {
                 maxEntries: 32,
-                maxAgeSeconds: 60 * 60 * 24 * 7,
+                maxAgeSeconds: 60 * 60 * 8,
               },
               networkTimeoutSeconds: 5,
               cacheableResponse: {

@@ -12,6 +12,7 @@ import com.ispf.server.ai.agent.AgentSessionStore;
 import com.ispf.server.ai.agent.PlatformAgentToolRegistry;
 import com.ispf.server.ai.agent.TreeFirstAgentService;
 import com.ispf.server.ai.generation.AiBundleGenerationService;
+import com.ispf.server.ai.generation.AiSolutionGeneratorService;
 import com.ispf.server.ai.llm.LlmProviderRegistry;
 import com.ispf.server.ai.tool.AiToolRegistry;
 import com.ispf.server.application.bundle.ApplicationBundleDeployService;
@@ -64,6 +65,7 @@ public class AiController {
     private final AiToolRegistry toolRegistry;
     private final LlmProviderRegistry llmProviderRegistry;
     private final AiBundleGenerationService generationService;
+    private final AiSolutionGeneratorService solutionGeneratorService;
     private final TreeFirstAgentService agentService;
     private final AgentSessionStore agentSessionStore;
     private final PlatformAgentToolRegistry agentToolRegistry;
@@ -79,6 +81,7 @@ public class AiController {
             AiToolRegistry toolRegistry,
             LlmProviderRegistry llmProviderRegistry,
             AiBundleGenerationService generationService,
+            AiSolutionGeneratorService solutionGeneratorService,
             TreeFirstAgentService agentService,
             AgentSessionStore agentSessionStore,
             PlatformAgentToolRegistry agentToolRegistry,
@@ -93,6 +96,7 @@ public class AiController {
         this.toolRegistry = toolRegistry;
         this.llmProviderRegistry = llmProviderRegistry;
         this.generationService = generationService;
+        this.solutionGeneratorService = solutionGeneratorService;
         this.agentService = agentService;
         this.agentSessionStore = agentSessionStore;
         this.agentToolRegistry = agentToolRegistry;
@@ -441,6 +445,17 @@ public class AiController {
         }
     }
 
+    @PostMapping("/solutions/generate")
+    public Map<String, Object> generateSolution(
+            @Valid @RequestBody GenerateSolutionRequest request
+    ) {
+        try {
+            return solutionGeneratorService.generate(request.prompt());
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex);
+        }
+    }
+
     @PostMapping("/bundles/generate")
     public Map<String, Object> generateBundle(
             Authentication authentication,
@@ -504,6 +519,11 @@ public class AiController {
             @NotBlank String appId,
             @NotBlank String prompt,
             Map<String, Object> baseManifest
+    ) {
+    }
+
+    public record GenerateSolutionRequest(
+            @NotBlank String prompt
     ) {
     }
 

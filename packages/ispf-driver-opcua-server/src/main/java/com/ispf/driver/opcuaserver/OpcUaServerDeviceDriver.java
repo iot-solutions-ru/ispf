@@ -15,6 +15,7 @@ import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager;
 import org.eclipse.milo.opcua.stack.core.security.DefaultTrustListManager;
 import org.eclipse.milo.opcua.stack.core.transport.TransportProfile;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MessageSecurityMode;
@@ -154,6 +155,7 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
 
             server = new OpcUaServer(serverConfig);
             namespace = new IspfOpcUaNamespace(server);
+            namespace.setExternalWriteListener(this::onExternalWrite);
             server.getAddressSpaceManager().register(namespace);
             server.startup().get(timeoutMs, TimeUnit.MILLISECONDS);
             connected = true;
@@ -204,6 +206,20 @@ public class OpcUaServerDeviceDriver implements DeviceDriver {
         String newValue = extractString(value);
         namespace.writeValue(point.nodeId(), newValue);
         driverObject.updateVariable(pointId, readPoint(point));
+    }
+
+    private void onExternalWrite(NodeId nodeId, String value) {
+        for (Map.Entry<String, OpcUaServerPoint> entry : points.entrySet()) {
+            if (entry.getValue().nodeId().equals(nodeId)) {
+                OpcUaServerPoint point = entry.getValue();
+                driverObject.updateVariable(entry.getKey(), DataRecord.single(VALUE_SCHEMA, Map.of(
+                        "value", value,
+                        "quality", StatusCode.GOOD.toString(),
+                        "nodeId", point.nodeIdText()
+                )));
+                return;
+            }
+        }
     }
 
     private DataRecord readPoint(OpcUaServerPoint point) {

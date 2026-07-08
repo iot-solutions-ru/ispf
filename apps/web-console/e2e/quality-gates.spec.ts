@@ -5,7 +5,7 @@ import { buildStressMimicDocument } from "./fixtures/stressMimic";
 
 const OPERATOR_E2E_URL = "/?mode=operator&app=e2e-operator";
 const MIN_MIMIC_FPS = Number(process.env.MIMIC_MIN_FPS ?? 55);
-const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 200);
+const STRESS_ELEMENTS = Number(process.env.MIMIC_STRESS_ELEMENTS ?? 500);
 
 async function openOperatorE2e(page: import("@playwright/test").Page) {
   await Promise.all([
@@ -60,8 +60,11 @@ test.describe("a11y baseline", () => {
 });
 
 test.describe("mimic runtime FPS", () => {
-  test("stress mimic sustains target FPS", async ({ page }) => {
-    const diagramJson = JSON.stringify(buildStressMimicDocument(STRESS_ELEMENTS));
+  test(`stress mimic renders ${STRESS_ELEMENTS} elements at target FPS`, async ({ page }) => {
+    const stressDoc = buildStressMimicDocument(STRESS_ELEMENTS);
+    expect(stressDoc.elements).toHaveLength(STRESS_ELEMENTS);
+
+    const diagramJson = JSON.stringify(stressDoc);
     await mockAuthenticatedApi(page, {
       dashboardLayout: {
         widgets: [
@@ -82,6 +85,13 @@ test.describe("mimic runtime FPS", () => {
     await openOperatorE2e(page);
     await expect(page.locator(".dashboard-shell")).toBeVisible({ timeout: 20_000 });
     await expect(page.locator(".dash-widget-scada-mimic")).toBeVisible({ timeout: 20_000 });
+
+    await expect
+      .poll(async () => page.locator(".scada-mimic-svg > g").count(), { timeout: 15_000 })
+      .toBeGreaterThanOrEqual(STRESS_ELEMENTS);
+
+    // Warm-up rAF before FPS sampling
+    await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
 
     const fps = await page.evaluate(async () => {
       const samples: number[] = [];

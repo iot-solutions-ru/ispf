@@ -6,10 +6,30 @@ on:
       - "packages/ispf-driver-*/**"
       - "packages/ispf-server/src/main/java/com/ispf/server/driver/**"
       - ".github/workflows/driver-interop.yml"
+      - "deploy/driver-interop/**"
       - "deploy/tools/driver-interop-report.sh"
+      - "deploy/tools/driver-interop-smoke.sh"
   workflow_dispatch:
 
 jobs:
+  docker-fixtures-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make smoke script executable
+        run: chmod +x deploy/tools/driver-interop-smoke.sh
+
+      - name: Start OT docker fixtures (BL-141)
+        run: docker compose -f deploy/driver-interop/docker-compose.yml up -d --wait
+
+      - name: Smoke MQTT / Modbus / OPC UA endpoints
+        run: deploy/tools/driver-interop-smoke.sh
+
+      - name: Tear down fixtures
+        if: always()
+        run: docker compose -f deploy/driver-interop/docker-compose.yml down -v
+
   matrix:
     runs-on: ubuntu-latest
     strategy:
@@ -69,7 +89,7 @@ jobs:
           fi
 
   summary:
-    needs: matrix
+    needs: [matrix, docker-fixtures-smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -91,7 +111,7 @@ jobs:
         run: echo "Driver interop matrix finished (see job summaries per pack)." >> "$GITHUB_STEP_SUMMARY"
 
   pr-comment:
-    needs: matrix
+    needs: [matrix, docker-fixtures-smoke]
     if: github.event_name == 'pull_request' && always()
     runs-on: ubuntu-latest
     permissions:
@@ -101,14 +121,16 @@ jobs:
         uses: actions/github-script@v7
         env:
           MATRIX_RESULT: ${{ needs.matrix.result }}
+          FIXTURES_RESULT: ${{ needs.docker-fixtures-smoke.result }}
         with:
           script: |
             const marker = '<!-- driver-interop-status -->';
-            const pass = process.env.MATRIX_RESULT === 'success';
+            const pass = process.env.MATRIX_RESULT === 'success' && process.env.FIXTURES_RESULT === 'success';
             const body = `${marker}
             ## Driver interop ${pass ? '✅ pass' : '❌ fail'}
 
             Matrix result: **${process.env.MATRIX_RESULT}**
+            Docker fixtures smoke: **${process.env.FIXTURES_RESULT}**
 
             Per-driver summaries: [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
 
@@ -135,7 +157,7 @@ jobs:
             }
 
   production-gate:
-    needs: matrix
+    needs: [matrix, docker-fixtures-smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
