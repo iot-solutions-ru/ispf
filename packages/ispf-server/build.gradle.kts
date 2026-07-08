@@ -109,6 +109,7 @@ tasks.named<Test>("test") {
     // Many @SpringBootTest classes in one JVM can pollute shared async shutdown (CI flakes).
     if (System.getenv("CI") != null) {
         forkEvery = 1
+        systemProperty("spring.test.context.cache.maxSize", "1")
     }
     useJUnitPlatform {
         if (System.getProperty("ispf.test.skipLoad") == "true") {

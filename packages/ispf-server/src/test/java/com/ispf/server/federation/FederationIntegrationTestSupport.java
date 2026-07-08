@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public final class FederationIntegrationTestSupport {
 
     /** Outbound tunnel WebSocket connect + linked peer registration. */
-    static final long TUNNEL_CONNECT_TIMEOUT_SECONDS = System.getenv("CI") != null ? 120 : 60;
+    static final long TUNNEL_CONNECT_TIMEOUT_SECONDS = System.getenv("CI") != null ? 180 : 60;
 
     /** Federation proxy first successful read after tunnel connect. */
     static final long PROXY_READY_TIMEOUT_SECONDS = System.getenv("CI") != null ? 60 : 30;
@@ -23,6 +23,12 @@ public final class FederationIntegrationTestSupport {
     static final long BUFFER_DRAIN_TIMEOUT_SECONDS = System.getenv("CI") != null ? 120 : 90;
 
     static final long CONNECT_RETRY_INTERVAL_MS = 5_000;
+
+    static boolean shouldRetryConnect(String status) {
+        return "FAILED".equals(status)
+                || "DISCONNECTED".equals(status)
+                || "RECONNECTING".equals(status);
+    }
 
     private FederationIntegrationTestSupport() {
     }

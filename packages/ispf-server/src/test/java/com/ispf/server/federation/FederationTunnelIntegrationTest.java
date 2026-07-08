@@ -138,7 +138,7 @@ class FederationTunnelIntegrationTest {
                 }
                 lastAgentStatus = agent.path("tunnelStatus").asString(null);
                 lastError = agent.path("lastError").asString(null);
-                if (shouldRetryConnect(lastAgentStatus) && System.nanoTime() >= nextConnectRetryAt) {
+                if (FederationIntegrationTestSupport.shouldRetryConnect(lastAgentStatus) && System.nanoTime() >= nextConnectRetryAt) {
                     triggerOutboundConnect(token, agentId);
                     nextConnectRetryAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(
                             FederationIntegrationTestSupport.CONNECT_RETRY_INTERVAL_MS);
@@ -196,11 +196,5 @@ class FederationTunnelIntegrationTest {
                 lastStatus,
                 lastBody
         ));
-    }
-
-    private static boolean shouldRetryConnect(String status) {
-        return "FAILED".equals(status)
-                || "DISCONNECTED".equals(status)
-                || "RECONNECTING".equals(status);
     }
 }

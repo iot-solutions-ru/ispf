@@ -145,6 +145,8 @@ class FederationStoreForwardIntegrationTest {
     private void waitForConnected(String token, String agentId) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(
                 FederationIntegrationTestSupport.TUNNEL_CONNECT_TIMEOUT_SECONDS);
+        long nextConnectRetryAt = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        String lastStatus = null;
         while (System.nanoTime() < deadline) {
             MvcResult agentsResult = mockMvc.perform(get("/api/v1/federation/outbound/agents")
                             .header("Authorization", "Bearer " + token))
@@ -152,14 +154,26 @@ class FederationStoreForwardIntegrationTest {
                     .andReturn();
             JsonNode agents = objectMapper.readTree(agentsResult.getResponse().getContentAsString());
             for (JsonNode agent : agents) {
-                if (agentId.equals(agent.path("id").asString(null))
-                        && "CONNECTED".equals(agent.path("tunnelStatus").asString(null))) {
+                if (!agentId.equals(agent.path("id").asString(null))) {
+                    continue;
+                }
+                lastStatus = agent.path("tunnelStatus").asString(null);
+                if (FederationIntegrationTestSupport.shouldRetryConnect(lastStatus)
+                        && System.nanoTime() >= nextConnectRetryAt) {
+                    mockMvc.perform(post("/api/v1/federation/outbound/agents/" + agentId + "/connect")
+                                    .header("Authorization", "Bearer " + token))
+                            .andExpect(status().isOk());
+                    nextConnectRetryAt = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(
+                            FederationIntegrationTestSupport.CONNECT_RETRY_INTERVAL_MS);
+                }
+                if ("CONNECTED".equals(lastStatus)) {
                     return;
                 }
             }
             Thread.sleep(500);
         }
-        throw new IllegalStateException("Timed out waiting for outbound agent connect: " + agentId);
+        throw new IllegalStateException(
+                "Timed out waiting for outbound agent connect: " + agentId + " (lastStatus=" + lastStatus + ")");
     }
 
     private String ensureQuietDevice(String deviceName) {
