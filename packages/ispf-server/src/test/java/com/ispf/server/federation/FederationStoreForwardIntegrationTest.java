@@ -37,7 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {
         "ispf.security.rbac-enabled=true",
         "ispf.security.secrets-key=test-secret-key-for-federation-phase7",
-        "ispf.federation.outbound-buffer.max-bytes=65536"
+        "ispf.federation.outbound-buffer.max-bytes=65536",
+        "ispf.agent.store-forward.persist-to-disk=false",
+        "ispf.license.data-dir=${java.io.tmpdir}/ispf-federation-store-forward-${random.uuid}"
 })
 class FederationStoreForwardIntegrationTest {
 

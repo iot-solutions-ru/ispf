@@ -2,11 +2,13 @@ package com.ispf.server.agent;
 
 import com.ispf.server.federation.FederationIntegrationTestSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
@@ -19,7 +21,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Isolated
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
+@TestPropertySource(properties = {
+        "ispf.agent.store-forward.persist-to-disk=false",
+        "ispf.license.data-dir=${java.io.tmpdir}/ispf-agent-store-forward-${random.uuid}"
+})
 class AgentStoreForwardApiTest {
 
     @Autowired
