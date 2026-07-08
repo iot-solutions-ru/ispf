@@ -47,9 +47,9 @@ public class EventFilterObjectService {
         SystemObjectCatalogSupport.ensureFolder(objectManager, EVENT_FILTERS_ROOT, ObjectType.EVENT_FILTERS, null);
     }
 
+    /** Read-only listing; catalog ensured by {@link #ensureCatalog()} at bootstrap. */
     @Transactional(readOnly = true)
     public List<EventFilterDefinition> list() {
-        ensureCatalog();
         List<EventFilterDefinition> filters = new ArrayList<>();
         if (objectManager.tree().findByPath(EVENT_FILTERS_ROOT).isEmpty()) {
             return filters;

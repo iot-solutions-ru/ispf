@@ -26,6 +26,20 @@
 
 Layout по умолчанию: `packages/ispf-server/.../DashboardLayouts.java`.
 
+## Сетка (grid)
+
+**Канонический формат** (Dashboard Builder, operator runtime, новые bundle):
+
+| Поле | Значение |
+|------|----------|
+| `columns` | **84** (12×7 fine columns) |
+| `rowHeight` | **8** (px на единицу высоты) |
+| `x`, `y`, `w`, `h` | единицы fine-сетки (полная ширина = `w: 84`) |
+
+**Устаревший черновой формат** (`columns: 12`, `rowHeight: 72`) остался в старых примерах и AI-шаблонах: удобнее писать «половина экрана = `w: 6`». Платформа при `saveLayout` / deploy **автоматически** переводит 12×72 → 84×8 (`DashboardWidgetPlacement`). Для **новых** bundle и генераторов пишите сразу **84×8** — не полагайтесь на миграцию.
+
+В `examples/*/generate_bundle.*` допустим **draft-слой**: координаты в «12 колонках» в коде, функция `layout()` сериализует fine grid (см. `mes-printing-contour/generate_bundle.py`).
+
 ## Привязка к объектам: `objectPath` и `selectionKey`
 
 Виджеты (`value`, `indicator`, `chart`, …) читают переменные **конкретного** объекта платформы (`DEVICE`, `CUSTOM`, …). Путь к этому объекту задается двумя способами.
@@ -210,14 +224,14 @@ sequenceDiagram
 
 ```json
 {
-  "columns": 12,
-  "rowHeight": 72,
+  "columns": 84,
+  "rowHeight": 8,
   "widgets": [
     {
       "id": "temp-value",
       "type": "value",
       "title": "Температура",
-      "x": 0, "y": 0, "w": 3, "h": 2,
+      "x": 0, "y": 0, "w": 21, "h": 14,
       "objectPath": "root.platform.devices.demo-sensor-01",
       "variableName": "temperature",
       "valueField": "value",
@@ -228,8 +242,10 @@ sequenceDiagram
 }
 ```
 
-- Сетка: 12 колонок, позиция `x,y`, размер `w,h` в единицах сетки
-- `rowHeight` — высота строки в пикселях
+- Сетка: **84** fine-колонок, `rowHeight` **8**; позиция `x,y`, размер `w,h` в единицах сетки (эквивалент старого `w:3` на 12-колоночной сетке → `w:21` здесь)
+- `rowHeight` — высота одной строки сетки в пикселях
+
+> Старые фрагменты с `"columns": 12, "rowHeight": 72` и `w:3` — черновой формат; при сохранении платформа масштабирует ×7.
 
 ## Grid Layout: форма-функция-форма (лабораторное задание 6)
 

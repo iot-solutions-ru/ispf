@@ -92,6 +92,47 @@ class DashboardWidgetPlacementTest {
     }
 
     @Test
+    void scalesLegacyWidthSevenOnFineGrid() {
+        Map<String, Object> layout = Map.of(
+                "columns", 84,
+                "rowHeight", 8,
+                "widgets", List.of(
+                        Map.of("id", "feed", "type", "event-feed", "x", 0, "y", 2, "w", 5, "h", 5),
+                        Map.of("id", "report", "type", "report", "x", 5, "y", 2, "w", 7, "h", 5)
+                )
+        );
+
+        Map<String, Object> normalized = DashboardWidgetPlacement.normalizeLayoutMap(layout);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
+
+        assertEquals(35, widgets.get(0).get("w"));
+        assertEquals(35, widgets.get(0).get("h"));
+        assertEquals(49, widgets.get(1).get("w"));
+        assertEquals(35, widgets.get(1).get("x"));
+    }
+
+    @Test
+    void scalesOnlyLegacyWidgetsInMixedLayout() {
+        Map<String, Object> layout = Map.of(
+                "columns", 84,
+                "rowHeight", 8,
+                "widgets", List.of(
+                        Map.of("id", "fine", "type", "value", "x", 0, "y", 0, "w", 84, "h", 14),
+                        Map.of("id", "legacy", "type", "value", "x", 0, "y", 6, "w", 6, "h", 4)
+                )
+        );
+
+        Map<String, Object> normalized = DashboardWidgetPlacement.normalizeLayoutMap(layout);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> widgets = (List<Map<String, Object>>) normalized.get("widgets");
+
+        assertEquals(84, widgets.get(0).get("w"));
+        assertEquals(42, widgets.get(1).get("w"));
+        assertEquals(28, widgets.get(1).get("h"));
+    }
+
+    @Test
     void scadaMimicDefaultsToFullScreen() {
         Map<String, Object> widget = new LinkedHashMap<>(Map.of(
                 "id", "mimic",

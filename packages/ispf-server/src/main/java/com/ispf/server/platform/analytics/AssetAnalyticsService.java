@@ -47,9 +47,9 @@ public class AssetAnalyticsService {
         ensureBuiltInTemplates();
     }
 
+    /** Read-only listing; catalog ensured by {@link #ensureCatalog()} at bootstrap. */
     @Transactional(readOnly = true)
     public List<AnalyticsTemplate> listTemplates() {
-        ensureCatalog();
         List<AnalyticsTemplate> templates = new ArrayList<>();
         if (objectManager.tree().findByPath(AssetAnalyticsPaths.ANALYTICS_ROOT).isEmpty()) {
             return templates;

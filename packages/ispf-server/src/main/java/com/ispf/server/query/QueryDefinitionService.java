@@ -61,9 +61,9 @@ public class QueryDefinitionService {
         SystemObjectCatalogSupport.ensureFolder(objectManager, QUERIES_ROOT, ObjectType.QUERIES, null);
     }
 
+    /** Read-only listing; catalog ensured by {@link #ensureCatalog()} at bootstrap. */
     @Transactional(readOnly = true)
     public List<QueryDefinition> list() {
-        ensureCatalog();
         List<QueryDefinition> queries = new ArrayList<>();
         if (objectManager.tree().findByPath(QUERIES_ROOT).isEmpty()) {
             return queries;

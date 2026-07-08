@@ -847,8 +847,13 @@ function normalizeLayoutWidget(widget: DashboardWidget): DashboardWidget {
   return widget;
 }
 
-function isFineGridUnit(value: number): boolean {
-  return value >= DASHBOARD_FINE_GRID_SCALE && value % DASHBOARD_FINE_GRID_SCALE === 0;
+/** Fine-grid dashboards use 84 columns; any coordinate &gt; 12 means already migrated. */
+function looksFineGridSized(widget: DashboardWidget): boolean {
+  const x = widget.x ?? 0;
+  const y = widget.y ?? 0;
+  const w = widget.w ?? 0;
+  const h = widget.h ?? 0;
+  return x > 12 || y > 12 || w > 12 || h > 12;
 }
 
 function looksLegacySized(widget: DashboardWidget): boolean {
@@ -857,7 +862,7 @@ function looksLegacySized(widget: DashboardWidget): boolean {
   if (w <= 0 || h <= 0) {
     return true;
   }
-  return w <= 12 && h <= 12 && !isFineGridUnit(w) && !isFineGridUnit(h);
+  return !looksFineGridSized(widget);
 }
 
 function migrateLegacyGridWidget(widget: DashboardWidget): DashboardWidget {
@@ -915,10 +920,7 @@ function migrateLegacyGridLayout(layout: DashboardLayout): DashboardLayout {
     rowHeight = DASHBOARD_ROW_HEIGHT;
     widgets = widgets.map((widget) => migrateLegacyGridWidget(widget));
   } else if (columns >= DASHBOARD_COLUMNS) {
-    const allLegacySized = widgets.length > 0 && widgets.every(looksLegacySized);
-    if (allLegacySized) {
-      widgets = widgets.map((widget) => migrateLegacyGridWidget(widget));
-    }
+    widgets = widgets.map((widget) => migrateLegacyGridWidget(widget));
   }
 
   return {

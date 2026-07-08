@@ -6052,6 +6052,12 @@ body.scada-mimic-editor-open {
   overscroll-behavior: contain;
 }
 
+.operator-dashboard-shell-host .dash-widget.function-form-widget,
+.operator-dashboard-shell-host .dash-widget.function-widget {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
 .work-queue-panel {
   display: flex;
   flex-direction: column;

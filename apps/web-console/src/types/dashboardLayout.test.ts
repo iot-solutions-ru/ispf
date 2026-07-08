@@ -69,4 +69,31 @@ describe("normalizeDashboardLayout", () => {
     expect(layout.widgets[0]?.h).toBe(14);
     expect(layout.widgets[1]?.y).toBeGreaterThanOrEqual(14);
   });
+
+  it("scales legacy w=7 widgets on fine grid (SCR-07 style split)", () => {
+    const layout = normalizeDashboardLayout({
+      columns: 84,
+      rowHeight: 8,
+      widgets: [
+        { id: "feed", type: "event-feed", title: "Feed", x: 0, y: 2, w: 5, h: 5 },
+        { id: "report", type: "report", title: "Report", x: 5, y: 2, w: 7, h: 5 },
+      ],
+    });
+    expect(layout.widgets[0]?.w).toBe(35);
+    expect(layout.widgets[1]?.w).toBe(49);
+    expect(layout.widgets[1]?.x).toBe(35);
+  });
+
+  it("scales only legacy widgets in a mixed layout", () => {
+    const layout = normalizeDashboardLayout({
+      columns: 84,
+      rowHeight: 8,
+      widgets: [
+        { id: "fine", type: "value", title: "Fine", x: 0, y: 0, w: 84, h: 14 },
+        { id: "legacy", type: "value", title: "Legacy", x: 0, y: 6, w: 6, h: 4 },
+      ],
+    });
+    expect(layout.widgets[0]?.w).toBe(84);
+    expect(layout.widgets[1]?.w).toBe(42);
+  });
 });

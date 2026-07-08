@@ -57,9 +57,9 @@ public class ProcessProgramObjectService {
         );
     }
 
+    /** Hot path from {@link ProcessProgramRunner} tick — read-only; catalog ensured at bootstrap. */
     @Transactional(readOnly = true)
     public List<ProcessProgramDefinition> listEnabled() {
-        ensureCatalog();
         List<ProcessProgramDefinition> programs = new ArrayList<>();
         if (objectManager.tree().findByPath(ProcessProgramPaths.PROCESS_PROGRAMS_ROOT).isEmpty()) {
             return programs;

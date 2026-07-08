@@ -189,9 +189,6 @@ public class DataSourceObjectService {
             String jdbcPassword,
             Integer poolSize
     ) {
-        if (displayName != null) {
-            setString(path, "displayName", displayName);
-        }
         if (connectionMode != null) {
             setString(path, "connectionMode", connectionMode);
         }

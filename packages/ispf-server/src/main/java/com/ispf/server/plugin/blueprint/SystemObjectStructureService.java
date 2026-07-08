@@ -38,9 +38,7 @@ public class SystemObjectStructureService {
     @Transactional
     public void ensureDataSourceStructure(String path) {
         PlatformObject node = objectManager.require(path);
-        if (node.getVariable("schemaName").isEmpty()
-                && node.getVariable("connectionMode").isEmpty()
-                && node.getVariable("jdbcUrl").isEmpty()) {
+        if (node.getVariable("schemaName").isEmpty()) {
             applyIntrinsic("data-source-v1", path);
         }
         ensureExecuteQueryFunction(path);
