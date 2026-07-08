@@ -8,7 +8,7 @@ import {
 /** Row units per video-wall quadrant (~448px at 8px row height). */
 const VIDEO_WALL_QUADRANT_ROWS = 56;
 
-function videoWallGrid(preset: DashboardLayoutPreset, columns: number, rows: number): DashboardLayout["widgets"] {
+function videoWallGrid(_preset: DashboardLayoutPreset, columns: number, rows: number): DashboardLayout["widgets"] {
   const cellW = DASHBOARD_COLUMNS / columns;
   const cellH = VIDEO_WALL_QUADRANT_ROWS;
   const slotCount = columns * rows;
