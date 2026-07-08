@@ -5,7 +5,7 @@
 | | |
 | --- | --- |
 | **Baseline** | Phase 24 closed, `main`, июль 2026 |
-| **Обновлено** | 2026-07-08 (wave 3–4 hardening) |
+| **Обновлено** | 2026-07-08 (wave 5–6 hardening) |
 | **Предыдущие фазы** | [ROADMAP.md](ROADMAP.md) — Phase 0–24, BL-01…139, S01–S30 |
 | **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](ARCHITECTURE.md)) |
 
@@ -16,12 +16,12 @@
 | Категория | Всего | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
 | Phase 25–32 | 8 | 0 | 8 | 0 | — |
-| BL-140…190 | 51 | 18 | 33 | 0 | 0 |
+| BL-140…190 | 51 | 24 | 27 | 0 | 0 |
 | Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
 
-**Текущий спринт:** **S31–S46 wave 4** — interop CI, 218 symbols, Parquet export, 40 agent scenarios; field soak + live LLM e2e остаётся.
+**Текущий спринт:** **S31–S46 wave 6** — scorecard ~9.2/10; live LLM e2e + field pilots остаётся.
 
-**Текущая оценка продукта:** ~9.0/10 (post wave 3–4).  
+**Текущая оценка продукта:** ~9.2/10 (post wave 5–6).  
 **Целевая оценка:** 10/10 — см. [§ Definition of Done](#definition-of-done--1010-overall).
 
 ---
@@ -364,7 +364,8 @@
 
 | Дата | Изменение |
 | ---- | --------- |
-| 2026-07-08 | Wave 4: interop CI smoke, 218 symbols, Parquet export, 40 agent scenarios, partner tiers, federation health poll |
+| 2026-07-08 | Wave 5–6: MES deploy script, historian SLA, MFA UI, Helm complete, scorecard ~9.2/10 |
+| 2026-07-08 | Wave 4–5 commit: interop CI, Parquet, 218 symbols, marketplace install |
 | 2026-07-08 | Wave 2–3 commit `d27f0be`: MFA, marketplace install, hard tenancy, mes-platform-production, 134→218 symbols path |
 | 2026-07-07 | Wave 2 hardening: TOTP MFA, MQTT eventToVariable, analytics, BPMN messages, 30 agent scenarios, 991 tests green |
 | 2026-07-07 | Wave 1 foundations: BL-140…190 skeletons (Partial) across Phase 25–32 |
