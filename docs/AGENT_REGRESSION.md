@@ -52,12 +52,13 @@ export ISPF_API_TOKEN=<admin-jwt>
 bash scripts/run-agent-regression.sh --live
 ```
 
-## CI integration (planned)
+## CI integration
 
 | Stage | Gate |
 |-------|------|
-| PR | `run-agent-regression.sh` / `validate-scenarios.mjs` (schema + manifest) |
+| PR | `agent-regression` job in [ci.yml](../.github/workflows/ci.yml): `validate-scenarios.mjs` + `AgentRegressionCiTest` (schema + manifest; **fails on schema errors**) |
 | Nightly | `tools/agent-regression/run-nightly.sh` + live agent run; pass rate ≥95% (BL-178 target: 50 scenarios) |
+| Manual live | `ISPF_LLM_SMOKE=true` + `AgentLiveDeploySmokeTest` (BL-177 mes-platform one-shot) |
 
 **Current scenario count:** 40 (SCADA, MES, HVAC).
 

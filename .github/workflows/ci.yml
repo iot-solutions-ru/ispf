@@ -56,9 +56,6 @@ jobs:
       - name: License compliance audit
         run: node tools/license-audit/check-all.mjs
 
-      - name: Agent regression scenarios (BL-178)
-        run: node tools/agent-regression/validate-scenarios.mjs
-
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
@@ -114,8 +111,38 @@ jobs:
           test -f dist/legal/LICENSE
           test -f dist/legal/THIRD_PARTY_NOTICES.md
 
+  agent-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate agent-regression scenario schemas (BL-178)
+        run: node tools/agent-regression/validate-scenarios.mjs
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: AgentRegressionCiTest (Java schema gate)
+        run: >
+          ./gradlew
+          :packages:ispf-server:test
+          --tests com.ispf.server.ai.agent.AgentRegressionCiTest
+          --no-daemon
+          -Dorg.gradle.workers.max=1
+          -Dispf.test.skipLoad=true
+
   pr-fast-ok:
-    needs: [changes, backend, web-console]
+    needs: [changes, backend, web-console, agent-regression]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -123,11 +150,16 @@ jobs:
         run: |
           echo "backend=${{ needs.backend.result }}"
           echo "web-console=${{ needs.web-console.result }}"
-          if [[ "${{ needs.backend.result }}" == "failure" || "${{ needs.web-console.result }}" == "failure" ]]; then
+          echo "agent-regression=${{ needs.agent-regression.result }}"
+          if [[ "${{ needs.backend.result }}" == "failure"
+             || "${{ needs.web-console.result }}" == "failure"
+             || "${{ needs.agent-regression.result }}" == "failure" ]]; then
             echo "pr-fast failed"
             exit 1
           fi
-          if [[ "${{ needs.backend.result }}" == "cancelled" || "${{ needs.web-console.result }}" == "cancelled" ]]; then
+          if [[ "${{ needs.backend.result }}" == "cancelled"
+             || "${{ needs.web-console.result }}" == "cancelled"
+             || "${{ needs.agent-regression.result }}" == "cancelled" ]]; then
             exit 1
           fi
           echo "pr-fast passed (skipped jobs are OK for path-only changes)"

@@ -153,8 +153,56 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | Pilot journal | Customer ticket / `docs/` appendix (duration, incidents, tag count) |
 | Scorecard delta | [COMPETITIVE_SCORECARD.md](COMPETITIVE_SCORECARD.md) dimension 3 |
 | Promotion evidence | [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md) field-pilot section |
+| Sign-off record | § Pilot sign-off below (one per scenario) |
 
-**Definition of done (BL-140):** three pilots complete with checklists signed; no P0 driver defects open; competitive scorecard OT connectivity ≥ 8.5.
+**Definition of done (BL-140):** three pilots complete with checklists signed; no P0 driver defects open; competitive scorecard OT connectivity ≥ 9.0 (post wave 6).
+
+### Pilot checklist status (wave 7)
+
+| Scenario | Lab dry-run | Field checklist | Sign-off template |
+| -------- | :---------: | :-------------: | :---------------: |
+| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below |
+| MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below |
+| OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below |
+
+Lab matrix and validation steps above are **complete**; customer site pilots use the sign-off template to record production evidence.
+
+---
+
+## Pilot sign-off template (BL-140)
+
+Complete one form per scenario after the **7-day soak**. Attach to the pilot journal and link from the customer ticket.
+
+| Field | Value |
+| ----- | ----- |
+| **Scenario** | ☐ Modbus plant ☐ MQTT fleet ☐ OPC UA line |
+| **Site / customer** | |
+| **Pilot lead (ISPF)** | |
+| **Customer OT lead** | |
+| **ISPF version** | e.g. 0.9.32 |
+| **Pilot start date** | |
+| **Pilot end date** | (≥ 7 days after start) |
+| **Tags / devices validated** | e.g. 52 Modbus tags, 10 MQTT gateways |
+| **Historian samples verified** | ☐ Yes ☐ N/A |
+| **HMI / mimic live** | ☐ Yes ☐ N/A |
+| **Checklist items (§1–3)** | ☐ All passed |
+| **P0 driver defects open** | ☐ None ☐ Listed in journal |
+
+**Validation summary** (2–3 sentences):
+
+```
+<Describe connect/read/write/historian/HMI results; note any incidents>
+```
+
+**Signatures**
+
+| Role | Name | Date |
+| ---- | ---- | ---- |
+| Customer OT lead | | |
+| ISPF integrator | | |
+| Platform QA | | |
+
+**Approval:** ☐ Promote driver evidence to [DRIVER_PROMOTION.md](DRIVER_PROMOTION.md) ☐ Follow-up required
 
 ---
 

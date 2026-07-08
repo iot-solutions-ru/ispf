@@ -67,6 +67,7 @@ Full pipeline: [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main
 | `tools/agent-regression/scenarios/*.json` | 40 curated scenarios (SCADA, MES, HVAC) |
 | `tools/agent-regression/validate-scenarios.mjs` | Schema + bundle manifest validation + pass-rate report |
 | `AgentRegressionCiTest` | Java CI gate (schema only, no LLM) |
+| `AgentLiveDeploySmokeTest` | Opt-in live LLM mes-platform deploy (`ISPF_LLM_SMOKE=true`) |
 
 Validate locally:
 
