@@ -1,0 +1,20 @@
+{
+  "_comment": "Proposed extended POST /api/v1/alert-rules body (ADR-0039 phase B+). Fields not yet in ispf-server until implemented.",
+  "name": "temperature-threshold-exceeded",
+  "objectPath": "root.platform.devices.demo-sensor-01",
+  "watchVariable": "temperature",
+  "conditionExpr": "self.temperature[\"value\"] > 80.0",
+  "deactivateExpr": "self.temperature[\"value\"] < 70.0",
+  "deactivateDelaySeconds": 60,
+  "delaySeconds": 0,
+  "sustainWhileTrue": false,
+  "eventName": "thresholdExceeded",
+  "clearEventName": "thresholdCleared",
+  "triggerMessage": "Temperature exceeded 80 C",
+  "payloadVariable": "temperature",
+  "enabled": true,
+  "edgeTrigger": true,
+  "ackRequired": true,
+  "priority": "HIGH",
+  "pollIntervalMs": 0
+}

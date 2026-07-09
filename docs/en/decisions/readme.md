@@ -11,5 +11,7 @@ English canonical ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](
 | [0022](0022-driver-production-matrix.md) | Driver production matrix |
 | [0027](0027-event-journal-ingress-fast-path.md) | Event journal ingress |
 | [0037](0037-relational-core-portability.md) | Relational core portability |
+| [0038](0038-analytics-platform-architecture.md) | Analytics platform (AF-capable) |
+| [0039](0039-unified-alarm-architecture.md) | Alert rule evolution (same `alert-rule-v1`) |
 
 Full list: all `NNNN-*.md` files in this directory.
