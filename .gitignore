@@ -55,6 +55,56 @@ deploy/load-test-report-*.json
 deploy/mqtt-*-report-*.json
 deploy/staging/
 
+# Marketing site — local / ops only (not product repo)
+marketing/
+
+# VPS, lab, load-test, and ad-hoc server ops under deploy/
+# (keep helm, docker-compose, nginx templates, air-gap, prod-quickstart, driver-interop)
+deploy/vps-*
+deploy/lab-*
+deploy/lab_*
+deploy/remote-*
+deploy/run_lab_*
+deploy/run_vps_*
+deploy/_lab_*
+deploy/_fetch_*
+deploy/tmp-*
+deploy/_tmp_*
+deploy/lab_ssh.py
+deploy/ispf_auth.py
+deploy/ispf-auth.sh
+deploy/ispf-server.prod-idle.env
+deploy/hotfix-*
+deploy/export-minitec-*
+deploy/fix-cbr-*
+deploy/fix-spreadsheet-*
+deploy/recreate-*
+deploy/repair-*
+deploy/restart-loadtest-*
+deploy/run-mqtt-*
+deploy/run-single-*
+deploy/setup-mqtt-*
+deploy/setup-platform-metrics-*
+deploy/setup-single-*
+deploy/start-snmp-*
+deploy/update-snmp-*
+deploy/meter-*
+deploy/mqtt-*
+deploy/events-*
+deploy/cluster-scale-*
+deploy/cluster-smoke-*
+deploy/loadtest*
+deploy/load-test-*
+deploy/check-cbr-*
+deploy/check-rate-*
+deploy/scylla-sample-*
+deploy/snmpd-*
+deploy/coalesce-sweep-report-*
+deploy/tools/vps-*
+deploy/tools/marketplace-patch-seed-on-vps.py
+deploy/tools/marketplace-vps-sync-catalog.sh
+deploy/tools/mes-platform-production-deploy.sh
+
 # Local only — реестр российского ПО (не публиковать в GitHub)
 docs/RUSSIAN_SOFTWARE_REGISTRY.md
 tools/registry-techpack/
