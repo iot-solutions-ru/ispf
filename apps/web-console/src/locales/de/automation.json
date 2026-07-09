@@ -5,7 +5,7 @@
   "alertRule.clearEvent": "Klares Ereignis",
   "alertRule.deactivateDelaySeconds": "Verzögerung deaktivieren (Sekunden)",
   "alertRule.deactivateExpr": "Ausdruck deaktivieren (CEL)",
-  "alertRule.deactivateExprPlaceholder": "self.temperature[\"value\"] < 70.0",
+  "alertRule.deactivateExprPlaceholder": "self.temperature[\"value\"] < 70,0",
   "alertRule.edgeTrigger": "Flankentrigger",
   "alertRule.edgeTriggerHint": "Flankentrigger (nur bei Übergang false→true)",
   "alertRule.enabled": "Aktiviert",

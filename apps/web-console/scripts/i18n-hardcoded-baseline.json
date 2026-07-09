@@ -169,93 +169,93 @@
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1071,
+    "line": 1057,
+    "kind": "ui-attr",
+    "text": "root.platform.workflows..."
+  },
+  {
+    "file": "components/dashboard/widgetEditorFields.tsx",
+    "line": 1185,
     "kind": "ui-attr",
     "text": "gpu-*"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1085,
+    "line": 1199,
     "kind": "jsx-text",
     "text": "DEVICE"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1086,
+    "line": 1200,
     "kind": "jsx-text",
     "text": "FOLDER"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1087,
+    "line": 1201,
     "kind": "jsx-text",
     "text": "DASHBOARD"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1088,
+    "line": 1202,
     "kind": "jsx-text",
     "text": "CUSTOM"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1109,
+    "line": 1223,
     "kind": "ui-attr",
     "text": "root.platform.devices"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1132,
+    "line": 1246,
     "kind": "ui-attr",
     "text": "count>10 && name contains abc"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1407,
+    "line": 1521,
     "kind": "ui-attr",
     "text": "root.platform.reports.ready-items"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1695,
+    "line": 1809,
     "kind": "ui-attr",
     "text": "SVG"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1701,
+    "line": 1815,
     "kind": "ui-attr",
     "text": "/lab-assets/button.svg"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1918,
+    "line": 2032,
     "kind": "ui-attr",
     "text": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 1977,
+    "line": 2091,
     "kind": "ui-attr",
     "text": "HTML"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 408,
+    "line": 409,
     "kind": "ui-attr",
     "text": "root.platform.dashboards.detail"
   },
   {
     "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 584,
+    "line": 698,
     "kind": "ui-attr",
     "text": "root.platform.devices"
-  },
-  {
-    "file": "components/dashboard/widgetEditorFields.tsx",
-    "line": 943,
-    "kind": "ui-attr",
-    "text": "root.platform.workflows..."
   },
   {
     "file": "components/dashboard/widgetEditorStructured.tsx",
@@ -283,19 +283,19 @@
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 118,
+    "line": 120,
     "kind": "jsx-text",
     "text": "(editable && series.points.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 122,
+    "line": 124,
     "kind": "jsx-text",
     "text": "(editable && isRangeChart && series.rangePoints.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 128,
+    "line": 130,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
   },
@@ -433,7 +433,7 @@
   },
   {
     "file": "components/MultiPenTrendModal.tsx",
-    "line": 156,
+    "line": 158,
     "kind": "jsx-text",
     "text": "0 && pens.length"
   },

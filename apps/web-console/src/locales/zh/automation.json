@@ -5,7 +5,7 @@
   "alertRule.clearEvent": "清除事件",
   "alertRule.deactivateDelaySeconds": "停用延迟（秒）",
   "alertRule.deactivateExpr": "失活表达 (CEL)",
-  "alertRule.deactivateExprPlaceholder": "self.temperature[\"value\"] < 70.0",
+  "alertRule.deactivateExprPlaceholder": "self.温度[“值”] < 70.0",
   "alertRule.edgeTrigger": "边沿触发",
   "alertRule.edgeTriggerHint": "边沿触发（仅在 false→true 时）",
   "alertRule.enabled": "已启用",
