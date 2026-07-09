@@ -105,6 +105,13 @@ deploy/tools/marketplace-patch-seed-on-vps.py
 deploy/tools/marketplace-vps-sync-catalog.sh
 deploy/tools/mes-platform-production-deploy.sh
 
+# docanima MES printing contour example (local / customer only)
+examples/mes-printing-contour/
+examples/mes-print-line/
+examples/marketplace-catalog/mes-printing-contour/
+packages/ispf-server/src/test/resources/mes-printing-contour-bundle.json
+packages/ispf-server/src/test/java/com/ispf/server/application/MesPrintingContourBundleSmokeTest.java
+
 # Local only — реестр российского ПО (не публиковать в GitHub)
 docs/RUSSIAN_SOFTWARE_REGISTRY.md
 tools/registry-techpack/
