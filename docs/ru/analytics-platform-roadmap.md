@@ -1,6 +1,6 @@
 > **Язык:** русская версия (вычитка). Канонический английский: [en/analytics-platform-roadmap.md](../en/analytics-platform-roadmap.md).
 
-# Roadmap аналитической платформы — БЛ-200…210 (AF-capable)
+# Roadmap аналитической платформы — БЛ-200…211 (AF-capable)
 
 **Цель:** эволюция от **AF-lite** (БЛ-160) к **AF-capable** analytics plane — derived tags, материализованные rollups, мультитеговые запросы — на **одном сервере** или в **кластере с разделением ролей**.
 

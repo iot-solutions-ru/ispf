@@ -8,6 +8,7 @@ import {
   filterPlatformBindings,
   suggestPlatformBindingPrefix,
   type BindingBuilderContext,
+  type PlatformBindingEntry,
 } from "../utils/platformBindings";
 
 interface BindingExpressionFieldProps extends BindingBuilderContext {
@@ -16,6 +17,8 @@ interface BindingExpressionFieldProps extends BindingBuilderContext {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  entries?: PlatformBindingEntry[];
+  onValidate?: (expression: string) => Promise<{ valid: boolean; error: string | null }>;
 }
 
 function insertAtSelection(
@@ -37,7 +40,7 @@ function insertAtSelection(
   return next;
 }
 
-function replaceFunctionPrefix(current: string, snippet: string): string {
+function replaceFunctionPrefix(current: string, snippet: string, entries: PlatformBindingEntry[]): string {
   const trimmed = current.trim();
   const paren = trimmed.indexOf("(");
   const head = paren >= 0 ? trimmed.slice(0, paren) : trimmed;
@@ -45,7 +48,7 @@ function replaceFunctionPrefix(current: string, snippet: string): string {
     return snippet;
   }
   const tail = paren >= 0 ? trimmed.slice(paren) : "";
-  const match = PLATFORM_BINDING_ENTRIES.find((entry) => entry.name.toLowerCase() === head.toLowerCase());
+  const match = entries.find((entry) => entry.name.toLowerCase() === head.toLowerCase());
   if (!match || tail.includes(")")) {
     return snippet;
   }
@@ -61,6 +64,8 @@ export default function BindingExpressionField({
   objectPath,
   variableNames = [],
   functionNames = [],
+  entries = PLATFORM_BINDING_ENTRIES,
+  onValidate,
 }: BindingExpressionFieldProps) {
   const { t } = useTranslation("inspector");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -74,17 +79,23 @@ export default function BindingExpressionField({
   );
 
   const validateMutation = useMutation({
-    mutationFn: () => validateExpression(value.trim()),
+    mutationFn: () => {
+      const trimmed = value.trim();
+      if (onValidate) {
+        return onValidate(trimmed);
+      }
+      return validateExpression(trimmed);
+    },
   });
 
   const catalogEntries = useMemo(
-    () => filterPlatformBindings(catalogQuery),
-    [catalogQuery]
+    () => filterPlatformBindings(catalogQuery, entries),
+    [catalogQuery, entries]
   );
 
   const inlineSuggestions = useMemo(
-    () => suggestPlatformBindingPrefix(value),
-    [value]
+    () => suggestPlatformBindingPrefix(value, entries),
+    [value, entries]
   );
 
   const showInlineSuggestions =
@@ -92,7 +103,7 @@ export default function BindingExpressionField({
 
   const applySnippet = (snippet: string, replacePrefix = false) => {
     const next = replacePrefix
-      ? replaceFunctionPrefix(value, snippet)
+      ? replaceFunctionPrefix(value, snippet, entries)
       : insertAtSelection(value, snippet, inputRef.current);
     onChange(next);
     setCatalogOpen(false);
@@ -128,7 +139,7 @@ export default function BindingExpressionField({
           onKeyDown={handleInputKeyDown}
         />
         <datalist id={id ? `${id}-platform-bindings` : "platform-bindings-list"}>
-          {PLATFORM_BINDING_ENTRIES.map((entry) => (
+          {entries.map((entry) => (
             <option key={entry.id} value={`${entry.name}(`}>
               {entry.snippet}
             </option>

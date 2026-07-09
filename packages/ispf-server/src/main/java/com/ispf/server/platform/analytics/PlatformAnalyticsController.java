@@ -53,6 +53,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsQueryExportService analyticsQueryExportService;
     private final EventFrameService eventFrameService;
     private final AnalyticsTagCatalogService tagCatalogService;
+    private final AnalyticsExpressionService expressionService;
 
     public PlatformAnalyticsController(
             AssetAnalyticsService assetAnalyticsService,
@@ -65,7 +66,8 @@ public class PlatformAnalyticsController {
             AnalyticsQueryService analyticsQueryService,
             AnalyticsQueryExportService analyticsQueryExportService,
             EventFrameService eventFrameService,
-            AnalyticsTagCatalogService tagCatalogService
+            AnalyticsTagCatalogService tagCatalogService,
+            AnalyticsExpressionService expressionService
     ) {
         this.assetAnalyticsService = assetAnalyticsService;
         this.derivedTagService = derivedTagService;
@@ -78,6 +80,7 @@ public class PlatformAnalyticsController {
         this.analyticsQueryExportService = analyticsQueryExportService;
         this.eventFrameService = eventFrameService;
         this.tagCatalogService = tagCatalogService;
+        this.expressionService = expressionService;
     }
 
     @GetMapping("/templates")
@@ -178,6 +181,25 @@ public class PlatformAnalyticsController {
         } catch (AnalyticsQueryRateLimiter.AnalyticsQueryRateLimitException ex) {
             throw new ResponseStatusException(TOO_MANY_REQUESTS, ex.getMessage());
         }
+    }
+
+    /** Validate analytics CEL-over-historian expression (BL-211). */
+    @PostMapping("/expression/validate")
+    public AnalyticsExpressionService.ValidateResult validateExpression(@RequestBody AnalyticsExpressionRequest request) {
+        return expressionService.validate(request.expression(), request.objectPath());
+    }
+
+    /** Evaluate analytics CEL-over-historian expression once (BL-211). */
+    @PostMapping("/expression/evaluate")
+    public AnalyticsExpressionService.EvaluateResult evaluateExpression(@RequestBody AnalyticsExpressionRequest request) {
+        return expressionService.evaluate(request.expression(), request.objectPath(), request.asOf());
+    }
+
+    public record AnalyticsExpressionRequest(
+            String expression,
+            String objectPath,
+            Instant asOf
+    ) {
     }
 
     /** List active analytics event frames for a scope (BL-208). */

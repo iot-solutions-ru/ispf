@@ -310,25 +310,32 @@ export const PLATFORM_BINDING_ENTRIES: PlatformBindingEntry[] = [
 
 export const PLATFORM_BINDING_NAMES = PLATFORM_BINDING_ENTRIES.map((entry) => entry.name);
 
-export function filterPlatformBindings(query: string): PlatformBindingEntry[] {
+export function filterPlatformBindings(query: string, entries: PlatformBindingEntry[] = PLATFORM_BINDING_ENTRIES): PlatformBindingEntry[] {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
-    return PLATFORM_BINDING_ENTRIES;
+    return entries;
   }
-  return PLATFORM_BINDING_ENTRIES.filter(
+  return entries.filter(
     (entry) =>
       entry.id.toLowerCase().includes(normalized) ||
+      entry.name.toLowerCase().includes(normalized) ||
       entry.snippet.toLowerCase().includes(normalized) ||
       entry.category.toLowerCase().includes(normalized)
   );
 }
 
-export function suggestPlatformBindingPrefix(input: string): PlatformBindingEntry[] {
+export function suggestPlatformBindingPrefix(
+  input: string,
+  entries: PlatformBindingEntry[] = PLATFORM_BINDING_ENTRIES
+): PlatformBindingEntry[] {
   const trimmed = input.trim();
   const paren = trimmed.indexOf("(");
   const head = (paren >= 0 ? trimmed.slice(0, paren) : trimmed).trim().toLowerCase();
   if (!head) {
-    return PLATFORM_BINDING_ENTRIES;
+    return entries;
   }
-  return PLATFORM_BINDING_ENTRIES.filter((entry) => entry.name.toLowerCase().startsWith(head));
+  return entries.filter(
+    (entry) =>
+      entry.name.toLowerCase().startsWith(head) || entry.name.toLowerCase().includes(head)
+  );
 }

@@ -4,7 +4,7 @@
 
 Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian + derived analytics», «ISA-95 object tree analytics».
 
-## Delivered (BL-200…209)
+## Delivered (BL-200…211)
 
 | Capability | ISPF | Notes |
 |------------|------|-------|
@@ -15,12 +15,13 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 | Event frames | ✅ | shift, batch, downtime (lightweight) |
 | Tag catalog & lineage | ✅ | `analytics-tag-v1`, Explorer inspector |
 | Analytics replicas | ✅ | `ReplicaProfile.ANALYTICS` |
+| CEL-over-historian | ✅ | `analyticsHelper=cel`, `hist.*` in expressions, validate/evaluate API, Tag Inspector editor (BL-211) |
 
 ## Gap register vs enterprise AF / PI-class
 
 | Area | Gap | Future BL |
 |------|-----|-----------|
-| Expression language | No full PI Analytics syntax; built-in helpers + CEL on bindings | BL-211+ CEL-over-historian |
+| Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | BL-212+ richer function library |
 | AF database | No duplicate asset tree; tree-first model | By design (ADR-0038) |
 | PI Vision graphics | No PI Vision–class graphics | Phase 26 HMI |
 | ML on tags | No inference on tag streams | BL-175 |

@@ -433,6 +433,40 @@ export function fetchAnalyticsTagByPath(path: string): Promise<AnalyticsTagCatal
   return request(`/api/v1/platform/analytics/tags/by-path?path=${encodeURIComponent(path)}`);
 }
 
+export interface AnalyticsExpressionValidateResult {
+  valid: boolean;
+  expandedExpression: string | null;
+  historianSources: string[];
+  errors: string[];
+}
+
+export interface AnalyticsExpressionEvaluateResult {
+  value: number;
+  expandedExpression: string;
+  latencyMs: number;
+}
+
+export function validateAnalyticsExpression(
+  expression: string,
+  objectPath: string
+): Promise<AnalyticsExpressionValidateResult> {
+  return request("/api/v1/platform/analytics/expression/validate", {
+    method: "POST",
+    body: JSON.stringify({ expression, objectPath }),
+  });
+}
+
+export function evaluateAnalyticsExpression(
+  expression: string,
+  objectPath: string,
+  asOf?: string
+): Promise<AnalyticsExpressionEvaluateResult> {
+  return request("/api/v1/platform/analytics/expression/evaluate", {
+    method: "POST",
+    body: JSON.stringify({ expression, objectPath, asOf }),
+  });
+}
+
 export interface AnalyticsQueryTagInput {
   path: string;
   variable: string;

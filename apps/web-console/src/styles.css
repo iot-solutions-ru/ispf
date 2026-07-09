@@ -13196,15 +13196,39 @@ html {
   flex: 1;
   min-height: 280px;
   max-height: 52vh;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-0);
-  padding: 0.35rem 0;
 }
 
 .object-tree-picker-hint {
   margin: 0;
+}
+
+.analytics-tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-0);
+}
+
+.analytics-tag-editor-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.analytics-tag-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .modal header .btn.small {

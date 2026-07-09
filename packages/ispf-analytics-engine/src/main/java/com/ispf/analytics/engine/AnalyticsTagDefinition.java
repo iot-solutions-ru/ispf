@@ -15,10 +15,25 @@ public record AnalyticsTagDefinition(
         long periodicMs,
         boolean onChangeEnabled,
         boolean enabled,
-        String outputVariable
+        String outputVariable,
+        String expression
 ) {
 
     public static final String DEFAULT_OUTPUT = "derivedValue";
+
+    public AnalyticsTagDefinition(
+            String tagPath,
+            String helper,
+            List<AnalyticsSourceRef> sources,
+            String windowBucket,
+            List<String> rollupBuckets,
+            long periodicMs,
+            boolean onChangeEnabled,
+            boolean enabled,
+            String outputVariable
+    ) {
+        this(tagPath, helper, sources, windowBucket, rollupBuckets, periodicMs, onChangeEnabled, enabled, outputVariable, null);
+    }
 
     public AnalyticsTagDefinition(
             String tagPath,
@@ -30,7 +45,21 @@ public record AnalyticsTagDefinition(
             boolean enabled,
             String outputVariable
     ) {
-        this(tagPath, helper, sources, windowBucket, List.of(), periodicMs, onChangeEnabled, enabled, outputVariable);
+        this(tagPath, helper, sources, windowBucket, List.of(), periodicMs, onChangeEnabled, enabled, outputVariable, null);
+    }
+
+    public AnalyticsTagDefinition(
+            String tagPath,
+            String helper,
+            List<AnalyticsSourceRef> sources,
+            String windowBucket,
+            long periodicMs,
+            boolean onChangeEnabled,
+            boolean enabled,
+            String outputVariable,
+            String expression
+    ) {
+        this(tagPath, helper, sources, windowBucket, List.of(), periodicMs, onChangeEnabled, enabled, outputVariable, expression);
     }
 
     public AnalyticsTagDefinition {
@@ -49,6 +78,17 @@ public record AnalyticsTagDefinition(
             rollupBuckets = List.copyOf(rollupBuckets);
         }
         sources = List.copyOf(sources);
+        if (expression != null && expression.isBlank()) {
+            expression = null;
+        }
+    }
+
+    public boolean isCelHelper() {
+        return "cel".equalsIgnoreCase(helper) || "expression".equalsIgnoreCase(helper);
+    }
+
+    public String expressionOrEmpty() {
+        return expression != null ? expression : "";
     }
 
     public AnalyticsSourceRef primarySource() {

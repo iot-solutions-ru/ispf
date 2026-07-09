@@ -113,6 +113,9 @@ public class AnalyticsTagCatalogService {
             return toOeeTagDefinition(node);
         }
         String helper = resolveHelper(node);
+        if (isCelHelper(helper)) {
+            return toCelTagDefinition(node, helper);
+        }
         String sourcePath = readString(node, "sourcePath").filter(s -> !s.isBlank()).orElse(node.path());
         String sourceVariable = readString(node, "sourceVariable").orElse("");
         if (sourceVariable.isBlank()) {
@@ -135,6 +138,35 @@ public class AnalyticsTagCatalogService {
                 enabled,
                 AnalyticsTagDefinition.DEFAULT_OUTPUT
         ));
+    }
+
+    private Optional<AnalyticsTagDefinition> toCelTagDefinition(PlatformObject node, String helper) {
+        String expression = readString(node, "analyticsExpression").orElse("").trim();
+        if (expression.isBlank()) {
+            return Optional.empty();
+        }
+        String windowBucket = readString(node, "windowBucket").orElse("5m");
+        List<String> rollupBuckets = readString(node, "rollupBuckets")
+                .map(HistorianRollupBuckets::parse)
+                .orElse(HistorianRollupBuckets.defaultForWindow(windowBucket));
+        boolean enabled = readBoolean(node, "analyticsTagEnabled").orElse(true);
+        List<AnalyticsSourceRef> sources = HistorianCelPreprocessor.extractSources(expression);
+        return Optional.of(new AnalyticsTagDefinition(
+                node.path(),
+                helper,
+                sources,
+                windowBucket,
+                rollupBuckets,
+                analyticsProperties.enginePeriodicMs(),
+                true,
+                enabled,
+                AnalyticsTagDefinition.DEFAULT_OUTPUT,
+                expression
+        ));
+    }
+
+    private static boolean isCelHelper(String helper) {
+        return "cel".equalsIgnoreCase(helper) || "expression".equalsIgnoreCase(helper);
     }
 
     private Optional<AnalyticsTagDefinition> toOeeTagDefinition(PlatformObject node) {
@@ -213,6 +245,9 @@ public class AnalyticsTagCatalogService {
             }
             if (lower.contains("oee")) {
                 return "oee";
+            }
+            if (lower.contains("analytics-expression") || lower.contains("cel-expression")) {
+                return "cel";
             }
         }
         return "rollingAvg";

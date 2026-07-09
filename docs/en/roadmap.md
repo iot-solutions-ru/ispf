@@ -1163,6 +1163,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-208 | **Event frames & shift context** | P2 | Done — shift/batch/downtime windows; MES OEE integration |
 | BL-209 | **Tag catalog & lineage UI** | P2 | Done — analytics tag inspector, lineage API |
 | BL-210 | **Enterprise scale gates** | P2 | Done — lab scripts, SLO table, JVM gate, examples |
+| BL-211 | **CEL-over-historian expressions** | P2 | Done — `hist.*`, `cel` helper, validate/evaluate API, Tag Inspector editor |
 
 **Phase metric:** Scenario B walkthrough ≤1 day; Scenario C lab gate documented; derived tag drives alarm without Chart-only rollup.
 
@@ -1241,6 +1242,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 | BL-208 | 33 | Event frames & shift context | P2 | Done |
 | BL-209 | 33 | Tag catalog & lineage UI | P2 | Done |
 | BL-210 | 33 | Enterprise scale gates | P2 | Done |
+| BL-211 | 33 | CEL-over-historian expressions | P2 | Done |
 
 ---
 
@@ -1444,7 +1446,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 | Shelving survives restart | Persistent alarm shelf + approval — not in-memory stub | BL-158 |
 | Shift handover | Work queue + event journal on operator path | BL-166 (with 26) |
 
-**Scenario:** mini-TEC or `mes-printing-contour` on video wall; operator acknowledges alarm, shelves with approval, continues offline 2 h.
+**Scenario:** mini-TEC or `mes-platform-production` on video wall; operator acknowledges alarm, shelves with approval, continues offline 2 h.
 
 **Not Done if:** Lighthouse/axe only; 200-element mocked e2e; shelf lost on restart.
 
@@ -1457,7 +1459,7 @@ Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
 | ERP is not an island | **Live 1C or SAP**: order/MDM round-trip, idempotent, DLQ visible | BL-169 |
 | Derived tag drives action | Analytics derived tag → variable → alarm (not chart-only) | BL-203, 204 |
 
-**Scenario:** `mes-platform-production` or `mes-printing-contour` — work order → operator confirm → quality record → ERP outbox **visible in ERP test system**.
+**Scenario:** `mes-platform-production` — work order → operator confirm → quality record → ERP outbox **visible in ERP test system**.
 
 **Not Done if:** `mes_erp_pollOutbox` marks sent without ERP; MES only `MesPlatformGaSmokeTest`; historian SLA not in CI.
 
@@ -1566,7 +1568,7 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 | [FEDERATION.md](federation.md) | Edge federation |
 | [LOAD_TESTING.md](load-testing.md) | Load gates |
 | [PLATFORM_EVOLUTION.md](platform-evolution.md) | History |
-| [analytics-platform-roadmap.md](analytics-platform-roadmap.md) | Phase 33 charter (BL-200…210) — status in this file |
+| [analytics-platform-roadmap.md](analytics-platform-roadmap.md) | Phase 33 charter (BL-200…211) — status in this file |
 | [decisions/](decisions/) | ADR |
 
 ---

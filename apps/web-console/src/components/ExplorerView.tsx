@@ -208,7 +208,7 @@ export default function ExplorerView({
           onDeleted={onDeleted}
         />
       ) : isAnalyticsTag ? (
-        <AnalyticsTagInspector key={selectedPath} path={selectedPath} />
+        <AnalyticsTagInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isFederation ? (
         <FederationPeersPanel canManage={isPlatformAdmin} />
       ) : isTenants ? (

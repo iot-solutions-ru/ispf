@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.List;
 
 @Component
-class AnalyticsHistorianPortAdapter implements HistorianPort {
+public class AnalyticsHistorianPortAdapter implements HistorianPort {
 
     private final VariableHistoryService variableHistoryService;
 

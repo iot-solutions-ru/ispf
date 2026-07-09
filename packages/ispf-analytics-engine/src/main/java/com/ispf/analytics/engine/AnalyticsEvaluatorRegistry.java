@@ -34,6 +34,20 @@ public final class AnalyticsEvaluatorRegistry {
         return new AnalyticsEvaluatorRegistry(map);
     }
 
+    public static AnalyticsEvaluatorRegistry combine(
+            AnalyticsEvaluatorRegistry base,
+            AnalyticsEvaluator... extras
+    ) {
+        Map<String, AnalyticsEvaluator> map = new LinkedHashMap<>();
+        for (String helper : base.helpers()) {
+            base.find(helper).ifPresent(evaluator -> map.put(helper, evaluator));
+        }
+        for (AnalyticsEvaluator extra : extras) {
+            register(map, extra);
+        }
+        return new AnalyticsEvaluatorRegistry(map);
+    }
+
     private static void register(Map<String, AnalyticsEvaluator> map, AnalyticsEvaluator evaluator) {
         map.put(evaluator.helper(), evaluator);
     }

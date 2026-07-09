@@ -10,7 +10,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 @Component
-class AnalyticsLiveVariablePortAdapter implements LiveVariablePort {
+public class AnalyticsLiveVariablePortAdapter implements LiveVariablePort {
 
     private final ObjectManager objectManager;
 

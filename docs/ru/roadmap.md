@@ -1163,6 +1163,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-208 | **Event frames & shift context** | P2 | Окна shift/batch/downtime; интеграция MES OEE |
 | БЛ-209 | **Каталог тегов & lineage UI** | P2 | Inspector analytics tag; граф upstream/downstream |
 | БЛ-210 | **Enterprise scale gates** | P2 | Готово — lab scripts, SLO, examples |
+| БЛ-211 | **CEL-over-historian выражения** | P2 | Готово — `hist.*`, helper `cel`, validate/evaluate API, редактор в Tag Inspector |
 
 **Метрика фазы:** walkthrough сценария B ≤1 день; lab gate сценария C; derived tag запускает alarm без Chart-only rollup.
 
@@ -1241,6 +1242,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-208 | 33 | Event frames & shift context | P2 | Планируется |
 | БЛ-209 | 33 | Каталог тегов & lineage UI | P2 | Планируется |
 | БЛ-210 | 33 | Enterprise scale gates | P2 | Готово |
+| БЛ-211 | 33 | CEL-over-historian выражения | P2 | Готово |
 
 ---
 
@@ -1417,7 +1419,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | Shelving переживает рестарт | Persistent shelf + approval — не in-memory stub | БЛ-158 |
 | Передача смены | Work queue + event journal на operator path | БЛ-166 (с 26) |
 
-**Сценарий:** mini-TEC или `mes-printing-contour` на video wall; оператор ack alarm, shelf с approval, 2 ч offline.
+**Сценарий:** mini-TEC или `mes-platform-production` на video wall; оператор ack alarm, shelf с approval, 2 ч offline.
 
 **Не Done если:** только Lighthouse/axe; e2e 200 el mocked; shelf теряется при рестарте.
 
@@ -1430,7 +1432,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | ERP не остров | **Живой 1C или SAP**: заказ/НСИ round-trip, idempotent, DLQ виден | БЛ-169 |
 | Derived tag → действие | Analytics tag → variable → alarm (не только chart) | БЛ-203, 204 |
 
-**Сценарий:** `mes-platform-production` или `mes-printing-contour` — work order → confirm → quality → outbox **виден в тестовой ERP**.
+**Сценарий:** `mes-platform-production` — work order → confirm → quality → outbox **виден в тестовой ERP**.
 
 **Не Done если:** `pollOutbox` помечает sent без ERP; только `MesPlatformGaSmokeTest`; SLA historian не в CI.
 

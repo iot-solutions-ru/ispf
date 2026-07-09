@@ -352,6 +352,32 @@ nginx → hmi-read replicas (REST/WS)
 
 ---
 
+### BL-211 — CEL-over-historian expressions
+
+| Field | Value |
+|-------|-------|
+| Priority | P2 |
+| Depends on | BL-203, BL-209 |
+| Delivers | PI Analytics–class formula language (subset) on derived tags |
+| Status | **Done** |
+
+**Scope**
+
+1. `hist.avg|min|max|last|sum|live(path, variable, …)` preprocessor → numeric literals → Google CEL
+2. Analytics helper `cel` / `expression` on `analytics-tag-v1` devices (`analyticsExpression` variable)
+3. `POST /api/v1/platform/analytics/expression/validate` and `/evaluate`
+4. Explorer Tag Inspector: CEL editor, autocomplete for `hist.*`, save & refresh
+5. VPS demo: `sensor-c` composite = average of `hist.avg(sensor-a)` and `hist.avg(sensor-b)` over 5m
+
+**Acceptance**
+
+- [x] Unit + integration tests (`HistorianCelPreprocessorTest`, `CelExpressionIntegrationTest`)
+- [x] Integer literal normalization for CEL type consistency (`22.0 + 5.0`)
+- [x] Catalog lists `cel` helper with historian sources in lineage graph
+- [x] Deployed on prod `0.9.106` with `analytics-demo` dashboard
+
+---
+
 ## Suggested implementation order
 
 ```text
@@ -362,6 +388,7 @@ BL-202 (tiers) ─→ BL-205 ─→ BL-206
 BL-203 + BL-202 ─→ BL-207 (analytics profile)
 BL-203 + BL-165 ─→ BL-208 (event frames)
 All ─→ BL-210 (gates)
+BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 ```
 
 | Wave | BL | Duration (est.) | Outcome |
@@ -375,11 +402,11 @@ All ─→ BL-210 (gates)
 
 ---
 
-## Out of scope (future BL-211+)
+## Out of scope (future BL-212+)
 
 | Topic | Rationale |
 |-------|-----------|
-| Full PI Analytics expression language | Use CEL subset + built-ins first |
+| Full PI Analytics expression language | BL-211 delivers CEL + `hist.*`; extend function library in BL-212+ |
 | Separate AF database / duplicate asset tree | Tree-first ISPF model |
 | Real-time ML inference on tags | BL-175 ML hooks |
 | PI Vision–class graphics | Phase 26 HMI scope |
@@ -403,4 +430,5 @@ All ─→ BL-210 (gates)
 
 | Date | Change |
 |------|--------|
+| 2026-07-09 | BL-211 CEL-over-historian (`hist.*`, Tag Inspector, validate/evaluate API) |
 | 2026-07-09 | Initial BL-200…210 charter + ADR-0038 |

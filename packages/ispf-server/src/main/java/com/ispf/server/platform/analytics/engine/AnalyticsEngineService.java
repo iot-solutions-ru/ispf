@@ -3,6 +3,7 @@ package com.ispf.server.platform.analytics.engine;
 
 
 import com.ispf.analytics.engine.AnalyticsEngine;
+import com.ispf.analytics.engine.AnalyticsEvaluatorRegistry;
 
 import com.ispf.analytics.engine.AnalyticsEvaluationOptions;
 
@@ -88,7 +89,11 @@ public class AnalyticsEngineService {
 
             AnalyticsMetricsRecorder metricsRecorder,
 
-            AnalyticsTagMetadataService metadataService
+            AnalyticsTagMetadataService metadataService,
+
+            CelExpressionEvaluator celExpressionEvaluator,
+
+            ExpressionAliasEvaluator expressionAliasEvaluator
 
     ) {
 
@@ -110,7 +115,11 @@ public class AnalyticsEngineService {
 
         this.metadataService = metadataService;
 
-        this.analyticsEngine = AnalyticsEngine.withBuiltins();
+        this.analyticsEngine = new AnalyticsEngine(AnalyticsEvaluatorRegistry.combine(
+                AnalyticsEvaluatorRegistry.builtins(),
+                celExpressionEvaluator,
+                expressionAliasEvaluator
+        ));
 
     }
 

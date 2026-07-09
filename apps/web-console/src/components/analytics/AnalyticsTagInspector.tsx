@@ -1,9 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fetchAnalyticsTagByPath, type AnalyticsTagCatalogEntryDto } from "../../api";
+import {
+  evaluateAnalyticsExpression,
+  fetchAnalyticsTagByPath,
+  refreshAnalyticsDerivedTag,
+  setVariable,
+  validateAnalyticsExpression,
+  type AnalyticsTagCatalogEntryDto,
+} from "../../api";
+import type { DataRecord } from "../../types";
+import BindingExpressionField from "../BindingExpressionField";
+import { ANALYTICS_CEL_BINDING_ENTRIES } from "../../utils/analyticsCelBindings";
 
 interface AnalyticsTagInspectorProps {
   path: string;
+  canManage?: boolean;
+}
+
+const CEL_HELPERS = new Set(["cel", "expression"]);
+
+function stringRecord(value: string): DataRecord {
+  return {
+    schema: {
+      name: "stringValue",
+      fields: [{ name: "value", type: "STRING" }],
+    },
+    rows: [{ value }],
+  };
 }
 
 function formatInstant(value: string | null | undefined): string {
@@ -64,12 +88,55 @@ function LineageGraph({ tag }: { tag: AnalyticsTagCatalogEntryDto }) {
   );
 }
 
-export default function AnalyticsTagInspector({ path }: AnalyticsTagInspectorProps) {
-  const { t } = useTranslation(["automation", "common"]);
+export default function AnalyticsTagInspector({ path, canManage = false }: AnalyticsTagInspectorProps) {
+  const { t } = useTranslation(["automation", "common", "inspector"]);
+  const queryClient = useQueryClient();
+  const [helperMode, setHelperMode] = useState<"builtin" | "cel">("builtin");
+  const [expressionDraft, setExpressionDraft] = useState("");
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [evalResult, setEvalResult] = useState<string | null>(null);
 
   const tagQuery = useQuery({
     queryKey: ["analytics-tag", path],
     queryFn: () => fetchAnalyticsTagByPath(path),
+  });
+
+  useEffect(() => {
+    if (!tagQuery.data) {
+      return;
+    }
+    const isCel = CEL_HELPERS.has(tagQuery.data.helper.toLowerCase());
+    setHelperMode(isCel ? "cel" : "builtin");
+    setExpressionDraft(tagQuery.data.expression ?? "");
+  }, [tagQuery.data]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const helper = helperMode === "cel" ? "cel" : tagQuery.data?.helper ?? "rollingAvg";
+      await setVariable(path, "analyticsHelper", stringRecord(helper));
+      if (helperMode === "cel") {
+        await setVariable(path, "analyticsExpression", stringRecord(expressionDraft.trim()));
+      }
+      await refreshAnalyticsDerivedTag(path);
+    },
+    onSuccess: async () => {
+      setSaveMessage(t("automation:analyticsTag.saved"));
+      setEvalResult(null);
+      await queryClient.invalidateQueries({ queryKey: ["analytics-tag", path] });
+    },
+    onError: (error: Error) => {
+      setSaveMessage(error.message);
+    },
+  });
+
+  const evaluateMutation = useMutation({
+    mutationFn: () => evaluateAnalyticsExpression(expressionDraft.trim(), path),
+    onSuccess: (result) => {
+      setEvalResult(`${result.value} (${result.latencyMs} ms)`);
+    },
+    onError: (error: Error) => {
+      setEvalResult(error.message);
+    },
   });
 
   if (tagQuery.isLoading) {
@@ -81,6 +148,7 @@ export default function AnalyticsTagInspector({ path }: AnalyticsTagInspectorPro
   }
 
   const tag = tagQuery.data;
+  const isCelMode = helperMode === "cel";
 
   return (
     <section className="automation-inspector analytics-tag-inspector">
@@ -93,6 +161,69 @@ export default function AnalyticsTagInspector({ path }: AnalyticsTagInspectorPro
           </p>
         </div>
       </header>
+
+      {canManage && (
+        <section className="analytics-tag-editor">
+          <label className="analytics-tag-editor-mode">
+            <span>{t("automation:analyticsTag.helperMode")}</span>
+            <select
+              value={helperMode}
+              onChange={(event) => setHelperMode(event.target.value as "builtin" | "cel")}
+            >
+              <option value="builtin">{t("automation:analyticsTag.helperBuiltin")}</option>
+              <option value="cel">{t("automation:analyticsTag.helperCel")}</option>
+            </select>
+          </label>
+
+          {isCelMode && (
+            <>
+              <label>
+                <span>{t("automation:analyticsTag.expression")}</span>
+                <BindingExpressionField
+                  id="analytics-tag-expression"
+                  value={expressionDraft}
+                  onChange={setExpressionDraft}
+                  objectPath={path}
+                  entries={ANALYTICS_CEL_BINDING_ENTRIES}
+                  placeholder={t("automation:analyticsTag.expressionPlaceholder")}
+                  onValidate={async (expression) => {
+                    const result = await validateAnalyticsExpression(expression, path);
+                    return {
+                      valid: result.valid,
+                      error: result.errors[0] ?? null,
+                    };
+                  }}
+                />
+              </label>
+              <p className="hint">{t("automation:analyticsTag.expressionHint")}</p>
+              <div className="analytics-tag-editor-actions">
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={!expressionDraft.trim() || saveMutation.isPending}
+                  onClick={() => saveMutation.mutate()}
+                >
+                  {t("automation:analyticsTag.save")}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={!expressionDraft.trim() || evaluateMutation.isPending}
+                  onClick={() => evaluateMutation.mutate()}
+                >
+                  {t("automation:analyticsTag.evaluate")}
+                </button>
+              </div>
+              {evalResult && <p className="hint">{evalResult}</p>}
+              {saveMessage && <p className="hint">{saveMessage}</p>}
+            </>
+          )}
+
+          {!isCelMode && (
+            <p className="hint">{t("automation:analyticsTag.builtinHint")}</p>
+          )}
+        </section>
+      )}
 
       <dl className="analytics-tag-summary">
         <div>

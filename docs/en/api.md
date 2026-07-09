@@ -258,6 +258,22 @@ Response includes aligned `timestamps[]`, per-series `values[]` (null when bucke
 
 Limits (configurable): max 20 tags per query, 3s timeout, soft rate limit 120/min.
 
+### Analytics CEL expression (BL-211)
+
+```http
+POST /api/v1/platform/analytics/expression/validate
+POST /api/v1/platform/analytics/expression/evaluate
+Content-Type: application/json
+
+{
+  "expression": "hist.avg('root.platform.devices.demo', 'temperature', '5m') * 2",
+  "objectPath": "root.platform.devices.my-derived-tag",
+  "asOf": "2026-07-09T10:00:00Z"
+}
+```
+
+Supported `hist.*` functions: `avg`, `min`, `max`, `last`, `sum`, `live`. Deployed tags: set `analyticsHelper` to `cel` and `analyticsExpression` on the device; engine evaluates on schedule.
+
 ## Actuator
 
 | Path | Access |

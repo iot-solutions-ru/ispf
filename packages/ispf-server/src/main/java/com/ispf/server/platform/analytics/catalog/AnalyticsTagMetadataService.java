@@ -1,7 +1,6 @@
 package com.ispf.server.platform.analytics.catalog;
 
 import com.ispf.analytics.engine.AnalyticsDagBuilder;
-import com.ispf.analytics.engine.AnalyticsDagBuilder;
 import com.ispf.analytics.engine.AnalyticsEvaluationResult;
 import com.ispf.analytics.engine.AnalyticsSourceRef;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
@@ -176,6 +175,16 @@ public class AnalyticsTagMetadataService {
 
     private void syncStaticMetadata(PlatformObject node) {
         String helper = AnalyticsTagCatalogService.resolveHelper(node);
+        if ("cel".equalsIgnoreCase(helper) || "expression".equalsIgnoreCase(helper)) {
+            setString(node.path(), "analyticsHelper", helper);
+            if (!readBoolean(node, "analyticsTagEnabled").isPresent()) {
+                setBoolean(node.path(), "analyticsTagEnabled", true);
+            }
+            if (readString(node, "analyticsQuality").orElse("").isBlank()) {
+                setString(node.path(), "analyticsQuality", QUALITY_OK);
+            }
+            return;
+        }
         String sourcePath = readString(node, "sourcePath").orElse(node.path());
         String sourceVariable = readString(node, "sourceVariable").orElse("");
         String sourceField = readString(node, "sourceField").orElse("value");
