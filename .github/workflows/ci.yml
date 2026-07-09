@@ -16,7 +16,7 @@ jobs:
       web_console: ${{ steps.filter.outputs.web_console }}
       tools: ${{ steps.filter.outputs.tools }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -44,7 +44,7 @@ jobs:
     if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.tools == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -98,7 +98,7 @@ jobs:
     if: needs.changes.outputs.web_console == 'true' || needs.changes.outputs.tools == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -130,7 +130,7 @@ jobs:
   agent-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:

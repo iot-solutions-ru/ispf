@@ -15,7 +15,7 @@ jobs:
   docker-fixtures-smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Make smoke script executable
         run: chmod +x deploy/tools/driver-interop-smoke.sh
@@ -57,7 +57,7 @@ jobs:
           - ispf-driver-opc-bridge
           - ispf-driver-gps-tracker
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
@@ -93,7 +93,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Make scripts executable
         run: chmod +x gradlew deploy/tools/driver-interop-report.sh
@@ -161,7 +161,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew

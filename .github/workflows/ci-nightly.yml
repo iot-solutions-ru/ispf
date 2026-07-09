@@ -16,7 +16,7 @@ jobs:
   backend-full:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v6
         with:
@@ -123,7 +123,7 @@ jobs:
   web-console-full:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -166,7 +166,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Generate CI dashboard
         run: python tools/acceleration/ci-dashboard.py
       - name: Upload CI dashboard
@@ -181,7 +181,7 @@ jobs:
   cluster-ownership:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: chmod +x gradlew
       - uses: actions/setup-java@v5
         with:
@@ -200,7 +200,7 @@ jobs:
   agent-regression-nightly:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
