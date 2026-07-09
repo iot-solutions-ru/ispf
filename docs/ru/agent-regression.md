@@ -71,4 +71,4 @@ bash scripts/run-agent-regression.sh --live
 - [ai-development.md](ai-development.md) — инструменты и playbook агента
 - [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — рецепт e2e-деплоя BL-177
 - [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — рецепт factory spec BL-180
-- [roadmap-phase-25.md](roadmap-phase-25.md) — BL-177, BL-178
+- [roadmap.md](roadmap.md) — BL-177, BL-178

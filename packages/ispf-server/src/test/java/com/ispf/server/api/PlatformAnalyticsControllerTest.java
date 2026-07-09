@@ -62,4 +62,13 @@ class PlatformAnalyticsControllerTest {
                 .andExpect(jsonPath("$[*].templateId", hasItem("oee")))
                 .andExpect(jsonPath("$[?(@.templateId=='oee')].helper").value(hasItem("oee")));
     }
+
+    @Test
+    void analyticsSloEndpointExposesBl210Targets() throws Exception {
+        mockMvc.perform(get("/api/v1/platform/analytics/analytics-slo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.multiTagQueryP95LatencyMs").value(3000))
+                .andExpect(jsonPath("$.catalogMinTags").value(50000))
+                .andExpect(jsonPath("$.clickhouseMinSamples").value(1000000000));
+    }
 }

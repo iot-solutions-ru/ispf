@@ -62,7 +62,7 @@ Filter v1: marker conjunction with `and` (e.g. `equip and ahu`). Legacy tag sear
 | GET | `/api/v1/objects/by-path/variables` | operator+ | List variables |
 | GET | `/api/v1/objects/by-path/variables/detail` | operator+ | One variable (`name`) |
 | GET | `/api/v1/objects/by-path/variables/history` | operator+ | Variable history (`path`, `name`, `field`, `from`, `to`, `limit`; only when `historyEnabled`) |
-| GET | `/api/v1/objects/by-path/variables/history/aggregate` | operator+ | Aggregates (`bucket`, `from`, `to`, `limit` — up to 2000 buckets; `avg`/`min`/`max`/`count`) |
+| GET | `/api/v1/objects/by-path/variables/history/aggregate` | operator+ | Aggregates (`bucket`, `from`, `to`, `limit` — up to 2000 buckets; `avg`/`min`/`max`/`count`; `dataSource`: `rollup`/`raw`/`none`) |
 | GET | `/api/v1/objects/by-path/variables/history/export` | operator+ | Download history (`format=csv\|json`, same filters, `limit` up to 10000) |
 | PATCH | `/api/v1/objects/by-path/variables/history` | admin | `historyEnabled`, `historyRetentionDays` |
 | PUT | `/api/v1/objects/by-path/variables` | admin | Write value |
@@ -214,6 +214,49 @@ Content-Type: application/json
 | POST | `/api/v1/blueprints/{id}/instantiate` | admin |
 | POST | `/api/v1/blueprints/from-object` | admin |
 | GET | `/api/v1/blueprints/attachments` | admin |
+
+## Platform analytics (BL-160, BL-206)
+
+| Method | Path | Roles | Description |
+|--------|------|-------|-------------|
+| GET | `/api/v1/platform/analytics/templates` | operator+ | List analytics templates |
+| GET | `/api/v1/platform/analytics/tags?path=` | operator+ | List deployed analytics tags (catalog, lineage) |
+| GET | `/api/v1/platform/analytics/tags/by-path?path=` | operator+ | Analytics tag catalog entry |
+| POST | `/api/v1/platform/analytics/templates/apply` | admin | Apply template to device |
+| POST | `/api/v1/platform/analytics/query` | operator+ | Multi-tag aligned aggregate query |
+| POST | `/api/v1/platform/analytics/query/export?format=csv\|parquet` | operator+ | Export query result |
+| POST | `/api/v1/platform/analytics/tags/backfill` | admin | Recompute derived tag window |
+| POST | `/api/v1/platform/analytics/rollups/rebuild` | admin | Rebuild materialized rollups |
+| GET | `/api/v1/platform/analytics/frames/active` | operator+ | List active event frames |
+| POST | `/api/v1/platform/analytics/frames/open-shift` | admin | Open shift frame from MES `mes_oee_shift` |
+| POST | `/api/v1/platform/analytics/frames/open` | admin | Open custom event frame |
+| POST | `/api/v1/platform/analytics/frames/close` | admin | Close event frame |
+| GET | `/api/v1/platform/analytics/frames/downtime-report` | operator+ | Downtime minutes per frame |
+| GET | `/api/v1/platform/analytics/historian-sla` | operator+ | Historian query SLA snapshot |
+| GET | `/api/v1/platform/analytics/analytics-slo` | operator+ | Analytics platform SLO targets (BL-210) |
+
+### Multi-tag query
+
+```http
+POST /api/v1/platform/analytics/query
+Content-Type: application/json
+
+{
+  "tags": [
+    { "path": "root.platform.devices.demo-sensor-01", "variable": "temperature", "field": "value", "label": "temp" },
+    { "path": "root.platform.devices.other", "variable": "pressure", "field": "value" }
+  ],
+  "from": "2026-07-01T00:00:00Z",
+  "to": "2026-07-08T00:00:00Z",
+  "bucket": "1h",
+  "agg": "avg",
+  "maxBuckets": 500
+}
+```
+
+Response includes aligned `timestamps[]`, per-series `values[]` (null when bucket missing), `dataSource` per series (`rollup` or `raw`), and `latencyMs`. Single-tag aggregate remains on `GET .../history/aggregate` with `dataSource` field.
+
+Limits (configurable): max 20 tags per query, 3s timeout, soft rate limit 120/min.
 
 ## Actuator
 

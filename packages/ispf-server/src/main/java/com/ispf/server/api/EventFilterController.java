@@ -34,32 +34,35 @@ public class EventFilterController {
     }
 
     @PostMapping
-    public EventFilterDefinition create(@RequestBody EventFilterDefinition definition) {
-        return eventFilterObjectService.upsert(definition);
+    public EventFilterDefinition create(@RequestBody SaveEventFilterRequest request) {
+        if (request.filterId() == null || request.filterId().isBlank()) {
+            throw new IllegalArgumentException("filterId is required");
+        }
+        return eventFilterObjectService.upsert(toDefinition("", request));
     }
 
     @PutMapping("/by-path")
     public EventFilterDefinition update(
             @RequestParam String path,
-            @RequestBody EventFilterDefinition definition
+            @RequestBody SaveEventFilterRequest request
     ) {
         EventFilterDefinition existing = eventFilterObjectService.getByPath(path);
         EventFilterDefinition merged = new EventFilterDefinition(
                 path,
-                definition.filterId() != null && !definition.filterId().isBlank()
-                        ? definition.filterId()
+                request.filterId() != null && !request.filterId().isBlank()
+                        ? request.filterId()
                         : existing.filterId(),
-                definition.displayName() != null ? definition.displayName() : existing.displayName(),
-                definition.description() != null ? definition.description() : existing.description(),
-                definition.eventNamePattern() != null ? definition.eventNamePattern() : existing.eventNamePattern(),
-                definition.sourceObjectPathPattern() != null
-                        ? definition.sourceObjectPathPattern()
+                request.displayName() != null ? request.displayName() : existing.displayName(),
+                request.description() != null ? request.description() : existing.description(),
+                request.eventNamePattern() != null ? request.eventNamePattern() : existing.eventNamePattern(),
+                request.sourceObjectPathPattern() != null
+                        ? request.sourceObjectPathPattern()
                         : existing.sourceObjectPathPattern(),
-                definition.minSeverity(),
-                definition.maxSeverity(),
-                definition.timeWindowMs(),
-                definition.filterExpression() != null ? definition.filterExpression() : existing.filterExpression(),
-                definition.enabled()
+                request.minSeverity() != null ? request.minSeverity() : existing.minSeverity(),
+                request.maxSeverity() != null ? request.maxSeverity() : existing.maxSeverity(),
+                request.timeWindowMs() != null ? request.timeWindowMs() : existing.timeWindowMs(),
+                request.filterExpression() != null ? request.filterExpression() : existing.filterExpression(),
+                request.enabled() != null ? request.enabled() : existing.enabled()
         );
         return eventFilterObjectService.upsert(merged);
     }
@@ -67,5 +70,35 @@ public class EventFilterController {
     @DeleteMapping("/by-path")
     public void delete(@RequestParam String path) {
         eventFilterObjectService.delete(path);
+    }
+
+    private static EventFilterDefinition toDefinition(String path, SaveEventFilterRequest request) {
+        return new EventFilterDefinition(
+                path,
+                request.filterId(),
+                request.displayName(),
+                request.description(),
+                request.eventNamePattern() != null ? request.eventNamePattern() : "*",
+                request.sourceObjectPathPattern() != null ? request.sourceObjectPathPattern() : "root.platform.**",
+                request.minSeverity() != null ? request.minSeverity() : 0L,
+                request.maxSeverity() != null ? request.maxSeverity() : 100L,
+                request.timeWindowMs() != null ? request.timeWindowMs() : 0L,
+                request.filterExpression() != null ? request.filterExpression() : "",
+                request.enabled() == null || request.enabled()
+        );
+    }
+
+    public record SaveEventFilterRequest(
+            String filterId,
+            String displayName,
+            String description,
+            String eventNamePattern,
+            String sourceObjectPathPattern,
+            Long minSeverity,
+            Long maxSeverity,
+            Long timeWindowMs,
+            String filterExpression,
+            Boolean enabled
+    ) {
     }
 }

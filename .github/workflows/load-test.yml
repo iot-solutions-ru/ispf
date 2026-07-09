@@ -47,6 +47,16 @@ jobs:
             -Dorg.gradle.workers.max=1 \
             2>&1 | tee load-test-event-fire.log
 
+      - name: Scale gate — analytics multi-tag query p95
+        run: |
+          set -o pipefail
+          ./gradlew \
+            :packages:ispf-server:test \
+            --tests com.ispf.server.platform.analytics.AnalyticsMultiTagQueryLoadTest \
+            --no-daemon \
+            -Dorg.gradle.workers.max=1 \
+            2>&1 | tee load-test-analytics-query.log
+
       - name: Upload load test logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,4 +65,5 @@ jobs:
           path: |
             load-test-list-devices.log
             load-test-event-fire.log
+            load-test-analytics-query.log
           retention-days: 14

@@ -1,6 +1,7 @@
 package com.ispf.server.platform;
 
 import com.ispf.server.config.ClusterProperties;
+import com.ispf.server.config.ReplicaCapability;
 import com.ispf.server.config.ReplicaCapabilitySet;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.driver.DriverOwnershipService;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -174,6 +176,36 @@ public class ClusterReplicaRegistryService {
         }
         nodes.sort(Comparator.comparing(ClusterNode::replicaId));
         return nodes;
+    }
+
+    public boolean hasUpReplicaWithCapability(ReplicaCapability capability) {
+        return countUpReplicasWithCapability(capability) > 0;
+    }
+
+    public int countUpReplicasWithCapability(ReplicaCapability capability) {
+        if (!clusterProperties.enabled()) {
+            return clusterProperties.hasCapability(capability) ? 1 : 0;
+        }
+        int count = 0;
+        for (ClusterNode node : listNodes()) {
+            if (!"UP".equals(node.status())) {
+                continue;
+            }
+            if (capabilitiesContain(node.replicaCapabilities(), capability)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    static boolean capabilitiesContain(String serialized, ReplicaCapability capability) {
+        if (serialized == null || serialized.isBlank()) {
+            return false;
+        }
+        return Arrays.stream(serialized.split(","))
+                .map(String::trim)
+                .anyMatch(token -> capability.externalName().equals(token)
+                        || capability.name().equalsIgnoreCase(token));
     }
 
     private ClusterNode singleNode(String replicaId) {

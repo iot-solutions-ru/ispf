@@ -69,4 +69,4 @@ Pass-rate reporter (`validate-scenarios.mjs --results nightly.json --enforce-rat
 - [AI_DEVELOPMENT.md](ai-development.md) — agent tools and playbooks
 - [AgentDeployPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentDeployPlaybook.java) — BL-177 e2e deploy recipe
 - [AgentSolutionGeneratorPlaybook](../packages/ispf-server/src/main/java/com/ispf/server/ai/agent/AgentSolutionGeneratorPlaybook.java) — BL-180 factory spec recipe
-- [ROADMAP_PHASE25.md](roadmap-phase-25.md) — BL-177, BL-178
+- [roadmap.md](roadmap.md) — BL-177, BL-178

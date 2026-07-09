@@ -52,6 +52,7 @@ public class VariableHistoryProperties {
         private String url = "http://localhost:8123";
         private String database = "ispf";
         private String table = "variable_samples";
+        private String rollupTable = "variable_rollups";
         private String username = "default";
         private String password = "";
 
@@ -77,6 +78,14 @@ public class VariableHistoryProperties {
 
         public void setTable(String table) {
             this.table = table;
+        }
+
+        public String getRollupTable() {
+            return rollupTable;
+        }
+
+        public void setRollupTable(String rollupTable) {
+            this.rollupTable = rollupTable;
         }
 
         public String getUsername() {

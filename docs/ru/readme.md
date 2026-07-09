@@ -28,8 +28,7 @@
 | [REST API](api.md) | Справочник endpoints |
 | [Приложения](applications.md) | Bundles, BFF, scheduler |
 | [Отчёты](reports.md) | SQL-отчёты, экспорт CSV |
-| [Roadmap](roadmap.md) | Phase 0–24, BL-01…139 |
-| [Roadmap Phase 25+](roadmap-phase-25.md) | Excellence Program → 10/10 |
+| [Roadmap](roadmap.md) | Единый растущий roadmap: Фаза 0–33, БЛ-01…210, Программа совершенствования |
 | [Конкурентный scorecard](competitive-scorecard.md) | Матрица готовности по коду |
 | [Индекс ADR](decisions/readme.md) | Архитектурные решения |
 

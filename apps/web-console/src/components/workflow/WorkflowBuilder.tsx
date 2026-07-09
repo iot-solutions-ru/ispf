@@ -401,7 +401,7 @@ export default function WorkflowBuilder({
           )}
         </section>
 
-        <section className="workflow-panel workflow-panel-wide workflow-bpmn-panel">
+        <section className="workflow-panel workflow-bpmn-panel">
           <div className="workflow-bpmn-head">
             <h3>{t("workflow:bpmn.title")}</h3>
             {mode === "edit" && (

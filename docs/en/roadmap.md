@@ -2,12 +2,12 @@
 
 # ISPF Platform Roadmap
 
-Single source of truth: phases, sprints, REQ-PF/FW, BL-01…146.
+Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** — append new phases here; do not split into `roadmap-phase-N.md`.
 
 | | |
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
-| **Updated** | 2026-07-07 |
+| **Updated** | 2026-07-09 |
 | **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](architecture.md)) |
 
 ---
@@ -19,16 +19,82 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…146.
 | REQ-PF | 13 | 13 | 0 | 0 | 0 |
 | REQ-FW | 20 | 20 | 0 | 0 | 0 |
 | BL-01…139 | 139 | 138 | 0 | 0 | 1 |
-| Phase 0–23 | 23 | 23 | 0 | — | — |
-| Sprint S01–S26 | 26 | 26 | 0 | 0 | — |
+| BL-140…210 | 65 | 26 | 37 | 2 | 0 |
+| Phase 0–24 | 25 | 25 | 0 | — | — |
+| Phase 25–33 | 9 | 0 | 9 | 0 | — |
+| Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
+| Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current sprint:** not started — **Phase 25 (Excellence Program)** Planned. See [ROADMAP_PHASE25.md](roadmap-phase-25.md).
+**Current focus:** Phase 25–33 Excellence Program (Partial) — see [Phase 25–33](#phase-25-33--excellence-program).
 
-**Post-acceleration backlog:** BL-01…139 Done (BL-112 Cancelled). Phase 24 closed — see [§ Phase 24](#phase-24--closed). Next wave: BL-140…190, Phase 25–32.
+**Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210.
 
 Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 
 VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc)).
+
+---
+
+## Retrospective — what shipped and where we are {#retrospective}
+
+**As of 2026-07-09** · prod **0.9.105** (`ispf.iot-solutions.ru`) · code-verified score **~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)).
+
+### Eras (closed → active)
+
+| Era | When | What shipped | State |
+| --- | ---- | ------------ | ----- |
+| **Phase 0–22** | History | Core platform: object tree, drivers SPI, HMI, BPMN, REQ-PF/FW, OIDC, Timescale, NATS, federation foundations | **Closed — Done** |
+| **Phase 23 + S01–S26** | Excellence REQ-EX + acceleration | OT trust wave, operator HMI/PWA, AI production, semantic (Haystack/Brick), MES wave, multi-tenant, cluster | **Closed — Done** |
+| **Phase 24 / S27–S30** | 2026-07-07 | Federation hardening, historian dual-write VPS, HMI a11y/Lighthouse, RU registry techpack | **Closed — Done** |
+| **Phase 25–33** | Active | Excellence Program: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Open — all Partial** |
+
+### Closed backlog (do not reopen)
+
+| Bucket | Count | Notes |
+| ------ | ----- | ----- |
+| REQ-PF | 13/13 Done | Application platform (functions, BFF, bundle, reports, …) |
+| REQ-FW | 20/20 Done | ADR, licensing, AI layer, public API, … |
+| BL-01…139 | 138 Done, 1 Cancelled (BL-112) | Full registry below |
+| Sprint S01–S30 | 30/30 Done | Including HF01 elastic ingress |
+
+### Active backlog BL-140…210 (registry truth)
+
+Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over the summary rollup if they diverge.
+
+| Status | IDs (highlights) | Meaning |
+| ------ | ---------------- | ------- |
+| **Done** | BL-141, 146, 160, 163, 189, 201, 202 | Accepted / shipped with evidence |
+| **Partial** | BL-140, most of 142–190, 164–188, … | Foundation exists; tail open (field task, stub, soak, or live gate missing) |
+| **Planned** | BL-185, 191–193, 200, 203–210 | Not started or charter-only |
+
+### Phase 25–33 at a glance
+
+| Phase | Theme | Done highlights | Still open (typical) |
+| ----- | ----- | --------------- | -------------------- |
+| **25** OT Trust | Drivers / edge | BL-141 interop lab | BL-140 field (after named task); BL-191 matrix honesty; edge soak |
+| **26** HMI | Mimics / operator | BL-146 — 218 P&ID symbols | Live FPS 500@60, offline PWA 8h, CEL debugger |
+| **27** Security | MFA / tenancy | TOTP MFA Partial | Hard tenancy, per-var ACL, persistent alarm shelf |
+| **28** Historian | Tiers / SLA | BL-160 AF-lite, BL-163 Parquet | Turnkey tiers, query SLA CI, petabyte path |
+| **29** MES / ERP L4 | ISA-95 | Catalog + reference bundles (smoke) | Live ERP (BL-169 P0), field sites, genealogy |
+| **30** Automation | CEP / BPMN | Message events Partial | Full CEP, process programs, DMN |
+| **31** AI | Autopilot | Tools + schema CI | Live LLM ≥95%, generator not stub |
+| **32** Ecosystem | Marketplace | Local install Partial | Partners, signed packs, symbol market |
+| **33** Analytics | AF-capable | **Done** (BL-200…210) | — |
+
+### Subsystem readiness (legacy Phase 23 view)
+
+See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the Excellence scorecard (~7.4/10).
+
+### Where to look next
+
+| Need | Section |
+| ---- | ------- |
+| P0 execution order (90 days) | [Next 90 days](#next-90-days) · [Domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) |
+| **Quality path (usable Done)** | [Quality path to Done](#quality-path-to-done) |
+| **S31 Wave 1 backlog** | [S31 execution backlog](#s31-wave-1-execution-backlog) |
+| Full BL status | [BL-140…210 registry](#bl-140210--full-registry) |
+| 10/10 exit criteria | [Definition of Done](#definition-of-done--1010-overall) |
+| Closed sprint detail | [Sprint registry](#sprint-registry) · [Phase 24](#phase-24--closed) |
 
 ---
 
@@ -776,25 +842,6 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 
 ---
 
-## Phase 25–32 — Excellence Program (Planned)
-
-Goal: **10/10** on competitive scorecard (IoT / SCADA / MES low-code). BL-140…190, sprints S31–S46.
-
-**Full plan:** [ROADMAP_PHASE25.md](roadmap-phase-25.md) — OT Trust, HMI Excellence, Enterprise Security, Historian Scale, MES Platform, Automation Depth, AI Autopilot, Ecosystem.
-
-| Phase | Theme | BL | Status |
-| ----- | ---- | -- | ------ |
-| 25 | OT Trust | 140…145 | Planned |
-| 26 | HMI Excellence | 146…152 | Planned |
-| 27 | Enterprise Security | 153…158 | Planned |
-| 28 | Historian at Scale | 159…163 | Planned |
-| 29 | MES Platform | 164…170 | Planned |
-| 30 | Automation Depth | 171…176 | Planned |
-| 31 | AI Autopilot | 177…182 | Planned |
-| 32 | Ecosystem & Market | 183…190 | Planned |
-
----
-
 ## Phase 24 — closed {#phase-24--closed}
 
 Post-S26; **Done** (S24–S30, 2026-07-07).
@@ -809,6 +856,695 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 **Local (2026-07-07):** pr-fast CI green (906 tests); web-console quality-gates + Lighthouse operator OK.
 
 ---
+
+
+## Phase 25–33 — Excellence Program {#phase-25-33--excellence-program}
+
+**Goal:** bring the product to **10/10** across IoT / SCADA / MES / ERP Level 4 / analytics, and surpass incumbents in solution delivery speed and AI-native development.
+
+**Single roadmap rule:** all future phases append here — do not create separate `roadmap-phase-N.md` files. Deep charters (e.g. [analytics-platform-roadmap.md](analytics-platform-roadmap.md)) remain companion docs; status and BL IDs live only in this file.
+
+| | |
+| --- | --- |
+| **Baseline** | Phase 24 closed, `main`, July 2026 |
+| **Updated** | 2026-07-09 (unified roadmap; domain gap audit; Phase 33 analytics) |
+| **Product score** | Code verified **~7.4/10** — [competitive-scorecard.md](competitive-scorecard.md) |
+| **Target** | 10/10 — see [Definition of Done](#definition-of-done--1010-overall) |
+
+### Excellence summary
+
+| Category | Total | Done | Partial | Planned | Cancelled |
+| --------- | ----- | ---- | ------- | ------- | --------- |
+| Phase 25–33 | 9 | 0 | 9 | 0 | — |
+| BL-140…210 | 65 | 26 | 37 | 2 | 0 |
+| Sprint S31–S46 (draft) | 16 | 0 | 16 | 0 | — |
+
+## Competitive scorecard (baseline → code verified → target)
+
+Scale 1–10 relative to best-in-class platforms (Ignition / Kepware / PI / Opcenter / Tulip / mature context-tree IIoT).  
+**Code verified** — evidence from `main` source/tests (0.9.102). Full matrix: [competitive-scorecard.md](competitive-scorecard.md).
+
+| Dimension | Baseline | **Code verified** | Target | Phase |
+| --------- | :------: | :---------------: | :----: | ----- |
+| Unified data model | 9.0 | **8.5** | **10** | 25, 29, 30 |
+| SCADA / HMI / mimics | 7.0 | **7.5** | **10** | 26 |
+| OT/IT connectivity (drivers) | 6.0 | **6.5** | **10** | 25 |
+| Historian / time-series | 7.0 | **7.0** | **10** | 28 |
+| Automation / alarms | 7.5 | **7.5** | **10** | 27, 30 |
+| Workflow / BPMN | 6.5 | **7.5** | **10** | 30 |
+| MES / ISA-95 | 5.5 | **6.5** | **10** | 29 |
+| Low-code velocity | 8.0 | **8.0** | **10** | 26, 31 |
+| AI-assisted development | 9.0 | **6.5** | **10** | 31 |
+| Security / RBAC / tenancy | 6.5 | **7.5** | **10** | 27 |
+| Deploy / scale / edge | 8.0 | **7.0** | **10** | 25, 28, 32 |
+| Ecosystem / marketplace | 4.0 | **5.0** | **10** | 32 |
+| Documentation / DX | 9.0 | **8.5** | **10** | 32 |
+| Stack modernity | 9.0 | **9.5** | **10** | maintain |
+
+**Overall (code verified): ~7.4/10**
+
+---
+
+## Priorities (when resources are limited)
+
+| Priority | Phase | Why |
+| --------- | ----- | ------ |
+| **P0** | [25 — OT Trust](#phase-25--ot-trust) + [BL-191](#bl-191193--domain-audit-follow-ups) | Without OT engineer trust, the product will not be accepted on production sites |
+| **P0** | [29 — MES / ERP L4](#phase-29--mes-platform) (BL-169) | MES without live ERP sync is an island; outbox stub is not enough |
+| **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | The only moat incumbents cannot copy within a year |
+| **P1** | [26 — HMI Excellence](#phase-26--hmi-excellence) | SCADA is the operator-facing face of the product |
+| **P1** | [29 — MES Platform](#phase-29--mes-platform) | Differentiates from "just SCADA"; needs field sites, not only smoke |
+| **P2** | [27 — Enterprise Security](#phase-27--enterprise-security) | Enterprise tender requirement |
+| **P2** | [28 — Historian at Scale](#phase-28--historian-at-scale) | Large sites, petabyte-class |
+| **P2** | [33 — Analytics Platform](#phase-33--analytics-platform-af-capable) | AF-capable derived tags + OLAP (BL-200…210) |
+| **P2** | [BL-192 compliance](#bl-191193--domain-audit-follow-ups) | IEC 62443 / GAMP tender pack |
+| **P3** | [30 — Automation Depth](#phase-30--automation-depth) | Power users, CEP, process control |
+| **P3** | [32 — Ecosystem & Market](#phase-32--ecosystem--market) | Scale through partners |
+
+---
+
+## Domain gap audit — IoT / SCADA / MES / ERP (2026-07-09)
+
+Strategic audit vs best-in-class (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Verdict: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
+
+**Strategy:** ISPF is **not** a full ERP (SAP/1C). Level 4 goal = reliable ISA-95 connectors. Full Opcenter-class MES is **not** "everything in core" — first-class MES objects + certified bundles + 1–2 live plants. Moat = solution velocity (AI + low-code) with Kepware-class OT trust.
+
+### Domain maturity
+
+| Domain | Today | Missing for leadership | "Better than market" criterion |
+| ------ | ----- | ---------------------- | ------------------------------ |
+| **IoT** | Object tree, 58 `driverId`, MQTT/Modbus/OPC UA/S7 | Honest PRODUCTION matrix, edge soak, Sparkplug as product | Connect site without intermediate OPC server |
+| **SCADA** | Mimic 218 symbols, builder, alerts, BPMN | Live FPS/offline gates, persistent shelving, CEL debugger | Displace WinCC/Ignition on a typical HMI project |
+| **MES** | `WORK_ORDER`/`LOT`/OEE + reference bundles | Field plants, genealogy, scheduling | MES in 1 day on a real shop floor |
+| **ERP L4** | Outbox pattern + SQL reports | Live 1C/SAP adapters, master-data sync, B2MML | Idempotent order/MDM exchange with customer ERP |
+
+### Critical gaps → backlog
+
+| Sev | Domain | Gap | Vs market | Evidence | BL |
+| --- | ------ | --- | --------- | -------- | -- |
+| **Blocker** | IoT / OT | PRODUCTION matrix: `opc-da` stub, DNP3 no write | Kepware / Ignition | `OpcDaDeviceDriver` stub labeled PRODUCTION | [BL-191](#bl-191193--domain-audit-follow-ups), BL-140 |
+| **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (elevated P0) |
+| **Blocker** | AI | Live LLM ≥95% + generator stub | Own AI moat | `AiSolutionGeneratorService` `mode=stub` | BL-177…180 |
+| High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-145/187 Partial; prod `clusterEnabled=false` | BL-145, 187 |
+| High | SCADA | Live FPS 500 el + offline PWA 8h | Ignition Perspective | e2e mocked; BL-151/152 Partial | BL-151, 152 |
+| High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | BL-158 |
+| High | Historian | No PI-class AF-lite / tiers / SLA CI | OSIsoft PI | ClickHouse dual-write Partial | BL-159…162 |
+| High | MES | Catalog + bundles ≠ Opcenter product | Siemens Opcenter | Scorecard 6.5; smoke, not field sites | BL-164…170 |
+| High | ERP L4 | No bidirectional MDM sync | Tulip + ERP connectors | Level 4 = reports + outbox pattern | BL-169 |
+| High | Security | Strict multi-tenant validator stub | Enterprise SaaS IoT | `TenantIsolationValidator` stub | BL-155 |
+| Med | MES | ISA-88 / genealogy / APS lite only | Batch MES suites | `batch-v1` + BFF; no batch engine | BL-168 |
+| Med | Ecosystem | Marketplace / partners / symbols stub | Ignition Exchange | `PartnerProgramService` `source=stub` | BL-183…185 |
+| Med | Compliance | No IEC 62443 / GAMP in DoD | Enterprise tenders | Absent from Phase 25 DoD | [BL-192](#bl-191193--domain-audit-follow-ups) |
+| Med | Mobile | No native app; PWA offline Partial | Perspective Mobile / Tulip | Responsive + PWA smoke | BL-151, 166 |
+
+### 90-day execution order (from audit)
+
+| Rank | Focus | Actions |
+| ---- | ----- | ------- |
+| **P0** | OT trust honesty | BL-191: downgrade `opc-da`; DNP3 write or BETA; field sign-offs |
+| **P0** | Live ERP L4 connector | BL-169: real 1C **or** SAP adapter + idempotent sync + DLQ |
+| **P0** | AI without stub | BL-177…180: live LLM CI ≥95%; generator not keyword-stub |
+| **P1** | SCADA operator excellence | BL-151/152/158: live FPS 500@60; offline PWA; persistent alarm shelf |
+| **P1** | MES productization | BL-164…170: 1–2 production sites; genealogy; mobile confirm |
+| **P2** | Historian + Security + compliance | BL-159…162, BL-155, BL-192 |
+
+---
+
+## Sprint registry (draft)
+
+| Sprint | Phase | Theme | BL / scope | Status |
+| ------ | ----- | ---- | ---------- | ------ |
+| S31 | 25 | OT Trust wave 1 | BL-140, BL-141 | Partial |
+| S32 | 25 | OT Trust wave 2 | BL-142, BL-143 | Partial |
+| S33 | 25 | Edge + DDK | BL-144, BL-145 | Partial |
+| S34 | 26 | HMI symbols + debugger | BL-146, BL-149 | Partial |
+| S35 | 26 | HMI perf + video wall | BL-147, BL-148, BL-152 | Partial |
+| S36 | 26 | Operator offline + spreadsheet | BL-150, BL-151 | Partial |
+| S37 | 27 | MFA + per-variable ACL | BL-153, BL-154 | Partial |
+| S38 | 27 | Hard tenancy + audit | BL-155, BL-156, BL-157, BL-158 | Partial |
+| S39 | 28 | Historian tiers | BL-159, BL-160 | Partial (BL-160 Done) |
+| S40 | 28 | Historian scale lab | BL-161, BL-162, BL-163 | Partial |
+| S41 | 29 | MES objects + OEE | BL-164, BL-165 | Partial |
+| S42 | 29 | MES dispatch + quality | BL-166, BL-167, BL-168 | Partial |
+| S43 | 30 | CEP + process control | BL-171, BL-172, BL-173 | Partial |
+| S44 | 31 | AI e2e deploy | BL-177, BL-178 | Partial |
+| S45 | 31 | AI solution generator | BL-179, BL-180, BL-181 | Partial |
+| S46 | 32 | Marketplace + partners | BL-183, BL-184, BL-189 | Partial |
+
+Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
+
+---
+
+## Phase 25 — OT Trust
+
+**Goal:** OT/IT connectivity **10/10** — production-grade drivers, interop lab, edge agents, DDK.
+
+**Gap today:** 58 `driverId` entries in catalog, ~13 `PRODUCTION` in [DriverProductionMatrix](../packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java).
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-140 | **Top-20 industrial PRODUCTION** | P0 | Modbus×3, OPC UA, OPC UA server, S7, BACnet, MQTT, SNMP, HTTP, flexible, IEC-104, DNP3, DLMS, EtherNet/IP, OPC DA bridge, GPS — `DriverMaturity.PRODUCTION`, interop test green, [drivers.md](drivers.md) updated |
+| BL-141 | **Driver interop lab** | P0 | Docker fixtures per driver, CI workflow `driver-interop.yml`, latency + write round-trip report |
+| BL-142 | **Event→variable at driver** | P1 | MQTT/Kafka streams → dynamic variables; integration test |
+| BL-143 | **OPC UA server GA** | P1 | External UA clients: subscribe, read, write; interop with UA Expert / prosys |
+| BL-144 | **Driver DDK** | P1 | `packages/ispf-driver-ddk`, template, 3 reference custom drivers, [driver-promotion.md](driver-promotion.md) |
+| BL-145 | **Agent edge GA** | P1 | Store-forward, offline buffer, federation sync — 30-day field soak, [federation.md](federation.md) |
+
+**Phase metric:** 20 PRODUCTION drivers; 0 beta in top-industrial list; 3 pilot OT sites without middleware.
+
+**Related docs:** [drivers.md](drivers.md), [driver-promotion.md](driver-promotion.md), [ADR-0022](decisions/0022-driver-production-matrix.md).
+
+---
+
+## Phase 26 — HMI Excellence
+
+**Goal:** SCADA / HMI **10/10** — P&ID library, video wall, offline operator, expression debugger.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-146 | **P&ID symbol library v2** | P1 | 200+ ISA symbols, import pipeline, [scada-symbol-library.md](scada-symbol-library.md), legal audit |
+| BL-147 | **Mimic editor pro** | P1 | Multi-select, layers, undo/redo, keyboard nav — WCAG |
+| BL-148 | **Video wall mode** | P2 | Dashboard layout 2×2…4×4, auto-scale |
+| BL-149 | **Expression debugger** | P1 | Step-through CEL/bindings in Web Console, breakpoints |
+| BL-150 | **Live spreadsheet v2** | P2 | Real-time cell refresh, cross-sheet refs, export — [spreadsheet-widget.md](spreadsheet-widget.md) |
+| BL-151 | **Operator offline PWA** | P1 | Service worker: dashboards + mimics cache; sync on reconnect |
+| BL-152 | **HMI perf gate** | P1 | Mimic 500 elements ≥60 FPS; Lighthouse operator ≥95 — [hmi-quality-gates.md](hmi-quality-gates.md) |
+
+**Phase metric:** mini-TEC + pipeline SCADA on video wall; operator 8 h offline.
+
+**Related docs:** [scada.md](scada.md), [widgets.md](widgets.md), [hmi-quality-gates.md](hmi-quality-gates.md).
+
+---
+
+## Phase 27 — Enterprise Security
+
+**Goal:** Security / RBAC **10/10** — MFA, per-variable ACL, hard tenancy, audit.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-153 | **MFA** | P2 | TOTP + WebAuthn; Keycloak integration — [security.md](security.md) |
+| BL-154 | **Per-variable ACL** | P2 | read/write on variable, event, function (not only object-level) |
+| BL-155 | **Hard multi-tenancy** | P2 | Per-tenant DB schema option; OIDC tenant claim mapping — [multi-tenant.md](multi-tenant.md) |
+| BL-156 | **Audit trail GA** | P2 | Immutable audit log, export, SIEM webhook |
+| BL-157 | **Role templates** | P2 | Custom roles; ISA-95 scoped permissions |
+| BL-158 | **Alarm shelving** | P2 | Shelve/unshelve with approval workflow — extension of [automation.md](automation.md) |
+
+**Phase metric:** pentest pass; tenant A ≠ tenant B in hard mode; MFA mandatory for admin.
+
+---
+
+## Phase 28 — Historian at Scale
+
+**Goal:** Historian **10/10** — turnkey tiers, asset analytics, petabyte path.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-159 | **Historian tiers turnkey** | P2 | Hot (PG/Timescale) → Warm (CH) → Cold (S3/parquet); one-click deploy profile |
+| BL-160 | **Asset analytics framework** | P2 | Rollups, KPI templates, derived tags (AF-like lite) — **Done** (BL-201) |
+| BL-161 | **Historian query SLA** | P2 | 1M points aggregate <2s; documented SLO |
+| BL-162 | **Event journal petabyte path** | P2 | CH cutover playbook executed; lab 10M events/min — [clickhouse-prod-playbook.md](clickhouse-prod-playbook.md) |
+| BL-163 | **Trend export** | P3 | Excel/CSV/Parquet bulk, REST streaming — [variable-history.md](variable-history.md) |
+
+**Phase metric:** lab 1B samples query; prod playbook ≤5 manual steps.
+
+**Related ADRs:** [0016](decisions/0016-clickhouse-event-journal.md), [0035](decisions/0035-historian-dual-write.md), [0025](decisions/0025-cassandra-scylla-timeseries-store.md).
+
+---
+
+## Phase 29 — MES Platform
+
+**Goal:** MES / ISA-95 **10/10** — first-class MES objects, not only reference bundles.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-164 | **MES object types** | P1 | `WORK_ORDER`, `OPERATION`, `LOT`, `SHIFT`, `QUALITY_RECORD` in tree |
+| BL-165 | **OEE first-class** | P1 | Platform BFF + dashboards; ISA-95 paths — [isa95-catalog.md](isa95-catalog.md) |
+| BL-166 | **Work order dispatch** | P1 | BPMN + work-queue + mobile operator confirm |
+| BL-167 | **Quality module** | P2 | SPC charts, defect tracking, traceability report |
+| BL-168 | **ISA-88 batch lite** | P2 | Recipe + phase + batch instance (workflow-backed) |
+| BL-169 | **ERP outbox (live connector)** | **P0** | Real SAP **or** 1C adapter (not stub); idempotent sync + retry/DLQ; master-data (orders/materials) round-trip — [isa95-catalog.md](isa95-catalog.md) Level 4 |
+| BL-170 | **MES certification bundle** | P1 | `mes-platform` bundle — deploy ≤30 min — [reference-mes-oee-walkthrough.md](reference-mes-oee-walkthrough.md) |
+
+**Phase metric:** OEE walkthrough → production MES in 1 day without custom Java.
+
+---
+
+## Phase 30 — Automation Depth
+
+**Goal:** Automation + workflow **10/10** — CEP, process control, queries, BPMN expansion.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-171 | **CEP engine** | P3 | Windowed patterns beyond COUNT/SEQUENCE (A→B within T) |
+| BL-172 | **Process control context** | P3 | `root.platform.process-programs` — cyclic control loops |
+| BL-173 | **Queries engine** | P2 | Dynamic cross-object queries in tree |
+| BL-174 | **Event filters** | P3 | Reusable event log filters |
+| BL-175 | **ML hooks** | P3 | Anomaly detection SPI + reference model |
+| BL-176 | **BPMN expansion** | P2 | Message events, escalation, compensation, DMN lite — [workflows.md](workflows.md) |
+
+**Phase metric:** escalation + CEP + process program in one project without ad-hoc scripts.
+
+---
+
+## Phase 31 — AI Autopilot
+
+**Goal:** AI **10/10** — zero-touch deploy, agent regression, solution generator.
+
+**ISPF strength — amplify, do not regress.**
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-177 | **End-to-end agent deploy** | P0 | Agent: spec → bundle → deploy → operator UI without human edit |
+| BL-178 | **Agent regression suite** | P0 | 50 scenarios CI (MES, SCADA, HVAC) — pass rate ≥95% |
+| BL-179 | **Operator agent GA** | P1 | Scoped tools, memory, ru/en — [ai-development.md](ai-development.md) |
+| BL-180 | **Solution generator** | P0 | "Describe a plant" → tree + dashboards + alerts <15 min |
+| BL-181 | **Agent observability v2** | P2 | Cost/latency per tool; failure auto-retry — [ADR-0034](decisions/0034-agent-observability-and-session-knowledge.md) |
+| BL-182 | **Context pack v2** | P2 | Auto-refresh from live platform + readiness gap index |
+
+**Phase metric:** new integrator builds demo in 2 h using only AI Studio.
+
+---
+
+## Phase 32 — Ecosystem & Market
+
+**Goal:** Ecosystem **10/10** — marketplace, partners, K8s, certification.
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-183 | **Marketplace GA** | P3 | Browse, install, sign, version bundle — [marketplace.md](marketplace.md) |
+| BL-184 | **Partner program** | P3 | 5 certified integrators, training curriculum |
+| BL-185 | **Symbol marketplace** | P3 | Community P&ID packs with legal review |
+| BL-186 | **K8s Helm chart** | P2 | Production helm + operator — [deployment.md](deployment.md) |
+| BL-187 | **ARM edge profile** | P2 | Raspberry Pi / industrial gateway compose — [demostands.md](demostands.md) |
+| BL-188 | **Manager-of-managers** | P3 | Federation hub 10+ peers, unified operator shell — [federation.md](federation.md) |
+| BL-189 | **Competitive scorecard** | P3 | Public readiness matrix, updated per release |
+| BL-190 | **Certification paths** | P3 | Solution developer + platform admin exams |
+
+**Phase metric:** 10+ bundles in marketplace; 3 external partners without core team.
+
+---
+
+## Phase 33 — Analytics Platform (AF-capable)
+
+**Goal:** Historian / analytics **10/10** beyond AF-lite — calculation engine, materialized rollups, multi-tag API, optional `analytics` replica profile. Same jar: **single server** (Scenario A) or **role-separated cluster** (Scenario C).
+
+**Charter:** [analytics-platform-roadmap.md](analytics-platform-roadmap.md) · **ADR:** [0038](decisions/0038-analytics-platform-architecture.md)
+
+| ID | Task | Priority | Acceptance |
+| -- | ------ | --------- | ---------- |
+| BL-200 | **Analytics platform charter** | P2 | ADR-0038 accepted; Phase 33 linked |
+| BL-201 | **AF-lite completion** | P1 | BL-160 full: editor, PUT API, `derivedValue` runtime, example |
+| BL-202 | **Historian tier enforcement** | P1 | Done — hot→warm→cold write/read; cold Parquet job |
+| BL-203 | **Calculation engine core** | P1 | Done — DAG, scheduler, built-in evaluators (`ispf-analytics-engine`) |
+| BL-204 | **Derived tag write-back** | P1 | Done — `observedAt` write-back, NATS fan-out, backfill API |
+| BL-205 | **Materialized rollups (OLAP)** | P2 | Done — `variable_rollups`, materializer, rollup-first aggregate API |
+| BL-206 | **Multi-tag Analytics Query API** | P2 | Done — `POST .../analytics/query`, export, chart multi-series |
+| BL-207 | **Analytics replica profile** | P2 | Done — `ISPF_REPLICA_PROFILE=analytics`; compose/Helm |
+| BL-208 | **Event frames & shift context** | P2 | Done — shift/batch/downtime windows; MES OEE integration |
+| BL-209 | **Tag catalog & lineage UI** | P2 | Done — analytics tag inspector, lineage API |
+| BL-210 | **Enterprise scale gates** | P2 | Done — lab scripts, SLO table, JVM gate, examples |
+
+**Phase metric:** Scenario B walkthrough ≤1 day; Scenario C lab gate documented; derived tag drives alarm without Chart-only rollup.
+
+**Prerequisite:** complete BL-160 via BL-201 before BL-203+.
+
+**Related:** [historian-tiers.md](historian-tiers.md), [variable-history.md](variable-history.md), [demostands.md](demostands.md), Phase 28 BL-159…163.
+
+---
+
+## BL-140…210 — full registry
+
+| ID | Phase | Name | P | Status |
+| -- | ----- | -------- | - | ------ |
+| BL-140 | 25 | Top-20 industrial PRODUCTION | P0 | **Partial** (matrix + playbooks; **ready-for-field** only after named field driver task) |
+| BL-141 | 25 | Driver interop lab | P0 | **Done** (Docker + CI smoke) |
+| BL-142 | 25 | Event→variable at driver | P1 | Partial |
+| BL-143 | 25 | OPC UA server GA | P1 | Partial |
+| BL-144 | 25 | Driver DDK | P1 | Partial |
+| BL-145 | 25 | Agent edge GA | P1 | Partial (disk buffer; 30d soak) |
+| BL-146 | 26 | P&ID symbol library v2 | P1 | **Done** (218 symbols) |
+| BL-147 | 26 | Mimic editor pro | P1 | Partial |
+| BL-148 | 26 | Video wall mode | P2 | Partial |
+| BL-149 | 26 | Expression debugger | P1 | Partial |
+| BL-150 | 26 | Live spreadsheet v2 | P2 | Partial |
+| BL-151 | 26 | Operator offline PWA | P1 | Partial |
+| BL-152 | 26 | HMI perf gate | P1 | Partial (200 el e2e) |
+| BL-153 | 27 | MFA | P2 | Partial (TOTP) |
+| BL-154 | 27 | Per-variable ACL | P2 | Partial |
+| BL-155 | 27 | Hard multi-tenancy | P2 | Partial |
+| BL-156 | 27 | Audit trail GA | P2 | Partial |
+| BL-157 | 27 | Role templates | P2 | Partial |
+| BL-158 | 27 | Alarm shelving | P2 | Partial |
+| BL-159 | 28 | Historian tiers turnkey | P2 | Partial |
+| BL-160 | 28 | Asset analytics framework | P2 | Done |
+| BL-161 | 28 | Historian query SLA | P2 | Partial |
+| BL-162 | 28 | Event journal petabyte path | P2 | Partial |
+| BL-163 | 28 | Trend export | P3 | **Done** (Parquet) |
+| BL-164 | 29 | MES object types | P1 | Partial |
+| BL-165 | 29 | OEE first-class | P1 | Partial |
+| BL-166 | 29 | Work order dispatch | P1 | Partial |
+| BL-167 | 29 | Quality module | P2 | Partial |
+| BL-168 | 29 | ISA-88 batch lite | P2 | Partial |
+| BL-169 | 29 | ERP outbox (live connector) | **P0** | Partial (stub → live required) |
+| BL-170 | 29 | MES certification bundle | P1 | Partial |
+| BL-171 | 30 | CEP engine | P3 | Partial |
+| BL-172 | 30 | Process control context | P3 | Partial |
+| BL-173 | 30 | Queries engine | P2 | Partial |
+| BL-174 | 30 | Event filters | P3 | Partial |
+| BL-175 | 30 | ML hooks | P3 | Partial |
+| BL-176 | 30 | BPMN expansion | P2 | Partial (subprocess stub; message events) |
+| BL-177 | 31 | End-to-end agent deploy | P0 | Partial |
+| BL-178 | 31 | Agent regression suite | P0 | Partial (50 scenarios schema CI; live ≥95% not met) |
+| BL-179 | 31 | Operator agent GA | P1 | Partial |
+| BL-180 | 31 | Solution generator | P0 | Partial (keyword stub) |
+| BL-181 | 31 | Agent observability v2 | P2 | Partial |
+| BL-182 | 31 | Context pack v2 | P2 | Partial |
+| BL-183 | 32 | Marketplace GA | P3 | Partial (install/uninstall) |
+| BL-184 | 32 | Partner program | P3 | Partial |
+| BL-185 | 32 | Symbol marketplace | P3 | Planned |
+| BL-186 | 32 | K8s Helm chart | P2 | Partial |
+| BL-187 | 32 | ARM edge profile | P2 | Partial |
+| BL-188 | 32 | Manager-of-managers | P3 | Partial |
+| BL-189 | 32 | Competitive scorecard | P3 | **Done** (published; code verified ~7.4/10) |
+| BL-190 | 32 | Certification paths | P3 | Partial |
+| BL-191 | 25 | OT matrix honesty | **P0** | Planned |
+| BL-192 | 27/32 | Compliance tender pack | P2 | Planned |
+| BL-193 | 29 | MES genealogy lite | P1 | Planned |
+| BL-200 | 33 | Analytics platform charter | P2 | Planned |
+| BL-201 | 33 | AF-lite completion (BL-160 full) | P1 | **Done** |
+| BL-202 | 33 | Historian tier enforcement | P1 | Done |
+| BL-203 | 33 | Calculation engine core | P1 | Done |
+| BL-204 | 33 | Derived tag write-back | P1 | Done |
+| BL-205 | 33 | Materialized rollups (OLAP) | P2 | Done |
+| BL-206 | 33 | Multi-tag Analytics Query API | P2 | Planned |
+| BL-207 | 33 | Analytics replica profile | P2 | Done |
+| BL-208 | 33 | Event frames & shift context | P2 | Done |
+| BL-209 | 33 | Tag catalog & lineage UI | P2 | Done |
+| BL-210 | 33 | Enterprise scale gates | P2 | Done |
+
+---
+
+## BL-191…193 — Domain audit follow-ups
+
+New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and Level-4 ERP; does not replace BL-140…190.
+
+| ID | Phase | Task | Priority | Acceptance |
+| -- | ----- | ---- | -------- | ---------- |
+| **BL-191** | 25 | **OT PRODUCTION matrix honesty** | **P0** | `opc-da` removed from PRODUCTION or implemented; DNP3 `writePoint` works **or** maturity downgraded to BETA; scorecard OT dimension updated; no stub labeled PRODUCTION |
+| **BL-192** | 27 / 32 | **Compliance tender pack** | P2 | IEC 62443 mapping + GAMP-lite checklist in docs; linked from DoD / scorecard; gap register for pen-test / audit trail |
+| **BL-193** | 29 | **MES genealogy / traceability lite** | P1 | Lot ↔ material ↔ work-order ↔ quality record graph query + operator report; extends BL-167 beyond SPC samples |
+
+---
+
+## Competitive matrix: who we overtake
+
+| Competitor class | Their strength | Our counter | Target BL |
+| ---------------- | ------------------ | -------------- | --------- |
+| Connectivity hub | 150+ protocols, all production | BL-140…145 OT Trust | 10 |
+| SCADA suite | HMI + UDT + marketplace | BL-146…152 + BL-183 | 10 |
+| Historian | Petabyte + asset framework | BL-159…163, BL-200…210 | 10 |
+| MES suite | Full MES modules | BL-164…170 | 10 |
+| Shopfloor low-code | Apps in hours | BL-177…180 AI | 10 |
+| Enterprise IAM | MFA, granular ACL | BL-153…157 | 10 |
+| Cloud IoT SaaS | Multi-tenant SaaS | BL-155 + BL-186 | 10 |
+| Mature context-tree IIoT | 20 years field track record | All phases + AI moat | 10 |
+
+---
+
+## Definition of Done — 10/10 overall
+
+Product is **10/10** when **all** of the following hold simultaneously:
+
+1. **20 PRODUCTION drivers** with interop CI and **3 field pilots signed** — **not met** (BL-140 Partial: playbooks only; [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy) — field work starts on named task)
+2. **MES bundle** — OEE + work orders + quality without custom code (BL-164…170); **at least one live ERP connector** (BL-169) — not stub-only
+3. **AI agent** — ≥95% regression scenarios green **with live LLM**, deploy without edits (BL-177, BL-178) — **not met** (CI: schema only; nightly stub results)
+4. **Historian** — turnkey 3-tier, 1B samples lab proven (BL-159…162); AF-capable analytics (BL-200…210)
+5. **Security** — MFA + per-variable ACL + hard tenancy option (BL-153…155)
+6. **HMI** — mimic 500 el @60 FPS, offline PWA 8h (BL-151, BL-152)
+7. **Marketplace** — 10+ signed bundles, 3 external partners (BL-183, BL-184)
+8. **Scorecard** — all 14 dimensions ≥9.5, none ≤8 (BL-189) — **not met** (code verified ~7.4/10; see [competitive-scorecard.md](competitive-scorecard.md))
+9. **OT honesty** — zero stub drivers labeled PRODUCTION (BL-191)
+10. **Compliance pack** — IEC 62443 / GAMP-lite docs published (BL-192) — for enterprise tenders
+
+**Checkbox trap:** program-wave scores and BL artifacts shipped **without** code-verified gates were retracted (see [competitive-scorecard.md](competitive-scorecard.md)). **Usable Done** is defined below — stricter than closing BL rows.
+
+---
+
+## Quality path to Done — usable product, not checkboxes {#quality-path-to-done}
+
+**Goal:** Phase 25–33 closes when a **real integrator + real operator + real OT engineer** can run production scenarios without core-team hand-holding — not when stubs, mocked e2e, or smoke-only bundles are green.
+
+### Principles
+
+| # | Principle | Rejects |
+| - | --------- | ------- |
+| 1 | **REAL evidence** — runtime path + automated test + reproducible runbook | `mode: stub`, `source: stub`, in-memory-only GA |
+| 2 | **Human sign-off** on the hot path | Self-certified Done without operator/OT/integrator journal |
+| 3 | **Live gates** where the feature claims live behaviour | Mocked WebSocket FPS, schema-only agent CI, ERP outbox that marks `sent` without ERP |
+| 4 | **Honest maturity** — PRODUCTION label matches code | `opc-da` stub in PRODUCTION matrix (BL-191) |
+| 5 | **Third-party repeatability** — runbook ≤ documented time | Demo only works on maintainer laptop |
+| 6 | **Field or lab SLO**, not single manual run | One-off screenshot; no CI regression |
+
+Evidence classes (same as scorecard): **REAL** / **PARTIAL** / **STUB**. Only **REAL** may promote a BL from Partial → **Done**.
+
+### When a BL may move Partial → Done
+
+All must hold:
+
+1. Acceptance criteria in [§ BL-140…210](#bl-140210--full-registry) met on **prod-like** profile (not `local` H2 only, unless BL explicitly lab-only).
+2. Integration or e2e test in CI — **no stub** on the path under test.
+3. Integrator runbook (or extension of existing walkthrough) — steps, rollback, known limits.
+4. Scorecard dimension updated with **file paths + test names** (BL-189 process).
+5. No open **P0 honesty** issue for that domain (e.g. OT Done blocked until BL-191 green).
+
+### Four waves (recommended order)
+
+Build **usable slices** end-to-end before breadth. Each wave ends with a **named scenario** a customer could run.
+
+#### Wave 1 — OT trust you can deploy (Phase 25 + BL-191)
+
+| Usable outcome | Evidence | BL |
+| -------------- | -------- | -- |
+| Integrator connects plant without middleware | 3 pilots **7-day soak** with incident journal — [field-pilot-playbook.md](field-pilot-playbook.md) | BL-140, 141, 191 |
+| Writes and quality flags trusted | Interop CI write round-trip per top driver; matrix matches code | BL-141, 191 |
+| Edge survives disconnect | Store-forward + reconnect; federation sync measured | BL-145 |
+
+**Scenario:** Modbus plant OR MQTT fleet OR OPC UA line — mimic live, alarm on stale, write acknowledged.
+
+**Not Done if:** only Docker interop smoke; PRODUCTION label on stub driver; no pilot journal.
+
+### S31 execution backlog — Wave 1 (Jul–Aug 2026) {#s31-wave-1-execution-backlog}
+
+> **Status: on hold** until a **named field driver implementation task** exists (customer/site + protocol + integrator ticket). Same policy as [ready-for-field gate](field-pilot-playbook.md#ready-for-field-gate-policy). Do not run matrix/pilot work for checkbox credit.
+
+**Sprint goal (usable):** OT engineer trusts the driver matrix; **one Modbus plant pilot** is running with a daily soak journal — not «BL-191 closed» without code + pilot evidence.
+
+**Exit gate (S31 Done):**
+
+| Gate | Evidence |
+| ---- | -------- |
+| Matrix honest | Zero `PRODUCTION` entries whose driver class is documented stub; CI test green |
+| Interop trusted | Write round-trip in `driver-interop-smoke.sh` for `modbus-tcp`, `mqtt`, `opcua` |
+| Pilot started | Modbus scenario: site named, journal day 1–3 logged, checklist §1 in progress |
+| Scorecard | [competitive-scorecard.md](competitive-scorecard.md) dim 3 updated with file paths |
+
+#### Workstream A — BL-191 matrix honesty (code)
+
+| # | Task | Owner | Files / tests | Done when |
+| - | ---- | ----- | ------------- | --------- |
+| A1 | **Decision record:** DNP3 — downgrade to `BETA` in S31 (write is `throw` today) **or** spike `writePoint` with stepfunc loopback | OT lead | `Dnp3DeviceDriver.java`, ADR note | Recorded in PR + matrix |
+| A2 | Downgrade **`opc-da`** to `BETA`; remove from `TOP_20_INDUSTRIAL` or exempt in test with comment | Dev | `DriverProductionMatrix.java` | `resolveMaturity("opc-da") == BETA` |
+| A3 | Downgrade **`opc-bridge`** to `BETA` (class logs «stub ready») | Dev | same | Not PRODUCTION |
+| A4 | Audit **read-only PRODUCTION** drivers: `dnp3`, `ethernet-ip`, `http`, `snmp`, `gps-tracker` — capabilities = `POLL_ONLY` only (no `WRITE` in matrix) | Dev | matrix `Capability` sets | No false WRITE claim |
+| A5 | Add CI gate **`productionDriversMustNotBeDocumentedStubs`** | Dev | `DriverProductionMatrixTest.java` | Fails if stub javadoc + PRODUCTION |
+| A6 | Regenerate / update driver catalog maturity column | Dev | `docs/en/drivers.md`, `docs/ru/drivers.md` | Matches matrix |
+| A7 | Update promotion checklist — stub never PRODUCTION | Docs | `driver-promotion.md` | Explicit rule |
+
+**Code anchors today:**
+
+```149:151:packages/ispf-server/src/main/java/com/ispf/server/driver/DriverProductionMatrix.java
+            entry("opc-da", DriverMaturity.PRODUCTION, POLL_ONLY,
+                    testPath("ispf-driver-opc-da", "com.ispf.driver.opcda.OpcDaDeviceDriverTest"),
+                    "ispf-driver-opc-da"),
+```
+
+```121:123:packages/ispf-driver-dnp3/src/main/java/com/ispf/driver/dnp3/Dnp3DeviceDriver.java
+    public void writePoint(String pointId, DataRecord value) throws DriverException {
+        throw new DriverException("DNP3 write not implemented");
+    }
+```
+
+#### Workstream B — BL-141 interop hardening
+
+| # | Task | Owner | Files / tests | Done when |
+| - | ---- | ----- | ------------- | --------- |
+| B1 | Extend smoke script: **FC16 / MQTT publish / OPC UA write** round-trip | Dev | `deploy/tools/driver-interop-smoke.sh` | Exit 0 on compose up |
+| B2 | CI workflow publishes `build/driver-interop/interop-summary.md` artifact | DevOps | `.github/workflows/driver-interop.yml` | Artifact on main |
+| B3 | Document read-only vs write drivers in interop lab | Docs | `driver-interop-lab.md` | Table matches post-BL-191 matrix |
+| B4 | Local gate before pilot: `docker compose … up` + `driver-interop-smoke.sh` in integrator runbook | Integrator | [field-pilot-playbook.md](field-pilot-playbook.md) §1 dry-run | Checklist linked |
+
+#### Workstream C — BL-140 pilot #1 (Modbus plant)
+
+| # | Task | Owner | Files / tests | Done when |
+| - | ---- | ----- | ------------- | --------- |
+| C1 | **Select site:** customer or internal lab VLAN; name pilot lead + OT contact | PM | Ticket / journal header | Names in journal |
+| C2 | Device config: `modbus-tcp`, 50+ tags, historian on top 5 | Integrator | ISPF device admin | Status `RUNNING` |
+| C3 | Validation §1 checklist (connect, read, write, historian, HMI) | Integrator | playbook §1 | All ☐ → ☑ |
+| C4 | **7-day soak:** daily journal row (uptime, incidents, tag count) | OT + integrator | [pilot soak journal](#pilot-soak-journal) below | ≥3 days logged in S31 |
+| C5 | Stale alarm rule: disconnect PLC/broker once; verify operator badge | Integrator | alarm rule + mimic | Screenshot in journal |
+| C6 | Sign-off template drafted (end date T+7) | QA | playbook § Pilot sign-off | Template attached to ticket |
+
+**Recommended first pilot:** Modbus plant — simplest dry-run (`deploy/driver-interop`), no UA security policy negotiation.
+
+#### Workstream D — BL-145 edge (stretch, not S31 blocker)
+
+| # | Task | Owner | Done when |
+| - | ---- | ----- | --------- |
+| D1 | Scripted disconnect: stop upstream 15 min, verify store-forward buffer | Edge | Log excerpt in journal |
+| D2 | Federation reconnect: measure sync lag after restore | Edge | Number in `federation.md` appendix |
+
+Defer **30-day edge soak** to S33; Wave 1 only needs evidence that disconnect path was exercised once.
+
+#### Pilot soak journal {#pilot-soak-journal}
+
+Copy into customer ticket or `docs/` appendix. One table per pilot ([field-pilot-playbook.md](field-pilot-playbook.md) § Close-out).
+
+| Day | Date | Tags online | Incidents (P0/P1) | Historian OK | Notes |
+| --- | ---- | ----------- | ------------------- | ------------ | ----- |
+| 1 | | | | ☐ | |
+| 2 | | | | ☐ | |
+| … | | | | ☐ | |
+| 7 | | | | ☐ | Ready for sign-off |
+
+**S31 does not close BL-140 field Done** — that needs 7 full days + customer OT signature. S31 closes when matrix is honest, interop write gate is green, and **pilot day 1–3** are logged with no open P0 driver defects.
+
+#### S31 ordering (2 weeks)
+
+```mermaid
+gantt
+    title S31 Wave 1
+    dateFormat  YYYY-MM-DD
+    section Honesty
+    A1-A7 BL-191 code+docs     :a1, 2026-07-14, 5d
+    section Interop
+    B1-B4 interop write gate   :b1, after a1, 3d
+    section Pilot
+    C1-C3 Modbus connect       :c1, 2026-07-14, 4d
+    C4-C6 soak journal         :c2, after c1, 10d
+```
+
+Week 1: A1–A7 + B1–B2 + C1–C3. Week 2: B3–B4 + C4–C6 + D1 if capacity.
+
+---
+
+| Usable outcome | Evidence | BL |
+| -------------- | -------- | -- |
+| Operator runs **8 h** on cached HMI | PWA offline test script; sync on reconnect without data loss | BL-151 |
+| Mimic usable on real wall | **500 elements @60 FPS** on **live WebSocket** (not mocked operator API) | BL-152 |
+| Shelving survives restart | Persistent alarm shelf + approval — not in-memory stub | BL-158 |
+| Shift handover | Work queue + event journal on operator path | BL-166 (with 26) |
+
+**Scenario:** mini-TEC or `mes-printing-contour` on video wall; operator acknowledges alarm, shelves with approval, continues offline 2 h.
+
+**Not Done if:** Lighthouse/axe only; 200-element mocked e2e; shelf lost on restart.
+
+#### Wave 3 — Plant + business loop (Phase 28–29 + ERP)
+
+| Usable outcome | Evidence | BL |
+| -------------- | -------- | -- |
+| Historian trustworthy at scale | 1M-point query **<2 s** in **CI lab gate**; tier policy enforced hot→warm→cold | BL-159, 161, 202 |
+| MES on real contour | **One production site** (not smoke only): OEE + dispatch + quality trace | BL-164…170, 193 |
+| ERP is not an island | **Live 1C or SAP**: order/MDM round-trip, idempotent, DLQ visible | BL-169 |
+| Derived tag drives action | Analytics derived tag → variable → alarm (not chart-only) | BL-203, 204 |
+
+**Scenario:** `mes-platform-production` or `mes-printing-contour` — work order → operator confirm → quality record → ERP outbox **visible in ERP test system**.
+
+**Not Done if:** `mes_erp_pollOutbox` marks sent without ERP; MES only `MesPlatformGaSmokeTest`; historian SLA not in CI.
+
+#### Wave 4 — Moat + scale (Phase 31 + 33 + 32)
+
+| Usable outcome | Evidence | BL |
+| -------------- | -------- | -- |
+| AI builds deployable app | New integrator: spec → bundle → operator UI **&lt;2 h**, **live LLM**, ≥95% regression | BL-177, 178, 180 |
+| Analytics at enterprise tier | 10 tags × 7d query p95; 50k-tag lab documented | BL-206, 210 |
+| Ecosystem without core team | **3 external partners** installed signed bundle; **10+** listings | BL-183, 184 |
+| Security tender-ready | Hard tenancy demo A≠B; per-var ACL; MFA admin; compliance pack | BL-153…157, 192 |
+
+**Scenario:** AI Studio deploys HVAC or MES demo; partner installs marketplace bundle on own VPS; analytics replica profile in Helm.
+
+**Not Done if:** keyword generator; nightly `stub-results.json`; partner enroll hardcoded; marketplace install-only without signing.
+
+### Phase 30 (Automation) — depth when Waves 1–3 are stable
+
+CEP, process programs, BPMN subprocess (BL-171…176) ship **after** operator + historian + MES paths are REAL — otherwise automation automates stubs.
+
+**Usable bar:** one project runs escalation + CEL + workflow on **live** variables without ad-hoc scripts.
+
+### Quality vs Definition of Done (mapping)
+
+| DoD # | Quality bar (usable) |
+| ----- | -------------------- |
+| 1 OT drivers | Wave 1 pilots signed + BL-191 |
+| 2 MES + ERP | Wave 3 production site + live ERP |
+| 3 AI | Wave 4 live LLM regression + integrator 2 h |
+| 4 Historian | Wave 3 SLA CI + Wave 4 analytics scale |
+| 5 Security | Wave 4 pentest-ready tenancy + ACL |
+| 6 HMI | Wave 2 offline 8 h + live FPS |
+| 7 Marketplace | Wave 4 external partners |
+| 8 Scorecard | All dimensions REAL-backed ≥9.5 |
+| 9 OT honesty | Wave 1 gate |
+| 10 Compliance | Wave 4 BL-192 |
+
+### Anti-patterns (do not mark Done)
+
+| Pattern | Example in codebase / process |
+| ------- | ------------------------------ |
+| Stub marked production | `OpcDaDeviceDriver`, PRODUCTION matrix |
+| Fake ERP sync | Outbox `sent` without connector |
+| Fake AI regression | `nightly-stub-results.json` |
+| Fake partner program | `PartnerProgramService` `source: stub` |
+| Fake alarm shelf | `AlarmShelfApprovalService` in-memory |
+| Mocked operator perf | e2e with mocked WebSocket for FPS |
+| Smoke = production | MES GA test only, no field site |
+
+### Next 90 days — quality-focused
+
+Same P0 as [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09), framed as **usable outcomes**:
+
+| Sprint | Usable milestone (not just BL id) |
+| ------ | --------------------------------- |
+| **S31** | On hold — drivers until field task | [S31 backlog](#s31-wave-1-execution-backlog) |
+| **S32** | ERP test system receives real outbox message; genealogy query on demo lot |
+| **S33** | One AI scenario: live LLM deploy end-to-end without human edit |
+
+Full BL list: [Next 90 days](#next-90-days) below.
+
+---
+
+## What we preserve (no regression)
+
+- Object tree + blueprints (RELATIVE / INSTANCE / ABSOLUTE)
+- Tree-first AI agent + MCP native
+- BPMN workflow + bundle deploy
+- Federation + horizontal cluster
+- Brick / Haystack semantic layer
+- 70+ docs, ADR culture, lab walkthroughs
+- Cloud-native stack (Spring Boot 4, React 19, PostgreSQL)
+
+---
+
+## Next 90 days
+
+Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-09) P0 order.
+
+| Sprint | Timeline (draft) | Scope |
+| ------ | ------------ | ----- |
+| **S31** | Jul–Aug 2026 | **On hold** — [Wave 1 backlog](#s31-wave-1-execution-backlog) until named field driver task; focus ERP/AI instead |
+| **S32** | Aug 2026 | **BL-169** live 1C **or** SAP connector (replace stub); BL-193 genealogy lite start |
+| **S33** | Sep 2026 | BL-177 e2e agent deploy; BL-178 live LLM ≥95% (no nightly stub); BL-180 generator not keyword-stub |
+
+---
+
 
 ## Platform baseline
 
@@ -830,7 +1566,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | [FEDERATION.md](federation.md) | Edge federation |
 | [LOAD_TESTING.md](load-testing.md) | Load gates |
 | [PLATFORM_EVOLUTION.md](platform-evolution.md) | History |
-| [ROADMAP_PHASE25.md](roadmap-phase-25.md) | Phase 25–32 Excellence Program, BL-140…190 |
+| [analytics-platform-roadmap.md](analytics-platform-roadmap.md) | Phase 33 charter (BL-200…210) — status in this file |
 | [decisions/](decisions/) | ADR |
 
 ---
@@ -839,7 +1575,11 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 
 | Date | Change |
 | ---- | --------- |
-| 2026-07-07 | Phase 25–32 Excellence Program: [ROADMAP_PHASE25.md](roadmap-phase-25.md), BL-140…190 |
+| 2026-07-09 | **Unified roadmap:** merged `roadmap-phase-25.md` into this file; Phase 25–33 + BL-140…210 live here; phase-25 file is redirect stub |
+| 2026-07-09 | Added [§ Retrospective](#retrospective) — eras, closed vs active backlog, Phase 25–33 glance |
+| 2026-07-09 | Domain gap audit IoT/SCADA/MES/ERP: BL-169 → P0; BL-191…193; Phase 33 analytics BL-200…210 |
+| 2026-07-09 | **Driver field policy:** `ready-for-field` only after named field implementation task; BL-140 → Partial (playbook-ready, not field Done) |
+| 2026-07-07 | Phase 25–32 Excellence Program: [roadmap.md](roadmap.md), BL-140…190 |
 | 2026-07-07 | Tail cleanup: ROADMAP sync (BL 0 Partial, 23.24 Done); CH verify prod-safe smoke |
 | 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
 | 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |

@@ -192,6 +192,7 @@ ispf:
           url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
           database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
           table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
+          rollup-table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_ROLLUP_TABLE:variable_rollups}
           username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
           password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
       warm:
@@ -202,6 +203,7 @@ ispf:
           url: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:http://localhost:8123}
           database: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:ispf}
           table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:variable_samples}
+          rollup-table: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_ROLLUP_TABLE:variable_rollups}
           username: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:default}
           password: ${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:}
       cold:
@@ -212,6 +214,31 @@ ispf:
           bucket: ${ISPF_HISTORIAN_TIER_COLD_BUCKET:ispf-historian-archive}
           prefix: ${ISPF_HISTORIAN_TIER_COLD_PREFIX:variable-samples/}
           format: ${ISPF_HISTORIAN_TIER_COLD_FORMAT:parquet}
+    cold-archive:
+      enabled: ${ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED:false}
+      local-root: ${ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT:}
+      cron: ${ISPF_HISTORIAN_COLD_ARCHIVE_CRON:0 0 4 * * *}
+      max-series-per-run: ${ISPF_HISTORIAN_COLD_ARCHIVE_MAX_SERIES:200}
+      max-samples-per-series: ${ISPF_HISTORIAN_COLD_ARCHIVE_MAX_SAMPLES:10000}
+    analytics:
+      derived-tag-enabled: ${ISPF_ANALYTICS_DERIVED_TAG_ENABLED:true}
+      derived-tag-tick-ms: ${ISPF_ANALYTICS_DERIVED_TAG_TICK_MS:60000}
+      engine-enabled: ${ISPF_ANALYTICS_ENGINE_ENABLED:true}
+      engine-periodic-ms: ${ISPF_ANALYTICS_ENGINE_PERIODIC_MS:60000}
+      materializer-enabled: ${ISPF_ANALYTICS_MATERIALIZER_ENABLED:false}
+      materializer-tick-ms: ${ISPF_ANALYTICS_MATERIALIZER_TICK_MS:60000}
+      rollup-min-query-range-days: ${ISPF_ANALYTICS_ROLLUP_MIN_QUERY_RANGE_DAYS:7}
+      query-max-tags: ${ISPF_ANALYTICS_QUERY_MAX_TAGS:20}
+      query-timeout-ms: ${ISPF_ANALYTICS_QUERY_TIMEOUT_MS:3000}
+      query-rate-limit-per-minute: ${ISPF_ANALYTICS_QUERY_RATE_LIMIT_PER_MINUTE:120}
+      slo:
+        multi-tag-query-tags: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_TAGS:10}
+        multi-tag-query-range-days: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_RANGE_DAYS:7}
+        multi-tag-query-bucket: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_BUCKET:1h}
+        multi-tag-query-p95-latency-ms: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_P95_MS:3000}
+        catalog-min-tags: ${ISPF_ANALYTICS_SLO_CATALOG_MIN_TAGS:50000}
+        materializer-max-lag-seconds: ${ISPF_ANALYTICS_SLO_MATERIALIZER_MAX_LAG_SEC:300}
+        clickhouse-min-samples: ${ISPF_ANALYTICS_SLO_CLICKHOUSE_MIN_SAMPLES:1000000000}
   ml:
     anomaly:
       enabled: ${ISPF_ML_ANOMALY_ENABLED:false}

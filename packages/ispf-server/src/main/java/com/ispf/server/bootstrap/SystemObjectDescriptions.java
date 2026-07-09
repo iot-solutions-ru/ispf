@@ -138,6 +138,9 @@ public final class SystemObjectDescriptions {
         map.put("root.platform.event-filters", new Entry("Event Filters", """
                 Reusable event journal filter catalog. Each EVENT_FILTER child stores eventNamePattern, sourceObjectPathPattern, \
                 severity range, time window, and optional CEL filterExpression for operator event log views and automation pre-filters."""));
+        map.put("root.platform.event-frames", new Entry("Event Frames", """
+                Analytics time-window registry (BL-208). Shift, batch, downtime, and custom frames scope historian queries \
+                and OEE rollups. Active frames are stored in PostgreSQL and exposed via platform analytics REST API."""));
         map.put(ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, new Entry("Process Programs", """
                 Cyclic process-control program catalog (BL-172). Each PROCESS_PROGRAM child defines a control loop interval, \
                 CEL controlExpression, and runtime cycle metadata. ProcessProgramRunner evaluates enabled programs each tick."""));

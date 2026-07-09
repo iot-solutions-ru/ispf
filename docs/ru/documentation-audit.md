@@ -11,7 +11,8 @@
 ## Соглашение об именах
 
 - **Было:** `SCADA_MIMIC.md`, `ROADMAP_PHASE25.md`
-- **Стало:** `scada-mimic.md`, `roadmap-phase-25.md`
+- **Стало:** `scada-mimic.md`, затем `roadmap-phase-25.md` (выделение Excellence)
+- **09.07.2026:** Программа совершенствования снова влита в единый [roadmap.md](roadmap.md); `roadmap-phase-25.md` — только redirect stub
 - **ADR:** `decisions/0001-app-platform-boundary.md` (тот же шаблон, lowercase)
 
 ## Проверка ссылок
@@ -32,7 +33,7 @@
 ## Вычитка (2026-07-08)
 
 - Машинный перевод заменён **ручной вычиткой** на ключевых страницах + глоссарий терминов (`proofread_ru_terms.py`).
-- Полностью вычитаны: scorecard, acceleration-program, architecture, getting-started, roadmap, roadmap-phase-25, scada, drivers, deployment, security, marketplace, testing, symbol-marketplace, partner-program, agent-regression, hmi-quality-gates, **все ADR (0001–0037)**, **все reference-walkthrough**.
+- Полностью вычитаны: scorecard, acceleration-program, architecture, getting-started, roadmap (единый, вкл. Excellence), scada, drivers, deployment, security, marketplace, testing, symbol-marketplace, partner-program, agent-regression, hmi-quality-gates, **все ADR (0001–0037)**, **все reference-walkthrough**.
 - ADR и walkthrough — терминологическая правка; углубить по запросу.
 
 ## Скрипты сопровождения

@@ -23,6 +23,7 @@ import java.util.UUID;
 public class AnalyticsBlueprintBootstrap {
 
     public static final String TEMPLATE_INTRINSIC = "analytics-template-v1";
+    public static final String ANALYTICS_TAG_MODEL = "analytics-tag-v1";
     public static final String ROLLING_AVG_MODEL = "rolling-avg-v1";
     public static final String RATE_OF_CHANGE_MODEL = "rate-of-change-v1";
     public static final String OEE_MODEL = "oee-v1";
@@ -45,6 +46,7 @@ public class AnalyticsBlueprintBootstrap {
 
     public void ensureAnalyticsModels() {
         ensureModel(TEMPLATE_INTRINSIC, buildTemplateIntrinsic());
+        ensureModel(ANALYTICS_TAG_MODEL, buildAnalyticsTagModel());
         ensureModel(ROLLING_AVG_MODEL, buildRollingAvgModel());
         ensureModel(RATE_OF_CHANGE_MODEL, buildRateOfChangeModel());
         ensureModel(OEE_MODEL, buildOeeModel());
@@ -79,8 +81,36 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("sourceVariable", "Source variable name", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),
                         varDef("windowBucket", "Historian bucket/window (1m, 5m, 1h, …)", "config", "5m"),
+                        varDef("rollupBuckets", "Materialized rollup windows (comma-separated)", "config", "5m,1h,8h"),
                         varDef("blueprintName", "Optional linked RELATIVE blueprint", "config", ""),
                         boolDef("enabled", "Template enabled", "config", true)
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                Map.of(),
+                Instant.now(),
+                Instant.now()
+        );
+    }
+
+    private static BlueprintDefinition buildAnalyticsTagModel() {
+        return new BlueprintDefinition(
+                UUID.randomUUID().toString(),
+                ANALYTICS_TAG_MODEL,
+                "Deployed analytics tag metadata — expression, lineage, quality (BL-209)",
+                BlueprintType.RELATIVE,
+                ObjectType.DEVICE,
+                "",
+                List.of(
+                        varDef("analyticsExpression", "Human-readable expression", "analytics", ""),
+                        varDef("analyticsHelper", "Engine helper name", "analytics", ""),
+                        varDef("analyticsLineageJson", "Comma-separated upstream tag paths", "analytics", ""),
+                        varDef("analyticsQuality", "Quality: ok, uncertain, error, disabled", "analytics", "ok"),
+                        varDef("analyticsLastEvalAt", "Last evaluation timestamp (ISO-8601)", "analytics", ""),
+                        varDef("analyticsLastEvalStatus", "Last eval status: ok, error, skipped", "analytics", ""),
+                        varDef("analyticsHaystackTags", "Haystack tags on output point (comma-separated)", "analytics", "point,cur,his"),
+                        boolDef("analyticsTagEnabled", "Tag enabled for engine evaluation", "analytics", true)
                 ),
                 List.of(),
                 List.of(),
@@ -104,7 +134,8 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("sourcePath", "Source object path", "config", ""),
                         varDef("sourceVariable", "Source variable name", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),
-                        varDef("windowBucket", "Historian aggregate bucket", "config", "5m")
+                        varDef("windowBucket", "Historian aggregate bucket", "config", "5m"),
+                        varDef("rollupBuckets", "Materialized rollup windows for source tag", "config", "5m,1h,8h")
                 ),
                 List.of(),
                 List.of(),
@@ -128,7 +159,8 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("sourcePath", "Source object path", "config", ""),
                         varDef("sourceVariable", "Source variable name", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),
-                        varDef("windowBucket", "Historian bucket for delta", "config", "1h")
+                        varDef("windowBucket", "Historian bucket for delta", "config", "1h"),
+                        varDef("rollupBuckets", "Materialized rollup windows for source tag", "config", "5m,1h,8h")
                 ),
                 List.of(),
                 List.of(),
@@ -157,7 +189,8 @@ public class AnalyticsBlueprintBootstrap {
                         varDef("performanceVariable", "Throughput or cycle-time source variable", "config", ""),
                         varDef("qualityVariable", "Good/total quality source variable", "config", ""),
                         varDef("sourceField", "Source schema field", "config", "value"),
-                        varDef("windowBucket", "Shift or rollup bucket (1h, 8h, 1d)", "config", "8h")
+                        varDef("windowBucket", "Shift or rollup bucket (1h, 8h, 1d)", "config", "8h"),
+                        varDef("eventFrameScope", "Scope path for active shift event frame (BL-208)", "config", "")
                 ),
                 List.of(),
                 List.of(),

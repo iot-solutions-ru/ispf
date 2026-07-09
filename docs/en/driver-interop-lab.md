@@ -147,4 +147,4 @@ Extended hardware-emulator fixtures (OpenDNP3 outstation, Gurux DLMS simulator) 
 
 - [drivers.md](drivers.md) — maturity and configs
 - [driver-promotion.md](driver-promotion.md) — promotion checklist
-- [roadmap-phase-25.md](roadmap-phase-25.md) — BL-140…145
+- [roadmap.md](roadmap.md) — BL-140…145

@@ -132,4 +132,4 @@ Certification labs feed the [agent regression suite](agent-regression.md). Targe
 
 - [PARTNER_PROGRAM.md](partner-program.md) — commercial partner tiers
 - [COMPETITIVE_SCORECARD.md](competitive-scorecard.md) — dimension 13 Documentation/DX
-- [ROADMAP_PHASE25.md](roadmap-phase-25.md) — BL-190
+- [roadmap.md](roadmap.md) — BL-190

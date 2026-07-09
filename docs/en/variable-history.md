@@ -92,6 +92,28 @@ Documented service-level objectives for historian REST queries. Defaults bind vi
 
 Lab gate (Phase 28): `deploy/run_lab_historian_*.py` scripts should assert aggregate latency against `aggregate-max-latency-ms` at `aggregate-max-points` load.
 
+## Analytics SLO (BL-210)
+
+Documented service-level objectives for the **analytics platform** plane (multi-tag query, catalog scale, materializer lag). Defaults bind via `AnalyticsSloProperties` (`ispf.analytics.slo`).
+
+| Gate | Scope | Target |
+|------|-------|--------|
+| **Multi-tag query** | 10 tags × 7 calendar days × 1h buckets (`POST .../platform/analytics/query`) | **p95 < 3 s** (8 vCPU ClickHouse lab) |
+| **Catalog** | History-enabled tags under lab prefix | **≥ 50k** devices (Enterprise L) |
+| **ClickHouse samples** | `variable_samples` row count | **≥ 1B** rows (Enterprise L ingest replay) |
+| **Materializer lag** | Rollup head vs historian ingest | **< 5 min** behind wall clock |
+| **Single-tag aggregate** | ≤ 1M points (BL-161) | **p95 < 2 s** (unchanged) |
+
+Lab scripts:
+
+- `deploy/tools/analytics-scale-gate.sh` — multi-tag p95, optional catalog/CH gates
+- `deploy/tools/seed-analytics-scale-catalog.py` — synthetic 50k-tag catalog
+- JVM CI gate: `AnalyticsMultiTagQueryLoadTest` (`@Tag("load")`, nightly workflow)
+
+SLO targets API: `GET /api/v1/platform/analytics/analytics-slo`. Historian + analytics targets also appear under `analyticsSlo` in `GET .../historian-sla`.
+
+Walkthroughs: [examples/analytics-platform/site-m](../examples/analytics-platform/site-m/), [enterprise-l](../examples/analytics-platform/enterprise-l/). Gap register: [analytics-platform-gaps.md](analytics-platform-gaps.md).
+
 Dashboard reference: [examples/historian-sla-dashboard](../examples/historian-sla-dashboard/) (BL-161 widget layout + BFF sketch).
 
 Multi-tier retention and deploy profiles: [HISTORIAN_TIERS.md](historian-tiers.md).

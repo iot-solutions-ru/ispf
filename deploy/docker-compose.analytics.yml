@@ -1,0 +1,157 @@
+# Analytics scale-out lab stack (BL-207): cluster + dedicated analytics replica + ClickHouse.
+# Extends the ADR-0032 cluster pattern with an internal analytics worker (materializer, backfill).
+#
+# Usage:
+#   bash deploy/cluster-quickstart.sh   # build jar + UI into deploy/staging first
+#   docker compose -f deploy/docker-compose.analytics.yml up -d
+#
+# Profiles: edge-api ×2 (nginx LB), io (drivers), analytics ×1 (rollup materializer).
+# When analytics replicas are UP, io/edge-api do not run the materializer.
+
+x-ispf-server-image: &ispf-server-image
+  image: ${ISPF_AIRGAP_JRE_IMAGE:-eclipse-temurin:25-jre-jammy}
+  working_dir: /opt/ispf
+  volumes:
+    - ./staging:/opt/ispf:ro
+  command: ["java", "-jar", "/opt/ispf/ispf-server.jar"]
+
+x-ispf-server-env: &ispf-server-env
+  ISPF_DB_URL: jdbc:postgresql://postgres:5432/ispf
+  ISPF_DB_USER: ispf
+  ISPF_DB_PASSWORD: ispf
+  ISPF_SERVER_PORT: "8080"
+  ISPF_BOOTSTRAP_FIXTURES_ENABLED: "true"
+  SPRING_PROFILES_ACTIVE: dev
+  ISPF_CLUSTER_ENABLED: "true"
+  ISPF_CLUSTER_DRIVER_LOCK_TTL_SECONDS: "15"
+  ISPF_CLUSTER_DRIVER_FAILOVER_SCAN_MS: "5000"
+  ISPF_NATS_ENABLED: "true"
+  ISPF_NATS_URL: nats://nats:4222
+  ISPF_NATS_REPLICA_EVENTS: "true"
+  ISPF_REDIS_ENABLED: "true"
+  ISPF_REDIS_HOST: redis
+  ISPF_CLUSTER_LIVE_VARIABLE_SYNC: "true"
+  ISPF_CLUSTER_PATH_INTEREST: "true"
+  ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS: "500"
+  ISPF_HISTORIAN_STORE: clickhouse
+  ISPF_HISTORIAN_CLICKHOUSE_URL: http://clickhouse:8123
+  ISPF_ANALYTICS_MATERIALIZER_ENABLED: "true"
+
+services:
+  postgres:
+    image: ${ISPF_AIRGAP_POSTGRES_IMAGE:-timescale/timescaledb:2.17.2-pg16}
+    environment:
+      POSTGRES_DB: ispf
+      POSTGRES_USER: ispf
+      POSTGRES_PASSWORD: ispf
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - ispf_analytics_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ispf -d ispf"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: ${ISPF_AIRGAP_REDIS_IMAGE:-redis:7.4.2-alpine}
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "127.0.0.1:4222:4222"
+      - "127.0.0.1:8222:8222"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    ports:
+      - "127.0.0.1:8123:8123"
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ispf_analytics_ch:/var/lib/clickhouse
+
+  ispf-server-edge-1:
+    <<: *ispf-server-image
+    environment:
+      <<: *ispf-server-env
+      ISPF_REPLICA_ID: edge-1
+      ISPF_REPLICA_PROFILE: edge-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nats:
+        condition: service_started
+      clickhouse:
+        condition: service_started
+
+  ispf-server-edge-2:
+    <<: *ispf-server-image
+    environment:
+      <<: *ispf-server-env
+      ISPF_REPLICA_ID: edge-2
+      ISPF_REPLICA_PROFILE: edge-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nats:
+        condition: service_started
+      clickhouse:
+        condition: service_started
+
+  ispf-server-io:
+    <<: *ispf-server-image
+    environment:
+      <<: *ispf-server-env
+      ISPF_REPLICA_ID: io-1
+      ISPF_REPLICA_PROFILE: io
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nats:
+        condition: service_started
+      clickhouse:
+        condition: service_started
+
+  ispf-server-analytics-1:
+    <<: *ispf-server-image
+    environment:
+      <<: *ispf-server-env
+      ISPF_REPLICA_ID: analytics-1
+      ISPF_REPLICA_PROFILE: analytics
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nats:
+        condition: service_started
+      clickhouse:
+        condition: service_started
+
+  nginx:
+    image: ${ISPF_AIRGAP_NGINX_IMAGE:-nginx:1.27.4-alpine}
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ../apps/web-console/dist:/usr/share/nginx/html:ro
+      - ./nginx-cluster.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - ispf-server-edge-1
+      - ispf-server-edge-2
+
+volumes:
+  ispf_analytics_pg:
+  ispf_analytics_ch:

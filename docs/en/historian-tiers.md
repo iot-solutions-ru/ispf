@@ -1,8 +1,8 @@
-# Historian tiers (BL-159)
+# Historian tiers (BL-159, BL-202)
 
-Turnkey **hot → warm → cold** historian profile for ISPF deployments. Configuration lives in `application.yml` under `ispf.historian.tiers`; tier routing enforcement is follow-up work (BL-160+).
+Turnkey **hot → warm → cold** historian profile for ISPF deployments. Configuration lives in `application.yml` under `ispf.historian.tiers`; **tier routing enforcement** is active when `deploy-profile=three-tier` (BL-202).
 
-**See also:** [VARIABLE_HISTORY.md](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [DEPLOYMENT.md](deployment.md).
+**See also:** [VARIABLE_HISTORY.md](variable-history.md), [decisions/0035-historian-dual-write.md](decisions/0035-historian-dual-write.md), [analytics-platform-roadmap.md](analytics-platform-roadmap.md) (BL-202), [DEPLOYMENT.md](deployment.md).
 
 ---
 
@@ -14,9 +14,23 @@ Turnkey **hot → warm → cold** historian profile for ISPF deployments. Config
 | **warm** | ClickHouse | 90 days | Analytics, long-range dashboards, dual-write target |
 | **cold** | S3 + Parquet (`cold`) | 10 years | Compliance archive, bulk export source |
 
-Hot tier may enable **dual-write** to warm ClickHouse (`dual-write-enabled: true`) without changing read path (still JDBC until cutover).
+Hot tier may enable **dual-write** to warm ClickHouse (`dual-write-enabled: true`) while recent samples stay on JDBC; with tier routing enabled, aged samples route to warm automatically.
 
 ---
+
+## Tier routing enforcement (BL-202)
+
+When `ispf.historian.deploy-profile=three-tier` (default), the server enables **warm tier routing** unless `ispf.historian.tiers.warm.enabled` is set explicitly:
+
+| Path | Behaviour |
+|------|-----------|
+| **Write** | `TierRoutingVariableHistoryWriteStore` — recent samples → JDBC hot; samples older than hot retention → ClickHouse warm; optional dual-write for hot window |
+| **Read** | `TierRoutingVariableHistoryQueryStore` — ranges spanning hot cutoff merge JDBC + ClickHouse |
+| **Cold** | Nightly `HistorianColdArchiveRunner` exports Parquet for the day leaving warm retention (when `ispf.historian.cold-archive.enabled=true`) |
+
+`hot-only` profile keeps JDBC-only path (`warm.enabled=false`).
+
+Java: `HistorianTierDeployProfileEnvironmentPostProcessor`, `HistorianColdArchiveService`.
 
 ## Default configuration
 
@@ -59,19 +73,22 @@ One-click **three-tier** profile for production historian at scale. Apply after 
 # /opt/ispf/config/runtime-settings.properties (or env on systemd unit)
 ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier
 ISPF_VARIABLE_HISTORY_STORE=jdbc
-ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=true
-ISPF_VARIABLE_HISTORY_RETENTION_DAYS=7
-ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
-ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE=ispf
 ISPF_HISTORIAN_TIER_HOT_RETENTION_DAYS=7
 ISPF_HISTORIAN_TIER_WARM_RETENTION_DAYS=90
+ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL=http://127.0.0.1:8123
+ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE=ispf
 ISPF_HISTORIAN_TIER_COLD_BUCKET=ispf-historian-archive
 ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
+# Optional: enable nightly Parquet export (local tree or S3-mounted path)
+ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true
+ISPF_HISTORIAN_COLD_ARCHIVE_LOCAL_ROOT=/var/lib/ispf/historian-cold
 ```
 
-**Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only`, `ISPF_VARIABLE_HISTORY_DUAL_WRITE_ENABLED=false`, omit cold bucket.
+`three-tier` sets `ispf.historian.tiers.warm.enabled=true` automatically. Override with `ISPF_HISTORIAN_TIER_WARM_ENABLED=false` if needed.
 
-**Warm query cutover:** set `ISPF_VARIABLE_HISTORY_STORE=clickhouse` only after dual-write soak and lab SLO gate — see [VARIABLE_HISTORY.md § SLO](variable-history.md).
+**Lab-only (single tier):** set `ISPF_HISTORIAN_DEPLOY_PROFILE=hot-only` — JDBC-only, no warm routing.
+
+**Warm read cutover (full CH primary):** set `ISPF_VARIABLE_HISTORY_STORE=clickhouse` only after dual-write soak and lab SLO gate — see [VARIABLE_HISTORY.md § SLO](variable-history.md). Tier routing is bypassed when store is `clickhouse`.
 
 ---
 
@@ -79,9 +96,9 @@ ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
 
 1. Enable Timescale hypertable on `variable_samples` (automatic when extension present).
 2. Deploy ClickHouse; run `vps-clickhouse-verify.sh`.
-3. Set hot dual-write + tier retention env vars above.
-4. Monitor CH append errors in server logs (secondary write is best-effort).
-5. Schedule cold-tier export job (BL-163) when Parquet archive is required.
+3. Set `ISPF_HISTORIAN_DEPLOY_PROFILE=three-tier` and tier retention env vars above.
+4. Monitor CH append errors in server logs (warm path is best-effort on dual-write).
+5. Enable `ISPF_HISTORIAN_COLD_ARCHIVE_ENABLED=true` when Parquet archive is required; sync `local-root` tree to S3 or mount bucket path. Cold **query** via Athena/Trino is out of scope (export-only in BL-202).
 
 ---
 
@@ -89,7 +106,8 @@ ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
 
 | BL | Topic |
 |----|-------|
-| BL-159 | This document + tier config |
+| BL-159 | Tier config model |
+| BL-202 | Tier routing enforcement + cold Parquet export (this doc) |
 | BL-161 | Query SLO — [VARIABLE_HISTORY.md](variable-history.md) |
-| BL-162 | Event journal CH cutover |
-| BL-163 | Trend export CSV/Parquet bulk |
+| BL-201 | AF-lite templates — [reference-asset-analytics.md](reference-asset-analytics.md) |
+| BL-163 | On-demand trend export CSV/Parquet |

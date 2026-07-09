@@ -317,6 +317,12 @@ export default function CreateObjectDialog({
           filterId: name,
           displayName: displayName || name,
           description,
+          eventNamePattern: "*",
+          sourceObjectPathPattern: "root.platform.**",
+          minSeverity: 0,
+          maxSeverity: 100,
+          timeWindowMs: 0,
+          filterExpression: "",
           enabled: true,
         });
         return created.path;

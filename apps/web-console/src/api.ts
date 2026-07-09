@@ -241,6 +241,7 @@ export interface VariableHistoryAggregateResponse {
   field: string;
   bucket: string;
   buckets: VariableHistoryBucket[];
+  dataSource?: "rollup" | "raw" | "none";
 }
 
 export function fetchVariableHistory(
@@ -310,6 +311,184 @@ export interface AnalyticsTemplateDto {
 
 export function fetchAnalyticsTemplates(): Promise<AnalyticsTemplateDto[]> {
   return request("/api/v1/platform/analytics/templates");
+}
+
+export function fetchAnalyticsTemplateByPath(path: string): Promise<AnalyticsTemplateDto> {
+  return request(`/api/v1/platform/analytics/templates/by-path?path=${encodeURIComponent(path)}`);
+}
+
+export function createAnalyticsTemplate(payload: AnalyticsTemplateDto): Promise<AnalyticsTemplateDto> {
+  return request("/api/v1/platform/analytics/templates", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAnalyticsTemplate(
+  path: string,
+  payload: AnalyticsTemplateDto,
+): Promise<AnalyticsTemplateDto> {
+  return request(`/api/v1/platform/analytics/templates/by-path?path=${encodeURIComponent(path)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteAnalyticsTemplate(path: string): Promise<void> {
+  return request(`/api/v1/platform/analytics/templates/by-path?path=${encodeURIComponent(path)}`, {
+    method: "DELETE",
+  });
+}
+
+export interface ApplyAnalyticsTemplatePayload {
+  templatePath: string;
+  devicePath: string;
+  sourcePath?: string;
+  sourceVariable: string;
+  sourceField?: string;
+  windowBucket?: string;
+  availabilityVariable?: string;
+  performanceVariable?: string;
+  qualityVariable?: string;
+}
+
+export interface ApplyAnalyticsTemplateResult {
+  devicePath: string;
+  templateId: string;
+  blueprintName: string;
+  refresh: { devicePath: string; status: string; message: string };
+}
+
+export function applyAnalyticsTemplate(
+  payload: ApplyAnalyticsTemplatePayload,
+): Promise<ApplyAnalyticsTemplateResult> {
+  return request("/api/v1/platform/analytics/templates/apply", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function refreshAnalyticsDerivedTag(devicePath: string): Promise<{ devicePath: string; status: string; message: string }> {
+  return request(`/api/v1/platform/analytics/derived-tags/refresh?devicePath=${encodeURIComponent(devicePath)}`, {
+    method: "POST",
+  });
+}
+
+export interface AnalyticsTagSourceDto {
+  path: string;
+  variable: string;
+  field: string;
+}
+
+export interface AnalyticsTagLineageNodeDto {
+  id: string;
+  kind: string;
+  label: string;
+  path: string;
+  variable: string;
+}
+
+export interface AnalyticsTagLineageEdgeDto {
+  from: string;
+  to: string;
+  relation: string;
+}
+
+export interface AnalyticsTagLineageGraphDto {
+  nodes: AnalyticsTagLineageNodeDto[];
+  edges: AnalyticsTagLineageEdgeDto[];
+}
+
+export interface AnalyticsTagCatalogEntryDto {
+  path: string;
+  displayName: string;
+  helper: string;
+  expression: string;
+  outputVariable: string;
+  sources: AnalyticsTagSourceDto[];
+  upstreamTagPaths: string[];
+  downstreamTagPaths: string[];
+  windowBucket: string;
+  rollupBuckets: string[];
+  periodicMs: number;
+  enabled: boolean;
+  qualityStatus: string;
+  lastEvalStatus: string;
+  lastEvalAt: string | null;
+  lastTickAt: string | null;
+  lineage: AnalyticsTagLineageGraphDto;
+}
+
+export interface AnalyticsTagCatalogListDto {
+  count: number;
+  tags: AnalyticsTagCatalogEntryDto[];
+}
+
+export function fetchAnalyticsTags(pathPrefix?: string): Promise<AnalyticsTagCatalogListDto> {
+  const params = pathPrefix ? `?path=${encodeURIComponent(pathPrefix)}` : "";
+  return request(`/api/v1/platform/analytics/tags${params}`);
+}
+
+export function fetchAnalyticsTagByPath(path: string): Promise<AnalyticsTagCatalogEntryDto> {
+  return request(`/api/v1/platform/analytics/tags/by-path?path=${encodeURIComponent(path)}`);
+}
+
+export interface AnalyticsQueryTagInput {
+  path: string;
+  variable: string;
+  field?: string;
+  label?: string;
+}
+
+export interface AnalyticsQueryRequestBody {
+  tags: AnalyticsQueryTagInput[];
+  from: string;
+  to: string;
+  bucket: string;
+  agg?: "avg" | "min" | "max" | "last";
+  maxBuckets?: number;
+}
+
+export interface AnalyticsQuerySeriesDto {
+  id: string;
+  path: string;
+  variable: string;
+  field: string;
+  dataSource: string;
+  values: Array<number | null>;
+}
+
+export interface AnalyticsQueryResponseDto {
+  bucket: string;
+  from: string;
+  to: string;
+  agg: string;
+  timestamps: string[];
+  series: AnalyticsQuerySeriesDto[];
+  latencyMs: number;
+}
+
+export function fetchAnalyticsQuery(body: AnalyticsQueryRequestBody): Promise<AnalyticsQueryResponseDto> {
+  return request("/api/v1/platform/analytics/query", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function downloadAnalyticsQueryExport(
+  body: AnalyticsQueryRequestBody,
+  format: "csv" | "parquet",
+): Promise<Blob> {
+  const params = new URLSearchParams({ format });
+  const response = await fetch(`/api/v1/platform/analytics/query/export?${params}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  return response.blob();
 }
 
 export async function downloadVariableHistoryExport(

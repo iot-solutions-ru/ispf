@@ -1,24 +1,24 @@
 # ISPF competitive scorecard (BL-189)
 
-Public readiness matrix for Phase 25–32 Excellence Program. **Authoritative current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
+Public readiness matrix for Phase 25–33 Excellence Program (see unified [roadmap.md](roadmap.md)). **Authoritative current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
 
 Scale **1–10** vs best-in-class: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.
 
 | # | Dimension | Baseline (Phase 24) | **Code verified (0.9.102)** | Target | Phase / BL |
 |---|-----------|:-------------------:|:---------------------------:|:------:|------------|
-| 1 | Unified data model (object tree) | 9.0 | **8.5** | **10** | [25](roadmap-phase-25.md), [29](roadmap-phase-25.md), [30](roadmap-phase-25.md) — BL-164…168, BL-173 |
-| 2 | SCADA / HMI / mimics | 7.0 | **7.5** | **10** | [26](roadmap-phase-25.md) — BL-146…152 |
-| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [25](roadmap-phase-25.md) — BL-140…145 |
-| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [28](roadmap-phase-25.md) — BL-159…163 |
-| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [27](roadmap-phase-25.md), [30](roadmap-phase-25.md) — BL-153…157, BL-171…174 |
-| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [30](roadmap-phase-25.md) — BL-176 |
-| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [29](roadmap-phase-25.md) — BL-164…170 |
-| 8 | Low-code velocity | 8.0 | **8.0** | **10** | [26](roadmap-phase-25.md), [31](roadmap-phase-25.md) — BL-146…152, BL-177…180 |
-| 9 | AI-assisted development | 9.0 | **6.5** | **10** | [31](roadmap-phase-25.md) — BL-177…182 |
-| 10 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | [27](roadmap-phase-25.md) — BL-153…157 |
-| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [25](roadmap-phase-25.md), [28](roadmap-phase-25.md), [32](roadmap-phase-25.md) — BL-144…145, BL-186…187 |
-| 12 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | [32](roadmap-phase-25.md) — BL-183…185 |
-| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [32](roadmap-phase-25.md) — BL-189, BL-190 |
+| 1 | Unified data model (object tree) | 9.0 | **8.5** | **10** | [25](roadmap.md#phase-25--ot-trust), [29](roadmap.md#phase-29--mes-platform), [30](roadmap.md#phase-30--automation-depth) — BL-164…168, BL-173 |
+| 2 | SCADA / HMI / mimics | 7.0 | **7.5** | **10** | [26](roadmap.md#phase-26--hmi-excellence) — BL-146…152 |
+| 3 | OT/IT connectivity (drivers.md) | 6.0 | **6.5** | **10** | [25](roadmap.md#phase-25--ot-trust) — BL-140…145 |
+| 4 | Historian / time-series | 7.0 | **7.0** | **10** | [28](roadmap.md#phase-28--historian-at-scale) — BL-159…163; [33](roadmap.md#phase-33--analytics-platform-af-capable) BL-200…210 |
+| 5 | Automation / alarms | 7.5 | **7.5** | **10** | [27](roadmap.md#phase-27--enterprise-security), [30](roadmap.md#phase-30--automation-depth) — BL-153…157, BL-171…174 |
+| 6 | Workflow / BPMN | 6.5 | **7.5** | **10** | [30](roadmap.md#phase-30--automation-depth) — BL-176 |
+| 7 | MES / ISA-95 | 5.5 | **6.5** | **10** | [29](roadmap.md#phase-29--mes-platform) — BL-164…170 |
+| 8 | Low-code velocity | 8.0 | **8.0** | **10** | [26](roadmap.md#phase-26--hmi-excellence), [31](roadmap.md#phase-31--ai-autopilot) — BL-146…152, BL-177…180 |
+| 9 | AI-assisted development | 9.0 | **6.5** | **10** | [31](roadmap.md#phase-31--ai-autopilot) — BL-177…182 |
+| 10 | Security / RBAC / tenancy | 6.5 | **7.5** | **10** | [27](roadmap.md#phase-27--enterprise-security) — BL-153…157 |
+| 11 | Deploy / scale / edge | 8.0 | **7.0** | **10** | [25](roadmap.md#phase-25--ot-trust), [28](roadmap.md#phase-28--historian-at-scale), [32](roadmap.md#phase-32--ecosystem--market) — BL-144…145, BL-186…187 |
+| 12 | Ecosystem / marketplace | 4.0 | **5.0** | **10** | [32](roadmap.md#phase-32--ecosystem--market) — BL-183…185 |
+| 13 | Documentation / DX | 9.0 | **8.5** | **10** | [32](roadmap.md#phase-32--ecosystem--market) — BL-189, BL-190 |
 | 14 | Stack modernity | 9.0 | **9.5** | **10** | maintain — Spring Boot 4, React 19, NATS, ClickHouse option |
 
 **Overall (code verified): ~7.4/10** — simple mean of the 14 dimensions above.
@@ -29,7 +29,7 @@ Scale **1–10** vs best-in-class: Ignition, Kepware/KEPServerEX, OSIsoft PI, Si
 
 ## Definition of done (10/10 overall)
 
-From [ROADMAP_PHASE25.md](roadmap-phase-25.md). Status on **0.9.102**:
+From [roadmap.md](roadmap.md) (Excellence Program / DoD). Status on **0.9.102**:
 
 | Criterion | Status |
 |-----------|--------|
@@ -49,7 +49,7 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall in `dashboardLayoutPresets.ts`; e2e FPS in `quality-gates.spec.ts` (mocked operator API) |
 | 3 | OT/IT drivers | 6.5 | **PARTIAL** | 20 `PRODUCTION` in `DriverProductionMatrix`; Milo OPC UA, j2mod, S7, BACnet4J real; `opc-da` class doc **stub** but matrix PRODUCTION; DNP3 `writePoint` throws |
-| 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC default; no in-repo throughput benchmark at PI-class scale |
+| 4 | Historian | 7.0 | **PARTIAL** | `ClickHouseVariableHistoryStore` HTTP insert/query; JDBC default; BL-210 lab gates + JVM multi-tag gate **defined** (`analytics-scale-gate.sh`); score **≥9.5** after Enterprise L lab sign-off |
 | 5 | Automation / alarms | 7.5 | **PARTIAL** | Alert rules + correlators **REAL**; `AlarmShelfApprovalService` in-memory **stub** |
 | 6 | Workflow / BPMN | 7.5 | **REAL** | `WorkflowEngineSubProcessTest`, `WorkflowEngineMessageTest`; not full BPMN 2.0 spec |
 | 7 | MES / ISA-95 | 6.5 | **PARTIAL** | `MesPlatformBootstrap` + bundle JSON/SQL/script BFF; `MesPlatformProductionBundleSmokeTest` — no standalone MES engine module |
@@ -74,14 +74,15 @@ Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gap
 
 ## Gaps to target
 
-Priority fixes that move **code verified** scores toward 10/10 (not marketing claims):
+Priority fixes that move **code verified** scores toward 10/10 (not marketing claims). Full domain audit: [roadmap.md § Domain gap audit](roadmap.md#domain-gap-audit--iot--scada--mes--erp-2026-07-09).
 
-1. **AI (6.5 → 9+):** live LLM regression in CI (`validate-scenarios.mjs --live --enforce-rate`); remove stub nightly results; real solution generator or document as keyword-only.
-2. **Ecosystem (5.0 → 9+):** persist partner enrollments; symbol pack install beyond in-memory stub; external signed bundles.
-3. **OT drivers (6.5 → 9+):** fix matrix honesty (opc-da); DNP3 write or downgrade; field pilot sign-offs (BL-140).
-4. **Historian (7.0 → 9+):** lab benchmark + CI gate for ingestion SLA (BL-161).
-5. **MES (6.5 → 9+):** production MES sites on reference bundle, not smoke tests only.
+1. **OT drivers (6.5 → 9+):** matrix honesty — `opc-da` stub / DNP3 write (**BL-191**); field pilot sign-offs after **named field driver task** (BL-140 Partial).
+2. **ERP L4 / MES (6.5 → 9+):** live 1C or SAP connector (**BL-169** P0); production MES sites; genealogy lite (**BL-193**).
+3. **AI (6.5 → 9+):** live LLM regression in CI (`validate-scenarios.mjs --live --enforce-rate`); remove stub nightly results; real solution generator or document as keyword-only.
+4. **Ecosystem (5.0 → 9+):** persist partner enrollments; symbol pack install beyond in-memory stub; external signed bundles.
+5. **Historian (7.0 → 9+):** run Enterprise L lab gates (`deploy/tools/analytics-scale-gate.sh`, 50k catalog, 1B CH) — BL-210; then update scorecard to **≥9.5** with dated sign-off.
 6. **HMI (7.5 → 9+):** FPS gate on live WebSocket mimic path; alarm shelving persistence.
+7. **Compliance:** IEC 62443 / GAMP-lite tender pack (**BL-192**).
 
 ---
 

@@ -109,4 +109,4 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 | First 5 certified integrators | Phase 32 GA |
 | OEM symbol + driver marketplace GA | BL-183, BL-185 |
 
-See [roadmap-phase-25.md](roadmap-phase-25.md) — BL-184, BL-190.
+See [roadmap.md](roadmap.md) — BL-184, BL-190.

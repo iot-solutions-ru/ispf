@@ -476,6 +476,7 @@ export default function ReportBuilder({
 
   return (
     <PlatformSqlEditorShell
+      fillHeight
       title={title}
       path={path}
       subtitle={
@@ -497,7 +498,7 @@ export default function ReportBuilder({
         </div>
       )}
 
-      <div className="report-tabs section-body">
+      <div className="report-tabs">
         <button
           type="button"
           className={`btn ${activeTab === "data" ? "primary" : ""}`}

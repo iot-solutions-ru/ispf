@@ -2,7 +2,7 @@
 
 Catalog and distribution for SCADA/HMI symbol packs — P&ID primitives, equipment icons, animated states, and mimic widget bindings compatible with [SCADA.md](scada.md) and `diagramJson` v2.
 
-Related: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [ROADMAP_PHASE25.md](roadmap-phase-25.md) (BL-146, BL-185).
+Related: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [roadmap.md](roadmap.md) (BL-146, BL-185).
 
 **Status (0.9.102):** reference pack `ispf-pid-v1` (218 symbols) ships in web-console. Server listing/install API is **stub** (`MarketplaceSymbolListingService`, `"source": "stub"`). See [COMPETITIVE_SCORECARD.md](competitive-scorecard.md).
 

@@ -134,4 +134,4 @@ curl -s examples/certification/solution-developer-l1.json | jq '.questions | len
 
 - [PARTNER_PROGRAM.md](partner-program.md) — уровни коммерческого партнера
 - [COMPETITIVE_Scorecard.md](competitive-scorecard.md) — измерение 13 Документация/DX
-- [ROADMAP_PHASE25.md](roadmap-phase-25.md) — BL-190
+- [roadmap.md](roadmap.md) — BL-190

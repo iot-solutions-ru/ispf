@@ -147,4 +147,4 @@ bash deploy/tools/driver-interop-report.sh
 
 - [DRIVERS.md](drivers.md) — зрелость и конфиги
 - [DRIVER_PROMOTION.md](driver-promotion.md) — чеклист продвижения
-- [ROADMAP_PHASE25.md](roadmap-phase-25.md) — BL-140…145
+- [roadmap.md](roadmap.md) — BL-140…145

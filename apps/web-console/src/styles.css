@@ -2482,9 +2482,25 @@ code,
 }
 
 .editor-main.dashboard-main {
+  display: flex;
+  flex-direction: column;
   max-width: none;
   margin: 0;
   padding: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-main.dashboard-main > .platform-sql-editor,
+.editor-main.dashboard-main > .dashboard-shell,
+.editor-main.dashboard-main > .workflow-shell {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.editor-main.dashboard-main > .platform-sql-editor--fill {
+  height: auto;
 }
 
 body.dashboard-editor-fullscreen {
@@ -4827,12 +4843,19 @@ body.scada-mimic-editor-open {
 
 .workflow-body {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) 1fr;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: 1rem;
   padding: 1rem 1.25rem 1.5rem;
-  overflow: auto;
-  flex: 1;
+  overflow: hidden;
+  flex: 1 1 0;
   min-height: 0;
+  align-items: stretch;
+}
+
+.workflow-side-panel {
+  overflow-y: auto;
+  min-height: 0;
+  min-width: 0;
 }
 
 .workflow-side-panel h3 + h3 {
@@ -4847,7 +4870,17 @@ body.scada-mimic-editor-open {
 .workflow-bpmn-panel {
   display: flex;
   flex-direction: column;
-  min-height: 520px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.workflow-bpmn-panel .bpmn-viewer-canvas,
+.workflow-bpmn-panel .bpmn-viewer-fallback,
+.workflow-bpmn-panel .bpmn-editor-layout,
+.workflow-bpmn-panel .workflow-bpmn-editor {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .workflow-bpmn-head {
@@ -4856,6 +4889,7 @@ body.scada-mimic-editor-open {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.75rem;
+  flex-shrink: 0;
 }
 
 .workflow-bpmn-head h3 {
@@ -4870,12 +4904,13 @@ body.scada-mimic-editor-open {
 .bpmn-hint {
   margin: 0 0 0.75rem;
   font-size: 0.82rem;
+  flex-shrink: 0;
 }
 
 .bpmn-editor-layout {
   display: flex;
   gap: 1rem;
-  min-height: 420px;
+  min-height: 0;
 }
 
 .bpmn-ispf-panel {
@@ -4904,10 +4939,11 @@ body.scada-mimic-editor-open {
 
 .bpmn-editor-wrap,
 .bpmn-viewer-fallback {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  min-height: 0;
+  min-width: 0;
 }
 
 .bpmn-editor-error {
@@ -4916,8 +4952,8 @@ body.scada-mimic-editor-open {
 
 .bpmn-editor-canvas,
 .bpmn-viewer-canvas {
-  flex: 1;
-  min-height: 420px;
+  flex: 1 1 0;
+  min-height: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #f8f9fb;
@@ -4956,10 +4992,6 @@ body.scada-mimic-editor-open {
   padding: 1rem;
   background: var(--bg-elevated);
   box-shadow: var(--ui-shadow-surface);
-}
-
-.workflow-panel-wide {
-  grid-column: 1 / -1;
 }
 
 .workflow-panel h3 {
@@ -8971,6 +9003,11 @@ body.scada-mimic-editor-open {
   .workflow-body {
     grid-template-columns: 1fr;
     padding: 0.75rem;
+    overflow-y: auto;
+  }
+
+  .workflow-bpmn-panel {
+    min-height: min(60vh, 560px);
   }
 
   .workflow-bpmn-head {
@@ -11881,11 +11918,11 @@ body.scada-mimic-editor-open {
 }
 
 .platform-sql-editor-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  gap: 0.35rem 1rem;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -11894,19 +11931,18 @@ body.scada-mimic-editor-open {
 }
 
 .platform-sql-editor-header-text {
-  grid-column: 1;
-  grid-row: 1;
+  flex: 1 1 220px;
   min-width: 0;
 }
 
 .platform-sql-editor-actions {
-  grid-column: 2;
-  grid-row: 1 / span 2;
+  flex: 0 1 auto;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
-  align-self: center;
+  align-items: center;
+  max-width: 100%;
 }
 
 .platform-sql-editor-title {
@@ -11926,9 +11962,7 @@ body.scada-mimic-editor-open {
 }
 
 .platform-sql-editor-path {
-  grid-column: 1;
-  grid-row: 2;
-  margin: 0;
+  margin: 0.15rem 0 0;
   font-size: 0.72rem;
   color: var(--text-muted);
   opacity: 0.85;
@@ -12196,20 +12230,9 @@ body.scada-mimic-editor-open {
 }
 
 @media (max-width: 960px) {
-  .platform-sql-editor-header {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
   .platform-sql-editor-actions {
-    grid-column: 1;
-    grid-row: 3;
+    flex: 1 1 100%;
     justify-content: flex-start;
-    width: 100%;
-  }
-
-  .platform-sql-editor-path {
-    grid-row: 2;
   }
 
   .data-source-editor-layout {
@@ -12232,16 +12255,26 @@ body.scada-mimic-editor-open {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
-.report-builder-banner {
-  margin: 0 1rem;
+.platform-sql-editor--fill .platform-sql-editor-body.report-builder-body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .report-tabs {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.report-builder-banner {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .report-editor-form {
@@ -12303,7 +12336,8 @@ body.scada-mimic-editor-open {
 }
 
 .report-builder-results {
-  overflow: auto;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .report-export-controls {
@@ -12346,6 +12380,50 @@ body.scada-mimic-editor-open {
 .dash-report-widget .report-truncated-banner {
   margin-bottom: 0.35rem;
   font-size: 0.85rem;
+}
+
+.dash-report-widget .dash-widget-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dash-report-widget .dash-widget-body .op-table-wrap {
+  flex: 1;
+  min-height: 0;
+}
+
+.op-table-filter-row th {
+  padding: 0.2rem 0.35rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.op-table-filter-input {
+  width: 100%;
+  min-width: 3.5rem;
+  box-sizing: border-box;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.op-table-filter-input::placeholder {
+  color: var(--text-muted);
+}
+
+.op-table-empty-filtered {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.operator-dashboard-shell-host .dash-report-widget .dash-widget-body {
+  overflow: auto;
 }
 
 /* в”Ђв”Ђ UI polish: animations, images, stagger, a11y в”Ђв”Ђ */
@@ -13201,5 +13279,28 @@ html {
 
 .application-object-panel .application-deploy-panel {
   margin-top: 0.5rem;
+}
+
+.analytics-template-inspector .analytics-template-preview-section,
+.analytics-template-inspector .analytics-template-apply-section {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+}
+
+.analytics-template-inspector h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.analytics-preview__chart {
+  margin-top: 0.5rem;
+}
+
+.analytics-preview__svg {
+  width: 100%;
+  max-width: 320px;
+  height: 80px;
+  color: var(--accent, #2563eb);
 }
 

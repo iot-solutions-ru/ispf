@@ -4,17 +4,23 @@ Repeatable OT field-pilot runbooks for three reference scenarios. Each pilot val
 
 Prerequisites: ISPF ≥ 0.9.32, [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) green locally, operator account with device admin role.
 
+### Ready-for-field gate (policy) {#ready-for-field-gate-policy}
+
+**`ready-for-field` is not a default label.** A scenario (and its drivers) become **ready for field** only after a **named field implementation task** exists — customer or internal site, protocol, integrator ticket, and scope to implement or harden the driver path for that site.
+
+Until then, status is **playbook-ready**: lab dry-run scripts, checklists, and sign-off templates exist; **no field soak or promotion evidence** is claimed.
+
 ---
 
 ## Pilot matrix
 
 | Scenario | Primary driver | Typical site | Success criteria | Status |
 | -------- | -------------- | ------------ | ---------------- | ------ |
-| **Modbus plant** | `modbus-tcp` | PLC / RTU tank farm, pump skids | 50+ tags poll <2 s; FC16 write round-trip; mimic live | **Ready for field** |
-| **MQTT fleet** | `mqtt` | Distributed gateways, telemetry burst | 10+ devices on shared broker; subscribe ingress; alarm on stale | **Ready for field** |
-| **OPC UA line** | `opcua` + `opcua-server` | Packaging / assembly line cells | Browse + subscribe; external UA write-back; SCADA mimic | **Ready for field** |
+| **Modbus plant** | `modbus-tcp` | PLC / RTU tank farm, pump skids | 50+ tags poll <2 s; FC16 write round-trip; mimic live | **Playbook-ready** |
+| **MQTT fleet** | `mqtt` | Distributed gateways, telemetry burst | 10+ devices on shared broker; subscribe ingress; alarm on stale | **Playbook-ready** |
+| **OPC UA line** | `opcua` + `opcua-server` | Packaging / assembly line cells | Browse + subscribe; external UA write-back; SCADA mimic | **Playbook-ready** |
 
-Soak target: **7 days** minimum per pilot; log incidents in pilot journal (see § Close-out).
+Soak target: **7 days** minimum per pilot; log incidents in pilot journal (see § [Soak journal](#soak-incident-journal) and § Close-out).
 
 ---
 
@@ -145,6 +151,24 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 
 ---
 
+## Soak incident journal {#soak-incident-journal}
+
+Daily log for the **7-day soak** (BL-140 field evidence). Copy the table into the customer ticket; full sprint checklist: [roadmap.md § S31 backlog](roadmap.md#s31-wave-1-execution-backlog).
+
+| Day | Date | Tags online | Incidents (P0/P1) | Historian OK | HMI live | Notes |
+| --- | ---- | ----------- | ------------------- | ------------ | -------- | ----- |
+| 1 | | | | ☐ | ☐ | |
+| 2 | | | | ☐ | ☐ | |
+| 3 | | | | ☐ | ☐ | |
+| 4 | | | | ☐ | ☐ | |
+| 5 | | | | ☐ | ☐ | |
+| 6 | | | | ☐ | ☐ | |
+| 7 | | | | ☐ | ☐ | Ready for sign-off |
+
+**P0 incident** = driver crash, data loss, write to wrong register, historian gap >1 h. Log stack trace or log excerpt in Notes.
+
+---
+
 ## Close-out
 
 | Artifact | Location |
@@ -155,17 +179,17 @@ Stop `opcua-server` device (frees port 4840), revert client endpoint URLs.
 | Promotion evidence | [DRIVER_PROMOTION.md](driver-promotion.md) field-pilot section |
 | Sign-off record | § Pilot sign-off below (one per scenario) |
 
-**Definition of done (BL-140):** three pilots **ready-for-field** with lab dry-run green, checklists complete, and sign-off template published; customer 7-day soak is the remaining gate before promotion evidence. Competitive scorecard OT connectivity ≥ 9.5 (post wave 8).
+**Definition of done (BL-140):** per scenario — **ready-for-field** only after named field task + driver work for that site; then lab dry-run green, field checklist passed, **7-day soak** journal, customer OT sign-off. Until a field task exists: **playbook-ready** (lab matrix + templates only). Scorecard OT connectivity ≥ 9.5 requires field evidence, not lab-only.
 
-### Pilot checklist status (wave 8)
+### Pilot checklist status
 
-| Scenario | Lab dry-run | Field checklist | Sign-off template | Ready for field |
-| -------- | :---------: | :-------------: | :---------------: | :-------------: |
-| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below | ✅ |
-| MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below | ✅ |
-| OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below | ✅ |
+| Scenario | Lab dry-run | Field checklist | Sign-off template | Field status |
+| -------- | :---------: | :-------------: | :---------------: | :------------: |
+| Modbus plant | ✅ `driver-interop-smoke.sh` | ✅ §1 | ✅ below | Playbook-ready |
+| MQTT fleet | ✅ Mosquitto + driver tests | ✅ §2 | ✅ below | Playbook-ready |
+| OPC UA line | ✅ opcua + opcua-server tests | ✅ §3 | ✅ below | Playbook-ready |
 
-Lab matrix, validation steps, and sign-off template are **complete** (BL-140 Done). Customer site pilots use the sign-off template to record production soak evidence.
+Lab matrix, validation steps, and sign-off template are **published** (BL-140 partial — playbook). **Ready-for-field** and BL-140 **Done** require a named field task, implementation work, and completed soak sign-off.
 
 ---
 
@@ -210,5 +234,5 @@ Complete one form per scenario after the **7-day soak**. Attach to the pilot jou
 
 - [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) — CI loopback matrix
 - [DRIVERS.md](drivers.md) — driver configs
-- [ROADMAP_PHASE25.md](roadmap-phase-25.md) — BL-140, BL-141, BL-143
+- [roadmap.md](roadmap.md) — BL-140, BL-141, BL-143
 - [DEPLOYMENT.md](deployment.md) — VPS / edge rollout

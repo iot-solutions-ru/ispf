@@ -105,6 +105,10 @@ public final class ReplicaCapabilitySet {
             throw new IllegalArgumentException(
                     "Replica capabilities must not combine jobs and drivers on one JVM");
         }
+        if (capabilities.contains(ReplicaCapability.ANALYTICS) && capabilities.contains(ReplicaCapability.DRIVERS)) {
+            throw new IllegalArgumentException(
+                    "Replica capabilities must not combine analytics and drivers on one JVM");
+        }
         if (capabilities.contains(ReplicaCapability.WS) && !capabilities.contains(ReplicaCapability.REPLICA_SYNC)) {
             throw new IllegalArgumentException("ws capability requires replica-sync");
         }

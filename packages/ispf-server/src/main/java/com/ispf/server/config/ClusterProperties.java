@@ -18,7 +18,7 @@ public record ClusterProperties(
         @DefaultValue("500") int liveVariableSyncCoalesceMs,
         /** When false, each live-variable NATS sync is published immediately (no pending map). */
         @DefaultValue("true") boolean liveVariableSyncCoalesceEnabled,
-        /** ADR-0032: unified | edge-api | hmi-read | io | compute */
+        /** ADR-0032: unified | edge-api | hmi-read | io | compute | analytics */
         @DefaultValue("") String replicaProfile,
         /** ADR-0032: comma-separated capability override (replaces profile caps when set). */
         @DefaultValue("") String replicaCapabilities,

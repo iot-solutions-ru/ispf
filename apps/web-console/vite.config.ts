@@ -40,6 +40,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "index.html",
+        navigateFallbackDenylist: [/^\/operator-printing/],
         runtimeCaching: [
           {
             // BL-151: last operator manifest / UI for 8h offline PWA

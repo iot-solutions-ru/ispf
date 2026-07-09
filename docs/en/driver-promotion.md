@@ -49,3 +49,13 @@ Label is set in `DriverMaturityRegistry` (server) and returned in `GET /api/v1/d
 | `smi-s` | STUB | **BETA** | SMI-S CIM point parser + connectivity shell |
 
 Remaining stub drivers require native stack or commercial pack — promotion only on specific request ([licensed-driver-packs.md](licensed-driver-packs.md)).
+
+## Ready-for-field (field pilots)
+
+**Not automatic** when `maturity: PRODUCTION` or lab interop is green. A driver/scenario is **ready for field** only after:
+
+1. **Named field implementation task** — site, protocol, integrator ticket, scope to implement or harden the driver for that deployment.
+2. Lab dry-run green for that scenario ([field-pilot-playbook.md](field-pilot-playbook.md)).
+3. **7-day soak** + customer OT sign-off.
+
+Until (1): status is **playbook-ready** only. See BL-140 (Partial) and [quality path Wave 1](roadmap.md#quality-path-to-done).

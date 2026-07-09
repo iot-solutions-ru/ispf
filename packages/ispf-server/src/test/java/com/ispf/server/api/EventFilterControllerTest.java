@@ -27,16 +27,15 @@ class EventFilterControllerTest {
     void crudEventFiltersViaRestShape() {
         eventFilterObjectService.ensureCatalog();
 
-        EventFilterDefinition created = eventFilterController.create(new EventFilterDefinition(
-                null,
+        EventFilterDefinition created = eventFilterController.create(new EventFilterController.SaveEventFilterRequest(
                 "ops-critical",
                 "Ops critical",
                 "Critical operator feed",
                 "alarm*",
                 "root.platform.**",
-                80,
-                100,
-                60000,
+                80L,
+                100L,
+                60000L,
                 "",
                 true
         ));
@@ -52,8 +51,7 @@ class EventFilterControllerTest {
 
         EventFilterDefinition updated = eventFilterController.update(
                 created.path(),
-                new EventFilterDefinition(
-                        created.path(),
+                new EventFilterController.SaveEventFilterRequest(
                         created.filterId(),
                         "Ops critical (updated)",
                         created.description(),

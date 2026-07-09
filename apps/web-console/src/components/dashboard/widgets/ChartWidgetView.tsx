@@ -20,6 +20,7 @@ import { widgetHistoryRangeLabel } from "../../../types/dashboard";
 import { fetchAnalyticsTemplates } from "../../../api";
 import { templateFromApiRow } from "../../../utils/analyticsChartBinding";
 import { useChartTrendSeries } from "../../../hooks/useChartTrendSeries";
+import { useAnalyticsMultiSeries } from "../../../hooks/useAnalyticsMultiSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
@@ -103,6 +104,14 @@ export default function ChartWidgetView({
     chartMode,
     analyticsTemplate
   );
+  const multiSeries = useAnalyticsMultiSeries(
+    widget.analyticsQueryTagsJson,
+    historyRange,
+    refreshIntervalMs,
+    maxPoints,
+    series.historyBucket
+  );
+  const useMultiSeries = multiSeries.tags.length > 0 && chartMode === "line";
 
   const demoPreview = parseDemoPreview<Array<{ t?: number; v: number }>>(widget.demoPreviewJson);
   const demoLinePoints = useMemo(
@@ -122,7 +131,11 @@ export default function ChartWidgetView({
     [demoPreview, editable, isCandlestickChart, series.candlestickPoints.length]
   );
 
-  const points = demoLinePoints.length >= 2 ? demoLinePoints : series.points;
+  const points = useMultiSeries
+    ? multiSeries.points
+    : demoLinePoints.length >= 2
+      ? demoLinePoints
+      : series.points;
   const rangePoints =
     demoRangePoints.length >= 2 ? demoRangePoints : series.rangePoints;
   const candlestickPoints =
@@ -225,7 +238,7 @@ export default function ChartWidgetView({
       <div className="dash-chart-body" style={styles.chart}>
         {!objectPath && widget.selectionKey ? (
           <div className="dash-chart-placeholder">{t("view.selectDevice")}</div>
-        ) : series.historyLoading && chartData.length === 0 && !isDemo ? (
+        ) : (useMultiSeries ? multiSeries.loading : series.historyLoading) && chartData.length === 0 && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>
         ) : series.isError && !isDemo ? (
           <div className="dash-chart-placeholder error">{t("view.bindingError")}</div>
@@ -316,25 +329,41 @@ export default function ChartWidgetView({
                   tickFormatter={(v) => Number(v).toFixed(decimals)}
                 />
                 <Tooltip
-                  formatter={(value) => {
+                  formatter={(value, name) => {
                     const numeric = typeof value === "number" ? value : Number(value);
                     return [
                       `${numeric.toFixed(decimals)}${unit ? ` ${unit}` : ""}`,
-                      widget.title,
+                      String(name),
                     ];
                   }}
                   labelFormatter={(label) => t("view.timeLabel", { label })}
                   contentStyle={CHART_TOOLTIP_STYLE}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                />
+                {useMultiSeries
+                  ? multiSeries.seriesIds.map((seriesId, index) => (
+                      <Line
+                        key={seriesId}
+                        type="monotone"
+                        dataKey={seriesId}
+                        name={seriesId}
+                        stroke={multiSeries.colors[index % multiSeries.colors.length]}
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                    ))
+                  : (
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke={color}
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls={false}
+                        isAnimationActive={false}
+                      />
+                    )}
               </LineChart>
             ) : (
               <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>

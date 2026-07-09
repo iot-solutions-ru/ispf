@@ -13,6 +13,8 @@ import com.ispf.server.persistence.VariableSampleRepository;
 import com.ispf.server.persistence.entity.ObjectVariableEntity;
 import com.ispf.server.persistence.entity.VariableSampleEntity;
 import com.ispf.server.object.CoalescedTelemetryUpdate;
+import com.ispf.server.platform.analytics.engine.AnalyticsOnChangeTrigger;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,8 @@ public class VariableHistoryService {
     private final VariableHistoryBatchPersister batchPersister;
     private final VariableHistoryQueryStore queryStore;
     private final HistorianQueryMetricsRecorder queryMetricsRecorder;
+    private final ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger;
+    private final ObjectProvider<HistorianRollupQueryService> rollupQueryService;
 
     /** Last sample epoch ms per (path|var|field) for debounce. */
     private final ConcurrentHashMap<String, Long> lastSampleMs = new ConcurrentHashMap<>();
@@ -65,7 +69,9 @@ public class VariableHistoryService {
             VariableHistoryAsyncWriter asyncWriter,
             VariableHistoryBatchPersister batchPersister,
             VariableHistoryQueryStore queryStore,
-            HistorianQueryMetricsRecorder queryMetricsRecorder
+            HistorianQueryMetricsRecorder queryMetricsRecorder,
+            ObjectProvider<AnalyticsOnChangeTrigger> analyticsOnChangeTrigger,
+            ObjectProvider<HistorianRollupQueryService> rollupQueryService
     ) {
         this.properties = properties;
         this.sampleRepository = sampleRepository;
@@ -78,6 +84,8 @@ public class VariableHistoryService {
         this.batchPersister = batchPersister;
         this.queryStore = queryStore;
         this.queryMetricsRecorder = queryMetricsRecorder;
+        this.analyticsOnChangeTrigger = analyticsOnChangeTrigger;
+        this.rollupQueryService = rollupQueryService;
     }
 
     public void recordVariableUpdate(String objectPath, String variableName) {
@@ -344,6 +352,11 @@ public class VariableHistoryService {
         } else {
             batchPersister.persistBatch(samples);
         }
+        analyticsOnChangeTrigger.ifAvailable(trigger -> {
+            for (VariableSampleEntity sample : samples) {
+                trigger.onSourceSample(sample.getObjectPath(), sample.getVariableName());
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -413,23 +426,42 @@ public class VariableHistoryService {
                     variableName,
                     field,
                     formatBucket(bucket),
-                    List.of()
+                    List.of(),
+                    "none"
             );
         }
 
         int cappedBuckets = Math.min(Math.max(maxBuckets, 1), 2_000);
         long started = System.nanoTime();
         List<VariableHistoryBucket> result;
+        String dataSource = "raw";
         try {
-            result = queryStore.aggregateBuckets(
-                    objectPath,
-                    variableName,
-                    field,
-                    resolvedFrom,
-                    resolvedTo,
-                    bucket,
-                    cappedBuckets
-            );
+            HistorianRollupQueryService rollupSvc = rollupQueryService.getIfAvailable();
+            Optional<HistorianRollupQueryService.RollupQueryResult> rollup = rollupSvc != null
+                    ? rollupSvc.tryRollupQuery(
+                            objectPath,
+                            variableName,
+                            field,
+                            resolvedFrom,
+                            resolvedTo,
+                            bucket,
+                            cappedBuckets
+                    )
+                    : Optional.empty();
+            if (rollup.isPresent()) {
+                result = rollup.orElseThrow().buckets();
+                dataSource = rollup.orElseThrow().dataSource();
+            } else {
+                result = queryStore.aggregateBuckets(
+                        objectPath,
+                        variableName,
+                        field,
+                        resolvedFrom,
+                        resolvedTo,
+                        bucket,
+                        cappedBuckets
+                );
+            }
         } finally {
             queryMetricsRecorder.recordAggregateQuery(
                     java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
@@ -441,11 +473,12 @@ public class VariableHistoryService {
                 variableName,
                 field,
                 formatBucket(bucket),
-                result
+                result,
+                dataSource
         );
     }
 
-    static Duration parseBucket(String bucketSpec) {
+    public static Duration parseBucket(String bucketSpec) {
         if (bucketSpec == null || bucketSpec.isBlank()) {
             throw new IllegalArgumentException("Bucket is required");
         }
@@ -457,6 +490,7 @@ public class VariableHistoryService {
             case "30m" -> Duration.ofMinutes(30);
             case "1h" -> Duration.ofHours(1);
             case "6h" -> Duration.ofHours(6);
+            case "8h" -> Duration.ofHours(8);
             case "1d" -> Duration.ofDays(1);
             default -> throw new IllegalArgumentException("Unsupported bucket: " + bucketSpec);
         };
@@ -473,7 +507,7 @@ public class VariableHistoryService {
         return to.minus(Math.max(retentionDays, 1), ChronoUnit.DAYS);
     }
 
-    private static String formatBucket(Duration bucket) {
+    public static String formatBucket(Duration bucket) {
         long seconds = bucket.getSeconds();
         if (seconds % 86_400 == 0) {
             return (seconds / 86_400) + "d";
@@ -700,7 +734,8 @@ public class VariableHistoryService {
             String variableName,
             String field,
             String bucket,
-            List<VariableHistoryBucket> buckets
+            List<VariableHistoryBucket> buckets,
+            String dataSource
     ) {
     }
 }

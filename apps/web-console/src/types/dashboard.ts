@@ -193,6 +193,11 @@ export interface ChartWidget extends DashboardWidgetBase {
   analyticsTemplateId?: string;
   /** Resolved binding expression for editor preview, e.g. rollingAvg('temp', '5m'). */
   analyticsBindingExpression?: string;
+  /**
+   * Multi-series analytics query JSON array
+   * `[{ "path", "variable", "field?", "label?" }]` — uses BL-206 query API when set.
+   */
+  analyticsQueryTagsJson?: string;
 }
 
 export interface SparklineWidget extends DashboardWidgetBase {
@@ -396,6 +401,10 @@ export interface ReportWidget extends DashboardWidgetBase {
   autoSelectFirstRow?: boolean;
   /** JSON array — table columns rendered as ok/warn status dots */
   statusDotColumnsJson?: string;
+  /** Per-column header filters (client-side) */
+  filterable?: boolean;
+  /** JSON array of column field names to filter; empty = all columns */
+  columnFiltersJson?: string;
 }
 
 export interface PieChartWidget extends DashboardWidgetBase {

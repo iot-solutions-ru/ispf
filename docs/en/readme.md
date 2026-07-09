@@ -28,8 +28,7 @@
 | [REST API](api.md) | Endpoints reference |
 | [Applications](applications.md) | Bundles, BFF, scheduler |
 | [Reports](reports.md) | SQL reports, CSV export |
-| [Roadmap](roadmap.md) | Phase 0–24, BL-01…139 |
-| [Roadmap Phase 25+](roadmap-phase-25.md) | Excellence Program → 10/10 |
+| [Roadmap](roadmap.md) | Single growing roadmap: Phase 0–33, BL-01…210, Excellence Program |
 | [Competitive scorecard](competitive-scorecard.md) | Code-verified readiness matrix |
 | [ADR index](decisions/readme.md) | Architecture decision records |
 

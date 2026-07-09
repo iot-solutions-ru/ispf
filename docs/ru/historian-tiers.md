@@ -93,5 +93,6 @@ ISPF_HISTORIAN_TIER_COLD_PREFIX=variable-samples/
 |----|-------|
 | БЛ-159 | Этот документ + конфигурация уровня |
 | БЛ-161 | SLO запроса — [VARIABLE_HISTORY.md](variable-history.md) |
+| БЛ-160+ | AF-lite → AF-capable — [analytics-platform-roadmap.md](analytics-platform-roadmap.md) (БЛ-200…210) |
 | БЛ-162 | Журнал событий CH переключение |
 | БЛ-163 | Тенденция экспорта CSV/Паркет оптом |

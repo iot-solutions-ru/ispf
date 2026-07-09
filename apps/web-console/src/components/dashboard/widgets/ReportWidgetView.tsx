@@ -82,6 +82,11 @@ export default function ReportWidgetView({
     [widget.statusDotColumnsJson]
   );
 
+  const filterColumns = useMemo(
+    () => parseJsonArray<string>(widget.columnFiltersJson, []),
+    [widget.columnFiltersJson]
+  );
+
   const rowParamsFromRow = useMemo(
     () => parseJsonObject(widget.rowParamsFromRowJson) ?? {},
     [widget.rowParamsFromRowJson]
@@ -230,6 +235,8 @@ export default function ReportWidgetView({
               selectedKey={selectedKey}
               onSelect={applyRowSelection}
               statusColumns={statusDotColumns}
+              filterable={Boolean(widget.filterable) && !editable}
+              filterColumns={filterColumns}
             />
           </>
         )}

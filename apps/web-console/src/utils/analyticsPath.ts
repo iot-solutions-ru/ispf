@@ -7,3 +7,12 @@ export function isAnalyticsRoot(path: string): boolean {
 export function isAnalyticsTemplatePath(path: string): boolean {
   return path.startsWith("root.platform.analytics.") && path !== "root.platform.analytics";
 }
+
+export function isAnalyticsTagDevice(
+  object: { type?: string; variableNames?: string[] } | null | undefined,
+): boolean {
+  if (!object || object.type !== "DEVICE" || !object.variableNames) {
+    return false;
+  }
+  return object.variableNames.includes("derivedValue") || object.variableNames.includes("oeePct");
+}

@@ -282,7 +282,17 @@ python deploy/events-load-test.py `
 
 JUnit equivalent: `EventFireLoadTest` (150 concurrent HTTP).
 
-**CI gate (BL-113):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, runs `EventFireLoadTest` + `ListDevicesLoadTest`, threshold `ISPF_LOAD_P99_CEILING_MS` (default 3000 ms), Gradle log artifacts. Gradle steps use `set -o pipefail` so test failure is not masked by `tee`.
+**CI gate (BL-113):** workflow `.github/workflows/load-test.yml` — nightly + `workflow_dispatch`, runs `EventFireLoadTest`, `ListDevicesLoadTest`, and `AnalyticsMultiTagQueryLoadTest` (BL-210), threshold `ISPF_LOAD_P99_CEILING_MS` / `ISPF_ANALYTICS_LOAD_P95_CEILING_MS` (default 3000 ms), Gradle log artifacts. Gradle steps use `set -o pipefail` so test failure is not masked by `tee`.
+
+## Analytics platform scale gates (BL-210)
+
+| Gate | Script / test | Default ceiling |
+|------|---------------|-----------------|
+| Multi-tag query (10×7d×1h) | `AnalyticsMultiTagQueryLoadTest` | p95 **3000 ms** |
+| Lab multi-tag + catalog + CH | `deploy/tools/analytics-scale-gate.sh` | p95 **3000 ms**, catalog **50k**, CH **1B** rows |
+| 50k-tag catalog seed | `deploy/tools/seed-analytics-scale-catalog.py` | `--tags 50000` |
+
+Enterprise L walkthrough: [examples/analytics-platform/enterprise-l](../examples/analytics-platform/enterprise-l/README.md). SLO table: [variable-history.md](variable-history.md) § Analytics SLO.
 
 ## Internal load test
 

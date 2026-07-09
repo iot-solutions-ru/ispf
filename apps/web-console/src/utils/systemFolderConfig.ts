@@ -15,6 +15,7 @@ import {
   isCorrelatorsRoot,
 } from "./automationPath";
 import { isEventFilterPath, isEventFiltersRoot } from "./eventFilterPath";
+import { isAnalyticsRoot, isAnalyticsTemplatePath } from "./analyticsPath";
 import { isFederationRoot } from "./federationPath";
 import { isTenantsRoot } from "./tenantPath";
 import { localizedSystemFolderMeta } from "./systemFolderI18n";
@@ -158,6 +159,7 @@ export function isSystemCatalogFolder(path: string, objectType?: ObjectType): bo
     || (isAlertRulePath(path) && !isAlertRulesRoot(path))
     || (isCorrelatorPath(path) && !isCorrelatorsRoot(path))
     || (isEventFilterPath(path) && !isEventFiltersRoot(path))
+    || (isAnalyticsTemplatePath(path) && !isAnalyticsRoot(path))
   ) {
     return false;
   }

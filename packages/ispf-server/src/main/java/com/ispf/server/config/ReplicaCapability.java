@@ -12,7 +12,9 @@ public enum ReplicaCapability {
     DRIVERS("drivers"),
     REPLICA_SYNC("replica-sync"),
     JOBS("jobs"),
-    SCHEDULERS("schedulers");
+    SCHEDULERS("schedulers"),
+    /** BL-207: analytics engine materializer, rollup backfill, heavy historian workloads */
+    ANALYTICS("analytics");
 
     private final String externalName;
 

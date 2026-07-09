@@ -123,3 +123,23 @@ edge:
   arm64: false
   federation:
     outboundTunnel: true
+
+# BL-207: dedicated analytics replicas (rollup materializer, heavy backfill).
+# When replicaCount > 0, main Deployment should use edge-api/io profiles; analytics pods
+# run ISPF_REPLICA_PROFILE=analytics with optional affinity to the ClickHouse zone.
+analytics:
+  enabled: false
+  replicaCount: 1
+  replicaIdPrefix: analytics
+  profile: analytics
+  materializerEnabled: true
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  resources:
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+    requests:
+      cpu: 500m
+      memory: 768Mi

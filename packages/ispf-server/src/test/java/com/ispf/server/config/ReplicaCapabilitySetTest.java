@@ -40,6 +40,23 @@ class ReplicaCapabilitySetTest {
     }
 
     @Test
+    void analyticsProfileHasAnalyticsSchedulersNotDrivers() {
+        ReplicaCapabilitySet set = ReplicaCapabilitySet.resolve("analytics", null, null);
+        assertEquals(ReplicaProfile.ANALYTICS, set.profile());
+        assertTrue(set.has(ReplicaCapability.ANALYTICS));
+        assertTrue(set.has(ReplicaCapability.REPLICA_SYNC));
+        assertTrue(set.has(ReplicaCapability.SCHEDULERS));
+        assertFalse(set.has(ReplicaCapability.DRIVERS));
+        assertFalse(set.has(ReplicaCapability.HTTP_PUBLIC));
+    }
+
+    @Test
+    void rejectsAnalyticsAndDriversTogether() {
+        assertThrows(IllegalArgumentException.class, () ->
+                ReplicaCapabilitySet.resolve(null, null, "analytics,drivers"));
+    }
+
+    @Test
     void hmiReadIsReadOnly() {
         ReplicaCapabilitySet set = ReplicaCapabilitySet.resolve("hmi-read", null, null);
         assertTrue(set.has(ReplicaCapability.HTTP_PUBLIC));

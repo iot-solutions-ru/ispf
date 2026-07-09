@@ -313,13 +313,16 @@ Default **unified** (`ISPF_REPLICA_PROFILE=unified` or `ISPF_REPLICA_ROLE=all`):
 
 ### Profiles (ADR-0032)
 
-| Profile | Environment | API/WS | Config write | Drivers | Jobs | Schedulers |
-|---------|-------------|--------|--------------|---------|------|------------|
-| unified | `ISPF_REPLICA_PROFILE=unified` | yes | yes | yes | yes | yes |
-| edge-api | `edge-api` (alias: `api`) | yes | yes | no | no | yes |
-| hmi-read | `hmi-read` | yes | no | no | no | no |
-| io | `io` | no | no | yes | no | yes |
-| compute | `compute` (alias: `worker`) | internal | no | no | yes | no |
+| Profile | Environment | API/WS | Config write | Drivers | Jobs | Schedulers | Analytics |
+|---------|-------------|--------|--------------|---------|------|------------|-----------|
+| unified | `ISPF_REPLICA_PROFILE=unified` | yes | yes | yes | yes | yes | yes |
+| edge-api | `edge-api` (alias: `api`) | yes | yes | no | no | yes | no |
+| hmi-read | `hmi-read` | yes | no | no | no | no | no |
+| io | `io` | no | no | yes | no | yes | no |
+| compute | `compute` (alias: `worker`) | internal | no | no | yes | no | no |
+| analytics | `analytics` | internal | no | no | no | yes | yes |
+
+**analytics** — rollup materializer and heavy historian backfill ([ADR-0038](decisions/0038-analytics-platform-architecture.md), BL-207). When UP analytics replicas exist, `io` and `edge-api` replicas do **not** run the materializer. Single-node `unified` still runs analytics workloads.
 
 **edge-api** without local drivers — see [demostands.md](demostands.md) (Edge B). Local drivers on a weak CPU — **unified** + [demostands.md](demostands.md) (Edge A).
 
@@ -335,6 +338,10 @@ ISPF_REPLICA_PROFILE=io
 # async reports worker
 ISPF_REPLICA_PROFILE=compute
 ISPF_CLUSTER_JOB_MAX_CONCURRENT=4
+
+# analytics engine (rollup materializer, heavy backfill)
+ISPF_REPLICA_PROFILE=analytics
+ISPF_ANALYTICS_MATERIALIZER_ENABLED=true
 ```
 
 ### Async reports

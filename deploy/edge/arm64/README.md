@@ -110,4 +110,4 @@ For Kubernetes arm64 nodes, set `edge.enabled=true` and `edge.arm64=true` in [`d
 ## Related
 
 - [DEPLOYMENT.md](../../../docs/en/deployment.md) — production deploy paths
-- [ROADMAP_PHASE25.md](../../../docs/en/roadmap-phase-25.md) — BL-187
+- [roadmap.md](../../../docs/en/roadmap.md) — BL-187 (Phase 25–33)

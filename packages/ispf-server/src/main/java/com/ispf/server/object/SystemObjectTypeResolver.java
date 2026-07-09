@@ -22,6 +22,7 @@ public final class SystemObjectTypeResolver {
             Map.entry("root.platform.correlators", ObjectType.CORRELATORS),
             Map.entry("root.platform.queries", ObjectType.QUERIES),
             Map.entry("root.platform.analytics", ObjectType.ANALYTICS),
+            Map.entry("root.platform.event-frames", ObjectType.EVENT_FRAMES),
             Map.entry("root.platform.event-filters", ObjectType.EVENT_FILTERS),
             Map.entry(ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, ObjectType.PROCESS_PROGRAMS),
             Map.entry("root.platform.applications", ObjectType.APPLICATIONS),
@@ -46,6 +47,7 @@ public final class SystemObjectTypeResolver {
             Map.entry("migration-v1", ObjectType.MIGRATION),
             Map.entry("query-v1", ObjectType.QUERY),
             Map.entry("analytics-template-v1", ObjectType.ANALYTICS_TEMPLATE),
+            Map.entry("event-frame-v1", ObjectType.EVENT_FRAME),
             Map.entry("event-filter-v1", ObjectType.EVENT_FILTER),
             Map.entry("process-program-v1", ObjectType.PROCESS_PROGRAM)
     );

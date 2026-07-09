@@ -518,6 +518,11 @@ public class ObjectManager {
 
     @Transactional
     public Variable setVariableValue(String path, String name, DataRecord value) {
+        return setVariableValue(path, name, value, null);
+    }
+
+    @Transactional
+    public Variable setVariableValue(String path, String name, DataRecord value, Instant observedAt) {
         assertUserVariable(name);
         assertExpectedRevision(path);
         PlatformObject node = objectTree.require(path);
@@ -535,7 +540,10 @@ public class ObjectManager {
                 node.revision(),
                 mapper.auditDiff(before, value)
         );
-        publishConfigChange(ObjectChangeEvent.variableUpdated(path, name), node);
+        publishConfigChange(
+                ObjectChangeEvent.variableUpdated(path, name, false, true, observedAt),
+                node
+        );
         return variable;
     }
 
@@ -873,6 +881,7 @@ public class ObjectManager {
         ensureBootstrapNode("root.platform.correlators", ObjectType.CORRELATORS, null);
         ensureBootstrapNode("root.platform.queries", ObjectType.QUERIES, null);
         ensureBootstrapNode("root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
+        ensureBootstrapNode("root.platform.event-frames", ObjectType.EVENT_FRAMES, null);
         ensureBootstrapNode("root.platform.mes", ObjectType.MES, null);
         ensureBootstrapNode(FederationPaths.FEDERATION_ROOT, ObjectType.AGENT, null);
         ensureBootstrapNode("root.tenant", ObjectType.TENANT, null);
@@ -1290,9 +1299,9 @@ public class ObjectManager {
                 Instant.now(),
                 node.revision(),
                 node.lastChangedBy(),
-                false,
-                true,
-                null,
+                template.telemetry(),
+                template.automationEligible(),
+                template.observedAt(),
                 false
         ));
     }

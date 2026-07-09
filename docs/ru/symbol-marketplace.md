@@ -4,7 +4,7 @@
 
 Каталог и распространение пакетов символов SCADA/HMI — примитивы P&ID, значки оборудования, анимированные состояния и привязки мнемосхем, совместимые с [SCADA.md](scada.md) и `diagramJson` v2.
 
-Связанные: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [ROADMAP_PHASE25.md](roadmap-phase-25.md) (BL-146, BL-185).
+Связанные: [MARKETPLACE.md](marketplace.md), [SCADA_MIMIC.md](scada-mimic.md), [roadmap.md](roadmap.md) (BL-146, BL-185).
 
 **Статус (0.9.102):** справочный пакет `ispf-pid-v1` (218 символов) поставляется в веб-консоли. API листинга/установки сервера — **заглушка** (`MarketplaceSymbolListingService`, `"source": "stub"`). См. [COMPETITIVE_Scorecard.md](competitive-scorecard.md).
 

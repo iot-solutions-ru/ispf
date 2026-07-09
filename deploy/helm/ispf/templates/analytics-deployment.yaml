@@ -1,0 +1,120 @@
+{{- if and .Values.analytics.enabled (gt (int .Values.analytics.replicaCount) 0) }}
+{{- range $i := until (int .Values.analytics.replicaCount) }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ispf.fullname" $ }}-analytics-{{ add $i 1 }}
+  labels:
+    app.kubernetes.io/name: {{ include "ispf.name" $ }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: analytics
+    ispf.io/replica-profile: analytics
+    ispf.io/bl: BL-207
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ispf.name" $ }}
+      app.kubernetes.io/instance: {{ $.Release.Name }}
+      app.kubernetes.io/component: analytics
+      ispf.io/analytics-index: "{{ add $i 1 }}"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "ispf.name" $ }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: analytics
+        ispf.io/analytics-index: "{{ add $i 1 }}"
+        ispf.io/replica-profile: analytics
+    spec:
+      {{- with $.Values.analytics.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.analytics.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.analytics.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ispf-server
+          image: "{{ $.Values.image.server.repository }}:{{ $.Values.image.server.tag }}"
+          imagePullPolicy: {{ $.Values.image.server.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $.Values.ispf.server.port }}
+              protocol: TCP
+          env:
+            - name: JAVA_OPTS
+              value: {{ $.Values.ispf.server.javaOpts | quote }}
+            - name: SPRING_PROFILES_ACTIVE
+              value: {{ $.Values.ispf.server.profiles | quote }}
+            - name: ISPF_CLUSTER_ENABLED
+              value: {{ $.Values.ispf.cluster.enabled | quote }}
+            - name: ISPF_REPLICA_ID
+              value: {{ printf "%s-%d" $.Values.analytics.replicaIdPrefix (add $i 1) | quote }}
+            - name: ISPF_REPLICA_PROFILE
+              value: {{ $.Values.analytics.profile | quote }}
+            - name: ISPF_ANALYTICS_MATERIALIZER_ENABLED
+              value: {{ $.Values.analytics.materializerEnabled | quote }}
+            - name: ISPF_HISTORIAN_STORE
+              value: {{ $.Values.ispf.historian.store | quote }}
+            - name: ISPF_BOOTSTRAP_FIXTURES_ENABLED
+              value: {{ $.Values.ispf.bootstrap.fixturesEnabled | quote }}
+            {{- if $.Values.ispf.clickhouse.enabled }}
+            - name: ISPF_HISTORIAN_CLICKHOUSE_URL
+              value: {{ $.Values.ispf.clickhouse.url | default "http://clickhouse:8123" | quote }}
+            {{- end }}
+            {{- if include "ispf.secretsEnabled" $ }}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ispf.secretName" $ }}
+                  key: db-password
+            {{- end }}
+            {{- if $.Values.redis.enabled }}
+            - name: ISPF_REDIS_HOST
+              value: {{ $.Values.ispf.redis.host | quote }}
+            - name: ISPF_REDIS_PORT
+              value: {{ $.Values.ispf.redis.port | quote }}
+            {{- end }}
+          resources:
+            {{- toYaml $.Values.analytics.resources | nindent 12 }}
+          volumeMounts:
+            {{- if $.Values.configMap.enabled }}
+            - name: config
+              mountPath: /opt/ispf/config
+              readOnly: true
+            {{- end }}
+            - name: data
+              mountPath: /opt/ispf/data
+            - name: drivers
+              mountPath: {{ $.Values.ispf.driverPacksDir }}
+      volumes:
+        {{- if $.Values.configMap.enabled }}
+        - name: config
+          configMap:
+            name: {{ include "ispf.fullname" $ }}-config
+        {{- end }}
+        {{- if $.Values.persistence.data.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "ispf.fullname" $ }}-data
+        {{- else }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+        {{- if $.Values.persistence.drivers.enabled }}
+        - name: drivers
+          persistentVolumeClaim:
+            claimName: {{ include "ispf.fullname" $ }}-drivers
+        {{- else }}
+        - name: drivers
+          emptyDir: {}
+        {{- end }}
+{{- end }}
+{{- end }}

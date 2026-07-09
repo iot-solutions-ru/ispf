@@ -32,7 +32,7 @@ public enum ClusterReplicaRole {
             case UNIFIED -> ALL;
             case EDGE_API, HMI_READ -> API;
             case COMPUTE -> WORKER;
-            case IO -> ALL;
+            case IO, ANALYTICS -> ALL;
         };
     }
 }

@@ -8,14 +8,15 @@ import java.util.Optional;
 
 /**
  * Multi-tier historian deploy profiles: hot (PG/Timescale) → warm (ClickHouse) → cold (S3/parquet) — BL-159.
- * Warm query routing: set {@code ispf.historian.tiers.warm.enabled=true}.
+ * Warm tier routing: enabled automatically for {@code deploy-profile=three-tier} (BL-202),
+ * or set {@code ispf.historian.tiers.warm.enabled=true} explicitly.
  */
 @ConfigurationProperties(prefix = "ispf.historian")
 public class HistorianTierProperties {
 
     /**
      * Named deploy profile selected by ops (documented in {@code docs/en/historian-tiers.md}).
-     * Tier routing enforcement is follow-up work; this block is the configuration contract.
+     * {@code three-tier} enables warm read/write routing via {@link HistorianTierDeployProfileEnvironmentPostProcessor}.
      */
     private String deployProfile = "three-tier";
 

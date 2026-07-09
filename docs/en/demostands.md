@@ -65,11 +65,14 @@ Operators → nginx (ip_hash / health) → replica-1..N
 
 See [cluster.md](cluster.md), [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml), rollout [`vps-cluster-rollout.sh`](../deploy/vps-cluster-rollout.sh).
 
+**Analytics scale-out (Prod L + ClickHouse):** add internal `analytics` replicas so driver `io` nodes stay free of rollup materializer CPU. Lab stack: [`deploy/docker-compose.analytics.yml`](../deploy/docker-compose.analytics.yml). Helm: `analytics.enabled=true`, `analytics.replicaCount`, optional `analytics.affinity` to pin pods near ClickHouse.
+
 | `ISPF_REPLICA_PROFILE` | When |
 |------------------------|------|
 | `unified` / `all` | General-purpose node (small prod) |
 | `io` | Dedicated driver I/O in a cluster |
 | `compute` | Async reports / platform jobs |
+| `analytics` | Rollup materializer, heavy historian backfill ([analytics-platform-roadmap.md](analytics-platform-roadmap.md) BL-207) |
 | `edge-api` | Remote site without local drivers ([federation.md](federation.md)) |
 
 ### Elastic pools and pipeline

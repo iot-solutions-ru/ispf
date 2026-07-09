@@ -2,7 +2,9 @@ package com.ispf.server.platform;
 
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.config.ReplicaCapability;
 import com.ispf.server.driver.DriverOwnershipService;
+import com.ispf.server.platform.analytics.AnalyticsClusterWorkloadService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -15,17 +17,20 @@ public class PlatformClusterHealthService {
     private final NatsProperties natsProperties;
     private final DriverOwnershipService driverOwnershipService;
     private final ClusterReplicaRegistryService replicaRegistryService;
+    private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
 
     public PlatformClusterHealthService(
             ClusterProperties clusterProperties,
             NatsProperties natsProperties,
             DriverOwnershipService driverOwnershipService,
-            ClusterReplicaRegistryService replicaRegistryService
+            ClusterReplicaRegistryService replicaRegistryService,
+            AnalyticsClusterWorkloadService analyticsClusterWorkloadService
     ) {
         this.clusterProperties = clusterProperties;
         this.natsProperties = natsProperties;
         this.driverOwnershipService = driverOwnershipService;
         this.replicaRegistryService = replicaRegistryService;
+        this.analyticsClusterWorkloadService = analyticsClusterWorkloadService;
     }
 
     public ClusterHealth health() {
@@ -52,6 +57,9 @@ public class PlatformClusterHealthService {
                 nodes,
                 upCount,
                 nodes.size(),
+                analyticsClusterWorkloadService.countUpAnalyticsReplicas(),
+                analyticsClusterWorkloadService.isAnalyticsWorkloadActive(),
+                clusterProperties.hasCapability(ReplicaCapability.ANALYTICS),
                 Instant.now()
         );
     }
@@ -75,6 +83,9 @@ public class PlatformClusterHealthService {
             List<ClusterReplicaRegistryService.ClusterNode> nodes,
             int nodesUp,
             int nodesTotal,
+            int analyticsReplicasUp,
+            boolean analyticsWorkloadActive,
+            boolean localAnalyticsCapability,
             Instant timestamp
     ) {
     }

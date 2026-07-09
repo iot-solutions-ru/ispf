@@ -151,6 +151,8 @@ else
 fi
 
 echo "" >> "$REPORT_FILE"
+echo "See also: [deploy/tools/analytics-scale-gate.sh](analytics-scale-gate.sh) (BL-210 multi-tag SLO)." >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
 echo "Report written to $REPORT_FILE"
 cat "$REPORT_FILE"
 

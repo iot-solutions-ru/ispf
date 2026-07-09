@@ -29,6 +29,11 @@ public enum ReplicaProfile {
     COMPUTE("compute", EnumSet.of(
             ReplicaCapability.JOBS,
             ReplicaCapability.REPLICA_SYNC
+    )),
+    ANALYTICS("analytics", EnumSet.of(
+            ReplicaCapability.ANALYTICS,
+            ReplicaCapability.REPLICA_SYNC,
+            ReplicaCapability.SCHEDULERS
     ));
 
     private final String externalName;
@@ -55,6 +60,7 @@ public enum ReplicaProfile {
             case COMPUTE -> "worker";
             case HMI_READ -> "hmi-read";
             case IO -> "io";
+            case ANALYTICS -> "analytics";
         };
     }
 
@@ -68,9 +74,10 @@ public enum ReplicaProfile {
             case "hmi-read" -> HMI_READ;
             case "io", "driver", "drivers" -> IO;
             case "compute", "worker" -> COMPUTE;
+            case "analytics" -> ANALYTICS;
             default -> throw new IllegalArgumentException(
                     "Unknown replica profile: " + raw
-                            + " (expected unified, edge-api, hmi-read, io, compute)");
+                            + " (expected unified, edge-api, hmi-read, io, compute, analytics)");
         };
     }
 }

@@ -45,7 +45,6 @@ ISPF is built around a **hierarchical object tree** with typed variables, events
 | REST API | [api.md](docs/en/api.md) | [api.md](docs/ru/api.md) |
 | Drivers | [drivers.md](docs/en/drivers.md) | [drivers.md](docs/ru/drivers.md) |
 | Roadmap | [roadmap.md](docs/en/roadmap.md) | [roadmap.md](docs/ru/roadmap.md) |
-| Roadmap Phase 25+ | [roadmap-phase-25.md](docs/en/roadmap-phase-25.md) | [roadmap-phase-25.md](docs/ru/roadmap-phase-25.md) |
 | ADR index | [decisions/readme.md](docs/en/decisions/readme.md) | [decisions/readme.md](docs/ru/decisions/readme.md) |
 | Glossary | [glossary.md](docs/en/glossary.md) | [glossary.md](docs/ru/glossary.md) |
 

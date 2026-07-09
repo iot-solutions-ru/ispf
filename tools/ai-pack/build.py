@@ -441,6 +441,8 @@ def build_doc_chunks() -> list[dict]:
         ("observability", "Observability diagnostics probe", "observability", DOCS / "observability.md", 9000),
         ("cluster", "Cluster multi-replica live sync", "cluster", DOCS / "cluster.md", 12000),
         ("load-testing", "Load testing baselines", "loadtest", DOCS / "load-testing.md", 8000),
+        ("analytics-tags", "Analytics tag catalog lineage", "analytics", DOCS / "analytics-tag-catalog.md", 6000),
+        ("analytics-gaps", "AF-capable gaps vs PI-class", "analytics", DOCS / "analytics-platform-gaps.md", 4000),
     ]
     chunks: list[dict] = []
     for chunk_id, title, topic, path, max_chars in slices:

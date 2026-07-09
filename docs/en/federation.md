@@ -438,9 +438,9 @@ Follow [Recovery runbook + SLO (BL-120)](#recovery-runbook--slo-bl-120-s22-05):
 
 - No cross-peer computed bindings on hub (aggregate in hub CUSTOM manually if needed).
 - Dashboard layout writes proxy to **remote** dashboard (BL-46).
-- MoM operator app is read-only for config; agent copilot read-only ([BL-179](roadmap-phase-25.md)).
+- MoM operator app is read-only for config; agent copilot read-only ([BL-179](roadmap.md)).
 
-See also: [operator-guide.md](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml), [roadmap-phase-25.md](roadmap-phase-25.md) BL-188.
+See also: [operator-guide.md](operator-guide.md), [deploy/docker-compose.edge-arm.yml](../deploy/docker-compose.edge-arm.yml), [roadmap.md](roadmap.md) BL-188.
 
 ## Spike / production backlog
 

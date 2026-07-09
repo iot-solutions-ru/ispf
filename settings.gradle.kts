@@ -7,6 +7,7 @@ rootProject.name = "iot-solutions-platform-framework"
 include(
     "packages:ispf-core",
     "packages:ispf-expression",
+    "packages:ispf-analytics-engine",
     "packages:ispf-driver-api",
     "packages:ispf-driver-ddk",
     "packages:ispf-server",
