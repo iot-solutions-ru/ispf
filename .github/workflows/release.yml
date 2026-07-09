@@ -31,7 +31,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           ISPF_VERSION="$VERSION" python tools/ai-pack/build.py
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: npm
