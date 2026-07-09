@@ -74,7 +74,7 @@ Body: JSON array of rules (reactive + historian). Historian rules auto-create th
 
 ## Built-in presets
 
-Static recipes (not object-tree templates). Same ids as `HistorianComputationPresets` on the server and `historianPresets.ts` in the UI.
+Static recipes (not object-tree templates). Ids match `HistorianComputationPresets` on the server (API / cookbook).
 
 | Preset id | Output (default) | Expression template |
 |-----------|------------------|---------------------|

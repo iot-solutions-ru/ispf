@@ -49,7 +49,7 @@
   "bindings.windowBucket": "Окно агрегации",
   "bindings.windowBucketHint": "Окно rollup, напр. 5m, 1h (в выражении без кавычек).",
   "bindings.column.kind": "Тип",
-  "computations.intro": "Реактивные привязки и historian-вычисления — один список правил. Выберите тип при создании или используйте шаблон.",
+  "computations.intro": "Реактивные привязки и historian-вычисления — один список правил. При создании выберите тип вычисления.",
   "computations.rulesTitle": "Правила",
   "computations.rulesHint": "Реактивные — по live-данным; historian — в теги аналитики (rollingAvg, hist.*).",
   "computations.historianStatusTitle": "Статус historian в каталоге",

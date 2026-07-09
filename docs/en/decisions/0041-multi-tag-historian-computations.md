@@ -40,7 +40,7 @@ Expression forms: builtins (`rollingAvg`, `rateOfChange`, `oee`), CEL with `hist
 ### 2. Remove `ANALYTICS_TEMPLATE` tree catalog
 
 - No bootstrap of `root.platform.analytics.*` template objects
-- **Presets** are static (`HistorianComputationPresets`, UI `historianPresets.ts`, cookbook)
+- **Presets** are static server recipes (`HistorianComputationPresets`, cookbook) — not toolbar buttons in the object inspector
 - `/api/v1/platform/analytics/templates/*` deprecated; new work uses binding rules API
 
 ### 3. Per-rule metadata

@@ -122,7 +122,7 @@
   "bindings.activators.remoteVariable": "Remote variable",
   "bindings.computedEmpty": "No computed bindings",
   "bindings.column.variable": "Variable",
-  "computations.intro": "Reactive bindings and historian computations share one rules list. Pick the kind when creating a rule, or use a preset template.",
+  "computations.intro": "Reactive bindings and historian computations share one rules list. Pick the computation kind when creating a rule.",
   "computations.rulesTitle": "Rules",
   "computations.rulesHint": "Reactive rules run on live data; historian rules compile into analytics tags (rollingAvg, hist.*).",
   "computations.historianStatusTitle": "Historian catalog status",

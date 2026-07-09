@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import type { AnalyticsTagCatalogEntryDto } from "../types/analytics";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import BindingRulesPanel from "./BindingRulesPanel";
-import { historianRuleTemplates } from "../data/historianPresets";
 
 interface ObjectComputationsPanelProps {
   path: string;
@@ -47,7 +46,6 @@ export default function ObjectComputationsPanel({
           eventNames={eventNames}
           variableNames={variableNames}
           functionNames={functionNames}
-          ruleTemplates={historianRuleTemplates(path, variableNames)}
           embedded
         />
       </section>
