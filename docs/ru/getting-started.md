@@ -11,6 +11,68 @@
 | Node.js | 20+ |
 | Docker Desktop | Для инфраструктуры (PostgreSQL, NATS, MQTT, Keycloak) |
 
+## Быстрый локальный цикл (dev & QA)
+
+**Не начинайте** с `./gradlew test` или `syncAllDriverPacks`, если не меняете драйверы и не гоняете полную регрессию. Эти пути собирают **все ~58 driver packs** и сериализуют **1000+** тестов — на холодной машине часто **часы** ([issue #65](https://github.com/Michaael/IoT-Solutions-Platform/issues/65)).
+
+### Рекомендуемый первый запуск (< 30 мин с тёплым кэшем)
+
+```bash
+# API (профиль local, только dev driver packs — virtual/mqtt/modbus/http/…)
+./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+
+# UI (hot reload, без production build)
+cd apps/web-console && npm install && npm run dev
+```
+
+`bootRun` и `:packages:ispf-server:test` по умолчанию вызывают **`syncDevDriverPacks`** (8 packs). Полный каталог: `-Dispf.driver.packs=all` → `syncAllDriverPacks`.
+
+### Проверка перед push (как CI pr-fast)
+
+```bash
+# Linux/macOS
+./tools/ci/pr-fast.sh
+
+# Windows
+.\tools\ci\pr-fast.ps1
+```
+
+Эквивалент backend в Gradle:
+
+```bash
+./gradlew :packages:ispf-core:test :packages:ispf-expression:test \
+  :packages:ispf-plugin-blueprint:test :packages:ispf-plugin-workflow:test \
+  :packages:ispf-server:test \
+  -Dispf.test.skipLoad=true -Dispf.driver.packs=dev
+```
+
+Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run build`.
+
+### Точечная проверка (< 2 мин)
+
+Только core/platform — **без driver packs**:
+
+```bash
+./gradlew :packages:ispf-core:test --tests com.ispf.core.model.DataRecordTest
+```
+
+Интеграционный тест сервера:
+
+```bash
+./gradlew :packages:ispf-server:test --tests com.ispf.server.alert.AlertRuleLatchTest \
+  -Dispf.test.skipLoad=true
+```
+
+### Когда нужен полный pipeline
+
+| Цель | Команда |
+|------|---------|
+| Все driver packs (как prod, работа над драйвером) | `./gradlew syncAllDriverPacks` или `-Dispf.driver.packs=all` |
+| Полная backend-регрессия (CI nightly) | `./gradlew :packages:ispf-server:test` (без `skipLoad`) |
+| Всё | `./gradlew build` (медленно — не для ежедневной итерации) |
+
+Опционально: скопируйте [gradle.properties.example](../../gradle.properties.example) для большего числа Gradle workers.
+
 ## 1. Инфраструктура
 
 ```bash
@@ -27,16 +89,19 @@ docker compose up -d
 | Mosquitto | 1883 | MQTT broker |
 | Keycloak | 8180 | OAuth2 (профиль `dev`) |
 
-## 2. Driver packs (обязательно)
+## 2. Driver packs
 
-Драйверы протоколов **не встроены** в `ispf-server.jar`. Перед первым запуском соберите packs:
+Драйверы протоколов **не встроены** в `ispf-server.jar`. Для локальной разработки **`syncDevDriverPacks` вызывается автоматически** перед `bootRun` и тестами сервера (virtual, mqtt, modbus, http, cwmp, flexible, gps-tracker, application).
+
+Ручная синхронизация при необходимости:
 
 ```bash
-./gradlew syncAllDriverPacks
+./gradlew syncDevDriverPacks          # по умолчанию — быстрый local QA
+./gradlew syncAllDriverPacks          # все packs — разработка драйверов / prod deploy
 ```
 
 Каталог по умолчанию: `./data/drivers` (или `ISPF_DRIVER_PACKS_DIR`).  
-`bootRun` и тесты Gradle автоматически используют `build/driver-packs` после `syncAllDriverPacks`.
+Gradle использует `build/driver-packs` после sync.
 
 Скопируйте packs на сервер:
 
@@ -118,11 +183,13 @@ curl -X POST "http://localhost:8080/api/v1/drivers/runtime/start?devicePath=root
 
 ## 6. Тесты
 
+**Избегайте** `./gradlew test` в корне репозитория в ежедневной работе — запускаются все subprojects и полный server test suite.
+
 ```bash
-./gradlew test
+./tools/ci/pr-fast.sh    # рекомендуется перед push (см. § Быстрый локальный цикл)
 ```
 
-Интеграционные тесты сервера используют профиль `test` (H2 in-memory, RBAC отключён).
+Интеграционные тесты сервера используют профиль `test` (H2 in-memory, RBAC отключён). Load/scale gates: без `-Dispf.test.skipLoad=true` (nightly CI).
 
 ## Профили Spring
 

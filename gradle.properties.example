@@ -1,0 +1,8 @@
+# Copy to ~/.gradle/gradle.properties or merge into ./gradle.properties for faster local builds.
+# See docs/en/getting-started.md § Fast local dev & QA (issue #65).
+
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configuration-cache=true
+org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=768m -Dfile.encoding=UTF-8
+org.gradle.workers.max=4

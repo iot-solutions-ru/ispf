@@ -29,8 +29,31 @@ python tools/generate-driver-packs-json.py
 
 ## Tests
 
+**Recommended pre-push** (matches [CI pr-fast](.github/workflows/ci.yml)):
+
 ```powershell
-.\gradlew syncAllDriverPacks :packages:ispf-server:test
+.\tools\ci\pr-fast.ps1
 ```
 
-Tests expect driver packs in `build/driver-packs` (configured automatically).
+Backend only:
+
+```powershell
+.\gradlew :packages:ispf-core:test :packages:ispf-expression:test `
+  :packages:ispf-plugin-blueprint:test :packages:ispf-plugin-workflow:test `
+  :packages:ispf-server:test `
+  -Dispf.test.skipLoad=true -Dispf.driver.packs=dev
+```
+
+Targeted example (no driver packs):
+
+```powershell
+.\gradlew :packages:ispf-core:test --tests com.ispf.core.model.DataRecordTest
+```
+
+Full server regression (all driver packs, load tests):
+
+```powershell
+.\gradlew syncAllDriverPacks :packages:ispf-server:test -Dispf.driver.packs=all
+```
+
+See [docs/en/getting-started.md](docs/en/getting-started.md) § Fast local dev & QA.

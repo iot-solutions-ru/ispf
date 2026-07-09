@@ -76,6 +76,7 @@ jobs:
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
+          -Dispf.driver.packs=dev
 
   web-console:
     needs: changes
@@ -140,6 +141,7 @@ jobs:
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
+          -Dispf.driver.packs=dev
 
   pr-fast-ok:
     needs: [changes, backend, web-console, agent-regression]

@@ -99,9 +99,12 @@ tasks.named<ProcessResources>("processResources") {
 
 val driverPacksDir = rootProject.layout.buildDirectory.dir("driver-packs")
 
+fun driverPackSyncTaskName(): String =
+    if (System.getProperty("ispf.driver.packs") == "all") "syncAllDriverPacks" else "syncDevDriverPacks"
+
 tasks.named<Test>("test") {
     dependsOn(tasks.named("bootBuildInfo"))
-    dependsOn(rootProject.tasks.named("syncAllDriverPacks"))
+    dependsOn(rootProject.tasks.named(driverPackSyncTaskName()))
     val packsPath = driverPacksDir.get().asFile.absolutePath
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
@@ -120,6 +123,6 @@ tasks.named<Test>("test") {
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-    dependsOn(rootProject.tasks.named("syncAllDriverPacks"))
+    dependsOn(rootProject.tasks.named(driverPackSyncTaskName()))
     environment("ISPF_DRIVER_PACKS_DIR", driverPacksDir.get().asFile.absolutePath)
 }

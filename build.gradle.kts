@@ -63,19 +63,55 @@ val driverPackProjects = subprojects.filter {
     it.name.startsWith("ispf-driver-") && it.name != "ispf-driver-api" && it.name != "ispf-driver-ddk"
 }
 
+/** Minimal packs for local bootRun, PR-fast, and most integration tests (issue #65). */
+val devDriverPackProjectNames = listOf(
+    "ispf-driver-virtual",
+    "ispf-driver-mqtt",
+    "ispf-driver-modbus",
+    "ispf-driver-http",
+    "ispf-driver-cwmp",
+    "ispf-driver-flexible",
+    "ispf-driver-gps-tracker",
+    "ispf-driver-application",
+)
+
+val devDriverPackProjects = driverPackProjects.filter { it.name in devDriverPackProjectNames }
+
 tasks.register("assembleAllDriverPacks") {
     group = "driver packs"
     description = "Assemble all ISPF driver pack directories"
     dependsOn(driverPackProjects.map { it.path + ":assembleDriverPack" })
 }
 
+tasks.register("assembleDevDriverPacks") {
+    group = "driver packs"
+    description = "Assemble dev/minimal driver packs (virtual, mqtt, modbus, http, …)"
+    dependsOn(devDriverPackProjects.map { it.path + ":assembleDriverPack" })
+}
+
 tasks.register<Sync>("syncAllDriverPacks") {
     group = "driver packs"
-    description = "Copy assembled driver packs to build/driver-packs"
+    description = "Copy all assembled driver packs to build/driver-packs"
     dependsOn("assembleAllDriverPacks")
     into(layout.buildDirectory.dir("driver-packs"))
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     driverPackProjects.forEach { project ->
+        from(project.layout.buildDirectory.dir("driver-pack")) {
+            include("**/*")
+        }
+    }
+}
+
+tasks.register<Sync>("syncDevDriverPacks") {
+    group = "driver packs"
+    description = "Copy dev/minimal driver packs to build/driver-packs (default for bootRun and tests)"
+    dependsOn("assembleDevDriverPacks")
+    doFirst {
+        delete(layout.buildDirectory.dir("driver-packs"))
+    }
+    into(layout.buildDirectory.dir("driver-packs"))
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    devDriverPackProjects.forEach { project ->
         from(project.layout.buildDirectory.dir("driver-pack")) {
             include("**/*")
         }

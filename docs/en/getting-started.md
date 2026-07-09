@@ -11,6 +11,68 @@
 | Node.js | 20+ |
 | Docker Desktop | For infrastructure (PostgreSQL, NATS, MQTT, Keycloak) |
 
+## Fast local dev & QA
+
+**Do not** start with `./gradlew test` or `syncAllDriverPacks` unless you are changing drivers or running full regression. Those paths build **all ~58 driver packs** and serialize **1000+** tests — often **hours** on a cold machine ([issue #65](https://github.com/Michaael/IoT-Solutions-Platform/issues/65)).
+
+### Recommended first run (< 30 min warm cache)
+
+```bash
+# API (local profile, dev driver packs only — virtual/mqtt/modbus/http/…)
+./gradlew :packages:ispf-server:bootRun --args="--spring.profiles.active=local"
+
+# UI (hot reload, no production build)
+cd apps/web-console && npm install && npm run dev
+```
+
+`bootRun` and `:packages:ispf-server:test` use **`syncDevDriverPacks`** by default (8 packs). Full catalog: `-Dispf.driver.packs=all` → `syncAllDriverPacks`.
+
+### Pre-push check (matches CI pr-fast)
+
+```bash
+# Linux/macOS
+./tools/ci/pr-fast.sh
+
+# Windows
+.\tools\ci\pr-fast.ps1
+```
+
+Equivalent Gradle backend slice:
+
+```bash
+./gradlew :packages:ispf-core:test :packages:ispf-expression:test \
+  :packages:ispf-plugin-blueprint:test :packages:ispf-plugin-workflow:test \
+  :packages:ispf-server:test \
+  -Dispf.test.skipLoad=true -Dispf.driver.packs=dev
+```
+
+Web console slice: `cd apps/web-console && npm test && npm run i18n:check && npm run build`.
+
+### Targeted feedback (< 2 min)
+
+Core/platform change only — **no driver packs**:
+
+```bash
+./gradlew :packages:ispf-core:test --tests com.ispf.core.model.DataRecordTest
+```
+
+Server integration test:
+
+```bash
+./gradlew :packages:ispf-server:test --tests com.ispf.server.alert.AlertRuleLatchTest \
+  -Dispf.test.skipLoad=true
+```
+
+### When you need the full pipeline
+
+| Goal | Command |
+|------|---------|
+| All driver packs (prod parity, driver work) | `./gradlew syncAllDriverPacks` or `-Dispf.driver.packs=all` |
+| Full backend regression (CI nightly) | `./gradlew :packages:ispf-server:test` (no `skipLoad`) |
+| Everything | `./gradlew build` (slow — avoid for daily iteration) |
+
+Optional: copy [gradle.properties.example](../../gradle.properties.example) for more Gradle workers locally.
+
 ## 1. Infrastructure
 
 ```bash
@@ -27,16 +89,19 @@ Services started:
 | Mosquitto | 1883 | MQTT broker |
 | Keycloak | 8180 | OAuth2 (`dev` profile) |
 
-## 2. Driver packs (required)
+## 2. Driver packs
 
-Protocol drivers are **not bundled** in `ispf-server.jar`. Build packs before the first run:
+Protocol drivers are **not bundled** in `ispf-server.jar`. For local dev, **`syncDevDriverPacks` runs automatically** before `bootRun` and server tests (virtual, mqtt, modbus, http, cwmp, flexible, gps-tracker, application).
+
+Manual sync when needed:
 
 ```bash
-./gradlew syncAllDriverPacks
+./gradlew syncDevDriverPacks          # default — fast local QA
+./gradlew syncAllDriverPacks          # all packs — driver development / prod deploy
 ```
 
-Default directory: `./data/drivers` (or `ISPF_DRIVER_PACKS_DIR`).  
-`bootRun` and Gradle tests automatically use `build/driver-packs` after `syncAllDriverPacks`.
+Default runtime directory: `./data/drivers` (or `ISPF_DRIVER_PACKS_DIR`).  
+Gradle uses `build/driver-packs` after sync.
 
 Copy packs to the server:
 
@@ -118,11 +183,13 @@ Temperature is simulated as a sine wave; when the threshold is exceeded, the `al
 
 ## 7. Tests
 
+**Avoid** `./gradlew test` at the repo root for day-to-day work — it runs every subproject and pulls the full server test suite.
+
 ```bash
-./gradlew test
+./tools/ci/pr-fast.sh    # recommended pre-push (see § Fast local dev & QA)
 ```
 
-Server integration tests use the `test` profile (H2 in-memory, RBAC disabled).
+Server integration tests use the `test` profile (H2 in-memory, RBAC disabled). Load/scale gates: omit `-Dispf.test.skipLoad=true` (nightly CI).
 
 ## Spring profiles
 
