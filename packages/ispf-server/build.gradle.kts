@@ -99,12 +99,12 @@ tasks.named<ProcessResources>("processResources") {
 
 val driverPacksDir = rootProject.layout.buildDirectory.dir("driver-packs")
 
-fun driverPackSyncTaskName(): String =
-    if (System.getProperty("ispf.driver.packs") == "all") "syncAllDriverPacks" else "syncDevDriverPacks"
+fun driverPackEnsureTaskName(): String =
+    if (System.getProperty("ispf.driver.packs") == "all") "ensureAllDriverPacks" else "ensureDevDriverPacks"
 
 tasks.named<Test>("test") {
     dependsOn(tasks.named("bootBuildInfo"))
-    dependsOn(rootProject.tasks.named(driverPackSyncTaskName()))
+    dependsOn(rootProject.tasks.named(driverPackEnsureTaskName()))
     val packsPath = driverPacksDir.get().asFile.absolutePath
     environment("ISPF_DRIVER_PACKS_DIR", packsPath)
     systemProperty("ISPF_DRIVER_PACKS_DIR", packsPath)
@@ -119,10 +119,13 @@ tasks.named<Test>("test") {
         if (System.getProperty("ispf.test.skipLoad") == "true") {
             excludeTags("load")
         }
+        if (System.getProperty("ispf.test.skipFederation") == "true") {
+            excludeTags("federation")
+        }
     }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-    dependsOn(rootProject.tasks.named(driverPackSyncTaskName()))
+    dependsOn(rootProject.tasks.named(driverPackEnsureTaskName()))
     environment("ISPF_DRIVER_PACKS_DIR", driverPacksDir.get().asFile.absolutePath)
 }

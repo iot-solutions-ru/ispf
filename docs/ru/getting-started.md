@@ -40,10 +40,8 @@ cd apps/web-console && npm install && npm run dev
 Эквивалент backend в Gradle:
 
 ```bash
-./gradlew :packages:ispf-core:test :packages:ispf-expression:test \
-  :packages:ispf-plugin-blueprint:test :packages:ispf-plugin-workflow:test \
-  :packages:ispf-server:test \
-  -Dispf.test.skipLoad=true -Dispf.driver.packs=dev
+./gradlew testPrFast \
+  -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
 ```
 
 Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run build`.
@@ -68,8 +66,12 @@ Web console: `cd apps/web-console && npm test && npm run i18n:check && npm run b
 | Цель | Команда |
 |------|---------|
 | Все driver packs (как prod, работа над драйвером) | `./gradlew syncAllDriverPacks` или `-Dispf.driver.packs=all` |
+| PR-fast backend tier (Gradle task) | `./gradlew testPrFast -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev` |
+| Nightly backend tier (load + federation отдельно) | `./tools/ci/nightly.sh` или `./gradlew testNightlyBackend -Dispf.test.skipLoad=true -Dispf.driver.packs=dev` |
 | Полная backend-регрессия (CI nightly) | `./gradlew :packages:ispf-server:test` (без `skipLoad`) |
 | Всё | `./gradlew build` (медленно — не для ежедневной итерации) |
+
+**Уровни тестов (issue #65):** PR-fast пропускает `@Tag("load")` и `@Tag("federation")`; nightly гоняет их явно (`tools/ci/nightly.sh`, [ci-nightly.yml](../../.github/workflows/ci-nightly.yml)). Тесты подпроектов локально **параллельны** (глобальный `mustRunAfter` снят); сериализация по желанию: `-Dispf.test.serializeSubprojects=true`. CI кэширует `build/driver-packs` (`ISPF_DRIVER_PACKS_PREBUILT=true` при cache hit).
 
 Опционально: скопируйте [gradle.properties.example](../../gradle.properties.example) для большего числа Gradle workers.
 

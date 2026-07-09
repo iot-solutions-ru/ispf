@@ -38,10 +38,14 @@ python tools/generate-driver-packs-json.py
 Backend only:
 
 ```powershell
-.\gradlew :packages:ispf-core:test :packages:ispf-expression:test `
-  :packages:ispf-plugin-blueprint:test :packages:ispf-plugin-workflow:test `
-  :packages:ispf-server:test `
-  -Dispf.test.skipLoad=true -Dispf.driver.packs=dev
+.\gradlew testPrFast `
+  -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev
+```
+
+Nightly backend slice (load + federation gates):
+
+```powershell
+.\tools\ci\nightly.ps1
 ```
 
 Targeted example (no driver packs):

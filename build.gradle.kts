@@ -50,7 +50,11 @@ subprojects {
     }
 }
 
+// Cross-subproject test serialization removed (issue #65 long-term). Server tests use forkEvery=1
+// in CI; @Isolated / @Tag("federation") gate slow suites. Opt-in for local flake hunts:
+// -Dispf.test.serializeSubprojects=true
 gradle.projectsEvaluated {
+    if (System.getProperty("ispf.test.serializeSubprojects") != "true") return@projectsEvaluated
     val testTasks = subprojects
         .flatMap { project -> project.tasks.withType<Test>().toList() }
         .sortedBy { it.path }
@@ -107,7 +111,9 @@ tasks.register<Sync>("syncDevDriverPacks") {
     description = "Copy dev/minimal driver packs to build/driver-packs (default for bootRun and tests)"
     dependsOn("assembleDevDriverPacks")
     doFirst {
-        delete(layout.buildDirectory.dir("driver-packs"))
+        if (!driverPacksPrebuilt()) {
+            delete(layout.buildDirectory.dir("driver-packs"))
+        }
     }
     into(layout.buildDirectory.dir("driver-packs"))
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -116,4 +122,44 @@ tasks.register<Sync>("syncDevDriverPacks") {
             include("**/*")
         }
     }
+}
+
+fun driverPacksPrebuilt(): Boolean {
+    if (System.getenv("ISPF_DRIVER_PACKS_PREBUILT") != "true") return false
+    val dir = layout.buildDirectory.dir("driver-packs").get().asFile
+    return dir.isDirectory && dir.list()?.isNotEmpty() == true
+}
+
+tasks.register("ensureDevDriverPacks") {
+    group = "driver packs"
+    description = "Sync dev packs unless ISPF_DRIVER_PACKS_PREBUILT=true and build/driver-packs exists (CI cache)"
+    onlyIf { !driverPacksPrebuilt() }
+    dependsOn("syncDevDriverPacks")
+}
+
+tasks.register("ensureAllDriverPacks") {
+    group = "driver packs"
+    description = "Sync all packs unless ISPF_DRIVER_PACKS_PREBUILT=true and build/driver-packs exists (CI cache)"
+    onlyIf { !driverPacksPrebuilt() }
+    dependsOn("syncAllDriverPacks")
+}
+
+val prFastBackendTestTasks = listOf(
+    ":packages:ispf-core:test",
+    ":packages:ispf-expression:test",
+    ":packages:ispf-plugin-blueprint:test",
+    ":packages:ispf-plugin-workflow:test",
+    ":packages:ispf-server:test",
+)
+
+tasks.register("testPrFast") {
+    group = "verification"
+    description = "PR-fast backend slice — add -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev"
+    dependsOn(prFastBackendTestTasks)
+}
+
+tasks.register("testNightlyBackend") {
+    group = "verification"
+    description = "Nightly backend module batch — add -Dispf.test.skipLoad=true -Dispf.driver.packs=dev (federation + load run separately)"
+    dependsOn(prFastBackendTestTasks)
 }

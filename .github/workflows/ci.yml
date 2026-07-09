@@ -65,18 +65,33 @@ jobs:
           java-version: "25"
           cache: gradle
 
+      - name: Restore dev driver packs
+        uses: actions/cache/restore@v4
+        id: driver-packs-cache
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
+          restore-keys: |
+            driver-packs-dev-
+
       - name: Test core platform modules (skip load)
+        env:
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: >
           ./gradlew
-          :packages:ispf-core:test
-          :packages:ispf-expression:test
-          :packages:ispf-plugin-blueprint:test
-          :packages:ispf-plugin-workflow:test
-          :packages:ispf-server:test
+          testPrFast
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
+          -Dispf.test.skipFederation=true
           -Dispf.driver.packs=dev
+
+      - name: Save dev driver packs
+        if: steps.driver-packs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
   web-console:
     needs: changes
@@ -133,7 +148,18 @@ jobs:
           java-version: "25"
           cache: gradle
 
+      - name: Restore dev driver packs
+        uses: actions/cache/restore@v4
+        id: driver-packs-cache
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
+          restore-keys: |
+            driver-packs-dev-
+
       - name: AgentRegressionCiTest (Java schema gate)
+        env:
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: >
           ./gradlew
           :packages:ispf-server:test
@@ -141,7 +167,15 @@ jobs:
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
+          -Dispf.test.skipFederation=true
           -Dispf.driver.packs=dev
+
+      - name: Save dev driver packs
+        if: steps.driver-packs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
   pr-fast-ok:
     needs: [changes, backend, web-console, agent-regression]

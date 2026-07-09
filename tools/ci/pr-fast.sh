@@ -4,16 +4,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-echo "==> Backend (pr-fast modules, skip load, dev driver packs)"
-./gradlew \
-  :packages:ispf-core:test \
-  :packages:ispf-expression:test \
-  :packages:ispf-plugin-blueprint:test \
-  :packages:ispf-plugin-workflow:test \
-  :packages:ispf-server:test \
+echo "==> Backend (pr-fast modules, skip load/federation, dev driver packs)"
+./gradlew testPrFast \
   --no-daemon \
   -Dorg.gradle.workers.max=1 \
   -Dispf.test.skipLoad=true \
+  -Dispf.test.skipFederation=true \
   -Dispf.driver.packs=dev
 
 echo "==> Web console (unit, i18n, build)"
@@ -32,6 +28,7 @@ echo "==> Agent regression schema gate"
   --no-daemon \
   -Dorg.gradle.workers.max=1 \
   -Dispf.test.skipLoad=true \
+  -Dispf.test.skipFederation=true \
   -Dispf.driver.packs=dev
 
 echo "pr-fast OK"

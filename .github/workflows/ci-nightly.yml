@@ -37,21 +37,37 @@ jobs:
           java-version: "25"
           cache: gradle
 
+      - name: Restore dev driver packs
+        uses: actions/cache/restore@v4
+        id: driver-packs-cache
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
+          restore-keys: |
+            driver-packs-dev-
+
       - name: Test core platform modules
+        env:
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: >
           ./gradlew
-          :packages:ispf-core:test
-          :packages:ispf-expression:test
-          :packages:ispf-plugin-blueprint:test
-          :packages:ispf-plugin-workflow:test
-          :packages:ispf-server:test
+          testNightlyBackend
           --no-daemon
           -Dorg.gradle.workers.max=1
           -Dispf.test.skipLoad=true
+          -Dispf.driver.packs=dev
+
+      - name: Save dev driver packs
+        if: steps.driver-packs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: build/driver-packs
+          key: driver-packs-dev-${{ hashFiles('gradle/driver-packs.json', 'build.gradle.kts', 'buildSrc/**', 'packages/ispf-driver-virtual/**', 'packages/ispf-driver-mqtt/**', 'packages/ispf-driver-modbus/**', 'packages/ispf-driver-http/**', 'packages/ispf-driver-cwmp/**', 'packages/ispf-driver-flexible/**', 'packages/ispf-driver-gps-tracker/**', 'packages/ispf-driver-application/**') }}
 
       - name: Scale gate — list_devices p99
         env:
           ISPF_LOAD_P99_CEILING_MS: 5000
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: |
           set -o pipefail
           ./gradlew \
@@ -61,9 +77,10 @@ jobs:
             -Dorg.gradle.workers.max=1 \
             2>&1 | tee nightly-list-devices.log
 
-      - name: Scale gate — events fire/list p99
+      - name: Scale gate — events/fire/list p99
         env:
           ISPF_LOAD_P99_CEILING_MS: 5000
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: |
           set -o pipefail
           ./gradlew \
@@ -76,6 +93,7 @@ jobs:
       - name: Federation integration gate (S27)
         env:
           CI: true
+          ISPF_DRIVER_PACKS_PREBUILT: ${{ steps.driver-packs-cache.outputs.cache-hit }}
         run: |
           set -o pipefail
           ./gradlew \

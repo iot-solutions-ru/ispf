@@ -3,16 +3,12 @@ $ErrorActionPreference = "Stop"
 $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Set-Location $Root
 
-Write-Host "==> Backend (pr-fast modules, skip load, dev driver packs)"
-& .\gradlew `
-  :packages:ispf-core:test `
-  :packages:ispf-expression:test `
-  :packages:ispf-plugin-blueprint:test `
-  :packages:ispf-plugin-workflow:test `
-  :packages:ispf-server:test `
+Write-Host "==> Backend (pr-fast modules, skip load/federation, dev driver packs)"
+& .\gradlew testPrFast `
   --no-daemon `
   -Dorg.gradle.workers.max=1 `
   -Dispf.test.skipLoad=true `
+  -Dispf.test.skipFederation=true `
   -Dispf.driver.packs=dev
 
 Write-Host "==> Web console (unit, i18n, build)"
@@ -30,6 +26,7 @@ Write-Host "==> Agent regression schema gate"
   --no-daemon `
   -Dorg.gradle.workers.max=1 `
   -Dispf.test.skipLoad=true `
+  -Dispf.test.skipFederation=true `
   -Dispf.driver.packs=dev
 
 Write-Host "pr-fast OK"
