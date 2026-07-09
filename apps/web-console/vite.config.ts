@@ -99,23 +99,37 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-query": ["@tanstack/react-query"],
-          "vendor-charts": ["recharts"],
-          "vendor-map": ["maplibre-gl", "react-map-gl/maplibre"],
+        advancedChunks: {
+          groups: [
+            { name: "vendor-react", test: /\/node_modules\/(react|react-dom|react-router-dom)\// },
+            { name: "vendor-query", test: /\/node_modules\/@tanstack\/react-query\// },
+            { name: "vendor-charts", test: /\/node_modules\/recharts\// },
+            { name: "vendor-map", test: /\/node_modules\/(maplibre-gl|react-map-gl)\// },
+          ],
         },
       },
     },
   },
   test: {
-    environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-    environmentMatchGlobs: [
-      ["src/components/**/*.test.tsx", "jsdom"],
-      ["src/hooks/**/*.test.tsx", "jsdom"],
-    ],
     setupFiles: ["src/test/setup.ts"],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "node",
+          environment: "node",
+          include: ["src/**/*.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "jsdom",
+          environment: "jsdom",
+          include: ["src/**/*.test.tsx"],
+        },
+      },
+    ],
   },
   server: {
     port: 5173,

@@ -47,7 +47,7 @@ dependencies {
     // YARG XlsxFormatter uses docx4j; JDK 11+ removed internal JAXB — required for .xlsx templates
     implementation("javax.xml.bind:jaxb-api:2.3.1")
     implementation("org.glassfish.jaxb:jaxb-runtime:2.3.9")
-    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:8.3.11")
+    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:17.0.0")
 
     implementation("org.apache.parquet:parquet-avro:1.14.3") {
         exclude(group = "org.slf4j", module = "slf4j-reload4j")
@@ -81,6 +81,7 @@ dependencies {
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     archiveBaseName.set("ispf-server")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(rootProject.file("LICENSE")) { into("META-INF") }
     from(rootProject.file("NOTICE")) { into("META-INF") }
 }
