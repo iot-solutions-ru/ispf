@@ -116,6 +116,7 @@ public class PlatformUserService {
             response.put("autoStartApp", user.autoStartApp());
         }
         tenantStore.findTenantIdForUser(user.username()).ifPresent(tenantId -> response.put("tenantId", tenantId));
+        response.put("timeZone", PlatformTimeZones.normalizeOrDefault(user.timeZone()));
         return response;
     }
 

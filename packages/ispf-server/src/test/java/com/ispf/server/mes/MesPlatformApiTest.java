@@ -60,7 +60,7 @@ class MesPlatformApiTest {
                 .andExpect(jsonPath("$[?(@.id=='ethernet-ip')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='corba')].maturity").value("BETA"))
                 .andExpect(jsonPath("$[?(@.id=='opc-da')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("BETA"))
+                .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("PRODUCTION"))
                 .andExpect(jsonPath("$[?(@.id=='dlms')].maturity").value("PRODUCTION"));
     }
 

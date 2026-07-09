@@ -47,8 +47,11 @@ ispf:
       check-enabled: false
       apply-enabled: false
   license:
-    data-dir: ${java.io.tmpdir}/ispf-test-license
+    data-dir: ${java.io.tmpdir}/ispf-test-${random.uuid}
     enforce: false
+  agent:
+    store-forward:
+      persist-to-disk: false
   driver:
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:../../build/driver-packs}
 

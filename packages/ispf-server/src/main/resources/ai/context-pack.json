@@ -1,6 +1,6 @@
 {
   "contextPackVersion": "ispf-0.9.3",
-  "generatedAt": "2026-07-09T08:01:14.516456+00:00",
+  "generatedAt": "2026-07-09T09:04:15.916860+00:00",
   "platformVersion": "0.9.3",
   "bundleManifest": {
     "fields": [
@@ -336,28 +336,358 @@
   ],
   "driverCatalog": [
     {
-      "driverId": "virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp",
-      "module": "PRODUCTION",
-      "description": "see interop lab",
-      "keywords": "virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp see interop lab"
+      "driverId": "virtual",
+      "module": "ispf-driver-virtual",
+      "description": "Simulator",
+      "keywords": "virtual Simulator"
     },
     {
-      "driverId": "opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible",
-      "module": "PRODUCTION",
-      "description": "see interop lab",
-      "keywords": "opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible see interop lab"
+      "driverId": "mqtt",
+      "module": "ispf-driver-mqtt",
+      "description": "MQTT subscribe",
+      "keywords": "mqtt MQTT subscribe"
     },
     {
-      "driverId": "iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker",
-      "module": "PRODUCTION",
-      "description": "see interop lab",
-      "keywords": "iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker see interop lab"
+      "driverId": "modbus-tcp",
+      "module": "ispf-driver-modbus",
+      "description": "Modbus TCP",
+      "keywords": "modbus-tcp Modbus TCP"
+    },
+    {
+      "driverId": "modbus-rtu",
+      "module": "ispf-driver-modbus-rtu",
+      "description": "Modbus RTU serial",
+      "keywords": "modbus-rtu Modbus RTU serial"
+    },
+    {
+      "driverId": "modbus-udp",
+      "module": "ispf-driver-modbus-udp",
+      "description": "Modbus UDP",
+      "keywords": "modbus-udp Modbus UDP"
+    },
+    {
+      "driverId": "snmp",
+      "module": "ispf-driver-snmp",
+      "description": "SNMP v1/v2c/v3",
+      "keywords": "snmp SNMP v1/v2c/v3"
+    },
+    {
+      "driverId": "http",
+      "module": "ispf-driver-http",
+      "description": "HTTP/HTTPS client",
+      "keywords": "http HTTP/HTTPS client"
+    },
+    {
+      "driverId": "haystack",
+      "module": "ispf-driver-haystack",
+      "description": "Project Haystack HTTP JSON client",
+      "keywords": "haystack Project Haystack HTTP JSON client"
+    },
+    {
+      "driverId": "http-server",
+      "module": "ispf-driver-http-server",
+      "description": "Embedded HTTP server",
+      "keywords": "http-server Embedded HTTP server"
+    },
+    {
+      "driverId": "icmp",
+      "module": "ispf-driver-icmp",
+      "description": "Ping",
+      "keywords": "icmp Ping"
+    },
+    {
+      "driverId": "ssh",
+      "module": "ispf-driver-ssh",
+      "description": "SSH command",
+      "keywords": "ssh SSH command"
+    },
+    {
+      "driverId": "coap",
+      "module": "ispf-driver-coap",
+      "description": "CoAP GET",
+      "keywords": "coap CoAP GET"
+    },
+    {
+      "driverId": "opcua",
+      "module": "ispf-driver-opcua",
+      "description": "OPC UA client (Milo)",
+      "keywords": "opcua OPC UA client (Milo)"
+    },
+    {
+      "driverId": "opcua-server",
+      "module": "ispf-driver-opcua-server",
+      "description": "OPC UA server (Milo)",
+      "keywords": "opcua-server OPC UA server (Milo)"
+    },
+    {
+      "driverId": "opc-da",
+      "module": "ispf-driver-opc-da",
+      "description": "OPC DA (DCOM/native bridge)",
+      "keywords": "opc-da OPC DA (DCOM/native bridge)"
+    },
+    {
+      "driverId": "opc-bridge",
+      "module": "ispf-driver-opc-bridge",
+      "description": "OPC/LON bridge TCP",
+      "keywords": "opc-bridge OPC/LON bridge TCP"
+    },
+    {
+      "driverId": "s7",
+      "module": "ispf-driver-s7",
+      "description": "Siemens S7",
+      "keywords": "s7 Siemens S7"
+    },
+    {
+      "driverId": "iec104",
+      "module": "ispf-driver-iec104",
+      "description": "IEC 104 client",
+      "keywords": "iec104 IEC 104 client"
     },
     {
       "driverId": "iec104-server",
-      "module": "BETA",
-      "description": "interop partner for `iec104`",
-      "keywords": "iec104-server interop partner for `iec104`"
+      "module": "ispf-driver-iec104-server",
+      "description": "IEC 104 server/slave",
+      "keywords": "iec104-server IEC 104 server/slave"
+    },
+    {
+      "driverId": "bacnet",
+      "module": "ispf-driver-bacnet",
+      "description": "BACnet/IP",
+      "keywords": "bacnet BACnet/IP"
+    },
+    {
+      "driverId": "dnp3",
+      "module": "ispf-driver-dnp3",
+      "description": "DNP3 TCP master (Class 0/1/2/3 poll)",
+      "keywords": "dnp3 DNP3 TCP master (Class 0/1/2/3 poll)"
+    },
+    {
+      "driverId": "ethernet-ip",
+      "module": "ispf-driver-ethernet-ip",
+      "description": "EtherNet/IP CIP session + tag path",
+      "keywords": "ethernet-ip EtherNet/IP CIP session + tag path"
+    },
+    {
+      "driverId": "dlms",
+      "module": "ispf-driver-dlms",
+      "description": "DLMS/COSEM master (Gurux read/write)",
+      "keywords": "dlms DLMS/COSEM master (Gurux read/write)"
+    },
+    {
+      "driverId": "jmx",
+      "module": "ispf-driver-jmx",
+      "description": "JMX local/remote",
+      "keywords": "jmx JMX local/remote"
+    },
+    {
+      "driverId": "jdbc",
+      "module": "ispf-driver-jdbc",
+      "description": "SQL JDBC",
+      "keywords": "jdbc SQL JDBC"
+    },
+    {
+      "driverId": "odbc",
+      "module": "ispf-driver-odbc",
+      "description": "ODBC via JDBC bridge JAR",
+      "keywords": "odbc ODBC via JDBC bridge JAR"
+    },
+    {
+      "driverId": "file",
+      "module": "ispf-driver-file",
+      "description": "File metadata/content",
+      "keywords": "file File metadata/content"
+    },
+    {
+      "driverId": "folder",
+      "module": "ispf-driver-folder",
+      "description": "Directory listing",
+      "keywords": "folder Directory listing"
+    },
+    {
+      "driverId": "application",
+      "module": "ispf-driver-application",
+      "description": "Shell/script",
+      "keywords": "application Shell/script"
+    },
+    {
+      "driverId": "message-stream",
+      "module": "ispf-driver-message-stream",
+      "description": "TCP/UDP stream",
+      "keywords": "message-stream TCP/UDP stream"
+    },
+    {
+      "driverId": "nmea",
+      "module": "ispf-driver-nmea",
+      "description": "NMEA 0183",
+      "keywords": "nmea NMEA 0183"
+    },
+    {
+      "driverId": "telnet",
+      "module": "ispf-driver-telnet",
+      "description": "Telnet",
+      "keywords": "telnet Telnet"
+    },
+    {
+      "driverId": "soap",
+      "module": "ispf-driver-soap",
+      "description": "SOAP",
+      "keywords": "soap SOAP"
+    },
+    {
+      "driverId": "ip-host",
+      "module": "ispf-driver-ip-host",
+      "description": "PING, HTTP, TCP, DNS, SMTP, FTP",
+      "keywords": "ip-host PING, HTTP, TCP, DNS, SMTP, FTP"
+    },
+    {
+      "driverId": "ldap",
+      "module": "ispf-driver-ldap",
+      "description": "LDAP search",
+      "keywords": "ldap LDAP search"
+    },
+    {
+      "driverId": "dhcp",
+      "module": "ispf-driver-dhcp",
+      "description": "DHCP discover",
+      "keywords": "dhcp DHCP discover"
+    },
+    {
+      "driverId": "imap",
+      "module": "ispf-driver-imap",
+      "description": "IMAP mailbox",
+      "keywords": "imap IMAP mailbox"
+    },
+    {
+      "driverId": "pop3",
+      "module": "ispf-driver-pop3",
+      "description": "POP3 mailbox",
+      "keywords": "pop3 POP3 mailbox"
+    },
+    {
+      "driverId": "radius",
+      "module": "ispf-driver-radius",
+      "description": "RADIUS auth check",
+      "keywords": "radius RADIUS auth check"
+    },
+    {
+      "driverId": "ipmi",
+      "module": "ispf-driver-ipmi",
+      "description": "IPMI LAN",
+      "keywords": "ipmi IPMI LAN"
+    },
+    {
+      "driverId": "wmi",
+      "module": "ispf-driver-wmi",
+      "description": "WMI (PowerShell, Windows)",
+      "keywords": "wmi WMI (PowerShell, Windows)"
+    },
+    {
+      "driverId": "kafka",
+      "module": "ispf-driver-kafka",
+      "description": "Kafka",
+      "keywords": "kafka Kafka"
+    },
+    {
+      "driverId": "jms",
+      "module": "ispf-driver-jms",
+      "description": "JMS (ActiveMQ)",
+      "keywords": "jms JMS (ActiveMQ)"
+    },
+    {
+      "driverId": "cwmp",
+      "module": "ispf-driver-cwmp",
+      "description": "TR-069 Inform client",
+      "keywords": "cwmp TR-069 Inform client"
+    },
+    {
+      "driverId": "web-transaction",
+      "module": "ispf-driver-web-transaction",
+      "description": "Multi-step HTTP",
+      "keywords": "web-transaction Multi-step HTTP"
+    },
+    {
+      "driverId": "graph-db",
+      "module": "ispf-driver-graph-db",
+      "description": "Neo4j / Gremlin",
+      "keywords": "graph-db Neo4j / Gremlin"
+    },
+    {
+      "driverId": "vmware",
+      "module": "ispf-driver-vmware",
+      "description": "vSphere SOAP stub",
+      "keywords": "vmware vSphere SOAP stub"
+    },
+    {
+      "driverId": "smi-s",
+      "module": "ispf-driver-smis",
+      "description": "SMI-S CIM-XML stub",
+      "keywords": "smi-s SMI-S CIM-XML stub"
+    },
+    {
+      "driverId": "gps-tracker",
+      "module": "ispf-driver-gps-tracker",
+      "description": "GPS/M2M TCP server",
+      "keywords": "gps-tracker GPS/M2M TCP server"
+    },
+    {
+      "driverId": "flexible",
+      "module": "ispf-driver-flexible",
+      "description": "Flexible TCP/UDP",
+      "keywords": "flexible Flexible TCP/UDP"
+    },
+    {
+      "driverId": "mbus",
+      "module": "ispf-driver-mbus",
+      "description": "M-Bus",
+      "keywords": "mbus M-Bus"
+    },
+    {
+      "driverId": "modem-at",
+      "module": "ispf-driver-modem-at",
+      "description": "GSM AT commands",
+      "keywords": "modem-at GSM AT commands"
+    },
+    {
+      "driverId": "omron-fins",
+      "module": "ispf-driver-omron-fins",
+      "description": "Omron FINS",
+      "keywords": "omron-fins Omron FINS"
+    },
+    {
+      "driverId": "asterisk",
+      "module": "ispf-driver-asterisk",
+      "description": "Asterisk AMI",
+      "keywords": "asterisk Asterisk AMI"
+    },
+    {
+      "driverId": "sip",
+      "module": "ispf-driver-sip",
+      "description": "SIP OPTIONS/REGISTER",
+      "keywords": "sip SIP OPTIONS/REGISTER"
+    },
+    {
+      "driverId": "xmpp",
+      "module": "ispf-driver-xmpp",
+      "description": "XMPP (Smack)",
+      "keywords": "xmpp XMPP (Smack)"
+    },
+    {
+      "driverId": "smpp",
+      "module": "ispf-driver-smpp",
+      "description": "SMPP",
+      "keywords": "smpp SMPP"
+    },
+    {
+      "driverId": "smb",
+      "module": "ispf-driver-smb",
+      "description": "SMB/CIFS",
+      "keywords": "smb SMB/CIFS"
+    },
+    {
+      "driverId": "corba",
+      "module": "ispf-driver-corba",
+      "description": "CORBA IIOP TCP stub",
+      "keywords": "corba CORBA IIOP TCP stub"
     }
   ],
   "exampleSummaries": [
@@ -588,7 +918,7 @@
       "title": "Automation correlators",
       "topic": "automation",
       "keywords": "automation Automation correlators automation",
-      "text": "> **Language:** Canonical English. Russian edition: [ru/automation.md](../ru/automation.md).\n\n# Automation: events, alerts, correlators\n\n## Events\n\n### Descriptor\n\nAn object defines an `EventDescriptor`: name, payload schema, level.\n\nLevels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Publishing\n\n**API (manual fire, integrations):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nShared hot path after descriptor validation:\n\n1. Write to `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) or ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Listeners: correlators, UI.\n\n### Journal\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nWithout `objectPath` — global journal (up to 200 entries).\n\n### Demo\n\n`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Storage in the object tree\n\nAlert rules and event correlators are **tree nodes** under `root.platform`, like dashboards and workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Entity | Node type | Model | Folder |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nConfiguration is stored on the object request (`objectPath`, `watchVariable`, `conditionExpr`, …). `AutomationTreeService` reads and writes nodes; on startup `AutomationBootstrap` migrates legacy rows from `alert_rules` / `event_correlators` tables (if present) and creates demo rules.\n\nUI: **Explorer** → select a node in `alert-rules` or `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Create via tree context menu or `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert rules\n\nCEL rule on variable change. When the condition is true — fire events.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `objectPath` | Object |\n| `watchVariable` | Variable name |\n| `conditionExpr` | CEL (context: variable fields) |\n| `eventName` | Event name to fire |\n| `payloadVariable` | Variable for payload (optional) |\n| `enabled` | On/off |\n| `edgeTrigger` | Only on false→true edge |\n| `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (optional, relay required) |\n\nWhen events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).\n\n### Example\n\nObject: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive[\"value\"] == true`, event: `thresholdExceeded`.\n\n`AlertRuleListener` reacts to `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Roles |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event correlators\n\nAggregate multiple events → action (start workflow).\n\n### Patterns (`CorrelatorPatternType`)\n\n| Type | Description |\n|-----|----------|\n| `COUNT` | N events of `eventName` within `windowSeconds` |\n| `SEQUENCE` | Event A, then B on the same object |\n| `WINDOW` | Set of events (A + list in `secondEventName`) — each at least once within `windowSeconds` |\n\n### WINDOW (BL-171)\n\n**Unordered window** pattern: all listed events must occur on one object within `windowSeconds`; order does not matter.\n\n| Field | Role for WINDOW |\n|------|-----------------|\n| `eventName` | First required event |\n| `secondEventName` | Additional events comma-separated (e.g. `workOrderReleased,workOrderStarted`) |\n| `windowSeconds` | Sliding window width (> 0) |\n| `minOccurrences` | Not used (leave 1) |\n\nExample: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` within 120 s on `mes-platform-hub` → `RUN_WORKFLOW`.\n\n`EventCorrelatorService.processWindowPattern` records each hit in the window store and fires when the set of unique events matches the required set.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `name` | Name |\n| `patternTy"
+      "text": "> **Language:** Canonical English. Russian edition: [ru/automation.md](../ru/automation.md).\n\n# Automation: events, alerts, correlators\n\n## Events\n\n### Descriptor\n\nAn object defines an `EventDescriptor`: name, payload schema, level.\n\nLevels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Publishing\n\n**API (manual fire, integrations):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nShared hot path after descriptor validation:\n\n1. Write to `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) or ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Listeners: correlators, UI.\n\n### Journal\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nWithout `objectPath` — global journal (up to 200 entries).\n\n### Demo\n\n`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Storage in the object tree\n\nAlert rules and event correlators are **tree nodes** under `root.platform`, like dashboards and workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Entity | Node type | Model | Folder |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nConfiguration is stored on the object request (`objectPath`, `watchVariable`, `conditionExpr`, …). `AutomationTreeService` reads and writes nodes; on startup `AutomationBootstrap` migrates legacy rows from `alert_rules` / `event_correlators` tables (if present) and creates demo rules.\n\nUI: **Explorer** → select a node in `alert-rules` or `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Create via tree context menu or `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert rules\n\nCEL rule on variable change. When the condition is true — fire events.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `objectPath` | Object |\n| `watchVariable` | Variable name |\n| `conditionExpr` | CEL (context: variable fields) |\n| `eventName` | Event name to fire |\n| `payloadVariable` | Variable for payload (optional) |\n| `enabled` | On/off |\n| `edgeTrigger` | Only on false→true edge |\n| `delaySeconds` | Seconds condition must stay true before activate (0 = immediate) |\n| `sustainWhileTrue` | Re-fire while condition stays true (subject to `rateLimitSeconds`) |\n| `rateLimitSeconds` | Minimum interval between repeated fires when sustaining |\n| `priority` | `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |\n| `ackRequired` | Operator acknowledgement metadata |\n| `deactivateExpr` | CEL clear condition (optional; empty = clear when `conditionExpr` is false) |\n| `deactivateDelaySeconds` | Seconds `deactivateExpr` must stay true before clear (0 = immediate) |\n| `clearEventName` | Event fired on deactivate (optional; e.g. `thresholdCleared`) |\n| `pollIntervalMs` | Periodic re-evaluation interval (0 = only on `watchVariable` change) |\n| `triggerMessage` | Static or CEL message stored on the event payload when raised |\n| `latchedActive` | Runtime: rule is in latched active state (read-only in inspector) |\n| `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (optional, relay required) |\n\n**Latch mode** activates when any of `deactivateExpr`, `clearEventName`, or `deactivateDelaySeconds > 0` is set. In latch mode the rule stays active after the activate condition fires until the deactivate path completes (with optional delay), then fires `clearEventName` if set.\n\nWhen events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).\n\n### Example (simple edge)\n\nObject: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive[\"value\"] == true`, event: `thresholdExceeded`.\n\n### Example (temperature latch, ADR-0039 phase B)\n\nObject: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature[\"value\"] > 80.0`, deactivate: `self.temperature[\"value\"] < 70.0`, events: `thresholdExceeded` / `thresholdCleared`. See [`examples/alert-rule-evolution/temperature-high.json`](../../examples/alert-rule-evolu"
     },
     {
       "id": "dashboards",
@@ -1564,7 +1894,7 @@
     "dashboardsDoc": "> **Language:** Canonical English. Russian edition: [ru/dashboards.md](../ru/dashboards.md).\n\n# Dashboards and widgets\n\n**Full widget reference** (purpose, settings, examples): **[widgets.md](widgets.md)**.\n\n## Overview\n\nA dashboard is a `DASHBOARD` object with the `dashboard-v1` model. Layout is stored in the `layout` variable (JSON string).\n\nModel variables:\n\n| Name | Description |\n|------|-------------|\n| `title` | Screen title |\n| `layout` | Widget grid JSON |\n| `refreshIntervalMs` | Poll interval (ms), default 5000 |\n| `@dashboardContext` | **Planned** — JSON session (selection, params, widgets); see [platform-logic.md](platform-logic.md) |\n\nDemos:\n\n| Dashboard | Purpose |\n|-----------|---------|\n| `root.platform.dashboards.demo-sensor` | single object, static `objectPath` |\n| `root.platform.dashboards.snmp-host-monitoring` | device table + `selectionKey: \"device\"` |\n\nDefault layouts: `packages/ispf-server/.../DashboardLayouts.java`.\n\n## Object binding: `objectPath` and `selectionKey`\n\nWidgets (`value`, `indicator`, `chart`, …) read variables from a **specific** platform object (`DEVICE`, `CUSTOM`, …). The path to that object is set in two ways.\n\n### Where `objectPath` comes from\n\n`objectPath` is a **field in the widget JSON** inside the `DASHBOARD` object's `layout` variable. It is not passed by a parent React component at runtime.\n\n| Source | When |\n|--------|------|\n| Bootstrap | `DashboardLayouts.java` writes layout on first start |\n| Dashboard Builder | admin picks an object in the **Object** field (`WidgetEditorPanel`) → `PUT .../layout` |\n| Manual edit | edit layout JSON |\n\nStatic binding example (one sensor):\n\n```json\n{\n  \"type\": \"value\",\n  \"objectPath\": \"root.platform.devices.demo-sensor-01\",\n  \"variableName\": \"temperature\",\n  \"valueField\": \"value\"\n}\n```\n\n### What `selectionKey` is\n\n`selectionKey` is a **slot name** in shared dashboard state (`DashboardContext`), not a replacement for `objectPath`.\n\n```typescript\nselection: Record<string, string>\n// { \"device\": \"root.platform.devices.snmp-localhost\" }\n```\n\nWhen rendering a widget, path resolution (`resolveWidgetPath` in `dashboardUtils.ts`):\n\n1. If `selectionKey` is set **and** `selection[selectionKey]` is non-empty → use the **selected path**.\n2. Otherwise → use the static `objectPath` from layout.\n3. If both are empty → widget shows a hint such as \"Select…\" / \"—\".\n\n`objectPath` is not overwritten by the key: the key only selects which context slot supplies the path after the user makes a selection.\n\n### Publish/subscribe within a dashboard\n\nBinding is **not** \"widget A → widget B\". It works by **matching** the `selectionKey` string:\n\n| Role | Widget type | Field | Action |\n|------|-------------|-------|--------|\n| **Selection source** | `object-table` | `selectionKey`, `parentPath` | on row click: `setSelection(key, child.path)` |\n| **Consumer** | `value`, `indicator`, `chart`, `sparkline`, `progress`, `gauge`, `status-badge`, `function`, `function-form` | same `selectionKey` | reads `selection[key]` as `objectPath` |\n\nAll widgets with the **same** `selectionKey` show data from the **same** object — that is expected (detail selection).\n\nFor **multiple independent selections** on one screen use **different** slot names, e.g. `\"device\"` and `\"order\"`.\n\n### Example: SNMP host monitoring\n\nDashboard `root.platform.dashboards.snmp-host-monitoring`:\n\n```json\n{\n  \"id\": \"device-table\",\n  \"type\": \"object-table\",\n  \"parentPath\": \"root.platform.devices\",\n  \"selectionKey\": \"device\",\n  \"columnsJson\": \"[{\\\"variable\\\":\\\"sysName\\\",\\\"label\\\":\\\"Host name\\\"},{\\\"variable\\\":\\\"driverStatus\\\",\\\"label\\\":\\\"Driver\\\"}]\"\n}\n```\n\n**Net ↓ / net ↑** charts reference `ifInOctetsRate` / `ifOutOctetsRate` (B/s). Platform bindings `counterRate(ifInOctets)` / `counterRate(ifOutOctets)` in `snmp-agent-v1` models update on each SNMP poll; raw Counter32 values remain in `ifInOctets` / `ifOutOctets`. Details: [bindings.md](bindings.md).\n\n```json\n{\n  \"id\": \"hostname-value\",\n  \"type\": \"value\",\n  \"selectionKey\": \"device\",\n  \"variableName\": \"sysName\",\n  \"valueField\": \"value\"\n}\n```\n\n- The table loads children of `parentPath`; columns show variables on **each** row object.\n- Row click publishes the path to `selection.device`.\n- Widgets with `selectionKey: \"device\"` poll variables on the **selected** `DEVICE` only.\n\nConsumers in this layout have **no** static `objectPath` — path comes entirely from selection.\n\n### Where function values come from (on-screen data)\n\nA dashboard does **not** call protocols (SNMP, Modbus, …) directly.\n\n```text\nDriver (poll) → DEVICE variables on server\n       ↓\nGET /api/v1/objects/by-path/variables?path=...\n       ↓\nWidget: variableName + valueField → display\n```\n\nFor an SNMP device you need: a model with variables (`snmp-agent-v1`), an active driver, and `driverPointMappingsJson`. Names in `columnsJson` / `variableName` must **match** object variable names.\n\nUI refresh: polling via `refreshIntervalMs` + WebSocket `/ws/objects` (`VARIABLE_UPDATED` invalidates the `variables` cache).\n\n### Common configuration mistakes\n\n| Situation | Result |\n|-----------|--------|\n| Table `selectionKey: \"device\"`, widget `selectionKey: \"device\"` | Works |\n| Table `\"device\"`, widget `\"order\"` | Not linked |\n| Two tables with one `selectionKey` | One slot; last click wins |\n| `selectionKey` without a source table | Empty slot → fallback to `objectPath` or \"—\" |\n| Both `objectPath` and `selectionKey` set | Non-empty selection **takes priority** |\n| Column variable name does not match model | Cell shows \"—\" |\n\nIn the widget editor: **Selection key (selectionKey)** field (`WidgetEditorPanel`). Empty string disables context binding.\n\n## Navigation between dashboards\n\nWidgets can open another dashboard by **navigate** or **modal**.\n\n| Mechanism | type | Fields |\n|-----------|------|--------|\n| Button | `dashboard-link` | `targetDashboardPath`, `openMode`, `buttonLabel`, `modalTitle` |\n| Table row click | `object-table` | `rowTargetDashboard`, `rowOpenMode` (+ `selec",
     "driversDoc": "> **Language:** Canonical English. Russian edition: [ru/drivers.md](../ru/drivers.md).\n\n# Device drivers\n\nCandidate catalog for new drivers (roadmap.md): [ROADMAP.md § PF-14](roadmap.md), full list below (REQ-PF-14).\n\n## Driver maturity\n\n| Level | Meaning |\n|-------|---------|\n| **production** | Full poll/read/write, tests, documented config |\n| **beta** | Working connectivity, limited feature set |\n| **stub** | TCP/session check or connectivity shell (v0.1) |\n| **simulator** | Virtual/profile-based (see PF-09) |\n\nMany REQ-PF-14 catalog entries are marked as stub — see the table below and [DRIVER_PROMOTION.md](driver-promotion.md).\n\nProduction readiness matrix — [ADR-0022](decisions/0022-driver-production-matrix.md), `DriverProductionMatrix` + CI gate `DriverProductionMatrixTest`. Interop lab — [DRIVER_INTEROP_LAB.md](driver-interop-lab.md) (BL-141).\n\n### Top-20 industrial (BL-140, Phase 25)\n\nIn `DriverProductionMatrix` — **20** drivers at **PRODUCTION** (including `cwmp` outside top-20) and **8** at **BETA**. Top-20 industrial: **19** **PRODUCTION** + `iec104-server` (BETA, loopback partner). List: `DriverProductionMatrix.TOP_20_INDUSTRIAL`.\n\n| `driverId` | Maturity | Interop module |\n| ---------- | -------- | -------------- |\n| `virtual`, `mqtt`, `modbus-tcp`, `modbus-rtu`, `modbus-udp` | PRODUCTION | see interop lab |\n| `opcua`, `opcua-server`, `snmp`, `bacnet`, `s7`, `http`, `flexible` | PRODUCTION | see interop lab |\n| `iec104`, `dnp3`, `dlms`, `ethernet-ip`, `opc-da`, `opc-bridge`, `gps-tracker` | PRODUCTION | see interop lab |\n| `iec104-server` | BETA | interop partner for `iec104` |\n\n### observedAt (source timestamps, BL-79)\n\nPoll drivers pass `updateVariable(name, value, observedAt)` to the historian ([0020](decisions/0020-time-and-timezones.md)):\n\n| Driver id | observedAt | Source |\n| --------- | ---------- | ------ |\n| virtual | yes | unified poll tick |\n| mqtt | yes | JSON `observedAt` / `timestamp` / epoch |\n| modbus-tcp/rtu/udp | yes | shared instant on poll tick |\n| opcua | yes | OPC UA SourceTime / ServerTime |\n| s7 | yes | poll tick |\n| snmp | yes | poll tick |\n| bacnet | yes | poll tick |\n\n## Architecture\n\nDrivers implement the `DeviceDriver` SPI (`packages/ispf-driver-api`):\n\n```java\npublic interface DeviceDriver {\n    DriverMetadata metadata();\n    void connect(Map<String, String> config) throws DriverException;\n    void disconnect();\n    void readPoints() throws DriverException;\n    void writePoint(String pointId, DataRecord value) throws DriverException;\n}\n```\n\nRegistration via **driver packs** in `${ISPF_DRIVER_PACKS_DIR}` (`LicensedDriverPackLoader` → `LicensedDriverRegistry` → `DriverCatalog`). Runtime — `DriverRuntimeService`: poll loop at `pollIntervalMs`.\n\nBuild packs: `./gradlew syncAllDriverPacks` → `build/driver-packs/<packId>/`. See [LICENSED_DRIVER_PACKS.md](licensed-driver-packs.md).\n\n## Device variables (driver group)\n\nOn a `DEVICE` object, variables in the `driver` group appear when **provisioning the driver** (`POST /objects` with `driverId` or `PUT .../drivers/runtime/configure`), not via auto-apply of RELATIVE models.\n\n`DeviceProvisioningService` → `SystemObjectStructureService.ensureDeviceDriverStructure()` embeds the schema (`driverId`, `driverStatus`, `driverPollIntervalMs`, `driverConfigJson`, `driverPointMappingsJson`, `status`) from a blueprint without writing to the model catalog and without `appliedBlueprintIds`.\n\nFixture RELATIVE model `device-driver-v1` (when `fixtures-enabled`) — for demo/lab and explicit apply; see [ADR-0018](decisions/0018-fixture-models-and-cel-applicability.md).\n\n| Variable | Description |\n|----------|-------------|\n| `driverId` | Driver ID — full list in the table below |\n| `driverStatus` | `STOPPED` / `RUNNING` / `ERROR` |\n| `driverPollIntervalMs` | Poll interval |\n| `driverConfigJson` | Configuration JSON |\n| `driverPointMappingsJson` | JSON: `variableName → pointId` (legacy string) or extended object with Haystack metadata (BL-59) |\n\n### Extended point mappings (BL-59)\n\nLegacy format — a string with protocol address per variable:\n\n```json\n{\n  \"temperature\": \"HOLDING:1:40001\",\n  \"status\": \"COIL:1:0\"\n}\n```\n\nExtended object adds Haystack tags for export (`GET /api/v1/platform/haystack/export`) without separate variables per point:\n\n```json\n{\n  \"sineWave\": {\n    \"point\": \"sim\",\n    \"haystackTags\": [\"point\", \"sensor\", \"temp\"],\n    \"unit\": \"°C\",\n    \"dis\": \"Sine wave\"\n  },\n  \"status\": \"sim\"\n}\n```\n\n| Field | Aliases | Purpose |\n|-------|---------|---------|\n| `point` | `address`, `pointId` | Protocol address (same as legacy string) |\n| `haystackTags` | `tags` | Marker tags for Haystack export |\n| `unit` | — | Unit of measure (`°C`, `kW`, …) |\n| `dis` | — | Display name of the point in export |\n\nRuntime poll/write uses only the protocol address; Haystack fields are ignored by the driver but included in semantic export. Variables with `historyEnabled` are always exported; without history — only if the mapping includes Haystack metadata.\n\n**BACnet example** (`analog-value:1:present-value`):\n\n```json\n{\n  \"supplyTemp\": {\n    \"address\": \"analog-value:1:present-value\",\n    \"haystackTags\": [\"point\", \"sensor\", \"temp\", \"supply\"],\n    \"unit\": \"°C\",\n    \"dis\": \"Supply air temperature\"\n  }\n}\n```\n\n**OPC UA example** (`ns=2;s=TagName`):\n\n```json\n{\n  \"chillerKw\": {\n    \"point\": \"ns=2;s=Chiller/ElectricPower\",\n    \"tags\": [\"point\", \"sensor\", \"power\"],\n    \"unit\": \"kW\",\n    \"dis\": \"Chiller electric power\"\n  }\n}\n```\n\nDemo: `root.platform.devices.lab-userA-01` (`HaystackModelBootstrap.DEMO_POINT_MAPPINGS`).\n\nBrick export (BL-60): apply `brick-metadata-v1` mixin, set `brickClass` URI on device → `GET /api/v1/platform/brick/export?format=jsonld|turtle`. `brick:hasPoint` from the same point mappings.\n\n## REST Runtime API\n\n```http\nPOST /api/v1/drivers/runtime/start?devicePath=root.platform.devices.demo-sensor-01\nPOST /api/v1/drivers/runtime/stop?devicePath=...\nPOST /api/v1/drivers/runtime/poll?devicePath=...&pointId=<optional>\nPOST /api/v1/drivers/runtime/write?devicePath=...&pointId=<variableName>\nPUT  /api/v1/drivers/runtime/configure?devicePath=...\nGET  /api/v1/drivers/runtime/status?devicePath=...\nGET  /api/v1/drivers/runtime/browse?devicePath=...&nodeId=<optional>\n```\n\n`poll` without `pointId` refreshes all mapped points; with `pointId` — single mapping key only (BL-84).\n\n`write` body — `DataRecord` with a `value` field (number, boolean, or string). `pointId` — key from `driverPointMappingsJson` (variable name).\n\n## Driver packs (not bundled in server JAR)\n\nEach protocol is a separate pack (`ispf-driver-*`). Without installed packs, `GET /api/v1/drivers` is empty.\n\n### virtual (`ispf-driver-virtual`)\n\nSimulator for a stand without hardware. Profile is set in `driverConfigJson.profile`:\n\n| `profile` | Variables | Purpose |\n|-----------|-----------|---------|\n| `demo` (default) | `temperature`, `status` | Temperature sine wave |\n| `meter` | `meterLiters`, `flowRate`, `filling` | Fill: `litersPerSecond`, `filling` |\n| `weighbridge` | `grossWeight`, `tareKg` | `tareKg + meterLiters * density` |\n| `rack-signals` | `gasPresent`, `groundConnected` | Boolean signals by `rackId` |\n\nExample meter (virtual driver profile):\n\n```json\n{\n  \"profile\": \"meter\",\n  \"litersPerSecond\": \"120\",\n  \"filling\": \"true\"\n}\n```\n\nDemo temperature config:\n\n```json\n{\n  \"profile\": \"demo\",\n  \"baseTemperature\": \"22.0\",\n  \"amplitude\": \"15.0\",\n  \"periodSec\": \"60\"\n}\n```\n\n### mqtt (`ispf-driver-mqtt`)\n\nEclipse Paho, topic subscription.\n\nConfig: `brokerUrl`, `topicPrefix`, `clientId`, credentials.\n\nPoint mapping: `variableName → mqttTopicSuffix`.\n\nLoopback test: `MqttDeviceDriverTest` (embedded moquette broker, subscribe + publish write).\n\n### modbus-tcp (`ispf-driver-modbus`)\n\nj2mod, Modbus TCP. Poll/read/write via `readPoints` / `writePoint`.\n\nPoint format: `slaveId:registerType:address[:count]`\n\nRegister types: `HOLDING`, `INPUT`, `COIL`, `DISCRETE`.\n\nWrite (`writePoint`):\n\n| Type | Modbus function | Field in `DataRecord` |\n|------|------",
     "workflowsDoc": "> **Language:** Canonical English. Russian edition: [ru/workflows.md](../ru/workflows.md).\n\n# Workflow & BPMN\n\n## Overview\n\nA workflow is an object of type `WORKFLOW` with model `workflow-v1`. The engine is pure Java in `ispf-plugin-workflow` (no Camunda/Flowable).\n\nWorkflow object variables:\n\n| Variable | Description |\n|----------|-------------|\n| `title` | Display name |\n| `status` | `DRAFT` / `ACTIVE` / `STOPPED` |\n| `bpmnXml` | BPMN 2.0 XML |\n| `triggerJson` | Variable-change trigger |\n| `operatorAppId` | Operator App for user tasks in the sidebar |\n| `instanceState` | JSON state of the last instance |\n| `lastRunAt` | Time of the last run |\n| `lastAction` | Last service task action |\n\n## Lifecycle\n\n**Workflow object:**\n- `DRAFT` — editing, manual run\n- `ACTIVE` — listens for triggers + manual run\n- `STOPPED` — does not start\n\n**Instance (`InstanceStatus`):**\n- `RUNNING` — executing\n- `WAITING` — waiting for user task, signal catch, or timer\n- `COMPLETED` — finished\n- `FAILED` — error\n\n## Supported BPMN elements\n\n| Element | Support |\n|---------|---------|\n| `startEvent` | Yes |\n| `endEvent` | Yes |\n| `serviceTask` | LOG, SET_VARIABLE, PUBLISH_NATS, **INVOKE_FUNCTION** |\n| `userTask` | Operator queue, claim/complete |\n| `intermediateCatchEvent` | Signal wait (`ispf:signal`) or timer (`ispf:durationSeconds`) |\n| `boundaryEvent` | Timer on user task (`attachedToRef`, `ispf:durationSeconds`, `cancelActivity`) |\n| `messageTask` | NATS publish (if enabled) |\n| `exclusiveGateway` | Conditional transitions (CEL) |\n| `parallelGateway` | Fork/join, execution tokens |\n| `subProcess` | Embedded subprocess — enter inner start, exit on inner end (BL-176 stub) |\n| `sequenceFlow` | `ispf:condition`, `ispf:default` |\n\nExtension namespace: `http://ispf.io/bpmn` (prefix `ispf:`).\n\n## ISPF attributes\n\n### serviceTask\n\n```xml\n<serviceTask id=\"log1\" name=\"Log alarm\"\n             ispf:action=\"log\"\n             ispf:message=\"Threshold exceeded\"/>\n```\n\n| Action | Parameters |\n|--------|------------|\n| `log` | `ispf:message` |\n| `set_variable` | `ispf:targetPath`, `ispf:variable`, `ispf:value` |\n| `publish_nats` | `ispf:subject`, `ispf:message`, `ispf:channel` |\n| `invoke_function` | `ispf:objectPath`, `ispf:functionName`, `ispf:inputMap`, `ispf:outputMap` |\n\nExample `invoke_function` (application functions — [applications.md](applications.md)):\n\n```xml\n<serviceTask id=\"assign\" name=\"Assign tank\"\n             ispf:action=\"invoke_function\"\n             ispf:objectPath=\"root.platform.devices.demo-sensor-01\"\n             ispf:functionName=\"myapp_acknowledge\"\n             ispf:inputMap=\"orderId=${workflow.orderId}\"\n             ispf:outputMap=\"assignResult=result\"/>\n```\n\n### userTask\n\n```xml\n<userTask id=\"approve\" name=\"Approve\"\n          ispf:title=\"Confirm alarm\"\n          ispf:instructions=\"Check the sensor\"\n          ispf:assigneeRole=\"operator\"\n          ispf:targetObjectPath=\"root.platform.devices.demo-sensor-01\"\n          ispf:function=\"acknowledgeAlarm\"/>\n```\n\n### sequenceFlow\n\n```xml\n<sequenceFlow sourceRef=\"gw\" targetRef=\"approve\" ispf:condition=\"needsApproval\"/>\n<sequenceFlow sourceRef=\"gw\" targetRef=\"end\" ispf:default=\"true\"/>\n```\n\nThe condition is a CEL expression evaluated in the context of workflow instance variables.\n\n### messageTask\n\n```xml\n<messageTask id=\"notify\" name=\"Notify\"\n             ispf:subject=\"ispf.ops.alarm\"\n             ispf:message=\"Alarm fired\"\n             ispf:channel=\"nats\"/>\n```\n\n### intermediateCatchEvent (signal)\n\n```xml\n<intermediateCatchEvent id=\"waitIncident\" name=\"Wait incident\"\n                        ispf:signal=\"incidentRegistered\"/>\n```\n\nThe instance moves to `WAITING` until the signal is delivered. As an alternative to cancellation via the cancel API, an incident can \"wake\" the process and continue the handling branch.\n\n### intermediateCatchEvent (timer)\n\n```xml\n<intermediateCatchEvent id=\"waitDelay\" name=\"Wait delay\"\n                        ispf:durationSeconds=\"300\"/>\n```\n\nThe instance waits until the deadline expires; continuation via `POST .../timer` (see below) or the scheduler.\n\n### boundaryEvent (timer on user task)\n\n```xml\n<boundaryEvent id=\"ackTimeout\" attachedToRef=\"operatorAck\"\n               cancelActivity=\"true\" ispf:durationSeconds=\"300\"/>\n<sequenceFlow sourceRef=\"ackTimeout\" targetRef=\"escalate\"/>\n```\n\nWhile the user task is in `WAITING`, an SLA timer runs in parallel. When the timer fires, the escalation branch runs (interrupting). Template: [reference-escalation-templates.md](reference-escalation-templates.md).\n\n## Work queue\n\nUser tasks appear in `GET /api/v1/work-queue`.\n\n### Operator App binding\n\nOn the workflow object (model `workflow-v1`), set the **`operatorAppId`** variable — the identifier of the Operator App whose sidebar **Tasks** panel receives user tasks from this process.\n\n- Configuration: workflow editor → **Operator App** panel (or `PUT /api/v1/workflows/by-path/operator-app`)\n- When a user task is created, the value is copied to `workflow_user_tasks.operator_app_id`\n- Sidebar filter: `GET /api/v1/work-queue?operatorAppId=platform`\n\nIf `operatorAppId` is empty, the task **does not appear** in the Operator Apps sidebar (the `work-queue` widget on a dashboard still shows all tasks).\n\n| Task status | Action |\n|-------------|--------|\n| `OPEN` | claim → `CLAIMED` |\n| `CLAIMED` | complete → workflow continues |\n\n```http\nPOST /api/v1/work-queue/claim?taskId=...&operatorId=operator\nPOST /api/v1/work-queue/complete?taskId=...&operatorId=operator\n```\n\nWhen `ispf:function` is set on a user task, the function is invoked on complete.\n\n## Triggers\n\n`triggerJson` on the workflow object. `WorkflowTriggerListener` compares variable changes against conditions and starts an ACTIVE workflow.\n\n## Event correlators → workflow\n\nCorrelator with action `RUN_WORKFLOW` and `actionTarget` = workflow path. See [automation.md](automation.md).\n\n## Demo workflow\n\n`root.platform.workflows.demo-alarm-handler` — BPMN with gateway, user task, service log.\n\nDefinition: ",
-    "automationDoc": "> **Language:** Canonical English. Russian edition: [ru/automation.md](../ru/automation.md).\n\n# Automation: events, alerts, correlators\n\n## Events\n\n### Descriptor\n\nAn object defines an `EventDescriptor`: name, payload schema, level.\n\nLevels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Publishing\n\n**API (manual fire, integrations):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nShared hot path after descriptor validation:\n\n1. Write to `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) or ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Listeners: correlators, UI.\n\n### Journal\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nWithout `objectPath` — global journal (up to 200 entries).\n\n### Demo\n\n`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Storage in the object tree\n\nAlert rules and event correlators are **tree nodes** under `root.platform`, like dashboards and workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Entity | Node type | Model | Folder |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nConfiguration is stored on the object request (`objectPath`, `watchVariable`, `conditionExpr`, …). `AutomationTreeService` reads and writes nodes; on startup `AutomationBootstrap` migrates legacy rows from `alert_rules` / `event_correlators` tables (if present) and creates demo rules.\n\nUI: **Explorer** → select a node in `alert-rules` or `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Create via tree context menu or `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert rules\n\nCEL rule on variable change. When the condition is true — fire events.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `objectPath` | Object |\n| `watchVariable` | Variable name |\n| `conditionExpr` | CEL (context: variable fields) |\n| `eventName` | Event name to fire |\n| `payloadVariable` | Variable for payload (optional) |\n| `enabled` | On/off |\n| `edgeTrigger` | Only on false→true edge |\n| `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (optional, relay required) |\n\nWhen events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).\n\n### Example\n\nObject: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive[\"value\"] == true`, event: `thresholdExceeded`.\n\n`AlertRuleListener` reacts to `VARIABLE_UPDATED`.\n\n### API\n\n| Method | Path | Roles |\n|--------|------|------|\n| GET | `/api/v1/alert-rules` | admin |\n| GET | `/api/v1/alert-rules/by-path?path=` | admin |\n| POST | `/api/v1/alert-rules` | admin |\n| PUT | `/api/v1/alert-rules/by-path?path=` | admin |\n| DELETE | `/api/v1/alert-rules/by-path?path=` | admin |\n\n---\n\n## Event correlators\n\nAggregate multiple events → action (start workflow).\n\n### Patterns (`CorrelatorPatternType`)\n\n| Type | Description |\n|-----|----------|\n| `COUNT` | N events of `eventName` within `windowSeconds` |\n| `SEQUENCE` | Event A, then B on the same object |\n| `WINDOW` | Set of events (A + list in `secondEventName`) — each at least once within `windowSeconds` |\n\n### WINDOW (BL-171)\n\n**Unordered window** pattern: all listed events must occur on one object within `windowSeconds`; order does not matter.\n\n| Field | Role for WINDOW |\n|------|-----------------|\n| `eventName` | First required event |\n| `secondEventName` | Additional events comma-separated (e.g. `workOrderReleased,workOrderStarted`) |\n| `windowSeconds` | Sliding window width (> 0) |\n| `minOccurrences` | Not used (leave 1) |\n\nExample: MES dispatch — `workOrderCreated` + `workOrderReleased` + `workOrderStarted` within 120 s on `mes-platform-hub` → `RUN_WORKFLOW`.\n\n`EventCorrelatorService.processWindowPattern` records each hit in the window store and fires when the set of unique events matches the required set.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `name` | Name |\n| `patternTy",
+    "automationDoc": "> **Language:** Canonical English. Russian edition: [ru/automation.md](../ru/automation.md).\n\n# Automation: events, alerts, correlators\n\n## Events\n\n### Descriptor\n\nAn object defines an `EventDescriptor`: name, payload schema, level.\n\nLevels (`EventLevel`): `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.\n\n### Publishing\n\n**API (manual fire, integrations):**\n\n```http\nPOST /api/v1/events/fire\n```\n\n**Driver ingress (high frequency, no HTTP):** when `telemetryPublishMode=EVENT_JOURNAL_ONLY`, each driver variable update triggers `EventService.fireIngress` → async journal. The event name comes from `ingressEventName` in the driver configuration (default `messageReceived`). See [ADR-0027](decisions/0027-event-journal-ingress-fast-path.md).\n\nShared hot path after descriptor validation:\n\n1. Write to `event_history` (async batch — Timescale [0015](decisions/0015-event-history-timescale.md) or ClickHouse [0016](decisions/0016-clickhouse-event-journal.md))\n2. `ObjectChangeEvent` → WebSocket\n3. Listeners: correlators, UI.\n\n### Journal\n\n```http\nGET /api/v1/events?objectPath=root.platform.devices.demo-sensor-01&limit=50\n```\n\nWithout `objectPath` — global journal (up to 200 entries).\n\n### Demo\n\n`mqtt-sensor-v1` → `thresholdExceeded` when the threshold is exceeded (via alert rule or manual fire); `messageReceived` — for loadtest/audit ingress ([0027](decisions/0027-event-journal-ingress-fast-path.md)).\n\n---\n\n## Storage in the object tree\n\nAlert rules and event correlators are **tree nodes** under `root.platform`, like dashboards and workflows:\n\n```\nroot.platform\n├── root.platform.alert-rules\n│   └── root.platform.alert-rules.temperature-threshold-exceeded\n└── root.platform.correlators\n    ├── root.platform.correlators.alarm-handler-on-threshold-event\n    └── root.platform.correlators.threshold-then-alarm-active-sequence-demo\n```\n\n| Entity | Node type | Model | Folder |\n|----------|----------|--------|-------|\n| Alert rule | `ALERT` | `alert-rule-v1` | `root.platform.alert-rules` |\n| Correlator | `CORRELATOR` | `correlator-v1` | `root.platform.correlators` |\n\nConfiguration is stored on the object request (`objectPath`, `watchVariable`, `conditionExpr`, …). `AutomationTreeService` reads and writes nodes; on startup `AutomationBootstrap` migrates legacy rows from `alert_rules` / `event_correlators` tables (if present) and creates demo rules.\n\nUI: **Explorer** → select a node in `alert-rules` or `correlators` → inspector (`AlertRuleInspector`, `CorrelatorInspector`). Create via tree context menu or `POST /api/v1/alert-rules` / `POST /api/v1/correlators`.\n\n---\n\n## Alert rules\n\nCEL rule on variable change. When the condition is true — fire events.\n\n### Fields\n\n| Field | Description |\n|------|----------|\n| `objectPath` | Object |\n| `watchVariable` | Variable name |\n| `conditionExpr` | CEL (context: variable fields) |\n| `eventName` | Event name to fire |\n| `payloadVariable` | Variable for payload (optional) |\n| `enabled` | On/off |\n| `edgeTrigger` | Only on false→true edge |\n| `delaySeconds` | Seconds condition must stay true before activate (0 = immediate) |\n| `sustainWhileTrue` | Re-fire while condition stays true (subject to `rateLimitSeconds`) |\n| `rateLimitSeconds` | Minimum interval between repeated fires when sustaining |\n| `priority` | `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |\n| `ackRequired` | Operator acknowledgement metadata |\n| `deactivateExpr` | CEL clear condition (optional; empty = clear when `conditionExpr` is false) |\n| `deactivateDelaySeconds` | Seconds `deactivateExpr` must stay true before clear (0 = immediate) |\n| `clearEventName` | Event fired on deactivate (optional; e.g. `thresholdCleared`) |\n| `pollIntervalMs` | Periodic re-evaluation interval (0 = only on `watchVariable` change) |\n| `triggerMessage` | Static or CEL message stored on the event payload when raised |\n| `latchedActive` | Runtime: rule is in latched active state (read-only in inspector) |\n| `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |\n| `notificationEmailTarget` | Email: `to@host\\|subject\\|body` (optional, relay required) |\n\n**Latch mode** activates when any of `deactivateExpr`, `clearEventName`, or `deactivateDelaySeconds > 0` is set. In latch mode the rule stays active after the activate condition fires until the deactivate path completes (with optional delay), then fires `clearEventName` if set.\n\nWhen events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).\n\n### Example (simple edge)\n\nObject: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive[\"value\"] == true`, event: `thresholdExceeded`.\n\n### Example (temperature latch, ADR-0039 phase B)\n\nObject: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature[\"value\"] > 80.0`, deactivate: `self.temperature[\"value\"] < 70.0`, events: `thresholdExceeded` / `thresholdCleared`. See [`examples/alert-rule-evolution/temperature-high.json`](../../examples/alert-rule-evolu",
     "objectModelDoc": "> **Language:** Canonical English. Russian edition: [ru/object-model.md](../ru/object-model.md).\n\n# Object model\n\nISPF business logic is expressed through **tree node composition**: models (blueprints), variables, events, functions, workflow, and automation nodes. See [architecture.md § Core principle](architecture.md).\n\n## Hierarchy\n\nAll platform entities are **object tree nodes** with dot-notation paths:\n\n```\nroot\n└── root.platform\n    ├── root.platform.devices\n    │   ├── root.platform.devices.demo-sensor-01\n    │   └── root.platform.devices.snmp-localhost\n    ├── root.platform.relative-blueprints\n    ├── root.platform.instance-types\n    ├── root.platform.absolute-blueprints\n    ├── root.platform.instances\n    ├── root.platform.dashboards\n    │   └── root.platform.dashboards.demo-sensor\n    ├── root.platform.reports\n    │   └── root.platform.reports.ready-items\n    ├── root.platform.security\n    │   ├── root.platform.security.users\n    │   │   ├── root.platform.security.users.admin\n    │   │   └── root.platform.security.users.operator\n    │   └── root.platform.security.roles\n    │       ├── root.platform.security.roles.admin\n    │       └── root.platform.security.roles.operator\n    ├── root.platform.workflows\n    │   └── root.platform.workflows.demo-alarm-handler\n    ├── root.platform.alert-rules\n    │   └── root.platform.alert-rules.temperature-threshold-exceeded\n    └── root.platform.correlators\n        └── root.platform.correlators.alarm-handler-on-threshold-event\n```\n\nPaths are separated by a **dot** (`.`), not a slash. Child path resolution: `parentPath + \".\" + name`.\n\n## Object types (`ObjectType`)\n\n| Type | Purpose |\n|------|---------|\n| `ROOT` | Tree root |\n| `TENANT` | Tenant (multi-tenancy, planned) |\n| `PLATFORM` | `root.platform` node |\n| `DEVICES` | Device catalog |\n| `DEVICE` | Device with driver |\n| `DRIVER` | Driver instance |\n| `MODEL` | Model definition |\n| `DASHBOARDS` | Dashboard catalog |\n| `DASHBOARD` | HMI screen |\n| `WORKFLOWS` | Workflow catalog |\n| `WORKFLOW` | BPMN process |\n| `ALERT_RULES` | Alert rules catalog |\n| `ALERT` | Alert rule |\n| `CORRELATORS` | Correlators catalog |\n| `CORRELATOR` | Event correlator |\n| `APPLICATIONS` | Applications catalog |\n| `APPLICATION` | Application (bundle) |\n| `OPERATOR_APPS` | Operator UI catalog |\n| `SECURITY` | RBAC root |\n| `USERS` / `USER` | Users |\n| `ROLES` / `ROLE` | Roles |\n| `FUNCTIONS` / `FUNCTION` | Application functions |\n| `REPORTS` / `REPORT` | `root.platform.reports` catalog and SQL reports (`report-v1`) |\n| `AGENT` | Edge agent |\n| `VISUAL_GROUP` | Visual group — references objects in `@groupMembers` without changing their paths |\n| `CUSTOM` | Arbitrary container (fallback for unknown nodes) |\n\nSystem folders (`PLATFORM`, `DEVICES`, `ALERT_RULES`, …) get semantic types at bootstrap and via migration `V22__system_object_types.sql`. User nodes — from model template or `CUSTOM`.\n\n## Security in the tree\n\nNodes under `root.platform.security` are created automatically at startup and when users change:\n\n| Path | Type | Variables |\n|------|------|-----------|\n| `...security.users.{username}` | `USER` | `username`, `displayName`, `roles`, `enabled` |\n| `...security.roles.{role}` | `CUSTOM` | `roleName`, `description` |\n\nUser CRUD — via `POST/PUT/DELETE /api/v1/security/users` (`admin` role). Deleting a `USER` tree node also deletes the account.\n\n## Object composition (`PlatformObject`)\n\nEach node contains:\n\n- **Metadata:** `id`, `path`, `displayName`, `description`, `templateId`, `sortOrder`, `createdAt`\n- **Variables** (`Variable`) — typed values\n- **Functions** (`FunctionDescriptor`) — callable operations\n- **Events** (`EventDescriptor`) — publishable event types\n\n## Typed data\n\n### DataSchema\n\nField description for a record:\n\n```json\n{\n  \"name\": \"temperature\",\n  \"fields\": [\n    { \"name\": \"value\", \"type\": \"DOUBLE\" },\n    { \"name\": \"unit\", \"type\": \"STRING\" }\n  ]\n}\n```\n\nField types (`FieldType`): `BOOLEAN`, `INTEGER`, `LONG`, `DOUBLE`, `STRING`, `DATETIME`, `BINARY`, `RECORD`, `RECORD_LIST`.\n\n### Telemetry quality (BL-82)\n\nOptional `quality` field on telemetry rows: `GOOD`, `UNCERTAIN`, `BAD` ([ADR-0025](decisions/0025-telemetry-quality-flags.md)). Drivers map protocol status (e.g. OPC UA StatusCode) to these levels. Chart widgets skip `BAD` samples (line gap); historian quality column is follow-up work.\n\n### DataRecord\n\nTabular structure with data rows. Typical single-row REST format:\n\n```json\n{\n  \"schema\": { \"name\": \"temperature\", \"fields\": [...] },\n  \"rows\": [{ \"value\": 23.5, \"unit\": \"C\" }]\n}\n```\n\nWidgets and API read fields via `valueField` (default `\"value\"`).\n\n## Variables\n\n| Property | Description |\n|----------|-------------|\n| `name` | Name on the object |\n| `schema` | `DataSchema` |\n| `readable` / `writable` | Access rights |\n| `value` | Current `DataRecord` |\n\n### Computed bindings (binding rules)\n\nRules on the object in `@bindingRules` (see [bindings.md](bindings.md)). Runtime — `BindingRuleEngine`; cross-object via activ",
     "observabilityDoc": "> **Language:** Canonical English. Russian edition: [ru/observability.md](../ru/observability.md).\n\n# Observability (ISPF)\n\nAutomation pipeline metrics export: **Prometheus scrape** (pull) and **OTLP** (push, OpenTelemetry-compatible backends).\n\n## Prometheus (default on prod)\n\n| Endpoint | Auth | Format |\n|----------|------|--------|\n| `/actuator/prometheus` | admin role | Prometheus text |\n\nKey ISPF metrics (Micrometer):\n\n| Metric | Type | Description |\n|--------|------|-------------|\n| `ispf.events.fired.total{source=...}` | counter | Fires by source (alert, api, correlator, function) |\n| `ispf.alert.fires.total` | counter | Alert rule firings |\n| `ispf.alert.evaluations.total` | counter | CEL evaluations |\n| `ispf.correlator.triggers.total` | counter | Correlator triggers |\n| `ispf.object_change.queue.size{lane=telemetry\\|automation\\|total}` | gauge | Async queue depth |\n| `ispf.object_change.workers.active{lane=telemetry\\|automation}` | gauge | Active worker threads (elastic mode) |\n| `ispf.object_change.processed.total` | gauge | Processed object-change events |\n| `ispf.object_change.queue.dropped.total` | counter | Dropped events (queue full) |\n| `ispf.event_journal.queue.size` | gauge | Journal async writer queue |\n| `ispf.event_journal.flushed.total` | gauge | Written to journal (cumulative) |\n| `ispf.event_journal.queue_full.sync_fallback.total` | counter | Sync fallback on queue overflow |\n| `ispf.workflow.starts.total{trigger=...}` | counter | Workflow starts by trigger |\n| `ispf.event_history.records` | gauge | Event journal record count |\n| `ispf.workflow_instances.running` | gauge | Active workflow instances |\n| `ispf.drivers.active` / `connected` | gauge | Drivers |\n| `ispf.database.connections.*` | gauge | HikariCP pool |\n\n### Metrics probe (object tree sync)\n\nIn-process sync `/api/v1/platform/metrics` → `root.platform.devices.platform-metrics-probe` (variables `eventsPerSecond`, `objectChangeQueueSize`, `heapUsedMb`, …). Alternative to external Prometheus during load test.\n\n| Endpoint | Auth | Description |\n|----------|------|-------------|\n| `GET /api/v1/platform/diagnostics/metrics-probe` | admin | `{ enabled, devicePath, devicePresent }` |\n| `PUT /api/v1/platform/diagnostics/metrics-probe` | admin | `{ \"enabled\": true\\|false }` — enable/disable sync |\n\n**UI (recommended):** Admin → System → Metrics → **Load diagnostics** → checkbox \"Sync metrics to probe device\". When leaving the page probe **automatically disables** (do not leave background load).\n\nEnv `ISPF_PLATFORM_METRICS_PROBE_ENABLED` and boot-time `ispf.platform-metrics-probe.enabled` **do not start** scheduler — only runtime toggle via API/UI. Interval: `ISPF_PLATFORM_METRICS_PROBE_INTERVAL_MS` (default 5000) or Runtime settings → `metrics-probe.interval-ms`.\n\nBefore enabling create probe device: `python deploy/setup-platform-metrics-monitor.py`.\n\n## Metrics UI diagnostics (0.9.97+)\n\nAdmin → **System → Metrics** — **Load diagnostics** card (cluster fan-out).\n\n| Endpoint | Auth | Description |\n|----------|------|-------------|\n| `GET /api/v1/platform/metrics` | admin | Metrics of **current** JVM + `diagnostics` (CPU, suspects, `detail`) |\n| `GET /api/v1/platform/cluster/diagnostics` | admin | All replicas: CPU rank, suspects, drill-down per node |\n\n**Level 1 — cluster:** which replica loads CPU (`processCpuPercent`), pipeline queues, `clusterTopSuspect`.\n\n**Level 2 — inside node** (expand in UI):\n\n| Block | Contents |\n|-------|----------|\n| Thread groups | `ispf-driver-io`, `driver-ingress`, `object-change`, top-5 threads by CPU Δ |\n| Driver bindings | `devicePath`, `driverId`, ingress pending/coalesced, `pressureScore` |\n| Jobs | `platform_jobs` with status `RUNNING` on `holder_id` |\n| Workflows | top `workflow_instances` in `RUNNING` status |\n\nSuspect heuristics: object-change / event journal / historian backlog, JDBC pool, heap pressure, hot driver binding.\n\nPeer fan-out: heartbeat writes `http_port` to `platform_cluster_replicas` (V65); aggregator polls `http://127.0.0.1:{port}/api/v1/platform/metrics` on VPS host network.\n\nIf all JVMs show low CPU — culprit outside ISPF (Scylla, ClickHouse, Postgres): `docker stats` on host.\n\n### CLI (single-node, SSH)\n\nScript [`deploy/vps-idle-thread-sample.py`](../deploy/vps-idle-thread-sample.py) — two samples of `GET /api/v1/platform/metrics` ~6s apart, prints thread groups and suspects to stdout. Handy over SSH without UI.\n\n```bash\nscp deploy/vps-idle-thread-sample.py root@ispf.iot-solutions.ru:/tmp/\nssh root@ispf.iot-solutions.ru python3 /tmp/vps-idle-thread-sample.py\n```\n\nDetails: [DEMOSTANDS.md](demostands.md) (verification section), [VPS_DEMOSTAND.md](vps-demostand.md) (ops example).\n\n**Grafana dashboard** (all pipeline metrics): [`deploy/grafana/ispf-automation-pipeline.json`](../deploy/grafana/ispf-automation-pipeline.json) — see [`deploy/grafana/README.md`](readme.md). Local stack: `docker compose -f deploy/docker-compose.observability.yml up -d`.\n\n## OTLP metrics export (optional, 0.9.9+)\n\nPush metrics to OpenTelemetry Collector / Grafana Cloud / Uptrace via Micrometer OTLP registry.\n\n**Disabled by default** — without `ISPF_OTLP_METRICS_ENABLED=true` export does not run.\n\n```yaml\n# /opt/ispf/ispf-server.env\nISPF_OTLP_METRICS_ENABLED=true\nISPF_OTLP_METRICS_URL=http://otel-collector:4318/v1/metrics\nISPF_OTLP_METRICS_STEP=30s\nISPF_ENVIRONMENT=prod\n```\n\nSpring properties (`application.yml`):\n\n| Property | Env | Default |\n|----------|-----|---------|\n| `management.otlp.metrics.export.enabled` | `ISPF_OTLP_METRICS_ENABLED` | `false` |\n| `management.otlp.metrics.export.url` | `ISPF_OTLP_METRICS_URL` | `http://localhost:4318/v1/metrics` |\n| `management.otlp.metrics.export.step` | `ISPF_OTLP_METRICS_STEP` | `30s` |\n\nResource attributes: `service.name=ispf-server`, `deployment.environment` from `ISPF_ENVIRONMENT`.\n\nAll ISPF counters/gauges above export to OTLP together with standard JVM/Spring Boot metrics (`jvm.*`, `http.server.requests`, `hikaricp.*`).\n\n### Example: ",
     "clusterDoc": "> **Language:** Canonical English. Russian edition: [ru/cluster.md](../ru/cluster.md).\n\n# ISPF cluster (multi-replica)\n\nGuide to horizontal API scaling: multiple JVM replicas, one object tree in PostgreSQL, live value synchronization via NATS ([ADR-0029](decisions/0029-cluster-live-variable-replica-sync.md)).\n\nSee also: [ADR-0028](decisions/0028-horizontal-active-active-cluster.md), [deployment.md](deployment.md), [messaging.md](messaging.md), [bindings.md](bindings.md).\n\n## Cluster ≠ federation\n\n| | **Cluster** | **Federation** |\n|---|-------------|------------------|\n| Object tree | Single `root.platform.*` in one DB | Multiple sites / edge agents |\n| Replicas | N stateless JVMs behind LB | Hub ↔ spoke communication |\n| Driver | Exactly one poll per device | See [federation.md](federation.md) |\n\n## Topology (VPS / lab example)\n\n```text\n                    nginx :8080\n           REST ip_hash  │  WS ip_hash (one replica per client)\n        ┌──────────┬───────┴───────┬──────────┐\n        ▼          ▼               ▼          │\n   replica-1   replica-2      replica-3      │\n   :8081       :8082           :8083          │\n        └──────────┴───────┬───┴──────────────┘\n                           │\n              PostgreSQL (one tree)\n              NATS (fan-out between replicas)\n              Redis (path interest, ACL, correlator)\n```\n\nCompose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml); VPS: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml).\n\nEach replica on startup:\n\n1. Flyway migrations (once per DB).\n2. `loadFromDatabase()` — identical tree on all nodes.\n3. Registration in `platform_cluster_replicas` + heartbeat.\n4. Acquire `platform_driver_locks` for devices assigned to this node.\n\n## Where data lives\n\n| Data | Storage | Cluster behavior |\n|------|---------|------------------|\n| Object structure, configs, bindings | PostgreSQL | Write on any replica → NATS fan-out → reload on peers ([ADR-0030](decisions/0030-cluster-config-structure-replica-sync.md): `reloadPathFromDatabase`, config variables: `syncVariableFromDatabase`) |\n| **Real-time telemetry** (`ifInOctets`, `temperature`, …) | **RAM on owner replica** | Not written to PG on every tick |\n| **Live mirror on subscriber** | RAM (copy snapshot) | ADR-0029: NATS payload includes `value` |\n| Historian / event journal | PG / ClickHouse / Cassandra | Written **only by owner** |\n| Bindings / alerts / cascading functions | RAM + automation pipeline | Executed **only on owner** |\n\n### Driver ownership\n\nExactly one replica polls each DEVICE (`platform_driver_locks`, TTL + refresh). When a node fails, its lock expires and another replica takes the device.\n\nCheck: `GET /api/v1/platform/cluster/health` (admin) — `heldDevicePaths` per node.\n\n## Bindings, variables, functions, dashboards\n\n### Variables\n\n- **Raw telemetry** arrives from the driver on the owner → `setDriverTelemetryValue()` → RAM.\n- **REST** `GET /api/v1/objects/{path}/variables` reads **local RAM** of the replica that served the request.\n- **WebSocket** `/ws/objects` — pushes `VARIABLE_UPDATED` to clients subscribed to the path.\n\nBefore ADR-0029, follower RAM for telemetry was empty → round-robin REST could return `null` / stale values.\n\n### Bindings\n\n**Local** (on the same DEVICE):\n\n```cel\ncounterRate(ifInOctets)   → variable ifInOctetsRate\n```\n\n**Cross-object** (on a hub object):\n\n```cel\nrefAt(\"root.platform.devices.snmp-router-01\", ifInOctetsRate)   → routerNetDown\n```\n\nChain on the **owner** replica where the source device lives:\n\n```text\nSNMP poll → ifInOctets (RAM)\n         → binding counterRate → ifInOctetsRate (RAM)\n         → (if hub on same owner or ref reads owner RAM) → derived vars\n```\n\nFollowers **do not recompute** bindings — they receive computed values via the NATS mirror (NATS events without automation).\n\n### Functions\n\n`INVOKE_FUNCTION`, script handlers, platform functions — run on the replica that accepted the HTTP request. For side effects, design for idempotency. Real-time device reads work from any replica after ADR-0029.\n\n### Dashboards\n\nA dashboard is a `DASHBOARD` object with layout JSON. Widgets reference `objectPath` / bindings. HMI flow:\n\n1. WS subscribes to table/chart paths.\n2. Receive `VARIABLE_UPDATED` (local or after NATS mirror).\n3. Occasional REST refetch — should hit a replica with current RAM (after ADR-0029 — any replica).\n\n## ADR-0029: live variable replica sync\n\n### Problem (before 0029)\n\n| Mechanism | Gap |\n|-----------|-----|\n| NATS `ispf.events.*` | Only `path` + `variableName`, **no value** |\n| `NatsEventBridge` | Skipped `telemetry=true` |\n| REST vs WS LB | `ip_hash` on REST and WS — one client (IP) → one JVM; failover via `max_fails` + `proxy_next_upstream` |\n| WS path interest | Local to one JVM — owner did not know about subscribers on other replicas |\n\n### Solution\n\n```text\nOwner (driver)\n  → RAM update\n  → automation (bindings, alerts, historian) — only here\n  → ClusterLiveVariableReplicaPublisher (coalesced NATS + full DataRecord)\n\nFollower\n  → ClusterVariableReplicaApplier → RAM mirror\n  → ObjectChangeEvent(replicaIngress=true) → WS push\n  → REST GET /variables — fresh value\n```\n\n```mermaid\nflowchart TB\n    subgraph owner [Driver owner replica]\n        DRV[Driver poll / MQTT]\n        RAM1[RAM update]\n        AUTO[Bindings / alerts / historian]\n        INT[Redis path interest]\n        PUB[ClusterLiveVariableReplicaPublisher]\n        DRV --> RAM1 --> AUTO\n        RAM1 --> PUB\n        INT --> PUB\n    end\n    subgraph bus [NATS]\n        NATS[\"ispf.events.variable_updated + value\"]\n    end\n    subgraph follower [Any other replica]\n        SUB[NatsObjectChangeSubscriber]\n        RAM2[RAM mirror apply]\n        WS[WebSocket push]\n        REST[GET /variables]\n        SUB --> RAM2 --> WS\n        RAM2 --> REST\n    end\n    PUB --> NATS --> SUB\n```\n\n### replicaIngress\n\nEvents with `replicaIngress=true` on followers:\n\n| Consumer | Behavior |\n|----------|----------|\n| NATS / `ClusterLiveVariableReplicaPublisher` | Skip (no loop) |\n| Bindings / historian / alerts | Skip |\n| WebSocket | Push to clients |\n\n### Cluster-wide path interest (Redis)\n\nWhen `ispf.cluster.cluster-path-interest-enabled=true` and Redis:\n\n- WS `subscribe` / `unsubscribe` updates ref-count in Redis (`ispf:cluster:ws:interest:{path}`).\n- Owner publishes NATS sync even if all browsers are on other replicas.\n\nWithout Redis — local interest only; pin REST+WS to the same replica or enable Redis.\n\n## Example: SNMP fleet monitoring (3 replicas)\n\n### Objects\n\n| Path | Type | Role |\n|------|------|------|\n| `root.platform.devices.snmp-router-01` | DEVICE | SNMP router, model `snmp-agent-v1` |\n| `root.platform.devices.snmp-switch-02` | DEVICE | SNMP switch |\n| `root.platform.devices.snmp-fleet.hub` | CUSTOM | Cross-object aggregator |\n| `root.platform.dashboards.snmp-host-monitoring` | DASHBOARD | btop table + charts |\n\n### Bindings\n\nOn each DEVICE (local):\n\n```json\n{\n  \"targetVariable\": \"ifInOctetsRate\",\n  \"expression\": \"counterRate(ifInOctets)\"\n}\n```\n\nOn the hub (cross-object):\n\n```json\n{\n  \"targetVariable\": \"routerNetDown\",\n  \"expression\": \"refAt(\\\"root.platform.devices.snmp-router-01\\\", ifInOctetsRate)\"\n}\n```\n\n```json\n{\n  \"targetVariable\": \"totalNetDown\",\n  \"expression\": \"routerNetDown + switchNetDown\"\n}\n```\n\n### Step-by-step scenario\n\n**T0 — startup:** R1, R2, R3 load the same tree from PG. R1 acquires lock on `snmp-router-01`, R2 on `snmp-switch-02`.\n\n**T1 — operator opens HMI:** browser → nginx → WS on R3 (`ip_hash`), subscribe to dashboard paths. Redis records global interest → owners R1/R2 start publishing updates.\n\n**T2 — SNMP poll on R1:** `ifInOctets` updates → `counterRate` binding → `ifInOctetsRate`. Demand-driven: interest present → `ObjectChangeEvent` → coalesced NATS with full `value`.\n\n**T3 — REST refresh on R2:** `GET .../snmp-router-01/variables/ifInOctetsRate` — follower already applied NATS snapshot → current value (no sticky REST required).\n\n**T4 — hub `total"
@@ -10453,5 +10783,5 @@
       "custom bff routes"
     ]
   },
-  "contentSha256": "e1ecbeb9d12c5b69db807c5740a3d6804c45194bb32e9c1f62b68da0c6bfe760"
+  "contentSha256": "632d64640fb9de949108849db4890ca4b13b40ff712eef1ae3fc2f7cdc3acb81"
 }

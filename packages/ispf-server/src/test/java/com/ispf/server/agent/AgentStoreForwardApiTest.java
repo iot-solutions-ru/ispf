@@ -2,6 +2,7 @@ package com.ispf.server.agent;
 
 import com.ispf.server.federation.FederationIntegrationTestSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -19,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Isolated
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 class AgentStoreForwardApiTest {
 
