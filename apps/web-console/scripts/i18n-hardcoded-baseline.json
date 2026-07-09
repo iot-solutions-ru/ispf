@@ -6,6 +6,12 @@
     "text": "scripts/run-local-with-ai.ps1"
   },
   {
+    "file": "components/analytics/AnalyticsTemplateInspector.tsx",
+    "line": 198,
+    "kind": "ui-attr",
+    "text": "root.platform.devices.demo-sensor-01"
+  },
+  {
     "file": "components/ApplicationBundlePanel.tsx",
     "line": 403,
     "kind": "ui-attr",
@@ -19,37 +25,37 @@
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 120,
+    "line": 174,
     "kind": "jsx-text",
     "text": "CRITICAL"
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 121,
+    "line": 175,
     "kind": "jsx-text",
     "text": "HIGH"
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 122,
+    "line": 176,
     "kind": "jsx-text",
     "text": "MEDIUM"
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 123,
+    "line": 177,
     "kind": "jsx-text",
     "text": "LOW"
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 144,
+    "line": 198,
     "kind": "ui-attr",
     "text": "https://hooks.example.com/alerts"
   },
   {
     "file": "components/automation/AlertRuleInspector.tsx",
-    "line": 153,
+    "line": 207,
     "kind": "ui-attr",
     "text": "ops@example.com|Alert|Threshold exceeded"
   },
@@ -73,25 +79,25 @@
   },
   {
     "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 136,
+    "line": 167,
     "kind": "jsx-text",
     "text": "CRITICAL"
   },
   {
     "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 137,
+    "line": 168,
     "kind": "jsx-text",
     "text": "HIGH"
   },
   {
     "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 138,
+    "line": 169,
     "kind": "jsx-text",
     "text": "MEDIUM"
   },
   {
     "file": "components/automation/CreateAlertRuleDialog.tsx",
-    "line": 139,
+    "line": 170,
     "kind": "jsx-text",
     "text": "LOW"
   },
@@ -121,25 +127,25 @@
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 513,
+    "line": 519,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 537,
+    "line": 543,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 551,
+    "line": 557,
     "kind": "ui-attr",
     "text": "root.platform.data-sources.myapp"
   },
   {
     "file": "components/CreateObjectDialog.tsx",
-    "line": 584,
+    "line": 590,
     "kind": "ui-attr",
     "text": "root.platform.devices.demo-sensor-01"
   },
@@ -277,19 +283,19 @@
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 109,
+    "line": 118,
     "kind": "jsx-text",
     "text": "(editable && series.points.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 113,
+    "line": 122,
     "kind": "jsx-text",
     "text": "(editable && isRangeChart && series.rangePoints.length"
   },
   {
     "file": "components/dashboard/widgets/ChartWidgetView.tsx",
-    "line": 119,
+    "line": 128,
     "kind": "jsx-text",
     "text": "(editable && isCandlestickChart && series.candlestickPoints.length"
   },
