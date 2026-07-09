@@ -235,7 +235,7 @@ Content-Type: application/json
 }
 ```
 
-Wire profile `anima-operator-v1` is the standard contract for legacy manifest shell. For new solutions use **dashboards + function-button** instead of custom manifest.
+Wire profile `ispf-operator-v1` is the standard contract for legacy manifest shell. For new solutions use **dashboards + function-button** instead of custom manifest.
 
 ---
 

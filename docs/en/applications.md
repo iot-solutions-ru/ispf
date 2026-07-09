@@ -219,20 +219,20 @@ Content-Type: application/json
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
     "rows": [{ "orderId": "..." }]
   },
-  "wireProfile": "anima-operator-v1"
+  "wireProfile": "ispf-operator-v1"
 }
 ```
 
-### Wire profile `anima-operator-v1`
+### Wire profile `ispf-operator-v1`
 
 | Rule | Behavior |
 |------|----------|
 | Success | `error_code === "OK"`, `error_message === ""` |
 | Error | `result` absent |
 | Table | `result` = array of rows (unwrap `rows` field) |
-| Labels | `result_field_labels`: output schema field `description` → profile map `anima-operator-v1` → field name |
+| Labels | `result_field_labels`: output schema field `description` → profile map `ispf-operator-v1` → field name |
 
-Response (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "anima-operator-v1" }`.
+Response (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "ispf-operator-v1" }`.
 
 Response (table): `{ "error_code": "OK", "result": [ {...}, ... ], "result_field_labels": {...} }`.
 

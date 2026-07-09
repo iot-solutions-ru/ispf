@@ -61,7 +61,7 @@ Turning point: solutions live **on the platform** via bundle deploy, not in indu
 
 - [x] **REQ-PF specification** — [roadmap.md § Part A](roadmap.md), ADR [0001](decisions/0001-app-platform-boundary.md)
 - [x] **Sprint A** — script runtime: `selectMany`, `setVar`, `when`/`if`, transactions; app schema isolation (PF-02)
-- [x] **Sprint B** — bundle metadata, BFF wire profile `anima-operator-v1`, `cancel_workflows` (PF-06, PF-10)
+- [x] **Sprint B** — bundle metadata, BFF wire profile `ispf-operator-v1`, `cancel_workflows` (PF-06, PF-10)
 - [x] **Sprint C** — manifest-driven operator shell via generic `POST /bff/invoke`
 - [x] **Sprint C P2** — SQL bindings, function rollback, virtual simulator profiles (PF-08, PF-09)
 - [x] **Sprint D** — bundle rollback, operator manifest API, terminal parity tests

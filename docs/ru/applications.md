@@ -219,20 +219,20 @@ Content-Type: application/json
     "schema": { "name": "in", "fields": [{"name": "orderId", "type": "STRING"}] },
     "rows": [{ "orderId": "..." }]
   },
-  "wireProfile": "anima-operator-v1"
+  "wireProfile": "ispf-operator-v1"
 }
 ```
 
-### Wire profile `anima-operator-v1`
+### Wire profile `ispf-operator-v1`
 
 | Правило | Поведение |
 |---------|-----------|
 | Успех | `error_code === "OK"`, `error_message === ""` |
 | Ошибка | `result` отсутствует |
 | Таблица | `result` = массив строк (unwrap поля `rows`) |
-| Подписи | `result_field_labels`: `description` поля output schema → profile map `anima-operator-v1` → имя поля |
+| Подписи | `result_field_labels`: `description` поля output schema → profile map `ispf-operator-v1` → имя поля |
 
-Ответ (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "anima-operator-v1" }`.
+Ответ (scalar): `{ "error_code": "OK", "error_message": "", "result": { ... }, "result_field_labels": {...}, "wireProfile": "ispf-operator-v1" }`.
 
 Ответ (таблица): `{ "error_code": "OK", "result": [ {...}, ... ], "result_field_labels": {...} }`.
 

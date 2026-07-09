@@ -1,7 +1,7 @@
 {
   "appId": "demo",
   "title": "Demo Application",
-  "wireProfile": "anima-operator-v1",
+  "wireProfile": "ispf-operator-v1",
   "defaultScreen": "ready-items-report",
   "screens": [
     {

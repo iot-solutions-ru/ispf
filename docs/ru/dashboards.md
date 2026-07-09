@@ -38,7 +38,7 @@ Layout по умолчанию: `packages/ispf-server/.../DashboardLayouts.java`
 
 **Устаревший черновой формат** (`columns: 12`, `rowHeight: 72`) остался в старых примерах и AI-шаблонах: удобнее писать «половина экрана = `w: 6`». Платформа при `saveLayout` / deploy **автоматически** переводит 12×72 → 84×8 (`DashboardWidgetPlacement`). Для **новых** bundle и генераторов пишите сразу **84×8** — не полагайтесь на миграцию.
 
-В `examples/*/generate_bundle.*` допустим **draft-слой**: координаты в «12 колонках» в коде, функция `layout()` сериализует fine grid (см. `mes-printing-contour/generate_bundle.py`).
+В `examples/*/generate_bundle.*` допустим **draft-слой**: координаты в «12 колонках» в коде, функция `layout()` сериализует fine grid (см. `mes-platform-production/generate_bundle.py`).
 
 ## Привязка к объектам: `objectPath` и `selectionKey`
 

@@ -1,7 +1,7 @@
 {
   "appId": "oil-terminal",
   "title": "Oil Terminal",
-  "wireProfile": "anima-operator-v1",
+  "wireProfile": "ispf-operator-v1",
   "defaultScreen": "shift",
   "screens": [
     {

@@ -26,7 +26,7 @@ A concise dictionary of platform terms. Product overview: [product.md](product.m
 
 **Binding** — a rule for computing variable values (`BindingRule` in `@bindingRules`). Recalculated by `BindingRuleEngine` on activators (local and cross-object changes). Expression — Google **CEL** or a platform function. See [bindings.md](bindings.md).
 
-**BFF (Backend-for-Frontend)** — the `POST /bff/invoke` gateway for calling application functions from the UI. Wire profile `anima-operator-v1` — contract for the legacy manifest.
+**BFF (Backend-for-Frontend)** — the `POST /bff/invoke` gateway for calling application functions from the UI. Wire profile `ispf-operator-v1` — contract for the legacy manifest.
 
 **Blueprint** — see **Model**.
 

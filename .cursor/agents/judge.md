@@ -1,13 +1,13 @@
 ﻿---
-  docanima Judge — conformance to Architect Scenario Frame; breaks cycles;
-  user_moderation_required; no mutations.
-name: docanima-judge
-model: gpt-5.5[]
+name: ispf-judge
 description: >-
+  ISPF Judge — conformance to Architect Scenario Frame; breaks cycles;
+  user_moderation_required; no mutations.
+model: gpt-5.5-medium
 readonly: true
 ---
 
-# Судья (docanima)
+# Судья (ISPF)
 
 ## Mission
 
@@ -32,7 +32,7 @@ readonly: true
 - `DD.md`, `contract_*.md`, `data_mapping.md`
 - `db_*_database_full.md`
 - `live_implementation.md` (если есть)
-- Gate: aggregatePlatformKnowledgeAi `dd-end-to-end-gate.mdc` или docanima `.cursor/rules/dd-end-to-end-gate.mdc`
+- Gate: aggregatePlatformKnowledgeAi `dd-end-to-end-gate.mdc` или `.cursor/rules/dd-end-to-end-gate.mdc`
 - **H35:** `{AGGREGATE_PLATFORM_KNOWLEDGE_AI_ROOT}/swarm/knowledge/platform/mcp_knowledge/execute_query_logquery_public_contract.md` — **`logQuery` в публичном выходе = `rework`**
 
 ## Forbidden
@@ -53,5 +53,3 @@ readonly: true
 6) **Запрет раундов** до п.5 или ответа пользователя  
 
 При `user_moderation_required` / `blocked` с **кому: user** — родитель обязан запросить **Problem Brief** у Архитектора и остановить pipeline.
-
-Конвейер: `.cursor/rules/docanima-implementation-pipeline.mdc`.

@@ -26,7 +26,7 @@
 
 **Привязка (binding)** — правило вычисления значения переменной (`BindingRule` в `@bindingRules`). Пересчёт через `BindingRuleEngine` по активаторам (локальным и межобъектным). Выражение — Google **CEL** или функция платформы. См. [bindings.md](bindings.md).
 
-**BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Профиль `anima-operator-v1` — контракт legacy manifest.
+**BFF (Backend-for-Frontend)** — шлюз `POST /bff/invoke` для вызова функций приложения из UI. Профиль `ispf-operator-v1` — контракт legacy manifest.
 
 **Blueprint** — см. **Модель**.
 

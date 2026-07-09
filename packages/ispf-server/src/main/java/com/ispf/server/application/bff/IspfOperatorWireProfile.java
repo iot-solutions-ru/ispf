@@ -4,12 +4,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Default field labels for wire profile {@code anima-operator-v1} (REQ-PF-06).
+ * Default field labels for wire profile {@code ispf-operator-v1} (REQ-PF-06).
  * Schema field {@code description} overrides these defaults.
  */
-final class AnimaOperatorWireProfile {
+final class IspfOperatorWireProfile {
 
-    static final String ID = "anima-operator-v1";
+    static final String ID = "ispf-operator-v1";
 
     private static final Map<String, String> DEFAULT_FIELD_LABELS = Map.ofEntries(
             Map.entry("item_code", "Код позиции"),
@@ -22,7 +22,11 @@ final class AnimaOperatorWireProfile {
             Map.entry("updated_at", "Обновлено")
     );
 
-    private AnimaOperatorWireProfile() {
+    private IspfOperatorWireProfile() {
+    }
+
+    static boolean matches(String wireProfile) {
+        return ID.equals(wireProfile);
     }
 
     static Map<String, String> defaultFieldLabels() {

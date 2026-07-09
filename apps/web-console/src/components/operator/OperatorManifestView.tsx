@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { useOperatorManifest } from "../../hooks/useOperatorManifest";
 import { useOperatorConnectivity } from "../../hooks/useOperatorConnectivity";
-import { ANIMA_OPERATOR_WIRE_PROFILE } from "../../types/bff";
+import { ISPF_OPERATOR_WIRE_PROFILE } from "../../types/bff";
 import { resolveOperatorScreen } from "../../types/operatorManifest";
 import OperatorPreferences from "./OperatorPreferences";
 import ManifestScreen from "./ManifestScreen";
@@ -49,7 +49,7 @@ export default function OperatorManifestView({
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const manifest = manifestQuery.data;
-  const wireProfile = manifest?.wireProfile ?? ANIMA_OPERATOR_WIRE_PROFILE;
+  const wireProfile = manifest?.wireProfile ?? ISPF_OPERATOR_WIRE_PROFILE;
 
   const activeScreen = useMemo(
     () => (manifest ? resolveOperatorScreen(manifest, screenId) : null),

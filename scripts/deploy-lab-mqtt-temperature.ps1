@@ -173,7 +173,7 @@ $bffBody = @{
     objectPath = "root.platform.devices.mqtt-lab.sensors.sensor-01"
     functionName = "listSensors"
     input = @{ schema = @{ name = "in"; fields = @() }; rows = @(@{}) }
-    wireProfile = "anima-operator-v1"
+    wireProfile = "ispf-operator-v1"
 } | ConvertTo-Json -Depth 6 -Compress
 $bff = Invoke-RestMethod -Uri "$BaseUrl/api/v1/bff/invoke" -Method POST -Headers $headers -Body $bffBody -ContentType "application/json"
 Write-Host "BFF listSensors: $($bff.error_code) rows=$($bff.result.Count)"

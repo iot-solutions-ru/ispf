@@ -105,7 +105,7 @@ deploy/tools/marketplace-patch-seed-on-vps.py
 deploy/tools/marketplace-vps-sync-catalog.sh
 deploy/tools/mes-platform-production-deploy.sh
 
-# docanima MES printing contour example (local / customer only)
+# Customer MES printing contour example (local only)
 examples/mes-printing-contour/
 examples/mes-print-line/
 examples/marketplace-catalog/mes-printing-contour/

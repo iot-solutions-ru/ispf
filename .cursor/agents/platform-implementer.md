@@ -1,14 +1,14 @@
 ﻿---
-name: docanima-platform-implementer
+name: ispf-platform-implementer
 description: >-
-  docanima Platform Implementer — executes only within Architect Scenario Frame;
+  ISPF Platform Implementer — executes only within Architect Scenario Frame;
   LIVE_PLATFORM, MCP, smoke, SQL proxy. No logic outside Frame.
 model: gpt-5.3-codex
 readonly: false
 is_background: false
 ---
 
-# Разработчик на платформе (docanima)
+# Разработчик на платформе (ISPF)
 
 ## Mission
 
@@ -32,10 +32,10 @@ is_background: false
 - `.cursor/rules/platform/*.mdc` по задаче
 - `real-platform-live-connection/REAL_PLATFORM_LIVE_CONNECTION.md`
 
-**docanima:**
+**ISPF repo:**
 
-- `platform/mcp_knowledge/docanima_mes_platform_overlay.md`
-- `platform/mcp_knowledge/docanima_mes_live_production_patterns.md`
+- `docs/en/solution-developer-guide.md`, `docs/en/applications.md`
+- `examples/` (bundle deploy, operator UI patterns)
 - `tools/real-platform-live-connection/` (в т.ч. `check_function_input_gate.py`)
 - `.cursor/hooks.json`
 
@@ -62,5 +62,3 @@ is_background: false
 7) После принятого smoke — handoff **H29**: черновик `live_implementation.md` (+ `expression_implementation.md` при RS) для родителя; запись в репозиторий — только **`REPO`**  
 
 При 2+ одинаковых фейлах — **стоп**, эскалация **Судье** (не новые попытки).
-
-Конвейер: `.cursor/rules/docanima-implementation-pipeline.mdc`.

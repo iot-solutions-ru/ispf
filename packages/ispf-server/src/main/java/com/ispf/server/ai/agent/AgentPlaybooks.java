@@ -202,7 +202,7 @@ public final class AgentPlaybooks {
                 }}
                 
                 Domain adapters (execution plugins): industrial_oil_gas, snmp_lab, mes_terminal, scada_hmi, _default.
-                docanima patterns: handoffFrame, GAP registry (blocksDev), conformance smoke.
+                ISPF agent patterns: handoffFrame, GAP registry (blocksDev), conformance smoke.
                 
                 Approval phrases: «Да, начинаем», «Утверждаю», «OK, start», primary suggestion click.
                 """

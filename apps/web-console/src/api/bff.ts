@@ -1,6 +1,6 @@
 import { getAuthHeaders } from "../auth/session";
 import {
-  ANIMA_OPERATOR_WIRE_PROFILE,
+  ISPF_OPERATOR_WIRE_PROFILE,
   type BffInvokeRequest,
   type BffWireResponse,
   isBffOk,
@@ -15,7 +15,7 @@ export async function bffInvoke<T = unknown>(request: BffInvokeRequest): Promise
     },
     body: JSON.stringify({
       ...request,
-      wireProfile: request.wireProfile ?? ANIMA_OPERATOR_WIRE_PROFILE,
+      wireProfile: request.wireProfile ?? ISPF_OPERATOR_WIRE_PROFILE,
     }),
   });
   if (!response.ok) {

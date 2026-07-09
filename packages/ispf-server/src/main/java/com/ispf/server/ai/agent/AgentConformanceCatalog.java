@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Conformance invariants and smoke case templates by assignment type (docanima patterns).
+ * Conformance invariants and smoke case templates by assignment type (ISPF agent pipeline).
  */
 public final class AgentConformanceCatalog {
 

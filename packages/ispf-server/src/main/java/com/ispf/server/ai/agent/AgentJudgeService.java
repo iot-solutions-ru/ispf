@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Pre-finish judge phase — readonly conformance verdict (docanima Judge patterns).
+ * Pre-finish judge phase — readonly conformance verdict (ISPF agent pipeline).
  */
 public final class AgentJudgeService {
 

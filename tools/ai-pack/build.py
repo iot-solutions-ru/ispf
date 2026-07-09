@@ -14,6 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 DOCS = ROOT / "docs" / "en"
 EXAMPLES = ROOT / "examples"
+SKIP_EXAMPLE_DIRS = frozenset({"mes-printing-contour", "mes-print-line"})
 OUT_DIR = ROOT / "ai" / "context" / "generated"
 SERVER_RESOURCE = (
     ROOT
@@ -301,6 +302,8 @@ def load_examples() -> list[dict]:
         return items
     for bundle_path in sorted(EXAMPLES.glob("*/bundle.json")):
         folder = bundle_path.parent.name
+        if folder in SKIP_EXAMPLE_DIRS:
+            continue
         try:
             manifest = json.loads(bundle_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:

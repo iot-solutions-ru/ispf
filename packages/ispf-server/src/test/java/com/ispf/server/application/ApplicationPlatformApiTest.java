@@ -701,7 +701,7 @@ class ApplicationPlatformApiTest {
     }
 
     @Test
-    void animaOperatorWireProfileReturnsTableArray() throws Exception {
+    void ispfOperatorWireProfileReturnsTableArray() throws Exception {
         mockMvc.perform(post("/api/v1/applications/%s/deploy".formatted(APP_ID))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -755,14 +755,14 @@ class ApplicationPlatformApiTest {
                                 {
                                   "objectPath": "%s",
                                   "functionName": "platform_wire_list",
-                                  "wireProfile": "anima-operator-v1",
+                                  "wireProfile": "ispf-operator-v1",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.error_code").value("OK"))
                 .andExpect(jsonPath("$.error_message").value(""))
-                .andExpect(jsonPath("$.wireProfile").value("anima-operator-v1"))
+                .andExpect(jsonPath("$.wireProfile").value("ispf-operator-v1"))
                 .andExpect(jsonPath("$.result", hasSize(1)))
                 .andExpect(jsonPath("$.result[0].item_code").value("IT-WIRE-01"))
                 .andExpect(jsonPath("$.result_field_labels.item_code").value("Код позиции"));
@@ -823,7 +823,7 @@ class ApplicationPlatformApiTest {
                                 {
                                   "objectPath": "%s",
                                   "functionName": "platform_labeled_list",
-                                  "wireProfile": "anima-operator-v1",
+                                  "wireProfile": "ispf-operator-v1",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))
@@ -902,7 +902,7 @@ class ApplicationPlatformApiTest {
                                 {
                                   "objectPath": "%s",
                                   "functionName": "warehouse_listLocations",
-                                  "wireProfile": "anima-operator-v1",
+                                  "wireProfile": "ispf-operator-v1",
                                   "input": { "schema": { "name": "in", "fields": [] }, "rows": [{}] }
                                 }
                                 """.formatted(DEMO_DEVICE)))

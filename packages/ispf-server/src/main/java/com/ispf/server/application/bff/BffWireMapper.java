@@ -22,8 +22,8 @@ public final class BffWireMapper {
         String errorCode = stringValue(row.remove("error_code"), "OK");
         String errorMessage = stringValue(row.remove("error_message"), "");
 
-        if (AnimaOperatorWireProfile.ID.equals(wireProfile)) {
-            return toAnimaOperatorWire(errorCode, errorMessage, row, outputSchema, wireProfile);
+        if (IspfOperatorWireProfile.matches(wireProfile)) {
+            return toIspfOperatorWire(errorCode, errorMessage, row, outputSchema, IspfOperatorWireProfile.ID);
         }
 
         Map<String, Object> wire = new LinkedHashMap<>();
@@ -38,14 +38,14 @@ public final class BffWireMapper {
         return wire;
     }
 
-    private static Map<String, Object> toAnimaOperatorWire(
+    private static Map<String, Object> toIspfOperatorWire(
             String errorCode,
             String errorMessage,
             Map<String, Object> row,
             DataSchema outputSchema,
             String wireProfile
     ) {
-        Map<String, String> profileDefaults = AnimaOperatorWireProfile.defaultFieldLabels();
+        Map<String, String> profileDefaults = IspfOperatorWireProfile.defaultFieldLabels();
 
         Map<String, Object> wire = new LinkedHashMap<>();
         wire.put("error_code", errorCode);
@@ -93,7 +93,7 @@ public final class BffWireMapper {
         if (outputSchema != null) {
             for (FieldDefinition field : outputSchema.fields()) {
                 if (field.type() == FieldType.RECORD_LIST && field.nestedSchema() != null) {
-                    Map<String, String> labels = AnimaOperatorWireProfile.labelsFromSchemaFields(
+                    Map<String, String> labels = IspfOperatorWireProfile.labelsFromSchemaFields(
                             field.nestedSchema().fields(),
                             profileDefaults
                     );
@@ -102,7 +102,7 @@ public final class BffWireMapper {
                     }
                 }
             }
-            Map<String, String> labels = AnimaOperatorWireProfile.labelsFromSchemaFields(
+            Map<String, String> labels = IspfOperatorWireProfile.labelsFromSchemaFields(
                     outputSchema.fields(),
                     profileDefaults
             );
@@ -116,7 +116,7 @@ public final class BffWireMapper {
             Map<String, String> labels = new LinkedHashMap<>();
             firstRow.keySet().forEach(key -> {
                 String name = String.valueOf(key);
-                labels.put(name, AnimaOperatorWireProfile.resolveLabel(name, null, profileDefaults));
+                labels.put(name, IspfOperatorWireProfile.resolveLabel(name, null, profileDefaults));
             });
             return labels;
         }
@@ -137,7 +137,7 @@ public final class BffWireMapper {
         Map<String, String> labels = new LinkedHashMap<>();
         row.keySet().forEach(key -> labels.put(
                 key,
-                AnimaOperatorWireProfile.resolveLabel(key, schemaByName.get(key), profileDefaults)
+                IspfOperatorWireProfile.resolveLabel(key, schemaByName.get(key), profileDefaults)
         ));
         return labels;
     }

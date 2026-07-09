@@ -61,7 +61,7 @@
 
 - [x] **Спецификация REQ-PF** — [ROADMAP.md § Часть A](roadmap.md), ADR [0001](decisions/0001-app-platform-boundary.md)
 - [x] **Sprint A** — время выполнения скрипта: `selectMany`, `setVar`, `when`/`if`, передача; Схема приложения изоляции (PF-02)
-- [x] **Sprint B** — метаданные пакета, профиль провода BFF `anima-operator-v1`, `cancel_workflows` (PF-06, PF-10)
+- [x] **Sprint B** — метаданные пакета, профиль провода BFF `ispf-operator-v1`, `cancel_workflows` (PF-06, PF-10)
 - [x] **Sprint C** — manifest-driven operator shell через generic `POST /bff/invoke`
 - [x] **Sprint C P2** — привязки SQL, откат функций, профили виртуального симулятора (PF-08, PF-09)
 - [x] **Sprint D** — откат пакета, API манифеста оператора, тесты четности терминала

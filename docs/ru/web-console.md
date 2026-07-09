@@ -75,7 +75,7 @@ Generic operator shell без отраслевого кода в `main`:
 src/
 ├── App.tsx                 # Shell, tabs, role selector
 ├── api.ts                  # REST client
-├── api/bff.ts              # POST /bff/invoke (anima-operator-v1)
+├── api/bff.ts              # POST /bff/invoke (ispf-operator-v1)
 ├── types/                  # dashboard, workflow, bff, operatorUi, operatorManifest (legacy)
 ├── hooks/
 │   ├── useObjectWebSocket.ts

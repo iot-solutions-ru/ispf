@@ -1,8 +1,8 @@
-/** anima-operator-v1 wire envelope (REQ-PF-06). */
+/** ispf-operator-v1 wire envelope (REQ-PF-06). */
 
-export const ANIMA_OPERATOR_WIRE_PROFILE = "anima-operator-v1" as const;
+export const ISPF_OPERATOR_WIRE_PROFILE = "ispf-operator-v1" as const;
 
-export type BffWireProfile = typeof ANIMA_OPERATOR_WIRE_PROFILE | string;
+export type BffWireProfile = typeof ISPF_OPERATOR_WIRE_PROFILE | string;
 
 export interface BffWireResponse<T = unknown> {
   error_code: string;
