@@ -186,6 +186,7 @@ export default function AnalyticsTagInspector({ path, canManage = false }: Analy
                   objectPath={path}
                   entries={ANALYTICS_CEL_BINDING_ENTRIES}
                   placeholder={t("automation:analyticsTag.expressionPlaceholder")}
+                  editorTitle={t("automation:analyticsTag.expression")}
                   onValidate={async (expression) => {
                     const result = await validateAnalyticsExpression(expression, path);
                     return {

@@ -34,7 +34,7 @@ export default function VariableHistoryModal({
 
   return (
     <ModalPortal>
-      <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-backdrop" role="presentation">
         <div
           className="modal modal-wide modal-variable-history"
           onClick={(event) => event.stopPropagation()}

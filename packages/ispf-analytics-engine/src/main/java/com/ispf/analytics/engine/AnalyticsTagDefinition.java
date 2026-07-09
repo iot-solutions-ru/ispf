@@ -83,6 +83,14 @@ public record AnalyticsTagDefinition(
         }
     }
 
+    public String objectPath() {
+        return HistorianTagPaths.objectPath(tagPath);
+    }
+
+    public String ruleId() {
+        return HistorianTagPaths.ruleId(tagPath);
+    }
+
     public boolean isCelHelper() {
         return "cel".equalsIgnoreCase(helper) || "expression".equalsIgnoreCase(helper);
     }

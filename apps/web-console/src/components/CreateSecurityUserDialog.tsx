@@ -43,7 +43,7 @@ export default function CreateSecurityUserDialog({
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-create-object" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("createUser.title")}</h3>

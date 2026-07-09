@@ -15,14 +15,6 @@ import java.util.Set;
  */
 public final class AnalyticsDagBuilder {
 
-    private static final Set<String> DERIVED_OUTPUT_VARIABLES = Set.of(
-            "derivedValue",
-            "oeePct",
-            "availabilityPct",
-            "performancePct",
-            "qualityPct"
-    );
-
     public record AnalyticsTagAdjacency(
             Map<String, Set<String>> downstreamByTag,
             Map<String, Set<String>> upstreamByTag
@@ -79,22 +71,33 @@ public final class AnalyticsDagBuilder {
 
         for (AnalyticsTagDefinition tag : tags) {
             for (AnalyticsSourceRef source : tag.sources()) {
-                if (!byPath.containsKey(source.path())) {
+                String upstreamTagPath = findProducerTagPath(tags, source.path(), source.variable());
+                if (upstreamTagPath == null) {
                     continue;
                 }
-                if (!DERIVED_OUTPUT_VARIABLES.contains(source.variable())) {
-                    continue;
-                }
-                if (source.path().equals(tag.tagPath())) {
+                if (upstreamTagPath.equals(tag.tagPath())) {
                     throw new AnalyticsDagCycleException("Self-referencing analytics tag: " + tag.tagPath());
                 }
-                if (downstream.get(source.path()).add(tag.tagPath())) {
-                    upstream.get(tag.tagPath()).add(source.path());
+                if (downstream.get(upstreamTagPath).add(tag.tagPath())) {
+                    upstream.get(tag.tagPath()).add(upstreamTagPath);
                     indegree.merge(tag.tagPath(), 1, Integer::sum);
                 }
             }
         }
         return new AdjacencyMaps(downstream, upstream, indegree);
+    }
+
+    private static String findProducerTagPath(
+            List<AnalyticsTagDefinition> tags,
+            String objectPath,
+            String variableName
+    ) {
+        for (AnalyticsTagDefinition tag : tags) {
+            if (tag.objectPath().equals(objectPath) && tag.outputVariable().equals(variableName)) {
+                return tag.tagPath();
+            }
+        }
+        return null;
     }
 
     private static List<AnalyticsTagDefinition> topologicalOrder(

@@ -267,7 +267,7 @@ export default function SecurityUserInspector({
       </div>
 
       {showPasswordDialog && (
-        <div className="modal-backdrop" onClick={() => setShowPasswordDialog(false)}>
+        <div className="modal-backdrop" role="presentation">
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <header>
               <h3>{t("user.passwordDialogTitle")}</h3>

@@ -2,8 +2,10 @@ package com.ispf.server.object;
 
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
+import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
+import com.ispf.core.binding.BindingRuleKind;
 import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.binding.BindingTarget;
 import com.ispf.core.binding.BindingVariableRef;
@@ -14,14 +16,18 @@ import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.core.object.Variable;
 import com.ispf.expression.BindingDependencyParser;
+import com.ispf.server.config.AnalyticsProperties;
+import com.ispf.server.history.HistorianRollupBuckets;
+import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
+import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -31,22 +37,32 @@ public class BindingRulesService {
             .field("value", FieldType.STRING)
             .build();
 
+    private static final DataSchema STRING_VALUE_SCHEMA = DataSchema.builder("stringValue")
+            .field("value", FieldType.STRING)
+            .build();
+
     private final ObjectManager objectManager;
     private final ObjectMapper objectMapper;
     private final BindingPeriodicScheduleRegistry periodicScheduleRegistry;
     private final BindingPeriodicScheduler periodicScheduler;
+    private final AnalyticsProperties analyticsProperties;
+    private final AnalyticsEngineScheduler engineScheduler;
     private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
 
     public BindingRulesService(
             ObjectManager objectManager,
             ObjectMapper objectMapper,
             BindingPeriodicScheduleRegistry periodicScheduleRegistry,
-            @Lazy BindingPeriodicScheduler periodicScheduler
+            @Lazy BindingPeriodicScheduler periodicScheduler,
+            AnalyticsProperties analyticsProperties,
+            @Lazy AnalyticsEngineScheduler engineScheduler
     ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
         this.periodicScheduleRegistry = periodicScheduleRegistry;
         this.periodicScheduler = periodicScheduler;
+        this.analyticsProperties = analyticsProperties;
+        this.engineScheduler = engineScheduler;
     }
 
     public List<BindingRule> listRules(String objectPath) {
@@ -60,9 +76,16 @@ public class BindingRulesService {
             for (BindingRule rule : normalized) {
                 validateRule(objectPath, rule);
             }
+            boolean historianChanged = normalized.stream().anyMatch(BindingRule::isHistorian);
             writeRules(objectPath, normalized);
-            periodicScheduleRegistry.syncObject(objectPath, normalized);
+            periodicScheduleRegistry.syncObject(
+                    objectPath,
+                    normalized.stream().filter(BindingRule::isReactive).toList()
+            );
             periodicScheduler.reschedule();
+            if (historianChanged) {
+                engineScheduler.syncSchedules();
+            }
             return normalized;
         }
     }
@@ -94,6 +117,10 @@ public class BindingRulesService {
     }
 
     private void validateRule(String objectPath, BindingRule rule) {
+        if (rule.isHistorian()) {
+            validateHistorianRule(objectPath, rule);
+            return;
+        }
         PlatformObject object = objectManager.require(objectPath);
         BindingTarget target = rule.target();
         if (target.isVariable()) {
@@ -116,6 +143,51 @@ public class BindingRulesService {
                 throw new IllegalArgumentException("Event target.eventName is required");
             }
         }
+    }
+
+    private void validateHistorianRule(String objectPath, BindingRule rule) {
+        if (!rule.target().isVariable()) {
+            throw new IllegalArgumentException("Historian rules must target a variable");
+        }
+        String windowBucket = rule.windowBucket() != null && !rule.windowBucket().isBlank()
+                ? rule.windowBucket()
+                : "5m";
+        validateWindowBucket(windowBucket);
+        if (rule.rollupBuckets() != null) {
+            for (String bucket : rule.rollupBuckets()) {
+                validateWindowBucket(bucket);
+            }
+        }
+        AnalyticsTagDefinition compiled = HistorianBindingRuleCompiler.compile(objectPath, rule, analyticsProperties)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Historian rule does not compile: " + rule.id()));
+        ensureHistorianTargetVariable(objectPath, rule, compiled);
+    }
+
+    private static void validateWindowBucket(String windowBucket) {
+        VariableHistoryService.parseBucket(windowBucket);
+    }
+
+    private void ensureHistorianTargetVariable(
+            String objectPath,
+            BindingRule rule,
+            AnalyticsTagDefinition compiled
+    ) {
+        String variableName = rule.target().variableName();
+        PlatformObject object = objectManager.require(objectPath);
+        if (object.getVariable(variableName).isPresent()) {
+            return;
+        }
+        objectManager.createVariable(
+                objectPath,
+                variableName,
+                STRING_VALUE_SCHEMA,
+                true,
+                true,
+                DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", "")),
+                false,
+                null
+        );
     }
 
     private List<BindingRule> readRules(PlatformObject object) {
@@ -152,19 +224,39 @@ public class BindingRulesService {
         List<BindingRule> normalized = new ArrayList<>();
         for (BindingRule rule : rules) {
             BindingActivators activators = normalizeActivators(rule.activators(), rule.expression());
+            BindingRuleKind kind = rule.kind() != null ? rule.kind() : BindingRuleKind.REACTIVE;
+            String windowBucket = blankToNull(rule.windowBucket());
+            List<String> rollupBuckets = normalizeRollupBuckets(rule.rollupBuckets(), windowBucket);
             normalized.add(new BindingRule(
                     rule.id(),
                     rule.name(),
                     rule.enabled(),
                     rule.order(),
+                    kind,
                     activators,
                     rule.condition(),
                     rule.expression(),
-                    rule.target()
+                    rule.target(),
+                    windowBucket,
+                    rollupBuckets
             ));
         }
         normalized.sort((left, right) -> Integer.compare(left.order(), right.order()));
         return normalized;
+    }
+
+    private static List<String> normalizeRollupBuckets(List<String> rollupBuckets, String windowBucket) {
+        if (rollupBuckets != null && !rollupBuckets.isEmpty()) {
+            return List.copyOf(rollupBuckets);
+        }
+        if (windowBucket == null || windowBucket.isBlank()) {
+            return null;
+        }
+        return HistorianRollupBuckets.defaultForWindow(windowBucket);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
     private static BindingActivators normalizeActivators(BindingActivators activators, String expression) {
@@ -201,10 +293,13 @@ public class BindingRulesService {
             String name,
             boolean enabled,
             int order,
+            String kind,
             BindingActivatorsDto activators,
             String condition,
             String expression,
-            BindingTargetDto target
+            BindingTargetDto target,
+            String windowBucket,
+            List<String> rollupBuckets
     ) {
         static BindingRuleDto from(BindingRule rule) {
             return new BindingRuleDto(
@@ -212,6 +307,7 @@ public class BindingRulesService {
                     rule.name(),
                     rule.enabled(),
                     rule.order(),
+                    rule.kind().name().toLowerCase(Locale.ROOT),
                     BindingActivatorsDto.from(rule.activators()),
                     rule.condition(),
                     rule.expression(),
@@ -221,16 +317,23 @@ public class BindingRulesService {
                             rule.target().field(),
                             rule.target().path(),
                             rule.target().eventName()
-                    )
+                    ),
+                    rule.windowBucket(),
+                    rule.rollupBuckets()
             );
         }
 
         BindingRule toRule() {
+            BindingRuleKind parsedKind = BindingRuleKind.REACTIVE;
+            if (kind != null && !kind.isBlank()) {
+                parsedKind = BindingRuleKind.valueOf(kind.trim().toUpperCase(Locale.ROOT));
+            }
             return new BindingRule(
                     id,
                     name,
                     enabled,
                     order,
+                    parsedKind,
                     activators != null ? activators.toActivators() : null,
                     condition,
                     expression,
@@ -240,7 +343,9 @@ public class BindingRulesService {
                             target.field(),
                             target.path(),
                             target.eventName()
-                    )
+                    ),
+                    windowBucket,
+                    rollupBuckets
             );
         }
     }

@@ -252,7 +252,7 @@ export default function EditDescriptorDialog({
       : t("descriptor.newEvent");
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal wide descriptor-editor-modal" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{title}</h3>

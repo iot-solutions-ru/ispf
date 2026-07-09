@@ -126,7 +126,7 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
 
   return (
     <ModalPortal>
-      <div className="modal-backdrop" role="presentation" onClick={onClose}>
+      <div className="modal-backdrop" role="presentation">
       <div
         className="modal-dialog haystack-bind-dialog"
         role="dialog"

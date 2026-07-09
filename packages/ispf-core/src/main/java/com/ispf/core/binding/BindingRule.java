@@ -1,17 +1,24 @@
 package com.ispf.core.binding;
 
+import java.util.List;
+
 /**
  * Declarative binding: activator (when) → condition (if) → expression (how) → target (where).
+ *
+ * <p>{@link BindingRuleKind#HISTORIAN} rules are compiled into analytics tags (ADR-0041).
  */
 public record BindingRule(
         String id,
         String name,
         boolean enabled,
         int order,
+        BindingRuleKind kind,
         BindingActivators activators,
         String condition,
         String expression,
-        BindingTarget target
+        BindingTarget target,
+        String windowBucket,
+        List<String> rollupBuckets
 ) {
     public BindingRule {
         if (id == null || id.isBlank()) {
@@ -32,6 +39,9 @@ public record BindingRule(
         if (target.isEvent() && (target.eventName() == null || target.eventName().isBlank())) {
             throw new IllegalArgumentException("Binding rule target.eventName is required for event effect");
         }
+        if (kind == null) {
+            kind = BindingRuleKind.REACTIVE;
+        }
         if (activators == null) {
             activators = BindingActivators.onLocalChange();
         }
@@ -41,5 +51,29 @@ public record BindingRule(
         if (name == null) {
             name = id;
         }
+        if (rollupBuckets != null) {
+            rollupBuckets = List.copyOf(rollupBuckets);
+        }
+    }
+
+    public BindingRule(
+            String id,
+            String name,
+            boolean enabled,
+            int order,
+            BindingActivators activators,
+            String condition,
+            String expression,
+            BindingTarget target
+    ) {
+        this(id, name, enabled, order, BindingRuleKind.REACTIVE, activators, condition, expression, target, null, null);
+    }
+
+    public boolean isHistorian() {
+        return kind == BindingRuleKind.HISTORIAN;
+    }
+
+    public boolean isReactive() {
+        return kind != BindingRuleKind.HISTORIAN;
     }
 }

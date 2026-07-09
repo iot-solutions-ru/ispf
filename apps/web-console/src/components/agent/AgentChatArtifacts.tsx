@@ -65,7 +65,7 @@ function TablePreviewModal({
   const { t } = useTranslation(i18nNs);
   const title = table.title ?? table.reportPath ?? t("agent.tablePreview");
   return (
-    <div className="operator-agent-modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="operator-agent-modal-backdrop" role="presentation">
       <div
         className="operator-agent-modal"
         role="dialog"

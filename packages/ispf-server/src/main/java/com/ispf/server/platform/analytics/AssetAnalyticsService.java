@@ -217,7 +217,6 @@ public class AssetAnalyticsService {
 
         AnalyticsDerivedTagService.DerivedTagRefreshResult refresh =
                 derivedTagService.refreshDevice(command.devicePath());
-        tagMetadataService.ensureTagMetadata(objectManager.require(command.devicePath()));
         engineScheduler.syncSchedules();
         return new ApplyTemplateResult(command.devicePath(), template.templateId(), template.blueprintName(), refresh);
     }

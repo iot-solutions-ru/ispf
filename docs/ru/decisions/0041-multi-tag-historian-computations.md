@@ -1,0 +1,61 @@
+> **Язык:** русская версия (вычитка). Канонический английский: [../../en/decisions/0041-multi-tag-historian-computations.md](../../en/decisions/0041-multi-tag-historian-computations.md).
+
+# ADR-0041: Мультитеговые historian-вычисления (binding rules)
+
+## Статус
+
+**Принято** (2026-07-09)
+
+## Контекст
+
+После ADR-0040 historian-теги оставались на MVP-модели: один `derivedValue`/`oeePct` на устройство, объекты `ANALYTICS_TEMPLATE` в `root.platform.analytics`, метаданные на уровне устройства.
+
+До 1.0 нет prod-легаси. MVP путал операторов: «шаблон в дереве» vs «живой тег на устройстве».
+
+## Решение
+
+### 1. Historian = `BindingRule` с `kind: historian`
+
+В `@bindingRules` рядом с reactive:
+
+```json
+{
+  "id": "avg-temp-5m",
+  "kind": "historian",
+  "expression": "rollingAvg(root.platform.devices.sensor-a.temperature, 5m)",
+  "windowBucket": "5m",
+  "target": { "kind": "variable", "variableName": "avgTemp5m", "field": "value" }
+}
+```
+
+- **Несколько правил на DEVICE** — произвольное `target.variableName`
+- **Путь тега** — `objectPath#ruleId`
+- **Reactive engine** пропускает `historian`; **analytics engine** компилирует и считает
+
+Рецепты (OEE, цепочки, CEL): [analytics-historian-cookbook.md](../../analytics-historian-cookbook.md).
+
+### 2. Убрать каталог `ANALYTICS_TEMPLATE`
+
+- Нет bootstrap `root.platform.analytics.*`
+- **Пресеты** — статический код и cookbook
+- `/templates/*` устарело
+
+### 3. Метаданные по правилу
+
+`@historianRuleMeta` на устройстве — quality и last eval по id правила.
+
+### 4. Устарело
+
+- `derivedValue`/`oeePct` как единственный признак тега
+- `analyticsExpression` / `applyTemplate` для новых конфигураций
+
+## Последствия
+
+- Один список правил на вкладке «Вычисления»
+- Виджеты ссылаются на выходные переменные правил
+- DAG и lineage по цепочкам тегов
+
+## См. также
+
+- [ADR-0040](0040-unified-computations-ui.md)
+- [analytics-tag-catalog.md](../../analytics-tag-catalog.md)

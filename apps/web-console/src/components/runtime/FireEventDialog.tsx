@@ -52,7 +52,7 @@ export default function FireEventDialog({ objectPath, event, onClose, onFired }:
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
           <h3>{t("runtime:fireEvent.title")}</h3>

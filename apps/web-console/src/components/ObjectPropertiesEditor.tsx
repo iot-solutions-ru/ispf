@@ -5,6 +5,7 @@ import {
   deleteEvent,
   deleteFunction,
   deleteObject,
+  fetchAnalyticsTags,
   fetchObjectEditor,
   setVariable,
   updateObject,
@@ -51,10 +52,9 @@ import ApplicationDeployPanel from "./ApplicationDeployPanel";
 import TreeSubtreeExportPanel from "./TreeSubtreeExportPanel";
 import PackageImportPanel from "./PackageImportPanel";
 import ObjectAclPanel from "./ObjectAclPanel";
-import BindingRulesPanel from "./BindingRulesPanel";
+import ObjectComputationsPanel from "./ObjectComputationsPanel";
 import EventJournalPanel from "./operator/EventJournalPanel";
 import FunctionInvokeJournalPanel from "./runtime/FunctionInvokeJournalPanel";
-import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import ExpressionDebuggerPanel from "./ExpressionDebuggerPanel";
 import ObjectChangeHistoryPanel from "./journal/ObjectChangeHistoryPanel";
 import VariableHistoryPanel from "./VariableHistoryPanel";
@@ -84,7 +84,7 @@ type Tab =
   | "export"
   | "access"
   | "variables"
-  | "bindings"
+  | "computations"
   | "expressions"
   | "events"
   | "functions"
@@ -100,7 +100,7 @@ const OBJECT_PROPERTY_TABS: readonly Tab[] = [
   "export",
   "access",
   "variables",
-  "bindings",
+  "computations",
   "expressions",
   "events",
   "functions",
@@ -287,6 +287,20 @@ export default function ObjectPropertiesEditor({
 
   const editorQuery = useInspectorObjectEditor(path);
   const variablesQuery = useVariablesQuery(path, 5000, Boolean(path));
+
+  const historianTagsQuery = useQuery({
+    queryKey: ["analytics-tags", path],
+    queryFn: () => fetchAnalyticsTags(path),
+    enabled: Boolean(path),
+  });
+
+  const historianComputations = useMemo(
+    () =>
+      (historianTagsQuery.data?.tags ?? []).filter((tag) =>
+        tag.path === path || tag.path.startsWith(`${path}#`)
+      ),
+    [historianTagsQuery.data?.tags, path]
+  );
 
   const [state, setState] = useState<EditorState | null>(null);
   const [baseline, setBaseline] = useState<EditorState | null>(null);
@@ -509,9 +523,21 @@ export default function ObjectPropertiesEditor({
     if (showAccessTab) {
       list.push("access");
     }
-    list.push("variables", "bindings", "expressions", "events", "functions", "history");
+    list.push("variables", "computations", "expressions", "events", "functions", "history");
     return list;
   }, [canManage, ctxPreview, hasBrickMetadata, hasHaystackMetadata, isApplicationPreview, isDevicePreview, path, showAccessTab, showFederationTab]);
+
+  useEffect(() => {
+    try {
+      const storageKey = `ispf:ui:active-tab:object-properties:${path}`;
+      if (sessionStorage.getItem(storageKey) === "bindings") {
+        sessionStorage.setItem(storageKey, "computations");
+        setTab("computations");
+      }
+    } catch {
+      // ignore
+    }
+  }, [path, setTab]);
 
   useEffect(() => {
     if (editorData && !tabs.includes(tab)) {
@@ -563,8 +589,8 @@ export default function ObjectPropertiesEditor({
         return t("tab.access");
       case "variables":
         return t("tab.variables");
-      case "bindings":
-        return t("tab.bindings");
+      case "computations":
+        return t("tab.computations");
       case "expressions":
         return t("tab.expressions");
       case "events":
@@ -817,33 +843,27 @@ export default function ObjectPropertiesEditor({
         </section>
       )}
 
-      {tab === "bindings" && (
+      {tab === "computations" && (
         <section className="panel">
-          <BindingRulesPanel
+          <ObjectComputationsPanel
             path={path}
             canManage={canManage}
             eventNames={editorData.events.map((event) => event.name)}
             variableNames={editorData.variables.map((variable) => variable.name)}
             functionNames={editorData.functions.map((fn) => fn.name)}
+            objectType={ctx.type}
+            historianComputations={historianComputations}
+            bindingAuditEnabled={editorData.object.bindingAuditEnabled ?? false}
+            federated={Boolean(ctx.federated)}
+            revision={revision}
+            onBindingAuditChange={async (enabled) => {
+              await updateObject(path, { bindingAuditEnabled: enabled }, { revision });
+              const fresh = await fetchObjectEditor(path);
+              setRevision(fresh.object.revision ?? revision);
+              await reloadFromEditor();
+              await queryClient.invalidateQueries({ queryKey: ["binding-audit-status", path] });
+            }}
           />
-          {canManage && !ctx.federated && (
-            <label className="binding-audit-toggle panel-toolbar">
-              <input
-                type="checkbox"
-                checked={editorData.object.bindingAuditEnabled ?? false}
-                onChange={async (e) => {
-                  const enabled = e.target.checked;
-                  await updateObject(path, { bindingAuditEnabled: enabled }, { revision });
-                  const fresh = await fetchObjectEditor(path);
-                  setRevision(fresh.object.revision ?? revision);
-                  await reloadFromEditor();
-                  await queryClient.invalidateQueries({ queryKey: ["binding-audit-status", path] });
-                }}
-              />
-              {t("bindings.auditEnabled")}
-            </label>
-          )}
-          <BindingInvokeJournalPanel objectPath={path} compact scrollMaxHeight={360} />
         </section>
       )}
 

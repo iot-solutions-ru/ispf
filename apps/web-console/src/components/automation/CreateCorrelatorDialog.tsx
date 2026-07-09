@@ -49,7 +49,7 @@ export default function CreateCorrelatorDialog({ onClose, onCreated }: CreateCor
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("automation:correlator.newTitle")}</h3>

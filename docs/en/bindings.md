@@ -40,6 +40,28 @@ See also: [object-model.md](object-model.md), [blueprints.md](blueprints.md), AD
 | `condition` | CEL; empty = always |
 | `expression` | CEL or single platform function |
 | `target` | Where to write result (see **Target kinds** below) |
+| `kind` | Optional: `reactive` (default) or `historian` — historian rules are evaluated by the analytics engine, not `BindingRuleEngine` ([ADR-0041](decisions/0041-multi-tag-historian-computations.md)) |
+| `windowBucket` | Historian only: aggregate window (`5m`, `1h`, `8h`, …) |
+| `rollupBuckets` | Historian only: optional materialized rollup windows |
+
+### Historian rules (`kind: historian`)
+
+Same `@bindingRules` array; multiple rules per device; arbitrary output variable names. Tag catalog path = `objectPath#ruleId`.
+
+**Recipes (rolling avg, OEE, tag chains, CEL):** [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+
+```json
+{
+  "id": "shift-oee",
+  "kind": "historian",
+  "enabled": true,
+  "order": 10,
+  "activators": { "periodicMs": 300000, "onVariableChange": [] },
+  "expression": "oee('root.platform.devices.line-01', 'availabilityPct', 'performancePct', 'qualityPct', '8h')",
+  "windowBucket": "8h",
+  "target": { "kind": "variable", "variableName": "oeePct", "field": "value" }
+}
+```
 
 ### Periodic execution
 
@@ -132,7 +154,7 @@ Existing DB without recreate: Flyway `V41__drop_binding_expr.sql` drops the colu
 
 ## UI
 
-Web Console → Object inspector → **Bindings** tab. Definition variables without bindings; live values via rules.
+Web Console → Object inspector → **Computations** tab (reactive + historian rules). See [ADR-0040](decisions/0040-unified-computations-ui.md).
 
 ---
 

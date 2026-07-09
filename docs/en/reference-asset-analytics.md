@@ -1,5 +1,7 @@
 > **Language:** Canonical English. Russian edition: [ru/reference-asset-analytics.md](../ru/reference-asset-analytics.md).
 
+> **Deprecated for new configurations (ADR-0041).** Use historian binding rules and [analytics-historian-cookbook.md](analytics-historian-cookbook.md) instead of `ANALYTICS_TEMPLATE` + apply workflow.
+
 # Asset analytics (BL-160 / BL-201)
 
 AF-like **lite** framework: catalog KPI templates, historian rollups, runtime **derived tags** on devices, typed Explorer inspector, and apply workflow.

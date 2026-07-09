@@ -13,5 +13,7 @@ English canonical ADRs for ISPF. Russian mirror: [../../ru/decisions/readme.md](
 | [0037](0037-relational-core-portability.md) | Relational core portability |
 | [0038](0038-analytics-platform-architecture.md) | Analytics platform (AF-capable) |
 | [0039](0039-unified-alarm-architecture.md) | Alert rule evolution (same `alert-rule-v1`) |
+| [0040](0040-unified-computations-ui.md) | Unified Computations tab |
+| [0041](0041-multi-tag-historian-computations.md) | Historian binding rules (multi-tag) |
 
 Full list: all `NNNN-*.md` files in this directory.

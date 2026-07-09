@@ -1,6 +1,31 @@
-import type { BindingRule, BindingTarget } from "../types";
+import type { BindingRule, BindingRuleKind, BindingTarget } from "../types";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
 import { defaultBindingActivators } from "./bindingActivatorsUtils";
+
+export function emptyHistorianRule(): BindingRule {
+  return {
+    id: "",
+    name: "",
+    enabled: true,
+    order: 0,
+    kind: "historian",
+    activators: {
+      onStartup: false,
+      onVariableChange: [],
+      onEvent: null,
+      periodicMs: 60_000,
+      onContextChange: false,
+    },
+    condition: "",
+    expression: "",
+    target: { kind: "variable", variableName: "", field: "value" },
+    windowBucket: "5m",
+  };
+}
+
+export function ruleKind(rule: BindingRule): BindingRuleKind {
+  return rule.kind === "historian" ? "historian" : "reactive";
+}
 
 export function emptyBindingRule(): BindingRule {
   return {
@@ -72,17 +97,19 @@ export function isBindingRuleSaveable(rule: BindingRule): boolean {
 
 export function prepareBindingRuleForSave(rule: BindingRule): BindingRule {
   const trimmedId = rule.id.trim();
-  const kind = targetKind(rule);
+  const target = targetKind(rule);
+  const kind = ruleKind(rule);
   return {
     ...rule,
     id: trimmedId,
     name: rule.name?.trim() || trimmedId,
+    kind,
     target: {
-      kind,
-      variableName: kind === "variable" ? (rule.target.variableName?.trim() ?? "") : rule.target.variableName ?? null,
+      kind: target,
+      variableName: target === "variable" ? (rule.target.variableName?.trim() ?? "") : rule.target.variableName ?? null,
       field: rule.target.field ?? "value",
-      path: kind === "context" ? (rule.target.path?.trim() ?? "") : rule.target.path ?? null,
-      eventName: kind === "event" ? (rule.target.eventName?.trim() ?? "") : rule.target.eventName ?? null,
+      path: target === "context" ? (rule.target.path?.trim() ?? "") : rule.target.path ?? null,
+      eventName: target === "event" ? (rule.target.eventName?.trim() ?? "") : rule.target.eventName ?? null,
     },
   };
 }

@@ -88,7 +88,7 @@ export default function FederationCatalogSyncDialog({
   const applyKey = subtreeMode ? "subtreeSync.apply" : "catalogSync.apply";
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
         className="modal federation-sync-dialog"
         role="dialog"

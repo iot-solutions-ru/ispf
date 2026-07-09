@@ -39,7 +39,7 @@ export default function DashboardModal({
 
   return (
     <ModalPortal>
-      <div className="modal-backdrop dashboard-modal-backdrop" onClick={onClose}>
+      <div className="modal-backdrop dashboard-modal-backdrop" role="presentation">
         <div className="modal dashboard-modal" onClick={(event) => event.stopPropagation()}>
           <header>
             <h3>{title}</h3>

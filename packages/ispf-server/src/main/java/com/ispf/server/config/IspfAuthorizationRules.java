@@ -146,6 +146,12 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.PATCH, "/api/v1/objects/by-path/variables/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        // Binding rules: same as variables — operator HTTP access; per-object ACL in BindingRulesController.
+        auth.requestMatchers(HttpMethod.PUT, "/api/v1/objects/by-path/binding-rules")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+        auth.requestMatchers(HttpMethod.DELETE, "/api/v1/objects/by-path/binding-rules/**")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
         auth.requestMatchers(HttpMethod.PUT, "/api/v1/auth/me/timezone")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 

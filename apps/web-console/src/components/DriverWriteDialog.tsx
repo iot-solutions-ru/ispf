@@ -11,7 +11,7 @@ export default function DriverWriteDialog({ devicePath, canManage, onClose }: Dr
   const { t } = useTranslation(["inspector", "common"]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-wide" onClick={(event) => event.stopPropagation()}>
         <header className="modal-head">
           <h3>{t("inspector:driver.write.dialogTitle")}</h3>

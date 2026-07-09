@@ -124,7 +124,7 @@ export default function MultiPenTrendModal({
 
   return (
     <ModalPortal>
-      <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-backdrop" role="presentation">
       <div
         className="modal modal-wide modal-variable-history modal-multi-pen-trend"
         data-testid="multi-pen-trend-modal"

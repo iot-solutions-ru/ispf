@@ -81,6 +81,42 @@ class ObjectDefinitionApiTest {
     }
 
     @Test
+    void savesHistorianBindingRuleWithLowercaseKind() throws Exception {
+        mockMvc.perform(put("/api/v1/objects/by-path/binding-rules")
+                        .param("path", DEVICE)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                [{
+                                  "id": "hist-test",
+                                  "name": "hist-test",
+                                  "enabled": true,
+                                  "order": 0,
+                                  "kind": "historian",
+                                  "windowBucket": "1h",
+                                  "activators": {
+                                    "onStartup": false,
+                                    "onVariableChange": [{
+                                      "objectPath": "root.platform.devices.analytics-demo.sensor-a",
+                                      "variableName": "temperature"
+                                    }],
+                                    "onEvent": null,
+                                    "periodicMs": 60000
+                                  },
+                                  "condition": "",
+                                  "expression": "rollingAvg(root.platform.devices.analytics-demo.sensor-a.temperature, 1h)",
+                                  "target": { "kind": "variable", "variableName": "test", "field": "value" }
+                                }]
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value("hist-test"))
+                .andExpect(jsonPath("$[0].kind").value("historian"));
+
+        mockMvc.perform(delete("/api/v1/objects/by-path/binding-rules/hist-test")
+                        .param("path", DEVICE))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void managesFunctionsAndEvents() throws Exception {
         mockMvc.perform(put("/api/v1/objects/by-path/functions")
                         .param("path", DEVICE)

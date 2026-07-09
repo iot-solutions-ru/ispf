@@ -40,6 +40,10 @@
 | `condition` | CEL; пусто = всегда |
 | `expression` | CEL или одна platform function |
 | `target` | Куда записать результат (см. **Target kinds** ниже) |
+| `kind` | Опционально: `reactive` или `historian` ([ADR-0041](decisions/0041-multi-tag-historian-computations.md)) |
+| `windowBucket` | Окно historian (`5m`, `1h`, …) |
+
+Рецепты: [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
 
 ### Периодическое время выполнения
 
@@ -132,7 +136,7 @@ systemctl start ispf-server
 
 ## Пользовательский интерфейс
 
-Веб-консоль → Инспектор объектов → вкладка **«Привязки»**. Переменные определения без привязки; важные значения — через правила.
+Веб-консоль → Инспектор объектов → вкладка **«Вычисления»** (reactive + historian). См. [ADR-0040](decisions/0040-unified-computations-ui.md).
 
 ---
 

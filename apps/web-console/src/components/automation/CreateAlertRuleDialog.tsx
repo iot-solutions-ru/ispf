@@ -44,7 +44,7 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("automation:alertRule.newTitle")}</h3>

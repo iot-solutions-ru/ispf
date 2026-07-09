@@ -4,7 +4,6 @@ import com.ispf.analytics.engine.AnalyticsEvaluationOptions;
 import com.ispf.analytics.engine.AnalyticsEvaluationResult;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.core.object.PlatformObject;
 import com.ispf.server.platform.analytics.AnalyticsClusterWorkloadService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,9 +43,8 @@ public class AnalyticsBackfillService {
         if (from == null || to == null || !from.isBefore(to)) {
             throw new IllegalArgumentException("from must be before to");
         }
-        PlatformObject node = objectManager.require(tagPath);
-        catalogService.toTagDefinition(node)
-                .orElseThrow(() -> new IllegalArgumentException("Not an analytics derived tag: " + tagPath));
+        catalogService.findCatalogEntryByTagPath(tagPath)
+                .orElseThrow(() -> new IllegalArgumentException("Historian computation not found: " + tagPath));
 
         List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
         List<AnalyticsEvaluationResult> results = engineService.evaluateTags(

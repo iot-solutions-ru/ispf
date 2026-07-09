@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBindingRule, fetchBindingRules, saveBindingRules } from "../api";
-import type { BindingRule, BindingTargetKind } from "../types";
+import type { BindingRule, BindingRuleKind, BindingTargetKind } from "../types";
 import BindingActivatorsEditor, { activatorsSummary } from "./BindingActivatorsEditor";
 import BindingExpressionField from "./BindingExpressionField";
 import { isTechnicalIdentifier } from "../utils/technicalIdentifier";
@@ -13,9 +13,13 @@ import {
   isExistingBindingRule,
   mergeBindingRules,
   prepareBindingRuleForSave,
+  ruleKind,
   targetKind,
   targetSummary,
 } from "./bindingRulesUtils";
+import { validateBindingRuleExpression } from "../utils/bindingExpressionValidation";
+import { HISTORIAN_EXPRESSION_ENTRIES } from "../utils/historianExpressionBindings";
+import { PLATFORM_BINDING_ENTRIES } from "../utils/platformBindings";
 
 interface RuleTemplate {
   id: string;
@@ -31,6 +35,8 @@ interface BindingRulesPanelProps {
   functionNames?: string[];
   dashboardMode?: boolean;
   ruleTemplates?: RuleTemplate[];
+  /** When nested inside ObjectComputationsPanel, skip outer panel wrapper. */
+  embedded?: boolean;
 }
 
 const TARGET_KINDS: BindingTargetKind[] = ["variable", "context", "event"];
@@ -43,6 +49,7 @@ export default function BindingRulesPanel({
   functionNames = [],
   dashboardMode = false,
   ruleTemplates = [],
+  embedded = false,
 }: BindingRulesPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const queryClient = useQueryClient();
@@ -110,10 +117,37 @@ export default function BindingRulesPanel({
   }
 
   const rules = rulesQuery.data ?? [];
-  const editingKind = editing ? targetKind(editing) : "variable";
+  const setRuleKind = (kind: BindingRuleKind) => {
+    if (!editing) {
+      return;
+    }
+    if (kind === "historian") {
+      setEditing({
+        ...editing,
+        kind: "historian",
+        windowBucket: editing.windowBucket ?? "5m",
+        activators: editing.activators.periodicMs
+          ? editing.activators
+          : { ...editing.activators, periodicMs: 60_000 },
+      });
+      return;
+    }
+    setEditing({
+      ...editing,
+      kind: "reactive",
+      windowBucket: null,
+      rollupBuckets: null,
+    });
+  };
+
+  const editingRuleKind = editing ? ruleKind(editing) : "reactive";
+  const editingTargetKind = editing ? targetKind(editing) : "variable";
+
+  const panelClass = embedded ? "binding-rules-embedded" : "panel";
+  const PanelTag = embedded ? "div" : "section";
 
   return (
-    <section className="panel">
+    <PanelTag className={panelClass}>
       {canManage && (
         <div className="panel-toolbar">
           <button type="button" className="btn primary small" onClick={startNewRule}>
@@ -140,6 +174,7 @@ export default function BindingRulesPanel({
             <thead>
               <tr>
                 <th>{t("common:table.id")}</th>
+                <th>{t("inspector:bindings.column.kind")}</th>
                 <th>{t("inspector:bindings.column.target")}</th>
                 <th>{t("inspector:bindings.column.expression")}</th>
                 <th>{t("inspector:bindings.column.activators")}</th>
@@ -151,6 +186,11 @@ export default function BindingRulesPanel({
               {rules.map((rule) => (
                 <tr key={rule.id}>
                   <td><code>{rule.id}</code></td>
+                  <td>
+                    <span className={`inline-badge binding-rule-kind-${ruleKind(rule)}`}>
+                      {t(`inspector:bindings.ruleKind.${ruleKind(rule)}`)}
+                    </span>
+                  </td>
                   <td><code>{targetSummary(rule.target)}</code></td>
                   <td className="mono small" title={rule.expression}>{rule.expression || "—"}</td>
                   <td className="small">{activatorsSummary(rule)}</td>
@@ -176,7 +216,7 @@ export default function BindingRulesPanel({
       )}
 
       {editing && (
-        <div className="modal-backdrop" onClick={() => setEditing(null)}>
+        <div className="modal-backdrop" role="presentation">
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <header>
               <h3>{editing.id ? t("inspector:bindings.ruleTitle", { id: editing.id }) : t("inspector:bindings.newRule")}</h3>
@@ -197,11 +237,35 @@ export default function BindingRulesPanel({
                   <span className="hint error">{t("common:error.invalidPathSegment")}</span>
                 )}
               </label>
-              {(dashboardMode || editingKind !== "variable") && (
+              {!dashboardMode && (
+                <label className="full">
+                  {t("inspector:bindings.ruleKind")}
+                  <select
+                    value={editingRuleKind}
+                    onChange={(e) => setRuleKind(e.target.value as BindingRuleKind)}
+                  >
+                    <option value="reactive">{t("inspector:bindings.ruleKind.reactive")}</option>
+                    <option value="historian">{t("inspector:bindings.ruleKind.historian")}</option>
+                  </select>
+                  <span className="hint">{t(`inspector:bindings.ruleKindHint.${editingRuleKind}`)}</span>
+                </label>
+              )}
+              {editingRuleKind === "historian" && (
+                <label className="full">
+                  {t("inspector:bindings.windowBucket")}
+                  <input
+                    value={editing.windowBucket ?? "5m"}
+                    onChange={(e) => setEditing({ ...editing, windowBucket: e.target.value })}
+                    placeholder="5m"
+                  />
+                  <span className="hint">{t("inspector:bindings.windowBucketHint")}</span>
+                </label>
+              )}
+              {(dashboardMode || editingTargetKind !== "variable") && (
                 <label className="full">
                   {t("inspector:bindings.targetKind")}
                   <select
-                    value={editingKind}
+                    value={editingTargetKind}
                     onChange={(e) => setTargetKind(e.target.value as BindingTargetKind)}
                   >
                     {TARGET_KINDS.map((kind) => (
@@ -212,7 +276,7 @@ export default function BindingRulesPanel({
                   </select>
                 </label>
               )}
-              {editingKind === "variable" && (
+              {editingTargetKind === "variable" && (
                 <label className="full">
                   {t("inspector:bindings.targetVariable")}
                   <input
@@ -227,7 +291,7 @@ export default function BindingRulesPanel({
                   />
                 </label>
               )}
-              {editingKind === "context" && (
+              {editingTargetKind === "context" && (
                 <label className="full">
                   {t("inspector:bindings.targetContextPath")}
                   <input
@@ -244,7 +308,7 @@ export default function BindingRulesPanel({
                   <span className="hint">{t("inspector:bindings.targetContextPathHint")}</span>
                 </label>
               )}
-              {editingKind === "event" && (
+              {editingTargetKind === "event" && (
                 <label className="full">
                   {t("inspector:bindings.targetEventName")}
                   <input
@@ -267,6 +331,15 @@ export default function BindingRulesPanel({
                   objectPath={path}
                   variableNames={variableNames}
                   functionNames={functionNames}
+                  editorTitle={t("inspector:bindings.column.expression")}
+                  entries={
+                    editingRuleKind === "historian"
+                      ? HISTORIAN_EXPRESSION_ENTRIES
+                      : PLATFORM_BINDING_ENTRIES
+                  }
+                  onValidate={(expression) =>
+                    validateBindingRuleExpression(expression, path, editingRuleKind, "expression")
+                  }
                 />
               </label>
               <label className="full">
@@ -278,6 +351,10 @@ export default function BindingRulesPanel({
                   objectPath={path}
                   variableNames={variableNames}
                   functionNames={functionNames}
+                  editorTitle={t("inspector:bindings.condition")}
+                  onValidate={(expression) =>
+                    validateBindingRuleExpression(expression, path, editingRuleKind, "condition")
+                  }
                 />
                 {dashboardMode && (
                   <span className="hint">{t("inspector:bindings.dashboardConditionHint")}</span>
@@ -315,6 +392,6 @@ export default function BindingRulesPanel({
           </div>
         </div>
       )}
-    </section>
+    </PanelTag>
   );
 }

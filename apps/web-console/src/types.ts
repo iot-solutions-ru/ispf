@@ -168,15 +168,20 @@ export interface BindingTarget {
   eventName?: string | null;
 }
 
+export type BindingRuleKind = "reactive" | "historian";
+
 export interface BindingRule {
   id: string;
   name?: string | null;
   enabled: boolean;
   order: number;
+  kind?: BindingRuleKind | null;
   activators: BindingActivators;
   condition: string;
   expression: string;
   target: BindingTarget;
+  windowBucket?: string | null;
+  rollupBuckets?: string[] | null;
 }
 
 export interface FunctionDescriptor {

@@ -90,7 +90,7 @@ export default function InvokeFunctionDialog({
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
           <h3>{t("runtime:invokeFunction.title")}</h3>

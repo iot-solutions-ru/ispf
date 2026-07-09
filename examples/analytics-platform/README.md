@@ -8,6 +8,8 @@ Deployment walkthrough bundles for **AF-capable** analytics profiles from [ADR-0
 | **Site M** | 500–5k | [site-m/](site-m/) | `historian-scale-benchmark.sh` + CH rollups |
 | **Enterprise L** | 5k–50k+ | [enterprise-l/](enterprise-l/) | `analytics-scale-gate.sh` + 50k catalog + 1B CH rows |
 
+Historian computation recipes (binding rules, OEE, tag chains): [docs/en/analytics-historian-cookbook.md](../../docs/en/analytics-historian-cookbook.md)
+
 ## Positioning
 
 ISPF Phase 33 delivers an **AF-capable** analytics plane (derived tags, multi-tag query, event frames, catalog/lineage) — **not** full OSIsoft PI / PI Vision parity. See [analytics-platform-gaps.md](../../docs/en/analytics-platform-gaps.md).

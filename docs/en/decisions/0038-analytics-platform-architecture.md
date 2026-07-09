@@ -33,7 +33,9 @@ Object tree remains **source of truth for metadata and live derived values**. Cl
 
 ### 2. Object model extensions (BL-209)
 
-- Keep `ANALYTICS_TEMPLATE` catalog (`root.platform.analytics`) for built-in KPI recipes.
+> **Amendment (ADR-0041, 2026-07-09):** Historian computations are **`BindingRule` with `kind: historian`** in `@bindingRules`, not `ANALYTICS_TEMPLATE` tree objects. Tag path = `objectPath#ruleId`; presets are static code + [analytics-historian-cookbook.md](../analytics-historian-cookbook.md). The bullets below describe the original BL-209 proposal; template catalog and `analytics-tag-v1` metadata vars are **deprecated** for new work.
+
+- ~~Keep `ANALYTICS_TEMPLATE` catalog (`root.platform.analytics`) for built-in KPI recipes.~~ → static presets + binding rules
 - Add optional **`ANALYTICS_TAG`** (or RELATIVE blueprint `analytics-tag-v1` on `DEVICE`) for deployed derived tags with:
   - `expression` / `helper` + `sourcePaths[]`
   - `schedule` (periodicMs, alignToWallClock)
@@ -111,7 +113,8 @@ BL-160 **must complete** (editor, PUT API, `derivedValue` runtime) as **BL-201**
 - New backlog BL-200…210 (Phase 33); historian competitive target moves from "petabyte storage" to **AF-capable analytics**.
 - ClickHouse becomes **required** for Enterprise L analytics SLO; PG remains mandatory for tree.
 - Binding rules unchanged; analytics engine must not fork CEL semantics for simple device logic.
-- Documentation: [analytics-platform-roadmap.md](../analytics-platform-roadmap.md), examples under `examples/analytics-platform/`.
+- [ADR-0041](0041-multi-tag-historian-computations.md) — historian binding rules (supersedes template catalog)
+- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md)
 
 ## Related
 

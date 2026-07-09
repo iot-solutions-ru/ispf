@@ -2,6 +2,7 @@ package com.ispf.server.api;
 
 import com.ispf.core.binding.BindingRule;
 import com.ispf.expression.BindingExpressionValidator;
+import com.ispf.expression.ExpressionException;
 import com.ispf.server.api.support.ObjectCollaborationSupport;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
@@ -70,7 +71,9 @@ public class BindingRulesController {
         beginWrite(path, authentication, headers);
         try {
             for (BindingRule rule : rules) {
-                BindingExpressionValidator.validateOrThrow(rule.expression());
+                if (!rule.isHistorian()) {
+                    BindingExpressionValidator.validateOrThrow(rule.expression());
+                }
                 if (rule.condition() != null && !rule.condition().isBlank()) {
                     BindingExpressionValidator.validateOrThrow(rule.condition());
                 }
@@ -79,7 +82,7 @@ public class BindingRulesController {
             dependencyIndex.rebuild(path);
             bindingRuleEngine.runRulesForObject(path);
             return saved;
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException | IllegalStateException | ExpressionException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } finally {
             endWrite();

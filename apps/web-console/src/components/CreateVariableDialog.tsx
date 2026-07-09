@@ -65,7 +65,7 @@ export default function CreateVariableDialog({
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal wide variable-editor-modal" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("variables.newTitle")}</h3>

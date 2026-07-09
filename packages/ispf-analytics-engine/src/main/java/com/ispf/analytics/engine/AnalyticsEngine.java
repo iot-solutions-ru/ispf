@@ -58,7 +58,7 @@ public final class AnalyticsEngine {
                 AnalyticsEvaluationResult result = evaluator.evaluate(tag, historian, live, options);
                 if ("ok".equals(result.status())) {
                     for (Map.Entry<String, Double> entry : result.outputs().entrySet()) {
-                        live.writeNumeric(tag.tagPath(), entry.getKey(), "value", entry.getValue());
+                        live.writeNumeric(tag.objectPath(), entry.getKey(), "value", entry.getValue());
                     }
                 }
                 results.add(result);

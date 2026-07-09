@@ -1,18 +1,16 @@
 package com.ispf.server.platform.analytics.engine;
 
+import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.core.object.ObjectType;
-import com.ispf.core.object.PlatformObject;
+import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AnalyticsBlueprintBootstrap;
 import com.ispf.server.platform.analytics.AssetAnalyticsService;
+import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.history.VariableHistoryService;
-import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
-import com.ispf.plugin.blueprint.BlueprintRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -43,25 +41,22 @@ class AnalyticsTagCatalogIntegrationTest {
     private AnalyticsTagMetadataService metadataService;
 
     @Autowired
+    private BindingRulesService bindingRulesService;
+
+    @Autowired
     private ObjectManager objectManager;
 
     @Autowired
     private VariableHistoryService variableHistoryService;
-
-    @Autowired
-    private BlueprintRegistry blueprintRegistry;
-
-    @Autowired
-    private BlueprintApplicationService blueprintApplicationService;
 
     @Test
     void lineageGraphShowsThreeTagChainAndPropagatesUncertainQuality() {
         assetAnalyticsService.ensureCatalog();
         seedHistorianSamples(24.0);
 
-        String tagA = createDerivedTag("analytics-catalog-a", SENSOR, "temperature");
-        String tagB = createDerivedTag("analytics-catalog-b", tagA, "derivedValue");
-        String tagC = createDerivedTag("analytics-catalog-c", tagB, "derivedValue");
+        String tagA = createHistorianTag("analytics-catalog-a", SENSOR, "temperature", "derived-a");
+        String tagB = createHistorianTag("analytics-catalog-b", tagAObjectPath(tagA), "derived-a", "derived-b");
+        String tagC = createHistorianTag("analytics-catalog-c", tagAObjectPath(tagB), "derived-b", "derived-c");
 
         engineService.evaluateAllEnabled();
 
@@ -82,21 +77,28 @@ class AnalyticsTagCatalogIntegrationTest {
                 .isEqualTo(AnalyticsTagMetadataService.QUALITY_UNCERTAIN);
     }
 
-    private void disableTag(String path) {
-        objectManager.setVariableValue(
-                path,
-                "analyticsTagEnabled",
-                DataRecord.single(
-                        DataSchema.builder("booleanValue").field("value", FieldType.BOOLEAN).build(),
-                        Map.of("value", false)
-                )
+    private void disableTag(String tagPath) {
+        bindingRulesService.saveRules(
+                HistorianTagPaths.objectPath(tagPath),
+                bindingRulesService.listRules(HistorianTagPaths.objectPath(tagPath)).stream()
+                        .map(rule -> rule.id().equals(HistorianTagPaths.ruleId(tagPath))
+                                ? new com.ispf.core.binding.BindingRule(
+                                        rule.id(),
+                                        rule.name(),
+                                        false,
+                                        rule.order(),
+                                        rule.kind(),
+                                        rule.activators(),
+                                        rule.condition(),
+                                        rule.expression(),
+                                        rule.target(),
+                                        rule.windowBucket(),
+                                        rule.rollupBuckets()
+                                )
+                                : rule)
+                        .toList()
         );
-        objectManager.setVariableValue(
-                path,
-                "analyticsQuality",
-                stringRecord(AnalyticsTagMetadataService.QUALITY_DISABLED)
-        );
-        objectManager.persistNodeTree(path);
+        objectManager.persistNodeTree(HistorianTagPaths.objectPath(tagPath));
     }
 
     private void seedHistorianSamples(double value) {
@@ -113,28 +115,31 @@ class AnalyticsTagCatalogIntegrationTest {
         }
     }
 
-    private String createDerivedTag(String nodeName, String sourcePath, String sourceVariable) {
-        String parent = "root.platform.devices";
-        String path = parent + "." + nodeName;
-        if (objectManager.tree().findByPath(path).isEmpty()) {
-            objectManager.create(parent, nodeName, ObjectType.DEVICE, nodeName, "analytics catalog", null);
-        }
-        var model = blueprintRegistry.findByName(AnalyticsBlueprintBootstrap.ROLLING_AVG_MODEL).orElseThrow();
-        blueprintApplicationService.applyBlueprintWithRules(model, path, Map.of());
-        objectManager.setVariableValue(path, "sourcePath", stringRecord(sourcePath));
-        objectManager.setVariableValue(path, "sourceVariable", stringRecord(sourceVariable));
-        objectManager.setVariableValue(path, "sourceField", stringRecord("value"));
-        objectManager.setVariableValue(path, "windowBucket", stringRecord("1h"));
-        PlatformObject node = objectManager.require(path);
-        metadataService.ensureTagMetadata(node);
-        objectManager.persistNodeTree(path);
-        return path;
+    private String createHistorianTag(
+            String nodeName,
+            String sourcePath,
+            String sourceVariable,
+            String outputVariable
+    ) {
+        String devicePath = HistorianComputationTestSupport.ensureDevice(
+                objectManager,
+                "root.platform.devices",
+                nodeName
+        );
+        String ruleId = nodeName + "-rule";
+        HistorianComputationTestSupport.upsertRollingAvgRule(
+                bindingRulesService,
+                devicePath,
+                ruleId,
+                sourcePath,
+                sourceVariable,
+                outputVariable,
+                "1h"
+        );
+        return HistorianTagPaths.encode(devicePath, ruleId);
     }
 
-    private static DataRecord stringRecord(String value) {
-        return DataRecord.single(
-                DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                Map.of("value", value)
-        );
+    private static String tagAObjectPath(String tagPath) {
+        return HistorianTagPaths.objectPath(tagPath);
     }
 }

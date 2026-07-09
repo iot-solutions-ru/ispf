@@ -33,7 +33,7 @@ export default function CreateSecurityRoleDialog({
   });
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal modal-create-object" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{t("createRole.title")}</h3>

@@ -1,4 +1,4 @@
-import { useEffect, useId, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import ModalPortal from "./ModalPortal";
@@ -25,19 +25,6 @@ export default function Modal({
   const { t } = useTranslation("common");
   const titleId = useId();
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
   return (
     <ModalPortal>
       <AnimatePresence initial={false}>
@@ -49,7 +36,6 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-            onClick={onClose}
           >
             <motion.div
               role="dialog"

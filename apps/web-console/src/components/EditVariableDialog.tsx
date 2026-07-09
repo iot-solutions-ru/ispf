@@ -176,7 +176,7 @@ export default function EditVariableDialog({
     record.schema.fields.some((f) => f.type === "RECORD_LIST") || record.rows.length > 1;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div className="modal wide variable-editor-modal" onClick={(e) => e.stopPropagation()}>
         <header>
           <h3>{title}</h3>

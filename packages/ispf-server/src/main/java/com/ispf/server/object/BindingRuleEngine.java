@@ -153,6 +153,7 @@ public class BindingRuleEngine {
         PlatformObject object = objectManager.require(objectPath);
         List<BindingRule> rules = bindingRulesService.listRules(objectPath).stream()
                 .filter(BindingRule::enabled)
+                .filter(BindingRule::isReactive)
                 .sorted(Comparator.comparingInt(BindingRule::order))
                 .toList();
         boolean changed = false;

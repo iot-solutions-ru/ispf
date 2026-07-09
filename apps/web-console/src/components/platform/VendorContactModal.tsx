@@ -39,7 +39,7 @@ export default function VendorContactModal({ listing, onClose }: VendorContactMo
   );
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" role="presentation">
       <div
         className="modal marketplace-vendor-contact-modal"
         onClick={(event) => event.stopPropagation()}
