@@ -57,7 +57,7 @@
     "chrome-launcher": "^1.1.2",
     "jsdom": "^29.1.1",
     "lighthouse": "^13.4.0",
-    "typescript": "^5.7.2",
+    "typescript": "^7.0.2",
     "vite": "^8.1.4",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.10"
