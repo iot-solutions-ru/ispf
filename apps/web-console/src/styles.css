@@ -13324,6 +13324,64 @@ html {
   gap: 0.5rem;
 }
 
+.analytics-tag-inspector-readonly .automation-panel-head h3 {
+  margin-bottom: 0.25rem;
+}
+
+.analytics-tag-readonly-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.modal.analytics-tag-inspector-modal {
+  width: min(920px, calc(100vw - 2rem));
+  max-height: min(88vh, 900px);
+}
+
+.modal.analytics-tag-inspector-modal .modal-body {
+  overflow: auto;
+}
+
+.modal.analytics-tag-inspector-modal .analytics-tag-inspector {
+  margin: 0;
+}
+
+.computations-historian-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.computations-historian-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-0);
+}
+
+.computations-historian-item .mono {
+  flex: 1 1 12rem;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.binding-rules-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
 .modal header .btn.small {
   min-width: 2rem;
   padding: 0.15rem 0.45rem;

@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyticsTagCatalogEntryDto } from "../types/analytics";
+import AnalyticsTagInspectorModal from "./analytics/AnalyticsTagInspectorModal";
 import BindingInvokeJournalPanel from "./runtime/BindingInvokeJournalPanel";
 import BindingRulesPanel from "./BindingRulesPanel";
 
@@ -30,6 +32,7 @@ export default function ObjectComputationsPanel({
   onBindingAuditChange,
 }: ObjectComputationsPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
+  const [inspectTagPath, setInspectTagPath] = useState<string | null>(null);
 
   return (
     <>
@@ -47,6 +50,7 @@ export default function ObjectComputationsPanel({
           variableNames={variableNames}
           functionNames={functionNames}
           embedded
+          onInspectHistorian={(tagPath) => setInspectTagPath(tagPath)}
         />
       </section>
 
@@ -60,7 +64,14 @@ export default function ObjectComputationsPanel({
               <li key={tag.path} className="computations-historian-item">
                 <strong>{tag.outputVariable}</strong>
                 <span className="hint mono">{tag.expression}</span>
-                <span>{tag.qualityStatus}</span>
+                <span className={`status-badge quality-${tag.qualityStatus}`}>{tag.qualityStatus}</span>
+                <button
+                  type="button"
+                  className="btn tiny"
+                  onClick={() => setInspectTagPath(tag.path)}
+                >
+                  {t("inspector:computations.inspect")}
+                </button>
               </li>
             ))}
           </ul>
@@ -80,6 +91,12 @@ export default function ObjectComputationsPanel({
         </label>
       )}
       <BindingInvokeJournalPanel objectPath={path} compact scrollMaxHeight={360} />
+
+      <AnalyticsTagInspectorModal
+        open={inspectTagPath !== null}
+        tagPath={inspectTagPath}
+        onClose={() => setInspectTagPath(null)}
+      />
     </>
   );
 }

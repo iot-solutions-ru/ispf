@@ -37,6 +37,8 @@ interface BindingRulesPanelProps {
   ruleTemplates?: RuleTemplate[];
   /** When nested inside ObjectComputationsPanel, skip outer panel wrapper. */
   embedded?: boolean;
+  /** Open read-only historian tag inspector (`objectPath#ruleId`). */
+  onInspectHistorian?: (tagPath: string) => void;
 }
 
 const TARGET_KINDS: BindingTargetKind[] = ["variable", "context", "event"];
@@ -50,6 +52,7 @@ export default function BindingRulesPanel({
   dashboardMode = false,
   ruleTemplates = [],
   embedded = false,
+  onInspectHistorian,
 }: BindingRulesPanelProps) {
   const { t } = useTranslation(["inspector", "common"]);
   const queryClient = useQueryClient();
@@ -179,7 +182,7 @@ export default function BindingRulesPanel({
                 <th>{t("inspector:bindings.column.expression")}</th>
                 <th>{t("inspector:bindings.column.activators")}</th>
                 <th>{t("common:table.enabled")}</th>
-                {canManage && <th aria-label={t("common:table.actions")} />}
+                {(canManage || onInspectHistorian) && <th aria-label={t("common:table.actions")} />}
               </tr>
             </thead>
             <tbody>
@@ -195,17 +198,30 @@ export default function BindingRulesPanel({
                   <td className="mono small" title={rule.expression}>{rule.expression || "—"}</td>
                   <td className="small">{activatorsSummary(rule)}</td>
                   <td>{rule.enabled ? t("common:action.yes") : t("common:action.no")}</td>
-                  {canManage && (
-                    <td>
-                      <button type="button" className="btn small" onClick={() => { targetDrafts.current = {}; setEditing(rule); }}>{t("inspector:bindings.edit")}</button>
-                      <button
-                        type="button"
-                        className="btn small danger"
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate(rule.id)}
-                      >
-                        {t("common:action.delete")}
-                      </button>
+                  {(canManage || onInspectHistorian) && (
+                    <td className="binding-rules-actions">
+                      {ruleKind(rule) === "historian" && onInspectHistorian && (
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => onInspectHistorian(`${path}#${rule.id}`)}
+                        >
+                          {t("inspector:computations.inspect")}
+                        </button>
+                      )}
+                      {canManage && (
+                        <>
+                          <button type="button" className="btn small" onClick={() => { targetDrafts.current = {}; setEditing(rule); }}>{t("inspector:bindings.edit")}</button>
+                          <button
+                            type="button"
+                            className="btn small danger"
+                            disabled={deleteMutation.isPending}
+                            onClick={() => deleteMutation.mutate(rule.id)}
+                          >
+                            {t("common:action.delete")}
+                          </button>
+                        </>
+                      )}
                     </td>
                   )}
                 </tr>

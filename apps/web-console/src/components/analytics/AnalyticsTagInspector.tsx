@@ -16,6 +16,8 @@ import { ANALYTICS_CEL_BINDING_ENTRIES } from "../../utils/analyticsCelBindings"
 interface AnalyticsTagInspectorProps {
   path: string;
   canManage?: boolean;
+  /** Read-only catalog view (binding-rule historian tags). Hides legacy editor. */
+  readOnly?: boolean;
 }
 
 const CEL_HELPERS = new Set(["cel", "expression"]);
@@ -88,7 +90,11 @@ function LineageGraph({ tag }: { tag: AnalyticsTagCatalogEntryDto }) {
   );
 }
 
-export default function AnalyticsTagInspector({ path, canManage = false }: AnalyticsTagInspectorProps) {
+export default function AnalyticsTagInspector({
+  path,
+  canManage = false,
+  readOnly = false,
+}: AnalyticsTagInspectorProps) {
   const { t } = useTranslation(["automation", "common", "inspector"]);
   const queryClient = useQueryClient();
   const [helperMode, setHelperMode] = useState<"builtin" | "cel">("builtin");
@@ -130,7 +136,10 @@ export default function AnalyticsTagInspector({ path, canManage = false }: Analy
   });
 
   const evaluateMutation = useMutation({
-    mutationFn: () => evaluateAnalyticsExpression(expressionDraft.trim(), path),
+    mutationFn: () => {
+      const expression = readOnly ? (tagQuery.data?.expression ?? "") : expressionDraft.trim();
+      return evaluateAnalyticsExpression(expression, path);
+    },
     onSuccess: (result) => {
       setEvalResult(`${result.value} (${result.latencyMs} ms)`);
     },
@@ -149,20 +158,37 @@ export default function AnalyticsTagInspector({ path, canManage = false }: Analy
 
   const tag = tagQuery.data;
   const isCelMode = helperMode === "cel";
+  const showLegacyEditor = canManage && !readOnly;
 
   return (
-    <section className="automation-inspector analytics-tag-inspector">
+    <section className={`automation-inspector analytics-tag-inspector${readOnly ? " analytics-tag-inspector-readonly" : ""}`}>
       <header className="automation-panel-head">
         <div>
-          <h3>{t("automation:analyticsTag.title")}</h3>
-          <p className="hint">{t("automation:analyticsTag.subtitle")}</p>
+          <h3>{readOnly ? t("inspector:computations.inspectHeading") : t("automation:analyticsTag.title")}</h3>
+          <p className="hint">
+            {readOnly ? t("inspector:computations.inspectSubtitle") : t("automation:analyticsTag.subtitle")}
+          </p>
           <p className="hint">
             <code>{path}</code>
           </p>
         </div>
       </header>
 
-      {canManage && (
+      {readOnly && (
+        <div className="analytics-tag-readonly-actions">
+          <button
+            type="button"
+            className="btn primary small"
+            disabled={!tag.expression?.trim() || evaluateMutation.isPending}
+            onClick={() => evaluateMutation.mutate()}
+          >
+            {t("automation:analyticsTag.evaluate")}
+          </button>
+          {evalResult && <p className="hint">{evalResult}</p>}
+        </div>
+      )}
+
+      {showLegacyEditor && (
         <section className="analytics-tag-editor">
           <label className="analytics-tag-editor-mode">
             <span>{t("automation:analyticsTag.helperMode")}</span>

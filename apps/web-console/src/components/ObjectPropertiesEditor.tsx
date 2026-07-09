@@ -37,6 +37,7 @@ import VariableHistoryFields, {
   type VariableHistoryState,
 } from "./VariableHistoryFields";
 import { canDeleteObjectPath } from "../utils/platformSystemPaths";
+import { filterUserVariableNames, isHiddenObjectVariable } from "../utils/systemVariables";
 import { localizedSystemObjectDescription } from "../utils/systemFolderI18n";
 import CreateVariableDialog from "./CreateVariableDialog";
 import EditDescriptorDialog from "./EditDescriptorDialog";
@@ -849,7 +850,7 @@ export default function ObjectPropertiesEditor({
             path={path}
             canManage={canManage}
             eventNames={editorData.events.map((event) => event.name)}
-            variableNames={editorData.variables.map((variable) => variable.name)}
+            variableNames={filterUserVariableNames(editorData.variables.map((variable) => variable.name))}
             functionNames={editorData.functions.map((fn) => fn.name)}
             objectType={ctx.type}
             historianComputations={historianComputations}
@@ -897,7 +898,7 @@ export default function ObjectPropertiesEditor({
             <p className="hint">{t("variables.empty")}</p>
           )}
           {editorData.variables
-            .filter((variable) => variable.name !== "uiIcon")
+            .filter((variable) => !isHiddenObjectVariable(variable.name))
             .map((variable) => (
               <div key={variable.name}>
                 <VariableEditorRow

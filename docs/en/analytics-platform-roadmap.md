@@ -402,11 +402,21 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 ---
 
-## Out of scope (future BL-212+)
+## BL-212–215: Function catalog and extensibility ([ADR-0042](decisions/0042-analytics-function-catalog.md))
+
+| BL | Scope | Outcome |
+|----|--------|---------|
+| **212a** | `GET /platform/analytics/catalog`; register dormant evaluators | Single API for builtins + `hist.*` + reactive CEL |
+| **212b** | Formula browser in Computations expression modal | PI-like discoverability without AF tree |
+| **213** | `ispf-analytics-api` SPI + optional packs JAR | Industry KPIs outside core (commercial OK) |
+| **214** | `@analyticsFormulas` + app bundle import | User-defined parameterized formulas |
+| **215** | `formulaRef` on rules, blueprint/marketplace share | Reusable site standards |
+
+## Out of scope (post BL-215)
 
 | Topic | Rationale |
 |-------|-----------|
-| Full PI Analytics expression language | BL-211 delivers CEL + `hist.*`; extend function library in BL-212+ |
+| Full PI Analytics expression language | CEL + helpers + Tier B formulas ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
 | Separate AF database / duplicate asset tree | Tree-first ISPF model |
 | Real-time ML inference on tags | BL-175 ML hooks |
 | PI Vision–class graphics | Phase 26 HMI scope |

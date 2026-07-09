@@ -21,7 +21,7 @@ Do **not** use PI trademarks in marketing copy. Use: «AF-capable», «historian
 
 | Area | Gap | Future BL |
 |------|-----|-----------|
-| Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | BL-212+ richer function library |
+| Expression language | No full PI Analytics syntax; built-in helpers + CEL `hist.*` on derived tags (BL-211) | [ADR-0042](decisions/0042-analytics-function-catalog.md) — unified catalog, user formulas, analytics packs (BL-212–215) |
 | AF database | No duplicate asset tree; tree-first model | By design (ADR-0038) |
 | PI Vision graphics | No PI Vision–class graphics | Phase 26 HMI |
 | ML on tags | No inference on tag streams | BL-175 |
