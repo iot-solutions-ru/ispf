@@ -4,7 +4,7 @@ dependencies {
 
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5")
 
-    testImplementation(enforcedPlatform("io.netty:netty-bom:4.1.135.Final"))
+    testImplementation(enforcedPlatform("io.netty:netty-bom:4.2.16.Final"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
     testImplementation("io.moquette:moquette-broker:0.17")
 }
