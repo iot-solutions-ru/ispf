@@ -32,7 +32,7 @@
 - **Путь тега** — `objectPath#ruleId`
 - **Reactive engine** пропускает `historian`; **analytics engine** компилирует и считает
 
-Рецепты (OEE, цепочки, CEL): [analytics-historian-cookbook.md](../../analytics-historian-cookbook.md).
+Рецепты (OEE, цепочки, CEL): [analytics-historian-cookbook.md](../../analytics-historian-cookbook.md). Эталон на prod: cookbook **рецепт 5** (`analytics-demo`).
 
 ### 2. Убрать каталог `ANALYTICS_TEMPLATE`
 
@@ -55,7 +55,23 @@
 - Виджеты ссылаются на выходные переменные правил
 - DAG и lineage по цепочкам тегов
 
+## Реализация (2026-07-09)
+
+| Решение ADR | Статус |
+|-------------|--------|
+| `kind: historian` в `@bindingRules` | ✅ |
+| Каталог `objectPath#ruleId`, DAG / lineage | ✅ |
+| `@historianRuleMeta` по rule id | ✅ |
+| Вкладка «Вычисления» (ADR-0040) | ✅ |
+| Без bootstrap `ANALYTICS_TEMPLATE` | ✅ |
+| Пресеты в коде + каталог редактора (без toolbar) | ✅ |
+| Эталон prod + дашборд + скрипты deploy/tools | ✅ |
+| API `/templates/*` | устарело, не для новых конфигураций |
+
+Полная таблица сверки — [cookbook § Сверка с планом](../../analytics-historian-cookbook.md#сверка-с-планом-adr-0040--adr-0041).
+
 ## См. также
 
 - [ADR-0040](0040-unified-computations-ui.md)
+- [analytics-historian-cookbook.md](../../analytics-historian-cookbook.md)
 - [analytics-tag-catalog.md](../../analytics-tag-catalog.md)

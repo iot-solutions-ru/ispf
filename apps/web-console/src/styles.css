@@ -8646,9 +8646,19 @@ body.scada-mimic-editor-open {
   cursor: not-allowed;
 }
 
+.modal.binding-expression-editor-modal {
+  width: min(900px, calc(100vw - 2rem));
+  max-height: min(90vh, 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .binding-expression-editor-modal .modal-body {
-  max-height: min(78vh, 52rem);
-  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .modal-backdrop:has(.binding-expression-editor-modal) {

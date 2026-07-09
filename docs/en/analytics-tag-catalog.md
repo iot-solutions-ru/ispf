@@ -25,7 +25,11 @@ Stored in system variable `@historianRuleMeta` (JSON object keyed by rule id):
 | `lastEvalAt` | ISO-8601 timestamp of last engine evaluation |
 | `lastEvalStatus` | `ok`, `error`, `skipped` |
 
-Updated by the analytics engine on each tick; read by catalog API and **Computations** inspector.
+Updated by the analytics engine on each tick; read by catalog API and **Computations** inspector. **Not** a valid `hist.avg` source — see [cookbook § `@historianRuleMeta`](analytics-historian-cookbook.md#historianrulemeta--purpose-and-misuse).
+
+## Production reference
+
+Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#recipe-5--full-production-example-analytics-demo) — `root.platform.devices.analytics-demo`, scripts `deploy/tools/setup-historian-chain-*.py`.
 
 ## REST API
 
@@ -77,7 +81,7 @@ Output variables can carry Haystack point mappings (`point`, `cur`, `his`) via `
 
 Object inspector → **Computations** tab:
 
-1. **Rules** — unified list of reactive + historian `@bindingRules` (presets for rolling avg, OEE, CEL)
+1. **Rules** — unified list of reactive + historian `@bindingRules`; built-in helpers in the modal expression editor catalog (not a preset toolbar)
 2. **Historian status** — catalog rows for this device (expression, quality)
 3. Binding invoke journal (audit)
 

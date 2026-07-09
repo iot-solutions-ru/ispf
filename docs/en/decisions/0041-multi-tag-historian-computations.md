@@ -64,7 +64,20 @@ Expression forms: builtins (`rollingAvg`, `rateOfChange`, `oee`), CEL with `hist
 ## Related
 
 - [ADR-0040](0040-unified-computations-ui.md)
-- [ADR-0010](0010-binding-rules-only.md)
-- [ADR-0038](0038-analytics-platform-architecture.md) — amended §2
-- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md)
+- [analytics-historian-cookbook.md](../analytics-historian-cookbook.md) — Recipe 5 (`analytics-demo` on prod)
 - [analytics-tag-catalog.md](../analytics-tag-catalog.md)
+
+### Implementation status (2026-07-09)
+
+| ADR decision | Status |
+|--------------|--------|
+| `kind: historian` in `@bindingRules` | Done |
+| Catalog `objectPath#ruleId`, DAG / lineage | Done |
+| `@historianRuleMeta` per rule id | Done |
+| Unified Computations tab (ADR-0040) | Done |
+| No `ANALYTICS_TEMPLATE` bootstrap | Done |
+| Presets in code + editor catalog (no toolbar) | Done |
+| Prod reference + dashboard + deploy/tools scripts | Done |
+| `/templates/*` API | Deprecated for new configs |
+
+Full checklist: [cookbook § Implementation checklist](../analytics-historian-cookbook.md#implementation-checklist-adr-0040--adr-0041).

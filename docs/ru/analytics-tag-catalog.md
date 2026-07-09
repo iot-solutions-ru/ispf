@@ -17,7 +17,7 @@
 
 Пример: правило `avg-temp-5m` на `root.platform.devices.sensor-a` → тег `…sensor-a#avg-temp-5m` → переменная `avgTemp5m`.
 
-## Метаданные правила
+## Метаданные правила (`@historianRuleMeta`)
 
 Системная переменная `@historianRuleMeta` (JSON по id правила):
 
@@ -26,6 +26,12 @@
 | `quality` | `ok`, `uncertain`, `error`, `disabled` |
 | `lastEvalAt` | Время последнего расчёта |
 | `lastEvalStatus` | `ok`, `error`, `skipped` |
+
+Обновляется analytics engine при каждом tick. **Не** является входом для `hist.avg` — только диагностика и quality в каталоге. Подробнее: [cookbook § `@historianRuleMeta`](analytics-historian-cookbook.md#historianrulemeta--что-это-и-чего-не-делать).
+
+## Эталон на prod
+
+Полная цепочка и дашборд: [cookbook, рецепт 5](analytics-historian-cookbook.md#рецепт-5--полный-пример-на-prod-analytics-demo) — `root.platform.devices.analytics-demo`, скрипты `deploy/tools/setup-historian-chain-*.py`.
 
 ## REST API
 
@@ -41,7 +47,7 @@
 
 ## UI
 
-Вкладка **Вычисления**: единый список правил, статус historian-тегов, журнал audit.
+Вкладка **Вычисления**: единый список правил (reactive + historian), статус historian-тегов каталога, журнал audit. Пресеты — в каталоге функций модального редактора выражения, не отдельные кнопки на панели.
 
 ## Устарело (ADR-0041)
 
