@@ -1,0 +1,1341 @@
+{
+  "version": "1.0.0",
+  "displayName": "MES Printing Contour",
+  "tablePrefix": "",
+  "schemaName": "app_mes_printing_contour",
+  "migrations": [
+    {
+      "id": "mes_printing_contour_v1",
+      "sql": "CREATE TABLE IF NOT EXISTS mes_machine (\n  machine_code VARCHAR(32) PRIMARY KEY,\n  display_name VARCHAR(128) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS mes_order (\n  id UUID PRIMARY KEY,\n  order_no VARCHAR(32) NOT NULL,\n  project_name VARCHAR(128) NOT NULL,\n  product_name VARCHAR(128) NOT NULL,\n  customer_name VARCHAR(128) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS work_area (\n  id UUID PRIMARY KEY,\n  mes_order_id UUID NOT NULL,\n  machine_code VARCHAR(32) NOT NULL,\n  area_id VARCHAR(64) NOT NULL,\n  operation_name VARCHAR(128) NOT NULL,\n  status VARCHAR(32) NOT NULL,\n  planned_start TIMESTAMP,\n  actual_start TIMESTAMP,\n  actual_end TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS work_area_execution_interval (\n  id UUID PRIMARY KEY,\n  work_area_id UUID NOT NULL,\n  interval_type VARCHAR(16) NOT NULL,\n  started_at TIMESTAMP NOT NULL,\n  ended_at TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS material_roll (\n  id UUID PRIMARY KEY,\n  barcode VARCHAR(64) NOT NULL UNIQUE,\n  roll_kind VARCHAR(8) NOT NULL,\n  length_m INTEGER NOT NULL DEFAULT 0,\n  current_length_m INTEGER NOT NULL DEFAULT 0,\n  status VARCHAR(32) NOT NULL,\n  work_area_id UUID,\n  machine_code VARCHAR(32)\n);\nCREATE TABLE IF NOT EXISTS meter_interval (\n  id UUID PRIMARY KEY,\n  work_area_id UUID NOT NULL,\n  roll_id UUID NOT NULL,\n  meters INTEGER NOT NULL,\n  interval_type VARCHAR(32) NOT NULL DEFAULT 'CONSUMPTION',\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS roll_composition (\n  id UUID PRIMARY KEY,\n  input_roll_id UUID NOT NULL,\n  output_roll_id UUID NOT NULL\n);\nCREATE TABLE IF NOT EXISTS job_bag (\n  id UUID PRIMARY KEY,\n  work_area_id UUID NOT NULL UNIQUE,\n  bag_no VARCHAR(32) NOT NULL\n);\nCREATE TABLE IF NOT EXISTS job_bag_document (\n  id UUID PRIMARY KEY,\n  job_bag_id UUID NOT NULL,\n  section_key VARCHAR(64) NOT NULL,\n  section_title VARCHAR(128) NOT NULL,\n  content_json TEXT NOT NULL\n);\nCREATE TABLE IF NOT EXISTS machine_stock (\n  id UUID PRIMARY KEY,\n  machine_code VARCHAR(32) NOT NULL,\n  material_name VARCHAR(128) NOT NULL,\n  qty_kg INTEGER NOT NULL DEFAULT 0\n);\nCREATE TABLE IF NOT EXISTS production_event (\n  id UUID PRIMARY KEY,\n  work_area_id UUID NOT NULL,\n  event_code VARCHAR(16) NOT NULL,\n  event_name VARCHAR(128) NOT NULL,\n  comment_text VARCHAR(512),\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP\n);\nCREATE TABLE IF NOT EXISTS erp_outbox (\n  id UUID PRIMARY KEY,\n  entity_type VARCHAR(32) NOT NULL,\n  entity_id VARCHAR(64) NOT NULL,\n  payload_json TEXT NOT NULL,\n  idempotency_key VARCHAR(128) NOT NULL UNIQUE,\n  status VARCHAR(16) NOT NULL DEFAULT 'pending',\n  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  processed_at TIMESTAMP\n);\nINSERT INTO mes_machine (machine_code, display_name)\nSELECT 'PR120', 'Flexo press PR120' WHERE NOT EXISTS (SELECT 1 FROM mes_machine WHERE machine_code = 'PR120');\nINSERT INTO mes_order (id, order_no, project_name, product_name, customer_name)\nSELECT '11111111-1111-1111-1111-111111111111', 'ORD-2026-042', 'Labels Q2', 'Shrink sleeve batch A', 'Demo Customer LLC'\nWHERE NOT EXISTS (SELECT 1 FROM mes_order WHERE id = '11111111-1111-1111-1111-111111111111');\nINSERT INTO work_area (id, mes_order_id, machine_code, area_id, operation_name, status, planned_start)\nSELECT 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'PR120', 'PRINT-OP-001', 'Flexo print — job 1', 'PLANNED', CURRENT_TIMESTAMP\nWHERE NOT EXISTS (SELECT 1 FROM work_area WHERE id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa');\nINSERT INTO work_area (id, mes_order_id, machine_code, area_id, operation_name, status, planned_start, actual_start)\nSELECT 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'PR120', 'PRINT-OP-002', 'Flexo print — job 2 (active demo)', 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP\nWHERE NOT EXISTS (SELECT 1 FROM work_area WHERE id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');\nINSERT INTO work_area (id, mes_order_id, machine_code, area_id, operation_name, status, planned_start, actual_start, actual_end)\nSELECT 'cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'PR120', 'PRINT-OP-000', 'Flexo print — completed ref', 'COMPLETED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP\nWHERE NOT EXISTS (SELECT 1 FROM work_area WHERE id = 'cccccccc-cccc-cccc-cccc-cccccccccccc');\nINSERT INTO work_area_execution_interval (id, work_area_id, interval_type, started_at)\nSELECT 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'RUN', CURRENT_TIMESTAMP\nWHERE NOT EXISTS (SELECT 1 FROM work_area_execution_interval WHERE id = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee');\nINSERT INTO job_bag (id, work_area_id, bag_no)\nSELECT '22222222-2222-2222-2222-222222222222', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'JB-PRINT-002'\nWHERE NOT EXISTS (SELECT 1 FROM job_bag WHERE id = '22222222-2222-2222-2222-222222222222');\nINSERT INTO job_bag_document (id, job_bag_id, section_key, section_title, content_json)\nSELECT '33333333-3333-3333-3333-333333333331', '22222222-2222-2222-2222-222222222222', 'press', 'Press settings', '{\"ink\":\"Cyan+Magenta\",\"speed\":120}'\nWHERE NOT EXISTS (SELECT 1 FROM job_bag_document WHERE id = '33333333-3333-3333-3333-333333333331');\nINSERT INTO job_bag_document (id, job_bag_id, section_key, section_title, content_json)\nSELECT '33333333-3333-3333-3333-333333333332', '22222222-2222-2222-2222-222222222222', 'process', 'Process control', '{\"tension\":\"1.2 bar\",\"register\":\"OK\"}'\nWHERE NOT EXISTS (SELECT 1 FROM job_bag_document WHERE id = '33333333-3333-3333-3333-333333333332');\nINSERT INTO material_roll (id, barcode, roll_kind, length_m, current_length_m, status, work_area_id, machine_code)\nSELECT 'd0000001-0000-0000-0000-000000000001', 'IN-ROLL-1001', 'IN', 5000, 4200, 'ON_STAGE', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'PR120'\nWHERE NOT EXISTS (SELECT 1 FROM material_roll WHERE id = 'd0000001-0000-0000-0000-000000000001');\nINSERT INTO material_roll (id, barcode, roll_kind, length_m, current_length_m, status, work_area_id, machine_code)\nSELECT 'd0000002-0000-0000-0000-000000000002', 'IN-ROLL-1002', 'IN', 3000, 3000, 'AVAILABLE', NULL, 'PR120'\nWHERE NOT EXISTS (SELECT 1 FROM material_roll WHERE id = 'd0000002-0000-0000-0000-000000000002');\nINSERT INTO material_roll (id, barcode, roll_kind, length_m, current_length_m, status, work_area_id, machine_code)\nSELECT 'd0000003-0000-0000-0000-000000000003', 'OUT-ROLL-2001', 'OUT', 800, 800, 'ON_STAGE', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'PR120'\nWHERE NOT EXISTS (SELECT 1 FROM material_roll WHERE id = 'd0000003-0000-0000-0000-000000000003');\nINSERT INTO meter_interval (id, work_area_id, roll_id, meters, interval_type)\nSELECT 'f0000001-0000-0000-0000-000000000001', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'd0000001-0000-0000-0000-000000000001', 800, 'CONSUMPTION'\nWHERE NOT EXISTS (SELECT 1 FROM meter_interval WHERE id = 'f0000001-0000-0000-0000-000000000001');\nINSERT INTO roll_composition (id, input_roll_id, output_roll_id)\nSELECT 'c1000001-0000-0000-0000-000000000001', 'd0000001-0000-0000-0000-000000000001', 'd0000003-0000-0000-0000-000000000003'\nWHERE NOT EXISTS (SELECT 1 FROM roll_composition WHERE id = 'c1000001-0000-0000-0000-000000000001');\nINSERT INTO machine_stock (id, machine_code, material_name, qty_kg)\nSELECT 'c2000001-0000-0000-0000-000000000001', 'PR120', 'Cyan ink', 120 WHERE NOT EXISTS (SELECT 1 FROM machine_stock WHERE id = 'c2000001-0000-0000-0000-000000000001');\nINSERT INTO machine_stock (id, machine_code, material_name, qty_kg)\nSELECT 'c2000002-0000-0000-0000-000000000002', 'PR120', 'Magenta ink', 95 WHERE NOT EXISTS (SELECT 1 FROM machine_stock WHERE id = 'c2000002-0000-0000-0000-000000000002');\nINSERT INTO production_event (id, work_area_id, event_code, event_name, comment_text)\nSELECT 'c3000001-0000-0000-0000-000000000001', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '110', 'Speed loss', 'Brief slowdown at 400m'\nWHERE NOT EXISTS (SELECT 1 FROM production_event WHERE id = 'c3000001-0000-0000-0000-000000000001');\nINSERT INTO production_event (id, work_area_id, event_code, event_name, comment_text)\nSELECT 'c3000002-0000-0000-0000-000000000002', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '120', 'Setup', 'Color match adjustment'\nWHERE NOT EXISTS (SELECT 1 FROM production_event WHERE id = 'c3000002-0000-0000-0000-000000000002');"
+    }
+  ],
+  "blueprints": [
+    {
+      "name": "printing-contour-hub-v1",
+      "description": "docanima printing contour BFF hub",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    },
+    {
+      "name": "print-machine-v1",
+      "description": "Flexo press machine telemetry",
+      "type": "RELATIVE",
+      "targetObjectType": "DEVICE",
+      "variables": [
+        {
+          "name": "status",
+          "description": "Machine status",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "RUNNING"
+              }
+            ]
+          }
+        },
+        {
+          "name": "speedMpm",
+          "description": "Speed m/min",
+          "group": "telemetry",
+          "schema": {
+            "name": "integerValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "INTEGER"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "integerValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "INTEGER"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": 120
+              }
+            ]
+          }
+        },
+        {
+          "name": "activeWorkAreaId",
+          "description": "Active work area UUID",
+          "group": "runtime",
+          "schema": {
+            "name": "stringValue",
+            "fields": [
+              {
+                "name": "value",
+                "type": "STRING"
+              }
+            ]
+          },
+          "readable": true,
+          "writable": true,
+          "defaultValue": {
+            "schema": {
+              "name": "stringValue",
+              "fields": [
+                {
+                  "name": "value",
+                  "type": "STRING"
+                }
+              ]
+            },
+            "rows": [
+              {
+                "value": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+              }
+            ]
+          }
+        }
+      ],
+      "events": [],
+      "functions": [],
+      "bindings": [],
+      "parameters": {}
+    }
+  ],
+  "objects": [
+    {
+      "parentPath": "root.platform.devices",
+      "name": "printing-contour-hub",
+      "type": "DEVICE",
+      "displayName": "Printing Contour Hub",
+      "description": "docanima printing contour BFF hub",
+      "templateId": "printing-contour-hub-v1"
+    },
+    {
+      "parentPath": "root.platform.devices",
+      "name": "print-machine-pr120",
+      "type": "DEVICE",
+      "displayName": "Flexo PR120",
+      "description": "Demo flexo press machine",
+      "templateId": "print-machine-v1"
+    }
+  ],
+  "functions": [
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_listStages",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "machineCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "stage_row",
+                "fields": [
+                  {
+                    "name": "id",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "areaId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "operationName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "orderNo",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "productName",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"stages\",\"sql\":\"SELECT w.id::text AS id, w.area_id, w.operation_name, w.status, o.order_no, o.product_name FROM work_area w JOIN mes_order o ON o.id = w.mes_order_id WHERE w.machine_code = ? ORDER BY w.planned_start NULLS LAST, w.area_id\",\"params\":[\"${input.machineCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${stages}\",\"fields\":{\"id\":\"${item.id}\",\"areaId\":\"${item.area_id}\",\"operationName\":\"${item.operation_name}\",\"status\":\"${item.status}\",\"orderNo\":\"${item.order_no}\",\"productName\":\"${item.product_name}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_getStageHeader",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "projectName",
+              "type": "STRING"
+            },
+            {
+              "name": "productName",
+              "type": "STRING"
+            },
+            {
+              "name": "orderNo",
+              "type": "STRING"
+            },
+            {
+              "name": "customerName",
+              "type": "STRING"
+            },
+            {
+              "name": "areaId",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            },
+            {
+              "name": "machineCode",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"hdr\",\"sql\":\"SELECT o.project_name, o.product_name, o.order_no, o.customer_name, w.area_id, w.status, w.machine_code FROM work_area w JOIN mes_order o ON o.id = w.mes_order_id WHERE w.id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"hdr\",\"message\":\"Work area not found\"},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"projectName\":\"${hdr.project_name}\",\"productName\":\"${hdr.product_name}\",\"orderNo\":\"${hdr.order_no}\",\"customerName\":\"${hdr.customer_name}\",\"areaId\":\"${hdr.area_id}\",\"status\":\"${hdr.status}\",\"machineCode\":\"${hdr.machine_code}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_startStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "startedBy",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT id::text AS id, machine_code, status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wa.status\",\"equals\":\"PLANNED\",\"message\":\"Stage is not PLANNED\"},{\"type\":\"selectOne\",\"var\":\"conflict\",\"sql\":\"SELECT id::text AS id FROM work_area WHERE machine_code = ? AND status = 'IN_PROGRESS' AND id <> ?\",\"params\":[\"${wa.machine_code}\",\"${input.workAreaId}\"]},{\"type\":\"when\",\"var\":\"conflict\",\"notNull\":true,\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"ERROR\",\"error_message\":\"Machine already has an active stage\",\"status\":\"\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE work_area SET status = 'IN_PROGRESS', actual_start = CURRENT_TIMESTAMP WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO work_area_execution_interval (id, work_area_id, interval_type, started_at) VALUES (RANDOM_UUID(), ?, 'RUN', CURRENT_TIMESTAMP)\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'STAGE_STARTED', ?, CONCAT('{\\\"workAreaId\\\":\\\"', ?, '\\\"}'), CONCAT('STAGE_STARTED:', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM erp_outbox WHERE idempotency_key = CONCAT('STAGE_STARTED:', ?))\",\"params\":[\"${input.workAreaId}\",\"${input.workAreaId}\",\"${input.workAreaId}\",\"${input.workAreaId}\"]},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"status\",\"fields\":{\"value\":\"RUNNING\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"activeWorkAreaId\",\"fields\":{\"value\":\"${input.workAreaId}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"IN_PROGRESS\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_pauseStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wa.status\",\"equals\":\"IN_PROGRESS\",\"message\":\"Stage is not IN_PROGRESS\"},{\"type\":\"exec\",\"sql\":\"UPDATE work_area SET status = 'PAUSED' WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE work_area_execution_interval SET ended_at = CURRENT_TIMESTAMP WHERE work_area_id = ? AND interval_type = 'RUN' AND ended_at IS NULL\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO work_area_execution_interval (id, work_area_id, interval_type, started_at) VALUES (RANDOM_UUID(), ?, 'PAUSE', CURRENT_TIMESTAMP)\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"status\",\"fields\":{\"value\":\"PAUSED\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"PAUSED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_resumeStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wa.status\",\"equals\":\"PAUSED\",\"message\":\"Stage is not PAUSED\"},{\"type\":\"exec\",\"sql\":\"UPDATE work_area SET status = 'IN_PROGRESS' WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE work_area_execution_interval SET ended_at = CURRENT_TIMESTAMP WHERE work_area_id = ? AND interval_type = 'PAUSE' AND ended_at IS NULL\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO work_area_execution_interval (id, work_area_id, interval_type, started_at) VALUES (RANDOM_UUID(), ?, 'RUN', CURRENT_TIMESTAMP)\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"status\",\"fields\":{\"value\":\"RUNNING\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"IN_PROGRESS\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_getMonitoringSummary",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "inputTotalM",
+              "type": "INTEGER"
+            },
+            {
+              "name": "inputRollM",
+              "type": "INTEGER"
+            },
+            {
+              "name": "outputTotalM",
+              "type": "INTEGER"
+            },
+            {
+              "name": "outputRollM",
+              "type": "INTEGER"
+            },
+            {
+              "name": "inputRollBarcode",
+              "type": "STRING"
+            },
+            {
+              "name": "outputRollBarcode",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"inSum\",\"sql\":\"SELECT COALESCE(SUM(meters), 0) AS total_m FROM meter_interval WHERE work_area_id = ? AND interval_type = 'CONSUMPTION'\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"selectOne\",\"var\":\"outSum\",\"sql\":\"SELECT COALESCE(SUM(length_m), 0) AS total_m FROM material_roll WHERE work_area_id = ? AND roll_kind = 'OUT'\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"selectOne\",\"var\":\"lastIn\",\"sql\":\"SELECT barcode, (length_m - current_length_m) AS consumed FROM material_roll WHERE work_area_id = ? AND roll_kind = 'IN' ORDER BY barcode DESC LIMIT 1\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"selectOne\",\"var\":\"lastOut\",\"sql\":\"SELECT barcode, current_length_m AS len FROM material_roll WHERE work_area_id = ? AND roll_kind = 'OUT' ORDER BY barcode DESC LIMIT 1\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"inputTotalM\":\"${inSum.total_m}\",\"inputRollM\":\"${lastIn.consumed}\",\"outputTotalM\":\"${outSum.total_m}\",\"outputRollM\":\"${lastOut.len}\",\"inputRollBarcode\":\"${lastIn.barcode}\",\"outputRollBarcode\":\"${lastOut.barcode}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_registerInputRoll",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "barcode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rollId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT status, machine_code FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wa.status\",\"equals\":\"IN_PROGRESS\",\"message\":\"Stage is not IN_PROGRESS\"},{\"type\":\"selectOne\",\"var\":\"existing\",\"sql\":\"SELECT id::text AS id FROM material_roll WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"when\",\"var\":\"existing\",\"notNull\":true,\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE material_roll SET status = 'ON_STAGE', work_area_id = ?, machine_code = ? WHERE barcode = ?\",\"params\":[\"${input.workAreaId}\",\"${wa.machine_code}\",\"${input.barcode}\"]}],\"else\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO material_roll (id, barcode, roll_kind, length_m, current_length_m, status, work_area_id, machine_code) VALUES (RANDOM_UUID(), ?, 'IN', 2000, 2000, 'ON_STAGE', ?, ?)\",\"params\":[\"${input.barcode}\",\"${input.workAreaId}\",\"${wa.machine_code}\"]}]},{\"type\":\"selectOne\",\"var\":\"roll\",\"sql\":\"SELECT id::text AS id FROM material_roll WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rollId\":\"${roll.id}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_recordConsumption",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "barcode",
+              "type": "STRING"
+            },
+            {
+              "name": "meters",
+              "type": "INTEGER"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "remainingM",
+              "type": "INTEGER"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"roll\",\"sql\":\"SELECT id::text AS id, current_length_m FROM material_roll WHERE barcode = ? AND work_area_id = ?\",\"params\":[\"${input.barcode}\",\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"roll\",\"message\":\"Input roll not found on stage\"},{\"type\":\"exec\",\"sql\":\"UPDATE material_roll SET current_length_m = GREATEST(0, current_length_m - ?) WHERE id = ?\",\"params\":[\"${input.meters}\",\"${roll.id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO meter_interval (id, work_area_id, roll_id, meters, interval_type) VALUES (RANDOM_UUID(), ?, ?, ?, 'CONSUMPTION')\",\"params\":[\"${input.workAreaId}\",\"${roll.id}\",\"${input.meters}\"]},{\"type\":\"selectOne\",\"var\":\"updated\",\"sql\":\"SELECT current_length_m FROM material_roll WHERE id = ?\",\"params\":[\"${roll.id}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"remainingM\":\"${updated.current_length_m}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_registerOutputRoll",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "barcode",
+              "type": "STRING"
+            },
+            {
+              "name": "lengthM",
+              "type": "INTEGER"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rollId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT machine_code, status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"exec\",\"sql\":\"INSERT INTO material_roll (id, barcode, roll_kind, length_m, current_length_m, status, work_area_id, machine_code) VALUES (RANDOM_UUID(), ?, 'OUT', ?, ?, 'ON_STAGE', ?, ?)\",\"params\":[\"${input.barcode}\",\"${input.lengthM}\",\"${input.lengthM}\",\"${input.workAreaId}\",\"${wa.machine_code}\"]},{\"type\":\"selectOne\",\"var\":\"roll\",\"sql\":\"SELECT id::text AS id FROM material_roll WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rollId\":\"${roll.id}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_getJobBag",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "bagNo",
+              "type": "STRING"
+            },
+            {
+              "name": "cylindersJson",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"jb\",\"sql\":\"SELECT bag_no FROM job_bag WHERE work_area_id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"when\",\"var\":\"jb\",\"notNull\":false,\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO job_bag (id, work_area_id, bag_no) VALUES (RANDOM_UUID(), ?, CONCAT('JB-', SUBSTRING(?::text, 1, 8)))\",\"params\":[\"${input.workAreaId}\",\"${input.workAreaId}\"]},{\"type\":\"selectOne\",\"var\":\"jb\",\"sql\":\"SELECT bag_no FROM job_bag WHERE work_area_id = ?\",\"params\":[\"${input.workAreaId}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"bagNo\":\"${jb.bag_no}\",\"cylindersJson\":\"[{\\\"id\\\":\\\"CYL-01\\\",\\\"color\\\":\\\"Cyan\\\"}]\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_getJobBagSections",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "section_row",
+                "fields": [
+                  {
+                    "name": "sectionKey",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "sectionTitle",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "contentJson",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"jb\",\"sql\":\"SELECT id::text AS id FROM job_bag WHERE work_area_id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"when\",\"var\":\"jb\",\"notNull\":false,\"then\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO job_bag (id, work_area_id, bag_no) VALUES (RANDOM_UUID(), ?, 'JB-NEW')\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"selectOne\",\"var\":\"jb\",\"sql\":\"SELECT id::text AS id FROM job_bag WHERE work_area_id = ?\",\"params\":[\"${input.workAreaId}\"]}]},{\"type\":\"selectMany\",\"var\":\"sections\",\"sql\":\"SELECT section_key, section_title, content_json FROM job_bag_document WHERE job_bag_id = ? ORDER BY section_key\",\"params\":[\"${jb.id}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${sections}\",\"fields\":{\"sectionKey\":\"${item.section_key}\",\"sectionTitle\":\"${item.section_title}\",\"contentJson\":\"${item.content_json}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_saveJobBagSection",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "sectionKey",
+              "type": "STRING"
+            },
+            {
+              "name": "sectionTitle",
+              "type": "STRING"
+            },
+            {
+              "name": "contentJson",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "saved",
+              "type": "BOOLEAN"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"jb\",\"sql\":\"SELECT id::text AS id FROM job_bag WHERE work_area_id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"jb\",\"message\":\"Job bag not found\"},{\"type\":\"exec\",\"sql\":\"DELETE FROM job_bag_document WHERE job_bag_id = ? AND section_key = ?\",\"params\":[\"${jb.id}\",\"${input.sectionKey}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO job_bag_document (id, job_bag_id, section_key, section_title, content_json) VALUES (RANDOM_UUID(), ?, ?, ?, ?)\",\"params\":[\"${jb.id}\",\"${input.sectionKey}\",\"${input.sectionTitle}\",\"${input.contentJson}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"saved\":true}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_writeOffReturn",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "barcode",
+              "type": "STRING"
+            },
+            {
+              "name": "meters",
+              "type": "INTEGER"
+            },
+            {
+              "name": "returnRoll",
+              "type": "BOOLEAN"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"roll\",\"sql\":\"SELECT id::text AS id, current_length_m FROM material_roll WHERE barcode = ?\",\"params\":[\"${input.barcode}\"]},{\"type\":\"failIfNull\",\"var\":\"roll\",\"message\":\"Roll not found\"},{\"type\":\"when\",\"var\":\"input.returnRoll\",\"equals\":\"true\",\"then\":[{\"type\":\"exec\",\"sql\":\"UPDATE material_roll SET status = 'RETURNED', work_area_id = NULL WHERE id = ?\",\"params\":[\"${roll.id}\"]}],\"else\":[{\"type\":\"exec\",\"sql\":\"UPDATE material_roll SET current_length_m = GREATEST(0, current_length_m - ?), work_area_id = ?, status = 'ON_STAGE' WHERE id = ?\",\"params\":[\"${input.meters}\",\"${input.workAreaId}\",\"${roll.id}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO meter_interval (id, work_area_id, roll_id, meters, interval_type) VALUES (RANDOM_UUID(), ?, ?, ?, 'CONSUMPTION')\",\"params\":[\"${input.workAreaId}\",\"${roll.id}\",\"${input.meters}\"]}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"OK\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_listMachineStock",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "machineCode",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "stock_row",
+                "fields": [
+                  {
+                    "name": "materialName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "qtyKg",
+                    "type": "INTEGER"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"stock\",\"sql\":\"SELECT material_name, qty_kg FROM machine_stock WHERE machine_code = ? ORDER BY material_name\",\"params\":[\"${input.machineCode}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${stock}\",\"fields\":{\"materialName\":\"${item.material_name}\",\"qtyKg\":\"${item.qty_kg}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_listStageEvents",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "event_row",
+                "fields": [
+                  {
+                    "name": "eventCode",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "eventName",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "commentText",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "createdAt",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"events\",\"sql\":\"SELECT event_code, event_name, COALESCE(comment_text, '') AS comment_text, created_at::text AS created_at FROM production_event WHERE work_area_id = ? ORDER BY created_at DESC\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${events}\",\"fields\":{\"eventCode\":\"${item.event_code}\",\"eventName\":\"${item.event_name}\",\"commentText\":\"${item.comment_text}\",\"createdAt\":\"${item.created_at}\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_registerProductionEvent",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            },
+            {
+              "name": "eventCode",
+              "type": "STRING"
+            },
+            {
+              "name": "eventName",
+              "type": "STRING"
+            },
+            {
+              "name": "commentText",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "eventId",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"exec\",\"sql\":\"INSERT INTO production_event (id, work_area_id, event_code, event_name, comment_text) VALUES (RANDOM_UUID(), ?, ?, ?, ?)\",\"params\":[\"${input.workAreaId}\",\"${input.eventCode}\",\"${input.eventName}\",\"${input.commentText}\"]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"eventId\":\"OK\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_assessCompletion",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "ready",
+              "type": "BOOLEAN"
+            },
+            {
+              "name": "message",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"selectOne\",\"var\":\"outs\",\"sql\":\"SELECT COUNT(*) AS cnt FROM material_roll WHERE work_area_id = ? AND roll_kind = 'OUT'\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"when\",\"var\":\"outs.cnt\",\"equals\":\"0\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"ready\":false,\"message\":\"Register at least one output roll\"}}]},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"ready\":true,\"message\":\"Ready to complete\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_completeStage",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": [
+            {
+              "name": "workAreaId",
+              "type": "STRING"
+            }
+          ]
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "status",
+              "type": "STRING"
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectOne\",\"var\":\"wa\",\"sql\":\"SELECT status FROM work_area WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"failIfNull\",\"var\":\"wa\",\"message\":\"Work area not found\"},{\"type\":\"failIfNotEquals\",\"var\":\"wa.status\",\"equals\":\"IN_PROGRESS\",\"message\":\"Stage is not IN_PROGRESS\"},{\"type\":\"selectOne\",\"var\":\"outs\",\"sql\":\"SELECT COUNT(*) AS cnt FROM material_roll WHERE work_area_id = ? AND roll_kind = 'OUT'\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"when\",\"var\":\"outs.cnt\",\"equals\":\"0\",\"then\":[{\"type\":\"return\",\"fields\":{\"error_code\":\"ERROR\",\"error_message\":\"Register at least one output roll before complete\",\"status\":\"\"}}]},{\"type\":\"exec\",\"sql\":\"UPDATE work_area SET status = 'COMPLETED', actual_end = CURRENT_TIMESTAMP WHERE id = ?\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"UPDATE work_area_execution_interval SET ended_at = CURRENT_TIMESTAMP WHERE work_area_id = ? AND ended_at IS NULL\",\"params\":[\"${input.workAreaId}\"]},{\"type\":\"exec\",\"sql\":\"INSERT INTO erp_outbox (id, entity_type, entity_id, payload_json, idempotency_key, status) SELECT RANDOM_UUID(), 'STAGE_COMPLETED', ?, CONCAT('{\\\"workAreaId\\\":\\\"', ?, '\\\"}'), CONCAT('STAGE_COMPLETED:', ?), 'pending' WHERE NOT EXISTS (SELECT 1 FROM erp_outbox WHERE idempotency_key = CONCAT('STAGE_COMPLETED:', ?))\",\"params\":[\"${input.workAreaId}\",\"${input.workAreaId}\",\"${input.workAreaId}\",\"${input.workAreaId}\"]},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"status\",\"fields\":{\"value\":\"IDLE\"}},{\"type\":\"writeVariable\",\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variable\":\"activeWorkAreaId\",\"fields\":{\"value\":\"\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"status\":\"COMPLETED\"}}]}"
+      }
+    },
+    {
+      "objectPath": "root.platform.devices.printing-contour-hub",
+      "functionName": "mes_printing_pollErpOutbox",
+      "version": "1",
+      "descriptor": {
+        "inputSchema": {
+          "name": "in",
+          "fields": []
+        },
+        "outputSchema": {
+          "name": "out",
+          "fields": [
+            {
+              "name": "error_code",
+              "type": "STRING"
+            },
+            {
+              "name": "error_message",
+              "type": "STRING"
+            },
+            {
+              "name": "rows",
+              "type": "RECORD_LIST",
+              "nestedSchema": {
+                "name": "outbox_row",
+                "fields": [
+                  {
+                    "name": "entityType",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "entityId",
+                    "type": "STRING"
+                  },
+                  {
+                    "name": "status",
+                    "type": "STRING"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "source": {
+        "type": "script",
+        "body": "{\"steps\":[{\"type\":\"selectMany\",\"var\":\"pending\",\"sql\":\"SELECT entity_type, entity_id, idempotency_key FROM erp_outbox WHERE status = 'pending' ORDER BY created_at LIMIT 20\"},{\"type\":\"exec\",\"sql\":\"UPDATE erp_outbox SET status = 'sent', processed_at = CURRENT_TIMESTAMP WHERE status = 'pending'\"},{\"type\":\"map\",\"var\":\"rows\",\"source\":\"${pending}\",\"fields\":{\"entityType\":\"${item.entity_type}\",\"entityId\":\"${item.entity_id}\",\"status\":\"sent\"}},{\"type\":\"return\",\"fields\":{\"error_code\":\"OK\",\"error_message\":\"\",\"rows\":\"${rows}\"}}]}"
+      }
+    }
+  ],
+  "reports": [
+    {
+      "reportId": "mes-printing-stages",
+      "title": "Stages for machine",
+      "description": "SCR-01 stage list",
+      "reportType": "sql",
+      "query": "SELECT w.id::text AS id, w.area_id, w.operation_name, w.status, o.order_no, o.product_name FROM work_area w JOIN mes_order o ON o.id = w.mes_order_id WHERE w.machine_code = COALESCE(NULLIF(?, ''), 'PR120') ORDER BY CASE w.status WHEN 'IN_PROGRESS' THEN 0 WHEN 'PAUSED' THEN 1 WHEN 'PLANNED' THEN 2 ELSE 3 END, w.area_id",
+      "parameters": [
+        "machineCode"
+      ],
+      "columns": [
+        {
+          "field": "area_id",
+          "label": "Stage"
+        },
+        {
+          "field": "operation_name",
+          "label": "Operation"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "order_no",
+          "label": "Order"
+        },
+        {
+          "field": "product_name",
+          "label": "Product"
+        }
+      ],
+      "maxRows": 50
+    },
+    {
+      "reportId": "mes-printing-input-rolls",
+      "title": "Input rolls",
+      "reportType": "sql",
+      "query": "SELECT barcode, length_m, current_length_m, status FROM material_roll WHERE work_area_id::text = COALESCE(NULLIF(?, ''), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') AND roll_kind = 'IN' ORDER BY barcode",
+      "parameters": [
+        "workAreaId"
+      ],
+      "columns": [
+        {
+          "field": "barcode",
+          "label": "Barcode"
+        },
+        {
+          "field": "length_m",
+          "label": "Length m"
+        },
+        {
+          "field": "current_length_m",
+          "label": "Remaining m"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        }
+      ],
+      "maxRows": 20
+    },
+    {
+      "reportId": "mes-printing-output-rolls",
+      "title": "Output rolls",
+      "reportType": "sql",
+      "query": "SELECT barcode, length_m, current_length_m, status FROM material_roll WHERE work_area_id::text = COALESCE(NULLIF(?, ''), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') AND roll_kind = 'OUT' ORDER BY barcode",
+      "parameters": [
+        "workAreaId"
+      ],
+      "columns": [
+        {
+          "field": "barcode",
+          "label": "Barcode"
+        },
+        {
+          "field": "length_m",
+          "label": "Length m"
+        },
+        {
+          "field": "current_length_m",
+          "label": "Current m"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        }
+      ],
+      "maxRows": 20
+    },
+    {
+      "reportId": "mes-printing-jb-sections",
+      "title": "Job bag sections",
+      "reportType": "sql",
+      "query": "SELECT d.section_key, d.section_title, d.content_json FROM job_bag_document d JOIN job_bag j ON j.id = d.job_bag_id WHERE j.work_area_id::text = COALESCE(NULLIF(?, ''), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') ORDER BY d.section_key",
+      "parameters": [
+        "workAreaId"
+      ],
+      "columns": [
+        {
+          "field": "section_key",
+          "label": "Section"
+        },
+        {
+          "field": "section_title",
+          "label": "Title"
+        },
+        {
+          "field": "content_json",
+          "label": "Content"
+        }
+      ],
+      "maxRows": 20
+    },
+    {
+      "reportId": "mes-printing-machine-stock",
+      "title": "Machine stock",
+      "reportType": "sql",
+      "query": "SELECT material_name, qty_kg FROM machine_stock WHERE machine_code = COALESCE(NULLIF(?, ''), 'PR120') ORDER BY material_name",
+      "parameters": [
+        "machineCode"
+      ],
+      "columns": [
+        {
+          "field": "material_name",
+          "label": "Material"
+        },
+        {
+          "field": "qty_kg",
+          "label": "Qty kg"
+        }
+      ],
+      "maxRows": 20
+    },
+    {
+      "reportId": "mes-printing-stage-events",
+      "title": "Stage events",
+      "reportType": "sql",
+      "query": "SELECT event_code, event_name, COALESCE(comment_text, '') AS comment_text, created_at::text AS created_at FROM production_event WHERE work_area_id::text = COALESCE(NULLIF(?, ''), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb') ORDER BY created_at DESC",
+      "parameters": [
+        "workAreaId"
+      ],
+      "columns": [
+        {
+          "field": "event_code",
+          "label": "Code"
+        },
+        {
+          "field": "event_name",
+          "label": "Event"
+        },
+        {
+          "field": "comment_text",
+          "label": "Comment"
+        },
+        {
+          "field": "created_at",
+          "label": "When"
+        }
+      ],
+      "maxRows": 50
+    },
+    {
+      "reportId": "mes-printing-complete-summary",
+      "title": "Completion summary",
+      "reportType": "sql",
+      "query": "SELECT w.area_id, w.status, (SELECT COUNT(*) FROM material_roll r WHERE r.work_area_id = w.id AND r.roll_kind = 'IN') AS input_rolls, (SELECT COUNT(*) FROM material_roll r WHERE r.work_area_id = w.id AND r.roll_kind = 'OUT') AS output_rolls, (SELECT COUNT(*) FROM production_event e WHERE e.work_area_id = w.id) AS event_count FROM work_area w WHERE w.id::text = COALESCE(NULLIF(?, ''), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')",
+      "parameters": [
+        "workAreaId"
+      ],
+      "columns": [
+        {
+          "field": "area_id",
+          "label": "Stage"
+        },
+        {
+          "field": "status",
+          "label": "Status"
+        },
+        {
+          "field": "input_rolls",
+          "label": "Input rolls"
+        },
+        {
+          "field": "output_rolls",
+          "label": "Output rolls"
+        },
+        {
+          "field": "event_count",
+          "label": "Events"
+        }
+      ],
+      "maxRows": 5
+    }
+  ],
+  "dashboards": [
+    {
+      "path": "root.platform.dashboards.mes-printing-stages",
+      "title": "SCR-01 Stages",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"help\",\"type\":\"html-snippet\",\"title\":\"SCR-01 Stage list\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p><strong>docanima SCR-01:</strong> выберите этап в таблице, затем <em>Start</em> / <em>Pause</em> / <em>Resume</em>. Активный демо-этап: <code>PRINT-OP-002</code>.</p>\"},{\"id\":\"stages\",\"type\":\"report\",\"title\":\"Stages (PR120)\",\"x\":0,\"y\":2,\"w\":12,\"h\":4,\"reportPath\":\"root.platform.reports.mes-printing-stages\",\"parametersJson\":\"{\\\"machineCode\\\":\\\"PR120\\\"}\",\"selectable\":true,\"rowSelectionKey\":\"id\",\"rowParamsFromRowJson\":\"{\\\"workAreaId\\\":\\\"id\\\",\\\"machineCode\\\":\\\"PR120\\\"}\"},{\"id\":\"start\",\"type\":\"function-form\",\"title\":\"Start stage\",\"x\":0,\"y\":6,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_startStage\",\"buttonLabel\":\"В работу\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"label\\\":\\\"Work area\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"startedBy\\\",\\\"label\\\":\\\"Operator\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"operator\\\"}]\",\"requireSessionParamsJson\":\"[\\\"workAreaId\\\"]\"},{\"id\":\"pause\",\"type\":\"function-form\",\"title\":\"Pause\",\"x\":4,\"y\":6,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_pauseStage\",\"buttonLabel\":\"Пауза\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"}]\",\"requireSessionParamsJson\":\"[\\\"workAreaId\\\"]\"},{\"id\":\"resume\",\"type\":\"function-form\",\"title\":\"Resume\",\"x\":8,\"y\":6,\"w\":4,\"h\":3,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_resumeStage\",\"buttonLabel\":\"Продолжить\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"}]\",\"requireSessionParamsJson\":\"[\\\"workAreaId\\\"]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-printing-arm",
+      "title": "SCR-00 ARM",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"arm-help\",\"type\":\"html-snippet\",\"title\":\"SCR-00 ARM shell\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p><strong>Исполнение заказа</strong> — мониторинг рулонов и вкладки JB / Materials / Events / Complete. Контекст: <code>workAreaId</code> из SCR-01 или активный <code>PRINT-OP-002</code>.</p>\"},{\"id\":\"machine-status\",\"type\":\"value\",\"title\":\"Machine status\",\"x\":0,\"y\":2,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variableName\":\"status\",\"valueField\":\"value\"},{\"id\":\"machine-speed\",\"type\":\"value\",\"title\":\"Speed m/min\",\"x\":3,\"y\":2,\"w\":3,\"h\":2,\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variableName\":\"speedMpm\",\"valueField\":\"value\",\"decimals\":0},{\"id\":\"active-wa\",\"type\":\"value\",\"title\":\"Active work area\",\"x\":6,\"y\":2,\"w\":6,\"h\":2,\"objectPath\":\"root.platform.devices.print-machine-pr120\",\"variableName\":\"activeWorkAreaId\",\"valueField\":\"value\"},{\"id\":\"input-rolls\",\"type\":\"report\",\"title\":\"Input rolls\",\"x\":0,\"y\":4,\"w\":6,\"h\":3,\"reportPath\":\"root.platform.reports.mes-printing-input-rolls\",\"contextParamsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"parametersJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"output-rolls\",\"type\":\"report\",\"title\":\"Output rolls\",\"x\":6,\"y\":4,\"w\":6,\"h\":3,\"reportPath\":\"root.platform.reports.mes-printing-output-rolls\",\"contextParamsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"parametersJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"arm-tabs\",\"type\":\"tab-panel\",\"title\":\"Operator panels\",\"x\":0,\"y\":7,\"w\":12,\"h\":8,\"tabsJson\":\"[{\\\"id\\\":\\\"jb\\\",\\\"label\\\":\\\"Job bag\\\",\\\"children\\\":[{\\\"id\\\":\\\"jb-sub\\\",\\\"type\\\":\\\"sub-dashboard\\\",\\\"title\\\":\\\"\\\",\\\"x\\\":0,\\\"y\\\":0,\\\"w\\\":12,\\\"h\\\":8,\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.mes-printing-job-bag\\\",\\\"inheritContext\\\":true}]},{\\\"id\\\":\\\"mat\\\",\\\"label\\\":\\\"Materials\\\",\\\"children\\\":[{\\\"id\\\":\\\"mat-sub\\\",\\\"type\\\":\\\"sub-dashboard\\\",\\\"title\\\":\\\"\\\",\\\"x\\\":0,\\\"y\\\":0,\\\"w\\\":12,\\\"h\\\":8,\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.mes-printing-materials\\\",\\\"inheritContext\\\":true}]},{\\\"id\\\":\\\"ev\\\",\\\"label\\\":\\\"Events\\\",\\\"children\\\":[{\\\"id\\\":\\\"ev-sub\\\",\\\"type\\\":\\\"sub-dashboard\\\",\\\"title\\\":\\\"\\\",\\\"x\\\":0,\\\"y\\\":0,\\\"w\\\":12,\\\"h\\\":8,\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.mes-printing-events\\\",\\\"inheritContext\\\":true}]},{\\\"id\\\":\\\"done\\\",\\\"label\\\":\\\"Complete\\\",\\\"children\\\":[{\\\"id\\\":\\\"done-sub\\\",\\\"type\\\":\\\"sub-dashboard\\\",\\\"title\\\":\\\"\\\",\\\"x\\\":0,\\\"y\\\":0,\\\"w\\\":12,\\\"h\\\":8,\\\"targetDashboardPath\\\":\\\"root.platform.dashboards.mes-printing-complete\\\",\\\"inheritContext\\\":true}]}]\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-printing-job-bag",
+      "title": "SCR-02 Job bag",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"jb-help\",\"type\":\"html-snippet\",\"title\":\"SCR-02 Job bag\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p>Job bag sections (docanima P4–P5). PDF print — stub в v1.</p>\"},{\"id\":\"jb-sections\",\"type\":\"report\",\"title\":\"JB sections\",\"x\":0,\"y\":2,\"w\":12,\"h\":4,\"reportPath\":\"root.platform.reports.mes-printing-jb-sections\",\"contextParamsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"parametersJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"jb-save\",\"type\":\"function-form\",\"title\":\"Save section\",\"x\":0,\"y\":6,\"w\":12,\"h\":4,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_saveJobBagSection\",\"buttonLabel\":\"Сохранить раздел\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"sectionKey\\\",\\\"label\\\":\\\"Section key\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"process\\\"},{\\\"name\\\":\\\"sectionTitle\\\",\\\"label\\\":\\\"Title\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"Process control\\\"},{\\\"name\\\":\\\"contentJson\\\",\\\"label\\\":\\\"JSON\\\",\\\"type\\\":\\\"textarea\\\",\\\"defaultValue\\\":\\\"{\\\"tension\\\":\\\"1.2 bar\\\"}\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-printing-materials",
+      "title": "SCR-04 Materials",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"mat-help\",\"type\":\"html-snippet\",\"title\":\"SCR-04 Materials\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p>Скан рулона, списание метража, возврат на склад (stub UC-13).</p>\"},{\"id\":\"stock\",\"type\":\"report\",\"title\":\"Machine stock\",\"x\":0,\"y\":2,\"w\":6,\"h\":4,\"reportPath\":\"root.platform.reports.mes-printing-machine-stock\",\"parametersJson\":\"{\\\"machineCode\\\":\\\"PR120\\\"}\"},{\"id\":\"register-in\",\"type\":\"function-form\",\"title\":\"Register input roll\",\"x\":6,\"y\":2,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_registerInputRoll\",\"buttonLabel\":\"Ввод рулона\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"barcode\\\",\\\"label\\\":\\\"Barcode\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"IN-ROLL-NEW\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"},{\"id\":\"writeoff\",\"type\":\"function-form\",\"title\":\"Write-off / return\",\"x\":0,\"y\":6,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_writeOffReturn\",\"buttonLabel\":\"Списать\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"barcode\\\",\\\"label\\\":\\\"Barcode\\\",\\\"type\\\":\\\"text\\\"},{\\\"name\\\":\\\"meters\\\",\\\"label\\\":\\\"Meters\\\",\\\"type\\\":\\\"number\\\",\\\"defaultValue\\\":\\\"100\\\"},{\\\"name\\\":\\\"returnRoll\\\",\\\"label\\\":\\\"Return\\\",\\\"type\\\":\\\"select\\\",\\\"defaultValue\\\":\\\"false\\\",\\\"selectOptions\\\":[{\\\"value\\\":\\\"false\\\",\\\"label\\\":\\\"Write-off\\\"},{\\\"value\\\":\\\"true\\\",\\\"label\\\":\\\"Return\\\"}]}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"},{\"id\":\"consumption\",\"type\":\"function-form\",\"title\":\"Record consumption\",\"x\":6,\"y\":6,\"w\":6,\"h\":4,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_recordConsumption\",\"buttonLabel\":\"Списать метраж\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"barcode\\\",\\\"label\\\":\\\"Barcode\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"IN-ROLL-1001\\\"},{\\\"name\\\":\\\"meters\\\",\\\"label\\\":\\\"Meters\\\",\\\"type\\\":\\\"number\\\",\\\"defaultValue\\\":\\\"50\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-printing-events",
+      "title": "SCR-07 Events",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"ev-help\",\"type\":\"html-snippet\",\"title\":\"SCR-07 Events\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p>Журнал производственных событий и регистрация простоя/брака (UC-25 stub).</p>\"},{\"id\":\"ev-feed\",\"type\":\"event-feed\",\"title\":\"Hub events\",\"x\":0,\"y\":2,\"w\":5,\"h\":5,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"limit\":20},{\"id\":\"ev-report\",\"type\":\"report\",\"title\":\"Stage events\",\"x\":5,\"y\":2,\"w\":7,\"h\":5,\"reportPath\":\"root.platform.reports.mes-printing-stage-events\",\"contextParamsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"parametersJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"ev-form\",\"type\":\"function-form\",\"title\":\"Register event\",\"x\":0,\"y\":7,\"w\":12,\"h\":4,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_registerProductionEvent\",\"buttonLabel\":\"Зарегистрировать\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"eventCode\\\",\\\"label\\\":\\\"Code\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"110\\\"},{\\\"name\\\":\\\"eventName\\\",\\\"label\\\":\\\"Name\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"Speed loss\\\"},{\\\"name\\\":\\\"commentText\\\",\\\"label\\\":\\\"Comment\\\",\\\"type\\\":\\\"textarea\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"}]}"
+    },
+    {
+      "path": "root.platform.dashboards.mes-printing-complete",
+      "title": "SCR-08 Complete",
+      "refreshIntervalMs": 5000,
+      "layoutJson": "{\"columns\":12,\"rowHeight\":72,\"widgets\":[{\"id\":\"cmp-help\",\"type\":\"html-snippet\",\"title\":\"SCR-08 Complete\",\"x\":0,\"y\":0,\"w\":12,\"h\":2,\"htmlJson\":\"<p>Итог этапа и завершение (UC-16). Нужен хотя бы один выходной рулон.</p>\"},{\"id\":\"cmp-summary\",\"type\":\"report\",\"title\":\"Summary\",\"x\":0,\"y\":2,\"w\":8,\"h\":4,\"reportPath\":\"root.platform.reports.mes-printing-complete-summary\",\"contextParamsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"parametersJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"assess\",\"type\":\"function\",\"title\":\"Readiness\",\"x\":8,\"y\":2,\"w\":4,\"h\":2,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_assessCompletion\",\"buttonLabel\":\"Check readiness\",\"inputJson\":\"{\\\"workAreaId\\\":\\\"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\\\"}\"},{\"id\":\"out-roll\",\"type\":\"function-form\",\"title\":\"Register output roll\",\"x\":8,\"y\":4,\"w\":4,\"h\":2,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_registerOutputRoll\",\"buttonLabel\":\"Output roll\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"},{\\\"name\\\":\\\"barcode\\\",\\\"label\\\":\\\"Barcode\\\",\\\"type\\\":\\\"text\\\",\\\"defaultValue\\\":\\\"OUT-ROLL-NEW\\\"},{\\\"name\\\":\\\"lengthM\\\",\\\"label\\\":\\\"Length m\\\",\\\"type\\\":\\\"number\\\",\\\"defaultValue\\\":\\\"500\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\"},{\"id\":\"complete\",\"type\":\"function-form\",\"title\":\"Complete stage\",\"x\":0,\"y\":6,\"w\":6,\"h\":3,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_completeStage\",\"buttonLabel\":\"Завершить этап\",\"fieldsJson\":\"[{\\\"name\\\":\\\"workAreaId\\\",\\\"type\\\":\\\"text\\\",\\\"hidden\\\":true,\\\"paramKey\\\":\\\"workAreaId\\\"}]\",\"paramBindingsJson\":\"{\\\"workAreaId\\\":\\\"workAreaId\\\"}\",\"confirmMessage\":\"Завершить этап печати?\"},{\"id\":\"outbox\",\"type\":\"function\",\"title\":\"1S outbox (stub)\",\"x\":6,\"y\":6,\"w\":6,\"h\":3,\"objectPath\":\"root.platform.devices.printing-contour-hub\",\"functionName\":\"mes_printing_pollErpOutbox\",\"buttonLabel\":\"Poll outbox\"}]}"
+    }
+  ],
+  "events": [
+    {
+      "id": "stageStarted",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    },
+    {
+      "id": "stageCompleted",
+      "roles": [
+        "operator",
+        "admin"
+      ]
+    }
+  ],
+  "operatorUi": {
+    "appId": "mes-printing-contour",
+    "title": "MES Printing Contour",
+    "defaultDashboard": "root.platform.dashboards.mes-printing-stages",
+    "dashboards": [
+      {
+        "path": "root.platform.dashboards.mes-printing-stages",
+        "title": "SCR-01 Stages"
+      },
+      {
+        "path": "root.platform.dashboards.mes-printing-arm",
+        "title": "SCR-00 ARM"
+      },
+      {
+        "path": "root.platform.dashboards.mes-printing-job-bag",
+        "title": "SCR-02 Job bag"
+      },
+      {
+        "path": "root.platform.dashboards.mes-printing-materials",
+        "title": "SCR-04 Materials"
+      },
+      {
+        "path": "root.platform.dashboards.mes-printing-events",
+        "title": "SCR-07 Events"
+      },
+      {
+        "path": "root.platform.dashboards.mes-printing-complete",
+        "title": "SCR-08 Complete"
+      }
+    ],
+    "eventJournalObjectPath": "root.platform.devices.printing-contour-hub"
+  }
+}

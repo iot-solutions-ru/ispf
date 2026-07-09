@@ -10,6 +10,8 @@ import {
 } from "./useVariableHistory";
 
 const MULTI_SERIES_COLORS = ["#2f81f7", "#e67e22", "#27ae60", "#9b59b6", "#e74c3c", "#16a085"];
+/** Multi-tag query is heavier than live binding; avoid dashboard poll hammering rate limiter. */
+const MULTI_QUERY_MIN_REFRESH_MS = 30_000;
 
 export interface AnalyticsMultiSeriesPoint {
   t: number;
@@ -41,6 +43,7 @@ export function useAnalyticsMultiSeries(
   bucketOverride?: string | null,
 ) {
   const tags = useMemo(() => parseAnalyticsQueryTags(tagsJson), [tagsJson]);
+  const refreshMs = Math.max(refreshIntervalMs, MULTI_QUERY_MIN_REFRESH_MS);
   const bucket =
     bucketOverride ??
     (historyRange !== "live" && isHistoryRange(historyRange)
@@ -64,8 +67,10 @@ export function useAnalyticsMultiSeries(
         maxBuckets: maxPoints,
       }),
     enabled: tags.length > 0 && Boolean(bucket),
-    staleTime: refreshIntervalMs,
-    refetchInterval: refreshIntervalMs,
+    staleTime: refreshMs,
+    refetchInterval: (query) => (query.state.error ? false : refreshMs),
+    retry: false,
+    placeholderData: (previous) => previous,
   });
 
   const points = useMemo(() => {

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import ModalPortal from "../ui/ModalPortal";
 import {
   Brush,
   CartesianGrid,
@@ -122,7 +123,8 @@ export default function MultiPenTrendModal({
   }, [merged, pens, t]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <ModalPortal>
+      <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal modal-wide modal-variable-history modal-multi-pen-trend"
         data-testid="multi-pen-trend-modal"
@@ -266,6 +268,7 @@ export default function MultiPenTrendModal({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }

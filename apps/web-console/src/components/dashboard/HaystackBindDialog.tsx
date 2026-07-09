@@ -9,6 +9,7 @@ import {
 } from "../../api/haystackSearch";
 import type { DashboardLayout, DashboardWidget } from "../../types/dashboard";
 import { newWidget } from "../../types/dashboard";
+import ModalPortal from "../../ui/ModalPortal";
 import { nextWidgetZIndex } from "./widgetLayerUtils";
 
 interface HaystackBindDialogProps {
@@ -124,7 +125,8 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
   };
 
   return (
-    <div className="modal-backdrop" role="presentation" onClick={onClose}>
+    <ModalPortal>
+      <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <div
         className="modal-dialog haystack-bind-dialog"
         role="dialog"
@@ -249,5 +251,6 @@ export default function HaystackBindDialog({ layout, onApply, onClose }: Haystac
         </footer>
       </div>
     </div>
+    </ModalPortal>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useId, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import ModalPortal from "./ModalPortal";
 
 export interface ModalProps {
   open: boolean;
@@ -38,39 +39,41 @@ export default function Modal({
   }, [open, onClose]);
 
   return (
-    <AnimatePresence initial={false}>
-      {open && (
-        <motion.div
-          className="modal-backdrop"
-          role="presentation"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-          onClick={onClose}
-        >
+    <ModalPortal>
+      <AnimatePresence initial={false}>
+        {open && (
           <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className={`modal ${wide ? "modal-wide" : ""} ${className}`.trim()}
-            initial={{ opacity: 0, y: 8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ type: "spring", duration: 0.3, bounce: 0 }}
-            onClick={(event) => event.stopPropagation()}
+            className="modal-backdrop"
+            role="presentation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
+            onClick={onClose}
           >
-            <header>
-              <h3 id={titleId}>{title}</h3>
-              <button type="button" className="btn small" onClick={onClose} aria-label={t("action.close")}>
-                ×
-              </button>
-            </header>
-            <div className="modal-body">{children}</div>
-            {footer && <footer>{footer}</footer>}
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              className={`modal ${wide ? "modal-wide" : ""} ${className}`.trim()}
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+              transition={{ type: "spring", duration: 0.3, bounce: 0 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <header>
+                <h3 id={titleId}>{title}</h3>
+                <button type="button" className="btn small" onClick={onClose} aria-label={t("action.close")}>
+                  ×
+                </button>
+              </header>
+              <div className="modal-body">{children}</div>
+              {footer && <footer>{footer}</footer>}
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </ModalPortal>
   );
 }

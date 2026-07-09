@@ -1,0 +1,26 @@
+{
+  "slug": "mes-printing-contour",
+  "title": "MES Printing Contour",
+  "description": "docanima printing operator contour: stages, ARM shell, job bag, materials, events, complete (SCR-00…08)",
+  "pricing": "free",
+  "appId": "mes-printing-contour",
+  "vendorName": "IoT Solutions",
+  "vendorLegalName": "ООО \"ИОТ РЕШЕНИЯ\"",
+  "vendorInn": "6950228075",
+  "vendorSellerKind": "company",
+  "vendorContactEmail": "info@iot-solutions.ru",
+  "vendorContactPhone": "+7 980 630-93-33",
+  "vendorContactPerson": "Marketplace Team",
+  "priceCents": 0,
+  "latestVersion": "1.0.0",
+  "minIspfVersion": "0.9.106",
+  "bundleArtifact": "bundle.json",
+  "tags": [
+    "mes",
+    "printing",
+    "operator",
+    "docanima",
+    "traceability"
+  ],
+  "changelog": "v1.0.0 — docanima printing contour demo (D0 + SCR-02/04/07/08)."
+}

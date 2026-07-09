@@ -230,7 +230,7 @@ ispf:
       rollup-min-query-range-days: ${ISPF_ANALYTICS_ROLLUP_MIN_QUERY_RANGE_DAYS:7}
       query-max-tags: ${ISPF_ANALYTICS_QUERY_MAX_TAGS:20}
       query-timeout-ms: ${ISPF_ANALYTICS_QUERY_TIMEOUT_MS:3000}
-      query-rate-limit-per-minute: ${ISPF_ANALYTICS_QUERY_RATE_LIMIT_PER_MINUTE:120}
+      query-rate-limit-per-minute: ${ISPF_ANALYTICS_QUERY_RATE_LIMIT_PER_MINUTE:600}
       slo:
         multi-tag-query-tags: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_TAGS:10}
         multi-tag-query-range-days: ${ISPF_ANALYTICS_SLO_MULTI_TAG_QUERY_RANGE_DAYS:7}

@@ -4,7 +4,7 @@ set -euo pipefail
 
 ENV_FILE="${ISPF_ENV_FILE:-/opt/ispf/ispf-server.env}"
 PEM_FILE="${1:-/opt/ispf/keys/marketplace-license-public.pem}"
-MARKETPLACE_URL="${ISPF_MARKETPLACE_DEFAULT_URL:-https://ispf-marketplace.iot-solutions.ru}"
+MARKETPLACE_URL="${ISPF_MARKETPLACE_DEFAULT_URL:-https://marketplace.ispf.ai}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
   touch "$ENV_FILE"

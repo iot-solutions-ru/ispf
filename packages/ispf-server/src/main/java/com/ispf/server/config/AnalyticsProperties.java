@@ -14,6 +14,6 @@ public record AnalyticsProperties(
         @DefaultValue("7") int rollupMinQueryRangeDays,
         @DefaultValue("20") int queryMaxTags,
         @DefaultValue("3000") long queryTimeoutMs,
-        @DefaultValue("120") int queryRateLimitPerMinute
+        @DefaultValue("600") int queryRateLimitPerMinute
 ) {
 }

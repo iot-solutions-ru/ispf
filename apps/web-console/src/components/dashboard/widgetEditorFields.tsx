@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchReport } from "../../api/reports";
-import { fetchAnalyticsTemplates } from "../../api";
-import type { DashboardWidget, NetworkGraphWidget } from "../../types/dashboard";
+import { fetchAnalyticsTemplates, type AnalyticsQueryTagInput } from "../../api";
+import type { ChartWidget, DashboardWidget, NetworkGraphWidget } from "../../types/dashboard";
+import { parseAnalyticsQueryTags } from "../../hooks/useAnalyticsMultiSeries";
 import { buildAnalyticsBindingExpression } from "../../utils/analyticsChartBinding";
 import { WIDGET_HISTORY_RANGE_OPTIONS, HISTORY_TABLE_RANGE_IDS } from "../../types/dashboard";
 import {
@@ -411,6 +412,108 @@ function DashboardPathInput({
   );
 }
 
+function ChartAnalyticsQueryTagsField({
+  widget,
+  objects,
+  update,
+}: {
+  widget: ChartWidget;
+  objects: ObjectOption[];
+  update: (patch: Partial<DashboardWidget>) => void;
+}) {
+  const { t } = useTranslation("widgets");
+  const tags = parseAnalyticsQueryTags(widget.analyticsQueryTagsJson);
+
+  const setTags = (next: AnalyticsQueryTagInput[]) => {
+    const filtered = next.filter((tag) => tag.path?.trim() && tag.variable?.trim());
+    update({
+      analyticsQueryTagsJson: filtered.length > 0 ? JSON.stringify(filtered) : undefined,
+    } as Partial<DashboardWidget>);
+  };
+
+  const updateTag = (index: number, patch: Partial<AnalyticsQueryTagInput>) => {
+    setTags(tags.map((tag, i) => (i === index ? { ...tag, ...patch } : tag)));
+  };
+
+  return (
+    <div className="widget-editor-analytics-tags full">
+      <p className="hint widget-editor-type-hint">{t("editor.analyticsQueryTagsHint")}</p>
+      {tags.length > 0 ? (
+        <div className="widget-editor-analytics-tag-list">
+          {tags.map((tag, index) => (
+            <div key={`${tag.path}-${tag.variable}-${index}`} className="widget-editor-analytics-tag-card">
+              <div className="widget-editor-analytics-tag-card-head">
+                <span className="widget-editor-analytics-tag-title">
+                  {tag.label?.trim() || tag.path.split(".").pop() || `#${index + 1}`}
+                </span>
+                <button
+                  type="button"
+                  className="btn small danger"
+                  onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                >
+                  {t("editor.analyticsQueryTagRemove")}
+                </button>
+              </div>
+              <ObjectPathField
+                className="widget-editor-analytics-tag-path"
+                label={t("editor.objectPath")}
+                value={tag.path}
+                onChange={(path) => updateTag(index, { path })}
+                placeholder={t("editor.placeholder.orEnterPath")}
+                pickerTitle={t("editor.objectPath")}
+              />
+              <label>
+                {t("editor.variableName")}
+                <input
+                  value={tag.variable}
+                  onChange={(e) => updateTag(index, { variable: e.target.value })}
+                  placeholder="temperature"
+                />
+              </label>
+              <label>
+                {t("editor.analyticsQueryTagLabel")}
+                <input
+                  value={tag.label ?? ""}
+                  onChange={(e) => updateTag(index, { label: e.target.value || undefined })}
+                  placeholder={tag.path.split(".").pop() ?? ""}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="hint">{t("editor.analyticsQueryTagsEmpty")}</p>
+      )}
+      <div className="widget-editor-list-actions">
+        <button
+          type="button"
+          className="btn small"
+          onClick={() =>
+            setTags([
+              ...tags,
+              {
+                path: objects[0]?.path ?? "",
+                variable: "temperature",
+                field: "value",
+                label: objects[0]?.displayName ?? "series",
+              },
+            ])
+          }
+        >
+          {t("editor.analyticsQueryTagAdd")}
+        </button>
+      </div>
+      <AdvancedJsonField
+        label={t("editor.analyticsQueryTagsJson")}
+        placeholder={t("editor.analyticsQueryTagsJsonHint")}
+        value={widget.analyticsQueryTagsJson ?? ""}
+        onChange={(value) => update({ analyticsQueryTagsJson: value || undefined } as Partial<DashboardWidget>)}
+        rows={6}
+      />
+    </div>
+  );
+}
+
 function ChartAnalyticsTemplateField({
   widget,
   update,
@@ -469,6 +572,9 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const bindingHint = t(DATA_BINDING_HINT_KEYS[binding], { defaultValue: "" });
   const typeHintKey = WIDGET_TYPE_HINT_KEYS[widget.type];
   const typeHint = typeHintKey ? t(typeHintKey, { defaultValue: "" }) : "";
+  const chartWidget = widget.type === "chart" ? widget : null;
+  const multiQueryTags = chartWidget ? parseAnalyticsQueryTags(chartWidget.analyticsQueryTagsJson) : [];
+  const usesMultiTagQuery = multiQueryTags.length > 0;
 
   return (
     <FieldPairs>
@@ -477,7 +583,14 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
         hint={[bindingHint, typeHint].filter(Boolean).join(" ")}
       />
 
-      {(binding === "object-variable" || binding === "object-only") && (
+      {chartWidget && (
+        <>
+          <Section title={t("editor.section.analyticsQueryTags")} />
+          <ChartAnalyticsQueryTagsField widget={chartWidget} objects={objects} update={update} />
+        </>
+      )}
+
+      {(binding === "object-variable" || binding === "object-only") && !usesMultiTagQuery && (
         <>
           <FormRow>
             <PathSelect
@@ -523,6 +636,7 @@ export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
 
       {binding === "object-variable" &&
         widget.type !== "spreadsheet" &&
+        !usesMultiTagQuery &&
         !(
           widget.type === "chart" &&
           ((widget.chartType ?? widget.chartStyle) === "bubble" ||

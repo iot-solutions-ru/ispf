@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { fetchVariables } from "../api";
 import { historizableFieldsFromVariable } from "../utils/variableHistoryFields";
+import ModalPortal from "../ui/ModalPortal";
 import VariableHistoryPanel from "./VariableHistoryPanel";
 
 interface VariableHistoryModalProps {
@@ -32,27 +33,29 @@ export default function VariableHistoryModal({
     : [valueField ?? "value"];
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal modal-wide modal-variable-history"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header>
-          <h3>{title ?? variableName}</h3>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label={t("action.close")}>
-            ✕
-          </button>
-        </header>
-        <p className="hint modal-variable-history-path">
-          <code>{objectPath}</code> · <code>{variableName}</code>
-        </p>
-        <VariableHistoryPanel
-          objectPath={objectPath}
-          variableName={variableName}
-          fields={fields}
-          refreshIntervalMs={30_000}
-        />
+    <ModalPortal>
+      <div className="modal-backdrop" onClick={onClose}>
+        <div
+          className="modal modal-wide modal-variable-history"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <header>
+            <h3>{title ?? variableName}</h3>
+            <button type="button" className="icon-btn" onClick={onClose} aria-label={t("action.close")}>
+              ✕
+            </button>
+          </header>
+          <p className="hint modal-variable-history-path">
+            <code>{objectPath}</code> · <code>{variableName}</code>
+          </p>
+          <VariableHistoryPanel
+            objectPath={objectPath}
+            variableName={variableName}
+            fields={fields}
+            refreshIntervalMs={30_000}
+          />
+        </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

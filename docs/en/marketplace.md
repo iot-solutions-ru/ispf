@@ -16,7 +16,7 @@ ispf:
     endpoints:
       - id: iot-solutions
         name: IoT Solutions Marketplace
-        base-url: ${ISPF_MARKETPLACE_DEFAULT_URL:https://ispf-marketplace.iot-solutions.ru}
+        base-url: ${ISPF_MARKETPLACE_DEFAULT_URL:https://marketplace.ispf.ai}
         contact-url: ${ISPF_MARKETPLACE_CONTACT_URL:https://iot-solutions.ru}
         default-endpoint: true
       - id: acme
@@ -28,7 +28,7 @@ ispf:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ISPF_MARKETPLACE_ENABLED` | `true` | Enable remote catalog in System → Solutions |
-| `ISPF_MARKETPLACE_DEFAULT_URL` | `https://ispf-marketplace.iot-solutions.ru` | Primary catalog base URL |
+| `ISPF_MARKETPLACE_DEFAULT_URL` | `https://marketplace.ispf.ai` | Primary catalog base URL |
 | `ISPF_MARKETPLACE_CONTACT_URL` | vendor site | Fallback "contact vendor" link |
 
 ## Web console

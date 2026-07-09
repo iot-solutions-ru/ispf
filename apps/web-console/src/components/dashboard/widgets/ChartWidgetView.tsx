@@ -20,7 +20,8 @@ import { widgetHistoryRangeLabel } from "../../../types/dashboard";
 import { fetchAnalyticsTemplates } from "../../../api";
 import { templateFromApiRow } from "../../../utils/analyticsChartBinding";
 import { useChartTrendSeries } from "../../../hooks/useChartTrendSeries";
-import { useAnalyticsMultiSeries } from "../../../hooks/useAnalyticsMultiSeries";
+import type { TrendPoint } from "../../../hooks/useTrendSeries";
+import { useAnalyticsMultiSeries, type AnalyticsMultiSeriesPoint } from "../../../hooks/useAnalyticsMultiSeries";
 import { useWidgetObjectPath } from "../../../hooks/useWidgetObjectPath";
 import { useWidgetStyles } from "../widgetStyles";
 import WidgetDragHandle from "../WidgetDragHandle";
@@ -104,12 +105,13 @@ export default function ChartWidgetView({
     chartMode,
     analyticsTemplate
   );
+  const hasMultiQueryTags = Boolean(widget.analyticsQueryTagsJson?.trim());
   const multiSeries = useAnalyticsMultiSeries(
     widget.analyticsQueryTagsJson,
     historyRange,
     refreshIntervalMs,
     maxPoints,
-    series.historyBucket
+    hasMultiQueryTags ? undefined : series.historyBucket
   );
   const useMultiSeries = multiSeries.tags.length > 0 && chartMode === "line";
 
@@ -131,11 +133,11 @@ export default function ChartWidgetView({
     [demoPreview, editable, isCandlestickChart, series.candlestickPoints.length]
   );
 
-  const points = useMultiSeries
+  const trendPoints =
+    demoLinePoints.length >= 2 ? demoLinePoints : series.points;
+  const lineChartData: TrendPoint[] | AnalyticsMultiSeriesPoint[] = useMultiSeries
     ? multiSeries.points
-    : demoLinePoints.length >= 2
-      ? demoLinePoints
-      : series.points;
+    : trendPoints;
   const rangePoints =
     demoRangePoints.length >= 2 ? demoRangePoints : series.rangePoints;
   const candlestickPoints =
@@ -160,7 +162,7 @@ export default function ChartWidgetView({
             max: Math.max(...candlestickPoints.map((point) => point.high)),
           }
         : (() => {
-            const numericValues = points
+            const numericValues = trendPoints
               .map((point) => point.value)
               .filter((value): value is number => value != null && Number.isFinite(value));
             if (numericValues.length === 0) {
@@ -179,7 +181,11 @@ export default function ChartWidgetView({
     widget.unit ??
     (widget.unitField && unitRow ? String(unitRow[widget.unitField] ?? "") : "");
 
-  const chartData = isRangeChart ? rangePoints : isCandlestickChart ? candlestickPoints : points;
+  const chartData = isRangeChart
+    ? rangePoints
+    : isCandlestickChart
+      ? candlestickPoints
+      : lineChartData;
   const chartReady = chartData.length >= 1;
   const bandLabel =
     isRangeChart && series.historyBucket
@@ -240,7 +246,7 @@ export default function ChartWidgetView({
           <div className="dash-chart-placeholder">{t("view.selectDevice")}</div>
         ) : (useMultiSeries ? multiSeries.loading : series.historyLoading) && chartData.length === 0 && !isDemo ? (
           <div className="dash-chart-placeholder">{t("view.collectingData")}</div>
-        ) : series.isError && !isDemo ? (
+        ) : (useMultiSeries ? multiSeries.isError : series.isError) && !isDemo ? (
           <div className="dash-chart-placeholder error">{t("view.bindingError")}</div>
         ) : !chartReady ? (
           <div className="dash-chart-placeholder">
@@ -311,7 +317,7 @@ export default function ChartWidgetView({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "bar" ? (
-              <BarChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <BarChart data={trendPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis tick={{ fontSize: 10 }} width={42} />
@@ -319,7 +325,10 @@ export default function ChartWidgetView({
                 <Bar dataKey="value" fill={color} isAnimationActive={false} />
               </BarChart>
             ) : chartStyle === "line" ? (
-              <LineChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <LineChart
+                data={lineChartData as TrendPoint[]}
+                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis
@@ -366,7 +375,7 @@ export default function ChartWidgetView({
                     )}
               </LineChart>
             ) : (
-              <AreaChart data={points} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={trendPoints} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID_STROKE} />
                 <XAxis dataKey="time" tick={{ fontSize: 10 }} minTickGap={24} />
                 <YAxis
