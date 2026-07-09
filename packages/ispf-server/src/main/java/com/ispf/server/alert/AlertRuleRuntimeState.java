@@ -6,17 +6,19 @@ import java.time.Instant;
 import java.util.Optional;
 
 /**
- * Ephemeral alert-rule evaluation state (edge detection, sustain timers, rate limits).
+ * Ephemeral alert-rule evaluation state (edge detection, sustain timers, rate limits, latch).
  * Hot path keeps this in RAM; {@link AlertRuleRuntimeFlusher} persists dirty entries periodically.
  */
 public record AlertRuleRuntimeState(
         Boolean lastConditionMet,
         Double lastWatchValue,
         Instant lastFiredAt,
-        Instant conditionTrueSince
+        Instant conditionTrueSince,
+        Boolean latchedActive,
+        Instant deactivateTrueSince
 ) {
     public static AlertRuleRuntimeState empty() {
-        return new AlertRuleRuntimeState(null, null, null, null);
+        return new AlertRuleRuntimeState(null, null, null, null, null, null);
     }
 
     public static AlertRuleRuntimeState fromNode(PlatformObject node) {
@@ -27,7 +29,9 @@ public record AlertRuleRuntimeState(
                         .map(Double::parseDouble)
                         .orElse(null),
                 parseInstant(readString(node, "lastFiredAt").orElse("")),
-                parseInstant(readString(node, "conditionTrueSince").orElse(""))
+                parseInstant(readString(node, "conditionTrueSince").orElse("")),
+                readBoolean(node, "latchedActive").orElse(null),
+                parseInstant(readString(node, "deactivateTrueSince").orElse(""))
         );
     }
 

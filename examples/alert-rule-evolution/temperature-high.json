@@ -1,5 +1,5 @@
 {
-  "_comment": "Proposed extended POST /api/v1/alert-rules body (ADR-0039 phase B+). Fields not yet in ispf-server until implemented.",
+  "_comment": "POST /api/v1/alert-rules body with ADR-0039 phase B latch fields (implemented in alert-rule-v1).",
   "name": "temperature-threshold-exceeded",
   "objectPath": "root.platform.devices.demo-sensor-01",
   "watchVariable": "temperature",

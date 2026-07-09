@@ -124,7 +124,8 @@ public class AutomationTreeService {
                 createAlertRuleNode(path, entity.getName(), entity.getObjectPath(), entity.getWatchVariable(),
                         entity.getConditionExpr(), entity.getEventName(), entity.getPayloadVariable(),
                         entity.isEnabled(), entity.isEdgeTrigger(), 0, false, "HIGH", false,
-                        entity.getLastConditionMet(), null, null, null);
+                        entity.getLastConditionMet(), null, null, null,
+                        null, null, null, null, null);
             }
         }
         legacyAlertRuleRepository.deleteAll();
@@ -193,10 +194,58 @@ public class AutomationTreeService {
             String notificationEmailTarget,
             String anomalyModelId
     ) {
+        return createAlertRule(
+                name,
+                targetObjectPath,
+                watchVariable,
+                conditionExpr,
+                eventName,
+                payloadVariable,
+                enabled,
+                edgeTrigger,
+                delaySeconds,
+                sustainWhileTrue,
+                priority,
+                ackRequired,
+                notificationWebhookUrl,
+                notificationEmailTarget,
+                anomalyModelId,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    @Transactional
+    public AlertRule createAlertRule(
+            String name,
+            String targetObjectPath,
+            String watchVariable,
+            String conditionExpr,
+            String eventName,
+            String payloadVariable,
+            boolean enabled,
+            boolean edgeTrigger,
+            int delaySeconds,
+            boolean sustainWhileTrue,
+            String priority,
+            boolean ackRequired,
+            String notificationWebhookUrl,
+            String notificationEmailTarget,
+            String anomalyModelId,
+            String deactivateExpr,
+            Integer deactivateDelaySeconds,
+            Integer pollIntervalMs,
+            String triggerMessage,
+            String clearEventName
+    ) {
         String path = uniqueRulePath(name);
         createAlertRuleNode(path, name, targetObjectPath, watchVariable, conditionExpr, eventName,
                 payloadVariable, enabled, edgeTrigger, delaySeconds, sustainWhileTrue, priority, ackRequired, null,
-                notificationWebhookUrl, notificationEmailTarget, anomalyModelId);
+                notificationWebhookUrl, notificationEmailTarget, anomalyModelId,
+                deactivateExpr, deactivateDelaySeconds, pollIntervalMs, triggerMessage, clearEventName);
         AlertRule rule = getAlertRule(path);
         indexRefresh.afterAlertRuleCreated(rule);
         return rule;
@@ -208,6 +257,40 @@ public class AutomationTreeService {
             Integer delaySeconds, Boolean sustainWhileTrue, String priority, Boolean ackRequired,
             Integer rateLimitSeconds,
             String notificationWebhookUrl, String notificationEmailTarget, String anomalyModelId) {
+        return updateAlertRule(
+                path,
+                name,
+                targetObjectPath,
+                watchVariable,
+                conditionExpr,
+                eventName,
+                payloadVariable,
+                enabled,
+                edgeTrigger,
+                delaySeconds,
+                sustainWhileTrue,
+                priority,
+                ackRequired,
+                rateLimitSeconds,
+                notificationWebhookUrl,
+                notificationEmailTarget,
+                anomalyModelId,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    @Transactional
+    public AlertRule updateAlertRule(String path, String name, String targetObjectPath, String watchVariable,
+            String conditionExpr, String eventName, String payloadVariable, Boolean enabled, Boolean edgeTrigger,
+            Integer delaySeconds, Boolean sustainWhileTrue, String priority, Boolean ackRequired,
+            Integer rateLimitSeconds,
+            String notificationWebhookUrl, String notificationEmailTarget, String anomalyModelId,
+            String deactivateExpr, Integer deactivateDelaySeconds, Integer pollIntervalMs,
+            String triggerMessage, String clearEventName) {
         AlertRule previous = getAlertRule(path);
         PlatformObject node = requireAlertRule(path);
         if (name != null && !name.isBlank()) {
@@ -258,6 +341,21 @@ public class AutomationTreeService {
         if (anomalyModelId != null) {
             setString(path, "anomalyModelId", anomalyModelId);
         }
+        if (deactivateExpr != null) {
+            setString(path, "deactivateExpr", deactivateExpr);
+        }
+        if (deactivateDelaySeconds != null) {
+            setInteger(path, "deactivateDelaySeconds", deactivateDelaySeconds);
+        }
+        if (pollIntervalMs != null) {
+            setInteger(path, "pollIntervalMs", pollIntervalMs);
+        }
+        if (triggerMessage != null) {
+            setString(path, "triggerMessage", triggerMessage);
+        }
+        if (clearEventName != null) {
+            setString(path, "clearEventName", clearEventName);
+        }
         objectManager.persistNodeTree(path);
         AlertRule rule = getAlertRule(path);
         indexRefresh.afterAlertRuleUpdated(previous, rule);
@@ -292,6 +390,25 @@ public class AutomationTreeService {
 
     public void setAlertRuleLastWatchValue(String path, Double value) {
         alertRuleRuntimeStore.setLastWatchValue(path, value);
+    }
+
+    public void setAlertRuleLatchedActive(String path, boolean latchedActive) {
+        alertRuleRuntimeStore.setLatchedActive(path, latchedActive);
+    }
+
+    public void setAlertRuleDeactivateTrueSince(String path, Instant deactivateTrueSince) {
+        alertRuleRuntimeStore.setDeactivateTrueSince(path, deactivateTrueSince);
+    }
+
+    public void clearAlertRuleDeactivateTrueSince(String path) {
+        alertRuleRuntimeStore.clearDeactivateTrueSince(path);
+    }
+
+    public List<AlertRule> listEnabledPeriodicAlertRules() {
+        return listAlertRules().stream()
+                .filter(AlertRule::enabled)
+                .filter(rule -> rule.pollIntervalMs() > 0)
+                .toList();
     }
 
     public List<EventCorrelator> listCorrelators() {
@@ -527,7 +644,12 @@ public class AutomationTreeService {
         Boolean lastConditionMet,
         String notificationWebhookUrl,
         String notificationEmailTarget,
-        String anomalyModelId
+        String anomalyModelId,
+        String deactivateExpr,
+        Integer deactivateDelaySeconds,
+        Integer pollIntervalMs,
+        String triggerMessage,
+        String clearEventName
     ) {
         ensureParent(path);
         String name = leafName(path);
@@ -552,6 +674,11 @@ public class AutomationTreeService {
             setRuntimeString(path, "notificationEmailTarget", notificationEmailTarget);
         }
         setString(path, "anomalyModelId", anomalyModelId != null ? anomalyModelId : "");
+        setString(path, "deactivateExpr", deactivateExpr != null ? deactivateExpr : "");
+        setInteger(path, "deactivateDelaySeconds", deactivateDelaySeconds != null ? deactivateDelaySeconds : 0);
+        setInteger(path, "pollIntervalMs", pollIntervalMs != null ? pollIntervalMs : 0);
+        setString(path, "triggerMessage", triggerMessage != null ? triggerMessage : "");
+        setString(path, "clearEventName", clearEventName != null ? clearEventName : "");
         objectManager.persistNodeTree(path);
         if (lastConditionMet != null) {
             alertRuleRuntimeStore.setLastConditionMet(path, lastConditionMet);
@@ -617,8 +744,15 @@ public class AutomationTreeService {
                 readInteger(node, "rateLimitSeconds").orElse(0),
                 readString(node, "priority").orElse("HIGH"),
                 readBoolean(node, "ackRequired").orElse(false),
+                readString(node, "deactivateExpr").orElse(""),
+                readInteger(node, "deactivateDelaySeconds").orElse(0),
+                readInteger(node, "pollIntervalMs").orElse(0),
+                blankToNull(readString(node, "triggerMessage").orElse(null)),
+                blankToNull(readString(node, "clearEventName").orElse(null)),
                 runtime.lastConditionMet(),
+                runtime.latchedActive(),
                 runtime.conditionTrueSince(),
+                runtime.deactivateTrueSince(),
                 runtime.lastFiredAt(),
                 createdAt,
                 createdAt,

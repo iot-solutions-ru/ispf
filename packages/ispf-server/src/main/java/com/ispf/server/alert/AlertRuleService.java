@@ -1,7 +1,7 @@
 package com.ispf.server.alert;
 
-import com.ispf.core.object.PlatformObject;
 import com.ispf.core.model.DataRecord;
+import com.ispf.core.object.PlatformObject;
 import com.ispf.expression.ExpressionEngine;
 import com.ispf.expression.ExpressionException;
 import com.ispf.server.automation.AutomationTreeService;
@@ -17,7 +17,9 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class AlertRuleService {
@@ -30,7 +32,6 @@ public class AlertRuleService {
     private final EventService eventService;
     private final AutomationMetricsRecorder automationMetricsRecorder;
     private final NotificationDispatchService notificationDispatchService;
-
     private final AlarmShelfService alarmShelfService;
     private final AnomalyAlertRuleEvaluator anomalyAlertRuleEvaluator;
 
@@ -70,7 +71,9 @@ public class AlertRuleService {
                 request.objectPath(),
                 request.eventName(),
                 request.conditionExpr(),
-                request.anomalyModelId()
+                request.anomalyModelId(),
+                request.deactivateExpr(),
+                request.clearEventName()
         );
         return automationTreeService.createAlertRule(
                 request.name(),
@@ -87,19 +90,27 @@ public class AlertRuleService {
                 request.resolvedAckRequired(),
                 request.notificationWebhookUrl(),
                 request.notificationEmailTarget(),
-                request.anomalyModelId()
+                request.anomalyModelId(),
+                request.deactivateExpr(),
+                request.resolvedDeactivateDelaySeconds(),
+                request.resolvedPollIntervalMs(),
+                request.triggerMessage(),
+                request.clearEventName()
         );
     }
 
     @Transactional
     public AlertRule update(String id, UpdateAlertRuleRequest request) {
-        if (request.objectPath() != null || request.eventName() != null || request.conditionExpr() != null) {
-            AlertRule current = get(id);
+        AlertRule current = get(id);
+        if (request.objectPath() != null || request.eventName() != null || request.conditionExpr() != null
+                || request.deactivateExpr() != null || request.clearEventName() != null) {
             validateRule(
                     request.objectPath() != null ? request.objectPath() : current.objectPath(),
                     request.eventName() != null ? request.eventName() : current.eventName(),
                     request.conditionExpr() != null ? request.conditionExpr() : current.conditionExpr(),
-                    request.anomalyModelId() != null ? request.anomalyModelId() : current.anomalyModelId()
+                    request.anomalyModelId() != null ? request.anomalyModelId() : current.anomalyModelId(),
+                    request.deactivateExpr() != null ? request.deactivateExpr() : current.deactivateExpr(),
+                    request.clearEventName() != null ? request.clearEventName() : current.clearEventName()
             );
         }
         return automationTreeService.updateAlertRule(
@@ -119,7 +130,12 @@ public class AlertRuleService {
                 request.rateLimitSeconds(),
                 request.notificationWebhookUrl(),
                 request.notificationEmailTarget(),
-                request.anomalyModelId()
+                request.anomalyModelId(),
+                request.deactivateExpr(),
+                request.deactivateDelaySeconds(),
+                request.pollIntervalMs(),
+                request.triggerMessage(),
+                request.clearEventName()
         );
     }
 
@@ -134,70 +150,159 @@ public class AlertRuleService {
         if (rules.isEmpty()) {
             return;
         }
-
-        PlatformObject node = objectManager.require(objectPath);
         for (AlertRule rule : rules) {
-            automationMetricsRecorder.recordAlertEvaluation();
-            if (!node.events().containsKey(rule.eventName())) {
-                continue;
-            }
-            boolean conditionMet = usesAnomalyModel(rule)
-                    ? anomalyAlertRuleEvaluator.evaluate(objectPath, rule.watchVariable(), rule.anomalyModelId())
-                    : evaluateCondition(rule.conditionExpr(), node, rule.watchVariable());
-            Double watchValue = readWatchValue(node, rule.watchVariable());
-            Double previousWatchValue = automationTreeService.getAlertRuleLastWatchValue(rule.id());
-            boolean shouldFire;
+            evaluateRule(rule);
+        }
+    }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void evaluateRule(AlertRule rule) {
+        rule = automationTreeService.getAlertRule(rule.id());
+        if (!rule.enabled()) {
+            return;
+        }
+        PlatformObject node = objectManager.require(rule.objectPath());
+        automationMetricsRecorder.recordAlertEvaluation();
+
+        boolean conditionMet = usesAnomalyModel(rule)
+                ? anomalyAlertRuleEvaluator.evaluate(rule.objectPath(), rule.watchVariable(), rule.anomalyModelId())
+                : evaluateCondition(rule.conditionExpr(), node, rule.watchVariable());
+        boolean deactivateMet = evaluateDeactivateMet(rule, node, conditionMet);
+        boolean latched = Boolean.TRUE.equals(rule.latchedActive());
+
+        if (rule.usesLatch() && latched) {
+            if (tryClearLatched(rule, node, deactivateMet)) {
+                automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
+                updateWatchValue(rule, node);
+            }
+            return;
+        }
+
+        if (!node.events().containsKey(rule.eventName())) {
+            return;
+        }
+
+        Double watchValue = readWatchValue(node, rule.watchVariable());
+        Double previousWatchValue = automationTreeService.getAlertRuleLastWatchValue(rule.id());
+        boolean shouldFire = resolveShouldFire(rule, conditionMet, watchValue, previousWatchValue);
+
+        if (shouldFire) {
+            if (rule.rateLimitSeconds() > 0
+                    && rule.lastFiredAt() != null
+                    && rule.lastFiredAt().plusSeconds(rule.rateLimitSeconds()).isAfter(Instant.now())) {
+                automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
+                updateWatchValue(rule, node);
+                return;
+            }
+            if (rule.rateLimitSeconds() > 0) {
+                automationTreeService.setAlertRuleLastFiredAt(rule.id(), Instant.now());
+            }
+            fireRaiseEvent(rule, node);
+            if (rule.usesLatch()) {
+                automationTreeService.setAlertRuleLatchedActive(rule.id(), true);
+                automationTreeService.clearAlertRuleDeactivateTrueSince(rule.id());
+            }
             if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
-                if (!conditionMet) {
-                    automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
-                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), false);
-                    continue;
-                }
-                Instant conditionTrueSince = rule.conditionTrueSince();
-                if (conditionTrueSince == null) {
-                    automationTreeService.setAlertRuleConditionTrueSince(rule.id(), Instant.now());
-                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), true);
-                    continue;
-                }
-                if (conditionTrueSince.plusSeconds(rule.delaySeconds()).isAfter(Instant.now())) {
-                    automationTreeService.setAlertRuleLastConditionMet(rule.id(), true);
-                    continue;
-                }
-                shouldFire = true;
-            } else {
-                shouldFire = conditionMet;
-                if (rule.edgeTrigger()) {
-                    boolean risingEdge = conditionMet && !Boolean.TRUE.equals(rule.lastConditionMet());
-                    boolean watchIncreased = conditionMet
-                            && watchValue != null
-                            && previousWatchValue != null
-                            && watchValue > previousWatchValue;
-                    shouldFire = risingEdge || watchIncreased;
-                }
+                automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
             }
+        }
 
-            if (shouldFire) {
-                if (rule.rateLimitSeconds() > 0) {
-                    if (rule.lastFiredAt() != null
-                            && rule.lastFiredAt().plusSeconds(rule.rateLimitSeconds()).isAfter(Instant.now())) {
-                        continue;
-                    }
-                    automationTreeService.setAlertRuleLastFiredAt(rule.id(), Instant.now());
-                }
-                DataRecord payload = resolvePayload(node, rule.payloadVariable());
-                eventService.fireAutomation(objectPath, rule.eventName(), payload);
-                automationMetricsRecorder.recordAlertFire();
-                dispatchNotifications(rule, objectPath);
-                if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
-                    automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
-                }
-            }
+        automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
+        updateWatchValue(rule, node);
+    }
 
-            automationTreeService.setAlertRuleLastConditionMet(rule.id(), conditionMet);
-            if (watchValue != null) {
-                automationTreeService.setAlertRuleLastWatchValue(rule.id(), watchValue);
+    private boolean tryClearLatched(AlertRule rule, PlatformObject node, boolean deactivateMet) {
+        if (!deactivateMet) {
+            automationTreeService.clearAlertRuleDeactivateTrueSince(rule.id());
+            return true;
+        }
+        if (rule.deactivateDelaySeconds() > 0) {
+            Instant since = rule.deactivateTrueSince();
+            if (since == null) {
+                automationTreeService.setAlertRuleDeactivateTrueSince(rule.id(), Instant.now());
+                return true;
             }
+            if (since.plusSeconds(rule.deactivateDelaySeconds()).isAfter(Instant.now())) {
+                return true;
+            }
+        }
+        fireClearEvent(rule, node);
+        automationTreeService.setAlertRuleLatchedActive(rule.id(), false);
+        automationTreeService.clearAlertRuleDeactivateTrueSince(rule.id());
+        return true;
+    }
+
+    private boolean resolveShouldFire(
+            AlertRule rule,
+            boolean conditionMet,
+            Double watchValue,
+            Double previousWatchValue
+    ) {
+        if (rule.sustainWhileTrue() && rule.delaySeconds() > 0) {
+            if (!conditionMet) {
+                automationTreeService.clearAlertRuleConditionTrueSince(rule.id());
+                return false;
+            }
+            Instant conditionTrueSince = rule.conditionTrueSince();
+            if (conditionTrueSince == null) {
+                automationTreeService.setAlertRuleConditionTrueSince(rule.id(), Instant.now());
+                return false;
+            }
+            if (conditionTrueSince.plusSeconds(rule.delaySeconds()).isAfter(Instant.now())) {
+                return false;
+            }
+            return true;
+        }
+        if (!conditionMet) {
+            return false;
+        }
+        if (!rule.edgeTrigger()) {
+            return true;
+        }
+        boolean risingEdge = !Boolean.TRUE.equals(rule.lastConditionMet());
+        boolean watchIncreased = watchValue != null
+                && previousWatchValue != null
+                && watchValue > previousWatchValue;
+        return risingEdge || watchIncreased;
+    }
+
+    private void fireRaiseEvent(AlertRule rule, PlatformObject node) {
+        DataRecord payload = resolvePayload(node, rule.payloadVariable());
+        eventService.fireAutomation(rule.objectPath(), rule.eventName(), payload);
+        automationMetricsRecorder.recordAlertFire();
+        dispatchNotifications(rule, rule.objectPath(), rule.eventName());
+    }
+
+    private void fireClearEvent(AlertRule rule, PlatformObject node) {
+        String clearEvent = rule.clearEventName();
+        if (clearEvent == null || clearEvent.isBlank()) {
+            return;
+        }
+        if (!node.events().containsKey(clearEvent)) {
+            log.warn("Alert rule {} clear event {} not defined on {}", rule.id(), clearEvent, rule.objectPath());
+            return;
+        }
+        if (alarmShelfService.isShelved(rule.objectPath(), clearEvent)) {
+            return;
+        }
+        DataRecord payload = resolvePayload(node, rule.payloadVariable());
+        eventService.fireAutomation(rule.objectPath(), clearEvent, payload);
+        automationMetricsRecorder.recordAlertFire();
+        dispatchNotifications(rule, rule.objectPath(), clearEvent);
+    }
+
+    private boolean evaluateDeactivateMet(AlertRule rule, PlatformObject node, boolean conditionMet) {
+        String expr = rule.deactivateExpr();
+        if (expr != null && !expr.isBlank()) {
+            return evaluateCondition(expr, node, rule.watchVariable());
+        }
+        return !conditionMet;
+    }
+
+    private void updateWatchValue(AlertRule rule, PlatformObject node) {
+        Double watchValue = readWatchValue(node, rule.watchVariable());
+        if (watchValue != null) {
+            automationTreeService.setAlertRuleLastWatchValue(rule.id(), watchValue);
         }
     }
 
@@ -206,19 +311,23 @@ public class AlertRuleService {
         automationTreeService.ensureDemoAlertRule();
     }
 
-    private void dispatchNotifications(AlertRule rule, String objectPath) {
-        if (alarmShelfService.isShelved(objectPath, rule.eventName())) {
+    private void dispatchNotifications(AlertRule rule, String objectPath, String eventName) {
+        if (alarmShelfService.isShelved(objectPath, eventName)) {
             return;
         }
         if (!rule.hasNotificationChannel()) {
             return;
         }
-        var context = notificationDispatchService.baseContext(
+        Map<String, Object> context = new HashMap<>(notificationDispatchService.baseContext(
                 "alert-rule",
                 rule.id(),
                 objectPath,
-                rule.eventName()
-        );
+                eventName
+        ));
+        String message = resolveTriggerMessage(rule, objectPath);
+        if (message != null) {
+            context.put("triggerMessage", message);
+        }
         try {
             if (rule.notificationWebhookUrl() != null && !rule.notificationWebhookUrl().isBlank()) {
                 notificationDispatchService.sendWebhook(rule.notificationWebhookUrl(), context);
@@ -228,6 +337,20 @@ public class AlertRuleService {
             }
         } catch (Exception ex) {
             log.warn("Alert rule {} notification failed: {}", rule.id(), ex.getMessage());
+        }
+    }
+
+    private String resolveTriggerMessage(AlertRule rule, String objectPath) {
+        String template = rule.triggerMessage();
+        if (template == null || template.isBlank()) {
+            return null;
+        }
+        try {
+            PlatformObject node = objectManager.require(objectPath);
+            Object result = expressionEngine.evaluateAlertCondition(template, node, rule.watchVariable());
+            return result != null ? String.valueOf(result) : null;
+        } catch (ExpressionException ex) {
+            return template;
         }
     }
 
@@ -275,13 +398,26 @@ public class AlertRuleService {
         return rule.anomalyModelId() != null && !rule.anomalyModelId().isBlank();
     }
 
-    private void validateRule(String objectPath, String eventName, String conditionExpr, String anomalyModelId) {
+    private void validateRule(
+            String objectPath,
+            String eventName,
+            String conditionExpr,
+            String anomalyModelId,
+            String deactivateExpr,
+            String clearEventName
+    ) {
         PlatformObject node = objectManager.require(objectPath);
         if (!node.events().containsKey(eventName)) {
             throw new IllegalArgumentException("Unknown event on object: " + eventName);
         }
+        if (clearEventName != null && !clearEventName.isBlank() && !node.events().containsKey(clearEventName)) {
+            throw new IllegalArgumentException("Unknown clear event on object: " + clearEventName);
+        }
         if (anomalyModelId == null || anomalyModelId.isBlank()) {
             expressionEngine.compile(conditionExpr);
+        }
+        if (deactivateExpr != null && !deactivateExpr.isBlank()) {
+            expressionEngine.compile(deactivateExpr);
         }
     }
 
@@ -300,7 +436,12 @@ public class AlertRuleService {
             Boolean ackRequired,
             String notificationWebhookUrl,
             String notificationEmailTarget,
-            String anomalyModelId
+            String anomalyModelId,
+            String deactivateExpr,
+            Integer deactivateDelaySeconds,
+            Integer pollIntervalMs,
+            String triggerMessage,
+            String clearEventName
     ) {
         public int resolvedDelaySeconds() {
             return delaySeconds != null ? delaySeconds : 0;
@@ -316,6 +457,14 @@ public class AlertRuleService {
 
         public boolean resolvedAckRequired() {
             return ackRequired != null && ackRequired;
+        }
+
+        public int resolvedDeactivateDelaySeconds() {
+            return deactivateDelaySeconds != null ? deactivateDelaySeconds : 0;
+        }
+
+        public int resolvedPollIntervalMs() {
+            return pollIntervalMs != null ? pollIntervalMs : 0;
         }
     }
 
@@ -335,7 +484,12 @@ public class AlertRuleService {
             Integer rateLimitSeconds,
             String notificationWebhookUrl,
             String notificationEmailTarget,
-            String anomalyModelId
+            String anomalyModelId,
+            String deactivateExpr,
+            Integer deactivateDelaySeconds,
+            Integer pollIntervalMs,
+            String triggerMessage,
+            String clearEventName
     ) {
     }
 }

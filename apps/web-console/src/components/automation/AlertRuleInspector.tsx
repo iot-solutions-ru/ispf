@@ -30,6 +30,12 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
     priority: variableString(variables, "priority") || "HIGH",
     ackRequired: variableBoolean(variables, "ackRequired", false),
     rateLimitSeconds: variableNumber(variables, "rateLimitSeconds", 0),
+    deactivateExpr: variableString(variables, "deactivateExpr"),
+    deactivateDelaySeconds: variableNumber(variables, "deactivateDelaySeconds", 0),
+    pollIntervalMs: variableNumber(variables, "pollIntervalMs", 0),
+    triggerMessage: variableString(variables, "triggerMessage"),
+    clearEventName: variableString(variables, "clearEventName"),
+    latchedActive: variableBoolean(variables, "latchedActive", false),
   };
 
   const saveMutation = useMutation({
@@ -85,6 +91,11 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
             priority: String(data.get("priority") ?? "HIGH") as CreateAlertRulePayload["priority"],
             ackRequired: data.get("ackRequired") === "on",
             rateLimitSeconds: Number(data.get("rateLimitSeconds") ?? 0),
+            deactivateExpr: String(data.get("deactivateExpr") ?? ""),
+            deactivateDelaySeconds: Number(data.get("deactivateDelaySeconds") ?? 0),
+            pollIntervalMs: Number(data.get("pollIntervalMs") ?? 0),
+            triggerMessage: String(data.get("triggerMessage") ?? ""),
+            clearEventName: String(data.get("clearEventName") ?? ""),
           });
         }}
       >
@@ -110,6 +121,49 @@ export default function AlertRuleInspector({ path, canManage = false }: AlertRul
             readOnly={!canManage}
           />
         </label>
+        <label className="full">
+          {t("automation:alertRule.deactivateExpr")}
+          <textarea
+            name="deactivateExpr"
+            defaultValue={form.deactivateExpr}
+            rows={2}
+            readOnly={!canManage}
+            placeholder={t("automation:alertRule.deactivateExprPlaceholder")}
+          />
+        </label>
+        <label>
+          {t("automation:alertRule.clearEvent")}
+          <input name="clearEventName" defaultValue={form.clearEventName} readOnly={!canManage} />
+        </label>
+        <label>
+          {t("automation:alertRule.deactivateDelaySeconds")}
+          <input
+            name="deactivateDelaySeconds"
+            type="number"
+            min={0}
+            step={1}
+            defaultValue={form.deactivateDelaySeconds}
+            readOnly={!canManage}
+          />
+        </label>
+        <label>
+          {t("automation:alertRule.pollIntervalMs")}
+          <input
+            name="pollIntervalMs"
+            type="number"
+            min={0}
+            step={100}
+            defaultValue={form.pollIntervalMs}
+            readOnly={!canManage}
+          />
+        </label>
+        <label className="full">
+          {t("automation:alertRule.triggerMessage")}
+          <input name="triggerMessage" defaultValue={form.triggerMessage} readOnly={!canManage} />
+        </label>
+        {form.latchedActive && (
+          <p className="hint full">{t("automation:alertRule.latchedActive")}</p>
+        )}
         <label className="full">
           {t("automation:alertRule.payloadVariable")}
           <input name="payloadVariable" defaultValue={form.payloadVariable} readOnly={!canManage} />

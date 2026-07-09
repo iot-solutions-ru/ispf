@@ -104,6 +104,8 @@ public class AlertRuleRuntimeFlusher {
         setRuntimeString(path, "lastWatchValue", state.lastWatchValue() != null ? Double.toString(state.lastWatchValue()) : "");
         setRuntimeString(path, "lastFiredAt", state.lastFiredAt() != null ? state.lastFiredAt().toString() : "");
         setRuntimeString(path, "conditionTrueSince", state.conditionTrueSince() != null ? state.conditionTrueSince().toString() : "");
+        setRuntimeBoolean(path, "latchedActive", Boolean.TRUE.equals(state.latchedActive()));
+        setRuntimeString(path, "deactivateTrueSince", state.deactivateTrueSince() != null ? state.deactivateTrueSince().toString() : "");
     }
 
     private void setString(String path, String variable, String value) {

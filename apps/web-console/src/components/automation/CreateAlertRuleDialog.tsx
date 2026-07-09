@@ -31,6 +31,9 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
       createAlertRule({
         ...form,
         payloadVariable: form.payloadVariable?.trim() || undefined,
+        deactivateExpr: form.deactivateExpr?.trim() || undefined,
+        clearEventName: form.clearEventName?.trim() || undefined,
+        triggerMessage: form.triggerMessage?.trim() || undefined,
       }),
     onSuccess: () => onCreated(),
   });
@@ -105,6 +108,34 @@ export default function CreateAlertRuleDialog({ onClose, onCreated }: CreateAler
               required
             />
             {exprError && <span className="hint error">{exprError}</span>}
+          </label>
+          <label className="full">
+            {t("automation:alertRule.deactivateExpr")}
+            <textarea
+              rows={2}
+              value={form.deactivateExpr ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, deactivateExpr: e.target.value }))}
+              placeholder={t("automation:alertRule.deactivateExprPlaceholder")}
+            />
+          </label>
+          <label>
+            {t("automation:alertRule.clearEvent")}
+            <input
+              value={form.clearEventName ?? ""}
+              onChange={(e) => setForm((f) => ({ ...f, clearEventName: e.target.value }))}
+            />
+          </label>
+          <label>
+            {t("automation:alertRule.deactivateDelaySeconds")}
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={form.deactivateDelaySeconds ?? 0}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, deactivateDelaySeconds: Number(e.target.value) }))
+              }
+            />
           </label>
           <label className="checkbox-row">
             <input

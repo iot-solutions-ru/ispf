@@ -165,7 +165,12 @@ final class AgentAutomationTools {
                             null,
                             null,
                             null,
-                            null
+                            null,
+                            optionalString(arguments, "deactivateExpr"),
+                            intArg(arguments, "deactivateDelaySeconds", null),
+                            intArg(arguments, "pollIntervalMs", null),
+                            optionalString(arguments, "triggerMessage"),
+                            optionalString(arguments, "clearEventName")
                     );
                     return Map.of("status", "OK", "path", path, "alert", alertPreview(updated));
                 } catch (Exception ex) {

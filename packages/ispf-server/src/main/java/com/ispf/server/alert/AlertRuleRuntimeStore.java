@@ -16,6 +16,8 @@ public class AlertRuleRuntimeStore {
         Double lastWatchValue;
         Instant lastFiredAt;
         Instant conditionTrueSince;
+        Boolean latchedActive;
+        Instant deactivateTrueSince;
         boolean dirty;
     }
 
@@ -57,12 +59,30 @@ public class AlertRuleRuntimeStore {
         setConditionTrueSince(path, null);
     }
 
+    public void setLatchedActive(String path, boolean latchedActive) {
+        MutableState state = states.computeIfAbsent(path, ignored -> new MutableState());
+        state.latchedActive = latchedActive;
+        state.dirty = true;
+    }
+
+    public void setDeactivateTrueSince(String path, Instant deactivateTrueSince) {
+        MutableState state = states.computeIfAbsent(path, ignored -> new MutableState());
+        state.deactivateTrueSince = deactivateTrueSince;
+        state.dirty = true;
+    }
+
+    public void clearDeactivateTrueSince(String path) {
+        setDeactivateTrueSince(path, null);
+    }
+
     public void reset(String path) {
         MutableState state = states.computeIfAbsent(path, ignored -> new MutableState());
         state.lastConditionMet = false;
         state.lastWatchValue = null;
         state.lastFiredAt = null;
         state.conditionTrueSince = null;
+        state.latchedActive = false;
+        state.deactivateTrueSince = null;
         state.dirty = true;
     }
 
@@ -111,6 +131,8 @@ public class AlertRuleRuntimeStore {
         state.lastWatchValue = loaded.lastWatchValue();
         state.lastFiredAt = loaded.lastFiredAt();
         state.conditionTrueSince = loaded.conditionTrueSince();
+        state.latchedActive = loaded.latchedActive();
+        state.deactivateTrueSince = loaded.deactivateTrueSince();
         state.dirty = false;
         return state;
     }
@@ -120,7 +142,9 @@ public class AlertRuleRuntimeStore {
                 state.lastConditionMet,
                 state.lastWatchValue,
                 state.lastFiredAt,
-                state.conditionTrueSince
+                state.conditionTrueSince,
+                state.latchedActive,
+                state.deactivateTrueSince
         );
     }
 }

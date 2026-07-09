@@ -250,6 +250,46 @@ public class BlueprintBootstrap {
                                 true, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
                         ),
                         BlueprintVariableDefinition.of(
+                                "deactivateExpr",
+                                "CEL expression for alarm clear (empty = clear when conditionExpr is false)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "deactivateDelaySeconds",
+                                "Seconds deactivate condition must hold before clear event",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "pollIntervalMs",
+                                "Periodic re-evaluation interval ms (0 = variable change only)",
+                                "config",
+                                INTEGER_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(INTEGER_VALUE_SCHEMA, Map.of("value", 0))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "triggerMessage",
+                                "Optional CEL message included in notifications",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "clearEventName",
+                                "Optional event published when alarm clears (latch mode)",
+                                "config",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                true, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
                                 "lastConditionMet",
                                 "Runtime: last evaluated condition result",
                                 "runtime",
@@ -268,6 +308,22 @@ public class BlueprintBootstrap {
                         BlueprintVariableDefinition.of(
                                 "conditionTrueSince",
                                 "Runtime: when condition first became true (ISO-8601)",
+                                "runtime",
+                                STRING_VALUE_SCHEMA,
+                                true,
+                                false, DataRecord.single(STRING_VALUE_SCHEMA, Map.of("value", ""))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "latchedActive",
+                                "Runtime: alarm latch active until clear",
+                                "runtime",
+                                BOOLEAN_VALUE_SCHEMA,
+                                true,
+                                false, DataRecord.single(BOOLEAN_VALUE_SCHEMA, Map.of("value", false))
+                        ),
+                        BlueprintVariableDefinition.of(
+                                "deactivateTrueSince",
+                                "Runtime: when deactivate condition first became true (ISO-8601)",
                                 "runtime",
                                 STRING_VALUE_SCHEMA,
                                 true,

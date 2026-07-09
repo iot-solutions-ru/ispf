@@ -22,6 +22,11 @@ export interface CreateAlertRulePayload {
   priority?: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   ackRequired?: boolean;
   rateLimitSeconds?: number;
+  deactivateExpr?: string;
+  deactivateDelaySeconds?: number;
+  pollIntervalMs?: number;
+  triggerMessage?: string;
+  clearEventName?: string;
   notificationWebhookUrl?: string;
   notificationEmailTarget?: string;
 }

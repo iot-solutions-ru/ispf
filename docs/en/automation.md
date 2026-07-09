@@ -79,16 +79,33 @@ CEL rule on variable change. When the condition is true — fire events.
 | `payloadVariable` | Variable for payload (optional) |
 | `enabled` | On/off |
 | `edgeTrigger` | Only on false→true edge |
+| `delaySeconds` | Seconds condition must stay true before activate (0 = immediate) |
+| `sustainWhileTrue` | Re-fire while condition stays true (subject to `rateLimitSeconds`) |
+| `rateLimitSeconds` | Minimum interval between repeated fires when sustaining |
+| `priority` | `CRITICAL` / `HIGH` / `MEDIUM` / `LOW` |
+| `ackRequired` | Operator acknowledgement metadata |
+| `deactivateExpr` | CEL clear condition (optional; empty = clear when `conditionExpr` is false) |
+| `deactivateDelaySeconds` | Seconds `deactivateExpr` must stay true before clear (0 = immediate) |
+| `clearEventName` | Event fired on deactivate (optional; e.g. `thresholdCleared`) |
+| `pollIntervalMs` | Periodic re-evaluation interval (0 = only on `watchVariable` change) |
+| `triggerMessage` | Static or CEL message stored on the event payload when raised |
+| `latchedActive` | Runtime: rule is in latched active state (read-only in inspector) |
 | `notificationWebhookUrl` | URL for HTTP POST on trigger (optional) |
 | `notificationEmailTarget` | Email: `to@host\|subject\|body` (optional, relay required) |
 
+**Latch mode** activates when any of `deactivateExpr`, `clearEventName`, or `deactivateDelaySeconds > 0` is set. In latch mode the rule stays active after the activate condition fires until the deactivate path completes (with optional delay), then fires `clearEventName` if set.
+
 When events fire, if webhook and/or email are set — `NotificationDispatchService` runs additionally (errors are logged; the alert is not blocked).
 
-### Example
+### Example (simple edge)
 
 Object: `demo-sensor-01`, watch: `alarmActive`, condition: `self.alarmActive["value"] == true`, event: `thresholdExceeded`.
 
-`AlertRuleListener` reacts to `VARIABLE_UPDATED`.
+### Example (temperature latch, ADR-0039 phase B)
+
+Object: `demo-sensor-01`, watch: `temperature`, activate: `self.temperature["value"] > 80.0`, deactivate: `self.temperature["value"] < 70.0`, events: `thresholdExceeded` / `thresholdCleared`. See [`examples/alert-rule-evolution/temperature-high.json`](../../examples/alert-rule-evolution/temperature-high.json).
+
+`AlertRuleListener` reacts to `VARIABLE_UPDATED`; rules with `pollIntervalMs > 0` are also evaluated by `AlertRulePeriodicScheduler`.
 
 ### API
 
