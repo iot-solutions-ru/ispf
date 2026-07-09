@@ -11,6 +11,7 @@ import {
   type BindingBuilderContext,
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
+import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -19,7 +20,7 @@ export interface BindingExpressionEditorModalProps extends BindingBuilderContext
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
-  onValidate?: (expression: string) => Promise<{ valid: boolean; error: string | null }>;
+  onValidate?: BindingExpressionValidator;
   onClose: () => void;
   onApply: (value: string) => void;
 }
@@ -117,7 +118,10 @@ export default function BindingExpressionEditorModal({
   );
 
   const showInlineSuggestions =
-    !disabled && draft.trim().length > 0 && inlineSuggestions.length > 0 && inlineSuggestions.length < 18;
+    !disabled &&
+    draft.trim().length > 0 &&
+    inlineSuggestions.length > 0 &&
+    inlineSuggestions.length <= 17;
 
   const applySnippet = (snippet: string, replacePrefix = false) => {
     const next = replacePrefix

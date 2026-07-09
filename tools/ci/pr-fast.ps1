@@ -4,12 +4,8 @@ $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Set-Location $Root
 
 Write-Host "==> Backend (pr-fast modules, skip load/federation, dev driver packs)"
-& .\gradlew testPrFast `
-  --no-daemon `
-  -Dorg.gradle.workers.max=1 `
-  -Dispf.test.skipLoad=true `
-  -Dispf.test.skipFederation=true `
-  -Dispf.driver.packs=dev
+$env:GRADLE_OPTS = "-Dorg.gradle.workers.max=1 -Dispf.test.skipLoad=true -Dispf.test.skipFederation=true -Dispf.driver.packs=dev"
+& .\gradlew testPrFast --no-daemon
 
 Write-Host "==> Web console (unit, i18n, build)"
 Push-Location apps/web-console
@@ -23,10 +19,6 @@ Write-Host "==> Agent regression schema gate"
 & .\gradlew `
   :packages:ispf-server:test `
   --tests com.ispf.server.ai.agent.AgentRegressionCiTest `
-  --no-daemon `
-  -Dorg.gradle.workers.max=1 `
-  -Dispf.test.skipLoad=true `
-  -Dispf.test.skipFederation=true `
-  -Dispf.driver.packs=dev
+  --no-daemon
 
 Write-Host "pr-fast OK"

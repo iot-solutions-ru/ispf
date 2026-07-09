@@ -105,6 +105,7 @@
   "bindings.targetKind.event": "Platform event",
   "bindings.targetContextPath": "Context path",
   "bindings.targetContextPathHint": "Dot path under @dashboardContext, e.g. params.mode or widgets.alarm-panel.visible",
+  "bindings.targetContextPathPlaceholder": "params.mode",
   "bindings.targetEventName": "Event name",
   "bindings.dashboardConditionHint": "Use context.selection.*, context.params.*, context.widgets.* in CEL",
   "bindings.activators.onContextChange": "On dashboard context change",

@@ -35,6 +35,7 @@
   "bindings.ruleTitle": "Правило: {{id}}",
   "bindings.targetContextPath": "Путь в context",
   "bindings.targetContextPathHint": "Dot-path в @dashboardContext, напр. params.mode или widgets.alarm-panel.visible",
+  "bindings.targetContextPathPlaceholder": "params.mode",
   "bindings.targetEventName": "Имя события",
   "bindings.targetKind": "Тип эффекта",
   "bindings.targetKind.context": "Контекст дашборда",

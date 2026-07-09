@@ -1,5 +1,6 @@
 package com.ispf.server.platform.analytics.engine;
 
+import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.core.binding.BindingActivators;
 import com.ispf.core.binding.BindingRule;
 import com.ispf.core.binding.BindingTarget;
@@ -14,6 +15,7 @@ import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.AssetAnalyticsService;
+import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +36,7 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
 
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
     private static final String HUB = "root.platform.devices.test-analytics-bind.hub";
-    private static final String ROLLING_AVG_TEMPLATE = "root.platform.analytics.rollingAvg";
+    private static final String RULE_ID = "cross-device-rolling-avg";
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
             .build();
@@ -75,22 +77,20 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
         assetAnalyticsService.ensureCatalog();
         seedHistorian(28.0);
 
-        assetAnalyticsService.applyTemplateToDevice(new AssetAnalyticsService.ApplyTemplateCommand(
-                ROLLING_AVG_TEMPLATE,
+        HistorianComputationTestSupport.upsertRollingAvgRule(
+                bindingRulesService,
                 SENSOR,
+                RULE_ID,
                 SENSOR,
                 "temperature",
-                "value",
-                "1h",
-                null,
-                null,
-                null
-        ));
+                "derivedValue",
+                "1h"
+        );
 
         var tick = engineService.evaluateAllEnabled();
         assertThat(tick.updated()).isGreaterThanOrEqualTo(1);
 
-        String derived = readDerived(SENSOR);
+        String derived = readDerived(SENSOR, "derivedValue");
         assertThat(derived).isNotBlank();
 
         ensureHub(HUB);
@@ -131,9 +131,9 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
         }
     }
 
-    private String readDerived(String path) {
+    private String readDerived(String path, String variableName) {
         PlatformObject node = objectManager.require(path);
-        return node.getVariable("derivedValue")
+        return node.getVariable(variableName)
                 .flatMap(v -> v.value())
                 .map(r -> String.valueOf(r.firstRow().get("value")))
                 .orElse("");

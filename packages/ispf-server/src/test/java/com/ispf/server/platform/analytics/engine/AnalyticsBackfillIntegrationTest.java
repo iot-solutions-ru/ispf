@@ -1,12 +1,15 @@
 package com.ispf.server.platform.analytics.engine;
 
+import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.history.VariableHistoryService;
+import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
 import com.ispf.server.platform.analytics.AssetAnalyticsService;
+import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,13 +28,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AnalyticsBackfillIntegrationTest {
 
     private static final String DEVICE = "root.platform.devices.demo-sensor-01";
-    private static final String ROLLING_AVG_PATH = "root.platform.analytics.rollingAvg";
+    private static final String RULE_ID = "backfill-rolling-avg";
 
     @Autowired
     private AssetAnalyticsService assetAnalyticsService;
 
     @Autowired
     private AnalyticsBackfillService backfillService;
+
+    @Autowired
+    private BindingRulesService bindingRulesService;
 
     @Autowired
     private ObjectManager objectManager;
@@ -44,21 +50,20 @@ class AnalyticsBackfillIntegrationTest {
         assetAnalyticsService.ensureCatalog();
         seedHistorian(30.0);
 
-        assetAnalyticsService.applyTemplateToDevice(new AssetAnalyticsService.ApplyTemplateCommand(
-                ROLLING_AVG_PATH,
+        HistorianComputationTestSupport.upsertRollingAvgRule(
+                bindingRulesService,
                 DEVICE,
+                RULE_ID,
                 DEVICE,
                 "temperature",
-                "value",
-                "1h",
-                null,
-                null,
-                null
-        ));
+                "derivedValue",
+                "1h"
+        );
+        String tagPath = HistorianTagPaths.encode(DEVICE, RULE_ID);
 
         Instant to = Instant.now();
         Instant from = to.minus(6, ChronoUnit.HOURS);
-        var result = backfillService.backfill(DEVICE, from, to);
+        var result = backfillService.backfill(tagPath, from, to);
 
         assertThat(result.updated()).isGreaterThanOrEqualTo(1);
         PlatformObject device = objectManager.require(DEVICE);

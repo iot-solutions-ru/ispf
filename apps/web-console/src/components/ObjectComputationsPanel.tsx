@@ -16,7 +16,7 @@ interface ObjectComputationsPanelProps {
   bindingAuditEnabled?: boolean;
   federated?: boolean;
   revision: number;
-  onBindingAuditChange: (enabled: boolean) => Promise<void>;
+  onBindingAuditChange: (enabled: boolean) => void;
 }
 
 export default function ObjectComputationsPanel({

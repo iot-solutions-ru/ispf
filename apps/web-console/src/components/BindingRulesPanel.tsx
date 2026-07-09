@@ -318,7 +318,7 @@ export default function BindingRulesPanel({
                         target: { ...editing.target, kind: "context", path: e.target.value },
                       })
                     }
-                    placeholder="params.mode"
+                    placeholder={t("inspector:bindings.targetContextPathPlaceholder")}
                     required
                   />
                   <span className="hint">{t("inspector:bindings.targetContextPathHint")}</span>

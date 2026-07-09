@@ -66,6 +66,41 @@ public final class HistorianComputationTestSupport {
         bindingRulesService.saveRules(devicePath, rules);
     }
 
+    public static void upsertCelHistorianRule(
+            BindingRulesService bindingRulesService,
+            String devicePath,
+            String ruleId,
+            String expression,
+            String sourcePath,
+            String sourceVariable,
+            String outputVariable,
+            String windowBucket
+    ) {
+        List<BindingRule> rules = new ArrayList<>(bindingRulesService.listRules(devicePath));
+        rules.removeIf(rule -> rule.id().equals(ruleId));
+        rules.add(new BindingRule(
+                ruleId,
+                ruleId,
+                true,
+                rules.size(),
+                BindingRuleKind.HISTORIAN,
+                new BindingActivators(
+                        false,
+                        List.of(new BindingVariableRef(sourcePath, sourceVariable)),
+                        null,
+                        60_000L,
+                        false,
+                        false
+                ),
+                "",
+                expression,
+                new BindingTarget("variable", outputVariable, "value", null, null),
+                windowBucket,
+                null
+        ));
+        bindingRulesService.saveRules(devicePath, rules);
+    }
+
     public static DataRecord stringRecord(String value) {
         return DataRecord.single(
                 DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),

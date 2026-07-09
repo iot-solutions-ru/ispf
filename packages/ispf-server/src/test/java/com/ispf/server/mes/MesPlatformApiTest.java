@@ -55,13 +55,12 @@ class MesPlatformApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id=='virtual')]").exists())
                 .andExpect(jsonPath("$[?(@.id=='virtual')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='snmp')]").exists())
-                .andExpect(jsonPath("$[?(@.id=='dnp3')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='ethernet-ip')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='corba')].maturity").value("BETA"))
-                .andExpect(jsonPath("$[?(@.id=='opc-da')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='cwmp')].maturity").value("PRODUCTION"))
-                .andExpect(jsonPath("$[?(@.id=='dlms')].maturity").value("PRODUCTION"));
+                .andExpect(jsonPath("$[?(@.id=='mqtt')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='modbus-tcp')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='http')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='cwmp')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='flexible')]").exists())
+                .andExpect(jsonPath("$[?(@.id=='gps-tracker')]").exists());
     }
 
     @Test

@@ -1,12 +1,15 @@
 import { validateAnalyticsExpression, validateExpression } from "../api";
 import type { BindingRuleKind } from "../types";
 
+export type BindingExpressionValidationResult = { valid: boolean; error: string | null };
+export type BindingExpressionValidator = (expression: string) => Promise<BindingExpressionValidationResult>;
+
 const HISTORIAN_BUILTIN_RE = /^(rollingAvg|rateOfChange|oee)\s*\(/i;
 
 export async function validateHistorianExpression(
   expression: string,
   objectPath: string
-): Promise<{ valid: boolean; error: string | null }> {
+): Promise<BindingExpressionValidationResult> {
   const trimmed = expression.trim();
   if (!trimmed) {
     return { valid: false, error: "Expression is empty" };
@@ -26,7 +29,7 @@ export async function validateBindingRuleExpression(
   objectPath: string,
   kind: BindingRuleKind,
   field: "expression" | "condition"
-): Promise<{ valid: boolean; error: string | null }> {
+): Promise<BindingExpressionValidationResult> {
   const trimmed = expression.trim();
   if (field === "condition") {
     if (!trimmed) {

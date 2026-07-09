@@ -6,6 +6,7 @@ import {
   type BindingBuilderContext,
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
+import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 
 interface BindingExpressionFieldProps extends BindingBuilderContext {
   id?: string;
@@ -15,7 +16,7 @@ interface BindingExpressionFieldProps extends BindingBuilderContext {
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
   editorTitle?: string;
-  onValidate?: (expression: string) => Promise<{ valid: boolean; error: string | null }>;
+  onValidate?: BindingExpressionValidator;
 }
 
 export default function BindingExpressionField({

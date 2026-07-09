@@ -45,7 +45,7 @@ public class CelExpressionEvaluator implements AnalyticsEvaluator {
             return AnalyticsEvaluationResult.skipped(tag.tagPath(), tag.helper(), "Missing analyticsExpression");
         }
         try {
-            PlatformObject node = objectManager.require(tag.tagPath());
+            PlatformObject node = objectManager.require(tag.objectPath());
             String expanded = HistorianCelPreprocessor.expand(
                     expression,
                     historian,
