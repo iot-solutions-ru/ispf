@@ -6,16 +6,18 @@ import {
   type BindingBuilderContext,
   type PlatformBindingEntry,
 } from "../utils/platformBindings";
+import type { BindingFormulaLink } from "../types";
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 
 interface BindingExpressionFieldProps extends BindingBuilderContext {
   id?: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (value: string, formulaLink?: BindingFormulaLink | null) => void;
   placeholder?: string;
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
   analyticsCatalogKind?: "historian" | "reactive";
+  formulaLink?: BindingFormulaLink | null;
   editorTitle?: string;
   onValidate?: BindingExpressionValidator;
 }
@@ -31,6 +33,7 @@ export default function BindingExpressionField({
   functionNames = [],
   entries = PLATFORM_BINDING_ENTRIES,
   analyticsCatalogKind,
+  formulaLink = null,
   editorTitle,
   onValidate,
 }: BindingExpressionFieldProps) {
@@ -73,6 +76,7 @@ export default function BindingExpressionField({
         functionNames={functionNames}
         entries={entries}
         analyticsCatalogKind={analyticsCatalogKind}
+        formulaLink={formulaLink}
         onValidate={onValidate}
         onClose={() => setEditorOpen(false)}
         onApply={onChange}

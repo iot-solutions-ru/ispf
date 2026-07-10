@@ -26,6 +26,8 @@
   "formula.use": "Применить формулу…",
   "formula.applyTitle": "Применить {{name}}",
   "formula.apply": "Вставить выражение",
+  "formula.linked": "Связанная формула: {{id}}",
+  "formula.linkedShort": "ƒ {{id}}",
   "bindings.activators.onContextChange": "При изменении context дашборда",
   "bindings.activators.onEvent": "По событию",
   "bindings.activators.onEventCustom": "Своё имя события…",

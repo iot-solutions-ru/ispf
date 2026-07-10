@@ -201,7 +201,12 @@ export default function BindingRulesPanel({
                     </span>
                   </td>
                   <td><code>{targetSummary(rule.target)}</code></td>
-                  <td className="mono small" title={rule.expression}>{rule.expression || "—"}</td>
+                  <td className="mono small" title={rule.expression}>
+                    {rule.formulaRef ? (
+                      <span className="inline-badge">{t("inspector:formula.linkedShort", { id: rule.formulaRef })}</span>
+                    ) : null}
+                    {rule.expression || "—"}
+                  </td>
                   <td className="small">{activatorsSummary(rule)}</td>
                   <td>{rule.enabled ? t("common:action.yes") : t("common:action.no")}</td>
                   {(canManage || onInspectHistorian) && (
@@ -349,7 +354,26 @@ export default function BindingRulesPanel({
                 {t("inspector:bindings.column.expression")}
                 <BindingExpressionField
                   value={editing.expression}
-                  onChange={(expression) => setEditing({ ...editing, expression })}
+                  formulaLink={
+                    editing.formulaRef
+                      ? {
+                          formulaRef: editing.formulaRef,
+                          formulaParams: editing.formulaParams,
+                          formulaScope: editing.formulaScope,
+                          formulaAppId: editing.formulaAppId,
+                        }
+                      : null
+                  }
+                  onChange={(expression, formulaLink) =>
+                    setEditing({
+                      ...editing,
+                      expression,
+                      formulaRef: formulaLink?.formulaRef ?? null,
+                      formulaParams: formulaLink?.formulaParams ?? null,
+                      formulaScope: formulaLink?.formulaScope ?? null,
+                      formulaAppId: formulaLink?.formulaAppId ?? null,
+                    })
+                  }
                   objectPath={path}
                   variableNames={variableNames}
                   functionNames={functionNames}

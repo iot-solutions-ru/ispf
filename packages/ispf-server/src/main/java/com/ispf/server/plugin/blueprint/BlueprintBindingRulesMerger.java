@@ -6,6 +6,7 @@ import com.ispf.plugin.blueprint.BlueprintDefinition;
 import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
+import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,15 +20,21 @@ public class BlueprintBindingRulesMerger {
     private final BindingRulesService bindingRulesService;
     private final BindingDependencyIndex dependencyIndex;
     private final BindingRuleEngine bindingRuleEngine;
+    private final BindingFormulaResolver bindingFormulaResolver;
+    private final BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport;
 
     public BlueprintBindingRulesMerger(
             BindingRulesService bindingRulesService,
             BindingDependencyIndex dependencyIndex,
-            BindingRuleEngine bindingRuleEngine
+            BindingRuleEngine bindingRuleEngine,
+            BindingFormulaResolver bindingFormulaResolver,
+            BlueprintAnalyticsFormulaSupport blueprintAnalyticsFormulaSupport
     ) {
         this.bindingRulesService = bindingRulesService;
         this.dependencyIndex = dependencyIndex;
         this.bindingRuleEngine = bindingRuleEngine;
+        this.bindingFormulaResolver = bindingFormulaResolver;
+        this.blueprintAnalyticsFormulaSupport = blueprintAnalyticsFormulaSupport;
     }
 
     public void mergeBlueprintRules(String objectPath, BlueprintDefinition model, Map<String, String> parameters) {
@@ -43,6 +50,7 @@ public class BlueprintBindingRulesMerger {
         if (model.bindingRules().isEmpty()) {
             return;
         }
+        blueprintAnalyticsFormulaSupport.mergeBlueprintFormulas(model);
         Map<String, String> resolvedParams = parameters != null ? parameters : Map.of();
         List<BindingRule> merged = new ArrayList<>(bindingRulesService.listRules(objectPath));
         Map<String, BindingRule> byId = new LinkedHashMap<>();
@@ -50,7 +58,7 @@ public class BlueprintBindingRulesMerger {
             byId.put(existing.id(), existing);
         }
         for (BlueprintBindingRule modelRule : model.bindingRules()) {
-            BindingRule resolved = resolve(modelRule, resolvedParams);
+            BindingRule resolved = bindingFormulaResolver.resolve(resolve(modelRule, resolvedParams));
             byId.put(resolved.id(), resolved);
         }
         bindingRulesService.saveRules(objectPath, new ArrayList<>(byId.values()));
@@ -63,15 +71,33 @@ public class BlueprintBindingRulesMerger {
     private static BindingRule resolve(BlueprintBindingRule modelRule, Map<String, String> parameters) {
         String expression = resolveParameters(modelRule.expression(), parameters);
         String condition = resolveParameters(modelRule.condition(), parameters);
+        Map<String, String> formulaParams = modelRule.formulaParams();
+        Map<String, String> mergedFormulaParams = formulaParams == null || formulaParams.isEmpty()
+                ? Map.of()
+                : new LinkedHashMap<>(formulaParams);
+        if (!mergedFormulaParams.isEmpty() && parameters != null) {
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                mergedFormulaParams.replaceAll((key, value) ->
+                        value != null ? value.replace("${" + entry.getKey() + "}", entry.getValue()) : value);
+            }
+        }
+        BindingRule base = modelRule.toBindingRule();
         return new BindingRule(
-                modelRule.id(),
-                modelRule.name(),
-                modelRule.enabled() == null || modelRule.enabled(),
-                modelRule.order() != null ? modelRule.order() : 0,
-                modelRule.activators(),
+                base.id(),
+                base.name(),
+                base.enabled(),
+                base.order(),
+                base.kind(),
+                base.activators(),
                 condition,
                 expression,
-                modelRule.toBindingRule().target()
+                base.target(),
+                base.windowBucket(),
+                base.rollupBuckets(),
+                base.formulaRef(),
+                mergedFormulaParams.isEmpty() ? base.formulaParams() : mergedFormulaParams,
+                base.formulaScope(),
+                base.formulaAppId()
         );
     }
 

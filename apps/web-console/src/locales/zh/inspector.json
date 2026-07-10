@@ -26,6 +26,8 @@
   "formula.use": "使用公式…",
   "formula.applyTitle": "应用 {{name}}",
   "formula.apply": "插入展开后的表达式",
+  "formula.linked": "关联公式：{{id}}",
+  "formula.linkedShort": "ƒ {{id}}",
   "bindings.activators.onContextChange": "仪表板 context 变更时",
   "bindings.activators.onEvent": "事件触发",
   "bindings.activators.onEventCustom": "自定义事件名…",

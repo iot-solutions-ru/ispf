@@ -1167,7 +1167,8 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-212a | **API каталога analytics-функций** | P2 | Готово — `GET .../analytics/catalog`; dormant evaluators ([ADR-0042](decisions/0042-analytics-function-catalog.md)) |
 | БЛ-212b | **UI браузер формул analytics** | P2 | Готово — каталог в модальном редакторе выражений; статические TS-каталоги удалены |
 | БЛ-213 | **Analytics extension packs (SPI)** | P2 | Готово — SPI `ispf-analytics-api`; `ispf-analytics-core-ext` (`energyDelta`) |
-| БЛ-214 | **Пользовательские формулы analytics** | P2 | В процессе — CRUD `@analyticsFormulas`, Tier B, UI, import из bundle |
+| БЛ-214 | **Пользовательские формулы analytics** | P2 | Готово — CRUD `@analyticsFormulas`, Tier B, UI, import из bundle |
+| БЛ-215 | **Ссылки на формулы и sharing в blueprint** | P2 | Готово — `formulaRef`, `analyticsFormulasJson`, re-expand при save |
 
 **Метрика фазы:** walkthrough сценария B ≤1 день; lab gate сценария C; derived tag запускает alarm без Chart-only rollup.
 

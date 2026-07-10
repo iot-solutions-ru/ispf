@@ -26,6 +26,8 @@
   "formula.use": "Formel verwenden…",
   "formula.applyTitle": "{{name}} anwenden",
   "formula.apply": "Erweiterten Ausdruck einfügen",
+  "formula.linked": "Verknüpfte Formel: {{id}}",
+  "formula.linkedShort": "ƒ {{id}}",
   "bindings.activators.onContextChange": "Bei Dashboard-Context-Änderung",
   "bindings.activators.onEvent": "Bei Event",
   "bindings.activators.onEventCustom": "Eigener Event-Name…",

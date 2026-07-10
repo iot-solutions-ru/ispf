@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
-import ApplyAnalyticsFormulaModal from "./ApplyAnalyticsFormulaModal";
+import ApplyAnalyticsFormulaModal, { type FormulaApplyResult } from "./ApplyAnalyticsFormulaModal";
+import type { BindingFormulaLink } from "../../types";
 
 export type AnalyticsFormulaKindFilter = "historian" | "reactive";
 
@@ -11,7 +12,8 @@ interface AnalyticsFormulaBrowserProps {
   disabled?: boolean;
   defaultKind?: AnalyticsFormulaKindFilter;
   fallbackEntries?: PlatformBindingEntry[];
-  onInsert: (snippet: string) => void;
+  onInsert: (snippet: string, formulaLink?: BindingFormulaLink | null) => void;
+  initialFormulaLink?: BindingFormulaLink | null;
 }
 
 function matchesQuery(entry: AnalyticsCatalogEntryDto, query: string): boolean {
@@ -49,6 +51,7 @@ export default function AnalyticsFormulaBrowser({
   defaultKind = "historian",
   fallbackEntries = [],
   onInsert,
+  initialFormulaLink = null,
 }: AnalyticsFormulaBrowserProps) {
   const { t } = useTranslation("inspector");
   const catalogQuery = useAnalyticsCatalog();
@@ -176,8 +179,9 @@ export default function AnalyticsFormulaBrowser({
       <ApplyAnalyticsFormulaModal
         open={applyEntry != null}
         entry={applyEntry}
+        initialParams={initialFormulaLink?.formulaRef === applyEntry?.id ? initialFormulaLink.formulaParams : null}
         onClose={() => setApplyEntry(null)}
-        onApply={onInsert}
+        onApply={(result: FormulaApplyResult) => onInsert(result.expression, result.formulaLink)}
       />
     </div>
   );

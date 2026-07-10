@@ -170,6 +170,13 @@ export interface BindingTarget {
 
 export type BindingRuleKind = "reactive" | "historian";
 
+export interface BindingFormulaLink {
+  formulaRef: string;
+  formulaParams?: Record<string, string> | null;
+  formulaScope?: "site" | "app" | string | null;
+  formulaAppId?: string | null;
+}
+
 export interface BindingRule {
   id: string;
   name?: string | null;
@@ -182,6 +189,10 @@ export interface BindingRule {
   target: BindingTarget;
   windowBucket?: string | null;
   rollupBuckets?: string[] | null;
+  formulaRef?: string | null;
+  formulaParams?: Record<string, string> | null;
+  formulaScope?: string | null;
+  formulaAppId?: string | null;
 }
 
 export interface FunctionDescriptor {

@@ -1,6 +1,7 @@
 package com.ispf.core.binding;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Declarative binding: activator (when) → condition (if) → expression (how) → target (where).
@@ -18,7 +19,11 @@ public record BindingRule(
         String expression,
         BindingTarget target,
         String windowBucket,
-        List<String> rollupBuckets
+        List<String> rollupBuckets,
+        String formulaRef,
+        Map<String, String> formulaParams,
+        String formulaScope,
+        String formulaAppId
 ) {
     public BindingRule {
         if (id == null || id.isBlank()) {
@@ -54,6 +59,9 @@ public record BindingRule(
         if (rollupBuckets != null) {
             rollupBuckets = List.copyOf(rollupBuckets);
         }
+        if (formulaParams != null) {
+            formulaParams = Map.copyOf(formulaParams);
+        }
     }
 
     public BindingRule(
@@ -66,7 +74,23 @@ public record BindingRule(
             String expression,
             BindingTarget target
     ) {
-        this(id, name, enabled, order, BindingRuleKind.REACTIVE, activators, condition, expression, target, null, null);
+        this(id, name, enabled, order, BindingRuleKind.REACTIVE, activators, condition, expression, target, null, null, null, null, null, null);
+    }
+
+    public BindingRule(
+            String id,
+            String name,
+            boolean enabled,
+            int order,
+            BindingRuleKind kind,
+            BindingActivators activators,
+            String condition,
+            String expression,
+            BindingTarget target,
+            String windowBucket,
+            List<String> rollupBuckets
+    ) {
+        this(id, name, enabled, order, kind, activators, condition, expression, target, windowBucket, rollupBuckets, null, null, null, null);
     }
 
     public boolean isHistorian() {
@@ -75,5 +99,33 @@ public record BindingRule(
 
     public boolean isReactive() {
         return kind != BindingRuleKind.HISTORIAN;
+    }
+
+    public boolean hasFormulaRef() {
+        return formulaRef != null && !formulaRef.isBlank();
+    }
+
+    public BindingFormulaRef formulaLink() {
+        return new BindingFormulaRef(formulaRef, formulaParams, formulaScope, formulaAppId);
+    }
+
+    public BindingRule withExpression(String nextExpression) {
+        return new BindingRule(
+                id,
+                name,
+                enabled,
+                order,
+                kind,
+                activators,
+                condition,
+                nextExpression,
+                target,
+                windowBucket,
+                rollupBuckets,
+                formulaRef,
+                formulaParams,
+                formulaScope,
+                formulaAppId
+        );
     }
 }

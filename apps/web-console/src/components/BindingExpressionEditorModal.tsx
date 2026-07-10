@@ -14,6 +14,7 @@ import {
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 import AnalyticsFormulaBrowser from "./analytics/AnalyticsFormulaBrowser";
 import SaveAnalyticsFormulaModal from "./analytics/SaveAnalyticsFormulaModal";
+import type { BindingFormulaLink } from "../types";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -23,9 +24,10 @@ export interface BindingExpressionEditorModalProps extends BindingBuilderContext
   disabled?: boolean;
   entries?: PlatformBindingEntry[];
   analyticsCatalogKind?: "historian" | "reactive";
+  formulaLink?: BindingFormulaLink | null;
   onValidate?: BindingExpressionValidator;
   onClose: () => void;
-  onApply: (value: string) => void;
+  onApply: (value: string, formulaLink?: BindingFormulaLink | null) => void;
 }
 
 function insertAtSelection(
@@ -73,6 +75,7 @@ export default function BindingExpressionEditorModal({
   functionNames = [],
   entries = PLATFORM_BINDING_ENTRIES,
   analyticsCatalogKind,
+  formulaLink = null,
   onValidate,
   onClose,
   onApply,
@@ -80,6 +83,7 @@ export default function BindingExpressionEditorModal({
   const { t } = useTranslation(["inspector", "common"]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState(value);
+  const [draftFormulaLink, setDraftFormulaLink] = useState<BindingFormulaLink | null>(formulaLink);
   const [catalogOpen, setCatalogOpen] = useState(true);
   const [catalogQuery, setCatalogQuery] = useState("");
   const [composingId, setComposingId] = useState<string | null>(null);
@@ -88,11 +92,12 @@ export default function BindingExpressionEditorModal({
   useEffect(() => {
     if (open) {
       setDraft(value);
+      setDraftFormulaLink(formulaLink);
       setCatalogQuery("");
       setComposingId(null);
       window.requestAnimationFrame(() => textareaRef.current?.focus());
     }
-  }, [open, value]);
+  }, [open, value, formulaLink]);
 
   const builderContext = useMemo(
     () => ({ objectPath, variableNames, functionNames }),
@@ -128,11 +133,12 @@ export default function BindingExpressionEditorModal({
     inlineSuggestions.length > 0 &&
     inlineSuggestions.length <= 17;
 
-  const applySnippet = (snippet: string, replacePrefix = false) => {
+  const applySnippet = (snippet: string, nextFormulaLink: BindingFormulaLink | null = null, replacePrefix = false) => {
     const next = replacePrefix
       ? replaceFunctionPrefix(draft, snippet, entries)
       : insertAtSelection(draft, snippet, textareaRef.current);
     setDraft(next);
+    setDraftFormulaLink(nextFormulaLink);
     setComposingId(null);
   };
 
@@ -149,7 +155,7 @@ export default function BindingExpressionEditorModal({
   };
 
   const handleApply = () => {
-    onApply(draft);
+    onApply(draft, draftFormulaLink);
     onClose();
   };
 
@@ -251,7 +257,8 @@ export default function BindingExpressionEditorModal({
               disabled={disabled}
               defaultKind={analyticsCatalogKind}
               fallbackEntries={entries}
-              onInsert={(snippet) => applySnippet(snippet)}
+              initialFormulaLink={draftFormulaLink}
+              onInsert={(snippet, link) => applySnippet(snippet, link ?? null)}
             />
           </div>
         )}
@@ -323,6 +330,11 @@ export default function BindingExpressionEditorModal({
           </div>
         )}
 
+        {draftFormulaLink?.formulaRef && (
+          <p className="hint">
+            {t("formula.linked", { id: draftFormulaLink.formulaRef })}
+          </p>
+        )}
         {validateMutation.data?.valid && (
           <span className="hint success">{t("bindingExpression.valid")}</span>
         )}

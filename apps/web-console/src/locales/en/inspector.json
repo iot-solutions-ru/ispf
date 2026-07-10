@@ -158,6 +158,8 @@
   "formula.use": "Use formula…",
   "formula.applyTitle": "Apply {{name}}",
   "formula.apply": "Insert expanded expression",
+  "formula.linked": "Linked formula: {{id}}",
+  "formula.linkedShort": "ƒ {{id}}",
   "platformBindings.showCatalog": "Functions",
   "platformBindings.hideCatalog": "Hide",
   "platformBindings.search": "Search platform functions…",

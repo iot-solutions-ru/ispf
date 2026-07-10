@@ -2,18 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "../../ui/Modal";
 import type { AnalyticsCatalogEntryDto } from "../../api/analyticsCatalog";
+import type { BindingFormulaLink } from "../../types";
 import { useExpandAnalyticsFormula } from "../../hooks/useAnalyticsFormulas";
+
+export interface FormulaApplyResult {
+  expression: string;
+  formulaLink?: BindingFormulaLink | null;
+}
 
 interface ApplyAnalyticsFormulaModalProps {
   open: boolean;
   entry: AnalyticsCatalogEntryDto | null;
+  initialParams?: Record<string, string> | null;
   onClose: () => void;
-  onApply: (expression: string) => void;
+  onApply: (result: FormulaApplyResult) => void;
 }
 
 export default function ApplyAnalyticsFormulaModal({
   open,
   entry,
+  initialParams = null,
   onClose,
   onApply,
 }: ApplyAnalyticsFormulaModalProps) {
@@ -27,10 +35,10 @@ export default function ApplyAnalyticsFormulaModal({
     }
     const initial: Record<string, string> = {};
     for (const parameter of entry.parameters) {
-      initial[parameter.name] = parameter.defaultValue ?? "";
+      initial[parameter.name] = initialParams?.[parameter.name] ?? parameter.defaultValue ?? "";
     }
     setValues(initial);
-  }, [open, entry]);
+  }, [open, entry, initialParams]);
 
   const missingRequired = useMemo(() => {
     if (!entry) {
@@ -55,7 +63,15 @@ export default function ApplyAnalyticsFormulaModal({
         appId,
       },
     });
-    onApply(result.expression);
+    onApply({
+      expression: result.expression,
+      formulaLink: {
+        formulaRef: entry.id,
+        formulaParams: values,
+        formulaScope: scope,
+        formulaAppId: appId ?? null,
+      },
+    });
     onClose();
   };
 

@@ -25,6 +25,13 @@ export interface BlueprintBindingRule {
   expression: string;
   targetVariable: string;
   targetField?: string | null;
+  kind?: string | null;
+  windowBucket?: string | null;
+  rollupBuckets?: string[] | null;
+  formulaRef?: string | null;
+  formulaParams?: Record<string, string> | null;
+  formulaScope?: string | null;
+  formulaAppId?: string | null;
 }
 
 export interface BlueprintDto {

@@ -21,6 +21,7 @@ import com.ispf.server.history.HistorianRollupBuckets;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
 import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
+import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,7 @@ public class BindingRulesService {
     private final AnalyticsProperties analyticsProperties;
     private final AnalyticsEngineScheduler engineScheduler;
     private final AnalyticsExtensionRegistry extensionRegistry;
+    private final BindingFormulaResolver bindingFormulaResolver;
     private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
 
     public BindingRulesService(
@@ -60,7 +62,8 @@ public class BindingRulesService {
             @Lazy BindingPeriodicScheduler periodicScheduler,
             AnalyticsProperties analyticsProperties,
             @Lazy AnalyticsEngineScheduler engineScheduler,
-            AnalyticsExtensionRegistry extensionRegistry
+            AnalyticsExtensionRegistry extensionRegistry,
+            BindingFormulaResolver bindingFormulaResolver
     ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
@@ -69,6 +72,7 @@ public class BindingRulesService {
         this.analyticsProperties = analyticsProperties;
         this.engineScheduler = engineScheduler;
         this.extensionRegistry = extensionRegistry;
+        this.bindingFormulaResolver = bindingFormulaResolver;
     }
 
     public List<BindingRule> listRules(String objectPath) {
@@ -78,7 +82,9 @@ public class BindingRulesService {
 
     public List<BindingRule> saveRules(String objectPath, List<BindingRule> rules) {
         synchronized (rulesLocks.computeIfAbsent(objectPath, ignored -> new Object())) {
-            List<BindingRule> normalized = normalizeRules(rules);
+            List<BindingRule> normalized = normalizeRules(rules).stream()
+                    .map(bindingFormulaResolver::resolve)
+                    .toList();
             for (BindingRule rule : normalized) {
                 validateRule(objectPath, rule);
             }
@@ -236,7 +242,7 @@ public class BindingRulesService {
         }
     }
 
-    private static List<BindingRule> normalizeRules(List<BindingRule> rules) {
+    private List<BindingRule> normalizeRules(List<BindingRule> rules) {
         List<BindingRule> normalized = new ArrayList<>();
         for (BindingRule rule : rules) {
             BindingActivators activators = normalizeActivators(rule.activators(), rule.expression());
@@ -254,7 +260,11 @@ public class BindingRulesService {
                     rule.expression(),
                     rule.target(),
                     windowBucket,
-                    rollupBuckets
+                    rollupBuckets,
+                    rule.formulaRef(),
+                    rule.formulaParams(),
+                    rule.formulaScope(),
+                    rule.formulaAppId()
             ));
         }
         normalized.sort((left, right) -> Integer.compare(left.order(), right.order()));
@@ -315,7 +325,11 @@ public class BindingRulesService {
             String expression,
             BindingTargetDto target,
             String windowBucket,
-            List<String> rollupBuckets
+            List<String> rollupBuckets,
+            String formulaRef,
+            Map<String, String> formulaParams,
+            String formulaScope,
+            String formulaAppId
     ) {
         static BindingRuleDto from(BindingRule rule) {
             return new BindingRuleDto(
@@ -335,7 +349,11 @@ public class BindingRulesService {
                             rule.target().eventName()
                     ),
                     rule.windowBucket(),
-                    rule.rollupBuckets()
+                    rule.rollupBuckets(),
+                    rule.formulaRef(),
+                    rule.formulaParams(),
+                    rule.formulaScope(),
+                    rule.formulaAppId()
             );
         }
 
@@ -361,7 +379,11 @@ public class BindingRulesService {
                             target.eventName()
                     ),
                     windowBucket,
-                    rollupBuckets
+                    rollupBuckets,
+                    formulaRef,
+                    formulaParams,
+                    formulaScope,
+                    formulaAppId
             );
         }
     }
