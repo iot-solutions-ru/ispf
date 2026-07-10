@@ -134,6 +134,13 @@ public final class IspfAuthorizationRules {
         auth.requestMatchers(HttpMethod.POST, "/api/v1/reports/by-path/run-async")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 
+        auth.requestMatchers(HttpMethod.POST, "/api/v1/platform/analytics/expression/evaluate",
+                        "/api/v1/platform/analytics/expression/validate",
+                        "/api/v1/platform/analytics/catalog/validate",
+                        "/api/v1/platform/analytics/query",
+                        "/api/v1/platform/analytics/query/export")
+                .hasAnyRole(IspfRoles.ROLES_READ);
+
         auth.requestMatchers(HttpMethod.GET, "/api/v1/platform/jobs/**")
                 .hasAnyRole(IspfRoles.ROLES_READ);
 

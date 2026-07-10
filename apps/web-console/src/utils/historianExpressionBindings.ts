@@ -1,6 +1,7 @@
 import { ANALYTICS_CEL_BINDING_ENTRIES } from "./analyticsCelBindings";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../api/analyticsCatalog";
 import { PLATFORM_BINDING_ENTRIES, type PlatformBindingEntry } from "./platformBindings";
+import { matchesAnalyticsCatalogKindFilter } from "./analyticsCatalogKindFilter";
 
 const HISTORIAN_BUILTIN_IDS = new Set(["rollingAvg", "rateOfChange"]);
 
@@ -58,7 +59,7 @@ export function mapAnalyticsCatalogToBindingEntries(
   kind: "historian" | "reactive"
 ): PlatformBindingEntry[] {
   return catalog
-    .filter((entry) => entry.kinds.some((candidate) => candidate.toLowerCase() === kind))
+    .filter((entry) => matchesAnalyticsCatalogKindFilter(entry, kind))
     .map((entry) => {
       const params = entry.parameters?.map((param) => ({
         key: param.name,

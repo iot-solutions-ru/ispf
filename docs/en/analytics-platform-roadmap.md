@@ -411,6 +411,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 | **213** | `ispf-analytics-api` SPI + optional packs JAR | Industry KPIs outside core (commercial OK) |
 | **214** | `@analyticsFormulas` + app bundle import | User-defined parameterized formulas |
 | **215** | `formulaRef` on rules, blueprint/marketplace share | Reusable site standards |
+| **216** | Marketplace `analytics-pack` + licensed packs dir | Buy Tier C historian KPI packs |
 
 **BL-212a** — **Done** (2026-07-10). Catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
 
@@ -422,7 +423,9 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 **BL-215** — **Done** (2026-07-10). `formulaRef` on binding rules, blueprint `analyticsFormulasJson` sharing, re-expand on save.
 
-## Out of scope (post BL-215)
+**BL-216** — **Done** (local + remote install path). Demo pack `percentChange` in `examples/marketplace-analytics-pack-demo/`; `DropInAnalyticsPackLoader`; paid RSA verify deferred.
+
+## Out of scope (post BL-216)
 
 | Topic | Rationale |
 |-------|-----------|

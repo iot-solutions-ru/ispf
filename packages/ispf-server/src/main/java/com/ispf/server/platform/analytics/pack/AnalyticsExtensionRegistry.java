@@ -18,6 +18,25 @@ public class AnalyticsExtensionRegistry {
         functionsByHelper.put(function.helperId(), function);
     }
 
+    public synchronized void unregisterPack(String packId) {
+        if (packId == null || packId.isBlank()) {
+            return;
+        }
+        String normalized = packId.trim();
+        functionsByHelper.entrySet().removeIf(entry -> normalized.equals(entry.getValue().packId()));
+    }
+
+    public synchronized List<String> helpersForPack(String packId) {
+        if (packId == null || packId.isBlank()) {
+            return List.of();
+        }
+        String normalized = packId.trim();
+        return functionsByHelper.values().stream()
+                .filter(fn -> normalized.equals(fn.packId()))
+                .map(RegisteredAnalyticsFunction::helperId)
+                .toList();
+    }
+
     public synchronized boolean containsHelper(String helperId) {
         return functionsByHelper.containsKey(helperId);
     }

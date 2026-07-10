@@ -74,6 +74,17 @@ public class ApplicationDataStore {
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.get(0));
     }
 
+    public boolean deleteApp(String appId) {
+        if (appId == null || appId.isBlank()) {
+            return false;
+        }
+        int deleted = jdbcTemplate.update(
+                "DELETE FROM " + applicationsTable + " WHERE app_id = ?",
+                appId.trim()
+        );
+        return deleted > 0;
+    }
+
     public boolean isMigrationApplied(String appId, String version, String scriptId) {
         Integer count = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*) FROM %s

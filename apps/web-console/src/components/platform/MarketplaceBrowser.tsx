@@ -1,16 +1,35 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import {
+  countMarketplaceListingsByKind,
+  filterMarketplaceListingsByKind,
+  groupMarketplaceListingsByKind,
+  marketplaceListingIdentifier,
+  resolveMarketplaceListingKind,
+  type MarketplaceKindFilter,
+  type MarketplaceListingKind,
+} from "../../api/marketplaceListingKind";
 import {
   activateMarketplaceListing,
   fetchMarketplaceCatalog,
   fetchMarketplaces,
   installMarketplaceListing,
+  uninstallAnalyticsPack,
   type MarketplaceListing,
 } from "../../api/solutions";
 import { fetchPlatformLicense } from "../../api/platformLicense";
 import BundleLicenseErrorAlert from "./BundleLicenseErrorAlert";
 import VendorContactModal, { hasMarketplaceVendorContact } from "./VendorContactModal";
+
+const KIND_FILTERS: MarketplaceKindFilter[] = [
+  "all",
+  "application",
+  "analytics-pack",
+  "symbol-pack",
+  "plugin",
+  "other",
+];
 
 function MarketplaceInstallationIdHint() {
   const { t } = useTranslation("system");
@@ -45,6 +64,15 @@ function MarketplaceInstallationIdHint() {
   );
 }
 
+function MarketplaceKindBadge({ kind }: { kind: MarketplaceListingKind }) {
+  const { t } = useTranslation("system");
+  return (
+    <span className={`marketplace-kind-badge marketplace-kind-badge--${kind}`}>
+      {t(`solutions.marketplace.kind.${kind}`)}
+    </span>
+  );
+}
+
 function MarketplaceListingCard({
   listing,
   marketplaceId,
@@ -52,7 +80,7 @@ function MarketplaceListingCard({
 }: {
   listing: MarketplaceListing;
   marketplaceId: string;
-  onInstalled: () => void;
+  onInstalled: (message?: string) => void;
 }) {
   const { t } = useTranslation("system");
   const [activationCode, setActivationCode] = useState("");
@@ -62,7 +90,19 @@ function MarketplaceListingCard({
 
   const installMutation = useMutation({
     mutationFn: () => installMarketplaceListing(marketplaceId, listing.slug),
-    onSuccess: onInstalled,
+    onSuccess: (result) => {
+      const functions = Array.isArray(result.functions) ? result.functions.join(", ") : "";
+      onInstalled(
+        functions
+          ? t("solutions.marketplace.installOkWithFunctions", { functions })
+          : t("solutions.installOk")
+      );
+    },
+  });
+
+  const uninstallMutation = useMutation({
+    mutationFn: () => uninstallAnalyticsPack(listing.packId ?? listing.slug),
+    onSuccess: () => onInstalled(t("solutions.uninstallOk")),
   });
 
   const activateMutation = useMutation({
@@ -74,17 +114,32 @@ function MarketplaceListingCard({
     },
   });
 
+  const kind = resolveMarketplaceListingKind(listing);
+  const identifier = marketplaceListingIdentifier(listing);
+  const isApplication = kind === "application";
+  const isAnalyticsPack = kind === "analytics-pack";
   const isPaid = listing.pricing === "paid";
-  const busy = installMutation.isPending || activateMutation.isPending;
+  const busy = installMutation.isPending || activateMutation.isPending || uninstallMutation.isPending;
 
   return (
     <>
-      <article className="solution-catalog-card solution-catalog-card--marketplace">
+      <article
+        className={`solution-catalog-card solution-catalog-card--marketplace marketplace-listing-card marketplace-listing-card--${kind}`}
+      >
         <header className="solution-catalog-card-head">
-          <div>
-            <strong>{listing.title}</strong>
+          <div className="marketplace-listing-card-title-block">
+            <div className="marketplace-listing-card-title-row">
+              <strong>{listing.title}</strong>
+              <MarketplaceKindBadge kind={kind} />
+            </div>
             <p className="op-muted solution-catalog-app-id">
-              <code>{listing.slug}</code> → <code>{listing.appId}</code>
+              <code>{listing.slug}</code>
+              {identifier ? (
+                <>
+                  {" "}
+                  → <code>{identifier}</code>
+                </>
+              ) : null}
             </p>
           </div>
           <span className={`solution-catalog-version-pill ${isPaid ? "paid" : "free"}`}>
@@ -101,6 +156,9 @@ function MarketplaceListingCard({
           {listing.installed && listing.activeVersion && (
             <span> · {t("solutions.marketplace.installedVersion", { version: listing.activeVersion })}</span>
           )}
+          {listing.installed && !listing.activeVersion && (
+            <span> · {t("solutions.marketplace.installed")}</span>
+          )}
         </p>
 
         <footer className="solution-catalog-card-actions">
@@ -111,7 +169,11 @@ function MarketplaceListingCard({
               disabled={busy}
               onClick={() => installMutation.mutate()}
             >
-              {listing.installed ? t("solutions.reinstall") : t("solutions.marketplace.installFree")}
+              {installMutation.isPending
+                ? t("solutions.marketplace.installing")
+                : listing.installed
+                  ? t("solutions.reinstall")
+                  : t("solutions.marketplace.installFree")}
             </button>
           )}
           {isPaid && !showActivate && (
@@ -165,7 +227,17 @@ function MarketplaceListingCard({
               {t("solutions.marketplace.contactVendor")}
             </button>
           )}
-          {listing.installed && (
+          {listing.installed && isAnalyticsPack && (
+            <button
+              type="button"
+              className="btn small danger"
+              disabled={busy}
+              onClick={() => uninstallMutation.mutate()}
+            >
+              {uninstallMutation.isPending ? t("solutions.uninstalling") : t("solutions.uninstall")}
+            </button>
+          )}
+          {listing.installed && isApplication && listing.appId && (
             <a
               className="btn small"
               href={`/?mode=operator&app=${encodeURIComponent(listing.appId)}`}
@@ -177,6 +249,9 @@ function MarketplaceListingCard({
 
         {installMutation.error && (
           <BundleLicenseErrorAlert error={installMutation.error} />
+        )}
+        {uninstallMutation.error && (
+          <div className="op-alert op-alert-error compact">{String(uninstallMutation.error)}</div>
         )}
         {activateMutation.error && (
           <div className="op-alert op-alert-error compact">
@@ -197,11 +272,35 @@ function MarketplaceListingCard({
   );
 }
 
-export default function MarketplaceBrowser({ onInstalled }: { onInstalled: () => void }) {
+function MarketplaceListingGrid({
+  listings,
+  marketplaceId,
+  onInstalled,
+}: {
+  listings: MarketplaceListing[];
+  marketplaceId: string;
+  onInstalled: (message?: string) => void;
+}) {
+  return (
+    <div className="solution-catalog-grid">
+      {listings.map((listing) => (
+        <MarketplaceListingCard
+          key={listing.slug}
+          listing={listing}
+          marketplaceId={marketplaceId}
+          onInstalled={onInstalled}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (message?: string) => void }) {
   const { t } = useTranslation("system");
   const [marketplaceId, setMarketplaceId] = useState("");
   const [query, setQuery] = useState("");
   const [pricing, setPricing] = useState("all");
+  const [kindFilter, setKindFilter] = useState<MarketplaceKindFilter>("all");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const marketplacesQuery = useQuery({
@@ -219,6 +318,15 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: () =>
   });
 
   const listings = catalogQuery.data?.listings ?? [];
+  const kindCounts = useMemo(() => countMarketplaceListingsByKind(listings), [listings]);
+  const filteredListings = useMemo(
+    () => filterMarketplaceListingsByKind(listings, kindFilter),
+    [listings, kindFilter]
+  );
+  const groupedListings = useMemo(
+    () => (kindFilter === "all" ? groupMarketplaceListingsByKind(listings) : []),
+    [listings, kindFilter]
+  );
 
   function applySearch() {
     setDebouncedQuery(query.trim());
@@ -267,25 +375,64 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: () =>
         </button>
       </div>
 
+      {listings.length > 0 && (
+        <div className="marketplace-kind-filters" role="group" aria-label={t("solutions.marketplace.kindFilter")}>
+          {KIND_FILTERS.map((filter) => {
+            const count = kindCounts[filter];
+            if (filter !== "all" && count === 0) {
+              return null;
+            }
+            const active = kindFilter === filter;
+            return (
+              <button
+                key={filter}
+                type="button"
+                className={`marketplace-kind-filter${active ? " active" : ""}${filter !== "all" ? ` marketplace-kind-filter--${filter}` : ""}`}
+                aria-pressed={active}
+                onClick={() => setKindFilter(filter)}
+              >
+                <span>{t(`solutions.marketplace.kindFilter.${filter}`)}</span>
+                <span className="marketplace-kind-filter-count">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {catalogQuery.error && (
         <div className="op-alert op-alert-error">{String(catalogQuery.error)}</div>
       )}
       {catalogQuery.isLoading && <p className="hint">{t("solutions.loading")}</p>}
 
-      {!catalogQuery.isLoading && listings.length === 0 && (
+      {!catalogQuery.isLoading && filteredListings.length === 0 && (
         <p className="op-muted">{t("solutions.marketplace.empty")}</p>
       )}
 
-      <div className="solution-catalog-grid">
-        {listings.map((listing) => (
-          <MarketplaceListingCard
-            key={listing.slug}
-            listing={listing}
-            marketplaceId={activeId}
-            onInstalled={onInstalled}
-          />
-        ))}
-      </div>
+      {!catalogQuery.isLoading && kindFilter === "all" && groupedListings.length > 1 && (
+        <div className="marketplace-kind-sections">
+          {groupedListings.map((group) => (
+            <section key={group.kind} className={`marketplace-kind-section marketplace-kind-section--${group.kind}`}>
+              <header className="marketplace-kind-section-head">
+                <h3>{t(`solutions.marketplace.kindSection.${group.kind}`)}</h3>
+                <span className="marketplace-kind-section-count">{group.listings.length}</span>
+              </header>
+              <MarketplaceListingGrid
+                listings={group.listings}
+                marketplaceId={activeId}
+                onInstalled={onInstalled}
+              />
+            </section>
+          ))}
+        </div>
+      )}
+
+      {!catalogQuery.isLoading && (kindFilter !== "all" || groupedListings.length <= 1) && filteredListings.length > 0 && (
+        <MarketplaceListingGrid
+          listings={filteredListings}
+          marketplaceId={activeId}
+          onInstalled={onInstalled}
+        />
+      )}
     </section>
   );
 }

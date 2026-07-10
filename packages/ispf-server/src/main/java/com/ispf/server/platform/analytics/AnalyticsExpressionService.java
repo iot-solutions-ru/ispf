@@ -1,7 +1,7 @@
 package com.ispf.server.platform.analytics;
 
-import com.ispf.analytics.engine.AnalyticsEvaluationOptions;
 import com.ispf.analytics.engine.HistorianPort;
+import com.ispf.analytics.engine.HistorianTagPaths;
 import com.ispf.analytics.engine.LiveVariablePort;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.expression.ExpressionEngine;
@@ -44,7 +44,7 @@ public class AnalyticsExpressionService {
         if (objectPath == null || objectPath.isBlank()) {
             throw new IllegalArgumentException("objectPath is required");
         }
-        objectManager.require(objectPath);
+        objectManager.require(HistorianTagPaths.objectPath(objectPath));
         List<String> sources = HistorianCelPreprocessor.extractSources(expression).stream()
                 .map(source -> source.path() + "." + source.variable())
                 .toList();
@@ -70,7 +70,8 @@ public class AnalyticsExpressionService {
             throw new IllegalArgumentException("objectPath is required");
         }
         long started = System.nanoTime();
-        PlatformObject node = objectManager.require(objectPath);
+        String resolvedObjectPath = HistorianTagPaths.objectPath(objectPath);
+        PlatformObject node = objectManager.require(resolvedObjectPath);
         Instant resolvedAsOf = asOf != null ? asOf : Instant.now();
         String expanded = HistorianCelPreprocessor.expand(
                 expression,

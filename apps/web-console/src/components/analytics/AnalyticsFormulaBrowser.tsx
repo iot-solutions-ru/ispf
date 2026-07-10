@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
+import { filterPlatformBindings, PLATFORM_BINDING_ENTRIES, type PlatformBindingEntry } from "../../utils/platformBindings";
+import { HISTORIAN_EXPRESSION_FALLBACK_ENTRIES } from "../../utils/historianExpressionBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
 import ApplyAnalyticsFormulaModal, { type FormulaApplyResult } from "./ApplyAnalyticsFormulaModal";
 import type { BindingFormulaLink } from "../../types";
+import { matchesAnalyticsCatalogKindFilter, type AnalyticsFormulaKindFilter } from "../../utils/analyticsCatalogKindFilter";
 
-export type AnalyticsFormulaKindFilter = "historian" | "reactive";
+export type { AnalyticsFormulaKindFilter };
 
 interface AnalyticsFormulaBrowserProps {
   disabled?: boolean;
@@ -54,27 +56,35 @@ export default function AnalyticsFormulaBrowser({
   initialFormulaLink = null,
 }: AnalyticsFormulaBrowserProps) {
   const { t } = useTranslation("inspector");
-  const catalogQuery = useAnalyticsCatalog();
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<AnalyticsFormulaKindFilter>(defaultKind);
+  const catalogQuery = useAnalyticsCatalog(kindFilter);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [applyEntry, setApplyEntry] = useState<AnalyticsCatalogEntryDto | null>(null);
-  const selectedQuery = useAnalyticsCatalogFunction(selectedId, catalogQuery.hasRemoteEntries);
+
+  const effectiveFallbackEntries = useMemo(() => {
+    if (fallbackEntries.length > 0) {
+      return fallbackEntries;
+    }
+    return kindFilter === "reactive"
+      ? PLATFORM_BINDING_ENTRIES
+      : HISTORIAN_EXPRESSION_FALLBACK_ENTRIES;
+  }, [fallbackEntries, kindFilter]);
 
   const remoteFiltered = useMemo(() => {
     const list = catalogQuery.data ?? [];
     return list.filter(
-      (entry) =>
-        entry.kinds.some((kind) => kind.toLowerCase() === kindFilter) && matchesQuery(entry, search)
+      (entry) => matchesAnalyticsCatalogKindFilter(entry, kindFilter) && matchesQuery(entry, search)
     );
   }, [catalogQuery.data, kindFilter, search]);
 
-  const fallbackFiltered = useMemo(() => {
-    if (catalogQuery.hasRemoteEntries) {
-      return [] as PlatformBindingEntry[];
-    }
-    return filterPlatformBindings(search, fallbackEntries);
-  }, [catalogQuery.hasRemoteEntries, fallbackEntries, search]);
+  const fallbackFiltered = useMemo(
+    () => filterPlatformBindings(search, effectiveFallbackEntries),
+    [search, effectiveFallbackEntries]
+  );
+
+  const showRemoteCatalog = remoteFiltered.length > 0;
+  const selectedQuery = useAnalyticsCatalogFunction(selectedId, showRemoteCatalog);
 
   return (
     <div className="analytics-formula-browser">
@@ -95,11 +105,11 @@ export default function AnalyticsFormulaBrowser({
         </select>
       </div>
 
-      {!catalogQuery.hasRemoteEntries && (
+      {!showRemoteCatalog && (
         <p className="hint">{t("catalog.fallbackHint")}</p>
       )}
 
-      {catalogQuery.hasRemoteEntries ? (
+      {showRemoteCatalog ? (
         <ul className="platform-binding-catalog-list analytics-formula-browser-list">
           {remoteFiltered.map((entry) => (
             <li key={entry.id}>
@@ -168,9 +178,26 @@ export default function AnalyticsFormulaBrowser({
                 >
                   <div className="platform-binding-catalog-head">
                     <code>{entry.name}</code>
+                    <span className="platform-binding-catalog-category">
+                      {t(`platformBindings.category.${entry.category}`)}
+                    </span>
+                    {entry.stateful ? (
+                      <span className="inline-badge">{t("platformBindings.stateful")}</span>
+                    ) : null}
                   </div>
                   <code className="platform-binding-catalog-snippet">{entry.snippet}</code>
+                  <p className="hint">{t(`platformBindings.${entry.id}.desc`, { defaultValue: "" })}</p>
                 </button>
+                <div className="platform-binding-catalog-actions">
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={disabled}
+                    onClick={() => onInsert(entry.snippet)}
+                  >
+                    {t("catalog.insert")}
+                  </button>
+                </div>
               </div>
             </li>
           ))}

@@ -10417,6 +10417,172 @@ body.scada-mimic-editor-open {
   border-color: #99f6e4;
 }
 
+.marketplace-kind-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.marketplace-kind-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(110, 118, 129, 0.35);
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.marketplace-kind-filter:hover {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.marketplace-kind-filter.active {
+  border-color: rgba(96, 165, 250, 0.65);
+  background: rgba(96, 165, 250, 0.16);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.marketplace-kind-filter-count {
+  min-width: 1.25rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.marketplace-kind-filter.active .marketplace-kind-filter-count {
+  background: rgba(96, 165, 250, 0.22);
+}
+
+.marketplace-kind-filter--application.active {
+  border-color: rgba(52, 211, 153, 0.55);
+  background: rgba(52, 211, 153, 0.14);
+}
+
+.marketplace-kind-filter--analytics-pack.active {
+  border-color: rgba(167, 139, 250, 0.55);
+  background: rgba(167, 139, 250, 0.14);
+}
+
+.marketplace-kind-filter--symbol-pack.active {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.14);
+}
+
+.marketplace-kind-filter--plugin.active {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.14);
+}
+
+.marketplace-kind-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.marketplace-kind-section-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.marketplace-kind-section-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.marketplace-kind-section-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(110, 118, 129, 0.2);
+  opacity: 0.9;
+}
+
+.marketplace-listing-card-title-block {
+  min-width: 0;
+  flex: 1;
+}
+
+.marketplace-listing-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.marketplace-kind-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.marketplace-kind-badge--application {
+  background: rgba(52, 211, 153, 0.18);
+  color: #6ee7b7;
+}
+
+.marketplace-kind-badge--analytics-pack {
+  background: rgba(167, 139, 250, 0.2);
+  color: #c4b5fd;
+}
+
+.marketplace-kind-badge--symbol-pack {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fcd34d;
+}
+
+.marketplace-kind-badge--plugin {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7dd3fc;
+}
+
+.marketplace-kind-badge--other {
+  background: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+.marketplace-listing-card--application {
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.marketplace-listing-card--analytics-pack {
+  border-color: rgba(167, 139, 250, 0.4);
+  background: linear-gradient(135deg, rgba(167, 139, 250, 0.06), rgba(0, 0, 0, 0.1));
+}
+
+.marketplace-listing-card--symbol-pack {
+  border-color: rgba(251, 191, 36, 0.38);
+}
+
+.marketplace-listing-card--plugin {
+  border-color: rgba(56, 189, 248, 0.38);
+}
+
+.marketplace-listing-card--other {
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
 .solution-catalog-version-pill.free {
   background: #dcfce7;
   color: #166534;

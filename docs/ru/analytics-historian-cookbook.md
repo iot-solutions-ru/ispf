@@ -6,7 +6,9 @@
 
 См. [ADR-0041](decisions/0041-multi-tag-historian-computations.md) и [analytics-tag-catalog.md](analytics-tag-catalog.md).
 
-**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–215). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
+**Дорожная карта (как в PI AF):** единый каталог формул, плагины и свои формулы — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–216). Каталог и «сохранить/применить формулу» доступны в редакторе выражений; менеджер формул — **Система → Формулы analytics**.
+
+**Полный гайд (Tier A/B/C, API, покупка пакетов в маркетплейсе):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
 
 ---
 
@@ -58,6 +60,15 @@
 | CEL-композит | `(hist.avg('a', 't', '5m') + hist.avg('b', 't', '5m')) / 2.0` | `cel` |
 
 В CEL используйте **литералы double** (`2.0`, не `2`) при смешении с развёрткой `hist.*`.
+
+### Свои формулы (кратко)
+
+| Задача | Механизм | Документ |
+|--------|----------|----------|
+| Переиспользуемый шаблон (`{{path}}`, `{{window}}`) | Tier B — **Сохранить как формулу** или **Система → Формулы analytics** | [§ Tier B](analytics-formulas-and-packs.md#tier-b--свои-формулы) |
+| Новая функция уровня `hist.avg` | Tier C — Java SPI pack; коммерческие — через **маркетплейс** | [§ Tier C](analytics-formulas-and-packs.md#tier-c--пакеты-расширений-java-spi) |
+
+Новый макрос `hist.*` из UI зарегистрировать нельзя. Компонуйте из `hist.*` / helpers, сохраняйте как Tier B или поставляйте Tier C.
 
 ---
 

@@ -133,6 +133,22 @@ public class AnalyticsTagCatalogService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<AnalyticsTagDefinition> findTagDefinition(String tagPath) {
+        if (tagPath == null || tagPath.isBlank()) {
+            return Optional.empty();
+        }
+        if (HistorianTagPaths.isComposite(tagPath)) {
+            String objectPath = HistorianTagPaths.objectPath(tagPath);
+            String ruleId = HistorianTagPaths.ruleId(tagPath);
+            return listTagDefinitionsForObject(objectPath).stream()
+                    .filter(definition -> definition.tagPath().equals(tagPath)
+                            || definition.ruleId().equals(ruleId))
+                    .findFirst();
+        }
+        return listTagDefinitionsForObject(tagPath).stream().findFirst();
+    }
+
+    @Transactional(readOnly = true)
     public List<AnalyticsTagDefinition> tagsAffectedBySource(String objectPath, String variableName) {
         return listEnabledTags().stream()
                 .filter(AnalyticsTagDefinition::onChangeEnabled)

@@ -141,7 +141,7 @@ Optional fields:
 
 When upgrading an installed app, `POST …/bundle/validate` warns on **major** version bumps (`1.x.x` → `2.0.0`) so integrators review migrations and operator UI breaks.
 
-API: `GET /api/v1/solutions/catalog`, `POST /api/v1/solutions/reference/{exampleId}/install`.
+API: `GET /api/v1/solutions/catalog`. Reference demos (MES, Warehouse, Building HVAC) install from the marketplace (`POST /api/v1/solutions/marketplaces/{marketplaceId}/listings/{slug}/install`).
 
 One request — registration, metadata, migrations, functions, schedules:
 

@@ -13,6 +13,7 @@ import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -112,6 +113,38 @@ public class AnalyticsEngineService {
         return results;
     }
 
+    /**
+     * Dry-run evaluation for inspector probe (does not write outputs or metadata).
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public TagProbeResult probeTag(String tagPath, Instant asOf) {
+        if (!isEnabled()) {
+            throw new IllegalStateException("Analytics engine is disabled");
+        }
+        AnalyticsTagDefinition tag = catalogService.findTagDefinition(tagPath)
+                .orElseThrow(() -> new IllegalArgumentException("Historian computation not found: " + tagPath));
+        long started = System.nanoTime();
+        Instant resolvedAsOf = asOf != null ? asOf : Instant.now();
+        try {
+            List<AnalyticsEvaluationResult> results = evaluateWithSession(
+                    List.of(tag),
+                    new AnalyticsEvaluationOptions(resolvedAsOf)
+            );
+            long latencyMs = (System.nanoTime() - started) / 1_000_000L;
+            AnalyticsEvaluationResult result = results.isEmpty()
+                    ? AnalyticsEvaluationResult.error(tagPath, tag.helper(), "No evaluation result")
+                    : results.getFirst();
+            return TagProbeResult.from(result, latencyMs);
+        } catch (RuntimeException ex) {
+            long latencyMs = (System.nanoTime() - started) / 1_000_000L;
+            String message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+            return TagProbeResult.from(
+                    AnalyticsEvaluationResult.error(tagPath, tag.helper(), message),
+                    latencyMs
+            );
+        }
+    }
+
     private List<AnalyticsEvaluationResult> evaluateWithSession(
             List<AnalyticsTagDefinition> tags,
             AnalyticsEvaluationOptions options
@@ -149,6 +182,26 @@ public class AnalyticsEngineService {
     ) {
         static TickResult skipped(String reason) {
             return new TickResult(false, 0, 0, 0L, reason);
+        }
+    }
+
+    public record TagProbeResult(
+            String tagPath,
+            String helper,
+            String status,
+            Map<String, Double> outputs,
+            String message,
+            long latencyMs
+    ) {
+        static TagProbeResult from(AnalyticsEvaluationResult result, long latencyMs) {
+            return new TagProbeResult(
+                    result.tagPath(),
+                    result.helper(),
+                    result.status(),
+                    result.outputs(),
+                    result.message(),
+                    latencyMs
+            );
         }
     }
 }

@@ -1,18 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   fetchSolutionCatalog,
-  installReferenceSolution,
+  uninstallAnalyticsPack,
+  uninstallApplication,
+  type SolutionCatalogAnalyticsPack,
   type SolutionCatalogInstalled,
-  type SolutionReferenceExample,
 } from "../../api/solutions";
 import MarketplaceBrowser from "./MarketplaceBrowser";
 
-function InstalledAppCard({ app }: { app: SolutionCatalogInstalled }) {
+function InstalledAppCard({
+  app,
+  onUninstall,
+  uninstalling,
+}: {
+  app: SolutionCatalogInstalled;
+  onUninstall: (appId: string) => void;
+  uninstalling: boolean;
+}) {
   const { t } = useTranslation("system");
   const versionCount = app.versions?.length ?? 0;
   return (
-    <article className="solution-catalog-card">
+    <article className="solution-catalog-card marketplace-listing-card marketplace-listing-card--application">
       <header className="solution-catalog-card-head">
         <div>
           <strong>{app.bundleDisplayName ?? app.displayName ?? app.appId}</strong>
@@ -43,51 +53,68 @@ function InstalledAppCard({ app }: { app: SolutionCatalogInstalled }) {
           </div>
         )}
       </dl>
-    </article>
-  );
-}
-
-function ReferenceExampleCard({
-  example,
-  onInstall,
-  installing,
-}: {
-  example: SolutionReferenceExample;
-  onInstall: (id: string) => void;
-  installing: boolean;
-}) {
-  const { t } = useTranslation("system");
-  return (
-    <article className="solution-catalog-card solution-catalog-card--reference">
-      <header className="solution-catalog-card-head">
-        <div>
-          <strong>{example.title}</strong>
-          <p className="op-muted solution-catalog-app-id">
-            <code>{example.exampleId}</code> → <code>{example.appId}</code>
-          </p>
-        </div>
-        {example.installed && example.activeVersion && (
-          <span className="solution-catalog-version-pill muted">v{example.activeVersion}</span>
-        )}
-      </header>
-      <p>{example.description}</p>
       <footer className="solution-catalog-card-actions">
-        <button
-          type="button"
-          className="btn primary small"
-          disabled={installing}
-          onClick={() => onInstall(example.exampleId)}
-        >
-          {example.installed ? t("solutions.reinstall") : t("solutions.installDemo")}
-        </button>
-        {example.installed && (
+        {app.activeVersion && (
           <a
             className="btn small"
-            href={`/?mode=operator&app=${encodeURIComponent(example.appId)}`}
+            href={`/?mode=operator&app=${encodeURIComponent(app.appId)}`}
           >
             {t("solutions.openOperator")}
           </a>
         )}
+        <button
+          type="button"
+          className="btn small danger"
+          disabled={uninstalling}
+          onClick={() => onUninstall(app.appId)}
+        >
+          {t("solutions.uninstall")}
+        </button>
+      </footer>
+    </article>
+  );
+}
+
+function InstalledAnalyticsPackCard({
+  pack,
+  onUninstall,
+  uninstalling,
+}: {
+  pack: SolutionCatalogAnalyticsPack;
+  onUninstall: (packId: string) => void;
+  uninstalling: boolean;
+}) {
+  const { t } = useTranslation("system");
+  const helpers = pack.helpers?.length ? pack.helpers : pack.functions ?? [];
+  return (
+    <article className="solution-catalog-card marketplace-listing-card marketplace-listing-card--analytics-pack">
+      <header className="solution-catalog-card-head">
+        <div>
+          <strong>{pack.packId}</strong>
+          <p className="op-muted solution-catalog-app-id">
+            <span className="marketplace-kind-badge marketplace-kind-badge--analytics-pack">
+              {t("solutions.marketplace.kind.analytics-pack")}
+            </span>
+          </p>
+        </div>
+        {pack.version && (
+          <span className="solution-catalog-version-pill">v{pack.version}</span>
+        )}
+      </header>
+      {helpers.length > 0 && (
+        <p className="op-muted solution-catalog-meta">
+          {t("solutions.installedAnalyticsHelpers", { helpers: helpers.join(", ") })}
+        </p>
+      )}
+      <footer className="solution-catalog-card-actions">
+        <button
+          type="button"
+          className="btn small danger"
+          disabled={uninstalling}
+          onClick={() => onUninstall(pack.packId)}
+        >
+          {t("solutions.uninstall")}
+        </button>
       </footer>
     </article>
   );
@@ -96,13 +123,23 @@ function ReferenceExampleCard({
 export default function SolutionCatalogPanel() {
   const { t } = useTranslation("system");
   const queryClient = useQueryClient();
+  const [marketplaceMessage, setMarketplaceMessage] = useState<string | null>(null);
+
   const catalogQuery = useQuery({
     queryKey: ["solution-catalog"],
     queryFn: fetchSolutionCatalog,
   });
 
-  const installMutation = useMutation({
-    mutationFn: installReferenceSolution,
+  const uninstallAppMutation = useMutation({
+    mutationFn: uninstallApplication,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["solution-catalog"] });
+      void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
+    },
+  });
+
+  const uninstallPackMutation = useMutation({
+    mutationFn: uninstallAnalyticsPack,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["solution-catalog"] });
       void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
@@ -115,7 +152,9 @@ export default function SolutionCatalogPanel() {
   };
 
   const installed = catalogQuery.data?.installed ?? [];
-  const references = catalogQuery.data?.referenceExamples ?? [];
+  const analyticsPacks = catalogQuery.data?.installedAnalyticsPacks ?? [];
+  const hasInstalled = installed.length > 0 || analyticsPacks.length > 0;
+  const uninstalling = uninstallAppMutation.isPending || uninstallPackMutation.isPending;
 
   return (
     <div className="solution-catalog-panel">
@@ -137,18 +176,25 @@ export default function SolutionCatalogPanel() {
       {catalogQuery.error && (
         <div className="op-alert op-alert-error">{String(catalogQuery.error)}</div>
       )}
-      {installMutation.error && (
-        <div className="op-alert op-alert-error">{String(installMutation.error)}</div>
+      {uninstallAppMutation.error && (
+        <div className="op-alert op-alert-error">{String(uninstallAppMutation.error)}</div>
       )}
-      {installMutation.isSuccess && (
-        <div className="op-alert op-alert-success">{t("solutions.installOk")}</div>
+      {uninstallPackMutation.error && (
+        <div className="op-alert op-alert-error">{String(uninstallPackMutation.error)}</div>
+      )}
+      {(uninstallAppMutation.isSuccess || uninstallPackMutation.isSuccess) && (
+        <div className="op-alert op-alert-success">{t("solutions.uninstallOk")}</div>
+      )}
+      {marketplaceMessage && (
+        <div className="op-alert op-alert-success">{marketplaceMessage}</div>
       )}
 
       <section className="solution-catalog-section">
         <h4>{t("solutions.marketplace.title")}</h4>
         <p className="op-muted">{t("solutions.marketplace.subtitle")}</p>
         <MarketplaceBrowser
-          onInstalled={() => {
+          onInstalled={(message) => {
+            setMarketplaceMessage(message ?? t("solutions.installOk"));
             void queryClient.invalidateQueries({ queryKey: ["solution-catalog"] });
             void queryClient.invalidateQueries({ queryKey: ["marketplace-catalog"] });
           }}
@@ -157,30 +203,27 @@ export default function SolutionCatalogPanel() {
 
       {catalogQuery.isLoading && <p className="hint">{t("solutions.loading")}</p>}
 
-      {references.length > 0 && (
-        <section className="solution-catalog-section">
-          <h4>{t("solutions.referenceTitle")}</h4>
-          <div className="solution-catalog-grid">
-            {references.map((example) => (
-              <ReferenceExampleCard
-                key={example.exampleId}
-                example={example}
-                installing={installMutation.isPending}
-                onInstall={(id) => installMutation.mutate(id)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="solution-catalog-section">
         <h4>{t("solutions.installedTitle")}</h4>
-        {installed.length === 0 ? (
+        {!hasInstalled ? (
           <p className="op-muted">{t("solutions.installedEmpty")}</p>
         ) : (
           <div className="solution-catalog-grid">
             {installed.map((app) => (
-              <InstalledAppCard key={app.appId} app={app} />
+              <InstalledAppCard
+                key={app.appId}
+                app={app}
+                uninstalling={uninstalling}
+                onUninstall={(appId) => uninstallAppMutation.mutate(appId)}
+              />
+            ))}
+            {analyticsPacks.map((pack) => (
+              <InstalledAnalyticsPackCard
+                key={pack.packId}
+                pack={pack}
+                uninstalling={uninstalling}
+                onUninstall={(packId) => uninstallPackMutation.mutate(packId)}
+              />
             ))}
           </div>
         )}

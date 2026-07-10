@@ -43,7 +43,20 @@
 | POST | `/api/v1/platform/analytics/expression/validate` | Валидация CEL + `hist.*` |
 | POST | `/api/v1/platform/analytics/query` | Мультитеговый запрос |
 
+| GET | `/api/v1/platform/analytics/catalog` | Единый каталог функций Tier A/B/C (BL-212) |
+| GET | `/api/v1/platform/analytics/catalog/{functionId}` | Метаданные одной функции |
+| POST | `/api/v1/platform/analytics/catalog/validate` | Валидация выражения |
+| GET | `/api/v1/platform/analytics/formulas?scope=site` | Список формул Tier B площадки (BL-214) |
+| GET | `/api/v1/platform/analytics/formulas?scope=app&appId=` | Формулы приложения |
+| POST | `/api/v1/platform/analytics/formulas` | Создать формулу |
+| PUT | `/api/v1/platform/analytics/formulas/{id}` | Обновить; перепривязка `formulaRef` |
+| DELETE | `/api/v1/platform/analytics/formulas/{id}` | Удалить формулу |
+| POST | `/api/v1/platform/analytics/formulas/{id}/expand` | Развернуть шаблон `{{param}}` |
+| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | Probe historian-тега (`objectPath#ruleId`) |
+
 Поля ответа каталога, CEL-over-historian и propagation quality — см. [английскую версию](../en/analytics-tag-catalog.md).
+
+**Формулы и пакеты расширений (Tier B/C):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
 
 ## UI
 
@@ -59,3 +72,4 @@
 
 - [ADR-0041](decisions/0041-multi-tag-historian-computations.md)
 - [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md)

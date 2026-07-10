@@ -135,6 +135,16 @@ public class ApplicationBundleSnapshotStore {
         }
     }
 
+    public void deactivateAll(String appId) {
+        if (appId == null || appId.isBlank()) {
+            return;
+        }
+        jdbcTemplate.update(
+                "UPDATE %s SET is_active = FALSE WHERE app_id = ?".formatted(deploymentsTable),
+                appId.trim()
+        );
+    }
+
     private BundleSnapshot mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
         return new BundleSnapshot(
                 UUID.fromString(rs.getString("id")),

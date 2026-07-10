@@ -493,6 +493,8 @@ ispf:
     mqtt-callback-scale-check-interval-ms: ${ISPF_DRIVER_MQTT_CALLBACK_SCALE_CHECK_MS:200}
     mqtt-ingress-coalesce-enabled: ${ISPF_DRIVER_MQTT_INGRESS_COALESCE:true}
     packs-dir: ${ISPF_DRIVER_PACKS_DIR:./data/drivers}
+  analytics-pack:
+    packs-dir: ${ISPF_ANALYTICS_PACKS_DIR:./data/analytics-packs}
   license:
     data-dir: ${ISPF_DATA_DIR:./data}
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}

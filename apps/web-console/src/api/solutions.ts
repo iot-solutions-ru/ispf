@@ -18,18 +18,18 @@ export interface SolutionCatalogInstalled {
   versions?: SolutionCatalogVersion[];
 }
 
-export interface SolutionReferenceExample {
-  exampleId: string;
-  appId: string;
-  title: string;
-  description: string;
-  installed?: boolean;
-  activeVersion?: string;
+export interface SolutionCatalogAnalyticsPack {
+  packId: string;
+  version?: string;
+  functions?: string[];
+  helpers?: string[];
+  licenseType?: string;
+  minPlatformVersion?: string;
 }
 
 export interface SolutionCatalogResponse {
   installed: SolutionCatalogInstalled[];
-  referenceExamples: SolutionReferenceExample[];
+  installedAnalyticsPacks?: SolutionCatalogAnalyticsPack[];
 }
 
 export interface MarketplaceEndpoint {
@@ -53,9 +53,11 @@ export interface MarketplaceListing {
   title: string;
   description: string;
   kind?: string;
+  artifactKind?: string | null;
   pricing: string;
   priceCents?: number | null;
-  appId: string;
+  appId?: string | null;
+  packId?: string | null;
   vendorSlug?: string | null;
   vendorName?: string | null;
   vendorLegalName?: string | null;
@@ -106,13 +108,6 @@ export function fetchMarketplaceCatalog(
   ).then((r) => parseJson<MarketplaceListingsResponse>(r));
 }
 
-export function installReferenceSolution(exampleId: string): Promise<Record<string, unknown>> {
-  return fetch(`/api/v1/solutions/reference/${encodeURIComponent(exampleId)}/install`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-  }).then((r) => parseJson<Record<string, unknown>>(r));
-}
-
 export function installMarketplaceListing(
   marketplaceId: string,
   slug: string
@@ -136,4 +131,18 @@ export function activateMarketplaceListing(
       body: JSON.stringify({ activationCode }),
     }
   ).then((r) => parseJson<Record<string, unknown>>(r));
+}
+
+export function uninstallApplication(appId: string): Promise<Record<string, unknown>> {
+  return fetch(`/api/v1/solutions/installed/applications/${encodeURIComponent(appId)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then((r) => parseJson<Record<string, unknown>>(r));
+}
+
+export function uninstallAnalyticsPack(packId: string): Promise<Record<string, unknown>> {
+  return fetch(`/api/v1/solutions/installed/analytics-packs/${encodeURIComponent(packId)}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  }).then((r) => parseJson<Record<string, unknown>>(r));
 }

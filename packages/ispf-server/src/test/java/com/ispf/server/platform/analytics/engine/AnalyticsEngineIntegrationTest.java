@@ -92,6 +92,29 @@ class AnalyticsEngineIntegrationTest {
         assertThat(results.getFirst().outputs()).containsKey("totalizedValue");
     }
 
+    @Test
+    void probeTagEvaluatesCompositeHistorianPathWithoutWriteBack() {
+        seedHistorianSamples(12.5);
+
+        String ruleId = "probe-rolling-rule";
+        HistorianComputationTestSupport.upsertRollingAvgRule(
+                bindingRulesService,
+                SENSOR,
+                ruleId,
+                SENSOR,
+                "temperature",
+                "probeOutput",
+                "1h"
+        );
+
+        String tagPath = HistorianTagPaths.encode(SENSOR, ruleId);
+        var probe = engineService.probeTag(tagPath, Instant.now());
+
+        assertThat(probe.status()).isEqualTo("ok");
+        assertThat(probe.outputs()).containsKey("probeOutput");
+        assertThat(probe.outputs().get("probeOutput")).isNotNull();
+    }
+
     private void seedHistorianSamples(double value) {
         for (int i = 0; i < 3; i++) {
             objectManager.setVariableValue(

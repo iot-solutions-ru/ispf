@@ -141,7 +141,7 @@ Content-Type: application/json
 
 При обновлении установленного приложения `POST …/bundle/validate` предупреждает о **серьезных** обновлениях версии (`1.x.x` → `2.0.0`), поэтому интеграторы проверяют миграции и сбои пользовательского интерфейса оператора.
 
-API: `GET /api/v1/solutions/catalog`, `POST /api/v1/solutions/reference/{exampleId}/install`.
+API: `GET /api/v1/solutions/catalog`. Reference demo (MES, Warehouse, Building HVAC) устанавливаются из маркетплейса (`POST /api/v1/solutions/marketplaces/{marketplaceId}/listings/{slug}/install`).
 
 Один — запрос логина, метаданные, поездки, функции, расписания:
 

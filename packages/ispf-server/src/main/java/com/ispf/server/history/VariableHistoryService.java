@@ -409,11 +409,19 @@ public class VariableHistoryService {
             String bucketSpec,
             int maxBuckets
     ) {
-        objectManager.require(objectPath).getVariable(variableName)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown variable: " + variableName));
-
+        objectManager.require(objectPath);
         String field = fieldName == null || fieldName.isBlank() ? "value" : fieldName;
         Duration bucket = parseBucket(bucketSpec);
+        if (objectManager.require(objectPath).getVariable(variableName).isEmpty()) {
+            return new VariableHistoryAggregateResponse(
+                    objectPath,
+                    variableName,
+                    field,
+                    formatBucket(bucket),
+                    List.of(),
+                    "none"
+            );
+        }
         Instant resolvedTo = to != null ? to : Instant.now();
         Instant resolvedFrom = from != null ? from : resolveHistoryStart(objectPath, variableName, resolvedTo);
         if (resolvedFrom.isAfter(resolvedTo)) {

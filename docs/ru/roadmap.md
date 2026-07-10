@@ -1169,6 +1169,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | БЛ-213 | **Analytics extension packs (SPI)** | P2 | Готово — SPI `ispf-analytics-api`; `ispf-analytics-core-ext` (`energyDelta`) |
 | БЛ-214 | **Пользовательские формулы analytics** | P2 | Готово — CRUD `@analyticsFormulas`, Tier B, UI, import из bundle |
 | БЛ-215 | **Ссылки на формулы и sharing в blueprint** | P2 | Готово — `formulaRef`, `analyticsFormulasJson`, re-expand при save |
+| БЛ-216 | **Analytics pack marketplace** | P2 | Готово — demo `percentChange`, local/remote install ([examples/marketplace-analytics-pack-demo](../../examples/marketplace-analytics-pack-demo/README.md)) |
 
 **Метрика фазы:** walkthrough сценария B ≤1 день; lab gate сценария C; derived tag запускает alarm без Chart-only rollup.
 

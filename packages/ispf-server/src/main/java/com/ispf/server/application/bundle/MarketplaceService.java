@@ -1,6 +1,7 @@
 package com.ispf.server.application.bundle;
 
 import com.ispf.server.application.data.ApplicationDataStore;
+import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import com.ispf.server.config.MarketplaceProperties;
 import com.ispf.server.license.InstallationIdService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ public class MarketplaceService {
     private final InstallationIdService installationIdService;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
+    private final DropInAnalyticsPackLoader analyticsPackLoader;
 
     @Autowired
     public MarketplaceService(
@@ -37,7 +39,8 @@ public class MarketplaceService {
             ApplicationBundleSnapshotStore snapshotStore,
             ApplicationBundleDeployService deployService,
             InstallationIdService installationIdService,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            DropInAnalyticsPackLoader analyticsPackLoader
     ) {
         this(
                 properties,
@@ -46,6 +49,7 @@ public class MarketplaceService {
                 deployService,
                 installationIdService,
                 objectMapper,
+                analyticsPackLoader,
                 HttpClient.newBuilder()
                         .connectTimeout(Duration.ofSeconds(15))
                         .followRedirects(HttpClient.Redirect.NORMAL)
@@ -60,6 +64,7 @@ public class MarketplaceService {
             ApplicationBundleDeployService deployService,
             InstallationIdService installationIdService,
             ObjectMapper objectMapper,
+            DropInAnalyticsPackLoader analyticsPackLoader,
             HttpClient httpClient
     ) {
         this.properties = properties;
@@ -68,6 +73,7 @@ public class MarketplaceService {
         this.deployService = deployService;
         this.installationIdService = installationIdService;
         this.objectMapper = objectMapper;
+        this.analyticsPackLoader = analyticsPackLoader;
         this.httpClient = httpClient;
     }
 
@@ -109,12 +115,20 @@ public class MarketplaceService {
         List<Map<String, Object>> enriched = new ArrayList<>();
         for (Map<String, Object> listing : listings) {
             Map<String, Object> row = new LinkedHashMap<>(listing);
-            String appId = stringValue(listing.get("appId"));
-            if (appId != null) {
-                row.put("installed", dataStore.findApp(appId).isPresent());
-                snapshotStore.findActive(appId).ifPresent(active ->
-                        row.put("activeVersion", active.bundleVersion())
-                );
+            String artifactKind = stringValue(listing.get("artifactKind"));
+            if ("analytics-pack".equalsIgnoreCase(artifactKind)) {
+                String packId = stringValue(listing.get("packId"));
+                if (packId != null) {
+                    row.put("installed", analyticsPackLoader.isPackInstalled(packId));
+                }
+            } else {
+                String appId = stringValue(listing.get("appId"));
+                if (appId != null) {
+                    row.put("installed", dataStore.findApp(appId).isPresent());
+                    snapshotStore.findActive(appId).ifPresent(active ->
+                            row.put("activeVersion", active.bundleVersion())
+                    );
+                }
             }
             if (endpoint.getContactUrl() != null && !endpoint.getContactUrl().isBlank()) {
                 row.putIfAbsent("marketplaceContactUrl", endpoint.getContactUrl());
@@ -138,6 +152,9 @@ public class MarketplaceService {
         if (!"free".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
             throw new IllegalArgumentException("Listing is not free — use activation with entitlement key");
         }
+        if (isAnalyticsPackListing(detail)) {
+            return installAnalyticsPackListing(endpoint, slug, detail, "free-download");
+        }
         String appId = requireAppId(detail);
         String manifestJson = httpGet(normalizeBaseUrl(endpoint.getBaseUrl())
                 + "/api/v1/catalog/" + encodeSlug(slug) + "/download");
@@ -156,6 +173,37 @@ public class MarketplaceService {
         Map<String, Object> detail = fetchListingDetail(endpoint, slug);
         if (!"paid".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
             throw new IllegalArgumentException("Listing is not paid — use free install");
+        }
+        if (isAnalyticsPackListing(detail)) {
+            String installationId = installationIdService.ensureInstallationId();
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("activationCode", activationCode.trim());
+            body.put("installationId", installationId);
+            body.put("slug", slug);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> activated = postJson(
+                    normalizeBaseUrl(endpoint.getBaseUrl()) + "/api/v1/entitlements/activate",
+                    body,
+                    Map.class
+            );
+            Object artifact = activated.get("artifactBytesBase64");
+            if (artifact == null) {
+                artifact = activated.get("bundle");
+            }
+            if (artifact == null) {
+                throw new IllegalStateException("Marketplace did not return analytics pack artifact");
+            }
+            byte[] zipBytes = decodeArtifactBytes(artifact);
+            Map<String, Object> result = installAnalyticsPackZip(
+                    detail,
+                    zipBytes,
+                    marketplaceId,
+                    slug,
+                    "paid-activation"
+            );
+            result.put("installationId", installationId);
+            return result;
         }
         String appId = requireAppId(detail);
         String installationId = installationIdService.ensureInstallationId();
@@ -197,6 +245,82 @@ public class MarketplaceService {
         result.put("listingSlug", slug);
         result.put("installedFrom", source);
         return result;
+    }
+
+    private Map<String, Object> installAnalyticsPackListing(
+            MarketplaceProperties.Endpoint endpoint,
+            String slug,
+            Map<String, Object> detail,
+            String source
+    ) throws Exception {
+        byte[] zipBytes = httpGetBytes(normalizeBaseUrl(endpoint.getBaseUrl())
+                + "/api/v1/catalog/" + encodeSlug(slug) + "/download");
+        return installAnalyticsPackZip(detail, zipBytes, endpoint.getId(), slug, source);
+    }
+
+    private Map<String, Object> installAnalyticsPackZip(
+            Map<String, Object> detail,
+            byte[] zipBytes,
+            String marketplaceId,
+            String slug,
+            String source
+    ) throws Exception {
+        String packId = requirePackId(detail);
+        List<String> helpers = analyticsPackLoader.installZipArchive(zipBytes, packId);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", "OK");
+        result.put("artifactKind", "analytics-pack");
+        result.put("packId", packId);
+        result.put("functions", helpers);
+        result.put("marketplaceId", marketplaceId);
+        result.put("listingSlug", slug);
+        result.put("installedFrom", source);
+        return result;
+    }
+
+    private static boolean isAnalyticsPackListing(Map<String, Object> detail) {
+        String artifactKind = stringValue(detail.get("artifactKind"));
+        if ("analytics-pack".equalsIgnoreCase(artifactKind)) {
+            return true;
+        }
+        String kind = stringValue(detail.get("kind"));
+        return "analytics-pack".equalsIgnoreCase(kind) || "analytics_pack".equalsIgnoreCase(kind);
+    }
+
+    private static String requirePackId(Map<String, Object> detail) {
+        String packId = stringValue(detail.get("packId"));
+        if (packId == null || packId.isBlank()) {
+            throw new IllegalStateException("Listing has no packId");
+        }
+        return packId;
+    }
+
+    private byte[] decodeArtifactBytes(Object artifact) throws Exception {
+        if (artifact instanceof String encoded && !encoded.isBlank()) {
+            return java.util.Base64.getDecoder().decode(encoded.trim());
+        }
+        if (artifact instanceof byte[] bytes) {
+            return bytes;
+        }
+        if (artifact instanceof Map<?, ?> map && map.get("zipBytesBase64") instanceof String encoded) {
+            return java.util.Base64.getDecoder().decode(encoded.trim());
+        }
+        String json = objectMapper.writeValueAsString(artifact);
+        return json.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private byte[] httpGetBytes(String url) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(Duration.ofSeconds(120))
+                .header("Accept", "application/octet-stream, application/zip, application/json")
+                .GET()
+                .build();
+        HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() >= 400) {
+            throw new MarketplaceRemoteException(response.statusCode(), new String(response.body()));
+        }
+        return response.body();
     }
 
     private Map<String, Object> fetchListingDetail(MarketplaceProperties.Endpoint endpoint, String slug)
@@ -260,6 +384,7 @@ public class MarketplaceService {
                 || containsIgnoreCase(row.get("description"), q)
                 || containsIgnoreCase(row.get("slug"), q)
                 || containsIgnoreCase(row.get("appId"), q)
+                || containsIgnoreCase(row.get("packId"), q)
                 || containsIgnoreCase(row.get("vendorName"), q);
     }
 

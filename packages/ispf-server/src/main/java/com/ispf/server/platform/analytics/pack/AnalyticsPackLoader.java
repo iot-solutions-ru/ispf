@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.ServiceLoader;
 
 @Component
@@ -29,7 +30,7 @@ public class AnalyticsPackLoader {
         }
     }
 
-    void register(AnalyticsFunctionProvider provider) {
+    public void register(AnalyticsFunctionProvider provider) {
         AnalyticsFunctionDescriptor descriptor = provider.getDescriptor();
         if (descriptor == null) {
             log.warn("Skipping analytics provider {}: descriptor is null", provider.getClass().getName());
@@ -72,6 +73,14 @@ public class AnalyticsPackLoader {
                 evaluator
         ));
         log.info("Analytics extension function loaded: helper={} pack={}", helperId, packId);
+    }
+
+    public void unregisterPack(String packId) {
+        extensionRegistry.unregisterPack(packId);
+    }
+
+    public List<String> helpersForPack(String packId) {
+        return extensionRegistry.helpersForPack(packId);
     }
 
     private static String safe(String value) {

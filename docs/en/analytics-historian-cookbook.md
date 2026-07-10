@@ -6,7 +6,9 @@ Recipes for **historian binding rules** (`kind: historian` in `@bindingRules`). 
 
 See [ADR-0041](decisions/0041-multi-tag-historian-computations.md) and [analytics-tag-catalog.md](analytics-tag-catalog.md).
 
-**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–215). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
+**Formula catalog (PI AF–style):** unified catalog, extension packs, and site formulas — [ADR-0042](decisions/0042-analytics-function-catalog.md) (BL-212–216). Use the expression editor catalog for insert/apply; manage saved formulas under **System → Analytics formulas**.
+
+**Full guide (Tier A/B/C, APIs, marketplace packs):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
 
 ---
 
@@ -58,6 +60,15 @@ See [ADR-0041](decisions/0041-multi-tag-historian-computations.md) and [analytic
 | CEL composite | `(hist.avg('a', 't', '5m') + hist.avg('b', 't', '5m')) / 2.0` | `cel` |
 
 Use **double literals** in CEL (`2.0`, not `2`) when mixing with historian expansions.
+
+### Custom formulas (summary)
+
+| Goal | Mechanism | Doc |
+|------|-----------|-----|
+| Reusable template (`{{path}}`, `{{window}}`) | Tier B — **Save as formula** or **System → Analytics formulas** | [§ Tier B](analytics-formulas-and-packs.md#tier-b--user-defined-formulas) |
+| New function like `hist.avg` | Tier C — Java SPI pack; commercial packs via **marketplace** | [§ Tier C](analytics-formulas-and-packs.md#tier-c--extension-packs-java-spi) |
+
+You cannot register a new `hist.*` macro from the UI. Compose with existing `hist.*` / helpers, save as Tier B, or ship Tier C.
 
 ---
 

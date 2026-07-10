@@ -59,7 +59,17 @@ Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace)
 - `GET /api/v1/catalog/{slug}/download` (free)
 - `POST /api/v1/entitlements/activate` (paid)
 
-Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`.
+Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `artifactKind`, `packId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`, `tags`.
+
+### Artifact kinds
+
+| `artifactKind` | Install target | Doc |
+|----------------|----------------|-----|
+| *(default / omitted)* | Application bundle deploy | [applications.md](applications.md) |
+| `symbol-pack` | `ISPF_SYMBOL_PACKS_DIR` | [symbol-marketplace.md](symbol-marketplace.md) |
+| `analytics-pack` | `ISPF_ANALYTICS_PACKS_DIR` | [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md) |
+
+Paid **analytics extension packs** (Tier C historian functions) use the same install/activate API as apps. After install, helpers appear in `GET /api/v1/platform/analytics/catalog` with `pack: <packId>`.
 
 ## Marketplace GA checklist (BL-183)
 
@@ -88,6 +98,7 @@ Reference listing + bundle for marketplace server seeding and integrator tests:
 |------|---------|
 | [examples/marketplace-demo/listing.manifest.json](../examples/marketplace-demo/listing.manifest.json) | Catalog entry fields (slug, vendor, pricing) |
 | [examples/marketplace-demo/bundle.json](../examples/marketplace-demo/bundle.json) | Installable application bundle (`appId=marketplace-demo`) |
+| [examples/marketplace-analytics-pack-demo/listing.manifest.json](../examples/marketplace-analytics-pack-demo/listing.manifest.json) | Tier C analytics pack listing (`artifactKind: analytics-pack`) |
 
 Publish flow (marketplace server):
 
@@ -117,3 +128,4 @@ ISPF only proxies the download; fix is always on the marketplace host. See [ispf
 - [commercial-licensing.md](commercial-licensing.md)
 - [plugins.md](plugins.md)
 - [applications.md](applications.md)
+- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md) — Tier C marketplace packs

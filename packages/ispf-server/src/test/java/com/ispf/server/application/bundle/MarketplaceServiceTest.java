@@ -4,6 +4,7 @@ import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.config.CommercialLicenseProperties;
 import com.ispf.server.config.MarketplaceProperties;
 import com.ispf.server.license.InstallationIdService;
+import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,7 @@ class MarketplaceServiceTest {
                 mock(ApplicationBundleDeployService.class),
                 new InstallationIdService(licenseProperties),
                 new ObjectMapper(),
+                mock(DropInAnalyticsPackLoader.class),
                 java.net.http.HttpClient.newHttpClient()
         );
     }

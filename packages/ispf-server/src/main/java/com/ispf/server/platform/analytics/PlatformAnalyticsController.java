@@ -12,6 +12,7 @@ import com.ispf.server.platform.analytics.frames.EventFrameService;
 import com.ispf.server.platform.analytics.frames.EventFrameType;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
+import com.ispf.server.platform.analytics.engine.AnalyticsEngineService;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
 import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
@@ -54,6 +55,7 @@ public class PlatformAnalyticsController {
     private final AnalyticsQueryExportService analyticsQueryExportService;
     private final EventFrameService eventFrameService;
     private final AnalyticsTagCatalogService tagCatalogService;
+    private final AnalyticsEngineService analyticsEngineService;
     private final AnalyticsCatalogService analyticsCatalogService;
     private final AnalyticsExpressionService expressionService;
     private final AnalyticsFormulaService formulaService;
@@ -70,6 +72,7 @@ public class PlatformAnalyticsController {
             AnalyticsQueryExportService analyticsQueryExportService,
             EventFrameService eventFrameService,
             AnalyticsTagCatalogService tagCatalogService,
+            AnalyticsEngineService analyticsEngineService,
             AnalyticsCatalogService analyticsCatalogService,
             AnalyticsExpressionService expressionService,
             AnalyticsFormulaService formulaService,
@@ -85,6 +88,7 @@ public class PlatformAnalyticsController {
         this.analyticsQueryExportService = analyticsQueryExportService;
         this.eventFrameService = eventFrameService;
         this.tagCatalogService = tagCatalogService;
+        this.analyticsEngineService = analyticsEngineService;
         this.analyticsCatalogService = analyticsCatalogService;
         this.expressionService = expressionService;
         this.formulaService = formulaService;
@@ -112,6 +116,18 @@ public class PlatformAnalyticsController {
     @GetMapping("/tags/by-path")
     public AnalyticsTagCatalogEntry tagByPath(@RequestParam String path) {
         return tagCatalogService.getCatalogEntry(path);
+    }
+
+    /** Dry-run historian tag evaluation via analytics engine (binding rules + builtins). */
+    @GetMapping("/tags/evaluate")
+    public AnalyticsEngineService.TagProbeResult evaluateTag(
+            @RequestParam String path,
+            @RequestParam(required = false) Instant asOf
+    ) {
+        if (path == null || path.isBlank()) {
+            throw new IllegalArgumentException("path is required");
+        }
+        return analyticsEngineService.probeTag(path, asOf);
     }
 
     /** Historian query SLA snapshot: p50/p95 latency vs documented SLO (BL-161). */

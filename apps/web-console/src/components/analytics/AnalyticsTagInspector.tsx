@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   evaluateAnalyticsExpression,
+  evaluateAnalyticsTag,
   fetchAnalyticsTagByPath,
   refreshAnalyticsDerivedTag,
   setVariable,
   validateAnalyticsExpression,
   type AnalyticsTagCatalogEntryDto,
+  type AnalyticsTagEvaluateResult,
+  type AnalyticsExpressionEvaluateResult,
 } from "../../api";
 import type { DataRecord } from "../../types";
 import BindingExpressionField from "../BindingExpressionField";
@@ -30,6 +33,27 @@ function stringRecord(value: string): DataRecord {
     },
     rows: [{ value }],
   };
+}
+
+function historianTagObjectPath(tagPath: string): string {
+  const separator = tagPath.indexOf("#");
+  return separator > 0 ? tagPath.slice(0, separator) : tagPath;
+}
+
+function isTagProbeResult(
+  result: AnalyticsTagEvaluateResult | AnalyticsExpressionEvaluateResult
+): result is AnalyticsTagEvaluateResult {
+  return "outputs" in result;
+}
+
+function formatTagProbeResult(result: AnalyticsTagEvaluateResult): string {
+  if (result.status !== "ok") {
+    return result.message?.trim() || result.status;
+  }
+  const values = Object.entries(result.outputs)
+    .map(([variable, value]) => `${variable}=${value}`)
+    .join(", ");
+  return `${values || "—"} (${result.latencyMs} ms)`;
 }
 
 function formatInstant(value: string | null | undefined): string {
@@ -135,12 +159,23 @@ export default function AnalyticsTagInspector({
     },
   });
 
-  const evaluateMutation = useMutation({
-    mutationFn: () => {
-      const expression = readOnly ? (tagQuery.data?.expression ?? "") : expressionDraft.trim();
-      return evaluateAnalyticsExpression(expression, path);
+  const evaluateMutation = useMutation<
+    AnalyticsTagEvaluateResult | AnalyticsExpressionEvaluateResult,
+    Error,
+    void
+  >({
+    mutationFn: async () => {
+      if (readOnly) {
+        return evaluateAnalyticsTag(path);
+      }
+      const expression = expressionDraft.trim();
+      return evaluateAnalyticsExpression(expression, historianTagObjectPath(path));
     },
     onSuccess: (result) => {
+      if (isTagProbeResult(result)) {
+        setEvalResult(formatTagProbeResult(result));
+        return;
+      }
       setEvalResult(`${result.value} (${result.latencyMs} ms)`);
     },
     onError: (error: Error) => {
@@ -179,7 +214,7 @@ export default function AnalyticsTagInspector({
           <button
             type="button"
             className="btn primary small"
-            disabled={!tag.expression?.trim() || evaluateMutation.isPending}
+            disabled={evaluateMutation.isPending || (!readOnly && !expressionDraft.trim())}
             onClick={() => evaluateMutation.mutate()}
           >
             {t("automation:analyticsTag.evaluate")}
@@ -209,12 +244,12 @@ export default function AnalyticsTagInspector({
                   id="analytics-tag-expression"
                   value={expressionDraft}
                   onChange={setExpressionDraft}
-                  objectPath={path}
+                  objectPath={historianTagObjectPath(path)}
                   entries={ANALYTICS_CEL_BINDING_ENTRIES}
                   placeholder={t("automation:analyticsTag.expressionPlaceholder")}
                   editorTitle={t("automation:analyticsTag.expression")}
                   onValidate={async (expression) => {
-                    const result = await validateAnalyticsExpression(expression, path);
+                    const result = await validateAnalyticsExpression(expression, historianTagObjectPath(path));
                     return {
                       valid: result.valid,
                       error: result.errors[0] ?? null,

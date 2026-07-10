@@ -50,7 +50,8 @@ class AnalyticsCatalogApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("energyDelta"))
                 .andExpect(jsonPath("$.tier").value("C"))
-                .andExpect(jsonPath("$.pack").value("core-ext"));
+                .andExpect(jsonPath("$.pack").value("core-ext"))
+                .andExpect(jsonPath("$.kinds[?(@ == 'historian')]").exists());
     }
 
     @Test

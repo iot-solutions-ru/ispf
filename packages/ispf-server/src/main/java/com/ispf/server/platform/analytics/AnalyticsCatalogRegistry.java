@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * In-memory analytics function catalog (Tier A built-ins + Tier C extensions).
@@ -69,7 +70,7 @@ public class AnalyticsCatalogRegistry {
                         "rollingAvg",
                         "Rolling average",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "rollingAvg(<objectPath.variable>, <windowBucket?>)",
                         List.of(
                                 parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
@@ -85,7 +86,7 @@ public class AnalyticsCatalogRegistry {
                         "rateOfChange",
                         "Rate of change",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "rateOfChange(<objectPath.variable>, <windowBucket?>)",
                         List.of(
                                 parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
@@ -101,7 +102,7 @@ public class AnalyticsCatalogRegistry {
                         "totalizer",
                         "Totalizer",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "totalizer(<objectPath.variable>, <windowBucket?>)",
                         List.of(
                                 parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
@@ -117,7 +118,7 @@ public class AnalyticsCatalogRegistry {
                         "last",
                         "Last sample",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "last(<objectPath.variable>)",
                         List.of(parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null)),
                         "Reads the most recent sample, with live fallback if historian is empty.",
@@ -130,7 +131,7 @@ public class AnalyticsCatalogRegistry {
                         "min",
                         "Minimum in window",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "min(<objectPath.variable>, <windowBucket?>)",
                         List.of(
                                 parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
@@ -146,7 +147,7 @@ public class AnalyticsCatalogRegistry {
                         "max",
                         "Maximum in window",
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         "max(<objectPath.variable>, <windowBucket?>)",
                         List.of(
                                 parameter("source", "string", true, "Path + variable in <objectPath.variable> form", null),
@@ -162,7 +163,7 @@ public class AnalyticsCatalogRegistry {
                         helper,
                         helper,
                         "A",
-                        List.of("helper", "binding-rule"),
+                        List.of("historian"),
                         helper + "(...)",
                         List.of(),
                         "Built-in analytics helper.",
@@ -228,7 +229,7 @@ public class AnalyticsCatalogRegistry {
                     preset.id(),
                     preset.displayName(),
                     "A",
-                    List.of("preset", "binding-rule"),
+                    List.of("historian"),
                     preset.expressionTemplate(),
                     presetParameters(preset),
                     preset.description(),
@@ -321,7 +322,7 @@ public class AnalyticsCatalogRegistry {
                 id,
                 displayName,
                 "C",
-                List.of("helper", "binding-rule"),
+                deriveKindsFromDescriptor(descriptor),
                 syntax,
                 parameters,
                 "Analytics extension function from pack " + function.packId() + ".",
@@ -330,6 +331,25 @@ public class AnalyticsCatalogRegistry {
                 function.packId(),
                 "analytics-catalog-pack-" + id.toLowerCase()
         );
+    }
+
+    private static List<String> deriveKindsFromDescriptor(AnalyticsFunctionDescriptor descriptor) {
+        List<String> kinds = new ArrayList<>();
+        Set<String> tags = descriptor.tags() == null ? Set.of() : descriptor.tags();
+        for (String tag : tags) {
+            if (tag == null || tag.isBlank()) {
+                continue;
+            }
+            String normalized = tag.trim().toLowerCase();
+            if (("historian".equals(normalized) || "reactive".equals(normalized) || "cel".equals(normalized))
+                    && !kinds.contains(normalized)) {
+                kinds.add(normalized);
+            }
+        }
+        if (kinds.isEmpty()) {
+            kinds.add("historian");
+        }
+        return List.copyOf(kinds);
     }
 
     private static List<AnalyticsCatalogParameter> presetParameters(HistorianComputationPresets.Preset preset) {

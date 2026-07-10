@@ -383,6 +383,26 @@ export function validateAnalyticsExpression(
   });
 }
 
+export interface AnalyticsTagEvaluateResult {
+  tagPath: string;
+  helper: string;
+  status: string;
+  outputs: Record<string, number>;
+  message: string | null;
+  latencyMs: number;
+}
+
+export function evaluateAnalyticsTag(
+  path: string,
+  asOf?: string
+): Promise<AnalyticsTagEvaluateResult> {
+  const params = new URLSearchParams({ path });
+  if (asOf) {
+    params.set("asOf", asOf);
+  }
+  return request(`/api/v1/platform/analytics/tags/evaluate?${params.toString()}`);
+}
+
 export function evaluateAnalyticsExpression(
   expression: string,
   objectPath: string,

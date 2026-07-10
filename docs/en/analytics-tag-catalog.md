@@ -41,8 +41,20 @@ Full chain + dashboard: [cookbook Recipe 5](analytics-historian-cookbook.md#reci
 | POST | `/api/v1/platform/analytics/expression/validate` | developer+ | Validate CEL-over-historian expression (BL-211) |
 | POST | `/api/v1/platform/analytics/expression/evaluate` | developer+ | Evaluate expression once (BL-211) |
 | POST | `/api/v1/platform/analytics/query` | operator+ | Multi-tag aligned historian query (BL-206) |
+| GET | `/api/v1/platform/analytics/catalog` | operator+ | Unified function catalog — Tier A/B/C (BL-212) |
+| GET | `/api/v1/platform/analytics/catalog/{functionId}` | operator+ | Single catalog entry metadata |
+| POST | `/api/v1/platform/analytics/catalog/validate` | developer+ | Validate expression against catalog context |
+| GET | `/api/v1/platform/analytics/formulas?scope=site` | developer+ | List Tier B site formulas (BL-214) |
+| GET | `/api/v1/platform/analytics/formulas?scope=app&appId=` | developer+ | List Tier B app formulas |
+| POST | `/api/v1/platform/analytics/formulas` | platform admin | Create user formula |
+| PUT | `/api/v1/platform/analytics/formulas/{id}` | platform admin | Update formula; rebinds `formulaRef` rules |
+| DELETE | `/api/v1/platform/analytics/formulas/{id}` | platform admin | Delete formula |
+| POST | `/api/v1/platform/analytics/formulas/{id}/expand` | developer+ | Expand `{{param}}` template |
+| GET | `/api/v1/platform/analytics/tags/evaluate?path=` | developer+ | Probe historian tag (`objectPath#ruleId`) |
 
 Alias paths `/derived-tags/catalog` may exist on some deployments for WAF compatibility.
+
+**Formulas and extension packs (Tier B/C):** [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md).
 
 ### Catalog entry fields
 
@@ -102,4 +114,5 @@ Legacy BL-160 docs: [reference-asset-analytics.md](reference-asset-analytics.md)
 - [ADR-0040](decisions/0040-unified-computations-ui.md)
 - [ADR-0038](decisions/0038-analytics-platform-architecture.md)
 - [analytics-historian-cookbook.md](analytics-historian-cookbook.md)
+- [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md)
 - [analytics-platform-roadmap.md](analytics-platform-roadmap.md) BL-209 / BL-211

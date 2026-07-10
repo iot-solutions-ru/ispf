@@ -10,6 +10,7 @@ include(
     "packages:ispf-analytics-engine",
     "packages:ispf-analytics-api",
     "packages:ispf-analytics-core-ext",
+    "packages:ispf-analytics-marketplace-demo",
     "packages:ispf-driver-api",
     "packages:ispf-driver-ddk",
     "packages:ispf-server",

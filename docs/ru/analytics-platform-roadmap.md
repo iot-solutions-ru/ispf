@@ -110,6 +110,7 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 | **213** | SPI `ispf-analytics-api` + optional packs JAR | Отраслевые KPI вне ядра |
 | **214** | `@analyticsFormulas` + import из bundle приложения | Параметризованные формулы пользователя |
 | **215** | `formulaRef` на правилах, blueprint/marketplace | Переиспользуемые стандарты площадки |
+| **216** | Marketplace `analytics-pack` + каталог `packs-dir` | Покупка Tier C KPI packs |
 
 **БЛ-212a** — **Готово** (2026-07-10). Catalog API + dormant evaluators (`totalizer`, `min`, `max`, `last`).
 
@@ -120,6 +121,8 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 **БЛ-214** — **Готово** (2026-07-10). CRUD `@analyticsFormulas`, Tier B в каталоге, UI сохранения/применения, import из bundle.
 
 **БЛ-215** — **Готово** (2026-07-10). `formulaRef` в binding rules, sharing через `analyticsFormulasJson` в blueprint, re-expand при сохранении.
+
+**БЛ-216** — **Готово** (локальный install + remote contract). `percentChange` demo pack: `examples/marketplace-analytics-pack-demo/`, `DropInAnalyticsPackLoader`, `POST /api/v1/marketplace/analytics-packs/{id}/install`.
 
 ---
 
@@ -136,5 +139,5 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 | Дата | Изменение |
 |------|-----------|
-| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят |
+| 10.07.2026 | БЛ-212a/b готово; БЛ-213 готово (pack `energyDelta`); ADR-0042 принят; docs [analytics-formulas-and-packs.md](analytics-formulas-and-packs.md); БЛ-216 marketplace analytics packs |
 | 09.07.2026 | Первоначальный charter БЛ-200…210 + ADR-0038 |

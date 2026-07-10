@@ -1,61 +1,39 @@
 package com.ispf.server.application.bundle;
 
 import com.ispf.server.application.data.ApplicationDataStore;
-import org.springframework.core.io.ClassPathResource;
+import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
- * BL-96: published bundle catalog + reference example install.
+ * BL-96: installed solutions catalog (applications + analytics packs).
+ * Marketplace listings install via {@link MarketplaceService}.
  */
 @Service
 public class SolutionCatalogService {
 
-    private static final List<ReferenceExample> REFERENCE_EXAMPLES = List.of(
-            new ReferenceExample(
-                    "mes-reference",
-                    "mes-reference",
-                    "MES Reference",
-                    "Dispatch orders, filling lifecycle, operator journal",
-                    "mes-reference-bundle.json"
-            ),
-            new ReferenceExample(
-                    "warehouse-app",
-                    "warehouse",
-                    "Warehouse Reference",
-                    "Storage locations list via BFF",
-                    "warehouse-bundle.json"
-            ),
-            new ReferenceExample(
-                    "building-hvac-app",
-                    "building-hvac",
-                    "Building HVAC Reference",
-                    "Zone comfort setpoints and Haystack-tagged points",
-                    "building-hvac-bundle.json"
-            )
-    );
-
     private final ApplicationDataStore dataStore;
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final ApplicationBundleDeployService deployService;
+    private final DropInAnalyticsPackLoader analyticsPackLoader;
     private final ObjectMapper objectMapper;
 
     public SolutionCatalogService(
             ApplicationDataStore dataStore,
             ApplicationBundleSnapshotStore snapshotStore,
             ApplicationBundleDeployService deployService,
+            DropInAnalyticsPackLoader analyticsPackLoader,
             ObjectMapper objectMapper
     ) {
         this.dataStore = dataStore;
         this.snapshotStore = snapshotStore;
         this.deployService = deployService;
+        this.analyticsPackLoader = analyticsPackLoader;
         this.objectMapper = objectMapper;
     }
 
@@ -78,52 +56,38 @@ public class SolutionCatalogService {
             installed.add(entry);
         }
         response.put("installed", installed);
-        response.put("referenceExamples", referenceExamples());
+        response.put("installedAnalyticsPacks", analyticsPackLoader.listInstalledPacks());
         return response;
     }
 
-    public Map<String, Object> installReferenceExample(String exampleId) {
-        ReferenceExample example = findReference(exampleId)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown reference example: " + exampleId));
-        try {
-            String json = loadClasspathBundle(example.resourceName());
-            ApplicationBundleDeployService.BundleManifest manifest =
-                    BundleManifestJsonSupport.parse(objectMapper, json);
-            Map<String, Object> deployResult = deployService.deploy(example.appId(), manifest);
-            Map<String, Object> result = new LinkedHashMap<>(deployResult);
-            result.put("exampleId", example.exampleId());
-            result.put("installedFrom", "reference");
-            return result;
-        } catch (IllegalArgumentException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            throw new IllegalStateException("Failed to install reference example " + exampleId + ": " + ex.getMessage(), ex);
+    public Map<String, Object> uninstallApplication(String appId) throws Exception {
+        if (appId == null || appId.isBlank()) {
+            throw new IllegalArgumentException("appId is required");
         }
+        String normalized = appId.trim();
+        if (dataStore.findApp(normalized).isEmpty()) {
+            throw new IllegalArgumentException("Application is not installed: " + normalized);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("appId", normalized);
+        result.put("action", "uninstall");
+        if (snapshotStore.findActive(normalized).isPresent()) {
+            Map<String, Object> removed = deployService.removeBundleObjects(normalized);
+            result.putAll(removed);
+        } else {
+            result.put("status", "OK");
+            result.put("removed", List.of());
+            result.put("skipped", List.of());
+            result.put("errors", List.of());
+        }
+        snapshotStore.deactivateAll(normalized);
+        dataStore.deleteApp(normalized);
+        return result;
     }
 
-    private List<Map<String, Object>> referenceExamples() {
-        return REFERENCE_EXAMPLES.stream().map(example -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("exampleId", example.exampleId());
-            row.put("appId", example.appId());
-            row.put("title", example.title());
-            row.put("description", example.description());
-            row.put("installed", dataStore.findApp(example.appId()).isPresent());
-            snapshotStore.findActive(example.appId()).ifPresent(active ->
-                    row.put("activeVersion", active.bundleVersion())
-            );
-            return row;
-        }).toList();
-    }
-
-    private Optional<ReferenceExample> findReference(String exampleId) {
-        if (exampleId == null || exampleId.isBlank()) {
-            return Optional.empty();
-        }
-        String normalized = exampleId.trim();
-        return REFERENCE_EXAMPLES.stream()
-                .filter(item -> item.exampleId().equals(normalized) || item.appId().equals(normalized))
-                .findFirst();
+    public Map<String, Object> uninstallAnalyticsPack(String packId) throws Exception {
+        return analyticsPackLoader.uninstallPack(packId);
     }
 
     @SuppressWarnings("unchecked")
@@ -147,18 +111,5 @@ public class SolutionCatalogService {
         } catch (Exception ignored) {
             // keep catalog resilient
         }
-    }
-
-    private static String loadClasspathBundle(String resourceName) throws Exception {
-        return new ClassPathResource(resourceName).getContentAsString(StandardCharsets.UTF_8);
-    }
-
-    private record ReferenceExample(
-            String exampleId,
-            String appId,
-            String title,
-            String description,
-            String resourceName
-    ) {
     }
 }

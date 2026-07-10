@@ -13,7 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
-abstract class WindowedHistorianEvaluator implements AnalyticsEvaluator {
+public abstract class WindowedHistorianEvaluator implements AnalyticsEvaluator {
 
     protected List<HistorianPort.HistorianBucket> loadBuckets(
             AnalyticsTagDefinition tag,

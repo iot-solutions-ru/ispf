@@ -30,7 +30,7 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 | **Associate** | Developers new to ISPF | Platform fundamentals course | Object tree, bundles, operator UI deploy |
 | **Professional** | Solution integrators | Associate + 1 shipped project | Drivers, dashboards, automation, federation basics |
 | **Expert** | Lead architects / OEM partners | Professional + 2 production sites | Cluster, historian tiers, MES bundle, agent playbooks |
-| **OEM** | Product vendors (drivers, symbols) | Legal + interop lab | Driver pack signing, marketplace listing, support SLA |
+| **OEM** | Product vendors (drivers, symbols, analytics KPI packs) | Legal + interop lab | Driver / `analytics-pack` signing, marketplace listing, support SLA |
 
 ---
 
@@ -89,7 +89,7 @@ Related: [marketplace.md](marketplace.md), [certification.md](certification.md),
 | Associate | Deploy `lab-training` bundle, add dashboard widget | Operator app loads; widget shows live value |
 | Professional | SNMP or virtual device + alert rule | Driver RUNNING; alert fires on threshold |
 | Expert | Federation bind + MES dispatch screen | Remote device readable; BFF invoke OK |
-| OEM | Submit driver pack + marketplace manifest | Interop CI green; listing validates |
+| OEM | Submit driver pack or analytics pack + marketplace manifest | Interop CI green; listing validates; catalog shows new helpers |
 
 ---
 

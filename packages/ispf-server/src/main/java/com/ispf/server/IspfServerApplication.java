@@ -34,6 +34,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         com.ispf.server.config.NotificationProperties.class,
         com.ispf.server.config.ClusterProperties.class,
         com.ispf.server.config.AnalyticsProperties.class,
+        com.ispf.server.config.AnalyticsPackProperties.class,
         com.ispf.server.config.AnalyticsSloProperties.class,
         com.ispf.server.config.WebSocketProperties.class,
         com.ispf.server.config.MarketplaceProperties.class,

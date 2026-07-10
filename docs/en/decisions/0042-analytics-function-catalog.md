@@ -146,6 +146,8 @@ Pack deliverable:
 
 Commercial industry packs stay **outside `main`** ([ADR-0003](0003-commercial-bundle-licensing.md)).
 
+**Marketplace distribution (BL-216):** paid and free Tier C packs list on the platform marketplace with `artifactKind: analytics-pack`. Install/activate flow matches application bundles; artifacts unpack to `ISPF_ANALYTICS_PACKS_DIR` with RSA license verification. Operator guide: [analytics-formulas-and-packs.md § Buying Tier C packs](../analytics-formulas-and-packs.md#buying-tier-c-packs-on-the-marketplace).
+
 **Near-term quick win:** wire dormant evaluators (`totalizer`, `min`, `max`, `last`) into `HistorianBindingRuleCompiler` and register them in the catalog (no new SPI yet).
 
 ### 5. Custom functions beyond formulas
@@ -179,6 +181,7 @@ Future (out of BL-212–214): **sandboxed** app functions invoked from historian
 | **3** | BL-213 | `ispf-analytics-api` SPI; first open pack (`ispf-analytics-core-ext` or industry demo) |
 | **4** | BL-214 | `@analyticsFormulas` CRUD, “save as formula”, app bundle import |
 | **5** | BL-215 | Blueprint/marketplace sharing; `formulaRef` on binding rules |
+| **6** | BL-216 | Marketplace `analytics-pack` install + `ISPF_ANALYTICS_PACKS_DIR` loader |
 
 Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases 3–5 parallel with OLAP (BL-205).
 
@@ -204,6 +207,7 @@ Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases
 - [ADR-0040](0040-unified-computations-ui.md) — Computations tab
 - [analytics-platform-roadmap.md](../analytics-platform-roadmap.md) — BL-212+
 - [analytics-historian-cookbook.md](../analytics-historian-cookbook.md) — recipes (linked from catalog)
+- [analytics-formulas-and-packs.md](../analytics-formulas-and-packs.md) — operator and vendor guide (Tier A/B/C, marketplace)
 
 ## Changelog
 
