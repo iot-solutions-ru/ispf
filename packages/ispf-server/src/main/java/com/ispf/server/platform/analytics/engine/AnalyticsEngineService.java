@@ -82,11 +82,12 @@ public class AnalyticsEngineService {
             return TickResult.skipped("engine disabled");
         }
         long started = System.nanoTime();
-        List<AnalyticsTagDefinition> tags = catalogService.listEnabledTags();
+        List<AnalyticsTagDefinition> allTags = catalogService.listAllTagDefinitions();
+        List<AnalyticsTagDefinition> tags = allTags.stream().filter(AnalyticsTagDefinition::enabled).toList();
         List<AnalyticsEvaluationResult> engineResults = evaluateWithSession(tags, options);
         int updated = applyEngineResults(engineResults, observedAt);
         metadataService.recordEvaluations(engineResults, observedAt);
-        metadataService.propagateQuality(catalogService.listAllTagDefinitions());
+        metadataService.propagateQuality(allTags);
         long latencyMs = (System.nanoTime() - started) / 1_000_000L;
         metricsRecorder.recordEvaluation(engineResults.size(), latencyMs);
         return new TickResult(true, engineResults.size(), updated, latencyMs, null);

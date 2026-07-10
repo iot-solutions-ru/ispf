@@ -20,6 +20,7 @@ import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.history.HistorianRollupBuckets;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.platform.analytics.engine.AnalyticsEngineScheduler;
+import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
 import com.ispf.server.platform.analytics.engine.HistorianBindingRuleCompiler;
 import com.ispf.server.platform.analytics.formula.BindingFormulaResolver;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
@@ -53,6 +54,7 @@ public class BindingRulesService {
     private final AnalyticsEngineScheduler engineScheduler;
     private final AnalyticsExtensionRegistry extensionRegistry;
     private final BindingFormulaResolver bindingFormulaResolver;
+    private final AnalyticsTagCatalogService tagCatalogService;
     private final ConcurrentHashMap<String, Object> rulesLocks = new ConcurrentHashMap<>();
 
     public BindingRulesService(
@@ -63,7 +65,8 @@ public class BindingRulesService {
             AnalyticsProperties analyticsProperties,
             @Lazy AnalyticsEngineScheduler engineScheduler,
             AnalyticsExtensionRegistry extensionRegistry,
-            BindingFormulaResolver bindingFormulaResolver
+            BindingFormulaResolver bindingFormulaResolver,
+            @Lazy AnalyticsTagCatalogService tagCatalogService
     ) {
         this.objectManager = objectManager;
         this.objectMapper = objectMapper;
@@ -73,6 +76,7 @@ public class BindingRulesService {
         this.engineScheduler = engineScheduler;
         this.extensionRegistry = extensionRegistry;
         this.bindingFormulaResolver = bindingFormulaResolver;
+        this.tagCatalogService = tagCatalogService;
     }
 
     public List<BindingRule> listRules(String objectPath) {
@@ -98,6 +102,7 @@ public class BindingRulesService {
             if (historianChanged) {
                 engineScheduler.syncSchedules();
             }
+            tagCatalogService.invalidateCatalog();
             return normalized;
         }
     }

@@ -3,7 +3,7 @@ package com.ispf.server.platform.analytics.engine;
 import com.ispf.analytics.engine.AnalyticsDagBuilder;
 import com.ispf.analytics.engine.AnalyticsTagDefinition;
 import com.ispf.analytics.engine.HistorianTagPaths;
-import com.ispf.core.object.ObjectType;
+import com.ispf.core.binding.BindingRulesConstants;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.config.AnalyticsProperties;
 import com.ispf.server.object.BindingRulesService;
@@ -13,6 +13,7 @@ import com.ispf.server.platform.analytics.catalog.AnalyticsTagLineageService;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
 import com.ispf.server.platform.analytics.catalog.HistorianRuleMetaService;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,11 @@ public class AnalyticsTagCatalogService {
     private final AnalyticsScheduleRegistry scheduleRegistry;
     private final HistorianRuleMetaService historianRuleMetaService;
     private final AnalyticsExtensionRegistry extensionRegistry;
+    private final JdbcTemplate jdbcTemplate;
+
+    private final Object catalogLock = new Object();
+    private volatile List<AnalyticsTagDefinition> cachedAllTags = List.of();
+    private volatile boolean catalogCacheLoaded;
 
     public AnalyticsTagCatalogService(
             ObjectManager objectManager,
@@ -43,7 +49,8 @@ public class AnalyticsTagCatalogService {
             AnalyticsTagLineageService lineageService,
             AnalyticsScheduleRegistry scheduleRegistry,
             HistorianRuleMetaService historianRuleMetaService,
-            AnalyticsExtensionRegistry extensionRegistry
+            AnalyticsExtensionRegistry extensionRegistry,
+            JdbcTemplate jdbcTemplate
     ) {
         this.objectManager = objectManager;
         this.bindingRulesService = bindingRulesService;
@@ -52,6 +59,15 @@ public class AnalyticsTagCatalogService {
         this.scheduleRegistry = scheduleRegistry;
         this.historianRuleMetaService = historianRuleMetaService;
         this.extensionRegistry = extensionRegistry;
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    /** Drops compiled catalog snapshot after binding-rule or historian config changes. */
+    public void invalidateCatalog() {
+        synchronized (catalogLock) {
+            catalogCacheLoaded = false;
+            cachedAllTags = List.of();
+        }
     }
 
     @Transactional(readOnly = true)
@@ -61,23 +77,54 @@ public class AnalyticsTagCatalogService {
 
     @Transactional(readOnly = true)
     public List<AnalyticsTagDefinition> listAllTagDefinitions() {
-        List<AnalyticsTagDefinition> tags = new ArrayList<>();
-        for (PlatformObject node : objectManager.tree().all()) {
-            if (node.type() != ObjectType.DEVICE) {
-                continue;
+        if (catalogCacheLoaded) {
+            return cachedAllTags;
+        }
+        synchronized (catalogLock) {
+            if (catalogCacheLoaded) {
+                return cachedAllTags;
             }
-            tags.addAll(listTagDefinitionsForObject(node.path()));
+            cachedAllTags = List.copyOf(buildAllTagDefinitions());
+            catalogCacheLoaded = true;
+            return cachedAllTags;
+        }
+    }
+
+    private List<AnalyticsTagDefinition> buildAllTagDefinitions() {
+        List<AnalyticsTagDefinition> tags = new ArrayList<>();
+        Set<String> extensionIds = extensionHelperIds();
+        for (String objectPath : objectPathsWithBindingRules()) {
+            tags.addAll(listTagDefinitionsForObject(objectPath, extensionIds));
         }
         return tags;
     }
 
+    private List<String> objectPathsWithBindingRules() {
+        return jdbcTemplate.queryForList(
+                """
+                        SELECT DISTINCT object_path
+                        FROM object_variables
+                        WHERE name = ?
+                        """,
+                String.class,
+                BindingRulesConstants.RULES_VARIABLE
+        );
+    }
+
     @Transactional(readOnly = true)
     public List<AnalyticsTagDefinition> listTagDefinitionsForObject(String objectPath) {
+        return listTagDefinitionsForObject(objectPath, extensionHelperIds());
+    }
+
+    private List<AnalyticsTagDefinition> listTagDefinitionsForObject(
+            String objectPath,
+            Set<String> extensionIds
+    ) {
         return HistorianBindingRuleCompiler.compileAll(
                 objectPath,
                 bindingRulesService.listRules(objectPath),
                 analyticsProperties,
-                extensionHelperIds()
+                extensionIds
         );
     }
 
@@ -89,10 +136,11 @@ public class AnalyticsTagCatalogService {
 
     @Transactional(readOnly = true)
     public List<AnalyticsTagCatalogEntry> listCatalogEntries(String pathPrefix) {
-        return listAllTagDefinitions().stream()
+        List<AnalyticsTagDefinition> definitions = listAllTagDefinitions();
+        return definitions.stream()
                 .filter(definition -> pathPrefix == null || pathPrefix.isBlank()
                         || definition.objectPath().startsWith(pathPrefix))
-                .map(definition -> toCatalogEntry(definition, listAllTagDefinitions()))
+                .map(definition -> toCatalogEntry(definition, definitions))
                 .toList();
     }
 
