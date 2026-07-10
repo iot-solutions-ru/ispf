@@ -83,6 +83,7 @@ public class PlatformBriefingService {
     private final ApplicationBundleSnapshotStore bundleSnapshotStore;
     private final ObjectManager objectManager;
     private final CacheManager cacheManager;
+    private final PlatformBriefingCacheEpoch briefingCacheEpoch;
     private final Optional<BuildProperties> buildProperties;
 
     public PlatformBriefingService(
@@ -93,6 +94,7 @@ public class PlatformBriefingService {
             ApplicationBundleSnapshotStore bundleSnapshotStore,
             ObjectManager objectManager,
             CacheManager cacheManager,
+            PlatformBriefingCacheEpoch briefingCacheEpoch,
             Optional<BuildProperties> buildProperties
     ) {
         this.aiProperties = aiProperties;
@@ -102,6 +104,7 @@ public class PlatformBriefingService {
         this.bundleSnapshotStore = bundleSnapshotStore;
         this.objectManager = objectManager;
         this.cacheManager = cacheManager;
+        this.briefingCacheEpoch = briefingCacheEpoch;
         this.buildProperties = buildProperties;
     }
 
@@ -120,9 +123,9 @@ public class PlatformBriefingService {
         return buildBriefingUncached(rootPath, includeStaticKnowledge);
     }
 
-    private static String briefingCacheKey(String rootPath, boolean includeStaticKnowledge) {
+    private String briefingCacheKey(String rootPath, boolean includeStaticKnowledge) {
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
-        return effectiveRoot + ":" + includeStaticKnowledge;
+        return briefingCacheEpoch.current() + ":" + effectiveRoot + ":" + includeStaticKnowledge;
     }
 
     private String buildBriefingUncached(String rootPath, boolean includeStaticKnowledge) {

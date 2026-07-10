@@ -6,12 +6,14 @@ import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
+import com.ispf.server.object.pubsub.StructureChangeSubscriptionRegistry;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.Options;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,7 @@ public class NatsEventBridge {
     private final NatsProperties properties;
     private final ClusterProperties clusterProperties;
     private final ObjectMapper objectMapper;
+    private final StructureChangeSubscriptionRegistry structureSubscriptionRegistry;
     private final Connection connection;
     private final NatsJetStreamSupport jetStreamSupport;
 
@@ -36,11 +39,13 @@ public class NatsEventBridge {
             NatsProperties properties,
             ClusterProperties clusterProperties,
             ObjectMapper objectMapper,
+            @Lazy StructureChangeSubscriptionRegistry structureSubscriptionRegistry,
             @Lazy NatsJetStreamSupport jetStreamSupport
     ) {
         this.properties = properties;
         this.clusterProperties = clusterProperties;
         this.objectMapper = objectMapper;
+        this.structureSubscriptionRegistry = structureSubscriptionRegistry;
         this.connection = properties.enabled() ? connect() : null;
         this.jetStreamSupport = jetStreamSupport;
     }
@@ -70,6 +75,9 @@ public class NatsEventBridge {
                 return;
             }
             if (event.telemetry()) {
+                return;
+            }
+            if (shouldSkipStructuralReplicaFanout(event)) {
                 return;
             }
             publishReplicaFanout("ispf.events." + event.type().name().toLowerCase(), buildPayload(event));
@@ -142,6 +150,16 @@ public class NatsEventBridge {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    private boolean shouldSkipStructuralReplicaFanout(ObjectChangeEvent event) {
+        if (event.type() != ObjectChangeType.UPDATED) {
+            return false;
+        }
+        if (event.revision() != null || (event.changedBy() != null && !event.changedBy().isBlank())) {
+            return false;
+        }
+        return !structureSubscriptionRegistry.interest(event.type(), event.path()).liveObserver();
     }
 
     private void publishReplicaFanout(String replicaSubject, byte[] payload) {

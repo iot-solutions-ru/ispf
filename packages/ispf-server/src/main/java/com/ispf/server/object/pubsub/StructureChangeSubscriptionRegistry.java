@@ -12,15 +12,18 @@ public class StructureChangeSubscriptionRegistry {
 
     private final ObjectWebSocketPathInterestRegistry webSocketPathInterest;
     private final FederationExportInterestRegistry federationExportInterest;
+    private final ClusterPathInterestStore clusterPathInterest;
     private final NatsEventBridge natsEventBridge;
 
     public StructureChangeSubscriptionRegistry(
             ObjectWebSocketPathInterestRegistry webSocketPathInterest,
             FederationExportInterestRegistry federationExportInterest,
+            ClusterPathInterestStore clusterPathInterest,
             NatsEventBridge natsEventBridge
     ) {
         this.webSocketPathInterest = webSocketPathInterest;
         this.federationExportInterest = federationExportInterest;
+        this.clusterPathInterest = clusterPathInterest;
         this.natsEventBridge = natsEventBridge;
     }
 
@@ -28,7 +31,9 @@ public class StructureChangeSubscriptionRegistry {
         if (path == null || path.isBlank()) {
             return StructureChangeInterest.NONE;
         }
-        boolean uiRefresh = webSocketPathInterest.hasPathInterest(path);
+        boolean uiRefresh = webSocketPathInterest.hasPathInterest(path)
+                || clusterPathInterest.hasPathInterest(path)
+                || federationExportInterest.hasPathInterest(path);
         boolean platformMaintenance = true;
         boolean federationExport = federationExportInterest.hasPathInterest(path);
         boolean natsBridge = natsEventBridge.isEnabled();

@@ -14,4 +14,9 @@ public record StructureChangeInterest(
     public boolean hasAny() {
         return uiRefresh || platformMaintenance || federationExport || natsBridge;
     }
+
+    /** Live UI / federation / cluster WS path interest (ADR-0024). */
+    public boolean liveObserver() {
+        return uiRefresh;
+    }
 }

@@ -21,4 +21,9 @@ public record VariableChangeInterest(
     public boolean automation() {
         return bindings || alerts || workflows || workflowIndex;
     }
+
+    /** Live UI / federation / cluster WS path interest — an observer exists (ADR-0024). */
+    public boolean liveObserver() {
+        return uiRefresh;
+    }
 }

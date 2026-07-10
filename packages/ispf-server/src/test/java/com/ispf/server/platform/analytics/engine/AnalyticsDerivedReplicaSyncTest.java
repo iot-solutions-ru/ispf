@@ -11,6 +11,8 @@ import com.ispf.server.config.NatsProperties;
 import com.ispf.server.object.ClusterLiveVariableReplicaPublisher;
 import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.object.pubsub.VariableChangeInterest;
+import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
 import com.ispf.server.workflow.NatsEventBridge;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +24,9 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +47,10 @@ class AnalyticsDerivedReplicaSyncTest {
     private PlatformObject node;
     @Mock
     private Variable variable;
+    @Mock
+    private VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
+    @Mock
+    private VariableChangeInterest interest;
 
     private ClusterLiveVariableReplicaPublisher publisher;
 
@@ -52,16 +60,19 @@ class AnalyticsDerivedReplicaSyncTest {
                 clusterProperties,
                 natsProperties,
                 objectManager,
-                natsEventBridge
+                natsEventBridge,
+                variableSubscriptionRegistry
         );
         when(clusterProperties.isLiveVariableSyncActive()).thenReturn(true);
         when(natsProperties.enabled()).thenReturn(true);
         when(natsProperties.replicaEventsEnabled()).thenReturn(true);
-        when(clusterProperties.liveVariableSyncCoalesceEnabled()).thenReturn(false);
+        when(variableSubscriptionRegistry.interest(anyString(), anyString())).thenReturn(interest);
     }
 
     @Test
     void derivedTagConfigWriteFansOutLiveValueSnapshot() {
+        when(interest.liveObserver()).thenReturn(true);
+        when(clusterProperties.isLiveVariableSyncCoalesceActive()).thenReturn(false);
         String path = "root.platform.devices.tag-a";
         Instant observedAt = Instant.parse("2026-07-09T06:00:00Z");
         DataRecord value = DataRecord.single(
@@ -79,6 +90,22 @@ class AnalyticsDerivedReplicaSyncTest {
                 eq(path),
                 eq("derivedValue"),
                 eq(value),
+                eq(observedAt)
+        );
+    }
+
+    @Test
+    void skipsNatsFanOutWhenNoLiveObserver() {
+        when(interest.liveObserver()).thenReturn(false);
+        String path = "root.platform.devices.tag-a";
+        Instant observedAt = Instant.parse("2026-07-09T06:00:00Z");
+
+        publisher.onObjectChange(ObjectChangeEvent.variableUpdated(path, "derivedValue", false, true, observedAt));
+
+        verify(natsEventBridge, never()).publishLiveVariableReplicaSync(
+                eq(path),
+                eq("derivedValue"),
+                org.mockito.ArgumentMatchers.any(),
                 eq(observedAt)
         );
     }

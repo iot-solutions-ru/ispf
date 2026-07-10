@@ -53,6 +53,7 @@ class PlatformBriefingServiceTest {
                 bundleSnapshotStore,
                 objectManager,
                 new ConcurrentMapCacheManager("platformBriefing"),
+                new PlatformBriefingCacheEpoch(),
                 Optional.empty()
         );
     }

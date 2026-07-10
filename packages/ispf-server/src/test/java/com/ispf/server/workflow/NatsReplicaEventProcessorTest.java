@@ -4,16 +4,16 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.object.ClusterStructureReplicaApplier;
 import com.ispf.server.object.ClusterVariableReplicaApplier;
-import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
+import com.ispf.server.object.pubsub.VariableChangeInterest;
+import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.charset.StandardCharsets;
@@ -21,21 +21,25 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class NatsReplicaEventProcessorTest {
 
     @Mock
-    private ApplicationEventPublisher eventPublisher;
-    @Mock
     private ClusterVariableReplicaApplier replicaApplier;
+    @Mock
+    private ClusterStructureReplicaApplier structureReplicaApplier;
+    @Mock
+    private VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
+    @Mock
+    private VariableChangeInterest interest;
 
     private NatsReplicaEventProcessor processor;
 
@@ -69,7 +73,7 @@ class NatsReplicaEventProcessorTest {
                 any(DataRecord.class),
                 eq(Instant.parse("2026-07-10T12:00:00Z"))
         );
-        verify(eventPublisher, never()).publishEvent(any());
+        verify(structureReplicaApplier, never()).apply(any(), anyString(), any());
     }
 
     @Test
@@ -84,12 +88,12 @@ class NatsReplicaEventProcessorTest {
                 """;
         processor.processPayload(json.getBytes(StandardCharsets.UTF_8));
 
-        verify(eventPublisher, never()).publishEvent(any());
+        verify(structureReplicaApplier, never()).apply(any(), anyString(), any());
         verify(replicaApplier, never()).apply(any(), any(), any(), any());
     }
 
     @Test
-    void publishesStructuralReplicaEventLocally() throws Exception {
+    void appliesStructuralReplicaEventViaApplier() throws Exception {
         processor = newProcessor("replica-2");
         String json = """
                 {
@@ -100,10 +104,11 @@ class NatsReplicaEventProcessorTest {
                 """;
         processor.processPayload(json.getBytes(StandardCharsets.UTF_8));
 
-        ArgumentCaptor<ObjectChangeEvent> captor = ArgumentCaptor.forClass(ObjectChangeEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals(ObjectChangeType.CREATED, captor.getValue().type());
-        assertEquals("root.platform.devices.d2", captor.getValue().path());
+        verify(structureReplicaApplier).apply(
+                eq(ObjectChangeType.CREATED),
+                eq("root.platform.devices.d2"),
+                eq(null)
+        );
     }
 
     @Test
@@ -119,7 +124,26 @@ class NatsReplicaEventProcessorTest {
                 """;
         assertTrue(processor.offer(json.getBytes(StandardCharsets.UTF_8)));
         verify(replicaApplier, never()).apply(any(), any(), any(), any());
-        verify(eventPublisher, never()).publishEvent(any());
+        verify(structureReplicaApplier, never()).apply(any(), anyString(), any());
+    }
+
+    @Test
+    void ignoresLiveSnapshotWhenNoObserverOnFollower() throws Exception {
+        processor = newProcessor("replica-2");
+        when(variableSubscriptionRegistry.interest(anyString(), anyString())).thenReturn(interest);
+        when(interest.liveObserver()).thenReturn(false);
+        String json = """
+                {
+                  "type": "VARIABLE_UPDATED",
+                  "path": "root.platform.devices.d1",
+                  "variableName": "temperature",
+                  "source": "replica-1",
+                  "value": {"schema":{"name":"telemetry","fields":[{"name":"value","type":"DOUBLE"}]},"values":{"value":42.5}},
+                  "observedAt": "2026-07-10T12:00:00Z"
+                }
+                """;
+        assertTrue(processor.offer(json.getBytes(StandardCharsets.UTF_8)));
+        verify(replicaApplier, never()).apply(any(), any(), any(), any());
     }
 
     @Test
@@ -145,10 +169,12 @@ class NatsReplicaEventProcessorTest {
         processor = new NatsReplicaEventProcessor(
                 tinyQueue,
                 objectMapper,
-                eventPublisher,
-                replicaApplier
+                replicaApplier,
+                structureReplicaApplier,
+                variableSubscriptionRegistry
         );
-        processor.shutdown();
+        when(variableSubscriptionRegistry.interest(anyString(), anyString())).thenReturn(interest);
+        when(interest.liveObserver()).thenReturn(true);
         DataRecord value = DataRecord.single(
                 DataSchema.builder("telemetry").field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 1.0)
@@ -163,6 +189,7 @@ class NatsReplicaEventProcessorTest {
             body.put("observedAt", "2026-07-10T12:00:00Z");
             assertTrue(processor.offer(objectMapper.writeValueAsBytes(body)));
         }
+        processor.shutdown();
     }
 
     @Test
@@ -188,9 +215,12 @@ class NatsReplicaEventProcessorTest {
         processor = new NatsReplicaEventProcessor(
                 tinyQueue,
                 objectMapper,
-                eventPublisher,
-                replicaApplier
+                replicaApplier,
+                structureReplicaApplier,
+                variableSubscriptionRegistry
         );
+        when(variableSubscriptionRegistry.interest(anyString(), anyString())).thenReturn(interest);
+        when(interest.liveObserver()).thenReturn(true);
         DataRecord value = DataRecord.single(
                 DataSchema.builder("telemetry").field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 1.0)
@@ -206,6 +236,24 @@ class NatsReplicaEventProcessorTest {
 
         for (int i = 0; i < 100; i++) {
             assertTrue(processor.offer(payload), "coalesce should accept duplicate live-variable lane");
+        }
+        processor.shutdown();
+    }
+
+    @Test
+    void structuralUpdatedCoalescesByPath() throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        processor = newProcessor("replica-2", objectMapper);
+        String json = """
+                {
+                  "type": "UPDATED",
+                  "path": "root.platform.devices.d1",
+                  "source": "replica-1"
+                }
+                """;
+        byte[] payload = json.getBytes(StandardCharsets.UTF_8);
+        for (int i = 0; i < 100; i++) {
+            assertTrue(processor.offer(payload), "coalesce should accept duplicate structural UPDATED lane");
         }
         processor.shutdown();
     }
@@ -235,8 +283,9 @@ class NatsReplicaEventProcessorTest {
         return new NatsReplicaEventProcessor(
                 properties,
                 objectMapper,
-                eventPublisher,
-                replicaApplier
+                replicaApplier,
+                structureReplicaApplier,
+                variableSubscriptionRegistry
         );
     }
 }

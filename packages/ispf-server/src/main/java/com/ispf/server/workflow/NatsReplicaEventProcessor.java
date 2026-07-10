@@ -5,18 +5,17 @@ import tools.jackson.databind.ObjectMapper;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.concurrent.ElasticWorkerLauncher;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.object.ClusterStructureReplicaApplier;
 import com.ispf.server.object.ClusterVariableReplicaApplier;
-import com.ispf.server.object.ObjectChangeEvent;
 import com.ispf.server.object.ObjectChangeType;
+import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,8 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Offloads NATS replica-event handling from the single {@code pool-3-thread-1} dispatcher thread.
  * <p>
- * Live variable snapshots use last-value-wins coalesce per {@code (path, variable)} so overload
- * keeps the freshest value instead of filling a FIFO queue with stale duplicates.
+ * Live variable snapshots and structural {@code UPDATED} use last-value-wins coalesce per path key.
  */
 @Component
 @ConditionalOnProperty(prefix = "ispf.nats", name = "enabled", havingValue = "true")
@@ -35,15 +33,17 @@ public class NatsReplicaEventProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(NatsReplicaEventProcessor.class);
     private static final int DRAIN_BATCH = 64;
-    private static final int STRUCTURAL_QUEUE_CAPACITY = 4096;
+    private static final int STRUCTURAL_FIFO_CAPACITY = 4096;
 
     private final NatsProperties properties;
     private final ObjectMapper objectMapper;
-    private final ApplicationEventPublisher eventPublisher;
     private final ClusterVariableReplicaApplier replicaApplier;
+    private final ClusterStructureReplicaApplier structureReplicaApplier;
+    private final VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
     private final int liveLaneCapacity;
     private final ConcurrentHashMap<String, PendingLiveSnapshot> livePendingByKey = new ConcurrentHashMap<>();
-    private final LinkedBlockingQueue<byte[]> structuralQueue;
+    private final ConcurrentHashMap<String, PendingStructural> structuralUpdatedByPath = new ConcurrentHashMap<>();
+    private final LinkedBlockingQueue<PendingStructural> structuralFifo;
     private final Object ingressGate = new Object();
     private final ElasticWorkerLauncher launcher;
     private final AtomicLong dropped = new AtomicLong();
@@ -54,18 +54,20 @@ public class NatsReplicaEventProcessor {
     public NatsReplicaEventProcessor(
             NatsProperties properties,
             ObjectMapper objectMapper,
-            ApplicationEventPublisher eventPublisher,
-            ClusterVariableReplicaApplier replicaApplier
+            ClusterVariableReplicaApplier replicaApplier,
+            ClusterStructureReplicaApplier structureReplicaApplier,
+            VariableChangeSubscriptionRegistry variableSubscriptionRegistry
     ) {
         this.properties = properties;
         this.objectMapper = objectMapper;
-        this.eventPublisher = eventPublisher;
         this.replicaApplier = replicaApplier;
+        this.structureReplicaApplier = structureReplicaApplier;
+        this.variableSubscriptionRegistry = variableSubscriptionRegistry;
         this.liveLaneCapacity = Math.max(1, properties.replicaConsumerQueueCapacity());
-        this.structuralQueue = new LinkedBlockingQueue<>(STRUCTURAL_QUEUE_CAPACITY);
+        this.structuralFifo = new LinkedBlockingQueue<>(STRUCTURAL_FIFO_CAPACITY);
         this.launcher = new ElasticWorkerLauncher(
                 properties.resolvedReplicaConsumerElastic(),
-                () -> livePendingByKey.size(),
+                () -> livePendingByKey.size() + structuralUpdatedByPath.size() + structuralFifo.size(),
                 "nats-replica-consumer",
                 this::drainBatch
         );
@@ -73,12 +75,12 @@ public class NatsReplicaEventProcessor {
         var elastic = properties.resolvedReplicaConsumerElastic();
         log.info(
                 "NATS replica consumer started (threads={}-{}, elastic={}, liveLaneCapacity={}, "
-                        + "structuralQueue={}, liveCoalesce=true, drainBatch={})",
+                        + "structuralFifo={}, structuralUpdatedCoalesce=true, drainBatch={})",
                 elastic.resolvedMinWorkers(),
                 elastic.resolvedMaxWorkers(),
                 elastic.enabled(),
                 liveLaneCapacity,
-                STRUCTURAL_QUEUE_CAPACITY,
+                STRUCTURAL_FIFO_CAPACITY,
                 DRAIN_BATCH
         );
     }
@@ -109,9 +111,12 @@ public class NatsReplicaEventProcessor {
                 }
                 DataRecord value = objectMapper.convertValue(body.get("value"), DataRecord.class);
                 Instant observedAt = parseInstant(body.get("observedAt"));
+                if (!variableSubscriptionRegistry.interest(path, variableName).liveObserver()) {
+                    return true;
+                }
                 return offerLiveSnapshot(path, variableName, value, observedAt);
             }
-            return offerStructural(Arrays.copyOf(payload, payload.length));
+            return offerStructural(type, path, variableName);
         } catch (Exception ex) {
             log.warn("Failed to classify NATS replica event: {}", ex.getMessage());
             return true;
@@ -136,13 +141,16 @@ public class NatsReplicaEventProcessor {
             String variableName = body.get("variableName") != null
                     ? String.valueOf(body.get("variableName"))
                     : null;
-            if (type == ObjectChangeType.VARIABLE_UPDATED && variableName != null && body.containsKey("value")) {
+            if (type == ObjectChangeType.VARIABLE_UPDATED && variableName != null) {
+                if (!body.containsKey("value") || body.get("value") == null) {
+                    return;
+                }
                 DataRecord value = objectMapper.convertValue(body.get("value"), DataRecord.class);
                 Instant observedAt = parseInstant(body.get("observedAt"));
                 replicaApplier.apply(path, variableName, value, observedAt);
                 return;
             }
-            publishStructuralEvent(type, path, variableName);
+            structureReplicaApplier.apply(type, path, variableName);
         } catch (Exception ex) {
             log.warn("Failed to handle NATS replica event: {}", ex.getMessage());
         }
@@ -176,19 +184,34 @@ public class NatsReplicaEventProcessor {
         }
     }
 
-    private boolean offerStructural(byte[] payload) {
+    private boolean offerStructural(ObjectChangeType type, String path, String variableName) {
+        PendingStructural pending = new PendingStructural(type, path, variableName);
         synchronized (ingressGate) {
-            if (structuralQueue.offer(payload)) {
+            if (type == ObjectChangeType.UPDATED) {
+                PendingStructural previous = structuralUpdatedByPath.put(path, pending);
+                if (previous != null) {
+                    coalesced.incrementAndGet();
+                    launcher.signalWork();
+                    return true;
+                }
+                while (structuralUpdatedByPath.size() > liveLaneCapacity) {
+                    if (!evictOtherStructuralUpdatedLane(path)) {
+                        structuralUpdatedByPath.remove(path, pending);
+                        recordDrop();
+                        return false;
+                    }
+                    evicted.incrementAndGet();
+                }
+                launcher.signalWork();
+                return true;
+            }
+            if (structuralFifo.offer(pending)) {
                 launcher.signalWork();
                 return true;
             }
             recordDrop();
             return false;
         }
-    }
-
-    private int pendingDepth() {
-        return livePendingByKey.size() + structuralQueue.size();
     }
 
     private void recordDrop() {
@@ -198,12 +221,13 @@ public class NatsReplicaEventProcessor {
         if (now - last >= 30_000L && lastDropLogAt.compareAndSet(last, now)) {
             log.warn(
                     "NATS replica consumer overloaded; droppedMessages={} coalescedMessages={} "
-                            + "evictedLanes={} livePending={} structuralPending={}",
+                            + "evictedLanes={} livePending={} structuralUpdatedPending={} structuralFifoPending={}",
                     totalDropped,
                     coalesced.get(),
                     evicted.get(),
                     livePendingByKey.size(),
-                    structuralQueue.size()
+                    structuralUpdatedByPath.size(),
+                    structuralFifo.size()
             );
         }
     }
@@ -217,20 +241,44 @@ public class NatsReplicaEventProcessor {
                 processed++;
                 continue;
             }
-            byte[] structural = pollStructural();
+            PendingStructural structuralUpdated = pollStructuralUpdated();
+            if (structuralUpdated != null) {
+                structureReplicaApplier.apply(
+                        structuralUpdated.type(),
+                        structuralUpdated.path(),
+                        structuralUpdated.variableName()
+                );
+                processed++;
+                continue;
+            }
+            PendingStructural structural = pollStructuralFifo();
             if (structural == null) {
                 break;
             }
-            processPayload(structural);
+            structureReplicaApplier.apply(
+                    structural.type(),
+                    structural.path(),
+                    structural.variableName()
+            );
             processed++;
         }
         return processed > 0;
     }
 
-    private byte[] pollStructural() {
+    private PendingStructural pollStructuralFifo() {
         synchronized (ingressGate) {
-            return structuralQueue.poll();
+            return structuralFifo.poll();
         }
+    }
+
+    private PendingStructural pollStructuralUpdated() {
+        Iterator<Map.Entry<String, PendingStructural>> iterator = structuralUpdatedByPath.entrySet().iterator();
+        if (!iterator.hasNext()) {
+            return null;
+        }
+        Map.Entry<String, PendingStructural> entry = iterator.next();
+        iterator.remove();
+        return entry.getValue();
     }
 
     private PendingLiveSnapshot pollLivePending() {
@@ -255,11 +303,16 @@ public class NatsReplicaEventProcessor {
         return false;
     }
 
-    private void publishStructuralEvent(ObjectChangeType type, String path, String variableName) {
-        ObjectChangeEvent event = type == ObjectChangeType.VARIABLE_UPDATED && variableName != null
-                ? ObjectChangeEvent.variableUpdated(path, variableName)
-                : ObjectChangeEvent.of(type, path);
-        eventPublisher.publishEvent(event);
+    private boolean evictOtherStructuralUpdatedLane(String protectedPath) {
+        for (Map.Entry<String, PendingStructural> entry : structuralUpdatedByPath.entrySet()) {
+            if (entry.getKey().equals(protectedPath)) {
+                continue;
+            }
+            if (structuralUpdatedByPath.remove(entry.getKey(), entry.getValue())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String liveVariableKey(String path, String variableName) {
@@ -278,5 +331,8 @@ public class NatsReplicaEventProcessor {
     }
 
     private record PendingLiveSnapshot(String path, String variableName, DataRecord value, Instant observedAt) {
+    }
+
+    private record PendingStructural(ObjectChangeType type, String path, String variableName) {
     }
 }

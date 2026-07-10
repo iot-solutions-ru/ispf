@@ -121,4 +121,17 @@ public record ObjectChangeEvent(
                 ObjectChangeType.EVENT_FIRED, path, eventName, Instant.now(), null, null, false, true, null, false
         );
     }
+
+    /** Follower RAM/WS refresh after NATS structure sync (ADR-0030) — no NATS re-fan-out. */
+    public static ObjectChangeEvent structureReplicaIngress(ObjectChangeType type, String path) {
+        return new ObjectChangeEvent(type, path, null, Instant.now(), null, null, false, false, null, true);
+    }
+
+    public static ObjectChangeEvent structureReplicaIngress(
+            ObjectChangeType type,
+            String path,
+            String variableName
+    ) {
+        return new ObjectChangeEvent(type, path, variableName, Instant.now(), null, null, false, false, null, true);
+    }
 }

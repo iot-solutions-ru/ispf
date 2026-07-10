@@ -3,7 +3,8 @@ package com.ispf.server.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
-import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
+import com.ispf.server.object.pubsub.VariableChangeInterest;
+import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,18 +34,22 @@ class ClusterVariableReplicaApplierTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private ObjectWebSocketPathInterestRegistry webSocketPathInterest;
+    private VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
+
+    @Mock
+    private VariableChangeInterest interest;
 
     private ClusterVariableReplicaApplier applier;
 
     @BeforeEach
     void setUp() {
-        applier = new ClusterVariableReplicaApplier(objectManager, eventPublisher, webSocketPathInterest);
+        applier = new ClusterVariableReplicaApplier(objectManager, eventPublisher, variableSubscriptionRegistry);
+        when(variableSubscriptionRegistry.interest(PATH, VAR)).thenReturn(interest);
     }
 
     @Test
-    void appliesValueAndPublishesReplicaIngressEventWhenPathHasInterest() {
-        when(webSocketPathInterest.hasPathInterest(PATH)).thenReturn(true);
+    void appliesValueAndPublishesReplicaIngressEventWhenLiveObserverExists() {
+        when(interest.liveObserver()).thenReturn(true);
         DataRecord value = DataRecord.single(
                 DataSchema.builder(VAR).field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 42.0)
@@ -63,8 +68,8 @@ class ClusterVariableReplicaApplierTest {
     }
 
     @Test
-    void appliesValueWithoutWsEventWhenPathHasNoInterest() {
-        when(webSocketPathInterest.hasPathInterest(PATH)).thenReturn(false);
+    void skipsApplyWhenNoLiveObserver() {
+        when(interest.liveObserver()).thenReturn(false);
         DataRecord value = DataRecord.single(
                 DataSchema.builder(VAR).field("value", FieldType.DOUBLE).build(),
                 Map.of("value", 42.0)
@@ -72,7 +77,7 @@ class ClusterVariableReplicaApplierTest {
 
         applier.apply(PATH, VAR, value, null);
 
-        verify(objectManager).setDriverTelemetryValueDirect(eq(PATH), eq(VAR), eq(value));
+        verify(objectManager, never()).setDriverTelemetryValueDirect(eq(PATH), eq(VAR), eq(value));
         verify(eventPublisher, never()).publishEvent(org.mockito.ArgumentMatchers.any());
     }
 }

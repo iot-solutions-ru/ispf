@@ -3,6 +3,7 @@ package com.ispf.server.object;
 import com.ispf.core.model.DataRecord;
 import com.ispf.server.config.ClusterProperties;
 import com.ispf.server.config.NatsProperties;
+import com.ispf.server.object.pubsub.VariableChangeSubscriptionRegistry;
 import com.ispf.server.workflow.NatsEventBridge;
 import jakarta.annotation.PreDestroy;
 import org.springframework.context.event.EventListener;
@@ -18,6 +19,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ADR-0029: coalesced NATS fan-out of live variable value snapshots from owner to follower replicas.
+ * <p>
+ * ADR-0024: publishes only when {@link com.ispf.server.object.pubsub.VariableChangeInterest#liveObserver()}
+ * — historian and local automation do not cross-replica NATS fan-out.
  */
 @Component
 public class ClusterLiveVariableReplicaPublisher {
@@ -26,6 +30,7 @@ public class ClusterLiveVariableReplicaPublisher {
     private final NatsProperties natsProperties;
     private final ObjectManager objectManager;
     private final NatsEventBridge natsEventBridge;
+    private final VariableChangeSubscriptionRegistry variableSubscriptionRegistry;
     private final ConcurrentHashMap<String, PendingLiveVariable> pending = new ConcurrentHashMap<>();
     private final AtomicBoolean flushScheduled = new AtomicBoolean();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -38,12 +43,14 @@ public class ClusterLiveVariableReplicaPublisher {
             ClusterProperties clusterProperties,
             NatsProperties natsProperties,
             ObjectManager objectManager,
-            NatsEventBridge natsEventBridge
+            NatsEventBridge natsEventBridge,
+            VariableChangeSubscriptionRegistry variableSubscriptionRegistry
     ) {
         this.clusterProperties = clusterProperties;
         this.natsProperties = natsProperties;
         this.objectManager = objectManager;
         this.natsEventBridge = natsEventBridge;
+        this.variableSubscriptionRegistry = variableSubscriptionRegistry;
     }
 
     @PreDestroy
@@ -60,6 +67,9 @@ public class ClusterLiveVariableReplicaPublisher {
             return;
         }
         if (event.type() != ObjectChangeType.VARIABLE_UPDATED || event.variableName() == null) {
+            return;
+        }
+        if (!variableSubscriptionRegistry.interest(event.path(), event.variableName()).liveObserver()) {
             return;
         }
         DataRecord value = objectManager.tree().findByPath(event.path())
@@ -104,6 +114,9 @@ public class ClusterLiveVariableReplicaPublisher {
         Map<String, PendingLiveVariable> batch = Map.copyOf(pending);
         pending.clear();
         for (PendingLiveVariable update : batch.values()) {
+            if (!variableSubscriptionRegistry.interest(update.path(), update.variableName()).liveObserver()) {
+                continue;
+            }
             natsEventBridge.publishLiveVariableReplicaSync(
                     update.path(),
                     update.variableName(),
