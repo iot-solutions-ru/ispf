@@ -15,7 +15,6 @@ import {
   isCorrelatorsRoot,
 } from "./automationPath";
 import { isEventFilterPath, isEventFiltersRoot } from "./eventFilterPath";
-import { isAnalyticsRoot, isAnalyticsTemplatePath } from "./analyticsPath";
 import { isFederationRoot } from "./federationPath";
 import { isTenantsRoot } from "./tenantPath";
 import { localizedSystemFolderMeta } from "./systemFolderI18n";
@@ -39,7 +38,6 @@ const CATALOG_CONTAINER_TYPES: ReadonlySet<ObjectType> = new Set([
   "ALERT_RULES",
   "CORRELATORS",
   "QUERIES",
-  "ANALYTICS",
   "EVENT_FILTERS",
   "PROCESS_PROGRAMS",
   "MES",
@@ -73,7 +71,6 @@ const EXACT_CATALOG_PATHS: ReadonlySet<string> = new Set([
   "root.platform.alert-rules",
   "root.platform.correlators",
   "root.platform.queries",
-  "root.platform.analytics",
   "root.platform.event-filters",
   "root.platform.process-programs",
   "root.platform.mes",
@@ -126,7 +123,6 @@ function resolveCatalogType(path: string, objectType?: ObjectType): ObjectType |
       "root.platform.alert-rules": "ALERT_RULES",
       "root.platform.correlators": "CORRELATORS",
       "root.platform.queries": "QUERIES",
-      "root.platform.analytics": "ANALYTICS",
       "root.platform.event-filters": "EVENT_FILTERS",
       "root.platform.process-programs": "PROCESS_PROGRAMS",
       "root.platform.applications": "APPLICATIONS",
@@ -159,7 +155,6 @@ export function isSystemCatalogFolder(path: string, objectType?: ObjectType): bo
     || (isAlertRulePath(path) && !isAlertRulesRoot(path))
     || (isCorrelatorPath(path) && !isCorrelatorsRoot(path))
     || (isEventFilterPath(path) && !isEventFiltersRoot(path))
-    || (isAnalyticsTemplatePath(path) && !isAnalyticsRoot(path))
   ) {
     return false;
   }

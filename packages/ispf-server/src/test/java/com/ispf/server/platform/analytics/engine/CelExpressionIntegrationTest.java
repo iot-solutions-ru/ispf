@@ -8,7 +8,6 @@ import com.ispf.core.model.FieldType;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
 import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +33,6 @@ class CelExpressionIntegrationTest {
     private AnalyticsTagCatalogService catalogService;
 
     @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
-
-    @Autowired
     private AnalyticsEngineService engineService;
 
     @Autowired
@@ -50,7 +46,6 @@ class CelExpressionIntegrationTest {
 
     @Test
     void celExpressionDerivedTagEvaluatesFromHistorian() {
-        assetAnalyticsService.ensureCatalog();
         objectManager.setVariableValue(
                 SENSOR,
                 "temperature",

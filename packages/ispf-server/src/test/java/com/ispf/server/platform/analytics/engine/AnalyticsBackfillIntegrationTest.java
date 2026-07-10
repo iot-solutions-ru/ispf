@@ -8,7 +8,6 @@ import com.ispf.core.object.PlatformObject;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
 import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +30,6 @@ class AnalyticsBackfillIntegrationTest {
     private static final String RULE_ID = "backfill-rolling-avg";
 
     @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
-
-    @Autowired
     private AnalyticsBackfillService backfillService;
 
     @Autowired
@@ -47,7 +43,6 @@ class AnalyticsBackfillIntegrationTest {
 
     @Test
     void backfillRecomputesDerivedValueAfterHistorianGap() {
-        assetAnalyticsService.ensureCatalog();
         seedHistorian(30.0);
 
         HistorianComputationTestSupport.upsertRollingAvgRule(

@@ -29,6 +29,9 @@ import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.datasource.DataSourceObjectService;
 import com.ispf.server.migration.MigrationObjectService;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaParameter;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import com.ispf.server.report.ReportService;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.operator.OperatorAppObjectTreeService;
@@ -72,6 +75,7 @@ public class ApplicationBundleDeployService {
     private final BundleDependencyVerifier dependencyVerifier;
     private final ApplicationEventCatalogService eventCatalogService;
     private final BundleVisualGroupService bundleVisualGroupService;
+    private final AnalyticsFormulaService analyticsFormulaService;
 
     public ApplicationBundleDeployService(
             ApplicationDataService dataService,
@@ -97,7 +101,8 @@ public class ApplicationBundleDeployService {
             CommercialBundleLicenseVerifier licenseVerifier,
             BundleDependencyVerifier dependencyVerifier,
             ApplicationEventCatalogService eventCatalogService,
-            BundleVisualGroupService bundleVisualGroupService
+            BundleVisualGroupService bundleVisualGroupService,
+            AnalyticsFormulaService analyticsFormulaService
     ) {
         this.dataService = dataService;
         this.functionStore = functionStore;
@@ -123,6 +128,7 @@ public class ApplicationBundleDeployService {
         this.dependencyVerifier = dependencyVerifier;
         this.eventCatalogService = eventCatalogService;
         this.bundleVisualGroupService = bundleVisualGroupService;
+        this.analyticsFormulaService = analyticsFormulaService;
     }
 
     public Map<String, Object> deploy(String appId, BundleManifest manifest) {
@@ -565,6 +571,17 @@ public class ApplicationBundleDeployService {
             }
         }
 
+        if (manifest.analyticsFormulas() != null && !manifest.analyticsFormulas().isEmpty()) {
+            try {
+                analyticsFormulaService.mergeAppBundleFormulas(appId, manifest.analyticsFormulas().stream()
+                        .map(formula -> toAnalyticsFormula(appId, formula))
+                        .toList());
+                applied.add("analyticsFormulas:" + manifest.analyticsFormulas().size());
+            } catch (Exception ex) {
+                errors.add("analyticsFormulas: " + ex.getMessage());
+            }
+        }
+
         if (manifest.events() != null) {
             try {
                 if (createMissingOnly && !eventCatalogService.listEvents(appId).isEmpty()) {
@@ -802,6 +819,31 @@ public class ApplicationBundleDeployService {
         return ApplicationSchemaSupport.defaultSchemaName(appId);
     }
 
+    private static AnalyticsFormula toAnalyticsFormula(String appId, BundleAnalyticsFormula formula) {
+        List<AnalyticsFormulaParameter> parameters = formula.parameters() == null
+                ? List.of()
+                : formula.parameters().stream()
+                        .map(param -> new AnalyticsFormulaParameter(
+                                param.name(),
+                                param.type(),
+                                param.required(),
+                                param.description(),
+                                param.defaultValue()
+                        ))
+                        .toList();
+        return new AnalyticsFormula(
+                formula.id(),
+                formula.displayName(),
+                formula.kind(),
+                formula.expression(),
+                parameters,
+                formula.createdBy(),
+                formula.version() != null ? formula.version() : 1,
+                AnalyticsFormula.SCOPE_APP,
+                appId
+        );
+    }
+
     private void deployAlertRule(BundleAlertRule rule) {
         String path = AutomationTreeService.rulePathForName(rule.name());
         if (objectManager.tree().findByPath(path).isPresent()) {
@@ -980,6 +1022,7 @@ public class ApplicationBundleDeployService {
             List<BundleAlertRule> alertRules,
             List<BundleCorrelator> correlators,
             List<BundleSchedule> schedules,
+            List<BundleAnalyticsFormula> analyticsFormulas,
             List<BundleEvent> events,
             List<BundleDependency> requires,
             Map<String, Object> license,
@@ -1108,6 +1151,26 @@ public class ApplicationBundleDeployService {
             long intervalMs,
             String actionType,
             Map<String, Object> action
+    ) {
+    }
+
+    public record BundleAnalyticsFormula(
+            String id,
+            String displayName,
+            String kind,
+            String expression,
+            List<BundleAnalyticsFormulaParameter> parameters,
+            String createdBy,
+            Integer version
+    ) {
+    }
+
+    public record BundleAnalyticsFormulaParameter(
+            String name,
+            String type,
+            boolean required,
+            String description,
+            String defaultValue
     ) {
     }
 

@@ -37,17 +37,3 @@ export function resolveAnalyticsAggregateBucket(
   }
   return fallbackBucket;
 }
-
-export function templateFromApiRow(row: {
-  templateId: string;
-  helper: string;
-  windowBucket: string;
-  sourceField?: string;
-}): AnalyticsTemplateRef {
-  return {
-    templateId: row.templateId,
-    helper: row.helper,
-    windowBucket: row.windowBucket,
-    sourceField: row.sourceField,
-  };
-}

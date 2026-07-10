@@ -5,6 +5,9 @@ import com.ispf.analytics.spi.AnalyticsFunctionDescriptor;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogParameter;
 import com.ispf.server.platform.analytics.pack.AnalyticsExtensionRegistry;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaParameter;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -22,9 +25,14 @@ public class AnalyticsCatalogRegistry {
 
     private final Map<String, AnalyticsCatalogEntry> baseEntriesById;
     private final AnalyticsExtensionRegistry extensionRegistry;
+    private final AnalyticsFormulaService formulaService;
 
-    public AnalyticsCatalogRegistry(AnalyticsExtensionRegistry extensionRegistry) {
+    public AnalyticsCatalogRegistry(
+            AnalyticsExtensionRegistry extensionRegistry,
+            AnalyticsFormulaService formulaService
+    ) {
         this.extensionRegistry = extensionRegistry;
+        this.formulaService = formulaService;
         this.baseEntriesById = buildBaseCatalog();
     }
 
@@ -50,6 +58,7 @@ public class AnalyticsCatalogRegistry {
     private Map<String, AnalyticsCatalogEntry> buildEffectiveCatalog() {
         Map<String, AnalyticsCatalogEntry> catalog = new LinkedHashMap<>(baseEntriesById);
         registerPackFunctions(catalog, extensionRegistry);
+        registerUserFormulas(catalog, formulaService.listAllForCatalog());
         return Collections.unmodifiableMap(catalog);
     }
 
@@ -238,6 +247,50 @@ public class AnalyticsCatalogRegistry {
         for (AnalyticsExtensionRegistry.RegisteredAnalyticsFunction function : extensionRegistry.registeredFunctions()) {
             registerIfAbsent(catalog, packEntry(function));
         }
+    }
+
+    private static void registerUserFormulas(
+            Map<String, AnalyticsCatalogEntry> catalog,
+            List<AnalyticsFormula> formulas
+    ) {
+        for (AnalyticsFormula formula : formulas) {
+            registerIfAbsent(catalog, formulaEntry(formula));
+        }
+    }
+
+    private static AnalyticsCatalogEntry formulaEntry(AnalyticsFormula formula) {
+        List<AnalyticsCatalogParameter> parameters = formula.parameters() == null
+                ? List.of()
+                : formula.parameters().stream()
+                        .map(param -> parameter(
+                                param.name(),
+                                param.type(),
+                                param.required(),
+                                param.description(),
+                                param.defaultValue()
+                        ))
+                        .toList();
+        String pack = AnalyticsFormula.SCOPE_APP.equals(formula.scope()) && formula.appId() != null
+                ? "app:" + formula.appId()
+                : "site";
+        List<String> kinds = List.of(formula.kind());
+        List<String> tags = new ArrayList<>(List.of("formula", "user", formula.kind()));
+        if (AnalyticsFormula.SCOPE_APP.equals(formula.scope())) {
+            tags.add("app");
+        }
+        return new AnalyticsCatalogEntry(
+                formula.id(),
+                formula.displayName(),
+                "B",
+                kinds,
+                formula.expression(),
+                parameters,
+                "User-defined analytics formula.",
+                List.of(formula.expression()),
+                List.copyOf(tags),
+                pack,
+                "analytics-catalog-formula-" + formula.id().toLowerCase()
+        );
     }
 
     private static AnalyticsCatalogEntry packEntry(AnalyticsExtensionRegistry.RegisteredAnalyticsFunction function) {

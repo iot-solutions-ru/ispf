@@ -6,7 +6,6 @@ import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
 import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagMetadataService;
@@ -29,9 +28,6 @@ class AnalyticsTagCatalogIntegrationTest {
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
 
     @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
-
-    @Autowired
     private AnalyticsEngineService engineService;
 
     @Autowired
@@ -51,7 +47,6 @@ class AnalyticsTagCatalogIntegrationTest {
 
     @Test
     void lineageGraphShowsThreeTagChainAndPropagatesUncertainQuality() {
-        assetAnalyticsService.ensureCatalog();
         seedHistorianSamples(24.0);
 
         String tagA = createHistorianTag("analytics-catalog-a", SENSOR, "temperature", "derived-a");

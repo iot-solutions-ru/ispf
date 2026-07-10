@@ -4,6 +4,8 @@ import com.ispf.core.model.DataRecord;
 import com.ispf.core.model.DataSchema;
 import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
+import com.ispf.server.plugin.blueprint.BlueprintApplicationService;
+import com.ispf.plugin.blueprint.BlueprintRegistry;
 import com.ispf.server.history.VariableHistoryService;
 import com.ispf.server.object.ObjectManager;
 import org.junit.jupiter.api.Test;
@@ -22,10 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AnalyticsDerivedTagServiceTest {
 
     private static final String DEVICE = "root.platform.devices.demo-sensor-01";
-    private static final String ROLLING_AVG_PATH = "root.platform.analytics.rollingAvg";
-
-    @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
 
     @Autowired
     private AnalyticsDerivedTagService derivedTagService;
@@ -36,9 +34,16 @@ class AnalyticsDerivedTagServiceTest {
     @Autowired
     private ObjectManager objectManager;
 
+    @Autowired
+    private BlueprintApplicationService blueprintApplicationService;
+
+    @Autowired
+    private BlueprintRegistry blueprintRegistry;
+
     @Test
     void refreshWritesDerivedValueFromHistorianAggregate() {
-        assetAnalyticsService.ensureCatalog();
+        applyRollingAvgBlueprint();
+        configureSource("temperature", "1h");
 
         double reading = 42.0;
         for (int i = 0; i < 3; i++) {
@@ -52,18 +57,6 @@ class AnalyticsDerivedTagServiceTest {
             );
             variableHistoryService.recordVariableUpdate(DEVICE, "temperature");
         }
-
-        assetAnalyticsService.applyTemplateToDevice(new AssetAnalyticsService.ApplyTemplateCommand(
-                ROLLING_AVG_PATH,
-                DEVICE,
-                DEVICE,
-                "temperature",
-                "value",
-                "1h",
-                null,
-                null,
-                null
-        ));
 
         AnalyticsDerivedTagService.DerivedTagRefreshResult result = derivedTagService.refreshDevice(DEVICE);
 
@@ -81,32 +74,33 @@ class AnalyticsDerivedTagServiceTest {
 
     @Test
     void refreshSkipsWhenSourceVariableMissing() {
-        assetAnalyticsService.ensureCatalog();
-
-        assetAnalyticsService.applyTemplateToDevice(new AssetAnalyticsService.ApplyTemplateCommand(
-                ROLLING_AVG_PATH,
-                DEVICE,
-                DEVICE,
-                "temperature",
-                "value",
-                "5m",
-                null,
-                null,
-                null
-        ));
-
-        objectManager.setVariableValue(
-                DEVICE,
-                "sourceVariable",
-                DataRecord.single(
-                        DataSchema.builder("stringValue").field("value", FieldType.STRING).build(),
-                        Map.of("value", "")
-                )
-        );
+        applyRollingAvgBlueprint();
+        configureSource("", "5m");
 
         AnalyticsDerivedTagService.DerivedTagRefreshResult result = derivedTagService.refreshDevice(DEVICE);
 
         assertThat(result.status()).isEqualTo("skipped");
         assertThat(result.message()).contains("sourceVariable");
+    }
+
+    private void applyRollingAvgBlueprint() {
+        blueprintRegistry.findByName(AnalyticsBlueprintBootstrap.ROLLING_AVG_MODEL).ifPresent(model ->
+                blueprintApplicationService.applyBlueprintWithRules(model, DEVICE, Map.of())
+        );
+    }
+
+    private void configureSource(String sourceVariable, String windowBucket) {
+        setString(DEVICE, "sourcePath", DEVICE);
+        setString(DEVICE, "sourceVariable", sourceVariable);
+        setString(DEVICE, "sourceField", "value");
+        setString(DEVICE, "windowBucket", windowBucket);
+    }
+
+    private void setString(String path, String name, String value) {
+        objectManager.setVariableValue(
+                path,
+                name,
+                HistorianComputationTestSupport.stringRecord(value)
+        );
     }
 }

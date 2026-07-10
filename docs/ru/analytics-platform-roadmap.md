@@ -117,6 +117,8 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 
 **БЛ-213** — **Готово** (2026-07-10). SPI `ispf-analytics-api`; первый open pack `ispf-analytics-core-ext` (`energyDelta`).
 
+**БЛ-214** — **В процессе** (2026-07-10). CRUD `@analyticsFormulas`, Tier B в каталоге, UI сохранения/применения, import из bundle.
+
 ---
 
 ## Вне scope (БЛ-211+)

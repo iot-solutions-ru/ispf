@@ -3,10 +3,9 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { useQuery } from "@tanstack/react-query";
 import { fetchReport } from "../../api/reports";
-import { fetchAnalyticsTemplates, type AnalyticsQueryTagInput } from "../../api";
+import { type AnalyticsQueryTagInput } from "../../api";
 import type { ChartWidget, DashboardWidget, NetworkGraphWidget } from "../../types/dashboard";
 import { parseAnalyticsQueryTags } from "../../hooks/useAnalyticsMultiSeries";
-import { buildAnalyticsBindingExpression } from "../../utils/analyticsChartBinding";
 import { WIDGET_HISTORY_RANGE_OPTIONS, HISTORY_TABLE_RANGE_IDS } from "../../types/dashboard";
 import {
   DATA_BINDING_HINT_KEYS,
@@ -514,57 +513,6 @@ function ChartAnalyticsQueryTagsField({
   );
 }
 
-function ChartAnalyticsTemplateField({
-  widget,
-  update,
-}: {
-  widget: Extract<DashboardWidget, { type: "chart" }>;
-  update: (patch: Partial<DashboardWidget>) => void;
-}) {
-  const { t } = useTranslation("widgets");
-  const analyticsTemplatesQuery = useQuery({
-    queryKey: ["analytics-templates"],
-    queryFn: fetchAnalyticsTemplates,
-    staleTime: 60_000,
-  });
-
-  return (
-    <label>
-      {t("editor.analyticsTemplate")}
-      <select
-        value={widget.analyticsTemplateId ?? ""}
-        onChange={(e) => {
-          const templateId = e.target.value || undefined;
-          const template = analyticsTemplatesQuery.data?.find((item) => item.templateId === templateId);
-          update({
-            analyticsTemplateId: templateId,
-            analyticsBindingExpression:
-              template && widget.variableName
-                ? buildAnalyticsBindingExpression(
-                    template.helper,
-                    widget.variableName,
-                    template.windowBucket
-                  )
-                : undefined,
-          } as Partial<DashboardWidget>);
-        }}
-      >
-        <option value="">—</option>
-        {(analyticsTemplatesQuery.data ?? []).map((template) => (
-          <option key={template.templateId} value={template.templateId}>
-            {template.displayName} ({template.helper})
-          </option>
-        ))}
-      </select>
-      {widget.analyticsBindingExpression && (
-        <span className="hint">
-          <code>{widget.analyticsBindingExpression}</code>
-        </span>
-      )}
-    </label>
-  );
-}
-
 export function WidgetDataSourceFields(ctx: WidgetFieldContext) {
   const { t } = useTranslation(["widgets", "common"]);
   const { widget, objects, variables, variableSelectEnabled, update } = ctx;
@@ -825,7 +773,6 @@ function renderWidgetTypeFields(ctx: WidgetFieldContext, t: TFunction): ReactNod
       return (
         <>
           <Section title={t("editor.section.chart")} />
-          <ChartAnalyticsTemplateField widget={widget} update={update} />
           <label>
             {t("editor.historyRange")}
             <select

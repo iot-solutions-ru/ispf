@@ -138,6 +138,7 @@ class BundleVisualGroupServiceTest {
                                 "functionName", "demoFn"
                         )
                 )),
+                null,
                 List.of(new ApplicationBundleDeployService.BundleEvent(
                         "demoEvent",
                         List.of("operator"),

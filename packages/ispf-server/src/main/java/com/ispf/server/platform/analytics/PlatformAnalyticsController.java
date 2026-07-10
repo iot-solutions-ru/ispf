@@ -4,10 +4,6 @@ import com.ispf.server.history.HistorianQueryMetricsRecorder;
 import com.ispf.server.config.VariableHistorySloProperties;
 import com.ispf.server.config.AnalyticsSloProperties;
 import com.ispf.server.platform.analytics.AnalyticsDerivedTagService;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
-import com.ispf.server.platform.analytics.AssetAnalyticsService.AnalyticsTemplate;
-import com.ispf.server.platform.analytics.AssetAnalyticsService.ApplyTemplateCommand;
-import com.ispf.server.platform.analytics.AssetAnalyticsService.ApplyTemplateResult;
 import com.ispf.server.platform.analytics.engine.AnalyticsBackfillService;
 import com.ispf.server.history.HistorianRollupMaterializerService;
 import com.ispf.server.platform.analytics.frames.EventFrame;
@@ -17,6 +13,8 @@ import com.ispf.server.platform.analytics.frames.EventFrameType;
 import com.ispf.server.platform.analytics.catalog.AnalyticsCatalogEntry;
 import com.ispf.server.platform.analytics.catalog.AnalyticsTagCatalogEntry;
 import com.ispf.server.platform.analytics.engine.AnalyticsTagCatalogService;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormula;
+import com.ispf.server.platform.analytics.formula.AnalyticsFormulaService;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +42,6 @@ import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 @RequestMapping("/api/v1/platform/analytics")
 public class PlatformAnalyticsController {
 
-    private final AssetAnalyticsService assetAnalyticsService;
     private final AnalyticsDerivedTagService derivedTagService;
     private final HistorianQueryMetricsRecorder historianQueryMetricsRecorder;
     private final VariableHistorySloProperties sloProperties;
@@ -57,9 +54,9 @@ public class PlatformAnalyticsController {
     private final AnalyticsTagCatalogService tagCatalogService;
     private final AnalyticsCatalogService analyticsCatalogService;
     private final AnalyticsExpressionService expressionService;
+    private final AnalyticsFormulaService formulaService;
 
     public PlatformAnalyticsController(
-            AssetAnalyticsService assetAnalyticsService,
             AnalyticsDerivedTagService derivedTagService,
             HistorianQueryMetricsRecorder historianQueryMetricsRecorder,
             VariableHistorySloProperties sloProperties,
@@ -71,9 +68,9 @@ public class PlatformAnalyticsController {
             EventFrameService eventFrameService,
             AnalyticsTagCatalogService tagCatalogService,
             AnalyticsCatalogService analyticsCatalogService,
-            AnalyticsExpressionService expressionService
+            AnalyticsExpressionService expressionService,
+            AnalyticsFormulaService formulaService
     ) {
-        this.assetAnalyticsService = assetAnalyticsService;
         this.derivedTagService = derivedTagService;
         this.historianQueryMetricsRecorder = historianQueryMetricsRecorder;
         this.sloProperties = sloProperties;
@@ -86,36 +83,7 @@ public class PlatformAnalyticsController {
         this.tagCatalogService = tagCatalogService;
         this.analyticsCatalogService = analyticsCatalogService;
         this.expressionService = expressionService;
-    }
-
-    @GetMapping("/templates")
-    public List<AnalyticsTemplate> templates() {
-        return assetAnalyticsService.listTemplates();
-    }
-
-    @GetMapping("/templates/by-path")
-    public AnalyticsTemplate templateByPath(@RequestParam String path) {
-        return assetAnalyticsService.getByPath(path);
-    }
-
-    @PostMapping("/templates")
-    public AnalyticsTemplate createTemplate(@RequestBody AnalyticsTemplate definition) {
-        return assetAnalyticsService.createTemplate(definition);
-    }
-
-    @PutMapping("/templates/by-path")
-    public AnalyticsTemplate updateTemplate(@RequestParam String path, @RequestBody AnalyticsTemplate definition) {
-        return assetAnalyticsService.updateTemplate(path, definition);
-    }
-
-    @DeleteMapping("/templates/by-path")
-    public void deleteTemplate(@RequestParam String path) {
-        assetAnalyticsService.deleteTemplate(path);
-    }
-
-    @PostMapping("/templates/apply")
-    public ApplyTemplateResult applyTemplate(@RequestBody ApplyTemplateCommand command) {
-        return assetAnalyticsService.applyTemplateToDevice(command);
+        this.formulaService = formulaService;
     }
 
     @PostMapping("/derived-tags/refresh")
@@ -215,6 +183,66 @@ public class PlatformAnalyticsController {
         return expressionService.validate(request.expression(), objectPath);
     }
 
+    /** List Tier B user-defined analytics formulas (BL-214). */
+    @GetMapping("/formulas")
+    public List<AnalyticsFormula> listFormulas(
+            @RequestParam(required = false, defaultValue = AnalyticsFormula.SCOPE_SITE) String scope,
+            @RequestParam(required = false) String appId
+    ) {
+        if (AnalyticsFormula.SCOPE_APP.equalsIgnoreCase(scope)) {
+            return formulaService.listAppFormulas(appId);
+        }
+        return formulaService.listSiteFormulas();
+    }
+
+    /** Get a user-defined analytics formula by id (BL-214). */
+    @GetMapping("/formulas/{formulaId}")
+    public AnalyticsFormula getFormula(
+            @PathVariable String formulaId,
+            @RequestParam(required = false, defaultValue = AnalyticsFormula.SCOPE_SITE) String scope,
+            @RequestParam(required = false) String appId
+    ) {
+        return formulaService.get(formulaId, scope, appId);
+    }
+
+    /** Create a Tier B analytics formula (BL-214). */
+    @PostMapping("/formulas")
+    public AnalyticsFormula createFormula(@RequestBody AnalyticsFormula formula) {
+        return formulaService.create(formula);
+    }
+
+    /** Update a Tier B analytics formula (BL-214). */
+    @PutMapping("/formulas/{formulaId}")
+    public AnalyticsFormula updateFormula(
+            @PathVariable String formulaId,
+            @RequestParam(required = false, defaultValue = AnalyticsFormula.SCOPE_SITE) String scope,
+            @RequestParam(required = false) String appId,
+            @RequestBody AnalyticsFormula formula
+    ) {
+        return formulaService.update(formulaId, formula, scope, appId);
+    }
+
+    /** Delete a Tier B analytics formula (BL-214). */
+    @DeleteMapping("/formulas/{formulaId}")
+    public void deleteFormula(
+            @PathVariable String formulaId,
+            @RequestParam(required = false, defaultValue = AnalyticsFormula.SCOPE_SITE) String scope,
+            @RequestParam(required = false) String appId
+    ) {
+        formulaService.delete(formulaId, scope, appId);
+    }
+
+    /** Expand a formula template with parameter values (BL-214). */
+    @PostMapping("/formulas/{formulaId}/expand")
+    public AnalyticsFormulaExpandResponse expandFormula(
+            @PathVariable String formulaId,
+            @RequestBody AnalyticsFormulaExpandRequest request
+    ) {
+        String scope = request.scope() != null ? request.scope() : AnalyticsFormula.SCOPE_SITE;
+        String expression = formulaService.expand(formulaId, request.parameters(), scope, request.appId());
+        return new AnalyticsFormulaExpandResponse(expression);
+    }
+
     /** Evaluate analytics CEL-over-historian expression once (BL-211). */
     @PostMapping("/expression/evaluate")
     public AnalyticsExpressionService.EvaluateResult evaluateExpression(@RequestBody AnalyticsExpressionRequest request) {
@@ -233,6 +261,16 @@ public class PlatformAnalyticsController {
             String expression,
             Map<String, Object> context
     ) {
+    }
+
+    public record AnalyticsFormulaExpandRequest(
+            Map<String, String> parameters,
+            String scope,
+            String appId
+    ) {
+    }
+
+    public record AnalyticsFormulaExpandResponse(String expression) {
     }
 
     /** List active analytics event frames for a scope (BL-208). */

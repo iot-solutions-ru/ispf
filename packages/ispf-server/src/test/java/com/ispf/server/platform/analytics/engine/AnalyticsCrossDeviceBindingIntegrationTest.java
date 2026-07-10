@@ -14,7 +14,6 @@ import com.ispf.server.object.BindingDependencyIndex;
 import com.ispf.server.object.BindingRuleEngine;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
 import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,9 +39,6 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
     private static final DataSchema STRING_VALUE = DataSchema.builder("stringValue")
             .field("value", FieldType.STRING)
             .build();
-
-    @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
 
     @Autowired
     private AnalyticsEngineService engineService;
@@ -74,7 +70,6 @@ class AnalyticsCrossDeviceBindingIntegrationTest {
 
     @Test
     void bindingRuleReadsRemoteDerivedValueAfterEngineWriteBack() {
-        assetAnalyticsService.ensureCatalog();
         seedHistorian(28.0);
 
         HistorianComputationTestSupport.upsertRollingAvgRule(

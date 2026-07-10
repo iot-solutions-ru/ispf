@@ -9,22 +9,20 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Phase 28: asset analytics catalog and built-in derived-tag templates (BL-160).
+ * Registers analytics RELATIVE blueprint models used by historian binding rules (ADR-0041).
+ * Tree catalog {@code root.platform.analytics} / {@code ANALYTICS_TEMPLATE} was removed per ADR-0041.
  */
 @Component
 public class AssetAnalyticsBootstrap {
 
     private final AnalyticsBlueprintBootstrap analyticsBlueprintBootstrap;
-    private final AssetAnalyticsService assetAnalyticsService;
     private final SystemObjectDescriptionReconciler systemObjectDescriptionReconciler;
 
     public AssetAnalyticsBootstrap(
             AnalyticsBlueprintBootstrap analyticsBlueprintBootstrap,
-            AssetAnalyticsService assetAnalyticsService,
             SystemObjectDescriptionReconciler systemObjectDescriptionReconciler
     ) {
         this.analyticsBlueprintBootstrap = analyticsBlueprintBootstrap;
-        this.assetAnalyticsService = assetAnalyticsService;
         this.systemObjectDescriptionReconciler = systemObjectDescriptionReconciler;
     }
 
@@ -33,7 +31,6 @@ public class AssetAnalyticsBootstrap {
     @Transactional
     public void onReady() {
         analyticsBlueprintBootstrap.ensureAnalyticsModels();
-        assetAnalyticsService.ensureCatalog();
         systemObjectDescriptionReconciler.reconcile();
     }
 }

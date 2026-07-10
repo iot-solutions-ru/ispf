@@ -418,6 +418,8 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 **BL-213** — **Done** (2026-07-10). `ispf-analytics-api` SPI; first open pack `ispf-analytics-core-ext` (`energyDelta`).
 
+**BL-214** — **In progress** (2026-07-10). `@analyticsFormulas` CRUD, catalog Tier B, save/apply UI, bundle import.
+
 ## Out of scope (post BL-215)
 
 | Topic | Rationale |

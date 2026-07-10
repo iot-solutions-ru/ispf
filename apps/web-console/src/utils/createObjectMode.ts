@@ -9,7 +9,6 @@ import {
 import type { ObjectType } from "../types";
 import { BINDINGS_ROOT, DATA_SOURCES_ROOT, MIGRATIONS_ROOT, SCHEDULES_ROOT } from "./platformSqlPath";
 import {
-  ANALYTICS_ROOT,
   QUERIES_ROOT,
   isMesCatalogContainer,
   isPlatformCatalogContainer,
@@ -34,8 +33,7 @@ export type CreateDialogMode =
   | "schedule"
   | "query"
   | "event-filter"
-  | "process-program"
-  | "analytics-template";
+  | "process-program";
 
 export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   if (parentPath === APPLICATIONS_ROOT) {
@@ -70,9 +68,6 @@ export function resolveCreateDialogMode(parentPath: string): CreateDialogMode {
   }
   if (parentPath === PROCESS_PROGRAMS_ROOT) {
     return "process-program";
-  }
-  if (parentPath === ANALYTICS_ROOT) {
-    return "analytics-template";
   }
   if (isPlatformReportsFolder(parentPath)) {
     return "report";
@@ -184,7 +179,6 @@ const CONTAINER_OBJECT_TYPES: ObjectType[] = [
   "ALERT_RULES",
   "CORRELATORS",
   "QUERIES",
-  "ANALYTICS",
   "EVENT_FILTERS",
   "PROCESS_PROGRAMS",
   "DATA_SOURCES",
@@ -220,7 +214,6 @@ export function canCreateChildAt(path: string, objectType: ObjectType | undefine
     || path === QUERIES_ROOT
     || path === EVENT_FILTERS_ROOT
     || path === PROCESS_PROGRAMS_ROOT
-    || path === ANALYTICS_ROOT
   ) {
     return true;
   }
@@ -279,9 +272,6 @@ export function defaultObjectTypeForParent(parentPath: string): ObjectType {
   }
   if (parentPath.endsWith(".queries")) {
     return "QUERY";
-  }
-  if (parentPath.endsWith(".analytics")) {
-    return "ANALYTICS_TEMPLATE";
   }
   if (parentPath.endsWith(".event-filters")) {
     return "EVENT_FILTER";

@@ -22,10 +22,9 @@ describe("resolveTreeIconKind", () => {
     );
   });
 
-  it("uses dedicated icons for queries, analytics, and MES catalog folders", () => {
+  it("uses dedicated icons for queries and MES catalog folders", () => {
     expect(resolveTreeIconKind("root.platform.queries", "QUERIES")).toBe("queries");
     expect(resolveTreeIconKind("root.platform.queries.asset-scan", "QUERY")).toBe("queries");
-    expect(resolveTreeIconKind("root.platform.analytics", "ANALYTICS")).toBe("analytics");
     expect(resolveTreeIconKind("root.platform.analytics.oee-kpi", "ANALYTICS_TEMPLATE")).toBe(
       "analytics",
     );

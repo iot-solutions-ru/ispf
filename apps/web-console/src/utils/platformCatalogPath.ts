@@ -1,6 +1,5 @@
 /** Platform catalog folder paths that accept new child instances from Explorer. */
 export const QUERIES_ROOT = "root.platform.queries";
-export const ANALYTICS_ROOT = "root.platform.analytics";
 
 const PLATFORM_CATALOG_SUFFIXES = [
   ".devices",
@@ -19,7 +18,6 @@ const PLATFORM_CATALOG_SUFFIXES = [
   ".bindings",
   ".migrations",
   ".queries",
-  ".analytics",
   ".event-filters",
   ".process-programs",
   ".mes",

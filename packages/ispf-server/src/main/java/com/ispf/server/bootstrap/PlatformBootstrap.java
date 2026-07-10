@@ -43,7 +43,6 @@ public class PlatformBootstrap {
         register(tree, "root.platform.correlators", ObjectType.CORRELATORS, null);
         register(tree, "root.platform.workflows", ObjectType.WORKFLOWS, null);
         register(tree, "root.platform.queries", ObjectType.QUERIES, null);
-        register(tree, "root.platform.analytics", ObjectType.ANALYTICS, null);
         register(tree, "root.platform.event-filters", ObjectType.EVENT_FILTERS, null);
         register(tree, ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, ObjectType.PROCESS_PROGRAMS, null);
         register(tree, "root.platform.mes", ObjectType.MES, null);

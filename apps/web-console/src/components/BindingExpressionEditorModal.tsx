@@ -13,6 +13,7 @@ import {
 } from "../utils/platformBindings";
 import type { BindingExpressionValidator } from "../utils/bindingExpressionValidation";
 import AnalyticsFormulaBrowser from "./analytics/AnalyticsFormulaBrowser";
+import SaveAnalyticsFormulaModal from "./analytics/SaveAnalyticsFormulaModal";
 
 export interface BindingExpressionEditorModalProps extends BindingBuilderContext {
   open: boolean;
@@ -82,6 +83,7 @@ export default function BindingExpressionEditorModal({
   const [catalogOpen, setCatalogOpen] = useState(true);
   const [catalogQuery, setCatalogQuery] = useState("");
   const [composingId, setComposingId] = useState<string | null>(null);
+  const [saveFormulaOpen, setSaveFormulaOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -198,6 +200,16 @@ export default function BindingExpressionEditorModal({
           >
             {t("bindingExpression.validate")}
           </button>
+          {analyticsCatalogKind && (
+            <button
+              type="button"
+              className="btn small"
+              disabled={disabled || !draft.trim()}
+              onClick={() => setSaveFormulaOpen(true)}
+            >
+              {t("formula.saveAs")}
+            </button>
+          )}
         </div>
 
         {variableNames.length > 0 && (
@@ -321,6 +333,14 @@ export default function BindingExpressionEditorModal({
           <span className="hint error">{(validateMutation.error as Error).message}</span>
         )}
       </div>
+      {analyticsCatalogKind && (
+        <SaveAnalyticsFormulaModal
+          open={saveFormulaOpen}
+          expression={draft}
+          defaultKind={analyticsCatalogKind}
+          onClose={() => setSaveFormulaOpen(false)}
+        />
+      )}
     </Modal>
   );
 }

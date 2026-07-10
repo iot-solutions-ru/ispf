@@ -29,10 +29,9 @@ import {
   isProcessProgramsRoot,
 } from "../utils/processProgramPath";
 import { isEventFilterPath, isEventFiltersRoot } from "../utils/eventFilterPath";
-import { isAnalyticsTagDevice, isAnalyticsTemplatePath } from "../utils/analyticsPath";
+import { isAnalyticsTagDevice } from "../utils/analyticsPath";
 import AlertRuleInspector from "./automation/AlertRuleInspector";
 import EventFilterInspector from "./automation/EventFilterInspector";
-import AnalyticsTemplateInspector from "./analytics/AnalyticsTemplateInspector";
 import AnalyticsTagInspector from "./analytics/AnalyticsTagInspector";
 import AutomationRulesListPanel from "./automation/AutomationRulesListPanel";
 import CorrelatorInspector from "./automation/CorrelatorInspector";
@@ -100,7 +99,6 @@ export default function ExplorerView({
   const isProcessProgramsFolder = isProcessProgramsRoot(selectedPath);
   const isEventFilter = isEventFilterPath(selectedPath);
   const isEventFiltersFolder = isEventFiltersRoot(selectedPath);
-  const isAnalyticsTemplate = isAnalyticsTemplatePath(selectedPath);
   const isAnalyticsTag = isAnalyticsTagDevice(selectedObject);
   const isFederation = isFederationRoot(selectedPath);
   const isTenants = isTenantsRoot(selectedPath);
@@ -130,7 +128,6 @@ export default function ExplorerView({
     || isProcessProgramsFolder
     || isEventFilter
     || isEventFiltersFolder
-    || isAnalyticsTemplate
     || isAnalyticsTag
     || isFederation
     || isTenants
@@ -200,13 +197,6 @@ export default function ExplorerView({
         <ProcessProgramInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isEventFilter ? (
         <EventFilterInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
-      ) : isAnalyticsTemplate ? (
-        <AnalyticsTemplateInspector
-          key={selectedPath}
-          path={selectedPath}
-          canManage={canConfigure}
-          onDeleted={onDeleted}
-        />
       ) : isAnalyticsTag ? (
         <AnalyticsTagInspector key={selectedPath} path={selectedPath} canManage={canConfigure} />
       ) : isFederation ? (

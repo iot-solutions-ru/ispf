@@ -21,7 +21,6 @@ public final class SystemObjectTypeResolver {
             Map.entry("root.platform.alert-rules", ObjectType.ALERT_RULES),
             Map.entry("root.platform.correlators", ObjectType.CORRELATORS),
             Map.entry("root.platform.queries", ObjectType.QUERIES),
-            Map.entry("root.platform.analytics", ObjectType.ANALYTICS),
             Map.entry("root.platform.event-frames", ObjectType.EVENT_FRAMES),
             Map.entry("root.platform.event-filters", ObjectType.EVENT_FILTERS),
             Map.entry(ProcessProgramPaths.PROCESS_PROGRAMS_ROOT, ObjectType.PROCESS_PROGRAMS),

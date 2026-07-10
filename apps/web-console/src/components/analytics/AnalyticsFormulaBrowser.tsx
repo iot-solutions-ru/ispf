@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
+import ApplyAnalyticsFormulaModal from "./ApplyAnalyticsFormulaModal";
 
 export type AnalyticsFormulaKindFilter = "historian" | "reactive";
 
@@ -54,6 +55,7 @@ export default function AnalyticsFormulaBrowser({
   const [search, setSearch] = useState("");
   const [kindFilter, setKindFilter] = useState<AnalyticsFormulaKindFilter>(defaultKind);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [applyEntry, setApplyEntry] = useState<AnalyticsCatalogEntryDto | null>(null);
   const selectedQuery = useAnalyticsCatalogFunction(selectedId, catalogQuery.hasRemoteEntries);
 
   const remoteFiltered = useMemo(() => {
@@ -110,18 +112,31 @@ export default function AnalyticsFormulaBrowser({
                     <span className="platform-binding-catalog-category">{entry.displayName}</span>
                     <span className="inline-badge">{entry.tier}</span>
                   </div>
-                  <code className="platform-binding-catalog-snippet">{buildInsertSnippet(entry)}</code>
+                  <code className="platform-binding-catalog-snippet">
+                    {entry.tier === "B" ? entry.syntax : buildInsertSnippet(entry)}
+                  </code>
                   <p className="hint">{entry.description}</p>
                 </button>
                 <div className="platform-binding-catalog-actions">
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    disabled={disabled}
-                    onClick={() => onInsert(buildInsertSnippet(entry))}
-                  >
-                    {t("catalog.insert")}
-                  </button>
+                  {entry.tier === "B" ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      disabled={disabled}
+                      onClick={() => setApplyEntry(entry)}
+                    >
+                      {t("formula.use")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      disabled={disabled}
+                      onClick={() => onInsert(buildInsertSnippet(entry))}
+                    >
+                      {t("catalog.insert")}
+                    </button>
+                  )}
                 </div>
               </div>
               {selectedId === entry.id && selectedQuery.data && (
@@ -158,6 +173,12 @@ export default function AnalyticsFormulaBrowser({
           ))}
         </ul>
       )}
+      <ApplyAnalyticsFormulaModal
+        open={applyEntry != null}
+        entry={applyEntry}
+        onClose={() => setApplyEntry(null)}
+        onApply={onInsert}
+      />
     </div>
   );
 }

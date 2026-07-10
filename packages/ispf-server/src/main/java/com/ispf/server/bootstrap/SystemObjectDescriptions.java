@@ -5,7 +5,6 @@ import com.ispf.server.binding.SqlBindingObjectService;
 import com.ispf.server.datasource.DataSourcePathResolver;
 import com.ispf.server.federation.FederationPaths;
 import com.ispf.server.migration.MigrationObjectService;
-import com.ispf.server.platform.analytics.AssetAnalyticsPaths;
 import com.ispf.server.process.ProcessProgramPaths;
 import com.ispf.server.schedule.ScheduleObjectService;
 import com.ispf.server.security.PlatformUserService;
@@ -131,10 +130,6 @@ public final class SystemObjectDescriptions {
         map.put("root.platform.queries", new Entry("Queries", """
                 Cross-object query catalog. Each QUERY child defines a dynamic scan or SQL projection over the object tree \
                 (sourcePathPattern, fieldsJson, optional CEL filterExpression). QueryDefinitionService.execute runs tree-scan queries."""));
-        map.put(AssetAnalyticsPaths.ANALYTICS_ROOT, new Entry("Analytics", """
-                Asset analytics template catalog (Phase 28). Each ANALYTICS_TEMPLATE child describes a derived-tag \
-                helper (rolling average, rate of change) with historian window/bucket settings. \
-                Apply linked RELATIVE blueprints (rolling-avg-v1, rate-of-change-v1) to devices for AF-like lite KPIs."""));
         map.put("root.platform.event-filters", new Entry("Event Filters", """
                 Reusable event journal filter catalog. Each EVENT_FILTER child stores eventNamePattern, sourceObjectPathPattern, \
                 severity range, time window, and optional CEL filterExpression for operator event log views and automation pre-filters."""));

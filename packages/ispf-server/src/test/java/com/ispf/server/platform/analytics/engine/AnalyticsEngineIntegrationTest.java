@@ -8,7 +8,6 @@ import com.ispf.core.model.FieldType;
 import com.ispf.core.object.PlatformObject;
 import com.ispf.server.object.BindingRulesService;
 import com.ispf.server.object.ObjectManager;
-import com.ispf.server.platform.analytics.AssetAnalyticsService;
 import com.ispf.server.platform.analytics.HistorianComputationTestSupport;
 import com.ispf.server.history.VariableHistoryService;
 import org.junit.jupiter.api.Test;
@@ -30,9 +29,6 @@ class AnalyticsEngineIntegrationTest {
     private static final String SENSOR = "root.platform.devices.demo-sensor-01";
 
     @Autowired
-    private AssetAnalyticsService assetAnalyticsService;
-
-    @Autowired
     private AnalyticsEngineService engineService;
 
     @Autowired
@@ -49,7 +45,6 @@ class AnalyticsEngineIntegrationTest {
 
     @Test
     void threeTagChainCompletesWithinPeriodicTick() {
-        assetAnalyticsService.ensureCatalog();
         seedHistorianSamples(24.0);
 
         String tagA = createHistorianTag("analytics-chain-a", SENSOR, "temperature", "derived-a");
@@ -71,7 +66,6 @@ class AnalyticsEngineIntegrationTest {
 
     @Test
     void totalizerHistorianRuleEvaluatesOk() {
-        assetAnalyticsService.ensureCatalog();
         seedHistorianSamples(12.5);
 
         String ruleId = "totalizer-rule";

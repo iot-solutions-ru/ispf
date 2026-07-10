@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
 import {
   Area,
   AreaChart,
@@ -17,8 +16,6 @@ import {
 } from "recharts";
 import type { ChartWidget } from "../../../types/dashboard";
 import { widgetHistoryRangeLabel } from "../../../types/dashboard";
-import { fetchAnalyticsTemplates } from "../../../api";
-import { templateFromApiRow } from "../../../utils/analyticsChartBinding";
 import { useChartTrendSeries } from "../../../hooks/useChartTrendSeries";
 import type { TrendPoint } from "../../../hooks/useTrendSeries";
 import { useAnalyticsMultiSeries, type AnalyticsMultiSeriesPoint } from "../../../hooks/useAnalyticsMultiSeries";
@@ -81,20 +78,6 @@ export default function ChartWidgetView({
   const objectPath = useWidgetObjectPath(widget.objectPath, widget.selectionKey);
   const styles = useWidgetStyles(widget.stylesJson);
 
-  const templatesQuery = useQuery({
-    queryKey: ["analytics-templates"],
-    queryFn: fetchAnalyticsTemplates,
-    staleTime: 60_000,
-    enabled: Boolean(widget.analyticsTemplateId),
-  });
-  const analyticsTemplate = useMemo(() => {
-    if (!widget.analyticsTemplateId) {
-      return null;
-    }
-    const row = templatesQuery.data?.find((item) => item.templateId === widget.analyticsTemplateId);
-    return row ? templateFromApiRow(row) : null;
-  }, [widget.analyticsTemplateId, templatesQuery.data]);
-
   const series = useChartTrendSeries(
     objectPath,
     widget.variableName ?? "",
@@ -103,7 +86,7 @@ export default function ChartWidgetView({
     maxPoints,
     historyRange,
     chartMode,
-    analyticsTemplate
+    null
   );
   const hasMultiQueryTags = Boolean(widget.analyticsQueryTagsJson?.trim());
   const multiSeries = useAnalyticsMultiSeries(

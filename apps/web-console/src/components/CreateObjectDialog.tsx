@@ -131,8 +131,6 @@ export default function CreateObjectDialog({
         return t("dialog.newEventFilter");
       case "process-program":
         return t("dialog.newProcessProgram");
-      case "analytics-template":
-        return t("dialog.newAnalyticsTemplate");
       default:
         return presetType === "VISUAL_GROUP"
           ? t("dialog.newVisualGroup")
@@ -337,16 +335,6 @@ export default function CreateObjectDialog({
         });
         return obj.path;
       }
-      if (mode === "analytics-template") {
-        const obj = await createObject({
-          parentPath,
-          name,
-          type: "ANALYTICS_TEMPLATE",
-          displayName: displayName || name,
-          description,
-        });
-        return obj.path;
-      }
       if (selectedInstanceModel) {
         const obj = await instantiateBlueprint(selectedInstanceModel.id, parentPath, name, {});
         return obj.path;
@@ -449,7 +437,7 @@ export default function CreateObjectDialog({
           {mode === "schedule" && (
             <p className="hint">{t("dialog.scheduleHint")}</p>
           )}
-          {(mode === "query" || mode === "event-filter" || mode === "process-program" || mode === "analytics-template") && (
+          {(mode === "query" || mode === "event-filter" || mode === "process-program") && (
             <p className="hint">{t(`dialog.${mode}Hint`, { path: parentPath })}</p>
           )}
           <form
@@ -694,7 +682,7 @@ export default function CreateObjectDialog({
             )}
 
             {(mode === "object" || mode === "data-source" || mode === "migration" || mode === "sql-binding"
-              || mode === "query" || mode === "event-filter" || mode === "process-program" || mode === "analytics-template") && (
+              || mode === "query" || mode === "event-filter" || mode === "process-program") && (
               <label className="full">
                 {t("common:field.description")}
                 <textarea
