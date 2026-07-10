@@ -1,8 +1,8 @@
 # ISPF competitive scorecard (BL-189)
 
-Public readiness matrix for Phase 25–33 Excellence Program (see unified [roadmap.md](roadmap.md)). **Authoritative current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
+Public readiness matrix for Phases 25–33 (see unified [roadmap.md](roadmap.md)). **Current column:** **Code verified** — evidence from `main` source and tests (release **0.9.102**, July 2026).
 
-Scale **1–10** vs best-in-class: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.
+Scale **1–10** vs leading platforms: Ignition, Kepware/KEPServerEX, OSIsoft PI, Siemens Opcenter, Tulip, mature context-tree IIoT platforms.
 
 | # | Dimension | Baseline (Phase 24) | **Code verified (0.9.102)** | Target | Phase / BL |
 |---|-----------|:-------------------:|:---------------------------:|:------:|------------|
@@ -29,7 +29,7 @@ Scale **1–10** vs best-in-class: Ignition, Kepware/KEPServerEX, OSIsoft PI, Si
 
 ## Definition of done (10/10 overall)
 
-From [roadmap.md](roadmap.md) (Excellence Program / DoD). Status on **0.9.102**:
+From [roadmap.md](roadmap.md) (Phases 25–33 / DoD). Status on **0.9.102**:
 
 | Criterion | Status |
 |-----------|--------|
@@ -44,7 +44,7 @@ From [roadmap.md](roadmap.md) (Excellence Program / DoD). Status on **0.9.102**:
 
 Evidence classes: **REAL** (runtime + tests), **PARTIAL** (core works, known gaps), **STUB** (explicit placeholder in source).
 
-| # | Dimension | Score | Verdict | Key evidence |
+| # | Dimension | Score | Assessment | Key evidence |
 |---|-----------|:-----:|---------|--------------|
 | 1 | Unified data model | 8.5 | **REAL** | Object tree, CEL, blueprints; `AlertRuleListener` → `AlertRuleService`; correlators in `EventCorrelatorService` |
 | 2 | SCADA / HMI | 7.5 | **REAL** | `ispf-pid-v1` manifest `totalSymbols: 218`; `ScadaMimicEditor.tsx`; video wall in `dashboardLayoutPresets.ts`; e2e FPS in `quality-gates.spec.ts` (mocked operator API) |

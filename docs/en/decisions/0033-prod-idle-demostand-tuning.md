@@ -68,13 +68,12 @@ After changing `env_file` — `compose rm` + `up`, not `docker restart`.
 
 ## Consequences
 
-**Positive**
-
 - Predictable low CPU on demo/edge with live drivers.
 - Clear separation of «load-test defaults» vs «idle overlay».
 - Fewer hidden ERRORs in logs.
 
-**Negative**
+
+Risks:
 
 - Prod-idle **not** suitable for flood MQTT without switching env to throughput profile.
 - One `FULL` demo device is an intentional CPU cost.

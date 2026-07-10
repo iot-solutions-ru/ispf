@@ -103,13 +103,13 @@ Agent может добавить `query_haystack`, delegating to `HaystackQuery
 
 ## Последствия
 
-**Positive**
 
 - Familiar Haystack filter strings для BMS integrators.
 - Reuses export tag index; minimal new surface area.
 - ACL enforced на query endpoint (строже, чем legacy search).
 
-**Negative**
+
+Risks:
 
 - Full tree scan per query; large deployments могут потребовать cached index (future BL).
 - v1 AND-only; complex filters deferred.

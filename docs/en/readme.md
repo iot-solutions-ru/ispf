@@ -11,7 +11,7 @@
 | [Product overview](product.md) | All | Capabilities, scenarios, doc map |
 | [Operator guide](operator-guide.md) | Operator | HMI, work queue, events |
 | [Solution developer guide](solution-developer-guide.md) | App developer | Deploy, operator UI, bundles |
-| [Application principles](application-principles.md) | Developer, Agent | P1–P10 north star |
+| [Application principles](application-principles.md) | Developer, Agent | P1–P10 target approach |
 | [Public API](solution-developer-public-api.md) | App developer | Stable platform ↔ bundle boundary |
 | [Glossary](glossary.md) | All | Terms and definitions |
 
@@ -28,7 +28,7 @@
 | [REST API](api.md) | Endpoints reference |
 | [Applications](applications.md) | Bundles, BFF, scheduler |
 | [Reports](reports.md) | SQL reports, CSV export |
-| [Roadmap](roadmap.md) | Single growing roadmap: Phase 0–33, BL-01…210, Excellence Program |
+| [Roadmap](roadmap.md) | Single growing roadmap: Phase 0–33, BL-01…210, Phases 25–33 |
 | [Competitive scorecard](competitive-scorecard.md) | Code-verified readiness matrix |
 | [ADR index](decisions/readme.md) | Architecture decision records |
 

@@ -97,7 +97,7 @@ ISPF обслуживает операторов, площадки и устро
 
 ## Последствия
 
-- Positive: consistent operator experience across sites; корректные shift/day reports; device timestamps сохраняются, когда edge их передаёт.
+- consistent operator experience across sites; корректные shift/day reports; device timestamps сохраняются, когда edge их передаёт.
 - Migration: additive schema (`time_zone` column, optional `observed_at`); existing data трактуется как `observedAt = ingestedAt`.
 - UI: одна formatting utility снижает inconsistent browser behaviour.
 - Drivers: optional `observedAt` в write path; без breaking change для driver'ов, опрашивающих только current values.

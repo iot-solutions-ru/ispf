@@ -178,13 +178,11 @@ Each phase ships backward-compatible: old nodes missing new variables behave exa
 
 ## Consequences
 
-**Positive**
-
 - One object type, one inspector, one API, one bundle key (`alertRules`).
 - Bundles and MCP tools keep working; new fields are optional.
-- Latch, hysteresis, and instances without a second mental model.
+- Latch, hysteresis, and instances without a parallel alarm object model.
 
-**Negative / risks**
+Risks:
 
 - Many fields on one blueprint — mitigated by phased UI sections (Activate / Deactivate / Event / Escalation).
 - `sourceObjectMask` indexing cost on large trees.

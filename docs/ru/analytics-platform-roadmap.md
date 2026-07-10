@@ -106,7 +106,7 @@ hmi-read + io + analytics×N + CH cluster + S3 cold
 | БЛ | Scope | Результат |
 |----|--------|---------|
 | **212a** | `GET /platform/analytics/catalog`; dormant evaluators | Единый API для builtins + `hist.*` + reactive CEL |
-| **212b** | Браузер формул в модальном редакторе выражений | PI-like discoverability без дерева AF |
+| **212b** | Браузер формул в модальном редакторе выражений | Comparable to PI: discoverability без дерева AF |
 | **213** | SPI `ispf-analytics-api` + optional packs JAR | Отраслевые KPI вне ядра |
 | **214** | `@analyticsFormulas` + import из bundle приложения | Параметризованные формулы пользователя |
 | **215** | `formulaRef` на правилах, blueprint/marketplace | Переиспользуемые стандарты площадки |

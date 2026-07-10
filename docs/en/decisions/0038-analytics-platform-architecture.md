@@ -110,7 +110,7 @@ BL-160 **must complete** (editor, PUT API, `derivedValue` runtime) as **BL-201**
 
 ## Consequences
 
-- New backlog BL-200…210 (Phase 33); historian competitive target moves from "petabyte storage" to **AF-capable analytics**.
+- New backlog BL-200…210 (Phase 33); historian Phase 33 target shifts from "petabyte storage" to **AF-capable analytics**.
 - ClickHouse becomes **required** for Enterprise L analytics SLO; PG remains mandatory for tree.
 - Binding rules unchanged; analytics engine must not fork CEL semantics for simple device logic.
 - [ADR-0041](0041-multi-tag-historian-computations.md) — historian binding rules (supersedes template catalog)

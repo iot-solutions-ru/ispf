@@ -29,7 +29,7 @@ Env overrides: `LH_MIN_PERFORMANCE`, `LH_MIN_ACCESSIBILITY`, `LH_MIN_ACCESSIBILI
 | Profile | Elements | FPS floor | Env |
 | ------- | -------- | --------- | --- |
 | CI gate (BL-152) | 500 | ≥55 | default `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=55` |
-| Excellence target | 500 | ≥60 | `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=60` |
+| Phase 26 target | 500 | ≥60 | `MIMIC_STRESS_ELEMENTS=500`, `MIMIC_MIN_FPS=60` |
 | Legacy S21 proxy | 120 | ≥55 | `MIMIC_STRESS_ELEMENTS=120` |
 | Tank-farm manual | full diagram | ≥60 | Chrome Performance on operator mimic |
 

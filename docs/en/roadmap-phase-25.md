@@ -2,7 +2,7 @@
 
 # Redirect — merged into unified roadmap
 
-**This file is a stub.** Phase 25–33 (Excellence Program), domain gap audit, BL-140…210, and Definition of Done live in the single growing roadmap:
+**This file is a stub.** Phase 25–33 (Phases 25–33), domain gap audit, BL-140…210, and Definition of Done live in the single growing roadmap:
 
 **→ [roadmap.md § Phase 25–33](roadmap.md#phase-25-33--excellence-program)**
 

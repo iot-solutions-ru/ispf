@@ -71,13 +71,12 @@ Follower replica
 
 ## Consequences
 
-**Positive**
-
 - Create/update/delete and mimic/dashboard config consistent on any replica behind LB.
 - No factory reset needed for RAM desync after normal CRUD.
 - Complements ADR-0029 without duplicating telemetry path.
 
-**Negative**
+
+Risks:
 
 - Extra PG reads on followers per config/structure event (low frequency vs telemetry).
 - Slightly higher NATS traffic for admin CRUD (acceptable).

@@ -8,7 +8,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | --- | --- |
 | **Baseline** | `main`, July 2026 |
 | **Updated** | 2026-07-09 |
-| **North star** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](architecture.md)) |
+| **Target approach** | Open self-hosted industrial application platform — object tree + SCADA HMI + automation + apps + AI ([ARCHITECTURE.md](architecture.md)) |
 
 ---
 
@@ -25,7 +25,7 @@ Single source of truth: phases, sprints, REQ-PF/FW, BL-01…210. **One file** �
 | Sprint S01–S30 | 30 | 30 | 0 | 0 | — |
 | Sprint S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Current focus:** Phase 25–33 Excellence Program (Partial) — see [Phase 25–33](#phase-25-33--excellence-program).
+**Current focus:** Phases 25–33 (partial) — see [Phase 25–33](#phase-25-33--excellence-program).
 
 **Closed:** BL-01…139 Done (BL-112 Cancelled); Phase 0–24 closed — [Phase 24](#phase-24--closed). **Active backlog:** BL-140…210.
 
@@ -44,9 +44,9 @@ VPS deploy — on request only ([vps-deploy.mdc](../.cursor/rules/vps-deploy.mdc
 | Era | When | What shipped | State |
 | --- | ---- | ------------ | ----- |
 | **Phase 0–22** | History | Core platform: object tree, drivers SPI, HMI, BPMN, REQ-PF/FW, OIDC, Timescale, NATS, federation foundations | **Closed — Done** |
-| **Phase 23 + S01–S26** | Excellence REQ-EX + acceleration | OT trust wave, operator HMI/PWA, AI production, semantic (Haystack/Brick), MES wave, multi-tenant, cluster | **Closed — Done** |
+| **Phase 23 + S01–S26** | REQ-EX + acceleration | OT trust wave, operator HMI/PWA, AI production, semantic (Haystack/Brick), MES wave, multi-tenant, cluster | **Closed — Done** |
 | **Phase 24 / S27–S30** | 2026-07-07 | Federation hardening, historian dual-write VPS, HMI a11y/Lighthouse, RU registry techpack | **Closed — Done** |
-| **Phase 25–33** | Active | Excellence Program: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Open — all Partial** |
+| **Phase 25–33** | Active | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Open — all Partial** |
 
 ### Closed backlog (do not reopen)
 
@@ -83,7 +83,7 @@ Counts from [§ BL-140…210](#bl-140210--full-registry) — prefer this over th
 
 ### Subsystem readiness (legacy Phase 23 view)
 
-See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the Excellence scorecard (~7.4/10).
+See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for closed-era subsystems. That table does **not** replace the competitive scorecard (~7.4/10).
 
 ### Where to look next
 
@@ -156,9 +156,9 @@ See [§ Subsystem readiness](#subsystem-readiness) — mostly 90–100% for clos
 | [HF01](#hf01--elastic-ingress) | 23 | Elastic ingress hotfix | ADR-0026, 0027 | Done |
 | [S19](#sprint-s19--acceleration-calibration) | 23 | Acceleration: calibration | baseline, scorecard, scope | Done |
 | [S20](#sprint-s20--ci-velocity) | 23 | Acceleration: CI speed | pr-fast, cache, flaky triage | Done |
-| [S21](#sprint-s21--hmi-moat) | 23 | Acceleration: HMI moat | BL-92, 93, 95 | Done |
+| [S21](#sprint-s21--hmi-moat) | 23 | Acceleration: HMI depth | BL-92, 93, 95 | Done |
 | [S22](#sprint-s22--edge-trust) | 23 | Acceleration: federation | BL-119, 120 | Done |
-| [S23](#sprint-s23--differentiation) | 23 | Acceleration: semantic moat | BL-104, 105 | Done |
+| [S23](#sprint-s23--differentiation) | 23 | Acceleration: semantic overlay | BL-104, 105 | Done |
 | [S24](#sprint-s24--mes-wave) | 23 | MES wave | BL-121…124 | Done |
 | [S25](#sprint-s25--multitenant--scale) | 23 | Multi-tenant + scale | BL-125…126, 116 | Done |
 | [S26](#sprint-s26--hmi--ops-close-out) | 23 | HMI + ops close-out | BL-94, 114 | Done |
@@ -403,7 +403,7 @@ Details: [AI_DEVELOPMENT.md](ai-development.md), [decisions/](decisions/).
 
 ---
 
-## Phase 23 — Platform Excellence (REQ-EX)
+## Phase 23 — REQ-EX
 
 Strategic wave: leadership vs Ignition, AWS/Azure IoT, ThingsBoard, SkySpark. Delivery — sprints [S01–S23](#sprint-registry).
 
@@ -763,7 +763,7 @@ Artifact: [ACCELERATION_PROGRAM.md](acceleration-program.md), `tools/acceleratio
 | S20-05 | Clean build artifacts | Done |
 | S20-06 | CI observability dashboard | Done — [CI_DASHBOARD.md](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
 
-### Sprint S21 — HMI Moat {#sprint-s21--hmi-moat}
+### Sprint S21 — HMI depth {#sprint-s21--hmi-moat}
 
 | ID | Purpose | BL | Status |
 | -- | ---------- | -- | ------ |
@@ -858,9 +858,9 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 ---
 
 
-## Phase 25–33 — Excellence Program {#phase-25-33--excellence-program}
+## Phases 25–33 {#phase-25-33--excellence-program}
 
-**Goal:** bring the product to **10/10** across IoT / SCADA / MES / ERP Level 4 / analytics, and surpass incumbents in solution delivery speed and AI-native development.
+**Goal:** bring the product to **10/10** across IoT / SCADA / MES / ERP Level 4 / analytics.
 
 **Single roadmap rule:** all future phases append here — do not create separate `roadmap-phase-N.md` files. Deep charters (e.g. [analytics-platform-roadmap.md](analytics-platform-roadmap.md)) remain companion docs; status and BL IDs live only in this file.
 
@@ -871,7 +871,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 | **Product score** | Code verified **~7.4/10** — [competitive-scorecard.md](competitive-scorecard.md) |
 | **Target** | 10/10 — see [Definition of Done](#definition-of-done--1010-overall) |
 
-### Excellence summary
+### Phases 25–33 summary
 
 | Category | Total | Done | Partial | Planned | Cancelled |
 | --------- | ----- | ---- | ------- | ------- | --------- |
@@ -881,7 +881,7 @@ Post-S26; **Done** (S24–S30, 2026-07-07).
 
 ## Competitive scorecard (baseline → code verified → target)
 
-Scale 1–10 relative to best-in-class platforms (Ignition / Kepware / PI / Opcenter / Tulip / mature context-tree IIoT).  
+Scale 1–10 relative to leading commercial platforms (Ignition / Kepware / PI / Opcenter / Tulip / mature context-tree IIoT).  
 **Code verified** — evidence from `main` source/tests (0.9.102). Full matrix: [competitive-scorecard.md](competitive-scorecard.md).
 
 | Dimension | Baseline | **Code verified** | Target | Phase |
@@ -911,8 +911,8 @@ Scale 1–10 relative to best-in-class platforms (Ignition / Kepware / PI / Opce
 | --------- | ----- | ------ |
 | **P0** | [25 — OT Trust](#phase-25--ot-trust) + [BL-191](#bl-191193--domain-audit-follow-ups) | Without OT engineer trust, the product will not be accepted on production sites |
 | **P0** | [29 — MES / ERP L4](#phase-29--mes-platform) (BL-169) | MES without live ERP sync is an island; outbox stub is not enough |
-| **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | The only moat incumbents cannot copy within a year |
-| **P1** | [26 — HMI Excellence](#phase-26--hmi-excellence) | SCADA is the operator-facing face of the product |
+| **P0** | [31 — AI Autopilot](#phase-31--ai-autopilot) | Live LLM agent deploy without manual edits |
+| **P1** | [26 — HMI phase](#phase-26--hmi-excellence) | SCADA is the operator-facing face of the product |
 | **P1** | [29 — MES Platform](#phase-29--mes-platform) | Differentiates from "just SCADA"; needs field sites, not only smoke |
 | **P2** | [27 — Enterprise Security](#phase-27--enterprise-security) | Enterprise tender requirement |
 | **P2** | [28 — Historian at Scale](#phase-28--historian-at-scale) | Large sites, petabyte-class |
@@ -925,7 +925,7 @@ Scale 1–10 relative to best-in-class platforms (Ignition / Kepware / PI / Opce
 
 ## Domain gap audit — IoT / SCADA / MES / ERP (2026-07-09)
 
-Strategic audit vs best-in-class (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Verdict: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
+Domain audit vs leading platforms (Kepware, Ignition, PI, Opcenter, Tulip). **Code-verified score ~7.4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Assessment: strong application platform; gap to leadership is **industrial depth** (honest OT, live ERP, field MES, AI without stub) — not more surface features.
 
 **Strategy:** ISPF is **not** a full ERP (SAP/1C). Level 4 goal = reliable ISA-95 connectors. Full Opcenter-class MES is **not** "everything in core" — first-class MES objects + certified bundles + 1–2 live plants. Moat = solution velocity (AI + low-code) with Kepware-class OT trust.
 
@@ -944,7 +944,7 @@ Strategic audit vs best-in-class (Kepware, Ignition, PI, Opcenter, Tulip). **Cod
 | --- | ------ | --- | --------- | -------- | -- |
 | **Blocker** | IoT / OT | PRODUCTION matrix: `opc-da` stub, DNP3 no write | Kepware / Ignition | `OpcDaDeviceDriver` stub labeled PRODUCTION | [BL-191](#bl-191193--domain-audit-follow-ups), BL-140 |
 | **Blocker** | ERP L4 | Outbox marks `sent` without real ERP | B2MML / 1C / SAP IDoc | Stub connector only | **BL-169** (elevated P0) |
-| **Blocker** | AI | Live LLM ≥95% + generator stub | Own AI moat | `AiSolutionGeneratorService` `mode=stub` | BL-177…180 |
+| **Blocker** | AI | Live LLM ≥95% + generator stub | Differentiated AI agent path | `AiSolutionGeneratorService` `mode=stub` | BL-177…180 |
 | High | IoT / Edge | Edge agent GA, ARM soak 30d | Ignition Edge | BL-145/187 Partial; prod `clusterEnabled=false` | BL-145, 187 |
 | High | SCADA | Live FPS 500 el + offline PWA 8h | Ignition Perspective | e2e mocked; BL-151/152 Partial | BL-151, 152 |
 | High | SCADA | Alarm shelving approval in-memory | WinCC / Ignition Alarming | `AlarmShelfApprovalService` STUB | BL-158 |
@@ -1016,7 +1016,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 ---
 
-## Phase 26 — HMI Excellence
+## Phase 26 — HMI
 
 **Goal:** SCADA / HMI **10/10** — P&ID library, video wall, offline operator, expression debugger.
 
@@ -1108,7 +1108,7 @@ Guideline: **~2 weeks per sprint**; Phase 25–32 ≈ **18–24 months**.
 
 ## Phase 31 — AI Autopilot
 
-**Goal:** AI **10/10** — zero-touch deploy, agent regression, solution generator.
+**Goal:** AI **10/10** — automated deploy, agent regression, solution generator.
 
 **ISPF strength — amplify, do not regress.**
 
@@ -1278,7 +1278,7 @@ New backlog from IoT/SCADA/MES/ERP gap audit (2026-07-09). Elevates honesty and 
 | Shopfloor low-code | Apps in hours | BL-177…180 AI | 10 |
 | Enterprise IAM | MFA, granular ACL | BL-153…157 | 10 |
 | Cloud IoT SaaS | Multi-tenant SaaS | BL-155 + BL-186 | 10 |
-| Mature context-tree IIoT | 20 years field track record | All phases + AI moat | 10 |
+| Mature context-tree IIoT | 20 years field track record | All phases + live AI agent | 10 |
 
 ---
 
@@ -1297,7 +1297,7 @@ Product is **10/10** when **all** of the following hold simultaneously:
 9. **OT honesty** — zero stub drivers labeled PRODUCTION (BL-191)
 10. **Compliance pack** — IEC 62443 / GAMP-lite docs published (BL-192) — for enterprise tenders
 
-**Checkbox trap:** program-wave scores and BL artifacts shipped **without** code-verified gates were retracted (see [competitive-scorecard.md](competitive-scorecard.md)). **Usable Done** is defined below — stricter than closing BL rows.
+**Premature Done marking:** program-wave scores and BL artifacts shipped **without** code-verified gates were retracted (see [competitive-scorecard.md](competitive-scorecard.md)). **Usable Done** is defined below — stricter than closing BL rows.
 
 ---
 
@@ -1590,7 +1590,7 @@ Aligned with [domain gap audit](#domain-gap-audit--iot--scada--mes--erp-2026-07-
 | 2026-07-09 | Added [§ Retrospective](#retrospective) — eras, closed vs active backlog, Phase 25–33 glance |
 | 2026-07-09 | Domain gap audit IoT/SCADA/MES/ERP: BL-169 → P0; BL-191…193; Phase 33 analytics BL-200…210 |
 | 2026-07-09 | **Driver field policy:** `ready-for-field` only after named field implementation task; BL-140 → Partial (playbook-ready, not field Done) |
-| 2026-07-07 | Phase 25–32 Excellence Program: [roadmap.md](roadmap.md), BL-140…190 |
+| 2026-07-07 | Phase 25–32 Phases 25–33: [roadmap.md](roadmap.md), BL-140…190 |
 | 2026-07-07 | Tail cleanup: ROADMAP sync (BL 0 Partial, 23.24 Done); CH verify prod-safe smoke |
 | 2026-07-07 | S30: registry techpack 0.9.101; S29 Lighthouse operator; quality-gates 5/5 |
 | 2026-07-07 | S27 Done: federation hardening; pr-fast CI green (906 tests) |

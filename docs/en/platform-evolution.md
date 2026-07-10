@@ -154,7 +154,7 @@ Turning point: solutions live **on the platform** via bundle deploy, not in indu
 
 ## 9. Phase 5–6 — mechanism strengthening
 
-North star: **more declarative logic in the object tree**, less custom Java.
+Target approach: **more declarative logic in the object tree**, less custom Java.
 
 - [x] **Models** — `extendsModelId`, bulk upgrade API, vendor demo
 - [x] **Functions** — extended script steps; declarative SQL bindings
@@ -309,7 +309,7 @@ Detailed current plan: [roadmap.md](roadmap.md).
 
 These decisions held throughout the evolution:
 
-- [x] **North star** — business logic in object-tree mechanisms, not industry-specific Java ([architecture.md](architecture.md))
+- [x] **Target approach** — business logic in object-tree mechanisms, not industry-specific Java ([architecture.md](architecture.md))
 - [x] **Dogfooding gate** — every REQ-PF originates from app-team needs ([0002](decisions/0002-dogfooding-gate.md))
 - [x] **Tree-first** — alert rules, correlators, reports, schedules, security — tree nodes
 - [x] **Bundle = packaging** — deploy delivers configuration into the platform, not a separate runtime

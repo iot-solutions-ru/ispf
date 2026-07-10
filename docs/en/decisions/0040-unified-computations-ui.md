@@ -6,7 +6,7 @@
 
 ## Context
 
-Binding rules ([ADR-0010](0010-binding-rules-only.md)) and analytics derived tags ([ADR-0038](0038-analytics-platform-architecture.md)) both express **when → expression → target variable**. Operators saw duplicate tabs (**Bindings**, **Analytics tag**) and overlapping mental models.
+Binding rules ([ADR-0010](0010-binding-rules-only.md)) and analytics derived tags ([ADR-0038](0038-analytics-platform-architecture.md)) both express **when → expression → target variable**. Operators saw duplicate tabs (**Bindings**, **Analytics tag**) and duplicate tabs and overlapping concepts.
 
 Pre-1.0: no legacy UI compatibility required.
 

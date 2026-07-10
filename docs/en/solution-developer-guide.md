@@ -29,7 +29,7 @@ A **solution (application)** is a registered app with an isolated SQL schema, sc
 
 ### Legacy bundle migration to tree-first
 
-| Was (legacy) | Now (north star) |
+| Was (legacy) | Now (target approach) |
 |--------------|------------------|
 | Only `POST .../functions/invoke` by appId | `POST /bff/invoke` or `objects/by-path/functions/invoke` on `{appId}.functions.*` |
 | `screens[]` in operator manifest | `operatorUi` + dashboards in `dashboards[]` / tree |

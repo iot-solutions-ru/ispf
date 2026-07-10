@@ -11,8 +11,8 @@
 ## Naming convention
 
 - **Before:** `SCADA_MIMIC.md`, `ROADMAP_PHASE25.md`
-- **After:** `scada-mimic.md`, then `roadmap-phase-25.md` (Excellence split)
-- **2026-07-09:** Excellence Program merged back into single [roadmap.md](roadmap.md); `roadmap-phase-25.md` is a redirect stub only
+- **After:** `scada-mimic.md`, then `roadmap-phase-25.md` (Phases 25–33 split)
+- **2026-07-09:** Phases 25–33 merged back into single [roadmap.md](roadmap.md); `roadmap-phase-25.md` is a redirect stub only
 - **ADRs:** `decisions/0001-app-platform-boundary.md` (unchanged pattern, lowercase)
 
 ## Link audit

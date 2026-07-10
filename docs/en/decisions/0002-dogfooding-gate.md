@@ -6,7 +6,7 @@ Accepted (2026-06-19; formalized 2026-06-22)
 
 ## Context
 
-Application team needs easily lead to industry-specific code in the platform repo. A mandatory filter is required: extend the object tree mechanism, do not add bespoke Java.
+Application team needs often lead to industry-specific code in the platform repo. A mandatory filter is required: extend the object tree mechanism, do not add bespoke Java.
 
 ## Decision
 

@@ -10,7 +10,7 @@ See also [application-principles.md](application-principles.md) (canonical P1-P1
 
 ---
 
-## North star
+## Target approach
 
 Canonical statement and expanded rules: [application-principles.md](application-principles.md).
 
@@ -244,7 +244,7 @@ Observed **~100% parity** for admin/operator scenarios. Detailed registry: [road
 
 ## C. Bundle deploy (declarative manifest)
 
-**Core idea:** one JSON/ZIP manifest defines the whole solution. This is the production **north star**.
+**Core idea:** one JSON/ZIP manifest defines the whole solution. This is the production **target approach**.
 
 **Manifest sections** (see ContextPack `bundleManifest.fields`):
 
@@ -412,7 +412,7 @@ Use `search_context` with `topic` or keywords from this table.
 | Doc | topic / keywords | Content |
 |-----|------------------|---------|
 | [product.md](product.md) | product | Product overview, scenarios |
-| [application-principles.md](application-principles.md) | application-principles | P1-P10 set, north star, anti-patterns |
+| [application-principles.md](application-principles.md) | application-principles | P1-P10 set, target approach, anti-patterns |
 | [solution-developer-guide.md](solution-developer-guide.md) | solution, applications | Solution lifecycle, 6 steps |
 | [solution-developer-public-api.md](solution-developer-public-api.md) | public-api, bundle | Stable manifest contract |
 | [applications.md](applications.md) | applications, bff, bundle | REQ-PF: deploy, functions, SQL, schedules |
@@ -514,7 +514,7 @@ Use `search_context` with `topic` or keywords from this table.
 
 | topic | When |
 |-------|------|
-| `application-principles` | North star, P1-P10, "how to build an app correctly" |
+| `application-principles` | Target approach, P1-P10, "how to build an app correctly" |
 | `agent-knowledge` | Choose approach A-H, docs map |
 | `applications` | Bundle, BFF, migrations, functions |
 | `public-api` | Manifest contract |

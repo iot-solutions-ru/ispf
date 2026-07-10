@@ -23,7 +23,7 @@ Custom logic today:
 - **Reactive:** platform/application **JavaScript functions** via `callFunction(...)` (instant, not historian-backed).
 - **Historian:** only **new Java** `AnalyticsEvaluator` + server deploy — no end-user UDF.
 
-Product goal (user request): **PI-like discoverability and extensibility** without abandoning ISPF’s **tree-first** model ([ADR-0001](0001-app-platform-boundary.md), [ADR-0041](0041-multi-tag-historian-computations.md)).
+Goal: **catalog browse and extensibility comparable to PI AF** without abandoning ISPF’s **tree-first** model ([ADR-0001](0001-app-platform-boundary.md), [ADR-0041](0041-multi-tag-historian-computations.md)).
 
 ## Decision
 
@@ -91,7 +91,7 @@ Registry merges:
 3. Tier B user formulas (see §3)
 4. Static **recipe** documents (cookbook) linked by `docAnchor`, not duplicated prose in API
 
-Optional browse node (read-only mirror): `root.platform.analytics.catalog` — Haystack-tagged objects for Explorer search; **authoritative definitions remain server registry** (avoid drift).
+Optional browse node (read-only mirror): `root.platform.analytics.catalog` — Haystack-tagged objects for Explorer search; **canonical definitions remain server registry** (avoid drift).
 
 UI ([ADR-0040](0040-unified-computations-ui.md)): **Formula browser** in `BindingExpressionEditorModal` — search, filter by kind/tag/pack, insert template with placeholders, validate before save. Replaces scattered static TS lists.
 
@@ -148,7 +148,7 @@ Commercial industry packs stay **outside `main`** ([ADR-0003](0003-commercial-bu
 
 **Marketplace distribution (BL-216):** paid and free Tier C packs list on the platform marketplace with `artifactKind: analytics-pack`. Install/activate flow matches application bundles; artifacts unpack to `ISPF_ANALYTICS_PACKS_DIR` with RSA license verification. Operator guide: [analytics-formulas-and-packs.md § Buying Tier C packs](../analytics-formulas-and-packs.md#buying-tier-c-packs-on-the-marketplace).
 
-**Near-term quick win:** wire dormant evaluators (`totalizer`, `min`, `max`, `last`) into `HistorianBindingRuleCompiler` and register them in the catalog (no new SPI yet).
+**First step:** wire dormant evaluators (`totalizer`, `min`, `max`, `last`) into `HistorianBindingRuleCompiler` and register them in the catalog (no new SPI yet).
 
 ### 5. Custom functions beyond formulas
 
@@ -187,14 +187,12 @@ Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases
 
 ## Consequences
 
-**Positive**
-
-- One mental model for operators: browse → parameterize → deploy rule.
+- For operators: browse → parameterize → deploy rule.
 - Solution developers ship formulas in app bundles without forking core.
 - ISVs ship certified KPI packs under commercial license.
 - Agents/MCP use same catalog API as UI.
 
-**Negative / risks**
+Risks:
 
 - Catalog drift if tree mirror and registry diverge → **registry is source of truth**, tree is optional index.
 - User formulas need validation and versioning to avoid breaking rules on edit.
@@ -214,4 +212,4 @@ Estimated: **4–6 weeks** after ADR-0041 stabilization for phases 1–2; phases
 | Date | Change |
 |------|--------|
 | 2026-07-10 | Status → Accepted; BL-212a in progress |
-| 2026-07-09 | Initial proposal (PI-like catalog, Tier A/B/C, BL-212–215) |
+| 2026-07-09 | Initial proposal (PI AF-style catalog, Tier A/B/C, BL-212–215) |

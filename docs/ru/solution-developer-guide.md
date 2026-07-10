@@ -29,7 +29,7 @@
 
 ### Миграция устаревшего пакета по дереву
 
-| Было (наследие) | Стало (North star) |
+| Было (наследие) | Стало (Target approach) |
 |---------------|-------------------|
 | Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или `objects/by-path/functions/invoke` по `{appId}.functions.*` |
 | `screens[]` в operator manifest | `operatorUi` + dashboards в `dashboards[]` / дереве |

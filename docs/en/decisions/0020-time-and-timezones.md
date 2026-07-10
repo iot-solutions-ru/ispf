@@ -95,7 +95,7 @@ If `observedAt` is absent, `observedAt := ingestedAt` (backward compatible).
 
 ## Consequences
 
-- Positive: consistent operator experience across sites; correct shift/day reports; device timestamps preserved when edge provides them.
+- consistent operator experience across sites; correct shift/day reports; device timestamps preserved when edge provides them.
 - Migration: additive schema (`time_zone` column, optional `observed_at`); existing data treated as `observedAt = ingestedAt`.
 - UI: one formatting utility reduces inconsistent browser behaviour.
 - Drivers: optional `observedAt` in write path; no breaking change for drivers that only poll current values.

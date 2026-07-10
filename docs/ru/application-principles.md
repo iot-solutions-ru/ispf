@@ -2,7 +2,7 @@
 
 # Принципы создания приложений на ISPF
 
-Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Сводит воедино North star из [ARCHITECTURE.md](architecture.md), границу platform/solution ([ADR-0001](decisions/0001-app-platform-boundary.md)), жизненный цикл из [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md), подходы A–H из [AGENT_KNOWLEDGE.md](agent-knowledge.md) и единую модель логики из [PLATFORM_LOGIC.md](platform-logic.md).
+Канонические правила для **разработчиков решений** и **AI-агентов** (агент Tree-First, AI Studio, MCP). Сводит воедино Target approach из [ARCHITECTURE.md](architecture.md), границу platform/solution ([ADR-0001](decisions/0001-app-platform-boundary.md)), жизненный цикл из [SOLUTION_DEVELOPER_GUIDE.md](solution-developer-guide.md), подходы A–H из [AGENT_KNOWLEDGE.md](agent-knowledge.md) и единую модель логики из [PLATFORM_LOGIC.md](platform-logic.md).
 
 **Для деталей API и виджетов** — специализированные документы; этот файл — хаб «как создать приложение».
 
@@ -10,7 +10,7 @@
 
 ---
 
-## North star
+## Target approach
 
 **Бизнес-логика прикладного решения живёт в declarative-конфигурации дерева объектов; платформа поставляет generic-движки; bundle deploy — упаковка и доставка конфигурации, не отдельный runtime.**
 
@@ -168,7 +168,7 @@ flowchart TB
 - `operatorUi` в manifest, не legacy `operatorManifest`.
 - Согласование: повторное развертывание обновляет узлы, а не только создание.
 
-| Было (наследие) | Стало (North star) |
+| Было (наследие) | Стало (Target approach) |
 |---------------|-------------------|
 | Только `POST .../functions/invoke` по appId | `POST /bff/invoke` или tree path `{appId}.functions.*` |
 | `screens[]` в operator manifest | `operatorUi` + dashboards |

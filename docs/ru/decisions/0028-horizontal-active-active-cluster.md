@@ -89,13 +89,13 @@ Platform properties mirror: `ispf.cluster.*`, `ispf.nats.*` in [application.yml]
 
 ## Последствия
 
-**Positive**
 
 - Horizontal scale for API/automation read path.
 - Survives single-node failure with nginx passive health.
 - Driver I/O safe across replicas via DB locks.
 
-**Negative**
+
+Risks:
 
 - PostgreSQL remains single writer — scale-out has limits on write-heavy historian; use ClickHouse path ([BL-114](../roadmap.md#часть-e--полный-реестр-bl-01139)).
 - NATS + Redis become operational dependencies for full multi-replica UX.

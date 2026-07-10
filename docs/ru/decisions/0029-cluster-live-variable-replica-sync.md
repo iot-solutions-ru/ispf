@@ -133,14 +133,14 @@ flowchart TB
 
 ## Последствия
 
-**Positive**
 
 - True active-active HMI: any replica serves fresh live telemetry.
 - Cross-object bindings on owner; consumers read mirrored values on any replica.
 - Backward compatible NATS payload; gradual rollout.
 - Redis interest closes demand-driven gap without sticky REST.
 
-**Negative**
+
+Risks:
 
 - NATS bandwidth scales with `(variables × replicas × rate / cluster_coalesce)` — monitor in cluster load tests.
 - Followers hold duplicate RAM (acceptable for typical device counts).

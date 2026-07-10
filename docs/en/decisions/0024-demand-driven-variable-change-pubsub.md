@@ -125,13 +125,12 @@ Exact numbers depend on coalesce ms, device count, and CEL complexity — BL-113
 
 ## Consequences
 
-**Positive**
-
-- Broker semantics aligned with integrator mental model.
+- Broker semantics aligned with integrator expectations.
 - MQTT hot path no longer blocked by sync bindings.
 - Zero-subscriber MQTT fan-in avoids useless platform work.
 
-**Negative**
+
+Risks:
 
 - Live WebSocket UI still needs in-memory values (always updated); event-driven UI refresh only when interest exists (acceptable for HMI polling/WebSocket variable subscriptions).
 - Subscription index must stay consistent when rules/workflows/history flags change (rebuild hooks already exist).

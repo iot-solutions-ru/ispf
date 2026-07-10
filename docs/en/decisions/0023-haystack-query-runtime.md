@@ -20,7 +20,7 @@ Requirements (BL-101…103):
 
 ### 1. Tree-first, overlay unchanged
 
-- ISPF dot-paths remain authoritative for bindings, historian, and ACL.
+- ISPF dot-paths remain canonical for bindings, historian, and ACL.
 - Query runtime evaluates **marker presence** on equip and point tag maps already produced by `HaystackExportService`.
 - No replacement of dot-path navigation; no full Haxall/Zinc server.
 
@@ -101,13 +101,12 @@ Agent may add `query_haystack` delegating to `HaystackQueryService`; not require
 
 ## Consequences
 
-**Positive**
-
 - Familiar Haystack filter strings for BMS integrators.
 - Reuses export tag index; minimal new surface area.
 - ACL enforced on query endpoint (stricter than legacy search).
 
-**Negative**
+
+Risks:
 
 - Full tree scan per query; large deployments may need cached index (future BL).
 - v1 AND-only; complex filters deferred.

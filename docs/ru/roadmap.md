@@ -8,7 +8,7 @@
 | --- | --- |
 | **Baseline** | `main`, июль 2026 |
 | **Обновлено** | 09.07.2026 |
-| **North star** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([ARCHITECTURE.md](architecture.md)) |
+| **Target approach** | Открытая автономная платформа промышленных приложений — дерево объектов + SCADA HMI + автоматизация + приложения + AI ([ARCHITECTURE.md](architecture.md)) |
 
 ---
 
@@ -25,7 +25,7 @@
 | Спринт S01–S30 | 30 | 30 | 0 | 0 | — |
 | Спринт S31–S46 | 16 | 0 | 16 | 0 | — |
 
-**Текущий фокус:** Фаза 25–33 Программа совершенствования (Частичный) — см. [Этап 25–33](#phase-25-33--excellence-program).
+**Текущий фокус:** Фаза 25–33 Фазы 25–33 (Частичный) — см. [Этап 25–33](#phase-25-33--excellence-program).
 
 **Закрыто:** БЛ-01…139 Готово (БЛ-112 Отменено); Фаза 0–24 закрыта — [Этап 24](#phase-24--закрыта). **Активный backlog:** БЛ-140…210.
 
@@ -46,7 +46,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 | **Фаза 0–22** | История | Ядро: дерево объектов, SPI драйверов, HMI, BPMN, REQ-PF/FW, OIDC, Timescale, NATS, федерация | **Закрыто — Готово** |
 | **Фаза 23 + S01–S26** | REQ-EX + ускорение | OT trust, operator HMI/PWA, AI production, семантика (Haystack/Brick), MES wave, multi-tenant, cluster | **Закрыто — Готово** |
 | **Фаза 24 / S27–S30** | 07.07.2026 | Federation hardening, dual-write historian на VPS, HMI a11y/Lighthouse, техпак реестра РФ | **Закрыто — Готово** |
-| **Фаза 25–33** | Активно | Excellence: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Открыто — всё Partial** |
+| **Фаза 25–33** | Активно | Phases 25–33: OT→HMI→Security→Historian→MES→Automation→AI→Ecosystem→Analytics | **Открыто — всё Partial** |
 
 ### Закрытый backlog (не переоткрывать)
 
@@ -83,7 +83,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 
 ### Готовность подсистем (наследие Фазы 23)
 
-См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет Excellence scorecard (~7,4/10).
+См. [§ Готовность подсистемы](#готовность-подсистемы) — в основном 90–100% для закрытых подсистем. Эта таблица **не** заменяет competitive scorecard (~7,4/10).
 
 ### Куда смотреть дальше
 
@@ -156,7 +156,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 | [HF01](#hf01--elastic-ingress) | 23 | Эластичное исправление проникновения | АДР-0026, 0027 | Готово |
 | [S19](#sprint-s19-калибровка-ускорение) | 23 | Ускорение: калибровка | базовый уровень, система показателей, объем | Готово |
 | [S20](#sprint-s20-скорость-двигателя) | 23 | Ускорение: скорость CI | pr-fast, кэш, ненадежная сортировка | Готово |
-| [S21](#sprint-s21--hmi-moat) | 23 | Ускорение: ров HMI | БЛ-92, 93, 95 | Готово |
+| [S21](#sprint-s21--hmi-moat) | 23 | Ускорение: глубина HMI | БЛ-92, 93, 95 | Готово |
 | [S22](#sprint-s22--edge-trust) | 23 | Ускорение: федерация | БЛ-119, 120 | Готово |
 | [S23](#sprint-s23--дифференциация) | 23 | Ускорение: смысловой ров | БЛ-104, 105 | Готово |
 | [S24](#sprint-s24--mes-wave) | 23 | MES волна | БЛ-121…124 | Готово |
@@ -403,7 +403,7 @@ Acceleration program: [ACCELERATION_PROGRAM.md](acceleration-program.md).
 
 ---
 
-## Этап 23 — Совершенствование платформы (REQ-EX)
+## Этап 23 — REQ-EX
 
 Стратегическая волна: лидерство vs Ignition, AWS/Azure IoT, ThingsBoard, SkySpark. Доставка — спринты [S01–S23](#реестр-спринтов).
 
@@ -763,7 +763,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | С20-05 | Очистить артефакты сборки | Готово |
 | С20-06 | Панель мониторинга CI | Готово — [CI_DASHBOARD.md](ci-dashboard.md), `tools/acceleration/ci-dashboard.py` |
 
-### Sprint S21 — HMI Moat
+### Sprint S21 — HMI depth
 
 | ID | Назначение | БЛ | Статус |
 | -- | ---------- | -- | ------ |
@@ -858,9 +858,9 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 ---
 
 
-## Этап 25–33 — Программа совершенствования {#phase-25-33--excellence-program}
+## Фазы 25–33 {#phase-25-33--excellence-program}
 
-**Цель:** довести продукт до **10/10** по IoT / SCADA / MES / ERP Level 4 / analytics и превзойти действующих игроков по скорости создания решений и AI-разработке.
+**Цель:** довести продукт до **10/10** по IoT / SCADA / MES / ERP Level 4 / analytics.
 
 **Правило единого roadmap:** все будущие фазы добавляются сюда — не создавать отдельные `roadmap-phase-N.md`. Глубокие чартеры (напр. [analytics-platform-roadmap.md](analytics-platform-roadmap.md)) остаются companion-документами; статусы и BL ID живут только в этом файле.
 
@@ -871,7 +871,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **Оценка продукта** | Проверено по коду **~7,4/10** — [competitive-scorecard.md](competitive-scorecard.md) |
 | **Цель** | 10/10 — см. [Определение готовности](#определение-готовности--1010-всего) |
 
-### Сводка Excellence
+### Сводка фаз 25–33
 
 | Категория | Всего | Готово | Частичный | Планируется | Отменено |
 | --------- | ----- | ---- | ------- | ------- | --------- |
@@ -881,7 +881,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ## Конкурентный показатель (базовый уровень → проверенный код → целевой показатель)
 
-Шкала 1–10 относительно лучших платформ класса Ignition/Kepware/PI/Opcenter/Tulip/зрелого context tree IIoT.  
+Шкала 1–10 относительно ведущих коммерческих платформ Ignition/Kepware/PI/Opcenter/Tulip/зрелого context tree IIoT.  
 **Проверено по коду** — данные из `main` источника/тестов (0.9.102). Полная матрица: [COMPETITIVE_Scorecard.md](competitive-scorecard.md).
 
 | Измерение | Базовый уровень | **Проверено по коду** | Цель | Фаза |
@@ -912,7 +912,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 | **P0** | [25 — OT Trust](#phase-25--ot-trust) + [БЛ-191](#бл-191193--аудит-доменов-follow-up) | Без доверия ОТ-инженеров продукт не примут на продакшен-объекте |
 | **P0** | [29 — MES / ERP L4](#этап-29--платформа-mes) (БЛ-169) | MES без живой синхронизации с ERP — остров; stub outbox недостаточно |
 | **P0** | [31 — Автопилот ИИ](#фаза-31--автопилот-ии) | Единственный ров, который действующие лица не скопируют за год |
-| **P1** | [26 — HMI Excellence](#этап-26--совершенство-hmi) | SCADA — лицевой продукт для операторов |
+| **P1** | [26 — HMI phase](#этап-26--совершенство-hmi) | SCADA — лицевой продукт для операторов |
 | **P1** | [29 — Платформа MES](#этап-29--платформа-mes) | Отличается от «просто SCADA»; нужны полевые объекты, не только smoke |
 | **П2** | [27 — Корпоративная безопасность](#этап-27--безопасность-предприятия) | Требование предприятий-тендеров |
 | **П2** | [28 — Историк в масштабе](#фаза-28--историк-в-масштабе) | Крупные объекты петабайтного класса |
@@ -925,7 +925,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 
 ## Аудит доменов — IoT / SCADA / MES / ERP (09.07.2026)
 
-Стратегический аудит относительно лучших в классе (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~7,4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Вердикт: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT, живой ERP, полевой MES, AI без stub) — не ещё одного слоя фич.
+Аудит домена относительно ведущих платформ (Kepware, Ignition, PI, Opcenter, Tulip). **Проверено по коду ~7,4/10** ([competitive-scorecard.md](competitive-scorecard.md)); prod **0.9.105**. Оценка: сильная application platform; до лидерства не хватает **промышленной глубины** (честный OT, живой ERP, полевой MES, AI без stub) — не ещё одного слоя фич.
 
 **Стратегия:** ISPF — **не** полный ERP (SAP/1C). Цель Level 4 — надёжные коннекторы ISA-95. Полный MES класса Opcenter — **не** «всё в ядре»: первоклассные MES-объекты + сертифицированные bundles + 1–2 живых цеха. Ров — скорость решений (AI + low-code) при OT-доверии уровня Kepware.
 
@@ -1297,7 +1297,7 @@ Lab: `deploy/cluster-smoke-test.sh`, `deploy/cluster-scale-load-test.py`, `deplo
 9. **Честность OT** — ноль stub-драйверов с меткой PRODUCTION (БЛ-191)
 10. **Compliance pack** — опубликованы docs IEC 62443 / GAMP-lite (БЛ-192) — для enterprise-тендеров
 
-**Ловушка галочек:** program-wave ~9.8 и закрытые BL без code-verified gates **отозваны** (см. [competitive-scorecard.md](competitive-scorecard.md)). **Пригодный Done** — ниже, строже, чем просто закрыть строки BL.
+**Преждевременная отметка Done:** program-wave ~9.8 и закрытые BL без code-verified gates **отозваны** (см. [competitive-scorecard.md](competitive-scorecard.md)). **Пригодный Done** — ниже, строже, чем просто закрыть строки BL.
 
 ---
 
@@ -1563,7 +1563,7 @@ CEP, process programs, BPMN subprocess (БЛ-171…176) — **после** REAL 
 | 09.07.2026 | Добавлена [§ Ретроспектива](#retrospective) — эпохи, закрытый vs активный backlog, обзор Фазы 25–33 |
 | 09.07.2026 | Аудит доменов IoT/SCADA/MES/ERP: БЛ-169 → P0; БЛ-191…193; Фаза 33 analytics БЛ-200…210 |
 | 09.07.2026 | **Политика поля для драйверов:** ready-for-field только после именованной полевой задачи; БЛ-140 → Частичный (playbook-ready, не field Done) |
-| 07.07.2026 | Программа совершенствования этапов 25–32: [roadmap.md](roadmap.md), BL-140…190 |
+| 07.07.2026 | Фазы 25–33 этапов 25–32: [roadmap.md](roadmap.md), BL-140…190 |
 | 07.07.2026 | Очистка хвоста: синхронизация ROADMAP (BL 0 Частичная, 23.24 Готово); CH проверить безопасность дыма |
 | 07.07.2026 | S30: технический пакет реестра 0.9.101; S29 Lighthouse operator; quality gates 5/5 |
 | 07.07.2026 | S27 Готово: усиление безопасности федерации; pr-fast CI зелёный (906 тестов) |

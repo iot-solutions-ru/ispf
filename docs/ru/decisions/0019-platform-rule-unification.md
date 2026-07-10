@@ -59,13 +59,11 @@ ADR [0010](0010-binding-rules-only.md) уже зафиксировал **binding
 
 ## Последствия
 
-**Плюсы**
-
 - Один язык (CEL), один engine, одна документация ([bindings.md](../BINDINGS.md), [platform-logic.md](../PLATFORM_LOGIC.md)).
 - Контекст дашборда durable, multi-client через WS; события в journal.
 - Таблица→детали остаётся, но семантика = «изменение context», не отдельная подсистема.
 
-**Минусы / риски**
+Risks:
 
 - Latency UI: правила на сервере; нужен optimistic session + reconcile по WS (фаза 1).
 - Расширение `BindingRuleEngine` и десериализация `BindingTarget` — breaking-safe только при default `kind=variable`.

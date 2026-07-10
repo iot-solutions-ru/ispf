@@ -9,7 +9,7 @@
 | **Phase** | 33 (extends Phase 28 historian) |
 | **ADR** | [0038-analytics-platform-architecture.md](decisions/0038-analytics-platform-architecture.md) |
 | **Prerequisites** | BL-159 (tiers), BL-160 (AF-lite), BL-161 (SLO), ClickHouse dual-write on prod |
-| **Competitive target** | Historian dimension **10/10** — "petabyte + asset framework" per [roadmap.md § Phase 33](roadmap.md#phase-33--analytics-platform-af-capable) |
+| **Target** | Historian dimension **10/10** — "petabyte + asset framework" per [roadmap.md § Phase 33](roadmap.md#phase-33--analytics-platform-af-capable) |
 | **Status of record** | BL IDs and Done/Partial live only in [roadmap.md](roadmap.md) — this file is the deep charter |
 
 ---
@@ -407,7 +407,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 | BL | Scope | Outcome |
 |----|--------|---------|
 | **212a** | `GET /platform/analytics/catalog`; register dormant evaluators | Single API for builtins + `hist.*` + reactive CEL |
-| **212b** | Formula browser in Computations expression modal | PI-like discoverability without AF tree |
+| **212b** | Formula browser in Computations expression modal | Comparable to PI: discoverability without AF tree |
 | **213** | `ispf-analytics-api` SPI + optional packs JAR | Industry KPIs outside core (commercial OK) |
 | **214** | `@analyticsFormulas` + app bundle import | User-defined parameterized formulas |
 | **215** | `formulaRef` on rules, blueprint/marketplace share | Reusable site standards |

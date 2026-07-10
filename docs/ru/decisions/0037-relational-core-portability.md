@@ -81,9 +81,12 @@ db/migration/oracle/
 
 ## Последствия
 
-**Плюсы:** единая абстракция; явный single-DB сценарий; external JDBC для интеграций без смешивания с metadata.
+- единая абстракция; явный single-DB сценарий; external JDBC для интеграций без смешивания с metadata.
 
-**Минусы:** enterprise-движки сертифицируются по одному; cluster требует одинаковый engine на всех репликах; смена СУБД — greenfield + бандлы, не live migration.
+
+Risks:
+
+- enterprise-движки сертифицируются по одному; cluster требует одинаковый engine на всех репликах; смена СУБД — greenfield + бандлы, не live migration.
 
 **Код:** `com.ispf.server.relational.*`, `DataSourceSqlSession`, `ExternalDataSourceRegistry`, расширение `data-source-v1`, UI DataSourceEditor + Database settings.
 

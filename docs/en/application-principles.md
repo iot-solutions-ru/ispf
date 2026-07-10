@@ -2,7 +2,7 @@
 
 # ISPF application development principles
 
-Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Combines the north star from [architecture.md](architecture.md), the platform/solution boundary ([ADR-0001](decisions/0001-app-platform-boundary.md)), the lifecycle from [solution-developer-guide.md](solution-developer-guide.md), approaches A–H from [agent-knowledge.md](agent-knowledge.md), and the unified logic model from [platform-logic.md](platform-logic.md).
+Canonical rules for **solution developers** and **AI agents** (tree-first agent, AI Studio, MCP). Combines the target approach from [architecture.md](architecture.md), the platform/solution boundary ([ADR-0001](decisions/0001-app-platform-boundary.md)), the lifecycle from [solution-developer-guide.md](solution-developer-guide.md), approaches A–H from [agent-knowledge.md](agent-knowledge.md), and the unified logic model from [platform-logic.md](platform-logic.md).
 
 **For API and widget details** — see specialized documents; this file is the hub for “how to build an application”.
 
@@ -10,7 +10,7 @@ Canonical rules for **solution developers** and **AI agents** (tree-first agent,
 
 ---
 
-## North star
+## Target approach
 
 **Application business logic lives in declarative object-tree configuration; the platform supplies generic engines; bundle deploy is packaging and delivery of configuration, not a separate runtime.**
 
@@ -87,7 +87,7 @@ Manifest sections: `objects[]`, `models[]`, `dashboards[]`, `workflows[]`, `migr
 
 ### P5. One logic model: Platform Rule
 
-**For humans:** All reactive logic follows one mental model:
+**For humans:** All reactive logic follows one workflow:
 
 ```text
 WHEN (activator)  →  IF (CEL condition)  →  THEN (effect)
@@ -168,7 +168,7 @@ Full table with delivery and Operator UI — [agent-knowledge.md § Approaches](
 - `operatorUi` in manifest, not legacy `operatorManifest`.
 - Reconcile: redeploy updates nodes, not create-only.
 
-| Was (legacy) | Now (north star) |
+| Was (legacy) | Now (target approach) |
 |--------------|------------------|
 | Only `POST .../functions/invoke` by appId | `POST /bff/invoke` or tree path `{appId}.functions.*` |
 | `screens[]` in operator manifest | `operatorUi` + dashboards |
@@ -270,4 +270,4 @@ See [ADR-0004](decisions/0004-ai-artifact-generation-gates.md).
 
 ---
 
-*Update when the north star changes (ADR, REQ-PF) and agent tools expand.*
+*Update when the target approach changes (ADR, REQ-PF) and agent tools expand.*

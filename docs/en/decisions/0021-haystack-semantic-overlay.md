@@ -11,7 +11,7 @@ ISPF models runtime state through the **object tree** (dot-paths, `DataSchema`, 
 Requirements from app teams and integrators:
 
 - Export equipment/point semantics to external Haystack tools without replacing ISPF paths.
-- Optional tagging on devices and telemetry variables; tree remains authoritative for bindings, ACL, and history.
+- Optional tagging on devices and telemetry variables; tree remains canonical for bindings, ACL, and history.
 - Demand-driven Brick/RDF export later (BIM / digital twin), not a runtime replacement for the object tree.
 
 Related standards:
@@ -73,13 +73,12 @@ Out of scope: full Brick reasoner, runtime replacement of object paths.
 
 ## Consequences
 
-**Positive**
-
 - Integrators can export tagged subtrees without forking the object model.
 - RELATIVE mixin pattern matches existing driver/lab mixins ([0011](0011-model-type-semantics.md), [0018](0018-fixture-models-and-cel-applicability.md)).
 - Clear boundary: semantics are metadata; mechanisms stay tree-first.
 
-**Negative / follow-ups**
+
+Risks:
 
 - Point-level tags are not first-class on each variable yet — use driver mapping JSON (BL-59 Done) or per-variable naming until variable annotations exist.
 - Export format may need Zinc compatibility layer if external FIN/SkySpark ingestion is required.

@@ -59,13 +59,11 @@ ADR [0010](0010-binding-rules-only.md) already fixed **binding rules** as the so
 
 ## Consequences
 
-**Positive**
-
 - One language (CEL), one engine, one documentation set ([BINDINGS.md](../bindings.md), [PLATFORM_LOGIC.md](../platform-logic.md)).
 - Dashboard context is durable, multi-client via WS; events in journal.
 - Table→details remains, but semantics = «context change», not a separate subsystem.
 
-**Negative / risks**
+Risks:
 
 - UI latency: rules on server; optimistic session + reconcile via WS required (phase 1).
 - Extending `BindingRuleEngine` and deserializing `BindingTarget` — breaking-safe only with default `kind=variable`.

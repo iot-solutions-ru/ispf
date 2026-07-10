@@ -127,13 +127,13 @@ Exact numbers зависят от coalesce ms, device count и CEL complexity �
 
 ## Последствия
 
-**Positive**
 
-- Broker semantics aligned с integrator mental model.
+- Broker semantics aligned с ожиданиями интегратора.
 - MQTT hot path больше не blocked sync bindings.
 - Zero-subscriber MQTT fan-in avoids useless platform work.
 
-**Negative**
+
+Risks:
 
 - Live WebSocket UI по-прежнему needs in-memory values (always updated); event-driven UI refresh только когда interest exists (acceptable для HMI polling/WebSocket variable subscriptions).
 - Subscription index must stay consistent при изменении rules/workflows/history flags (rebuild hooks already exist).

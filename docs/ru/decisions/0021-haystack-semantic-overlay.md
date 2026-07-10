@@ -75,13 +75,13 @@ Out of scope: full Brick reasoner, runtime replacement object paths.
 
 ## Последствия
 
-**Positive**
 
 - Integrators могут экспортировать tagged subtrees без fork object model.
 - RELATIVE mixin pattern совпадает с existing driver/lab mixin'ами ([0011](0011-model-type-semantics.md), [0018](0018-fixture-models-and-cel-applicability.md)).
 - Чёткая граница: semantics — metadata; mechanisms остаются tree-first.
 
-**Negative / follow-ups**
+
+Risks:
 
 - Point-level tags пока не first-class на каждой variable — используйте driver mapping JSON (BL-59 Done) или per-variable naming, пока нет variable annotations.
 - Export format может потребовать Zinc compatibility layer, если нужен external FIN/SkySpark ingestion.

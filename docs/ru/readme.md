@@ -11,7 +11,7 @@
 | [Обзор продукта](product.md) | Все | Возможности, сценарии, карта документации |
 | [Руководство оператора](operator-guide.md) | Оператор | HMI, work queue, события |
 | [Руководство разработчика решений](solution-developer-guide.md) | Разработчик приложений | Deploy, operator UI, bundles |
-| [Принципы приложений](application-principles.md) | Разработчик, агент | North star P1–P10 |
+| [Принципы приложений](application-principles.md) | Разработчик, агент | Target approach P1–P10 |
 | [Публичный API](solution-developer-public-api.md) | Разработчик приложений | Стабильная граница platform ↔ bundle |
 | [Глоссарий](glossary.md) | Все | Термины и определения |
 
@@ -28,7 +28,7 @@
 | [REST API](api.md) | Справочник endpoints |
 | [Приложения](applications.md) | Bundles, BFF, scheduler |
 | [Отчёты](reports.md) | SQL-отчёты, экспорт CSV |
-| [Roadmap](roadmap.md) | Единый растущий roadmap: Фаза 0–33, БЛ-01…210, Программа совершенствования |
+| [Roadmap](roadmap.md) | Единый растущий roadmap: Фаза 0–33, БЛ-01…210, Фазы 25–33 |
 | [Конкурентный scorecard](competitive-scorecard.md) | Матрица готовности по коду |
 | [Индекс ADR](decisions/readme.md) | Архитектурные решения |
 

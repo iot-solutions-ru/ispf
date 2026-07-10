@@ -69,13 +69,12 @@
 
 ## Последствия
 
-**Плюсы**
-
 - Предсказуемый низкий CPU на demo/edge при живых драйверах.
 - Явное разделение «load-test defaults» vs «idle overlay».
 - Меньше скрытых ERROR в логах.
 
-**Минусы**
+
+Risks:
 
 - Prod-idle **не** подходит для flood MQTT без смены env на throughput profile.
 - Один `FULL` demo-device — осознанный CPU cost.

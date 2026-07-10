@@ -14,7 +14,7 @@ One mechanism for variable bindings, dashboard logic, and event side effects.
 WHEN  →  IF (CEL)  →  THEN (write result)
 ```
 
-Same mental model as [binding rules](bindings.md):
+Same pattern as [binding rules](bindings.md):
 
 - **Binding rule** on device → writes to a variable.
 - **Dashboard rule** on `DASHBOARD` object → writes to `@dashboardContext` or fires event.

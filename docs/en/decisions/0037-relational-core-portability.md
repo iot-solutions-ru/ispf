@@ -80,9 +80,12 @@ Default mode: `ISPF_EVENT_JOURNAL_STORE=jdbc`, `ISPF_VARIABLE_HISTORY_STORE=jdbc
 
 ## Consequences
 
-**Positive:** single abstraction; explicit single-DB scenario; external JDBC for integrations without mixing with metadata.
+- single abstraction; explicit single-DB scenario; external JDBC for integrations without mixing with metadata.
 
-**Negative:** enterprise engines certified one at a time; cluster requires the same engine on all replicas; DBMS change — greenfield + bundles, not live migration.
+
+Risks:
+
+- enterprise engines certified one at a time; cluster requires the same engine on all replicas; DBMS change — greenfield + bundles, not live migration.
 
 **Code:** `com.ispf.server.relational.*`, `DataSourceSqlSession`, `ExternalDataSourceRegistry`, `data-source-v1` extension, UI DataSourceEditor + Database settings.
 

@@ -4,7 +4,7 @@
 
 Platform-side development infrastructure for solution developers. AI reads curated context, generates **declarative bundle JSON**, runs validation gates, and publishes through the existing deploy API. The **tree-first agent** (FW-44) operates on the live object tree step-by-step.
 
-**North star:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
+**Target approach:** AI does not write Java/React in `main`; only validated artifacts (bundle, models, dashboards, functions, events) and tree nodes via platform tools.
 
 See [0004](decisions/0004-ai-artifact-generation-gates.md) and [0005](decisions/0005-tree-first-ai-agent.md).
 
