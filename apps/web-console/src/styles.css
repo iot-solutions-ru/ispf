@@ -8780,6 +8780,132 @@ body.scada-mimic-editor-open {
   font-size: 0.8rem;
 }
 
+.modal.analytics-formula-editor-modal {
+  width: min(680px, calc(100vw - 2rem));
+  max-height: min(92vh, 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.analytics-formula-editor-modal .modal-body {
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.analytics-formula-save-form {
+  gap: 1rem;
+}
+
+.analytics-formula-save-form label span:first-child {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.analytics-formula-expression-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.analytics-formula-expression-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.analytics-formula-expression-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.analytics-formula-expression-shell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.35rem;
+  background:
+    linear-gradient(180deg, rgba(47, 129, 247, 0.06), transparent 42%),
+    var(--bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.analytics-formula-expression-input {
+  min-height: 11rem;
+  max-height: 22rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.analytics-formula-expression-input:focus {
+  box-shadow: none;
+}
+
+.analytics-formula-expression-shell:focus-within {
+  border-color: rgba(47, 129, 247, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 2px rgba(47, 129, 247, 0.15);
+}
+
+.analytics-formula-param-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+}
+
+.analytics-formula-param-label {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.analytics-formula-param-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.analytics-formula-param-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 129, 247, 0.28);
+  background: rgba(47, 129, 247, 0.1);
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.analytics-formula-param-empty {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.analytics-formulas-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.analytics-formula-expression-cell {
+  display: inline-block;
+  max-width: min(36rem, 48vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
 .platform-binding-catalog-list {
   list-style: none;
   margin: 0;

@@ -31,7 +31,7 @@ export default function AnalyticsFormulasPanel() {
     }
     await deleteMutation.mutateAsync({
       formulaId: formula.id,
-      scope: formula.scope,
+      scope: formula.scope || "site",
       appId: formula.appId ?? undefined,
     });
     setStatusMessage(t("formulas.deleted", { id: formula.id }));

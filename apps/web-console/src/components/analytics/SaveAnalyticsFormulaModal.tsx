@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "../../ui/Modal";
 import {
@@ -37,6 +37,7 @@ export default function SaveAnalyticsFormulaModal({
   const { t } = useTranslation(["inspector", "common", "system"]);
   const createMutation = useCreateAnalyticsFormula();
   const updateMutation = useUpdateAnalyticsFormula();
+  const expressionRef = useRef<HTMLTextAreaElement>(null);
   const isEdit = formula != null;
   const [id, setId] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -61,6 +62,13 @@ export default function SaveAnalyticsFormulaModal({
     setId("");
     setExpression(expressionProp);
   }, [open, defaultKind, expressionProp, formula]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    window.requestAnimationFrame(() => expressionRef.current?.focus());
+  }, [open, formula]);
 
   const parameters = useMemo<AnalyticsCatalogParameterDto[]>(() => {
     return detectFormulaParameters(expression).map((name: string) => ({
@@ -112,9 +120,11 @@ export default function SaveAnalyticsFormulaModal({
   return (
     <Modal
       open={open}
+      wide
       stackLevel={1}
       title={isEdit ? t("formula.editTitle") : t("formula.saveTitle")}
       onClose={onClose}
+      className="analytics-formula-editor-modal"
       footer={
         <>
           <button type="button" className="btn" onClick={onClose}>
@@ -131,12 +141,13 @@ export default function SaveAnalyticsFormulaModal({
         </>
       }
     >
-      <div className="analytics-formula-save-form">
-        <label>
+      <div className="analytics-formula-save-form form-grid">
+        <label className="full">
           <span>{t("formula.displayName")}</span>
           <input
             type="text"
             value={displayName}
+            placeholder={t("formula.displayNamePlaceholder")}
             onChange={(event) => {
               setDisplayName(event.target.value);
               if (!isEdit && !id.trim()) {
@@ -145,10 +156,19 @@ export default function SaveAnalyticsFormulaModal({
             }}
           />
         </label>
+
         <label>
           <span>{t("formula.id")}</span>
-          <input type="text" value={id} disabled={isEdit} onChange={(event) => setId(event.target.value)} />
+          <input
+            type="text"
+            className="mono"
+            value={id}
+            disabled={isEdit}
+            placeholder="tank-fill-rate"
+            onChange={(event) => setId(event.target.value)}
+          />
         </label>
+
         <label>
           <span>{t("formula.kind")}</span>
           <select value={kind} onChange={(event) => setKind(event.target.value as "historian" | "reactive")}>
@@ -156,23 +176,41 @@ export default function SaveAnalyticsFormulaModal({
             <option value="reactive">{t("catalog.kind.reactive")}</option>
           </select>
         </label>
-        <label>
-          <span>{t("formula.expression")}</span>
-          <textarea
-            className="mono"
-            readOnly={!isEdit}
-            value={expression}
-            rows={4}
-            onChange={(event) => setExpression(event.target.value)}
-          />
-        </label>
-        {parameters.length > 0 && (
-          <p className="hint">
-            {t("formula.parametersDetected", { names: parameters.map((param) => param.name).join(", ") })}
-          </p>
-        )}
-        {saveMessage && <p className="hint success">{saveMessage}</p>}
-        {error && <p className="hint error">{(error as Error).message}</p>}
+
+        <div className="full analytics-formula-expression-field">
+          <div className="analytics-formula-expression-head">
+            <span className="analytics-formula-expression-label">{t("formula.expression")}</span>
+            <span className="hint">{t("formula.expressionHint")}</span>
+          </div>
+          <div className="analytics-formula-expression-shell">
+            <textarea
+              ref={expressionRef}
+              className="binding-expression-textarea mono analytics-formula-expression-input"
+              value={expression}
+              rows={6}
+              spellCheck={false}
+              placeholder={t("formula.expressionPlaceholder")}
+              onChange={(event) => setExpression(event.target.value)}
+            />
+          </div>
+          {parameters.length > 0 ? (
+            <div className="analytics-formula-param-row" aria-label={t("formula.parametersLabel")}>
+              <span className="hint analytics-formula-param-label">{t("formula.parametersLabel")}</span>
+              <div className="analytics-formula-param-chips">
+                {parameters.map((param) => (
+                  <code key={param.name} className="analytics-formula-param-chip">
+                    {`{{${param.name}}}`}
+                  </code>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <p className="hint analytics-formula-param-empty">{t("formula.parametersEmpty")}</p>
+          )}
+        </div>
+
+        {saveMessage && <p className="hint success full">{saveMessage}</p>}
+        {error && <p className="hint error full">{(error as Error).message}</p>}
       </div>
     </Modal>
   );

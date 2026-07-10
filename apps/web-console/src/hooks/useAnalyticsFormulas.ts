@@ -61,9 +61,9 @@ export function useDeleteAnalyticsFormula() {
       scope?: string;
       appId?: string;
     }) => deleteAnalyticsFormula(formulaId, scope, appId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["analytics-formulas"] });
-      queryClient.invalidateQueries({ queryKey: ["analytics-catalog"] });
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: ["analytics-formulas"] });
+      await queryClient.invalidateQueries({ queryKey: ["analytics-catalog"] });
     },
   });
 }
