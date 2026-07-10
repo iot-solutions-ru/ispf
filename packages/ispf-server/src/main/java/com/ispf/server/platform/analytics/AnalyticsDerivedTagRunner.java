@@ -12,6 +12,8 @@ import java.time.Duration;
 
 /**
  * Legacy periodic tick — delegates to calculation engine (BL-203).
+ * <p>
+ * Runs only on analytics-capable replicas when dedicated analytics nodes exist (BL-207).
  */
 @Component
 public class AnalyticsDerivedTagRunner {
@@ -22,6 +24,7 @@ public class AnalyticsDerivedTagRunner {
     private final AnalyticsEngineService engineService;
     private final AnalyticsEngineScheduler engineScheduler;
     private final AnalyticsProperties analyticsProperties;
+    private final AnalyticsClusterWorkloadService analyticsClusterWorkloadService;
     private final PlatformLeaderLockService leaderLockService;
     private final ClusterProperties clusterProperties;
 
@@ -29,12 +32,14 @@ public class AnalyticsDerivedTagRunner {
             AnalyticsEngineService engineService,
             AnalyticsEngineScheduler engineScheduler,
             AnalyticsProperties analyticsProperties,
+            AnalyticsClusterWorkloadService analyticsClusterWorkloadService,
             PlatformLeaderLockService leaderLockService,
             ClusterProperties clusterProperties
     ) {
         this.engineService = engineService;
         this.engineScheduler = engineScheduler;
         this.analyticsProperties = analyticsProperties;
+        this.analyticsClusterWorkloadService = analyticsClusterWorkloadService;
         this.leaderLockService = leaderLockService;
         this.clusterProperties = clusterProperties;
     }
@@ -42,6 +47,9 @@ public class AnalyticsDerivedTagRunner {
     @Scheduled(fixedDelayString = "${ispf.analytics.derived-tag-tick-ms:60000}")
     public void tick() {
         if (!analyticsProperties.derivedTagEnabled() || !engineService.isEnabled()) {
+            return;
+        }
+        if (!analyticsClusterWorkloadService.isAnalyticsWorkloadActive()) {
             return;
         }
         if (!clusterProperties.isSchedulerActive()) {
