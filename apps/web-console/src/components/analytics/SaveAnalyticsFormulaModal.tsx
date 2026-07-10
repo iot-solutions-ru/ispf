@@ -76,6 +76,7 @@ export default function SaveAnalyticsFormulaModal({
   return (
     <Modal
       open={open}
+      stackLevel={1}
       title={t("formula.saveTitle")}
       onClose={onClose}
       footer={

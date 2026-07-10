@@ -151,7 +151,7 @@ export default function BindingExpressionEditorModal({
       return;
     }
     event.preventDefault();
-    applySnippet(suggestion.snippet, true);
+    applySnippet(suggestion.snippet, null, true);
   };
 
   const handleApply = () => {
@@ -160,6 +160,7 @@ export default function BindingExpressionEditorModal({
   };
 
   return (
+    <>
     <Modal
       open={open}
       title={title}
@@ -243,7 +244,7 @@ export default function BindingExpressionEditorModal({
                 type="button"
                 className="btn btn-sm binding-expression-suggestion"
                 disabled={disabled}
-                onClick={() => applySnippet(entry.snippet, true)}
+                onClick={() => applySnippet(entry.snippet, null, true)}
               >
                 <code>{entry.name}</code>
               </button>
@@ -345,14 +346,15 @@ export default function BindingExpressionEditorModal({
           <span className="hint error">{(validateMutation.error as Error).message}</span>
         )}
       </div>
-      {analyticsCatalogKind && (
-        <SaveAnalyticsFormulaModal
-          open={saveFormulaOpen}
-          expression={draft}
-          defaultKind={analyticsCatalogKind}
-          onClose={() => setSaveFormulaOpen(false)}
-        />
-      )}
     </Modal>
+    {analyticsCatalogKind && (
+      <SaveAnalyticsFormulaModal
+        open={saveFormulaOpen}
+        expression={draft}
+        defaultKind={analyticsCatalogKind}
+        onClose={() => setSaveFormulaOpen(false)}
+      />
+    )}
+    </>
   );
 }

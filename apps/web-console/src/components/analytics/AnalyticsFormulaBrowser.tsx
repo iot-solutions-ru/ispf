@@ -179,7 +179,7 @@ export default function AnalyticsFormulaBrowser({
       <ApplyAnalyticsFormulaModal
         open={applyEntry != null}
         entry={applyEntry}
-        initialParams={initialFormulaLink?.formulaRef === applyEntry?.id ? initialFormulaLink.formulaParams : null}
+        initialParams={initialFormulaLink && initialFormulaLink.formulaRef === applyEntry?.id ? initialFormulaLink.formulaParams : null}
         onClose={() => setApplyEntry(null)}
         onApply={(result: FormulaApplyResult) => onInsert(result.expression, result.formulaLink)}
       />

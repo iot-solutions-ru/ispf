@@ -11,6 +11,8 @@ export interface ModalProps {
   footer?: ReactNode;
   wide?: boolean;
   className?: string;
+  /** Raised above elevated modals (e.g. expression editor backdrop at 20010). */
+  stackLevel?: number;
 }
 
 export default function Modal({
@@ -21,9 +23,11 @@ export default function Modal({
   footer,
   wide = false,
   className = "",
+  stackLevel = 0,
 }: ModalProps) {
   const { t } = useTranslation("common");
   const titleId = useId();
+  const backdropStyle = stackLevel > 0 ? { zIndex: 20010 + stackLevel * 10 } : undefined;
 
   return (
     <ModalPortal>
@@ -32,6 +36,7 @@ export default function Modal({
           <motion.div
             className="modal-backdrop"
             role="presentation"
+            style={backdropStyle}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

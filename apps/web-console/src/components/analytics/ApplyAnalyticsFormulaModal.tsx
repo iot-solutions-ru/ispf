@@ -82,6 +82,7 @@ export default function ApplyAnalyticsFormulaModal({
   return (
     <Modal
       open={open}
+      stackLevel={1}
       title={t("formula.applyTitle", { name: entry.displayName })}
       onClose={onClose}
       footer={
