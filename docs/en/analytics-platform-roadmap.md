@@ -423,7 +423,7 @@ BL-209 + BL-203 ─→ BL-211 (CEL-over-historian)
 
 **BL-215** — **Done** (2026-07-10). `formulaRef` on binding rules, blueprint `analyticsFormulasJson` sharing, re-expand on save.
 
-**BL-216** — **Done** (local + remote install path). Demo pack `percentChange` in `examples/marketplace-analytics-pack-demo/`; `DropInAnalyticsPackLoader`; paid RSA verify deferred.
+**BL-216** — **Done** (local + remote install, RSA license verify on `analytics-pack.json` + JAR). Demo pack `percentChange` in `examples/marketplace-analytics-pack-demo/`; `DropInAnalyticsPackLoader`; marketplace paid activate signs zip manifest.
 
 ## Out of scope (post BL-216)
 

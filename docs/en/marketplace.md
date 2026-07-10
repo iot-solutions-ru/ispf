@@ -56,7 +56,7 @@ Paid activate body: `{ "activationCode": "..." }` — `installationId` is added 
 Compatible with [ispf-marketplace](https://github.com/Michaael/ispf-marketplace) API:
 
 - `GET /api/v1/catalog` → `{ listings: [...] }`
-- `GET /api/v1/catalog/{slug}/download` (free)
+- `GET /api/v1/catalog/{slug}/download` (free) — optional `?installationId=` returns RSA-signed bundle when marketplace signing key is configured
 - `POST /api/v1/entitlements/activate` (paid)
 
 Listing fields used by UI: `slug`, `title`, `description`, `pricing`, `appId`, `artifactKind`, `packId`, `vendorName`, `vendorLegalName`, `vendorInn`, `vendorSellerKind` (`company` | `individual`), `vendorContactPerson`, `vendorContactEmail`, `vendorContactPhone`, `priceCents`, `latestVersion`, `minIspfVersion`, `tags`.
@@ -80,13 +80,13 @@ Foundation for Phase 32 marketplace GA. Track in release planning; not all items
 | 1 | Remote catalog browse (System → Solutions) | Shipped |
 | 2 | Free one-click install (platform proxies download + deploy) | Shipped |
 | 3 | Paid activate with entitlement key | Shipped |
-| 4 | Bundle signature verification on install | Partial — paid activate + optional `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM`; trusted free install when unsigned |
+| 4 | Bundle signature verification on install | Shipped — paid activate signs; free `/download?installationId=` signs on marketplace; ISPF trusted path fallback when unsigned |
 | 5 | Version pinning + upgrade path (`latestVersion`, semver) | Shipped — `updateAvailable` in catalog, `installedVersion` / `upgrade` on install |
 | 6 | `minIspfVersion` enforcement before install | Shipped |
 | 7 | Vendor legal fields in listing manifest | Foundation — see demo |
 | 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API |
 | 9 | Marketplace server artifact reseed runbook | Shipped — see Troubleshooting |
-| 10 | 10+ signed production bundles | Planned |
+| 10 | 10+ signed production bundles | Shipped — `examples/marketplace-catalog/` (14 listings); `publish-marketplace-catalog.ps1` |
 | 11 | 3 external partner catalogs | Planned (BL-184) |
 | 12 | CI: bundle validate on publish | Use `tools/bundle-validate-cli/validate.mjs` |
 
@@ -105,6 +105,14 @@ Publish flow (marketplace server):
 1. Copy `bundle.json` to marketplace artifacts store as `marketplace-demo__1.0.0.json`
 2. Register `listing.manifest.json` in catalog index
 3. Verify `GET /api/v1/catalog/marketplace-demo/download` and ISPF **Install**
+
+Bulk publish all catalog listings:
+
+```powershell
+.\deploy\tools\        publish-marketplace-catalog.ps1
+```
+
+Paid analytics packs: marketplace `activate` signs `analytics-pack.json` inside zip (`patch-marketplace-analytics-pack-signing.sh`).
 
 ## Troubleshooting
 

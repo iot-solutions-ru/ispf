@@ -12,7 +12,8 @@ public record AnalyticsPackManifest(
         String licenseType,
         String minPlatformVersion,
         String jarFile,
-        List<String> functions
+        List<String> functions,
+        Map<String, Object> license
 ) {
     @SuppressWarnings("unchecked")
     static AnalyticsPackManifest fromMap(Map<String, Object> root) {
@@ -29,13 +30,19 @@ public record AnalyticsPackManifest(
         if (rawFunctions instanceof List<?> list) {
             functions = list.stream().map(String::valueOf).map(String::trim).filter(s -> !s.isBlank()).toList();
         }
+        Map<String, Object> license = null;
+        Object licenseRaw = root.get("license");
+        if (licenseRaw instanceof Map<?, ?> licenseMap) {
+            license = (Map<String, Object>) licenseMap;
+        }
         return new AnalyticsPackManifest(
                 packId,
                 stringValue(root.get("version")),
                 stringValue(root.get("licenseType")),
                 stringValue(root.get("minPlatformVersion")),
                 jarFile,
-                functions
+                functions,
+                license
         );
     }
 

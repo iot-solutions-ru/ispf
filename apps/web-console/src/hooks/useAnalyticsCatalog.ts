@@ -7,11 +7,8 @@ import {
   type AnalyticsCatalogEntryDto,
   type AnalyticsCatalogValidateRequest,
 } from "../api/analyticsCatalog";
-import { PLATFORM_BINDING_ENTRIES, type PlatformBindingEntry } from "../utils/platformBindings";
-import {
-  HISTORIAN_EXPRESSION_FALLBACK_ENTRIES,
-  mapAnalyticsCatalogToBindingEntries,
-} from "../utils/historianExpressionBindings";
+import type { PlatformBindingEntry } from "../utils/platformBindings";
+import { mapAnalyticsCatalogToBindingEntries } from "../utils/historianExpressionBindings";
 
 export type AnalyticsBrowserKind = "historian" | "reactive";
 
@@ -29,20 +26,10 @@ export function useAnalyticsCatalog(kind?: AnalyticsBrowserKind) {
     return mapAnalyticsCatalogToBindingEntries(query.data, kind);
   }, [query.data, kind]);
 
-  const fallbackEntries = useMemo(() => {
-    if (kind === "historian") {
-      return HISTORIAN_EXPRESSION_FALLBACK_ENTRIES;
-    }
-    if (kind === "reactive") {
-      return PLATFORM_BINDING_ENTRIES;
-    }
-    return [] as PlatformBindingEntry[];
-  }, [kind]);
-
   return {
     ...query,
-    entries: remoteEntries.length > 0 ? remoteEntries : fallbackEntries,
-    hasRemoteEntries: kind ? remoteEntries.length > 0 : (query.data?.length ?? 0) > 0,
+    entries: remoteEntries,
+    hasRemoteEntries: (query.data?.length ?? 0) > 0,
   };
 }
 

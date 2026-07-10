@@ -161,6 +161,25 @@ public class AnalyticsCatalogRegistry {
                         "core",
                         "analytics-catalog-max"
                 );
+                case "oee" -> new AnalyticsCatalogEntry(
+                        "oee",
+                        "OEE composite",
+                        "A",
+                        List.of("historian"),
+                        "oee('<sourcePath>', '<availability>', '<performance>', '<quality>', '<windowBucket?>')",
+                        List.of(
+                                parameter("sourcePath", "string", true, "Object path with OEE metric variables", null),
+                                parameter("availability", "string", false, "Availability variable name", "availability"),
+                                parameter("performance", "string", false, "Performance variable name", "performance"),
+                                parameter("quality", "string", false, "Quality variable name", "quality"),
+                                parameter("windowBucket", "string", false, "Historian bucket (e.g. 8h)", "8h")
+                        ),
+                        "Composite OEE percent (availability × performance × quality).",
+                        List.of("oee('root.platform.devices.line01', 'availabilityPct', 'performancePct', 'qualityPct', '8h')"),
+                        List.of("historian", "oee", "builtin"),
+                        "core",
+                        "analytics-catalog-oee"
+                );
                 default -> new AnalyticsCatalogEntry(
                         helper,
                         helper,

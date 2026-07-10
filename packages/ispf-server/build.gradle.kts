@@ -95,6 +95,7 @@ springBoot {
 }
 
 tasks.named<ProcessResources>("processResources") {
+    dependsOn(rootProject.tasks.named("buildContextPack"))
     from(rootProject.file("gradle/driver-packs.json")) {
         into("driver-pack")
     }

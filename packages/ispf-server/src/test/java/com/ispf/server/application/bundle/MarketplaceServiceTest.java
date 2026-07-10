@@ -120,22 +120,35 @@ class MarketplaceServiceTest {
 
     @Test
     void browseFiltersByQueryAndPricing() throws Exception {
-        Map<String, Object> all = service.browseCatalog("test", null, "all");
+        Map<String, Object> all = service.browseCatalog("test", null, "all", "all");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> listings = (List<Map<String, Object>>) all.get("listings");
         assertEquals(3, listings.size());
 
-        Map<String, Object> freeOnly = service.browseCatalog("test", null, "free");
+        Map<String, Object> freeOnly = service.browseCatalog("test", null, "free", "all");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> freeListings = (List<Map<String, Object>>) freeOnly.get("listings");
         assertEquals(2, freeListings.size());
         assertEquals("free-app", freeListings.get(0).get("slug"));
 
-        Map<String, Object> search = service.browseCatalog("test", "commercial", "all");
+        Map<String, Object> search = service.browseCatalog("test", "commercial", "all", "all");
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> searchListings = (List<Map<String, Object>>) search.get("listings");
         assertEquals(1, searchListings.size());
         assertEquals("paid-app", searchListings.get(0).get("slug"));
+    }
+
+    @Test
+    void browseFiltersByArtifactKind() throws Exception {
+        Map<String, Object> applications = service.browseCatalog("test", null, "all", "application");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> appListings = (List<Map<String, Object>>) applications.get("listings");
+        assertEquals(3, appListings.size());
+
+        Map<String, Object> drivers = service.browseCatalog("test", null, "all", "driver");
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> driverListings = (List<Map<String, Object>>) drivers.get("listings");
+        assertEquals(0, driverListings.size());
     }
 
     @Test

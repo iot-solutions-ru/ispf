@@ -1,6 +1,9 @@
 package com.ispf.server.platform.analytics.pack;
 
 import com.ispf.server.config.AnalyticsPackProperties;
+import com.ispf.server.config.CommercialLicenseProperties;
+import com.ispf.server.driver.pack.DriverPackLicenseVerifier;
+import com.ispf.server.license.InstallationIdService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -39,10 +42,26 @@ class DropInAnalyticsPackLoaderTest {
         AnalyticsPackLoader classpathLoader = new AnalyticsPackLoader(registry);
         AnalyticsPackProperties properties = new AnalyticsPackProperties();
         properties.setPacksDir(tempDir.resolve("packs").toString());
+        CommercialLicenseProperties licenseProperties = new CommercialLicenseProperties();
+        licenseProperties.setEnforce(false);
+        InstallationIdService installationIdService = new InstallationIdService(licenseProperties);
+        DriverPackLicenseVerifier licenseVerifier = new DriverPackLicenseVerifier(
+                licenseProperties,
+                installationIdService,
+                java.util.Optional.empty()
+        );
+        AnalyticsPackLicenseSigner licenseSigner = new AnalyticsPackLicenseSigner(
+                licenseProperties,
+                installationIdService,
+                java.util.Optional.empty(),
+                licenseVerifier
+        );
         DropInAnalyticsPackLoader loader = new DropInAnalyticsPackLoader(
                 properties,
                 classpathLoader,
-                new ObjectMapper()
+                new ObjectMapper(),
+                licenseProperties,
+                licenseSigner
         );
 
         Path zipPath = tempDir.resolve("demo.zip");

@@ -2,6 +2,9 @@ package com.ispf.server.platform.analytics.pack;
 
 import com.ispf.analytics.spi.AnalyticsFunctionProvider;
 import com.ispf.server.config.AnalyticsPackProperties;
+import com.ispf.server.config.CommercialLicenseProperties;
+import com.ispf.server.driver.pack.DriverPackLicenseClaims;
+import com.ispf.server.license.CommercialLicenseException;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,15 +41,21 @@ public class DropInAnalyticsPackLoader {
     private final AnalyticsPackProperties packProperties;
     private final AnalyticsPackLoader analyticsPackLoader;
     private final ObjectMapper objectMapper;
+    private final CommercialLicenseProperties licenseProperties;
+    private final AnalyticsPackLicenseSigner licenseSigner;
 
     public DropInAnalyticsPackLoader(
             AnalyticsPackProperties packProperties,
             AnalyticsPackLoader analyticsPackLoader,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CommercialLicenseProperties licenseProperties,
+            AnalyticsPackLicenseSigner licenseSigner
     ) {
         this.packProperties = packProperties;
         this.analyticsPackLoader = analyticsPackLoader;
         this.objectMapper = objectMapper;
+        this.licenseProperties = licenseProperties;
+        this.licenseSigner = licenseSigner;
     }
 
     @PostConstruct
@@ -82,6 +91,20 @@ public class DropInAnalyticsPackLoader {
                 throw new IllegalArgumentException(
                         "Pack id mismatch: expected " + expectedPackId + " got " + manifest.packId()
                 );
+            }
+
+            Path jarPath = tempDir.resolve(manifest.jarFile()).normalize();
+            if (Files.isRegularFile(jarPath) && manifest.license() == null
+                    && licenseSigner.isConfigured()
+                    && !isOpenLicenseType(manifest.licenseType())) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> signedRoot = licenseSigner.signManifestIfNeeded(
+                        manifest.packId(),
+                        objectMapper.readValue(manifestPath.toFile(), Map.class),
+                        jarPath
+                );
+                objectMapper.writeValue(manifestPath.toFile(), signedRoot);
+                manifest = AnalyticsPackManifest.fromMap(signedRoot);
             }
 
             Path targetDir = packsRoot().resolve(manifest.packId()).normalize();
@@ -126,6 +149,9 @@ public class DropInAnalyticsPackLoader {
             Path jarPath = packDir.resolve(manifest.jarFile()).normalize();
             if (!jarPath.startsWith(packDir.normalize()) || !Files.isRegularFile(jarPath)) {
                 log.warn("Analytics pack {} JAR not found: {}", manifest.packId(), jarPath);
+                return List.of();
+            }
+            if (!verifyPackLicense(manifest, jarPath)) {
                 return List.of();
             }
             return registerJar(manifest.packId(), jarPath);
@@ -212,6 +238,45 @@ public class DropInAnalyticsPackLoader {
         result.put("removedHelpers", removedHelpers);
         log.info("Analytics drop-in pack removed: {} helpers={}", normalized, removedHelpers);
         return result;
+    }
+
+    private boolean verifyPackLicense(AnalyticsPackManifest manifest, Path jarPath) {
+        DriverPackLicenseClaims claims = DriverPackLicenseClaims.fromMap(manifest.license());
+        if (claims != null) {
+            try {
+                licenseSigner.verify(manifest.packId(), jarPath, claims);
+                return true;
+            } catch (CommercialLicenseException ex) {
+                if (licenseProperties.isEnforce()) {
+                    log.error("Skipping analytics pack {}: {}", manifest.packId(), ex.getMessage());
+                } else {
+                    log.warn("Skipping analytics pack {} (license): {}", manifest.packId(), ex.getMessage());
+                }
+                return false;
+            }
+        }
+        if (!isOpenLicenseType(manifest.licenseType())) {
+            if (licenseProperties.isEnforce()) {
+                log.warn(
+                        "Skipping analytics pack {} — commercial license required when enforce=true",
+                        manifest.packId()
+                );
+                return false;
+            }
+            log.warn("Loading commercial analytics pack {} without license (enforce=false)", manifest.packId());
+        }
+        return true;
+    }
+
+    private static boolean isOpenLicenseType(String licenseType) {
+        if (licenseType == null || licenseType.isBlank()) {
+            return true;
+        }
+        String normalized = licenseType.trim().toLowerCase();
+        return normalized.equals("apache-2.0")
+                || normalized.equals("mit")
+                || normalized.equals("bsd-3-clause")
+                || normalized.equals("public-domain");
     }
 
     private List<String> registerJar(String packId, Path jarPath) throws IOException {

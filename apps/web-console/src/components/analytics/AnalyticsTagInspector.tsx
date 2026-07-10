@@ -14,7 +14,7 @@ import {
 } from "../../api";
 import type { DataRecord } from "../../types";
 import BindingExpressionField from "../BindingExpressionField";
-import { ANALYTICS_CEL_BINDING_ENTRIES } from "../../utils/analyticsCelBindings";
+import { useAnalyticsCatalog } from "../../hooks/useAnalyticsCatalog";
 
 interface AnalyticsTagInspectorProps {
   path: string;
@@ -130,6 +130,7 @@ export default function AnalyticsTagInspector({
     queryKey: ["analytics-tag", path],
     queryFn: () => fetchAnalyticsTagByPath(path),
   });
+  const celCatalog = useAnalyticsCatalog("historian");
 
   useEffect(() => {
     if (!tagQuery.data) {
@@ -245,7 +246,7 @@ export default function AnalyticsTagInspector({
                   value={expressionDraft}
                   onChange={setExpressionDraft}
                   objectPath={historianTagObjectPath(path)}
-                  entries={ANALYTICS_CEL_BINDING_ENTRIES}
+                  entries={celCatalog.entries}
                   placeholder={t("automation:analyticsTag.expressionPlaceholder")}
                   editorTitle={t("automation:analyticsTag.expression")}
                   onValidate={async (expression) => {

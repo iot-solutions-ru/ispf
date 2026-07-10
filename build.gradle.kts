@@ -163,3 +163,19 @@ tasks.register("testNightlyBackend") {
     description = "Nightly backend module batch — add -Dispf.test.skipLoad=true -Dispf.driver.packs=dev (federation + load run separately)"
     dependsOn(prFastBackendTestTasks)
 }
+
+val contextPackScript = layout.projectDirectory.file("tools/ai-pack/build.py")
+val contextPackResource = layout.projectDirectory.file(
+    "packages/ispf-server/src/main/resources/ai/context-pack.json"
+)
+
+tasks.register<Exec>("buildContextPack") {
+    group = "ai"
+    description = "Regenerate ai/context-pack.json from docs and examples (FW-41); runs before server bootJar"
+    commandLine("python", contextPackScript.asFile.absolutePath)
+    environment("ISPF_VERSION", version.toString())
+    inputs.file(contextPackScript)
+    inputs.dir(layout.projectDirectory.dir("docs/en"))
+    inputs.dir(layout.projectDirectory.dir("examples"))
+    outputs.file(contextPackResource)
+}

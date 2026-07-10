@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
-import { HISTORIAN_EXPRESSION_FALLBACK_ENTRIES } from "../../utils/historianExpressionBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
 import ApplyAnalyticsFormulaModal, { type FormulaApplyResult } from "./ApplyAnalyticsFormulaModal";
@@ -62,15 +61,7 @@ export default function AnalyticsFormulaBrowser({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [applyEntry, setApplyEntry] = useState<AnalyticsCatalogEntryDto | null>(null);
 
-  const effectiveFallbackEntries = useMemo(() => {
-    if (fallbackEntries.length > 0) {
-      return fallbackEntries;
-    }
-    if (kindFilter === "reactive") {
-      return [];
-    }
-    return HISTORIAN_EXPRESSION_FALLBACK_ENTRIES;
-  }, [fallbackEntries, kindFilter]);
+  const effectiveFallbackEntries = useMemo(() => fallbackEntries, [fallbackEntries]);
 
   const remoteFiltered = useMemo(() => {
     const list = catalogQuery.data ?? [];

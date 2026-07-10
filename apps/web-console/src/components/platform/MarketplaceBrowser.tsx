@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
-  countMarketplaceListingsByKind,
   filterMarketplaceListingsByKind,
   groupMarketplaceListingsByKind,
   marketplaceListingIdentifier,
@@ -27,9 +26,29 @@ const KIND_FILTERS: MarketplaceKindFilter[] = [
   "application",
   "analytics-pack",
   "symbol-pack",
+  "driver",
   "plugin",
+  "workflow-template",
+  "report-template",
+  "ai-provider",
+  "binding-pack",
   "other",
 ];
+
+type InstalledFilter = "all" | "installed" | "not-installed";
+
+function filterMarketplaceListingsByInstalled(
+  listings: MarketplaceListing[],
+  installedFilter: InstalledFilter
+): MarketplaceListing[] {
+  if (installedFilter === "all") {
+    return listings;
+  }
+  if (installedFilter === "installed") {
+    return listings.filter((listing) => listing.installed);
+  }
+  return listings.filter((listing) => !listing.installed);
+}
 
 function MarketplaceInstallationIdHint() {
   const { t } = useTranslation("system");
@@ -301,6 +320,7 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
   const [query, setQuery] = useState("");
   const [pricing, setPricing] = useState("all");
   const [kindFilter, setKindFilter] = useState<MarketplaceKindFilter>("all");
+  const [installedFilter, setInstalledFilter] = useState<InstalledFilter>("all");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
   const marketplacesQuery = useQuery({
@@ -313,19 +333,26 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
 
   const catalogQuery = useQuery({
     queryKey: ["marketplace-catalog", activeId, debouncedQuery, pricing],
-    queryFn: () => fetchMarketplaceCatalog(activeId, { q: debouncedQuery, pricing }),
+    queryFn: () =>
+      fetchMarketplaceCatalog(activeId, {
+        q: debouncedQuery,
+        pricing,
+      }),
     enabled: Boolean(activeId) && marketplacesQuery.data?.enabled !== false,
   });
 
   const listings = catalogQuery.data?.listings ?? [];
-  const kindCounts = useMemo(() => countMarketplaceListingsByKind(listings), [listings]);
+  const visibleListings = useMemo(
+    () => filterMarketplaceListingsByInstalled(listings, installedFilter),
+    [listings, installedFilter]
+  );
   const filteredListings = useMemo(
-    () => filterMarketplaceListingsByKind(listings, kindFilter),
-    [listings, kindFilter]
+    () => filterMarketplaceListingsByKind(visibleListings, kindFilter),
+    [visibleListings, kindFilter]
   );
   const groupedListings = useMemo(
-    () => (kindFilter === "all" ? groupMarketplaceListingsByKind(listings) : []),
-    [listings, kindFilter]
+    () => (kindFilter === "all" ? groupMarketplaceListingsByKind(visibleListings) : []),
+    [visibleListings, kindFilter]
   );
 
   function applySearch() {
@@ -370,15 +397,26 @@ export default function MarketplaceBrowser({ onInstalled }: { onInstalled: (mess
             <option value="paid">{t("solutions.marketplace.pricingPaid")}</option>
           </select>
         </label>
+        <label className="marketplace-field">
+          <span>{t("solutions.marketplace.statusFilter")}</span>
+          <select value={installedFilter} onChange={(e) => setInstalledFilter(e.target.value as InstalledFilter)}>
+            <option value="all">{t("solutions.marketplace.statusAll")}</option>
+            <option value="installed">{t("solutions.marketplace.statusInstalled")}</option>
+            <option value="not-installed">{t("solutions.marketplace.statusNotInstalled")}</option>
+          </select>
+        </label>
         <button type="button" className="btn" onClick={applySearch}>
           {t("solutions.marketplace.searchBtn")}
         </button>
       </div>
 
-      {listings.length > 0 && (
+      {visibleListings.length > 0 && (
         <div className="marketplace-kind-filters" role="group" aria-label={t("solutions.marketplace.kindFilter")}>
           {KIND_FILTERS.map((filter) => {
-            const count = kindCounts[filter];
+            const count =
+              filter === "all"
+                ? visibleListings.length
+                : filterMarketplaceListingsByKind(visibleListings, filter).length;
             if (filter !== "all" && count === 0) {
               return null;
             }

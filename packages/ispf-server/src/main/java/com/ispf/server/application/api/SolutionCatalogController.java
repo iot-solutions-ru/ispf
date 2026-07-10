@@ -67,10 +67,11 @@ public class SolutionCatalogController {
     public Map<String, Object> marketplaceCatalog(
             @PathVariable String marketplaceId,
             @RequestParam(required = false) String q,
-            @RequestParam(required = false, defaultValue = "all") String pricing
+            @RequestParam(required = false, defaultValue = "all") String pricing,
+            @RequestParam(required = false, defaultValue = "all") String kind
     ) {
         try {
-            return marketplaceService.browseCatalog(marketplaceId, q, pricing);
+            return marketplaceService.browseCatalog(marketplaceId, q, pricing, kind);
         } catch (MarketplaceService.MarketplaceRemoteException ex) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, ex.getMessage(), ex);
         } catch (IllegalArgumentException ex) {

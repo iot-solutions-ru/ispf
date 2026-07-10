@@ -114,7 +114,7 @@ public class MarketplaceService {
         return response;
     }
 
-    public Map<String, Object> browseCatalog(String marketplaceId, String query, String pricingFilter)
+    public Map<String, Object> browseCatalog(String marketplaceId, String query, String pricingFilter, String kindFilter)
             throws Exception {
         MarketplaceProperties.Endpoint endpoint = requireEndpoint(marketplaceId);
         @SuppressWarnings("unchecked")
@@ -158,7 +158,7 @@ public class MarketplaceService {
             enriched.add(row);
         }
 
-        List<Map<String, Object>> filtered = filterListings(enriched, query, pricingFilter);
+        List<Map<String, Object>> filtered = filterListings(enriched, query, pricingFilter, kindFilter);
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("marketplaceId", endpoint.getId());
         response.put("marketplaceName", endpoint.getName());
@@ -357,6 +357,11 @@ public class MarketplaceService {
     ) throws Exception {
         String packId = requirePackId(detail);
         List<String> helpers = analyticsPackLoader.installZipArchive(zipBytes, packId);
+        if (helpers == null || helpers.isEmpty()) {
+            throw new IllegalStateException(
+                    "Analytics pack install failed — license verification or helper registration"
+            );
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "OK");
         result.put("artifactKind", "analytics-pack");
@@ -448,12 +453,15 @@ public class MarketplaceService {
     private List<Map<String, Object>> filterListings(
             List<Map<String, Object>> listings,
             String query,
-            String pricingFilter
+            String pricingFilter,
+            String kindFilter
     ) {
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         String pricing = pricingFilter == null ? "all" : pricingFilter.trim().toLowerCase(Locale.ROOT);
+        String kind = kindFilter == null ? "all" : kindFilter.trim().toLowerCase(Locale.ROOT);
         return listings.stream()
                 .filter(row -> matchesPricing(row, pricing))
+                .filter(row -> matchesKind(row, kind))
                 .filter(row -> matchesQuery(row, q))
                 .toList();
     }
@@ -464,6 +472,55 @@ public class MarketplaceService {
         }
         String rowPricing = stringValue(row.get("pricing"));
         return rowPricing != null && pricing.equalsIgnoreCase(rowPricing);
+    }
+
+    private static boolean matchesKind(Map<String, Object> row, String kind) {
+        if ("all".equals(kind) || kind.isBlank()) {
+            return true;
+        }
+        String raw = normalizeListingKind(
+                stringValue(row.get("artifactKind")),
+                stringValue(row.get("kind"))
+        );
+        return kind.equalsIgnoreCase(raw);
+    }
+
+    /** Normalize artifactKind/kind to one of the marketplace filter categories. */
+    private static String normalizeListingKind(String artifactKind, String kind) {
+        String raw = artifactKind != null && !artifactKind.isBlank() ? artifactKind : kind;
+        if (raw == null || raw.isBlank()) {
+            return "application";
+        }
+        raw = raw.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        if ("application-bundle".equals(raw) || "application".equals(raw)) {
+            return "application";
+        }
+        if ("analytics-pack".equals(raw)) {
+            return "analytics-pack";
+        }
+        if ("symbol-pack".equals(raw)) {
+            return "symbol-pack";
+        }
+        if (raw.contains("driver") || raw.equals("driver-pack")) {
+            return "driver";
+        }
+        if (raw.contains("workflow") || raw.equals("workflow-template")) {
+            return "workflow-template";
+        }
+        if (raw.contains("report") || raw.equals("report-template")) {
+            return "report-template";
+        }
+        if (raw.contains("ai") || raw.contains("llm") || raw.contains("ollama") || raw.contains("openai")
+                || raw.equals("ai-provider")) {
+            return "ai-provider";
+        }
+        if (raw.contains("binding") || raw.equals("binding-pack")) {
+            return "binding-pack";
+        }
+        if (raw.contains("plugin")) {
+            return "plugin";
+        }
+        return "other";
     }
 
     private static boolean matchesQuery(Map<String, Object> row, String q) {

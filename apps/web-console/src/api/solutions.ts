@@ -96,11 +96,12 @@ export function fetchMarketplaces(): Promise<{ enabled: boolean; defaultId: stri
 
 export function fetchMarketplaceCatalog(
   marketplaceId: string,
-  params?: { q?: string; pricing?: string }
+  params?: { q?: string; pricing?: string; kind?: string }
 ): Promise<MarketplaceListingsResponse> {
   const search = new URLSearchParams();
   if (params?.q) search.set("q", params.q);
   if (params?.pricing && params.pricing !== "all") search.set("pricing", params.pricing);
+  if (params?.kind && params.kind !== "all") search.set("kind", params.kind);
   const qs = search.toString();
   return fetch(
     `/api/v1/solutions/marketplaces/${encodeURIComponent(marketplaceId)}/catalog${qs ? `?${qs}` : ""}`,

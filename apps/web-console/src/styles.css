@@ -10484,6 +10484,31 @@ body.scada-mimic-editor-open {
   background: rgba(56, 189, 248, 0.14);
 }
 
+.marketplace-kind-filter--driver.active {
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.marketplace-kind-filter--workflow-template.active {
+  border-color: rgba(244, 114, 182, 0.55);
+  background: rgba(244, 114, 182, 0.14);
+}
+
+.marketplace-kind-filter--report-template.active {
+  border-color: rgba(251, 146, 60, 0.55);
+  background: rgba(251, 146, 60, 0.14);
+}
+
+.marketplace-kind-filter--ai-provider.active {
+  border-color: rgba(129, 140, 248, 0.55);
+  background: rgba(129, 140, 248, 0.14);
+}
+
+.marketplace-kind-filter--binding-pack.active {
+  border-color: rgba(45, 212, 191, 0.55);
+  background: rgba(45, 212, 191, 0.14);
+}
+
 .marketplace-kind-sections {
   display: flex;
   flex-direction: column;
@@ -10557,6 +10582,31 @@ body.scada-mimic-editor-open {
   color: #7dd3fc;
 }
 
+.marketplace-kind-badge--driver {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.marketplace-kind-badge--workflow-template {
+  background: rgba(244, 114, 182, 0.2);
+  color: #f9a8d4;
+}
+
+.marketplace-kind-badge--report-template {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fdba74;
+}
+
+.marketplace-kind-badge--ai-provider {
+  background: rgba(129, 140, 248, 0.2);
+  color: #a5b4fc;
+}
+
+.marketplace-kind-badge--binding-pack {
+  background: rgba(45, 212, 191, 0.2);
+  color: #5eead4;
+}
+
 .marketplace-kind-badge--other {
   background: rgba(148, 163, 184, 0.2);
   color: #cbd5e1;
@@ -10577,6 +10627,26 @@ body.scada-mimic-editor-open {
 
 .marketplace-listing-card--plugin {
   border-color: rgba(56, 189, 248, 0.38);
+}
+
+.marketplace-listing-card--driver {
+  border-color: rgba(34, 197, 94, 0.38);
+}
+
+.marketplace-listing-card--workflow-template {
+  border-color: rgba(244, 114, 182, 0.38);
+}
+
+.marketplace-listing-card--report-template {
+  border-color: rgba(251, 146, 60, 0.38);
+}
+
+.marketplace-listing-card--ai-provider {
+  border-color: rgba(129, 140, 248, 0.38);
+}
+
+.marketplace-listing-card--binding-pack {
+  border-color: rgba(45, 212, 191, 0.38);
 }
 
 .marketplace-listing-card--other {

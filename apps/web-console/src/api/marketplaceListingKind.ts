@@ -5,14 +5,24 @@ export type MarketplaceListingKind =
   | "application"
   | "analytics-pack"
   | "symbol-pack"
+  | "driver"
   | "plugin"
+  | "workflow-template"
+  | "report-template"
+  | "ai-provider"
+  | "binding-pack"
   | "other";
 
 export const MARKETPLACE_KIND_ORDER: MarketplaceListingKind[] = [
   "application",
   "analytics-pack",
   "symbol-pack",
+  "driver",
   "plugin",
+  "workflow-template",
+  "report-template",
+  "ai-provider",
+  "binding-pack",
   "other",
 ];
 
@@ -33,7 +43,22 @@ export function resolveMarketplaceListingKind(listing: MarketplaceListing): Mark
   if (raw === "symbol-pack") {
     return "symbol-pack";
   }
-  if (raw.includes("plugin") || raw === "driver-pack" || raw === "driver") {
+  if (raw.includes("driver")) {
+    return "driver";
+  }
+  if (raw.includes("workflow") || raw === "workflow-template") {
+    return "workflow-template";
+  }
+  if (raw.includes("report") || raw === "report-template") {
+    return "report-template";
+  }
+  if (raw.includes("ai") || raw.includes("llm") || raw.includes("ollama") || raw.includes("openai")) {
+    return "ai-provider";
+  }
+  if (raw.includes("binding") || raw === "binding-pack") {
+    return "binding-pack";
+  }
+  if (raw.includes("plugin")) {
     return "plugin";
   }
   return "other";
@@ -84,7 +109,12 @@ export function countMarketplaceListingsByKind(
     application: 0,
     "analytics-pack": 0,
     "symbol-pack": 0,
+    driver: 0,
     plugin: 0,
+    "workflow-template": 0,
+    "report-template": 0,
+    "ai-provider": 0,
+    "binding-pack": 0,
     other: 0,
   };
   for (const listing of listings) {

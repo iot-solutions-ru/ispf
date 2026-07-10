@@ -8,17 +8,22 @@ import com.ispf.server.ai.agent.AgentDashboardGuide;
 import com.ispf.server.ai.agent.AgentWidgetCatalog;
 import com.ispf.server.driver.DriverCatalog;
 import com.ispf.server.object.ObjectManager;
+import com.ispf.server.platform.update.PlatformVersionSupport;
+import com.ispf.core.object.ObjectType;
 import com.ispf.core.object.PlatformObject;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Compact platform knowledge injected into the tree-first agent system prompt (FW-45).
@@ -27,6 +32,24 @@ import java.util.Optional;
 public class PlatformBriefingService {
 
     private static final int LIVE_CHILDREN_CAP = 30;
+    private static final int FOLDER_CHILDREN_CAP = 12;
+    private static final String PLATFORM_ROOT = "root.platform";
+
+    private static final Set<ObjectType> LIVE_OBJECT_COUNT_TYPES = Set.of(
+            ObjectType.DEVICE,
+            ObjectType.DASHBOARD,
+            ObjectType.MIMIC,
+            ObjectType.WORKFLOW,
+            ObjectType.ALERT,
+            ObjectType.CORRELATOR,
+            ObjectType.CUSTOM,
+            ObjectType.FUNCTION,
+            ObjectType.REPORT,
+            ObjectType.WORK_ORDER,
+            ObjectType.OPERATION,
+            ObjectType.LOT,
+            ObjectType.APPLICATION
+    );
 
     private static final List<Map<String, String>> FEATURE_INDEX = List.of(
             feature("bundles", "Bundle deploy", "manifest JSON, migrations, functions, dashboards", "bundle deploy import"),
@@ -60,6 +83,7 @@ public class PlatformBriefingService {
     private final ApplicationBundleSnapshotStore bundleSnapshotStore;
     private final ObjectManager objectManager;
     private final CacheManager cacheManager;
+    private final Optional<BuildProperties> buildProperties;
 
     public PlatformBriefingService(
             AiProperties aiProperties,
@@ -68,7 +92,8 @@ public class PlatformBriefingService {
             ApplicationDataStore applicationDataStore,
             ApplicationBundleSnapshotStore bundleSnapshotStore,
             ObjectManager objectManager,
-            CacheManager cacheManager
+            CacheManager cacheManager,
+            Optional<BuildProperties> buildProperties
     ) {
         this.aiProperties = aiProperties;
         this.contextPackService = contextPackService;
@@ -77,6 +102,7 @@ public class PlatformBriefingService {
         this.bundleSnapshotStore = bundleSnapshotStore;
         this.objectManager = objectManager;
         this.cacheManager = cacheManager;
+        this.buildProperties = buildProperties;
     }
 
     public String buildBriefing(String rootPath, boolean includeStaticKnowledge) {
@@ -217,6 +243,7 @@ public class PlatformBriefingService {
 
     private void appendLiveSnapshot(StringBuilder sb, String rootPath) {
         sb.append("\n### Live instance snapshot\n");
+        appendServerAndPackVersions(sb);
         List<Map<String, Object>> apps = new ArrayList<>();
         for (Map<String, Object> app : applicationDataStore.listAllApps()) {
             String appId = String.valueOf(app.get("app_id"));
@@ -241,16 +268,62 @@ public class PlatformBriefingService {
             }
         }
 
+        appendObjectTypeCounts(sb);
         String effectiveRoot = rootPath == null || rootPath.isBlank() ? "root" : rootPath.trim();
-        sb.append("Tree under ").append(effectiveRoot).append(" (direct children, max ")
-                .append(LIVE_CHILDREN_CAP)
-                .append("):\n");
+        appendDirectChildren(sb, effectiveRoot, LIVE_CHILDREN_CAP,
+                "Tree under " + effectiveRoot + " (direct children, max " + LIVE_CHILDREN_CAP + ")");
+        appendPlatformTreeDetail(sb);
+    }
+
+    private void appendServerAndPackVersions(StringBuilder sb) {
+        String serverVersion = PlatformVersionSupport.currentVersion(buildProperties);
+        String packVersion = contextPackService.contextPackVersion();
+        sb.append("Server version: ").append(serverVersion).append('\n');
+        String packNumeric = packVersion.startsWith("ispf-")
+                ? packVersion.substring("ispf-".length())
+                : packVersion;
+        if (PlatformVersionSupport.compare(packNumeric, serverVersion) < 0) {
+            sb.append("WARNING: context pack (")
+                    .append(packVersion)
+                    .append(") is older than server — use list_objects/list_applications for live state, ")
+                    .append("not search_context alone.\n");
+        }
+    }
+
+    private void appendObjectTypeCounts(StringBuilder sb) {
+        sb.append("Live object counts:\n");
         try {
-            List<PlatformObject> children = objectManager.tree().childrenOf(effectiveRoot);
+            Map<ObjectType, Integer> counts = new EnumMap<>(ObjectType.class);
+            for (PlatformObject object : objectManager.tree().all()) {
+                if (LIVE_OBJECT_COUNT_TYPES.contains(object.type())) {
+                    counts.merge(object.type(), 1, Integer::sum);
+                }
+            }
+            if (counts.isEmpty()) {
+                sb.append("- (none)\n");
+                return;
+            }
+            Map<ObjectType, Integer> sorted = new TreeMap<>(counts);
+            for (Map.Entry<ObjectType, Integer> entry : sorted.entrySet()) {
+                sb.append("- ")
+                        .append(entry.getKey().name())
+                        .append(": ")
+                        .append(entry.getValue())
+                        .append('\n');
+            }
+        } catch (Exception ex) {
+            sb.append("- (unable to count: ").append(ex.getMessage()).append(")\n");
+        }
+    }
+
+    private void appendDirectChildren(StringBuilder sb, String parentPath, int cap, String heading) {
+        sb.append(heading).append(":\n");
+        try {
+            List<PlatformObject> children = objectManager.tree().childrenOf(parentPath);
             int count = 0;
             for (PlatformObject child : children) {
-                if (count >= LIVE_CHILDREN_CAP) {
-                    sb.append("- ... (truncated)\n");
+                if (count >= cap) {
+                    sb.append("- ... (").append(children.size() - cap).append(" more)\n");
                     break;
                 }
                 sb.append("- ")
@@ -265,6 +338,48 @@ public class PlatformBriefingService {
             }
         } catch (Exception ex) {
             sb.append("- (unable to list: ").append(ex.getMessage()).append(")\n");
+        }
+    }
+
+    private void appendPlatformTreeDetail(StringBuilder sb) {
+        sb.append("Platform tree under ").append(PLATFORM_ROOT).append(":\n");
+        try {
+            if (objectManager.tree().findByPath(PLATFORM_ROOT).isEmpty()) {
+                sb.append("- (root.platform not found)\n");
+                return;
+            }
+            List<PlatformObject> folders = objectManager.tree().childrenOf(PLATFORM_ROOT);
+            if (folders.isEmpty()) {
+                sb.append("- (no platform folders)\n");
+                return;
+            }
+            for (PlatformObject folder : folders) {
+                List<PlatformObject> items = objectManager.tree().childrenOf(folder.path());
+                sb.append("- ")
+                        .append(folder.path())
+                        .append(" [")
+                        .append(folder.type())
+                        .append("] — ")
+                        .append(items.size())
+                        .append(" children\n");
+                int shown = 0;
+                for (PlatformObject item : items) {
+                    if (shown >= FOLDER_CHILDREN_CAP) {
+                        sb.append("  - ... (")
+                                .append(items.size() - shown)
+                                .append(" more)\n");
+                        break;
+                    }
+                    sb.append("  - ")
+                            .append(item.path())
+                            .append(" [")
+                            .append(item.type())
+                            .append("]\n");
+                    shown++;
+                }
+            }
+        } catch (Exception ex) {
+            sb.append("- (unable to list platform tree: ").append(ex.getMessage()).append(")\n");
         }
     }
 
