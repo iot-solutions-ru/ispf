@@ -33,7 +33,7 @@ public class RadiusDeviceDriver implements DeviceDriver {
             Map.of(
                     "host", "127.0.0.1",
                     "port", "1812",
-                    "secret", "testing123",
+                    "secret", "",
                     "username", "",
                     "password", "",
                     "timeoutMs", "3000",
@@ -44,7 +44,7 @@ public class RadiusDeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String host = "127.0.0.1";
     private int port = 1812;
-    private String secret = "testing123";
+    private String secret = "";
     private String username = "";
     private String password = "";
     private int timeoutMs = 3000;

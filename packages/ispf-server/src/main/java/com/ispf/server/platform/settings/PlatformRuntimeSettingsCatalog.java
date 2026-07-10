@@ -108,6 +108,10 @@ final class PlatformRuntimeSettingsCatalog {
             def("elastic", "mqtt-gateway.ingress-dispatch-threads-max", "ISPF_MQTT_GATEWAY_INGRESS_DISPATCH_THREADS_MAX", "ispf.mqtt-gateway.ingress-dispatch-threads-max", PlatformRuntimeSettingType.INTEGER, "32", false, false),
             def("elastic", "cluster.job-elastic-enabled", "ISPF_CLUSTER_JOB_ELASTIC", "ispf.cluster.job-elastic-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
             def("elastic", "cluster.job-max-concurrent-max", "ISPF_CLUSTER_JOB_MAX_CONCURRENT_MAX", "ispf.cluster.job-max-concurrent-max", PlatformRuntimeSettingType.INTEGER, "8", false, false),
+            def("elastic", "cluster.scheduled-pool-elastic-enabled", "ISPF_CLUSTER_SCHEDULED_POOL_ELASTIC", "ispf.cluster.scheduled-pool-elastic-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
+            def("elastic", "cluster.scheduled-pool-max", "ISPF_CLUSTER_SCHEDULED_POOL_MAX", "ispf.cluster.scheduled-pool-max", PlatformRuntimeSettingType.INTEGER, "8", false, false),
+            def("elastic", "nats.replica-consumer-elastic-enabled", "ISPF_NATS_REPLICA_CONSUMER_ELASTIC", "ispf.nats.replica-consumer-elastic-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, false),
+            def("elastic", "nats.replica-consumer-worker-threads-max", "ISPF_NATS_REPLICA_CONSUMER_WORKERS_MAX", "ispf.nats.replica-consumer-worker-threads-max", PlatformRuntimeSettingType.INTEGER, "32", false, false),
 
             def("automation", "runtime-telemetry.coalesce-ms", "ISPF_RUNTIME_TELEMETRY_COALESCE_MS", "ispf.runtime-telemetry.coalesce-ms", PlatformRuntimeSettingType.INTEGER, "250", false, true),
             def("automation", "runtime-telemetry.coalesce-enabled", "ISPF_RUNTIME_TELEMETRY_COALESCE_ENABLED", "ispf.runtime-telemetry.coalesce-enabled", PlatformRuntimeSettingType.BOOLEAN, "true", false, true),

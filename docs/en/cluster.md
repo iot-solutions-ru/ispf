@@ -360,6 +360,158 @@ Job storage in `platform_jobs` (PostgreSQL). Worker claim: `FOR UPDATE SKIP LOCK
 
 Details: [ADR-0031](decisions/0031-cluster-replica-roles-platform-jobs.md), [ADR-0032](decisions/0032-replica-profiles-and-capabilities.md).
 
+## Cluster startup and configuration
+
+This section is the **canonical order** for bringing up a multi-profile cluster: shared infrastructure first, staggered JVM replicas, ingress last. Applies to VPS (`network_mode: host`, unique ports) and lab Docker stacks ([`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml)).
+
+### Design rules
+
+| Rule | Why |
+|------|-----|
+| **One PostgreSQL** for all replicas | Single `root.platform.*` tree, driver locks, cluster registry ([ADR-0028](decisions/0028-horizontal-active-active-cluster.md)) |
+| **Unique `ISPF_REPLICA_ID`** per JVM | Heartbeat, locks, diagnostics |
+| **`ISPF_CLUSTER_ENABLED=true`** on every replica | `unified` profile is not allowed when cluster mode is on |
+| **Profile separation** | `edge-api` in nginx; `io` / `analytics` / `compute` internal ([ADR-0032](decisions/0032-replica-profiles-and-capabilities.md)) |
+| **Staggered replica start** | Avoid concurrent `AssetAnalyticsBootstrap` / Flyway on cold DB (PostgreSQL deadlock on `object_nodes`) |
+| **Host network or unique HTTP ports** | Cluster diagnostics fan-out uses `http://127.0.0.1:{httpPort}/api/v1/platform/metrics` per registered port |
+
+### Reference topology (Enterprise L / analytics scale-out)
+
+```text
+                         nginx :8000 (lab) / :8080 (VPS)
+              REST/WS ──► edge-api pool (replica-1, replica-2)
+              materializer paths only ──► analytics (replica-3)
+              (no public ingress)     io (replica-4) — drivers
+                                    compute (optional) — jobs
+
+        ┌──────────┬──────────┬──────────────┬─────────────┐
+        ▼          ▼          ▼              ▼             │
+   edge-api    edge-api   analytics          io           │
+   replica-1   replica-2  replica-3      replica-4       │
+        └──────────┴──────────┴──────┬───────┴─────────────┘
+                                     │
+              PostgreSQL (one)  NATS  Redis  ClickHouse (optional)
+```
+
+| Node | Profile | In nginx? | Responsibilities |
+|------|---------|-----------|------------------|
+| replica-1, replica-2 | `edge-api` | yes | REST, WS, config write, schedulers |
+| replica-3 | `analytics` | internal only (`/api/v1/platform/analytics/rollups/materializer/*`) | Rollup materializer, heavy historian backfill |
+| replica-4 | `io` | no | Driver ownership, replica-sync, schedulers |
+| worker-* | `compute` | no | `platform_jobs` consumer (async reports) |
+
+Lab compose + nginx: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf).  
+VPS host-network example: [`deploy/docker-compose.vps-cluster.yml`](../deploy/docker-compose.vps-cluster.yml) (ports `8081`…`8084`).
+
+### Startup order (staged bootstrap)
+
+Automated: [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/vps-cluster-bootstrap.sh`](../deploy/vps-cluster-bootstrap.sh).
+
+```text
+Phase 0  Stop conflicting stacks (free ingress port)
+Phase 1  Shared services: postgres → redis → nats → clickhouse (wait healthy)
+Phase 2  replica-1 only (bootstrap leader)
+         └─ Flyway, admin user, optional fixtures (fixtures only on leader wave)
+Phase 3  replica-2 + analytics replica + nginx
+         └─ Wait /api/v1/info via nginx, admin login
+Phase 4  io replica (replica-4) — delay ~15s after Phase 3
+         └─ Wait fresh heartbeat in platform_cluster_replicas
+Phase 5  Optional: LAN peer / compute worker (best effort)
+Phase 6  Verify: cluster health 4/4 UP, smoke test
+```
+
+**Do not** `docker compose up -d` all ISPF replicas at once on a fresh database. Parallel `ApplicationReadyEvent` bootstrap (`AssetAnalyticsBootstrap`, `SystemObjectDescriptionReconciler`) can deadlock on `object_nodes`.
+
+**Do not** expect all replica IDs in round-robin `/api/v1/info` — nginx upstream lists **edge-api only** (by design). Check `GET /api/v1/platform/cluster/health` for the full node list.
+
+### Per-replica environment (minimum)
+
+Shared on every JVM:
+
+```bash
+ISPF_CLUSTER_ENABLED=true
+ISPF_DB_URL=jdbc:postgresql://postgres:5432/ispf   # same URL on all nodes
+ISPF_NATS_ENABLED=true
+ISPF_NATS_URL=nats://nats:4222
+ISPF_NATS_REPLICA_EVENTS=true
+ISPF_REDIS_ENABLED=true
+ISPF_REDIS_HOST=redis
+ISPF_CLUSTER_LIVE_VARIABLE_SYNC=true
+ISPF_CLUSTER_PATH_INTEREST=true
+```
+
+Per profile (examples):
+
+```bash
+# edge-api (×2 behind nginx)
+ISPF_REPLICA_ID=replica-1
+ISPF_REPLICA_PROFILE=edge-api
+ISPF_SERVER_PORT=8080          # lab Docker bridge; VPS: 8081, 8082, …
+
+# analytics
+ISPF_REPLICA_ID=replica-3
+ISPF_REPLICA_PROFILE=analytics
+ISPF_ANALYTICS_MATERIALIZER_ENABLED=true
+
+# io (drivers) — not in nginx
+ISPF_REPLICA_ID=replica-4
+ISPF_REPLICA_PROFILE=io
+```
+
+VPS production uses **`network_mode: host`** and **distinct `ISPF_SERVER_PORT`** per replica so diagnostics peer probes work. Lab Docker bridge uses internal port `8080` in each container; diagnostics for `io`/`analytics` may show **Unreachable** from edge nodes even when heartbeats are UP — use **Cluster nodes** card (`/api/v1/platform/cluster/health`) as source of truth.
+
+### Memory on a shared host (example: 120 GB total)
+
+RAM is for the **whole machine** (OS + all containers), not per replica. Lab defaults in `lab-cluster-compose.yml`:
+
+| Service | cgroup limit | JVM `-Xmx` (typical) |
+|---------|--------------|----------------------|
+| ClickHouse | 34g | — |
+| PostgreSQL | 6g | — |
+| edge-api ×2 | 6g each | 4g each |
+| analytics | 10g | 6g |
+| io | 8g | 6g |
+
+Override via `ISPF_LAB_CH_MEM_LIMIT`, `ISPF_LAB_EDGE_MEM_LIMIT`, `ISPF_LAB_ANALYTICS_MEM_LIMIT`, `ISPF_LAB_IO_MEM_LIMIT`, `ISPF_LAB_JVM_XMX_*`.
+
+### nginx ingress rules
+
+| Path | Upstream |
+|------|----------|
+| `/api/` (default) | `edge-api` replicas (`least_conn` or `ip_hash` for WS) |
+| `/api/v1/platform/analytics/rollups/materializer/` | `analytics` replica |
+| `/ws/` | `edge-api` (`ip_hash`) |
+
+Writes for catalog seeding and operator API must hit **edge-api**, not `io` or `analytics` (otherwise `503 REPLICA_CAPABILITY_DENIED`).
+
+### Lab BL-210 pipeline (after cluster is UP)
+
+From workstation (SSH password in `ISPF_LAB_PASSWORD`):
+
+```powershell
+python deploy/run_lab_bl210_launch.py --force   # full reset + remote nohup
+python deploy/run_lab_bl210_seeds.py            # seeds+gates on running cluster
+```
+
+Remote logs: `~/ispf/loadtest/bl210-full.log`, `bl210-seed-50k.log`, `bl210-ch-1b.log`.
+
+### Post-start verification
+
+```bash
+# Ingress
+curl -sf http://127.0.0.1:8000/api/v1/info | jq '.clusterEnabled,.replicaProfile'
+
+# All nodes (admin token)
+curl -sf -H "Authorization: Bearer $TOKEN" \
+  http://127.0.0.1:8000/api/v1/platform/cluster/health | jq '.nodesUp,.nodesTotal,.nodes[].replicaId,.nodes[].status'
+
+# Smoke
+ISPF_CLUSTER_COMPOSE_FILE=~/ispf/lab-cluster-compose.yml \
+ISPF_CLUSTER_PORT=8000 bash deploy/cluster-smoke-test.sh
+```
+
+Expected healthy lab cluster: **`nodesUp` = `nodesTotal` = 4**, profiles `edge-api`, `edge-api`, `analytics`, `io`.
+
 ### VPS prod (single unified node)
 
 > **Profiles:** production / throughput / demo-simple / edge — [demostands.md](demostands.md). Below — **demo-idle** example for one node.

@@ -6,6 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
 REPORT_DIR="${ISPF_ANALYTICS_BENCH_DIR:-$ROOT/build/analytics-scale}"
+HISTORIAN_REPORT_DIR="${ISPF_HISTORIAN_BENCH_DIR:-$ROOT/build/historian-scale}"
 mkdir -p "$REPORT_DIR"
 SUMMARY_FILE="$REPORT_DIR/enterprise-l-gates-summary.md"
 
@@ -47,7 +48,7 @@ echo "Detailed reports:" >> "$SUMMARY_FILE"
 echo "- $REPORT_DIR/analytics-scale-gate.md" >> "$SUMMARY_FILE"
 echo "- $REPORT_DIR/analytics-materializer-lag-gate.md" >> "$SUMMARY_FILE"
 if [[ "$RUN_HISTORIAN" == "true" ]]; then
-  echo "- $REPORT_DIR/scale-benchmark.md" >> "$SUMMARY_FILE"
+  echo "- $HISTORIAN_REPORT_DIR/scale-benchmark.md" >> "$SUMMARY_FILE"
 fi
 echo "" >> "$SUMMARY_FILE"
 echo "See examples/analytics-platform/enterprise-l/README.md for seed + CH ingest playbook." >> "$SUMMARY_FILE"

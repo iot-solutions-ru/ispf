@@ -68,7 +68,7 @@ class ClusterReplicaRegistryServiceTest {
         DriverOwnershipService peer = new DriverOwnershipService(
                 jdbcTemplate,
                 clusterProperties,
-                new NatsProperties(false, "nats://localhost:4222", false, "cluster-node-b", false, "ispf-automation", 24, "ispf-replica-")
+                new NatsProperties(false, "nats://localhost:4222", false, "cluster-node-b", false, "ispf-automation", 24, "ispf-replica-", 65536, true, 2, 8, 50, 6, 30)
         );
         assertTrue(peer.tryAcquire(device));
 

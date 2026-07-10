@@ -39,7 +39,7 @@ public class GraphDbDeviceDriver implements DeviceDriver {
             Map.of(
                     "uri", "bolt://localhost:7687",
                     "username", "neo4j",
-                    "password", "password",
+                    "password", "",
                     "timeoutMs", "5000",
                     "pollIntervalMs", "30000"
             )
@@ -48,7 +48,7 @@ public class GraphDbDeviceDriver implements DeviceDriver {
     private DriverObject driverObject;
     private String uri = "bolt://localhost:7687";
     private String username = "neo4j";
-    private String password = "password";
+    private String password = "";
     private long timeoutMs = 5000;
     private Driver neo4jDriver;
     private HttpClient httpClient;

@@ -46,7 +46,11 @@ public class ReplicaCapabilityHttpFilter extends OncePerRequestFilter {
         String method = request.getMethod();
 
         if (!clusterProperties.isHttpPublicActive() && requiresHttpPublic(path, method)) {
-            if (!(isClusterPeerMetricsPath(path, method) && isLoopback(request))) {
+            if (isReplicaObservabilityPath(path, method) && isLoopback(request)) {
+                // cluster diagnostics + BL-210 materializer gate via loopback sidecar
+            } else if (isAnalyticsObservabilityPath(path, method)) {
+                // nginx / lab gates: read-only materializer status on analytics replica
+            } else {
                 reject(response, "Replica profile does not serve public HTTP API");
                 return;
             }
@@ -65,8 +69,14 @@ public class ReplicaCapabilityHttpFilter extends OncePerRequestFilter {
     }
 
     /** Cluster diagnostics fan-out: peer JVM polls loopback metrics (OBSERVABILITY.md). */
-    private static boolean isClusterPeerMetricsPath(String path, String method) {
+    private static boolean isReplicaObservabilityPath(String path, String method) {
         return HttpMethod.GET.matches(method) && path.equals("/api/v1/platform/metrics");
+    }
+
+    /** BL-210 Enterprise L gate: materializer health on analytics replica (via nginx or loopback). */
+    private static boolean isAnalyticsObservabilityPath(String path, String method) {
+        return HttpMethod.GET.matches(method)
+                && path.equals("/api/v1/platform/analytics/rollups/materializer/status");
     }
 
     private static boolean isLoopback(HttpServletRequest request) {

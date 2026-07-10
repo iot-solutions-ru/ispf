@@ -188,18 +188,27 @@ Details: [commercial-licensing.md](commercial-licensing.md) (deploy behavior, ke
 
 ## Multi-instance cluster (BL-134…139)
 
-Detailed guide: **[cluster.md](cluster.md)** (topology, cluster bindings, ADR-0029, SNMP example, tuning).
+Detailed guide: **[cluster.md](cluster.md)** — topology, bindings, ADR-0029, tuning, and **[cluster startup order](cluster.md#cluster-startup-and-configuration)** (staged bootstrap, profiles, nginx, lab BL-210).
 
-Lab stack with three replicas behind nginx:
+**Lab / Enterprise L (4 profiles: edge×2 + analytics + io):**
+
+```bash
+# On lab host after jar/UI upload:
+bash ~/ispf/lab-cluster-bootstrap.sh
+# Ingress: http://<lab>:8000/
+```
+
+Artifacts: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf).
+
+**Local CI stack (3 generic replicas):**
 
 ```bash
 bash deploy/cluster-quickstart.sh
 # UI + API via LB: http://127.0.0.1:8088/
-# Round-robin: curl -s http://127.0.0.1:8088/api/v1/info | jq .replicaId
 ```
 
-Compose file: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
-Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST and WS `ip_hash` (sticky by client IP), `max_fails` passive health, `proxy_next_upstream` on 502/503/504.
+Compose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
+Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf).
 
 ### Required env (each replica)
 

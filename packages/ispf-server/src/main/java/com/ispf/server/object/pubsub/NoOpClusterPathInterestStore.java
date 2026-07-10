@@ -1,10 +1,12 @@
 package com.ispf.server.object.pubsub;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(prefix = "ispf.redis", name = "enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnExpression(
+        "!${ispf.redis.enabled:false} or !${ispf.cluster.cluster-path-interest-enabled:true}"
+)
 public class NoOpClusterPathInterestStore implements ClusterPathInterestStore {
     @Override
     public void onBroadcastSessionAdded() {

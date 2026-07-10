@@ -18,7 +18,14 @@ class NatsPropertiesTest {
                 true,
                 null,
                 0,
-                null
+                null,
+                65536,
+                true,
+                2,
+                8,
+                50,
+                6,
+                30
         );
 
         assertTrue(properties.jetStreamEnabled());
@@ -37,7 +44,14 @@ class NatsPropertiesTest {
                 false,
                 "custom-stream",
                 48,
-                "node-"
+                "node-",
+                65536,
+                true,
+                2,
+                8,
+                50,
+                6,
+                30
         );
 
         assertFalse(properties.enabled());

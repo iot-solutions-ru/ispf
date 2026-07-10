@@ -69,7 +69,7 @@ public class ClusterLiveVariableReplicaPublisher {
         if (value == null) {
             return;
         }
-        if (!clusterProperties.liveVariableSyncCoalesceEnabled()) {
+        if (!clusterProperties.isLiveVariableSyncCoalesceActive()) {
             natsEventBridge.publishLiveVariableReplicaSync(
                     event.path(),
                     event.variableName(),
@@ -92,7 +92,7 @@ public class ClusterLiveVariableReplicaPublisher {
         if (!flushScheduled.compareAndSet(false, true)) {
             return;
         }
-        long delayMs = Math.max(1L, clusterProperties.liveVariableSyncCoalesceMs());
+        long delayMs = clusterProperties.liveVariableSyncCoalesceMs();
         scheduler.schedule(this::flushPending, delayMs, TimeUnit.MILLISECONDS);
     }
 

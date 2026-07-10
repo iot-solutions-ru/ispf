@@ -14,13 +14,32 @@ SLA_ITERATIONS="${ISPF_ANALYTICS_BENCH_ITERATIONS:-10}"
 MULTI_TAG_P95_MS="${ISPF_ANALYTICS_BENCH_MULTI_TAG_P95_MS:-3000}"
 CATALOG_MIN_TAGS="${ISPF_ANALYTICS_BENCH_CATALOG_MIN_TAGS:-50000}"
 CH_URL="${ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL:-}"
+CH_USER="${ISPF_VARIABLE_HISTORY_CLICKHOUSE_USERNAME:-}"
+CH_PASS="${ISPF_VARIABLE_HISTORY_CLICKHOUSE_PASSWORD:-}"
 CH_DATABASE="${ISPF_VARIABLE_HISTORY_CLICKHOUSE_DATABASE:-ispf}"
 CH_TABLE="${ISPF_VARIABLE_HISTORY_CLICKHOUSE_TABLE:-variable_samples}"
 CH_MIN_SAMPLES="${ISPF_ANALYTICS_BENCH_CH_MIN_SAMPLES:-1000000000}"
 SKIP_CATALOG_GATE="${ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE:-true}"
 SKIP_CH_GATE="${ISPF_ANALYTICS_BENCH_SKIP_CH_GATE:-true}"
+BENCH_TOKEN="${ISPF_BENCH_TOKEN:-}"
+BENCH_USER="${ISPF_BENCH_USER:-admin}"
+BENCH_PASSWORD="${ISPF_BENCH_PASSWORD:-admin}"
 
 GATE_EXIT=0
+
+bench_auth_header() {
+  if [[ -z "$BENCH_TOKEN" ]]; then
+    BENCH_TOKEN="$(curl -sf "${BASE_URL}/api/v1/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "{\"username\":\"${BENCH_USER}\",\"password\":\"${BENCH_PASSWORD}\"}" \
+      | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  fi
+  if [[ -z "$BENCH_TOKEN" ]]; then
+    echo "Failed to obtain auth token (set ISPF_BENCH_TOKEN or ISPF_BENCH_USER/PASSWORD)" >&2
+    return 1
+  fi
+  printf 'Authorization: Bearer %s' "$BENCH_TOKEN"
+}
 
 echo "# Analytics scale gate (BL-210)" > "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
@@ -39,7 +58,7 @@ VERSION="$(curl -sf "${BASE_URL}/api/v1/info" | sed -n 's/.*"version"[[:space:]]
 echo "- Server version: ${VERSION:-unknown}" >> "$REPORT_FILE"
 
 echo "==> Analytics SLO targets"
-if SLO_BODY="$(curl -sf "${BASE_URL}/api/v1/platform/analytics/analytics-slo")"; then
+if SLO_BODY="$(curl -sf -H "$(bench_auth_header)" "${BASE_URL}/api/v1/platform/analytics/analytics-slo")"; then
   echo "- Analytics SLO endpoint: **OK**" >> "$REPORT_FILE"
   echo '```json' >> "$REPORT_FILE"
   echo "$SLO_BODY" >> "$REPORT_FILE"
@@ -50,22 +69,50 @@ else
 fi
 
 echo "==> Catalog tag count"
-if CATALOG_BODY="$(curl -sf "${BASE_URL}/api/v1/platform/analytics/tags?path=root.platform.devices")"; then
-  TAG_COUNT="$(printf '%s' "$CATALOG_BODY" | sed -n 's/.*"count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)"
-  echo "- Analytics catalog (devices prefix): **${TAG_COUNT:-0}** tags" >> "$REPORT_FILE"
-  if [[ "$SKIP_CATALOG_GATE" != "true" ]]; then
-    if [[ "${TAG_COUNT:-0}" -lt "$CATALOG_MIN_TAGS" ]]; then
-      echo "- Catalog gate: **FAIL** (${TAG_COUNT:-0} < ${CATALOG_MIN_TAGS})" >> "$REPORT_FILE"
-      GATE_EXIT=1
-    else
-      echo "- Catalog gate: **PASS** (≥ ${CATALOG_MIN_TAGS})" >> "$REPORT_FILE"
+TAG_PREFIX="${ISPF_ANALYTICS_BENCH_TAG_PREFIX:-root.platform.devices.analytics-scale-lab}"
+CATALOG_MODE="${ISPF_ANALYTICS_BENCH_CATALOG_MODE:-history-enabled}"
+TAG_COUNT=""
+ANALYTICS_RULE_COUNT=""
+
+if [[ "$CATALOG_MODE" == "history-enabled" ]]; then
+  PG_COMPOSE="${ISPF_ANALYTICS_BENCH_CATALOG_PG_COMPOSE:-}"
+  if [[ -z "$PG_COMPOSE" && -f "$ROOT/lab-cluster-compose.yml" ]]; then
+    PG_COMPOSE="$ROOT/lab-cluster-compose.yml"
+  fi
+  if [[ -n "$PG_COMPOSE" && -f "$PG_COMPOSE" ]]; then
+    TAG_COUNT="$(docker compose -f "$PG_COMPOSE" exec -T postgres psql -U ispf -d ispf -tAc \
+      "SELECT COUNT(*) FROM object_nodes WHERE path LIKE '${TAG_PREFIX}.tag-%';" \
+      2>/dev/null | tr -d '[:space:]' || true)"
+    if [[ -z "${TAG_COUNT:-}" || "${TAG_COUNT:-0}" -eq 0 ]]; then
+      TAG_COUNT="$(docker compose -f "$PG_COMPOSE" exec -T postgres psql -U ispf -d ispf -tAc \
+        "SELECT COUNT(*) FROM object_variables WHERE object_path LIKE '${TAG_PREFIX}.%' AND history_enabled = true;" \
+        2>/dev/null | tr -d '[:space:]' || true)"
     fi
+  fi
+  if CATALOG_BODY="$(curl -sf -H "$(bench_auth_header)" "${BASE_URL}/api/v1/platform/analytics/tags?path=${TAG_PREFIX}")"; then
+    ANALYTICS_RULE_COUNT="$(printf '%s' "$CATALOG_BODY" | sed -n 's/.*"count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)"
+  fi
+  echo "- History-enabled points (${TAG_PREFIX}): **${TAG_COUNT:-0}**" >> "$REPORT_FILE"
+  echo "- Analytics historian rules (${TAG_PREFIX}): **${ANALYTICS_RULE_COUNT:-0}**" >> "$REPORT_FILE"
+else
+  if CATALOG_BODY="$(curl -sf -H "$(bench_auth_header)" "${BASE_URL}/api/v1/platform/analytics/tags?path=${TAG_PREFIX}")"; then
+    TAG_COUNT="$(printf '%s' "$CATALOG_BODY" | sed -n 's/.*"count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)"
+    echo "- Analytics catalog (${TAG_PREFIX}): **${TAG_COUNT:-0}** historian rules" >> "$REPORT_FILE"
   else
-    echo "- Catalog gate: **SKIPPED** (set ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false after seed)" >> "$REPORT_FILE"
+    echo "- Analytics catalog: **FAILED**" >> "$REPORT_FILE"
+    GATE_EXIT=1
+  fi
+fi
+
+if [[ "$SKIP_CATALOG_GATE" != "true" ]]; then
+  if [[ "${TAG_COUNT:-0}" -lt "$CATALOG_MIN_TAGS" ]]; then
+    echo "- Catalog gate: **FAIL** (${TAG_COUNT:-0} < ${CATALOG_MIN_TAGS})" >> "$REPORT_FILE"
+    GATE_EXIT=1
+  else
+    echo "- Catalog gate: **PASS** (≥ ${CATALOG_MIN_TAGS})" >> "$REPORT_FILE"
   fi
 else
-  echo "- Analytics catalog: **FAILED**" >> "$REPORT_FILE"
-  GATE_EXIT=1
+  echo "- Catalog gate: **SKIPPED** (set ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false after seed)" >> "$REPORT_FILE"
 fi
 
 TAG_PREFIX="${ISPF_ANALYTICS_BENCH_TAG_PREFIX:-root.platform.devices.analytics-scale-lab}"
@@ -73,8 +120,9 @@ TAG_VARIABLE="${ISPF_ANALYTICS_BENCH_TAG_VARIABLE:-temperature}"
 TAG_COUNT="${ISPF_ANALYTICS_BENCH_TAG_COUNT:-10}"
 
 echo "==> Multi-tag query SLO (${TAG_COUNT} tags × 7d × 1h)"
-FROM_ISO="$(date -u -d '7 days ago' +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -v-7d +"%Y-%m-%dT%H:%M:%SZ")"
-TO_ISO="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+# UTC day boundaries: lab nginx returns 403 when "to" embeds live clock time (HH:MM:SS now).
+FROM_ISO="$(date -u -d '7 days ago' +"%Y-%m-%dT00:00:00Z" 2>/dev/null || date -u -v-7d +"%Y-%m-%dT00:00:00Z")"
+TO_ISO="$(date -u +"%Y-%m-%dT00:00:00Z")"
 
 QUERY_BODY="$(python3 - <<PY
 import json
@@ -107,6 +155,7 @@ LATENCIES_FILE="$(mktemp)"
 for _ in $(seq 1 "$SLA_ITERATIONS"); do
   START_NS="$(date +%s%N 2>/dev/null || python -c 'import time; print(int(time.time()*1e9))')"
   if curl -sf -X POST "${BASE_URL}/api/v1/platform/analytics/query" \
+      -H "$(bench_auth_header)" \
       -H "Content-Type: application/json" \
       -d "$QUERY_BODY" >/dev/null; then
     END_NS="$(date +%s%N 2>/dev/null || python -c 'import time; print(int(time.time()*1e9))')"
@@ -140,7 +189,13 @@ if [[ "$SKIP_CH_GATE" == "true" || -z "$CH_URL" ]]; then
   echo "- ClickHouse 1B gate: **SKIPPED** (set ISPF_VARIABLE_HISTORY_CLICKHOUSE_URL + ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false)" >> "$REPORT_FILE"
 else
   COUNT_QUERY="SELECT count() FROM ${CH_DATABASE}.${CH_TABLE} FORMAT TabSeparated"
-  if CH_COUNT="$(curl -sf "${CH_URL}/?query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${COUNT_QUERY}'''))")" 2>/dev/null | tr -d '[:space:]')"; then
+  COUNT_URL="${CH_URL}/?query=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''${COUNT_QUERY}'''))")"
+  if [[ -n "$CH_PASS" ]]; then
+    CH_COUNT="$(curl -sf -u "${CH_USER:-default}:${CH_PASS}" "$COUNT_URL" 2>/dev/null | tr -d '[:space:]')"
+  else
+    CH_COUNT="$(curl -sf "$COUNT_URL" 2>/dev/null | tr -d '[:space:]')"
+  fi
+  if [[ -n "${CH_COUNT:-}" ]]; then
     echo "- ClickHouse rows (${CH_DATABASE}.${CH_TABLE}): **${CH_COUNT}**" >> "$REPORT_FILE"
     if [[ "${CH_COUNT:-0}" -lt "$CH_MIN_SAMPLES" ]]; then
       echo "- ClickHouse 1B gate: **FAIL** (< ${CH_MIN_SAMPLES})" >> "$REPORT_FILE"

@@ -1,6 +1,7 @@
 package com.ispf.server.object;
 
 import com.ispf.core.model.DataRecord;
+import com.ispf.server.object.pubsub.ObjectWebSocketPathInterestRegistry;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -14,10 +15,16 @@ public class ClusterVariableReplicaApplier {
 
     private final ObjectManager objectManager;
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectWebSocketPathInterestRegistry webSocketPathInterest;
 
-    public ClusterVariableReplicaApplier(ObjectManager objectManager, ApplicationEventPublisher eventPublisher) {
+    public ClusterVariableReplicaApplier(
+            ObjectManager objectManager,
+            ApplicationEventPublisher eventPublisher,
+            ObjectWebSocketPathInterestRegistry webSocketPathInterest
+    ) {
         this.objectManager = objectManager;
         this.eventPublisher = eventPublisher;
+        this.webSocketPathInterest = webSocketPathInterest;
     }
 
     public void apply(String path, String variableName, DataRecord value, Instant observedAt) {
@@ -25,8 +32,10 @@ public class ClusterVariableReplicaApplier {
             return;
         }
         objectManager.setDriverTelemetryValueDirect(path, variableName, value);
-        eventPublisher.publishEvent(
-                ObjectChangeEvent.variableUpdatedReplicaIngress(path, variableName, observedAt)
-        );
+        if (webSocketPathInterest.hasPathInterest(path)) {
+            eventPublisher.publishEvent(
+                    ObjectChangeEvent.variableUpdatedReplicaIngress(path, variableName, observedAt)
+            );
+        }
     }
 }

@@ -8,6 +8,7 @@ target/
 .idea/
 *.iml
 .vscode/
+.cursor/
 *.swp
 
 # Node

@@ -59,6 +59,60 @@ class ReplicaCapabilityHttpFilterTest {
         assertEquals(503, response.getStatus());
     }
 
+    @Test
+    void analyticsProfileAllowsMaterializerStatusFromNginx() throws Exception {
+        ClusterProperties cluster = analyticsClusterProperties();
+        ReplicaCapabilityHttpFilter filter = new ReplicaCapabilityHttpFilter(cluster);
+
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "GET",
+                "/api/v1/platform/analytics/rollups/materializer/status"
+        );
+        request.setRemoteAddr("172.18.0.5");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain chain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+        assertEquals(200, response.getStatus());
+    }
+
+    private static ClusterProperties analyticsClusterProperties() {
+        return new ClusterProperties(
+                true,
+                true,
+                30,
+                10,
+                15,
+                10,
+                30,
+                true,
+                2,
+                8,
+                4,
+                6,
+                500,
+                true,
+                true,
+                500,
+                true,
+                "analytics",
+                "",
+                "all",
+                true,
+                2000,
+                2,
+                true,
+                1,
+                8,
+                50,
+                6,
+                500,
+                1800
+        );
+    }
+
     private static ClusterProperties ioClusterProperties() {
         return new ClusterProperties(
                 true,
@@ -68,6 +122,12 @@ class ReplicaCapabilityHttpFilterTest {
                 15,
                 10,
                 30,
+                true,
+                2,
+                8,
+                4,
+                6,
+                500,
                 true,
                 true,
                 500,

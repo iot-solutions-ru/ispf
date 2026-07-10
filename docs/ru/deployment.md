@@ -188,18 +188,27 @@ Commercial bundle manifests могут содержать RSA-signed блок `l
 
 ## Multi-instance cluster (BL-134…139)
 
-Подробное руководство: **[CLUSTER.md](cluster.md)** (топология, bindings в кластере, ADR-0029, SNMP-пример, tuning).
+Подробное руководство: **[CLUSTER.md](cluster.md)** — топология, bindings, ADR-0029, tuning и **[порядок запуска кластера](cluster.md#порядок-запуска-и-настройка-кластера)** (staged bootstrap, профили, nginx, lab BL-210).
 
-Lab stack with three replicas behind nginx:
+**Lab / Enterprise L (4 профиля: edge×2 + analytics + io):**
+
+```bash
+# На lab-хосте после загрузки jar/UI:
+bash ~/ispf/lab-cluster-bootstrap.sh
+# Ingress: http://<lab>:8000/
+```
+
+Артефакты: [`deploy/lab-cluster-compose.yml`](../deploy/lab-cluster-compose.yml), [`deploy/lab-cluster-bootstrap.sh`](../deploy/lab-cluster-bootstrap.sh), [`deploy/nginx-cluster-lab.conf`](../deploy/nginx-cluster-lab.conf).
+
+**Локальный CI-стек (3 универсальные реплики):**
 
 ```bash
 bash deploy/cluster-quickstart.sh
-# UI + API via LB: http://127.0.0.1:8088/
-# Round-robin: curl -s http://127.0.0.1:8088/api/v1/info | jq .replicaId
+# UI + API: http://127.0.0.1:8088/
 ```
 
-Compose file: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
-Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf) — REST и WS `ip_hash` (sticky по IP клиента), `max_fails` passive health, `proxy_next_upstream` при 502/503/504.
+Compose: [`deploy/docker-compose.cluster.yml`](../deploy/docker-compose.cluster.yml).  
+Ingress: [`deploy/nginx-cluster.conf`](../deploy/nginx-cluster.conf).
 
 ### Required env (each replica)
 

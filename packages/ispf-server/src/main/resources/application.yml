@@ -115,6 +115,13 @@ ispf:
     jet-stream-stream-name: ${ISPF_NATS_JETSTREAM_STREAM:ispf-automation}
     jet-stream-max-age-hours: ${ISPF_NATS_JETSTREAM_MAX_AGE_HOURS:24}
     jet-stream-replica-consumer-prefix: ${ISPF_NATS_JETSTREAM_CONSUMER_PREFIX:ispf-replica-}
+    replica-consumer-queue-capacity: ${ISPF_NATS_REPLICA_CONSUMER_QUEUE:65536}
+    replica-consumer-elastic-enabled: ${ISPF_NATS_REPLICA_CONSUMER_ELASTIC:true}
+    replica-consumer-worker-threads-min: ${ISPF_NATS_REPLICA_CONSUMER_WORKERS_MIN:2}
+    replica-consumer-worker-threads-max: ${ISPF_NATS_REPLICA_CONSUMER_WORKERS_MAX:32}
+    replica-consumer-elastic-scale-up-threshold: ${ISPF_NATS_REPLICA_CONSUMER_SCALE_UP:50}
+    replica-consumer-elastic-scale-down-steps: ${ISPF_NATS_REPLICA_CONSUMER_SCALE_DOWN:6}
+    slow-consumer-log-interval-seconds: ${ISPF_NATS_SLOW_CONSUMER_LOG_INTERVAL:30}
   cluster:
     enabled: ${ISPF_CLUSTER_ENABLED:false}
     driver-ownership-enabled: ${ISPF_CLUSTER_DRIVER_OWNERSHIP:true}
@@ -126,6 +133,12 @@ ispf:
     replica-heartbeat-seconds: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_SECONDS:10}
     replica-stale-seconds: ${ISPF_CLUSTER_REPLICA_STALE_SECONDS:30}
     replica-heartbeat-ms: ${ISPF_CLUSTER_REPLICA_HEARTBEAT_MS:10000}
+    scheduled-pool-elastic-enabled: ${ISPF_CLUSTER_SCHEDULED_POOL_ELASTIC:true}
+    scheduled-pool-min: ${ISPF_CLUSTER_SCHEDULED_POOL_MIN:2}
+    scheduled-pool-max: ${ISPF_CLUSTER_SCHEDULED_POOL_MAX:8}
+    scheduled-pool-scale-up-threshold: ${ISPF_CLUSTER_SCHEDULED_POOL_SCALE_UP:4}
+    scheduled-pool-scale-down-steps: ${ISPF_CLUSTER_SCHEDULED_POOL_SCALE_DOWN:6}
+    scheduled-pool-scale-check-interval-ms: ${ISPF_CLUSTER_SCHEDULED_POOL_SCALE_CHECK_MS:500}
     live-variable-sync-enabled: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC:true}
     cluster-path-interest-enabled: ${ISPF_CLUSTER_PATH_INTEREST:true}
     live-variable-sync-coalesce-ms: ${ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS:500}

@@ -22,8 +22,25 @@ AGGREGATE_MAX_POINTS="${ISPF_HISTORIAN_BENCH_AGGREGATE_MAX_POINTS:-1000000}"
 AGGREGATE_MAX_LATENCY_MS="${ISPF_HISTORIAN_BENCH_AGGREGATE_MAX_LATENCY_MS:-2000}"
 SLA_ITERATIONS="${ISPF_HISTORIAN_BENCH_SLA_ITERATIONS:-5}"
 SKIP_SLA_GATE="${ISPF_HISTORIAN_BENCH_SKIP_SLA_GATE:-false}"
+BENCH_TOKEN="${ISPF_BENCH_TOKEN:-}"
+BENCH_USER="${ISPF_BENCH_USER:-admin}"
+BENCH_PASSWORD="${ISPF_BENCH_PASSWORD:-admin}"
 
 GATE_EXIT=0
+
+bench_auth_header() {
+  if [[ -z "$BENCH_TOKEN" ]]; then
+    BENCH_TOKEN="$(curl -sf "${BASE_URL}/api/v1/auth/login" \
+      -H "Content-Type: application/json" \
+      -d "{\"username\":\"${BENCH_USER}\",\"password\":\"${BENCH_PASSWORD}\"}" \
+      | sed -n 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+  fi
+  if [[ -z "$BENCH_TOKEN" ]]; then
+    echo "Failed to obtain auth token (set ISPF_BENCH_TOKEN or ISPF_BENCH_USER/PASSWORD)" >&2
+    return 1
+  fi
+  printf 'Authorization: Bearer %s' "$BENCH_TOKEN"
+}
 
 echo "# Historian scale benchmark (BL-162)" > "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
@@ -53,7 +70,7 @@ if [[ -n "$TO_ISO" ]]; then
 fi
 
 HIST_QUERY="${BASE_URL}/api/v1/objects/by-path/variables/history?path=${HIST_PATH}&name=${HIST_VAR}&field=value&limit=5${RANGE_ARGS}"
-if HIST_BODY="$(curl -sf "$HIST_QUERY")"; then
+if HIST_BODY="$(curl -sf -H "$(bench_auth_header)" "$HIST_QUERY")"; then
   SAMPLE_COUNT="$(printf '%s' "$HIST_BODY" | sed -n 's/.*"samples"[[:space:]]*:[[:space:]]*\[\([^]]*\)\].*/\1/p' | awk -F',' '{print NF}')"
   echo "- History query: **OK** (${SAMPLE_COUNT:-0} samples in response head)" >> "$REPORT_FILE"
 else
@@ -62,7 +79,7 @@ else
 fi
 
 AGG_QUERY="${BASE_URL}/api/v1/objects/by-path/variables/history/aggregate?path=${HIST_PATH}&name=${HIST_VAR}&field=value&bucket=1h&limit=10${RANGE_ARGS}"
-if curl -sf "$AGG_QUERY" >/dev/null; then
+if curl -sf -H "$(bench_auth_header)" "$AGG_QUERY" >/dev/null; then
   echo "- History aggregate (1h bucket): **OK**" >> "$REPORT_FILE"
 else
   echo "- History aggregate: **FAILED**" >> "$REPORT_FILE"
@@ -71,7 +88,7 @@ fi
 
 CSV_TMP="$(mktemp)"
 CSV_QUERY="${BASE_URL}/api/v1/objects/by-path/variables/history/export?path=${HIST_PATH}&name=${HIST_VAR}&field=value&format=csv&limit=100${RANGE_ARGS}"
-if curl -sf "$CSV_QUERY" -o "$CSV_TMP"; then
+if curl -sf -H "$(bench_auth_header)" "$CSV_QUERY" -o "$CSV_TMP"; then
   CSV_LINES="$(wc -l < "$CSV_TMP" | tr -d ' ')"
   echo "- CSV export stream: **OK** (${CSV_LINES} lines)" >> "$REPORT_FILE"
 else
@@ -81,11 +98,11 @@ else
 fi
 rm -f "$CSV_TMP"
 
-if curl -sf "${BASE_URL}/api/v1/platform/analytics/templates" >/dev/null; then
-  TEMPLATE_COUNT="$(curl -sf "${BASE_URL}/api/v1/platform/analytics/templates" | grep -o '"templateId"' | wc -l | tr -d ' ')"
-  echo "- Analytics templates: **OK** (${TEMPLATE_COUNT:-0} templates)" >> "$REPORT_FILE"
+if curl -sf -H "$(bench_auth_header)" "${BASE_URL}/api/v1/platform/analytics/catalog" >/dev/null; then
+  CATALOG_COUNT="$(curl -sf -H "$(bench_auth_header)" "${BASE_URL}/api/v1/platform/analytics/catalog" | grep -o '"id"' | wc -l | tr -d ' ')"
+  echo "- Analytics catalog: **OK** (${CATALOG_COUNT:-0} functions)" >> "$REPORT_FILE"
 else
-  echo "- Analytics templates: **FAILED**" >> "$REPORT_FILE"
+  echo "- Analytics catalog: **FAILED**" >> "$REPORT_FILE"
   exit 1
 fi
 
@@ -102,7 +119,7 @@ if [[ "$SKIP_SLA_GATE" == "true" ]]; then
   echo "- 1M aggregate SLA gate: **SKIPPED** (ISPF_HISTORIAN_BENCH_SKIP_SLA_GATE=true)" >> "$REPORT_FILE"
 else
   SLA_URL="${BASE_URL}/api/v1/platform/analytics/historian-sla"
-  if SLA_BODY="$(curl -sf "$SLA_URL")"; then
+  if SLA_BODY="$(curl -sf -H "$(bench_auth_header)" "$SLA_URL")"; then
     echo "- Historian SLA endpoint: **OK**" >> "$REPORT_FILE"
     P50="$(printf '%s' "$SLA_BODY" | sed -n 's/.*"aggregate"[^{]*{[^}]*"p50LatencyMs"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)"
     P95="$(printf '%s' "$SLA_BODY" | sed -n 's/.*"aggregate"[^{]*{[^}]*"p95LatencyMs"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -1)"
@@ -118,7 +135,7 @@ else
   FAIL_COUNT=0
   for _ in $(seq 1 "$SLA_ITERATIONS"); do
     START_NS="$(date +%s%N)"
-    if curl -sf "$WIDE_AGG_QUERY" >/dev/null; then
+    if curl -sf -H "$(bench_auth_header)" "$WIDE_AGG_QUERY" >/dev/null; then
       END_NS="$(date +%s%N)"
       ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
       echo "$ELAPSED_MS" >> "$LATENCIES_FILE"

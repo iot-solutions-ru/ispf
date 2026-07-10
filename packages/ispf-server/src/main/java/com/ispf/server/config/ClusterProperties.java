@@ -1,5 +1,6 @@
 package com.ispf.server.config;
 
+import com.ispf.driver.ingress.IngressElasticSettings;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -12,9 +13,19 @@ public record ClusterProperties(
         @DefaultValue("15") int driverFailoverScanSeconds,
         @DefaultValue("10") int replicaHeartbeatSeconds,
         @DefaultValue("30") int replicaStaleSeconds,
+        /** Elastic Spring {@code @Scheduled} pool (heartbeats, driver locks, platform ticks). */
+        @DefaultValue("true") boolean scheduledPoolElasticEnabled,
+        @DefaultValue("2") int scheduledPoolMin,
+        @DefaultValue("8") int scheduledPoolMax,
+        @DefaultValue("4") int scheduledPoolScaleUpThreshold,
+        @DefaultValue("6") int scheduledPoolScaleDownSteps,
+        @DefaultValue("500") int scheduledPoolScaleCheckIntervalMs,
         @DefaultValue("true") boolean liveVariableSyncEnabled,
         @DefaultValue("true") boolean clusterPathInterestEnabled,
-        /** ADR-0029: NATS fan-out coalesce window (independent of runtime-telemetry.coalesce-ms). */
+        /**
+         * ADR-0029: NATS fan-out coalesce window (ms). {@code 0} = publish immediately (critical HMI).
+         * Tune via {@code ISPF_CLUSTER_LIVE_VARIABLE_SYNC_COALESCE_MS} only; not hardcoded per environment.
+         */
         @DefaultValue("500") int liveVariableSyncCoalesceMs,
         /** When false, each live-variable NATS sync is published immediately (no pending map). */
         @DefaultValue("true") boolean liveVariableSyncCoalesceEnabled,
@@ -60,6 +71,11 @@ public record ClusterProperties(
         return effectiveCapabilities().has(capability);
     }
 
+    /** ADR-0029: coalesce window active (disabled when ms {@code <= 0} or coalesce flag off). */
+    public boolean isLiveVariableSyncCoalesceActive() {
+        return liveVariableSyncCoalesceEnabled() && liveVariableSyncCoalesceMs() > 0;
+    }
+
     public boolean isDriverOwnershipActive() {
         return enabled && driverOwnershipEnabled && hasCapability(ReplicaCapability.DRIVERS);
     }
@@ -91,6 +107,19 @@ public record ClusterProperties(
 
     public int resolvedJobMaxConcurrentMax() {
         return jobElasticEnabled ? jobMaxConcurrentMax : jobMaxConcurrent;
+    }
+
+    public IngressElasticSettings resolvedScheduledPoolElastic() {
+        int max = Math.max(1, scheduledPoolMax);
+        int min = scheduledPoolElasticEnabled ? Math.max(1, scheduledPoolMin) : max;
+        return new IngressElasticSettings(
+                scheduledPoolElasticEnabled,
+                Math.min(min, max),
+                max,
+                scheduledPoolScaleUpThreshold,
+                scheduledPoolScaleDownSteps,
+                scheduledPoolScaleCheckIntervalMs
+        );
     }
 
     public boolean isSchedulerActive() {

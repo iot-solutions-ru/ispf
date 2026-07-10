@@ -66,8 +66,7 @@ public class NatsEventBridge {
                 return;
             }
             if (clusterProperties.isLiveVariableSyncActive()
-                    && event.type() == ObjectChangeType.VARIABLE_UPDATED
-                    && event.telemetry()) {
+                    && event.type() == ObjectChangeType.VARIABLE_UPDATED) {
                 return;
             }
             if (event.telemetry()) {
@@ -160,6 +159,7 @@ public class NatsEventBridge {
                     .connectionName("ispf-server-" + properties.replicaId().substring(0, 8))
                     .connectionTimeout(Duration.ofSeconds(2))
                     .maxReconnects(3)
+                    .errorListener(new RateLimitedNatsErrorListener(properties.slowConsumerLogIntervalSeconds()))
                     .build();
             Connection conn = Nats.connect(options);
             log.info("Connected to NATS at {}", properties.url());
