@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { filterPlatformBindings, PLATFORM_BINDING_ENTRIES, type PlatformBindingEntry } from "../../utils/platformBindings";
+import { filterPlatformBindings, type PlatformBindingEntry } from "../../utils/platformBindings";
 import { HISTORIAN_EXPRESSION_FALLBACK_ENTRIES } from "../../utils/historianExpressionBindings";
 import { useAnalyticsCatalog, useAnalyticsCatalogFunction } from "../../hooks/useAnalyticsCatalog";
 import type { AnalyticsCatalogEntryDto, AnalyticsCatalogParameterDto } from "../../api/analyticsCatalog";
@@ -66,9 +66,10 @@ export default function AnalyticsFormulaBrowser({
     if (fallbackEntries.length > 0) {
       return fallbackEntries;
     }
-    return kindFilter === "reactive"
-      ? PLATFORM_BINDING_ENTRIES
-      : HISTORIAN_EXPRESSION_FALLBACK_ENTRIES;
+    if (kindFilter === "reactive") {
+      return [];
+    }
+    return HISTORIAN_EXPRESSION_FALLBACK_ENTRIES;
   }, [fallbackEntries, kindFilter]);
 
   const remoteFiltered = useMemo(() => {

@@ -86,6 +86,12 @@ Enterprise L proves **AF-capable** tier (derived tags, DAG engine, OLAP rollups,
 
 ## Sign-off checklist
 
+- [ ] Seed 50k tags (`seed-analytics-scale-catalog.py --tags 50000`)
+- [ ] ClickHouse ≥ 1B `variable_samples` rows
+- [ ] `ISPF_ANALYTICS_MATERIALIZER_ENABLED=true` on analytics replica; materializer lag < 5 min
+- [ ] Run gates: `bash deploy/tools/run-enterprise-l-gates.sh` with `ISPF_ANALYTICS_BENCH_SKIP_CATALOG_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_MATERIALIZER_GATE=false`, `ISPF_ANALYTICS_BENCH_SKIP_CH_GATE=false`
+- [ ] JVM gate: `AnalyticsMultiTagQueryLoadTest` in CI (nightly `load-test.yml`)
+
 - [ ] `build/analytics-scale/analytics-scale-gate.md` — all gates **PASS**
 - [ ] `build/historian-scale/scale-benchmark.md` — BL-161 aggregate **PASS**
 - [ ] Competitive scorecard Historian row updated to **≥9.5** with lab date (manual release step)

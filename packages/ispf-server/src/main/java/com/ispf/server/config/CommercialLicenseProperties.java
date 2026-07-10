@@ -32,6 +32,17 @@ public class CommercialLicenseProperties {
         this.publicKeyPem = publicKeyPem;
     }
 
+    /** Optional PEM RSA private key for per-installation marketplace bundle signing (BL-183). */
+    private String signingPrivateKeyPem = "";
+
+    public String getSigningPrivateKeyPem() {
+        return signingPrivateKeyPem;
+    }
+
+    public void setSigningPrivateKeyPem(String signingPrivateKeyPem) {
+        this.signingPrivateKeyPem = signingPrivateKeyPem;
+    }
+
     public boolean isEnforce() {
         return enforce;
     }

@@ -3,15 +3,20 @@ package com.ispf.server.application.bundle;
 import com.ispf.server.application.data.ApplicationDataStore;
 import com.ispf.server.platform.analytics.pack.DropInAnalyticsPackLoader;
 import com.ispf.server.config.MarketplaceProperties;
+import com.ispf.server.license.CommercialBundleLicenseSigner;
 import com.ispf.server.license.InstallationIdService;
+import com.ispf.server.platform.update.PlatformVersionSupport;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -28,6 +33,8 @@ public class MarketplaceService {
     private final ApplicationBundleSnapshotStore snapshotStore;
     private final ApplicationBundleDeployService deployService;
     private final InstallationIdService installationIdService;
+    private final CommercialBundleLicenseSigner bundleLicenseSigner;
+    private final Optional<BuildProperties> buildProperties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final DropInAnalyticsPackLoader analyticsPackLoader;
@@ -39,6 +46,8 @@ public class MarketplaceService {
             ApplicationBundleSnapshotStore snapshotStore,
             ApplicationBundleDeployService deployService,
             InstallationIdService installationIdService,
+            CommercialBundleLicenseSigner bundleLicenseSigner,
+            Optional<BuildProperties> buildProperties,
             ObjectMapper objectMapper,
             DropInAnalyticsPackLoader analyticsPackLoader
     ) {
@@ -48,6 +57,8 @@ public class MarketplaceService {
                 snapshotStore,
                 deployService,
                 installationIdService,
+                bundleLicenseSigner,
+                buildProperties,
                 objectMapper,
                 analyticsPackLoader,
                 HttpClient.newBuilder()
@@ -63,6 +74,8 @@ public class MarketplaceService {
             ApplicationBundleSnapshotStore snapshotStore,
             ApplicationBundleDeployService deployService,
             InstallationIdService installationIdService,
+            CommercialBundleLicenseSigner bundleLicenseSigner,
+            Optional<BuildProperties> buildProperties,
             ObjectMapper objectMapper,
             DropInAnalyticsPackLoader analyticsPackLoader,
             HttpClient httpClient
@@ -72,6 +85,8 @@ public class MarketplaceService {
         this.snapshotStore = snapshotStore;
         this.deployService = deployService;
         this.installationIdService = installationIdService;
+        this.bundleLicenseSigner = bundleLicenseSigner;
+        this.buildProperties = buildProperties;
         this.objectMapper = objectMapper;
         this.analyticsPackLoader = analyticsPackLoader;
         this.httpClient = httpClient;
@@ -125,9 +140,16 @@ public class MarketplaceService {
                 String appId = stringValue(listing.get("appId"));
                 if (appId != null) {
                     row.put("installed", dataStore.findApp(appId).isPresent());
-                    snapshotStore.findActive(appId).ifPresent(active ->
-                            row.put("activeVersion", active.bundleVersion())
-                    );
+                    String latestVersion = stringValue(listing.get("latestVersion"));
+                    snapshotStore.findActive(appId).ifPresent(active -> {
+                        row.put("activeVersion", active.bundleVersion());
+                        if (latestVersion != null && !latestVersion.isBlank()) {
+                            row.put(
+                                    "updateAvailable",
+                                    PlatformVersionSupport.isUpdateAvailable(active.bundleVersion(), latestVersion)
+                            );
+                        }
+                    });
                 }
             }
             if (endpoint.getContactUrl() != null && !endpoint.getContactUrl().isBlank()) {
@@ -152,13 +174,22 @@ public class MarketplaceService {
         if (!"free".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
             throw new IllegalArgumentException("Listing is not free — use activation with entitlement key");
         }
+        assertListingCompatible(detail);
         if (isAnalyticsPackListing(detail)) {
             return installAnalyticsPackListing(endpoint, slug, detail, "free-download");
         }
         String appId = requireAppId(detail);
-        String manifestJson = httpGet(normalizeBaseUrl(endpoint.getBaseUrl())
-                + "/api/v1/catalog/" + encodeSlug(slug) + "/download");
-        return deployManifest(appId, manifestJson, marketplaceId, slug, "free-download");
+        String installationId = installationIdService.ensureInstallationId();
+        String manifestJson = httpGet(buildFreeDownloadUrl(endpoint, slug, installationId));
+        return deployManifest(
+                appId,
+                manifestJson,
+                marketplaceId,
+                slug,
+                "free-download",
+                stringValue(detail.get("latestVersion")),
+                resolveTrustedFreeInstall(manifestJson)
+        );
     }
 
     public Map<String, Object> activatePaidListing(
@@ -174,6 +205,7 @@ public class MarketplaceService {
         if (!"paid".equalsIgnoreCase(stringValue(detail.get("pricing")))) {
             throw new IllegalArgumentException("Listing is not paid — use free install");
         }
+        assertListingCompatible(detail);
         if (isAnalyticsPackListing(detail)) {
             String installationId = installationIdService.ensureInstallationId();
             Map<String, Object> body = new LinkedHashMap<>();
@@ -225,7 +257,15 @@ public class MarketplaceService {
             throw new IllegalStateException("Marketplace did not return signed bundle");
         }
         String manifestJson = objectMapper.writeValueAsString(bundle);
-        Map<String, Object> result = deployManifest(appId, manifestJson, marketplaceId, slug, "paid-activation");
+        Map<String, Object> result = deployManifest(
+                appId,
+                manifestJson,
+                marketplaceId,
+                slug,
+                "paid-activation",
+                stringValue(detail.get("latestVersion")),
+                false
+        );
         result.put("installationId", installationId);
         return result;
     }
@@ -235,16 +275,66 @@ public class MarketplaceService {
             String manifestJson,
             String marketplaceId,
             String slug,
-            String source
+            String source,
+            String listingVersion,
+            boolean trustedMarketplaceFreeInstall
     ) throws Exception {
+        String previousVersion = snapshotStore.findActive(appId)
+                .map(ApplicationBundleSnapshotStore.BundleSnapshot::bundleVersion)
+                .orElse(null);
         ApplicationBundleDeployService.BundleManifest manifest =
                 BundleManifestJsonSupport.parse(objectMapper, manifestJson);
-        Map<String, Object> deployResult = deployService.deploy(appId, manifest, true);
+        if (trustedMarketplaceFreeInstall && bundleLicenseSigner.isConfigured()) {
+            Map<String, Object> signed = bundleLicenseSigner.signManifestIfNeeded(appId, manifest);
+            manifest = BundleManifestJsonSupport.parse(objectMapper, objectMapper.writeValueAsString(signed));
+            trustedMarketplaceFreeInstall = false;
+        }
+        Map<String, Object> deployResult = deployService.deploy(appId, manifest, trustedMarketplaceFreeInstall);
         Map<String, Object> result = new LinkedHashMap<>(deployResult);
         result.put("marketplaceId", marketplaceId);
         result.put("listingSlug", slug);
         result.put("installedFrom", source);
+        result.put("installedVersion", manifest.version());
+        result.put("listingVersion", listingVersion);
+        if (previousVersion != null) {
+            result.put("previousVersion", previousVersion);
+            result.put("upgrade", PlatformVersionSupport.isUpdateAvailable(previousVersion, manifest.version()));
+        }
         return result;
+    }
+
+    private boolean resolveTrustedFreeInstall(String manifestJson) throws Exception {
+        ApplicationBundleDeployService.BundleManifest manifest =
+                BundleManifestJsonSupport.parse(objectMapper, manifestJson);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> root = objectMapper.convertValue(manifest, Map.class);
+        return root.get("license") == null && !bundleLicenseSigner.isConfigured();
+    }
+
+    private void assertListingCompatible(Map<String, Object> detail) {
+        String minIspfVersion = stringValue(detail.get("minIspfVersion"));
+        if (minIspfVersion == null || minIspfVersion.isBlank()) {
+            return;
+        }
+        String platformVersion = PlatformVersionSupport.currentVersion(buildProperties);
+        if (PlatformVersionSupport.compare(platformVersion, minIspfVersion) < 0) {
+            throw new IllegalArgumentException(
+                    "Listing requires ISPF " + minIspfVersion + " or newer (current " + platformVersion + ")"
+            );
+        }
+    }
+
+    private static String buildFreeDownloadUrl(
+            MarketplaceProperties.Endpoint endpoint,
+            String slug,
+            String installationId
+    ) {
+        String base = normalizeBaseUrl(endpoint.getBaseUrl())
+                + "/api/v1/catalog/" + encodeSlug(slug) + "/download";
+        if (installationId == null || installationId.isBlank()) {
+            return base;
+        }
+        return base + "?installationId=" + URLEncoder.encode(installationId, StandardCharsets.UTF_8);
     }
 
     private Map<String, Object> installAnalyticsPackListing(
@@ -253,8 +343,8 @@ public class MarketplaceService {
             Map<String, Object> detail,
             String source
     ) throws Exception {
-        byte[] zipBytes = httpGetBytes(normalizeBaseUrl(endpoint.getBaseUrl())
-                + "/api/v1/catalog/" + encodeSlug(slug) + "/download");
+        String installationId = installationIdService.ensureInstallationId();
+        byte[] zipBytes = httpGetBytes(buildFreeDownloadUrl(endpoint, slug, installationId));
         return installAnalyticsPackZip(detail, zipBytes, endpoint.getId(), slug, source);
     }
 

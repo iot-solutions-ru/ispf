@@ -80,9 +80,9 @@ Foundation for Phase 32 marketplace GA. Track in release planning; not all items
 | 1 | Remote catalog browse (System → Solutions) | Shipped |
 | 2 | Free one-click install (platform proxies download + deploy) | Shipped |
 | 3 | Paid activate with entitlement key | Shipped |
-| 4 | Bundle signature verification on install | Planned |
-| 5 | Version pinning + upgrade path (`latestVersion`, semver) | Partial |
-| 6 | `minIspfVersion` enforcement before install | Partial |
+| 4 | Bundle signature verification on install | Partial — paid activate + optional `ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM`; trusted free install when unsigned |
+| 5 | Version pinning + upgrade path (`latestVersion`, semver) | Shipped — `updateAvailable` in catalog, `installedVersion` / `upgrade` on install |
+| 6 | `minIspfVersion` enforcement before install | Shipped |
 | 7 | Vendor legal fields in listing manifest | Foundation — see demo |
 | 8 | Offline/air-gapped bundle import (same manifest) | Shipped via deploy API |
 | 9 | Marketplace server artifact reseed runbook | Shipped — see Troubleshooting |

@@ -500,6 +500,7 @@ ispf:
     public-key-pem: ${ISPF_LICENSE_PUBLIC_KEY_PEM:}
     enforce: ${ISPF_LICENSE_ENFORCE:false}
     require-signed-bundles: ${ISPF_LICENSE_REQUIRE_SIGNED_BUNDLES:false}
+    signing-private-key-pem: ${ISPF_LICENSE_SIGNING_PRIVATE_KEY_PEM:}
   marketplace:
     enabled: ${ISPF_MARKETPLACE_ENABLED:true}
     default-id: ${ISPF_MARKETPLACE_DEFAULT_ID:iot-solutions}
